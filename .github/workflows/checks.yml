@@ -1,0 +1,106 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Install asdf
+        uses: asdf-vm/actions/setup@v1.1.0
+        with:
+          asdf_branch: v0.11.0
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Annotate tests
+        if: always()
+        uses: guyarb/golang-test-annotations@v0.6.0
+        with:
+          test-results: test.json
+
+  e2e-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install asdf
+        uses: asdf-vm/actions/setup@v1.1.0
+        with:
+          asdf_branch: v0.11.0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+
+      - name: Run e2e tests
+        run: make e2e-test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Gather tool versions
+        uses: endorama/asdf-parse-tool-versions@v1
+        id: versions
+
+      - name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v2
+        with:
+          fail_on_error: true
+          reporter: github-pr-review
+          golangci_lint_version: v${{ fromJson(steps.versions.outputs.tools).golangci-lint }}
+
+  pre-commit:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Gather tool versions
+        uses: endorama/asdf-parse-tool-versions@v1
+        id: versions
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ fromJson(steps.versions.outputs.tools).golang }}
+          check-latest: false
+          cache: true
+
+      - uses: mfinelli/setup-shfmt@v2
+        with:
+          shfmt-version: ${{ fromJson(steps.versions.outputs.tools).shfmt }}
+
+      - uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --all-files --show-diff-on-failure
+        env:
+          SKIP: no-commit-to-branch,golangci-lint

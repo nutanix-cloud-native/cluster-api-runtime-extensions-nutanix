@@ -1,0 +1,84 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+run:
+  timeout: 5m
+  go: '1.17'
+
+linters:
+  disable-all: true
+  enable:
+    - containedctx
+    - contextcheck
+    - depguard
+    - errcheck
+    - errchkjson
+    - errname
+    - gochecknoinits
+    - gci
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - gofumpt
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nolintlint
+    - prealloc
+    - staticcheck
+    - stylecheck
+    - tenv
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+
+linters-settings:
+  depguard:
+    list-type: blacklist
+    packages:
+      - k8s.io/kubernetes
+    packages-with-error-messages:
+      k8s.io/kubernetes: "do not use k8s.io/kubernetes directly"
+  errcheck:
+    exclude-functions:
+      - encoding/json.Marshal
+      - encoding/json.MarshalIndent
+  errchkjson:
+    check-error-free-encoding: true
+  gci:
+    sections:
+      - Standard
+      - Default
+      - Prefix(github.com/d2iq-labs/capi-runtime-extensions)
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+  gofumpt:
+    lang-version: "1.17"
+    extra-rules: true
+  lll:
+    line-length: 120
+
+issues:
+  exclude-rules:
+    # ignore errcheck for code under a /test folder
+    - path: "test/*"
+      linters:
+        - errcheck
+    # ignore errcheck for flags.Parse (it is expected that we flag.ExitOnError)
+    # ignore response.WriteError as it always returns the err it was passed
+    - source: "flags.Parse|response.WriteError"
+      linters:
+        - errcheck
