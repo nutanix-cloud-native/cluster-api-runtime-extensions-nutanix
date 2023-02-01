@@ -16,6 +16,7 @@ export GOARCH := $(shell go env GOARCH)
 endif
 
 define go_test
+	source <(setup-envtest use -p env $(ENVTEST_VERSION)) && \
 	gotestsum \
 		--jsonfile test.json \
 		--junitfile junit-report.xml \
@@ -45,7 +46,7 @@ endif
 
 .PHONY: test.%
 test.%: ## Runs go tests for a specific module
-test.%: install-tool.go.gotestsum; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
+test.%: install-tool.go.gotestsum install-tool.go.setup-envtest ; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
 	$(if $(filter-out root,$*),cd $* && )$(call go_test)
 
 .PHONY: integration-test
@@ -156,8 +157,10 @@ go-clean.%: install-tool.golang; $(info $(M) running go clean for $* module)
 
 .PHONY: go-generate
 go-generate: ## Runs go generate
-go-generate: install-tool.golang ; $(info $(M) running go generate)
+go-generate: install-tool.golang install-tool.kube-controller-tools ; $(info $(M) running go generate)
 	go generate -x ./...
+	controller-gen rbac:roleName=manager-role webhook paths="./..."
+	controller-gen object:headerFile="header.txt" paths="./..."
 
 .PHONY: go-mod-upgrade
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades

@@ -4,6 +4,8 @@ golang 1.19.5
 golangci-lint 1.50.1
 goreleaser 1.15.0
 helm 3.11.0
+kube-controller-tools 0.11.2
+kustomize 4.5.7
 pre-commit 3.0.2
 shfmt 3.6.0
 upx 4.0.2

@@ -1,3 +1,6 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
@@ -5,17 +8,17 @@ import (
 	"flag"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/spf13/pflag"
 	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
 	logsv1 "k8s.io/component-base/logs/api/v1"
 	"k8s.io/klog/v2"
-	ctrl "sigs.k8s.io/controller-runtime"
-
 	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/server"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
@@ -28,11 +31,6 @@ var (
 	webhookCertDir  string
 	logOptions      = logs.NewOptions()
 )
-
-func init() {
-	// Adds to the catalog all the RuntimeHooks defined in cluster API.
-	_ = runtimehooksv1.AddToCatalog(catalog)
-}
 
 // InitFlags initializes the flags.
 func InitFlags(fs *pflag.FlagSet) {
@@ -52,6 +50,8 @@ func InitFlags(fs *pflag.FlagSet) {
 }
 
 func main() {
+	_ = runtimehooksv1.AddToCatalog(catalog)
+
 	// Creates a logger to be used during the main func.
 	setupLog := ctrl.Log.WithName("main")
 
@@ -74,7 +74,14 @@ func main() {
 	if profilerAddress != "" {
 		klog.Infof("Profiler listening for requests at %s", profilerAddress)
 		go func() {
-			klog.Info(http.ListenAndServe(profilerAddress, nil))
+			profilerServer := &http.Server{
+				Addr:              profilerAddress,
+				Handler:           nil,
+				MaxHeaderBytes:    1 << 20,
+				IdleTimeout:       90 * time.Second, // matches http.DefaultTransport keep-alive timeout
+				ReadHeaderTimeout: 32 * time.Second,
+			}
+			klog.Info(profilerServer.ListenAndServe())
 		}()
 	}
 
@@ -118,13 +125,21 @@ func main() {
 	}
 }
 
-func DoBeforeClusterCreate(ctx context.Context, request *runtimehooksv1.BeforeClusterCreateRequest, response *runtimehooksv1.BeforeClusterCreateResponse) {
+func DoBeforeClusterCreate(
+	ctx context.Context,
+	request *runtimehooksv1.BeforeClusterCreateRequest,
+	response *runtimehooksv1.BeforeClusterCreateResponse,
+) {
 	log := ctrl.LoggerFrom(ctx)
 	log.Info("BeforeClusterCreate is called")
 	// Your implementation
 }
 
-func DoBeforeClusterUpgrade(ctx context.Context, request *runtimehooksv1.BeforeClusterUpgradeRequest, response *runtimehooksv1.BeforeClusterUpgradeResponse) {
+func DoBeforeClusterUpgrade(
+	ctx context.Context,
+	request *runtimehooksv1.BeforeClusterUpgradeRequest,
+	response *runtimehooksv1.BeforeClusterUpgradeResponse,
+) {
 	log := ctrl.LoggerFrom(ctx)
 	log.Info("BeforeClusterUpgrade is called")
 	// Your implementation
