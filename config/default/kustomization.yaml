@@ -22,7 +22,7 @@ vars:
     objref:
       kind: Service
       version: v1
-      name: webhook-service
+      name: test-extension-webhook-service
 
 configurations:
   - kustomizeconfig.yaml

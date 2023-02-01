@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - command:
-        - /extension
+        - /manager
         image: controller:latest
         name: extension
       terminationGracePeriodSeconds: 10
