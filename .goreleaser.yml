@@ -35,8 +35,6 @@ builds:
       - -w
     goos:
       - linux
-      - windows
-      - darwin
     goarch:
       - amd64
       - arm64
@@ -47,9 +45,6 @@ builds:
 archives:
   - name_template: '{{ .ProjectName }}_v{{trimprefix .Version "v"}}_{{ .Os }}_{{ .Arch }}'
     rlcp: true
-    format_overrides:
-      - goos: windows
-        format: zip
     builds:
       - capi-runtime-extensions
 dockers:
