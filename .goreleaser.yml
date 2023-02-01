@@ -51,12 +51,12 @@ dockers:
   - image_templates:
       # Specify the image tag including `-amd64` suffix if the build is not a snapshot build or is not being built on
       # arm64 machine. This allows for using the snapshot image build without the archtecture specific suffix
-      # consistently on local machines, i.e. can always use `d2iq-labs/capi-runtime-extensions:v<VERSION>` on the machine the snapshot
+      # consistently on local machines, i.e. can always use `ghcr.io/d2iq-labs/capi-runtime-extensions:v<VERSION>` on the machine the snapshot
       # is built on.
       #
       # For a release build the `-amd64` suffix will always be included and the `docker_manifests` specification below
       # will create the final multiplatform manifest to be pushed to the registry.
-      - 'd2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}{{ if or (not .IsSnapshot) (not (eq .Runtime.Goarch "amd64")) }}-amd64{{ end }}'
+      - ghcr.io/d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}{{ if or (not .IsSnapshot) (not (eq .Runtime.Goarch "amd64")) }}-amd64{{ end }}
     use: buildx
     dockerfile: Dockerfile
     build_flag_templates:
@@ -70,12 +70,12 @@ dockers:
   - image_templates:
       # Specify the image tag including `-amd64v8` suffix if the build is not a snapshot build or is not being built on
       # arm64 machine. This allows for using the snapshot image build without the archtecture specific suffix
-      # consistently on local machines, i.e. can always use `d2iq-labs/capi-runtime-extensions:v<VERSION>` on the machine the snapshot
+      # consistently on local machines, i.e. can always use `ghcr.io/d2iq-labs/capi-runtime-extensions:v<VERSION>` on the machine the snapshot
       # is built on.
       #
       # For a release build the `-amd64v8` suffix will always be included and the `docker_manifests` specification below
       # will create the final multiplatform manifest to be pushed to the registry.
-    - 'd2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}{{ if or (not .IsSnapshot) (not (eq .Runtime.Goarch "arm64")) }}-arm64v8{{ end }}'
+    - ghcr.io/d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}{{ if or (not .IsSnapshot) (not (eq .Runtime.Goarch "arm64")) }}-arm64v8{{ end }}
     use: buildx
     goarch: arm64
     dockerfile: Dockerfile
@@ -90,8 +90,8 @@ dockers:
 docker_manifests:
   - name_template: d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}
     image_templates:
-    - d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}-amd64
-    - d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}-arm64v8
+    - ghcr.io/d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}-amd64
+    - ghcr.io/d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}-arm64v8
 checksum:
   name_template: 'checksums.txt'
 snapshot:
