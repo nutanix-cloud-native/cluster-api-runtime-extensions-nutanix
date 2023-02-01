@@ -10,32 +10,32 @@ endif
 
 .PHONY: build-snapshot
 build-snapshot: ## Builds a snapshot with goreleaser
-build-snapshot: dockerauth install-tool.goreleaser install-tool.golang ; $(info $(M) building snapshot $*)
+build-snapshot: dockerauth install-tool.goreleaser install-tool.golang go-generate ; $(info $(M) building snapshot $*)
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		build \
 		--snapshot \
-		--rm-dist \
+		--clean \
 		--parallelism=$(GORELEASER_PARALLELISM) \
 		$(if $(BUILD_ALL),,--single-target) \
 		--skip-post-hooks
 
 .PHONY: release
 release: ## Builds a release with goreleaser
-release: dockerauth install-tool.goreleaser  install-tool.golang ; $(info $(M) building release $*)
+release: dockerauth install-tool.goreleaser install-tool.golang go-generate ; $(info $(M) building release $*)
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		release \
-		--rm-dist \
+		--clean \
 		--parallelism=$(GORELEASER_PARALLELISM) \
 		--timeout=60m \
 		$(GORELEASER_FLAGS)
 
 .PHONY: release-snapshot
 release-snapshot: ## Builds a snapshot release with goreleaser
-release-snapshot: dockerauth install-tool.goreleaser  install-tool.golang ; $(info $(M) building snapshot release $*)
+release-snapshot: dockerauth install-tool.goreleaser install-tool.golang go-generate ; $(info $(M) building snapshot release $*)
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		release \
 		--snapshot \
 		--skip-publish \
-		--rm-dist \
+		--clean \
 		--parallelism=$(GORELEASER_PARALLELISM) \
 		--timeout=60m

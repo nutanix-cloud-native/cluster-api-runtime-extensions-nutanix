@@ -16,6 +16,7 @@ export GOARCH := $(shell go env GOARCH)
 endif
 
 define go_test
+	source <(setup-envtest use -p env $(ENVTEST_VERSION)) && \
 	gotestsum \
 		--jsonfile test.json \
 		--junitfile junit-report.xml \
@@ -45,7 +46,7 @@ endif
 
 .PHONY: test.%
 test.%: ## Runs go tests for a specific module
-test.%: install-tool.go.gotestsum; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
+test.%: install-tool.go.gotestsum install-tool.go.setup-envtest ; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
 	$(if $(filter-out root,$*),cd $* && )$(call go_test)
 
 .PHONY: integration-test
@@ -79,7 +80,10 @@ E2E_FLAKE_ATTEMPTS ?= 1
 e2e-test: ## Runs e2e tests
 e2e-test: install-tool.golang install-tool.ginkgo install-tool.gojq
 	$(info $(M) running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
-	$(MAKE) GORELEASER_FLAGS=$$'--config=<(env GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) gojq --yaml-input --yaml-output \'del(.builds[0].goarch) | del(.builds[0].goos) | .builds[0].targets|=(["linux_amd64","linux_arm64",env.GOOS+"_"+env.GOARCH] | unique | map(. | sub("_amd64";"_amd64_v1")))\' .goreleaser.yml) --rm-dist --skip-validate --skip-publish' release
+ifneq ($(wildcard test/e2e/*),)
+ifneq ($(SKIP_BUILD),true)
+	$(MAKE) GORELEASER_FLAGS=$$'--config=<(env GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) gojq --yaml-input --yaml-output \'del(.builds[0].goarch) | del(.builds[0].goos) | .builds[0].targets|=(["linux_amd64","linux_arm64",env.GOOS+"_"+env.GOARCH] | unique | map(. | sub("_amd64";"_amd64_v1")))\' .goreleaser.yml) --clean --skip-validate --skip-publish' release
+endif
 	ginkgo run \
 		--r \
 		--race \
@@ -106,6 +110,7 @@ e2e-test: install-tool.golang install-tool.ginkgo install-tool.gojq
 	go tool cover \
 		-html=coverage-e2e.out \
 		-o coverage-e2e.html
+endif
 
 GOLANGCI_CONFIG_FILE ?= $(wildcard $(REPO_ROOT)/.golangci.y*ml)
 
@@ -156,8 +161,10 @@ go-clean.%: install-tool.golang; $(info $(M) running go clean for $* module)
 
 .PHONY: go-generate
 go-generate: ## Runs go generate
-go-generate: install-tool.golang ; $(info $(M) running go generate)
+go-generate: install-tool.golang install-tool.kube-controller-tools ; $(info $(M) running go generate)
 	go generate -x ./...
+	controller-gen rbac:roleName=manager-role webhook paths="./..."
+	controller-gen object:headerFile="header.txt" paths="./..."
 
 .PHONY: go-mod-upgrade
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades

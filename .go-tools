@@ -1,3 +1,5 @@
 github.com/oligot/go-mod-upgrade@v0.9.1
-gotest.tools/gotestsum@v1.9.0
 github.com/segmentio/golines@v0.11.0
+gotest.tools/gotestsum@v1.9.0
+sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20230131195449-5db173878d6d
+github.com/google/go-containerregistry/cmd/crane@v0.12.1

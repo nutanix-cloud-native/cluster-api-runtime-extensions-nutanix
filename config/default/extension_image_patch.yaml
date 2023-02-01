@@ -1,0 +1,14 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-extension
+spec:
+  template:
+    spec:
+      containers:
+      # FIXME replace with d2iq image
+      - image: dkoshkin/capi-runtime-extensions:latest
+        name: extension
