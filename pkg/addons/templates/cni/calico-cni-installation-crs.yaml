@@ -1,0 +1,17 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: addons.cluster.x-k8s.io/v1beta1
+kind: ClusterResourceSet
+metadata:
+  name: calico-cni-installation
+spec:
+  clusterSelector:
+    matchLabels:
+      capi-runtime-extensions.d2iq-labs.com/cni: calico
+  resources:
+    - kind: ConfigMap
+      name: tigera-operator
+    - kind: ConfigMap
+      name: calico-cni-installation
+  strategy: ApplyAlways

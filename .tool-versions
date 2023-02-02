@@ -10,3 +10,4 @@ pre-commit 3.0.2
 shfmt 3.6.0
 upx 4.0.2
 gcloud 416.0.0
+kubectl 1.26.1
