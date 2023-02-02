@@ -8,17 +8,16 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type k8sResourcesCreateError struct {
+type k8sResourcesApplyError struct {
 	err error
 }
 
-func (e k8sResourcesCreateError) Error() string {
-	return fmt.Sprintf("unable to create kubernetes resource: %v", e.err)
+func (e k8sResourcesApplyError) Error() string {
+	return fmt.Sprintf("unable to apply Kubernetes resource: %v", e.err)
 }
 
 type GenericResourcesClient struct {
@@ -33,18 +32,21 @@ func NewGenericResourcesClient(client ctrlclient.Client, log logr.Logger) *Gener
 	}
 }
 
-// Create will create objects, ignoring individual already exists errors.
-func (c *GenericResourcesClient) Create(
+// Apply will apply objects via server-side apply. This will overwrite any changes that have been manually applied.
+func (c *GenericResourcesClient) Apply(
 	ctx context.Context,
 	objects []unstructured.Unstructured,
 ) error {
-	opts := &ctrlclient.CreateOptions{}
-
-	// try to create, continue if it is just an alreadyExists error, fail otherwise
 	for i := range objects {
-		err := c.client.Create(ctx, &objects[i], opts)
-		if err != nil && !errors.IsAlreadyExists(err) {
-			return k8sResourcesCreateError{err: err}
+		err := c.client.Patch(
+			ctx,
+			&objects[i],
+			ctrlclient.Apply,
+			ctrlclient.ForceOwnership,
+			ctrlclient.FieldOwner("capi-runtime-extensions"),
+		)
+		if err != nil {
+			return k8sResourcesApplyError{err: err}
 		}
 	}
 

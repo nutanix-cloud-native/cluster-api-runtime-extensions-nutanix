@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/cluster-api/cmd/clusterctl/client/config"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/client/repository"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/client/yamlprocessor"
 )
@@ -25,9 +26,10 @@ func crsObjsFromTemplates(ns string, templates ...[]byte) ([]unstructured.Unstru
 
 func objsFromTemplate(template []byte, ns string) ([]unstructured.Unstructured, error) {
 	ti := repository.TemplateInput{
-		RawArtifact:     template,
-		TargetNamespace: ns,
-		Processor:       yamlprocessor.NewSimpleProcessor(),
+		RawArtifact:           template,
+		TargetNamespace:       ns,
+		Processor:             yamlprocessor.NewSimpleProcessor(),
+		ConfigVariablesClient: config.NewMemoryReader(),
 	}
 
 	t, err := repository.NewTemplate(ti)
