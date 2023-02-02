@@ -17,3 +17,4 @@ include $(INCLUDE_DIR)ci.mk
 include $(INCLUDE_DIR)tag.mk
 include $(INCLUDE_DIR)upx.mk
 include $(INCLUDE_DIR)kubebuilder.mk
+include $(INCLUDE_DIR)addons.mk
