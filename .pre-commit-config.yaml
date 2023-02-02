@@ -22,6 +22,7 @@ repos:
   - id: check-yaml
     args: ["-m", "--unsafe"]
     stages: [commit]
+    exclude: ^charts/.+/templates/
   - id: mixed-line-ending
     args: ["-f", "lf"]
     exclude: \.bat$
@@ -64,7 +65,7 @@ repos:
   hooks:
   - id: markdownlint
     stages: [commit]
-    exclude: ^CHANGELOG.md$
+    exclude: ^(CHANGELOG.md|charts/.+/README.md)$
 - repo: https://github.com/Lucas-C/pre-commit-hooks
   rev: v1.4.2
   hooks:
@@ -94,3 +95,10 @@ repos:
       - header.txt
       - --comment-style
       - <!--|| -->
+- repo: https://github.com/norwoodj/helm-docs
+  rev: v1.2.0
+  hooks:
+  - id: helm-docs
+    args:
+      # Make the tool search for charts only under the `example-charts` directory
+      - --chart-search-root=charts

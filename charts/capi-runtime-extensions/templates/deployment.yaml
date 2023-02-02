@@ -1,0 +1,72 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  name: {{ template "chart.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "chart.selectorLabels" . | nindent 8 }}
+    spec:
+      nodeSelector:
+        {{- toYaml .Values.commonNodeSelector | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.commonTolerations | nindent 8 }}
+      serviceAccountName: {{ template "chart.name" . }}
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: webhook
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default $.Chart.AppVersion }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+{{- if .Values.env }}
+        env:
+{{- range $key, $value := .Values.env }}
+        - name: "{{ $key }}"
+          value: "{{ $value }}"
+{{- end }}
+{{- end }}
+        args:
+        - --webhook-cert-dir=/certs/
+        {{- range $key, $value := .Values.extraArgs }}
+        - --{{ $key }}={{ $value }}
+        {{- end }}
+        ports:
+        - containerPort: 9443
+          name: https
+          protocol: TCP
+        resources:
+          {{ with .Values.resources }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        volumeMounts:
+        - mountPath: /certs
+          name: cert
+          readOnly: true
+        # livenessProbe:
+        #   httpGet:
+        #     port: 9443
+        #     scheme: HTTPS
+        #     path: /healthz
+        # readinessProbe:
+        #   httpGet:
+        #     port: 9443
+        #     scheme: HTTPS
+        #     path: /readyz
+      securityContext:
+        {{ with .Values.securityContext }}
+        {{- toYaml . | nindent 8}}
+        {{- end }}
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: {{ template "chart.name" . }}-tls
