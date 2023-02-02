@@ -52,11 +52,6 @@ jobs:
         with:
           asdf_branch: v0.11.0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        with:
-          platforms: arm64
-
       - name: Run e2e tests
         run: make e2e-test
         env:
@@ -98,6 +93,14 @@ jobs:
       - uses: mfinelli/setup-shfmt@v2
         with:
           shfmt-version: ${{ fromJson(steps.versions.outputs.tools).shfmt }}
+
+      - name: Install asdf
+        uses: asdf-vm/actions/setup@master
+        with:
+          asdf_branch: v0.11.0
+
+      - name: Install helm-docs
+        run: make install-tool.helm-docs
 
       - uses: pre-commit/action@v3.0.0
         with:

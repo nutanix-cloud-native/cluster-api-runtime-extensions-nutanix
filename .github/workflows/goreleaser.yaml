@@ -43,6 +43,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ fromJson(steps.versions.outputs.tools).golang }}
+          check-latest: false
           cache: true
 
       - name: Run goreleaser

@@ -34,4 +34,4 @@ gojq --yaml-input --slurp --indent=0 \
 
 kubectl create configmap tigera-operator --dry-run=client --output yaml \
   --from-file "${CALICO_CNI_ASSETS_DIR}/tigera-operator.json" \
-  >>"${GIT_REPO_ROOT}/pkg/addons/templates/cni/tigera-operator-configmap.yaml"
+  >"${GIT_REPO_ROOT}/pkg/addons/templates/cni/tigera-operator-configmap.yaml"

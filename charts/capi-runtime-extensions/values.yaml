@@ -1,0 +1,46 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+image:
+  repository: ghcr.io/d2iq-labs/capi-runtime-extensions
+  tag:
+  pullPolicy: IfNotPresent
+
+# -- Optional secrets used for pulling the container image
+imagePullSecrets: []
+#- name: Secret with Registry credentials
+
+certificate:
+  issuer:
+    selfSigned: true
+    name:
+    kind: Issuer
+
+env: {}
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+securityContext:
+  runAsUser: 65532
+service:
+  annotations: {}
+  type: ClusterIP
+  port: 443
+
+nodeSelector: {}
+  # -- Kubernetes node selector: node labels for pod assignment
+  # Allow scheduling of Deployment on linux nodes only
+  # kubernetes.io/os: linux
+
+tolerations: []
+  # -- Kubernetes pod tolerations
+  # Allow scheduling of Deployment on all nodes
+  # - operator: "Exists"
+
+# -- Optional priority class to be used for the pod.
+priorityClassName: ""
