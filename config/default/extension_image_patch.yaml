@@ -9,6 +9,5 @@ spec:
   template:
     spec:
       containers:
-      # FIXME replace with d2iq image
-      - image: dkoshkin/capi-runtime-extensions:latest
+      - image: ghcr.io/d2iq-labs/capi-runtime-extensions:v0.1.0-dev
         name: extension

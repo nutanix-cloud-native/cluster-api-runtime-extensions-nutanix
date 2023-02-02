@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - command:
-        - /manager
+        - /usr/local/bin/capi-runtime-extensions
         image: controller:latest
         name: extension
       terminationGracePeriodSeconds: 10

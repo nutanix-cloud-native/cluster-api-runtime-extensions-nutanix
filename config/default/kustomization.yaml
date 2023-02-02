@@ -9,6 +9,7 @@ resources:
 - role.yaml
 - rolebinding.yaml
 - service_account.yaml
+- extension_config.yaml
 
 bases:
 - ../certmanager
