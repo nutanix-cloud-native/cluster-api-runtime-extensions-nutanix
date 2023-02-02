@@ -14,4 +14,4 @@ spec:
       name: tigera-operator
     - kind: ConfigMap
       name: calico-cni-installation
-  strategy: ApplyAlways
+  strategy: ApplyOnce

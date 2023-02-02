@@ -52,7 +52,7 @@ func (m *ExtensionHandlers) DoAfterControlPlaneInitialized(
 		response.Message = err.Error()
 		return
 	}
-	err = genericResourcesClient.Create(ctx, objs)
+	err = genericResourcesClient.Apply(ctx, objs)
 	if err != nil {
 		response.Status = runtimehooksv1.ResponseStatusFailure
 		response.Message = err.Error()

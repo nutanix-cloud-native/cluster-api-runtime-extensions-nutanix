@@ -3,7 +3,10 @@
 
 .PHONY: clusterctl.init
 clusterctl.init: install-tool.clusterctl
-	env CLUSTER_TOPOLOGY=true EXP_RUNTIME_SDK=true clusterctl init \
+	env CLUSTER_TOPOLOGY=true \
+			EXP_RUNTIME_SDK=true \
+			EXP_CLUSTER_RESOURCE_SET=true \
+			clusterctl init \
 		--kubeconfig=$(KIND_KUBECONFIG) \
 		--infrastructure docker \
 		--wait-providers
