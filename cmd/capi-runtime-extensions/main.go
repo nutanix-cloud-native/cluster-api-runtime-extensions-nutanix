@@ -4,7 +4,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"net/http"
 	"os"
@@ -19,6 +18,9 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/server"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/lifecycle"
 )
 
 var (
@@ -96,11 +98,37 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Lifecycle Hooks
+
+	// Gets a client to access the Kubernetes cluster where this RuntimeExtension will be deployed to
+	restConfig, err := ctrl.GetConfig()
+	if err != nil {
+		setupLog.Error(err, "error getting config for the cluster")
+		os.Exit(1)
+	}
+
+	client, err := ctrclient.New(restConfig, ctrclient.Options{})
+	if err != nil {
+		setupLog.Error(err, "error creating client to the cluster")
+		os.Exit(1)
+	}
+
+	// Create the ExtensionHandlers for the lifecycle hooks
+	lifecycleExtensionHandlers := lifecycle.NewExtensionHandlers(client)
+
 	// Register extension handlers.
 	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 		Hook:        runtimehooksv1.BeforeClusterCreate,
 		Name:        "before-cluster-create",
-		HandlerFunc: DoBeforeClusterCreate,
+		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterCreate,
+	}); err != nil {
+		setupLog.Error(err, "error adding handler")
+		os.Exit(1)
+	}
+	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+		Hook:        runtimehooksv1.AfterControlPlaneInitialized,
+		Name:        "after-control-plane-initialized",
+		HandlerFunc: lifecycleExtensionHandlers.DoAfterControlPlaneInitialized,
 	}); err != nil {
 		setupLog.Error(err, "error adding handler")
 		os.Exit(1)
@@ -108,7 +136,15 @@ func main() {
 	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 		Hook:        runtimehooksv1.BeforeClusterUpgrade,
 		Name:        "before-cluster-upgrade",
-		HandlerFunc: DoBeforeClusterUpgrade,
+		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterUpgrade,
+	}); err != nil {
+		setupLog.Error(err, "error adding handler")
+		os.Exit(1)
+	}
+	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+		Hook:        runtimehooksv1.BeforeClusterDelete,
+		Name:        "before-cluster-delete",
+		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterDelete,
 	}); err != nil {
 		setupLog.Error(err, "error adding handler")
 		os.Exit(1)
@@ -123,24 +159,4 @@ func main() {
 		setupLog.Error(err, "error running webhook server")
 		os.Exit(1)
 	}
-}
-
-func DoBeforeClusterCreate(
-	ctx context.Context,
-	request *runtimehooksv1.BeforeClusterCreateRequest,
-	response *runtimehooksv1.BeforeClusterCreateResponse,
-) {
-	log := ctrl.LoggerFrom(ctx)
-	log.Info("BeforeClusterCreate is called")
-	// Your implementation
-}
-
-func DoBeforeClusterUpgrade(
-	ctx context.Context,
-	request *runtimehooksv1.BeforeClusterUpgradeRequest,
-	response *runtimehooksv1.BeforeClusterUpgradeResponse,
-) {
-	log := ctrl.LoggerFrom(ctx)
-	log.Info("BeforeClusterUpgrade is called")
-	// Your implementation
 }
