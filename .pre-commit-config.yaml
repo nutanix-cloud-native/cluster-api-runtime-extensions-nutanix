@@ -100,6 +100,7 @@ repos:
   rev: v1.2.0
   hooks:
   - id: helm-docs
+    stages: [commit]
     args:
       # Make the tool search for charts only under the `example-charts` directory
       - --chart-search-root=charts

@@ -78,9 +78,9 @@ E2E_FLAKE_ATTEMPTS ?= 1
 
 .PHONY: e2e-test
 e2e-test: ## Runs e2e tests
+ifneq ($(wildcard test/e2e/*),)
 e2e-test: install-tool.golang install-tool.ginkgo install-tool.gojq
 	$(info $(M) running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
-ifneq ($(wildcard test/e2e/*),)
 ifneq ($(SKIP_BUILD),true)
 	$(MAKE) GORELEASER_FLAGS=$$'--config=<(env GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) gojq --yaml-input --yaml-output \'del(.builds[0].goarch) | del(.builds[0].goos) | .builds[0].targets|=(["linux_amd64","linux_arm64",env.GOOS+"_"+env.GOARCH] | unique | map(. | sub("_amd64";"_amd64_v1")))\' .goreleaser.yml) --clean --skip-validate --skip-publish' release
 endif
