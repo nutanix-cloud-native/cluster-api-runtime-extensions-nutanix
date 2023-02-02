@@ -4,6 +4,5 @@
 export CALICO_VERSION := v3.24
 
 .PHONY: update-addon.calico
-update-addon.calico: install-tool.gojq install-tool.kubectl ## update the Calico CNI from source files
-	$(call print-target)
+update-addon.calico: install-tool.gojq install-tool.kubectl ; $(info $(M) updating calico manifests)
 	./hack/addons/update-calico-manifests.sh

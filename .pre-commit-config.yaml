@@ -59,7 +59,7 @@ repos:
   hooks:
   - id: shellcheck
     stages: [commit]
-    args: ["-e", "SC2211"]
+    args: ["-e", "SC2211", "-x"]
 - repo: https://github.com/igorshubovych/markdownlint-cli
   rev: v0.33.0
   hooks:
@@ -85,6 +85,7 @@ repos:
     args:
       - --license-filepath
       - header.txt
+    exclude: ^pkg/addons/templates/.+\.yaml$
   - id: insert-license
     name: License headers - Markdown
     stages: [commit]
