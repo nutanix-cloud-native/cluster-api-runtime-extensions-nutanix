@@ -168,5 +168,5 @@ go-generate: install-tool.golang install-tool.kube-controller-tools ; $(info $(M
 
 .PHONY: go-mod-upgrade
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades
-go-mod-upgrade: install-tool.golang ; $(info $(M) checking for direct module dependency upgrades)
+go-mod-upgrade: install-tool.go.go-mod-upgrade; $(info $(M) checking for direct module dependency upgrades)
 	go-mod-upgrade

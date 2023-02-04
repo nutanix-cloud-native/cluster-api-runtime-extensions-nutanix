@@ -3,8 +3,8 @@ gcloud 416.0.0
 gcloud 416.0.0
 ginkgo 2.8.0
 gojq 0.12.11
-golang 1.19.5
-golangci-lint 1.50.1
+golang 1.20
+golangci-lint 1.51.0
 goreleaser 1.15.0
 helm 3.11.0
 helm-docs 1.11.0

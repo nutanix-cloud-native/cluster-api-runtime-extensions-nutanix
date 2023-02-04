@@ -4,9 +4,7 @@
 package addons
 
 import (
-
-	// embedding as []byte does not import the package.
-	_ "embed"
+	_ "embed" // embedding as []byte does not import the package.
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
