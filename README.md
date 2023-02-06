@@ -24,13 +24,15 @@ clusterctl generate cluster capi-quickstart \
   --kubernetes-version v1.26.0 \
   --control-plane-machine-count=1 \
   --worker-machine-count=1 | \
+  gojq --yaml-input --yaml-output --slurp \
+    '.[] | (select( .kind=="Cluster").metadata.labels += {"capi-runtime-extensions.d2iq-labs.com/cni": "calico"})' \
   kubectl apply -f -
 ```
 
-Label the cluster to deploy Calico:
+Wait until control plane is ready:
 
 ```shell
-kubectl label cluster capi-quickstart capi-runtime-extensions.d2iq-labs.com/cni=calico
+kubectl wait clusters/capi-quickstart --for=condition=ControlPlaneInitialized --timeout=5m
 ```
 
 To get the kubeconfig for the new cluster, run:
@@ -45,6 +47,18 @@ If you are not on Linux, you will also need to fix the generated kubeconfig's `s
 kubectl config set-cluster capi-quickstart \
   --kubeconfig capd-kubeconfig \
   --server=https://$(docker port capi-quickstart-lb 6443/tcp)
+```
+
+Wait until all nodes are ready (this indicates that CNI has been deployed successfully):
+
+```shell
+kubectl --kubeconfig capd-kubeconfig wait nodes --all --for=condition=Ready --timeout=5m
+```
+
+Show that Calico is running successfully on the workload cluster:
+
+```shell
+kubectl --kubeconfig capd-kubeconfig get daemonsets -n calico-system
 ```
 
 To delete the workload cluster, run:
