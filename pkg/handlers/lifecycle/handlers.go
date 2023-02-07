@@ -7,12 +7,17 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/addons/clusterresourcesets"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/addons/fluxhelmrelease"
 	k8sclient "github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/client"
 )
 
@@ -59,15 +64,7 @@ func (m *ExtensionHandlers) DoAfterControlPlaneInitialized(
 
 	genericResourcesClient := k8sclient.NewGenericResourcesClient(m.client, log)
 
-	var err error
-	switch m.addonProvider {
-	case ClusterResourceSetAddonProvider:
-		err = applyCNICRS(ctx, &request.Cluster, genericResourcesClient)
-	case FluxHelmReleaseAddonProvider:
-		// TODO Apply flux helm releases
-	default:
-		err = fmt.Errorf("unsupported provider: %q", m.addonProvider)
-	}
+	err := applyCNICRS(ctx, m.addonProvider, &request.Cluster, genericResourcesClient, m.client)
 	if err != nil {
 		response.Status = runtimehooksv1.ResponseStatusFailure
 		response.Message = err.Error()
@@ -94,13 +91,49 @@ func (m *ExtensionHandlers) DoBeforeClusterDelete(
 
 func applyCNICRS(
 	ctx context.Context,
+	addonProvider AddonProvider,
 	cluster *v1beta1.Cluster,
 	genericResourcesClient *k8sclient.GenericResourcesClient,
+	c ctrlclient.Client,
 ) error {
-	// Create CNI ClusterResourceSet and let the CAPI controller reconcile it.
-	objs, err := clusterresourcesets.CNIForCluster(cluster)
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		c,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
 	if err != nil {
 		return err
 	}
-	return genericResourcesClient.Apply(ctx, objs)
+	err = remoteClient.Patch(ctx, &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "tigera-operator",
+			Labels: map[string]string{
+				"pod-security.kubernetes.io/enforce":         "privileged",
+				"pod-security.kubernetes.io/enforce-version": "latest",
+			},
+		},
+	}, ctrlclient.Apply, ctrlclient.ForceOwnership, ctrlclient.FieldOwner("capi-runtime-extensions"))
+	if err != nil {
+		return err
+	}
+
+	var objs []unstructured.Unstructured
+	switch addonProvider {
+	case ClusterResourceSetAddonProvider:
+		objs, err = clusterresourcesets.CNIForCluster(cluster)
+	case FluxHelmReleaseAddonProvider:
+		objs, err = fluxhelmrelease.CNIForCluster(cluster)
+	default:
+		err = fmt.Errorf("unsupported provider: %q", addonProvider)
+	}
+	if err != nil {
+		return err
+	}
+
+	return genericResourcesClient.Apply(ctx, objs...)
 }

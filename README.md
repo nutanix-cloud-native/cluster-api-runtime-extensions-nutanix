@@ -16,6 +16,19 @@ make dev.run-on-kind
 eval $(make kind.kubeconfig)
 ```
 
+By default this will use the `ClusterResourceSet` addons provider. To use the `FluxHelmRelease` addons provider run:
+
+```shell
+make ADDONS_PROVIDER=FluxHelmRelease dev.run-on-kind
+```
+
+Pro-tip: to redeploy without rebuilding the binaries, images, etc (useful if you have only changed the Helm chart for
+example), run:
+
+```shell
+make SKIP_BUILD=true dev.run-on-kind
+```
+
 To create a cluster with [clusterctl](https://cluster-api.sigs.k8s.io/user/quick-start.html), run:
 
 ```shell

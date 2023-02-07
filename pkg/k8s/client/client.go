@@ -35,12 +35,12 @@ func NewGenericResourcesClient(client ctrlclient.Client, log logr.Logger) *Gener
 // Apply will apply objects via server-side apply. This will overwrite any changes that have been manually applied.
 func (c *GenericResourcesClient) Apply(
 	ctx context.Context,
-	objects []unstructured.Unstructured,
+	objs ...unstructured.Unstructured,
 ) error {
-	for i := range objects {
+	for i := range objs {
 		err := c.client.Patch(
 			ctx,
-			&objects[i],
+			&objs[i],
 			ctrlclient.Apply,
 			ctrlclient.ForceOwnership,
 			ctrlclient.FieldOwner("capi-runtime-extensions"),
