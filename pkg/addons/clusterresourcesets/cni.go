@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package addons
+package clusterresourcesets
 
 import (
 	_ "embed" // embedding as []byte does not import the package.

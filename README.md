@@ -25,7 +25,7 @@ clusterctl generate cluster capi-quickstart \
   --control-plane-machine-count=1 \
   --worker-machine-count=1 | \
   gojq --yaml-input --yaml-output --slurp \
-    '.[] | (select( .kind=="Cluster").metadata.labels += {"capi-runtime-extensions.d2iq-labs.com/cni": "calico"})' \
+    '.[] | (select( .kind=="Cluster").metadata.labels += {"capi-runtime-extensions.d2iq-labs.com/cni": "calico"})' | \
   kubectl apply -f -
 ```
 

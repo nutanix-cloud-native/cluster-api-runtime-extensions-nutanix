@@ -5,6 +5,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -31,6 +32,7 @@ var (
 	profilerAddress string
 	webhookPort     int
 	webhookCertDir  string
+	addonProvider   lifecycle.AddonProvider
 	logOptions      = logs.NewOptions()
 )
 
@@ -49,6 +51,18 @@ func InitFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&webhookCertDir, "webhook-cert-dir", "/tmp/k8s-webhook-server/serving-certs/",
 		"Webhook cert dir, only used when webhook-port is specified.")
+
+	fs.Var(newAddonProviderValue(
+		lifecycle.ClusterResourceSetAddonProvider, &addonProvider),
+		"addon-provider",
+		fmt.Sprintf(
+			"addon provider (one of %v)",
+			[]string{
+				string(lifecycle.ClusterResourceSetAddonProvider),
+				string(lifecycle.FluxHelmReleaseAddonProvider),
+			},
+		),
+	)
 }
 
 func main() {
@@ -114,7 +128,7 @@ func main() {
 	}
 
 	// Create the ExtensionHandlers for the lifecycle hooks
-	lifecycleExtensionHandlers := lifecycle.NewExtensionHandlers(client)
+	lifecycleExtensionHandlers := lifecycle.NewExtensionHandlers(addonProvider, client)
 
 	// Register extension handlers.
 	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{

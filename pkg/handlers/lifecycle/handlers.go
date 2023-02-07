@@ -5,24 +5,38 @@ package lifecycle
 
 import (
 	"context"
+	"fmt"
 
+	"sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/addons"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/addons/clusterresourcesets"
 	k8sclient "github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/client"
+)
+
+type AddonProvider string
+
+const (
+	ClusterResourceSetAddonProvider AddonProvider = "ClusterResourceSet"
+	FluxHelmReleaseAddonProvider    AddonProvider = "FluxHelmRelease"
 )
 
 // ExtensionHandlers provides a common struct shared across the lifecycle hook handlers.
 type ExtensionHandlers struct {
-	client ctrlclient.Client
+	addonProvider AddonProvider
+	client        ctrlclient.Client
 }
 
 // NewExtensionHandlers returns a ExtensionHandlers for the lifecycle hooks handlers.
-func NewExtensionHandlers(client ctrlclient.Client) *ExtensionHandlers {
+func NewExtensionHandlers(
+	addonProvider AddonProvider,
+	client ctrlclient.Client,
+) *ExtensionHandlers {
 	return &ExtensionHandlers{
-		client: client,
+		addonProvider: addonProvider,
+		client:        client,
 	}
 }
 
@@ -45,18 +59,18 @@ func (m *ExtensionHandlers) DoAfterControlPlaneInitialized(
 
 	genericResourcesClient := k8sclient.NewGenericResourcesClient(m.client, log)
 
-	// Create CNI ClusterResourceSet and let the CAPI controller reconcile it
-	objs, err := addons.CNIForCluster(&request.Cluster)
-	if err != nil {
-		response.Status = runtimehooksv1.ResponseStatusFailure
-		response.Message = err.Error()
-		return
+	var err error
+	switch m.addonProvider {
+	case ClusterResourceSetAddonProvider:
+		err = applyCNICRS(ctx, &request.Cluster, genericResourcesClient)
+	case FluxHelmReleaseAddonProvider:
+		// TODO Apply flux helm releases
+	default:
+		err = fmt.Errorf("unsupported provider: %q", m.addonProvider)
 	}
-	err = genericResourcesClient.Apply(ctx, objs)
 	if err != nil {
 		response.Status = runtimehooksv1.ResponseStatusFailure
 		response.Message = err.Error()
-		return
 	}
 }
 
@@ -76,4 +90,17 @@ func (m *ExtensionHandlers) DoBeforeClusterDelete(
 ) {
 	log := ctrl.LoggerFrom(ctx)
 	log.Info("BeforeClusterDelete is called")
+}
+
+func applyCNICRS(
+	ctx context.Context,
+	cluster *v1beta1.Cluster,
+	genericResourcesClient *k8sclient.GenericResourcesClient,
+) error {
+	// Create CNI ClusterResourceSet and let the CAPI controller reconcile it.
+	objs, err := clusterresourcesets.CNIForCluster(cluster)
+	if err != nil {
+		return err
+	}
+	return genericResourcesClient.Apply(ctx, objs)
 }

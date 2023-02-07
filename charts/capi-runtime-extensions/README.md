@@ -25,13 +25,14 @@ A Helm chart for capi-runtime-extensions
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| addons.provider | string | `"ClusterResourceSet"` |  |
 | certificate.issuer.kind | string | `"Issuer"` |  |
-| certificate.issuer.name | string | `nil` |  |
+| certificate.issuer.name | string | `""` |  |
 | certificate.issuer.selfSigned | bool | `true` |  |
 | env | object | `{}` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/d2iq-labs/capi-runtime-extensions"` |  |
-| image.tag | string | `nil` |  |
+| image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` | Optional secrets used for pulling the container image |
 | nodeSelector | object | `{}` |  |
 | priorityClassName | string | `""` | Optional priority class to be used for the pod. |
