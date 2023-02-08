@@ -64,7 +64,13 @@ func (m *ExtensionHandlers) DoAfterControlPlaneInitialized(
 
 	genericResourcesClient := k8sclient.NewGenericResourcesClient(m.client, log)
 
-	err := applyCNICRS(ctx, m.addonProvider, &request.Cluster, genericResourcesClient, m.client)
+	err := applyCNIResources(
+		ctx,
+		m.addonProvider,
+		&request.Cluster,
+		genericResourcesClient,
+		m.client,
+	)
 	if err != nil {
 		response.Status = runtimehooksv1.ResponseStatusFailure
 		response.Message = err.Error()
@@ -87,9 +93,47 @@ func (m *ExtensionHandlers) DoBeforeClusterDelete(
 ) {
 	log := ctrl.LoggerFrom(ctx)
 	log.Info("BeforeClusterDelete is called")
+
+	genericResourcesClient := k8sclient.NewGenericResourcesClient(m.client, log)
+
+	err := applyCNIResourcesForDelete(
+		ctx,
+		m.addonProvider,
+		&request.Cluster,
+		genericResourcesClient,
+	)
+	if err != nil {
+		response.Status = runtimehooksv1.ResponseStatusFailure
+		response.Message = err.Error()
+	}
 }
 
-func applyCNICRS(
+func applyCNIResourcesForDelete(
+	ctx context.Context,
+	addonProvider AddonProvider,
+	cluster *v1beta1.Cluster,
+	genericResourcesClient *k8sclient.GenericResourcesClient,
+) error {
+	var (
+		err  error
+		objs []unstructured.Unstructured
+	)
+	switch addonProvider {
+	case ClusterResourceSetAddonProvider:
+		// Nothing to do.
+	case FluxHelmReleaseAddonProvider:
+		objs, err = fluxhelmrelease.CNIPatchesForClusterDelete(cluster)
+	default:
+		err = fmt.Errorf("unsupported provider: %q", addonProvider)
+	}
+	if err != nil {
+		return err
+	}
+
+	return genericResourcesClient.Apply(ctx, objs...)
+}
+
+func applyCNIResources(
 	ctx context.Context,
 	addonProvider AddonProvider,
 	cluster *v1beta1.Cluster,
