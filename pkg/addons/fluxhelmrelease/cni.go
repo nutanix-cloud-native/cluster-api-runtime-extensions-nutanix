@@ -60,7 +60,7 @@ installation:
 				Name:      "projectcalico",
 			},
 			Spec: fluxsourcev1beta2.HelmRepositorySpec{
-				URL: "https://projectcalico.docs.tigera.io/charts",
+				URL: "https://docs.tigera.io/calico/charts",
 			},
 		},
 		&fluxhelmv2beta1.HelmRelease{
