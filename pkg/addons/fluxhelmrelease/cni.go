@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -71,6 +72,13 @@ installation:
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-tigera-operator",
 				Namespace: cluster.Namespace,
+				OwnerReferences: []metav1.OwnerReference{{
+					APIVersion: cluster.APIVersion,
+					Kind:       cluster.Kind,
+					Name:       cluster.Name,
+					UID:        cluster.UID,
+					Controller: pointer.Bool(true),
+				}},
 			},
 			Spec: fluxhelmv2beta1.HelmReleaseSpec{
 				KubeConfig: &fluxhelmv2beta1.KubeConfig{
