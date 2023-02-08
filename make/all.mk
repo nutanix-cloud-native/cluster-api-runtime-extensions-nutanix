@@ -19,4 +19,5 @@ include $(INCLUDE_DIR)upx.mk
 include $(INCLUDE_DIR)addons.mk
 include $(INCLUDE_DIR)kind.mk
 include $(INCLUDE_DIR)clusterctl.mk
+include $(INCLUDE_DIR)flux.mk
 include $(INCLUDE_DIR)dev.mk

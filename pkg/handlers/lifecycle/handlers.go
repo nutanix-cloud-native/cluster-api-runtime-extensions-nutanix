@@ -5,24 +5,43 @@ package lifecycle
 
 import (
 	"context"
+	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/addons"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/addons/clusterresourcesets"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/addons/fluxhelmrelease"
 	k8sclient "github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/client"
+)
+
+type AddonProvider string
+
+const (
+	ClusterResourceSetAddonProvider AddonProvider = "ClusterResourceSet"
+	FluxHelmReleaseAddonProvider    AddonProvider = "FluxHelmRelease"
 )
 
 // ExtensionHandlers provides a common struct shared across the lifecycle hook handlers.
 type ExtensionHandlers struct {
-	client ctrlclient.Client
+	addonProvider AddonProvider
+	client        ctrlclient.Client
 }
 
 // NewExtensionHandlers returns a ExtensionHandlers for the lifecycle hooks handlers.
-func NewExtensionHandlers(client ctrlclient.Client) *ExtensionHandlers {
+func NewExtensionHandlers(
+	addonProvider AddonProvider,
+	client ctrlclient.Client,
+) *ExtensionHandlers {
 	return &ExtensionHandlers{
-		client: client,
+		addonProvider: addonProvider,
+		client:        client,
 	}
 }
 
@@ -45,18 +64,10 @@ func (m *ExtensionHandlers) DoAfterControlPlaneInitialized(
 
 	genericResourcesClient := k8sclient.NewGenericResourcesClient(m.client, log)
 
-	// Create CNI ClusterResourceSet and let the CAPI controller reconcile it
-	objs, err := addons.CNIForCluster(&request.Cluster)
+	err := applyCNICRS(ctx, m.addonProvider, &request.Cluster, genericResourcesClient, m.client)
 	if err != nil {
 		response.Status = runtimehooksv1.ResponseStatusFailure
 		response.Message = err.Error()
-		return
-	}
-	err = genericResourcesClient.Apply(ctx, objs)
-	if err != nil {
-		response.Status = runtimehooksv1.ResponseStatusFailure
-		response.Message = err.Error()
-		return
 	}
 }
 
@@ -76,4 +87,53 @@ func (m *ExtensionHandlers) DoBeforeClusterDelete(
 ) {
 	log := ctrl.LoggerFrom(ctx)
 	log.Info("BeforeClusterDelete is called")
+}
+
+func applyCNICRS(
+	ctx context.Context,
+	addonProvider AddonProvider,
+	cluster *v1beta1.Cluster,
+	genericResourcesClient *k8sclient.GenericResourcesClient,
+	c ctrlclient.Client,
+) error {
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		c,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return err
+	}
+	err = remoteClient.Patch(ctx, &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "tigera-operator",
+			Labels: map[string]string{
+				"pod-security.kubernetes.io/enforce":         "privileged",
+				"pod-security.kubernetes.io/enforce-version": "latest",
+			},
+		},
+	}, ctrlclient.Apply, ctrlclient.ForceOwnership, ctrlclient.FieldOwner("capi-runtime-extensions"))
+	if err != nil {
+		return err
+	}
+
+	var objs []unstructured.Unstructured
+	switch addonProvider {
+	case ClusterResourceSetAddonProvider:
+		objs, err = clusterresourcesets.CNIForCluster(cluster)
+	case FluxHelmReleaseAddonProvider:
+		objs, err = fluxhelmrelease.CNIForCluster(cluster)
+	default:
+		err = fmt.Errorf("unsupported provider: %q", addonProvider)
+	}
+	if err != nil {
+		return err
+	}
+
+	return genericResourcesClient.Apply(ctx, objs...)
 }

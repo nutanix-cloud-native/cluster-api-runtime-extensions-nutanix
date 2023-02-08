@@ -36,6 +36,7 @@ spec:
 {{- end }}
         args:
         - --webhook-cert-dir=/certs/
+        - --addon-provider={{ .Values.addons.provider }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}
