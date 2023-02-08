@@ -20,6 +20,7 @@ By default this will use the `ClusterResourceSet` addons provider. To use the `F
 
 ```shell
 make ADDONS_PROVIDER=FluxHelmRelease dev.run-on-kind
+eval $(make kind.kubeconfig)
 ```
 
 Pro-tip: to redeploy without rebuilding the binaries, images, etc (useful if you have only changed the Helm chart for
