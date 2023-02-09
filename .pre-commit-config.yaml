@@ -97,7 +97,7 @@ repos:
       - --comment-style
       - <!--|| -->
 - repo: https://github.com/norwoodj/helm-docs
-  rev: v1.2.0
+  rev: v1.11.0
   hooks:
   - id: helm-docs
     stages: [commit]
