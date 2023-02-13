@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: capi-runtime-extensions-manager-role
+rules:
+- apiGroups:
+  - clusteraddons.labs.d2iq.io
+  resources:
+  - clusteraddons
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - clusteraddons.labs.d2iq.io
+  resources:
+  - clusteraddons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - clusteraddons.labs.d2iq.io
+  resources:
+  - clusteraddons/status
+  verbs:
+  - get
+  - patch
+  - update

@@ -163,8 +163,10 @@ go-clean.%: install-tool.golang; $(info $(M) running go clean for $* module)
 go-generate: ## Runs go generate
 go-generate: install-tool.golang install-tool.kube-controller-tools ; $(info $(M) running go generate)
 	go generate -x ./...
-	controller-gen rbac:roleName=manager-role webhook paths="./..."
-	controller-gen object:headerFile="header.txt" paths="./..."
+	controller-gen rbac:roleName=capi-runtime-extensions-manager-role crd webhook paths="./..." \
+		output:crd:artifacts:config=charts/capi-runtime-extensions/crds \
+		output:rbac:artifacts:config=charts/capi-runtime-extensions/templates
+	controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: go-mod-upgrade
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades

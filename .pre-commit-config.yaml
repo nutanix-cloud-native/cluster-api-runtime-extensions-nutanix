@@ -6,9 +6,9 @@ repos:
   hooks:
   - id: golangci-lint
     name: golangci-lint
-    entry: make lint
+    entry: make go-generate lint
     language: system
-    files: "(.*\\.go|go.mod|go.sum)$"
+    files: "(.*\\.go|go.mod|go.sum|go.mk)$"
     pass_filenames: false
 - repo: https://github.com/tekwizely/pre-commit-golang
   rev: v1.0.0-rc.1
@@ -85,7 +85,7 @@ repos:
     args:
       - --license-filepath
       - header.txt
-    exclude: ^pkg/addons/templates/.+\.yaml$
+    exclude: ^(pkg/addons/templates/.+\.yaml|charts/.+/templates/role\.yaml||charts/.+/crds/.+\.yaml)$
   - id: insert-license
     name: License headers - Markdown
     stages: [commit]
