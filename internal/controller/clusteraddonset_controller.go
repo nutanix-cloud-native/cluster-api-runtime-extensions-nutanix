@@ -14,16 +14,16 @@ import (
 	clusteraddonsv1alpha1 "github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 )
 
-// ClusterAddonReconciler reconciles a ClusterAddon object.
-type ClusterAddonReconciler struct {
+// ClusterAddonSetReconciler reconciles a ClusterAddon object.
+type ClusterAddonSetReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
 //nolint:lll // This is a long line.
-//+kubebuilder:rbac:groups=clusteraddons.labs.d2iq.io,resources=clusteraddons,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=clusteraddons.labs.d2iq.io,resources=clusteraddons/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=clusteraddons.labs.d2iq.io,resources=clusteraddons/finalizers,verbs=update
+//+kubebuilder:rbac:groups=clusteraddons.labs.d2iq.io,resources=clusteraddonsets;clusteraddons,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=clusteraddons.labs.d2iq.io,resources=clusteraddonsets/status;clusteraddons/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=clusteraddons.labs.d2iq.io,resources=clusteraddonsets/finalizers;clusteraddons/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -34,7 +34,7 @@ type ClusterAddonReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
-func (r *ClusterAddonReconciler) Reconcile(
+func (r *ClusterAddonSetReconciler) Reconcile(
 	ctx context.Context,
 	req ctrl.Request,
 ) (ctrl.Result, error) {
@@ -46,8 +46,9 @@ func (r *ClusterAddonReconciler) Reconcile(
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ClusterAddonReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ClusterAddonSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&clusteraddonsv1alpha1.ClusterAddon{}).
+		For(&clusteraddonsv1alpha1.ClusterAddonSet{}).
+		Owns(&clusteraddonsv1alpha1.ClusterAddon{}).
 		Complete(r)
 }

@@ -9,6 +9,7 @@ rules:
   - clusteraddons.labs.d2iq.io
   resources:
   - clusteraddons
+  - clusteraddonsets
   verbs:
   - create
   - delete
@@ -21,12 +22,14 @@ rules:
   - clusteraddons.labs.d2iq.io
   resources:
   - clusteraddons/finalizers
+  - clusteraddonsets/finalizers
   verbs:
   - update
 - apiGroups:
   - clusteraddons.labs.d2iq.io
   resources:
   - clusteraddons/status
+  - clusteraddonsets/status
   verbs:
   - get
   - patch
