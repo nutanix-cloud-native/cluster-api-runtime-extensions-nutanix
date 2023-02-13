@@ -9,6 +9,8 @@ require (
 	github.com/fluxcd/helm-controller/api v0.28.1
 	github.com/fluxcd/pkg/apis/meta v0.18.0
 	github.com/fluxcd/source-controller/api v0.33.0
+	github.com/onsi/ginkgo/v2 v2.6.0
+	github.com/onsi/gomega v1.24.1
 	github.com/spf13/pflag v1.0.5
 	k8s.io/apimachinery v0.25.6
 	k8s.io/component-base v0.25.6
@@ -20,7 +22,10 @@ require (
 require (
 	github.com/fluxcd/pkg/apis/acl v0.1.0 // indirect
 	github.com/fluxcd/pkg/apis/kustomize v0.7.0 // indirect
-	github.com/onsi/gomega v1.24.1 // indirect
+	github.com/go-logr/zapr v1.2.3 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/zap v1.21.0 // indirect
 	k8s.io/cluster-bootstrap v0.25.6 // indirect
 )
 
@@ -91,7 +96,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.25.6
 	k8s.io/apiextensions-apiserver v0.25.6
-	k8s.io/client-go v0.25.6 // indirect
+	k8s.io/client-go v0.25.6
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect

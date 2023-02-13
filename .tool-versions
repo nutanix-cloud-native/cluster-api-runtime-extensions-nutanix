@@ -10,6 +10,7 @@ helm 3.11.1
 helm-docs 1.11.0
 kind 0.17.0
 kube-controller-tools 0.11.3
+kubebuilder 3.9.0
 kubectl 1.26.1
 kustomize 5.0.0
 pre-commit 3.0.4
