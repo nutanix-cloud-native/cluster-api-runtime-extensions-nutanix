@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -19,6 +20,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/addons/clusterresourcesets"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/addons/fluxhelmrelease"
 	k8sclient "github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/client"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/deleter"
 )
 
 type AddonProvider string
@@ -50,7 +52,12 @@ func (m *ExtensionHandlers) DoBeforeClusterCreate(
 	request *runtimehooksv1.BeforeClusterCreateRequest,
 	response *runtimehooksv1.BeforeClusterCreateResponse,
 ) {
-	log := ctrl.LoggerFrom(ctx)
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"Cluster",
+		request.Cluster.GetName(),
+		"Namespace",
+		request.Cluster.GetNamespace(),
+	)
 	log.Info("BeforeClusterCreate is called")
 }
 
@@ -59,7 +66,12 @@ func (m *ExtensionHandlers) DoAfterControlPlaneInitialized(
 	request *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	response *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	log := ctrl.LoggerFrom(ctx)
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"Cluster",
+		request.Cluster.GetName(),
+		"Namespace",
+		request.Cluster.GetNamespace(),
+	)
 	log.Info("AfterControlPlaneInitialized is called")
 
 	genericResourcesClient := k8sclient.NewGenericResourcesClient(m.client, log)
@@ -82,7 +94,12 @@ func (m *ExtensionHandlers) DoBeforeClusterUpgrade(
 	request *runtimehooksv1.BeforeClusterUpgradeRequest,
 	response *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
-	log := ctrl.LoggerFrom(ctx)
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"Cluster",
+		request.Cluster.GetName(),
+		"Namespace",
+		request.Cluster.GetNamespace(),
+	)
 	log.Info("BeforeClusterUpgrade is called")
 }
 
@@ -91,7 +108,12 @@ func (m *ExtensionHandlers) DoBeforeClusterDelete(
 	request *runtimehooksv1.BeforeClusterDeleteRequest,
 	response *runtimehooksv1.BeforeClusterDeleteResponse,
 ) {
-	log := ctrl.LoggerFrom(ctx)
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"Cluster",
+		request.Cluster.GetName(),
+		"Namespace",
+		request.Cluster.GetNamespace(),
+	)
 	log.Info("BeforeClusterDelete is called")
 
 	genericResourcesClient := k8sclient.NewGenericResourcesClient(m.client, log)
@@ -102,6 +124,14 @@ func (m *ExtensionHandlers) DoBeforeClusterDelete(
 		&request.Cluster,
 		genericResourcesClient,
 	)
+	if err != nil {
+		response.Status = runtimehooksv1.ResponseStatusFailure
+		response.Message = err.Error()
+	}
+
+	// Delete Services of type LoadBalancer in the Cluster
+	// Skip if annotation capi-runtime-extensions.d2iq-labs.com/loadbalancer-gc=false
+	err = deleteServiceLoadBalancers(ctx, log, &request.Cluster, m.client)
 	if err != nil {
 		response.Status = runtimehooksv1.ResponseStatusFailure
 		response.Message = err.Error()
@@ -180,4 +210,41 @@ func applyCNIResources(
 	}
 
 	return genericResourcesClient.Apply(ctx, objs...)
+}
+
+func deleteServiceLoadBalancers(
+	ctx context.Context,
+	log logr.Logger,
+	cluster *v1beta1.Cluster,
+	c ctrlclient.Client,
+) error {
+	shouldDelete, err := deleter.ShouldDeleteServicesWithLoadBalancer(cluster)
+	if err != nil {
+		return fmt.Errorf(
+			"error determining if Services of type LoadBalancer should be deleted: %w",
+			err,
+		)
+	}
+	if !shouldDelete {
+		return nil
+	}
+
+	log.Info("Will attempt to delete Services with type LoadBalancer")
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		c,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return err
+	}
+
+	dltr := deleter.New(log, cluster, remoteClient)
+	err = dltr.DeleteServicesWithLoadBalancer(ctx)
+	if err != nil {
+		return fmt.Errorf("error deleting Services of type LoadBalancer: %v", err)
+	}
+
+	return nil
 }
