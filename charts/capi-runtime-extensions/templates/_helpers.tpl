@@ -38,13 +38,13 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Certificate issuer name
 */}}
 {{- define "chart.issuerName" -}}
-{{- if .Values.certificate.issuer.selfSigned -}}
-{{- if .Values.certificate.issuer.name -}}
-{{ .Values.certificate.issuer.name }}
+{{- if .Values.certificates.issuer.selfSigned -}}
+{{- if .Values.certificates.issuer.name -}}
+{{ .Values.certificates.issuer.name }}
 {{- else -}}
 {{ template "chart.name" . }}-issuer
 {{- end -}}
 {{- else -}}
-{{ required "A valid .Values.certificates.issuer.name is required!" .Values.certificate.issuer.name }}
+{{ required "A valid .Values.certificates.issuer.name is required!" .Values.certificates.issuer.name }}
 {{- end -}}
 {{- end -}}

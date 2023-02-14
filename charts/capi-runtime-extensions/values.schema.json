@@ -11,7 +11,7 @@
                 }
             }
         },
-        "certificate": {
+        "certificates": {
             "type": "object",
             "properties": {
                 "issuer": {
@@ -29,6 +29,23 @@
                             "type": "boolean"
                         }
                     }
+                }
+            }
+        },
+        "controllers": {
+            "type": "object",
+            "properties": {
+                "enableLeaderElection": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "deployment": {
+            "type": "object",
+            "properties": {
+                "replicas": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },

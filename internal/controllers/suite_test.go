@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package controller
+package controllers_test
 
 import (
 	"path/filepath"
@@ -39,7 +39,9 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "..", "charts", "capi-runtime-extensions", "crds"),
+		},
 		ErrorIfCRDPathMissing: true,
 	}
 

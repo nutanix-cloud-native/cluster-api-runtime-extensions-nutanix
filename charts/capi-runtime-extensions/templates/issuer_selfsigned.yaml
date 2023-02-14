@@ -1,9 +1,9 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-{{- if .Values.certificate.issuer.selfSigned }}
+{{- if .Values.certificates.issuer.selfSigned }}
 apiVersion: cert-manager.io/v1
-kind: {{ .Values.certificate.issuer.kind }}
+kind: {{ .Values.certificates.issuer.kind }}
 metadata:
   name: {{ template "chart.issuerName" . }}
   namespace: {{ .Release.Namespace }}

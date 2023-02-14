@@ -26,3 +26,4 @@ dist/
 
 *.tar.gz
 *.tar
+capd-kubeconfig

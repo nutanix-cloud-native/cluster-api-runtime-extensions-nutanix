@@ -1,8 +1,14 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+deployment:
+  replicas: 1
+
 addons:
   provider: ClusterResourceSet
+
+controllers:
+  enableLeaderElection: false
 
 image:
   repository: ghcr.io/d2iq-labs/capi-runtime-extensions
@@ -13,7 +19,7 @@ image:
 imagePullSecrets: []
 #- name: Secret with Registry credentials
 
-certificate:
+certificates:
   issuer:
     selfSigned: true
     name: ""

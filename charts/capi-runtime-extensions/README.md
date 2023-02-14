@@ -26,9 +26,11 @@ A Helm chart for capi-runtime-extensions
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | addons.provider | string | `"ClusterResourceSet"` |  |
-| certificate.issuer.kind | string | `"Issuer"` |  |
-| certificate.issuer.name | string | `""` |  |
-| certificate.issuer.selfSigned | bool | `true` |  |
+| certificates.issuer.kind | string | `"Issuer"` |  |
+| certificates.issuer.name | string | `""` |  |
+| certificates.issuer.selfSigned | bool | `true` |  |
+| controllers.enableLeaderElection | bool | `false` |  |
+| deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/d2iq-labs/capi-runtime-extensions"` |  |
