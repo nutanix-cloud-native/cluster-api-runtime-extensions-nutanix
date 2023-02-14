@@ -5,34 +5,25 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/spf13/pflag"
+	"golang.org/x/sync/errgroup"
 	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
 	logsv1 "k8s.io/component-base/logs/api/v1"
 	"k8s.io/klog/v2"
-	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	"sigs.k8s.io/cluster-api/exp/runtime/server"
 	ctrl "sigs.k8s.io/controller-runtime"
-	ctrclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/lifecycle"
+	"github.com/d2iq-labs/capi-runtime-extensions/internal/controllermanager"
+	runtimewebhooks "github.com/d2iq-labs/capi-runtime-extensions/internal/runtimehooks/webhooks"
 )
 
 var (
-	// catalog contains all information about RuntimeHooks.
-	catalog = runtimecatalog.New()
-
 	// Flags.
 	profilerAddress string
-	webhookPort     int
-	webhookCertDir  string
-	addonProvider   lifecycle.AddonProvider
 	logOptions      = logs.NewOptions()
 )
 
@@ -45,34 +36,19 @@ func InitFlags(fs *pflag.FlagSet) {
 	// Add test-extension specific flags
 	fs.StringVar(&profilerAddress, "profiler-address", "",
 		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
-
-	fs.IntVar(&webhookPort, "webhook-port", 9443,
-		"Webhook Server port")
-
-	fs.StringVar(&webhookCertDir, "webhook-cert-dir", "/tmp/k8s-webhook-server/serving-certs/",
-		"Webhook cert dir, only used when webhook-port is specified.")
-
-	fs.Var(newAddonProviderValue(
-		lifecycle.ClusterResourceSetAddonProvider, &addonProvider),
-		"addon-provider",
-		fmt.Sprintf(
-			"addon provider (one of %v)",
-			[]string{
-				string(lifecycle.ClusterResourceSetAddonProvider),
-				string(lifecycle.FluxHelmReleaseAddonProvider),
-			},
-		),
-	)
 }
 
 func main() {
-	_ = runtimehooksv1.AddToCatalog(catalog)
-
 	// Creates a logger to be used during the main func.
 	setupLog := ctrl.Log.WithName("main")
 
+	runtimeWebhookServer := runtimewebhooks.NewServer()
+	controllers := controllermanager.New()
+
 	// Initialize and parse command line flags.
 	InitFlags(pflag.CommandLine)
+	runtimeWebhookServer.AddFlags("runtimehooks", pflag.CommandLine)
+	controllers.AddFlags("controllermanager", pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
@@ -101,76 +77,27 @@ func main() {
 		}()
 	}
 
-	// Create a http server for serving runtime extensions
-	webhookServer, err := server.New(server.Options{
-		Catalog: catalog,
-		Port:    webhookPort,
-		CertDir: webhookCertDir,
+	signalCtx := ctrl.SetupSignalHandler()
+	g, ctx := errgroup.WithContext(signalCtx)
+
+	g.Go(func() error {
+		err := runtimeWebhookServer.Start(ctx)
+		if err != nil {
+			setupLog.Error(err, "unable to start runtime hooks wehook server")
+		}
+		return err
 	})
-	if err != nil {
-		setupLog.Error(err, "error creating webhook server")
-		os.Exit(1)
-	}
 
-	// Lifecycle Hooks
+	g.Go(func() error {
+		err := controllers.Start(ctx)
+		if err != nil {
+			setupLog.Error(err, "unable to start controller manager")
+		}
+		return err
+	})
 
-	// Gets a client to access the Kubernetes cluster where this RuntimeExtension will be deployed to
-	restConfig, err := ctrl.GetConfig()
-	if err != nil {
-		setupLog.Error(err, "error getting config for the cluster")
-		os.Exit(1)
-	}
-
-	client, err := ctrclient.New(restConfig, ctrclient.Options{})
-	if err != nil {
-		setupLog.Error(err, "error creating client to the cluster")
-		os.Exit(1)
-	}
-
-	// Create the ExtensionHandlers for the lifecycle hooks
-	lifecycleExtensionHandlers := lifecycle.NewExtensionHandlers(addonProvider, client)
-
-	// Register extension handlers.
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.BeforeClusterCreate,
-		Name:        "before-cluster-create",
-		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterCreate,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		os.Exit(1)
-	}
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.AfterControlPlaneInitialized,
-		Name:        "after-control-plane-initialized",
-		HandlerFunc: lifecycleExtensionHandlers.DoAfterControlPlaneInitialized,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		os.Exit(1)
-	}
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.BeforeClusterUpgrade,
-		Name:        "before-cluster-upgrade",
-		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterUpgrade,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		os.Exit(1)
-	}
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.BeforeClusterDelete,
-		Name:        "before-cluster-delete",
-		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterDelete,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		os.Exit(1)
-	}
-
-	// Setup a context listening for SIGINT.
-	ctx := ctrl.SetupSignalHandler()
-
-	// Start the https server.
-	setupLog.Info("Starting Runtime Extension server")
-	if err := webhookServer.Start(ctx); err != nil {
-		setupLog.Error(err, "error running webhook server")
+	if err := g.Wait(); err != nil {
+		setupLog.Error(err, "failed to run successfully")
 		os.Exit(1)
 	}
 }
