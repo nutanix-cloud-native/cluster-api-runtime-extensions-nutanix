@@ -4,26 +4,24 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // ClusterAddonSpec defines the desired state of ClusterAddon.
 type ClusterAddonSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// ImplementationRef is a required reference to a custom resource
+	// offered by an cluster addon provider.
+	ImplementationRef corev1.TypedLocalObjectReference `json:"implementationRef"`
 
-	// Foo is an example field of ClusterAddon. Edit clusteraddon_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Version defines the desired addon version.
+	// This field is meant to be optionally used by addon providers.
+	// +optional
+	Version *string `json:"version,omitempty"`
 }
 
 // ClusterAddonStatus defines the observed state of ClusterAddon.
-type ClusterAddonStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
+type ClusterAddonStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
