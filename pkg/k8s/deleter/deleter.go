@@ -72,7 +72,7 @@ func deleteServicesWithLoadBalancer(
 		svc := &services.Items[i]
 		if needsDelete(svc) {
 			log.Info(fmt.Sprintf("Deleting Service %s/%s", svc.Namespace, svc.Name))
-			if err = c.Delete(ctx, svc); err != nil {
+			if err = c.Delete(ctx, svc); client.IgnoreNotFound(err) != nil {
 				log.Error(
 					err,
 					fmt.Sprintf(
