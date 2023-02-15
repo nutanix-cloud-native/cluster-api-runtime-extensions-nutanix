@@ -4,5 +4,5 @@
 package constants
 
 const (
-	LoadBalancerGCAnnotation = "capi-runtime-extensions.d2iq-labs.com/loadbalancer-gc"
+	LoadBalancerGCAnnotation = "labs.d2iq.io/loadbalancer-gc"
 )

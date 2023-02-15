@@ -5,13 +5,15 @@ package deleter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/cluster-api/api/v1beta1"
@@ -22,6 +24,8 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/annotations"
 )
 
+var ErrFailedToDeleteService = errors.New("kubernetes Services deletion failed")
+
 type Deleter struct {
 	cluster *v1beta1.Cluster
 	client  client.Client
@@ -31,14 +35,12 @@ type Deleter struct {
 type objectMetaList []metav1.ObjectMeta
 
 func (ol objectMetaList) asCommaSeparatedString() string {
-	out := ""
-	separator := ""
+	names := make([]string, 0, len(ol))
 	for n := range ol {
-		object := ol[n]
-		out += fmt.Sprintf("%s%s/%s", separator, object.Namespace, object.Name)
-		separator = ", "
+		obj := ol[n]
+		names = append(names, fmt.Sprintf("%s/%s", obj.Namespace, obj.Name))
 	}
-	return out
+	return strings.Join(names, ", ")
 }
 
 func New(log logr.Logger, cluster *v1beta1.Cluster, remoteClient client.Client) Deleter {
@@ -50,11 +52,7 @@ func New(log logr.Logger, cluster *v1beta1.Cluster, remoteClient client.Client) 
 }
 
 func (d *Deleter) DeleteServicesWithLoadBalancer(ctx context.Context) error {
-	err := deleteServicesWithLoadBalancer(ctx, d.client, d.log)
-	if err != nil {
-		return err
-	}
-	return nil
+	return deleteServicesWithLoadBalancer(ctx, d.client, d.log)
 }
 
 func deleteServicesWithLoadBalancer(
@@ -69,7 +67,7 @@ func deleteServicesWithLoadBalancer(
 		return fmt.Errorf("error listing Services: %w", err)
 	}
 
-	svcsFailedToBeDeleted := make(objectMetaList, 0)
+	var svcsFailedToBeDeleted objectMetaList
 	for i := range services.Items {
 		svc := &services.Items[i]
 		if needsDelete(svc) {
@@ -120,36 +118,35 @@ func waitForServiceDeletion(
 	ctx context.Context,
 	c client.Client,
 	service *corev1.Service,
-) (err error) {
+) error {
 	backoff := wait.Backoff{
 		Duration: 1 * time.Second,
 		Factor:   1.5,
 		Jitter:   0,
 		Steps:    13,
 	}
-	// the error is always nil to retry but is captured in the named return err
-	_ = wait.ExponentialBackoff(backoff, func() (bool, error) {
+	return wait.ExponentialBackoff(backoff, func() (bool, error) {
 		key := client.ObjectKey{
 			Namespace: service.Namespace,
 			Name:      service.Name,
 		}
-		err = c.Get(ctx, key, service)
+		err := c.Get(ctx, key, service)
 		if err != nil {
-			if errors.IsNotFound(err) {
-				err = nil
+			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
+			return false, err
 		}
 		return false, nil
 	})
-
-	return
 }
 
 func failedToDeleteServicesError(svcsFailedToBeDeleted objectMetaList) error {
-	//nolint:goerr113 // This error is specific to this function
-	return fmt.Errorf("the following Services could not be deleted "+
-		"and must cleaned up manually before deleting the cluster: %s", svcsFailedToBeDeleted.asCommaSeparatedString())
+	return fmt.Errorf("%w: the following Services could not be deleted "+
+		"and must cleaned up manually before deleting the cluster: %s",
+		ErrFailedToDeleteService,
+		svcsFailedToBeDeleted.asCommaSeparatedString(),
+	)
 }
 
 func ShouldDeleteServicesWithLoadBalancer(cluster *v1beta1.Cluster) (bool, error) {
@@ -168,14 +165,14 @@ func ShouldDeleteServicesWithLoadBalancer(cluster *v1beta1.Cluster) (bool, error
 		)
 	}
 
-	// use the Cluster phase to determine if its safe to skip deleting
+	// use the Cluster phase to determine if it's safe to skip deleting
 	//
 	// when ClusterPhasePending or ClusterPhaseProvisioning Kubernetes API has not been created
 	// and the user would not have been able to create any Kubernetes resources that would prevent cleanup
 	//nolint:lll // long URL cannot be split up
 	// https://github.com/kubernetes-sigs/cluster-api/blob/7f879be68d15737e335b6cb39d380d1d163e06e6/controllers/cluster_controller_phases.go#L44-L50
 	//
-	// when ClusterPhaseDeleting its too late to try to cleanup
+	// when ClusterPhaseDeleting it's too late to try to cleanup
 	phase := cluster.Status.GetTypedPhase()
 	skipDeleteBasedOnPhase := phase == v1beta1.ClusterPhasePending ||
 		phase == v1beta1.ClusterPhaseProvisioning ||

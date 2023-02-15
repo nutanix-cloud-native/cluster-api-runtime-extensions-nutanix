@@ -302,6 +302,6 @@ func Test_failedToDeleteServicesError(t *testing.T) {
 		metav1.ObjectMeta{Namespace: "ns-5", Name: "svc-5"},
 	}
 	//nolint:lll // want to show the full error in one line
-	expectedErrString := "the following Services could not be deleted and must cleaned up manually before deleting the cluster: ns-1/svc-1, ns-2/svc-2, ns-3/svc-3, ns-4/svc-4, ns-5/svc-5"
+	expectedErrString := "kubernetes Services deletion failed: the following Services could not be deleted and must cleaned up manually before deleting the cluster: ns-1/svc-1, ns-2/svc-2, ns-3/svc-3, ns-4/svc-4, ns-5/svc-5"
 	assert.EqualError(t, failedToDeleteServicesError(svcs), expectedErrString)
 }
