@@ -12,7 +12,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.8.3
 	github.com/onsi/gomega v1.27.1
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	golang.org/x/sync v0.1.0
 	k8s.io/apimachinery v0.25.6
 	k8s.io/component-base v0.25.6
