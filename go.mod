@@ -10,7 +10,7 @@ require (
 	github.com/fluxcd/pkg/apis/meta v0.18.0
 	github.com/fluxcd/source-controller/api v0.33.0
 	github.com/onsi/ginkgo/v2 v2.9.2
-	github.com/onsi/gomega v1.27.4
+	github.com/onsi/gomega v1.27.5
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/sync v0.1.0
