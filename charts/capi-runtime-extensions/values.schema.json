@@ -2,15 +2,6 @@
     "$schema": "http://json-schema.org/schema#",
     "type": "object",
     "properties": {
-        "addons": {
-            "type": "object",
-            "properties": {
-                "provider": {
-                    "type": "string",
-                    "enum": ["ClusterResourceSet", "FluxHelmRelease"]
-                }
-            }
-        },
         "certificates": {
             "type": "object",
             "properties": {

@@ -25,7 +25,6 @@ A Helm chart for capi-runtime-extensions
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| addons.provider | string | `"ClusterResourceSet"` |  |
 | certificates.issuer.kind | string | `"Issuer"` |  |
 | certificates.issuer.name | string | `""` |  |
 | certificates.issuer.selfSigned | bool | `true` |  |

@@ -4,9 +4,6 @@
 deployment:
   replicas: 1
 
-addons:
-  provider: ClusterResourceSet
-
 controllers:
   enableLeaderElection: false
 
