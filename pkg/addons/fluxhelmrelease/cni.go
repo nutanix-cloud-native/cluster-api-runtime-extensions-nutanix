@@ -114,7 +114,7 @@ func calicoHelmReleaseForCluster(cluster *clusterv1.Cluster) *fluxhelmv2beta1.He
 			}},
 		},
 		Spec: fluxhelmv2beta1.HelmReleaseSpec{
-			KubeConfig: &fluxhelmv2beta1.KubeConfig{
+			KubeConfig: &meta.KubeConfigReference{
 				SecretRef: meta.SecretKeyReference{
 					Name: fmt.Sprintf("%s-kubeconfig", cluster.Name),
 					Key:  "value",
