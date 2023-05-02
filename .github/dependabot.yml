@@ -12,15 +12,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    ignore:
-      # Ignore these until CAPI 1.4 is released with support for controller-runtime >=0.14.
-      - dependency-name: sigs.k8s.io/controller-runtime
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
-      - dependency-name: k8s.io/*
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
-      - dependency-name: github.com/fluxcd/*
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
