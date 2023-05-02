@@ -6,7 +6,7 @@ module github.com/d2iq-labs/capi-runtime-extensions
 go 1.20
 
 require (
-	github.com/fluxcd/helm-controller/api v0.28.1
+	github.com/fluxcd/helm-controller/api v0.32.2
 	github.com/fluxcd/pkg/apis/meta v1.0.0
 	github.com/fluxcd/source-controller/api v0.33.0
 	github.com/onsi/ginkgo/v2 v2.9.2
@@ -27,7 +27,7 @@ require (
 	github.com/coredns/corefile-migration v1.0.20 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/fluxcd/pkg/apis/acl v0.1.0 // indirect
-	github.com/fluxcd/pkg/apis/kustomize v0.7.0 // indirect
+	github.com/fluxcd/pkg/apis/kustomize v1.0.0 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/google/go-github/v48 v48.2.0 // indirect
