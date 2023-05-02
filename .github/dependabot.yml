@@ -12,6 +12,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: k8s.io/*
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
