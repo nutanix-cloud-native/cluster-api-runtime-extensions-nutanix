@@ -14,7 +14,7 @@ image:
 
 # -- Optional secrets used for pulling the container image
 imagePullSecrets: []
-#- name: Secret with Registry credentials
+# - name: Secret with Registry credentials
 
 certificates:
   issuer:

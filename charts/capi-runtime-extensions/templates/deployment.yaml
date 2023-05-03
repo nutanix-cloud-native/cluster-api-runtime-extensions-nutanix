@@ -18,9 +18,9 @@ spec:
         {{- include "chart.selectorLabels" . | nindent 8 }}
     spec:
       nodeSelector:
-        {{- toYaml .Values.commonNodeSelector | nindent 8 }}
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
       tolerations:
-        {{- toYaml .Values.commonTolerations | nindent 8 }}
+        {{- toYaml .Values.tolerations | nindent 8 }}
       serviceAccountName: {{ template "chart.name" . }}
       terminationGracePeriodSeconds: 10
       containers:

@@ -15,7 +15,7 @@ A Helm chart for capi-runtime-extensions
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| Jimmi Dyson | <jimmidyson@gmail.com> | <https://eng.d2iq.com> |
+| jimmidyson | <jimmidyson@gmail.com> | <https://eng.d2iq.com> |
 
 ## Source Code
 

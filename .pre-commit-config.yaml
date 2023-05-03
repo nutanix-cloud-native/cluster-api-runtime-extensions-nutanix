@@ -78,6 +78,7 @@ repos:
       - header.txt
       - --comment-style
       - //
+      - --use-current-year
   - id: insert-license
     name: License headers - YAML and Makefiles
     stages: [commit]
@@ -85,6 +86,7 @@ repos:
     args:
       - --license-filepath
       - header.txt
+      - --use-current-year
     exclude: ^(pkg/addons/templates/.+\.yaml|charts/.+/templates/role\.yaml||charts/.+/crds/.+\.yaml)$
   - id: insert-license
     name: License headers - Markdown
@@ -96,6 +98,7 @@ repos:
       - header.txt
       - --comment-style
       - <!--|| -->
+      - --use-current-year
 - repo: https://github.com/norwoodj/helm-docs
   rev: v1.11.0
   hooks:
