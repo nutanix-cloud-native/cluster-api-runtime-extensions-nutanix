@@ -33,7 +33,7 @@ jobs:
     - name: Install tools via asdf
       uses: asdf-vm/actions/install@master
       with:
-        asdf_branch: v0.11.0
+        asdf_branch: v0.11.3
 
     - name: Build
       run: make build-snapshot

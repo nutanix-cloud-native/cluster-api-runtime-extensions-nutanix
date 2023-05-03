@@ -1,7 +1,7 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-apiVersion: v1
+apiVersion: v2
 
 name: capi-runtime-extensions
 type: application
@@ -9,7 +9,7 @@ description: A Helm chart for capi-runtime-extensions
 
 home: https://github.com/d2iq-labs/capi-runtime-extensions
 maintainers:
-- name: Jimmi Dyson
+- name: jimmidyson
   email: jimmidyson@gmail.com
   url: https://eng.d2iq.com
 sources:
