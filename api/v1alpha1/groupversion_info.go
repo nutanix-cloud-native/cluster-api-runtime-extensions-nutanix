@@ -1,9 +1,9 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// Package v1alpha1 contains API Schema definitions for the clusteraddons v1alpha1 API group
+// Package v1alpha1 contains API Schema definitions for the CAPI extensions v1alpha1 API group
 // +kubebuilder:object:generate=true
-// +groupName=clusteraddons.labs.d2iq.io
+// +groupName=capiext.labs.d2iq.io
 package v1alpha1
 
 import (
@@ -13,7 +13,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects.
-	GroupVersion = schema.GroupVersion{Group: "clusteraddons.labs.d2iq.io", Version: "v1alpha1"}
+	GroupVersion = schema.GroupVersion{Group: "capiext.labs.d2iq.io", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

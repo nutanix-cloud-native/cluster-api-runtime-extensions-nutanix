@@ -5,7 +5,6 @@ package webhooks
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spf13/pflag"
 	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
@@ -15,12 +14,12 @@ import (
 	ctrclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/lifecycle"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/mutation"
 )
 
 type Server struct {
 	webhookPort    int
 	webhookCertDir string
-	addonProvider  lifecycle.AddonProvider
 
 	catalog *runtimecatalog.Catalog
 }
@@ -35,7 +34,6 @@ func NewServer() *Server {
 		catalog:        catalog,
 		webhookPort:    9443,
 		webhookCertDir: "/runtimehooks-certs/",
-		addonProvider:  lifecycle.ClusterResourceSetAddonProvider,
 	}
 }
 
@@ -47,18 +45,6 @@ func (s *Server) AddFlags(prefix string, fs *pflag.FlagSet) {
 		prefix+".cert-dir",
 		s.webhookCertDir,
 		"Runtime hooks server cert dir.",
-	)
-
-	fs.Var(newAddonProviderValue(
-		lifecycle.ClusterResourceSetAddonProvider, &s.addonProvider),
-		prefix+".addon-provider",
-		fmt.Sprintf(
-			"addon provider (one of %v)",
-			[]string{
-				string(lifecycle.ClusterResourceSetAddonProvider),
-				string(lifecycle.FluxHelmReleaseAddonProvider),
-			},
-		),
 	)
 }
 
@@ -93,7 +79,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	// Create the ExtensionHandlers for the lifecycle hooks
-	lifecycleExtensionHandlers := lifecycle.NewExtensionHandlers(s.addonProvider, client)
+	lifecycleExtensionHandlers := lifecycle.NewExtensionHandlers(client)
 
 	// Register extension handlers.
 	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
@@ -124,6 +110,33 @@ func (s *Server) Start(ctx context.Context) error {
 		Hook:        runtimehooksv1.BeforeClusterDelete,
 		Name:        "before-cluster-delete",
 		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterDelete,
+	}); err != nil {
+		setupLog.Error(err, "error adding handler")
+		return err
+	}
+
+	// Create the ExtensionHandlers for the topology mutation hooks
+	topologyMutationHandlers := mutation.NewExtensionHandlers(client)
+	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+		Hook:        runtimehooksv1.DiscoverVariables,
+		Name:        "discover-variables",
+		HandlerFunc: topologyMutationHandlers.DoDiscoverVariables,
+	}); err != nil {
+		setupLog.Error(err, "error adding handler")
+		return err
+	}
+	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+		Hook:        runtimehooksv1.GeneratePatches,
+		Name:        "generate-patches",
+		HandlerFunc: topologyMutationHandlers.DoGeneratePatches,
+	}); err != nil {
+		setupLog.Error(err, "error adding handler")
+		return err
+	}
+	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+		Hook:        runtimehooksv1.ValidateTopology,
+		Name:        "validate-topology",
+		HandlerFunc: topologyMutationHandlers.DoValidateTopology,
 	}); err != nil {
 		setupLog.Error(err, "error adding handler")
 		return err

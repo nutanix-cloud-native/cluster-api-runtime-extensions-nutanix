@@ -38,7 +38,6 @@ spec:
         - --controllermanager.cert-dir=/controllers-certs/
         - --controllermanager.leader-elect={{ if gt (.Values.deployment.replicas | int) 1 }}true{{ else }}{{ .Values.controllers.enableLeaderElection }}{{ end }}
         - --runtimehooks.cert-dir=/runtimehooks-certs/
-        - --runtimehooks.addon-provider={{ .Values.addons.provider }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}

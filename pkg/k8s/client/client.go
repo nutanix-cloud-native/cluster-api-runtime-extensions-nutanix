@@ -43,7 +43,7 @@ func (c *GenericResourcesClient) Apply(
 			&objs[i],
 			ctrlclient.Apply,
 			ctrlclient.ForceOwnership,
-			ctrlclient.FieldOwner("capi-runtime-extensions"),
+			ctrlclient.FieldOwner("d2iq-capi-runtime-extensions"),
 		)
 		if err != nil {
 			return k8sResourcesApplyError{err: err}

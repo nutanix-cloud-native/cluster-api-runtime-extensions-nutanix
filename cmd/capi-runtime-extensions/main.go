@@ -27,8 +27,8 @@ var (
 	logOptions      = logs.NewOptions()
 )
 
-// InitFlags initializes the flags.
-func InitFlags(fs *pflag.FlagSet) {
+// initFlags initializes the flags.
+func initFlags(fs *pflag.FlagSet) {
 	// Initialize logs flags using Kubernetes component-base machinery.
 	logs.AddFlags(fs, logs.SkipLoggingConfigurationFlags())
 	logsv1.AddFlags(logOptions, fs)
@@ -46,7 +46,7 @@ func main() {
 	controllers := controllermanager.New()
 
 	// Initialize and parse command line flags.
-	InitFlags(pflag.CommandLine)
+	initFlags(pflag.CommandLine)
 	runtimeWebhookServer.AddFlags("runtimehooks", pflag.CommandLine)
 	controllers.AddFlags("controllermanager", pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)

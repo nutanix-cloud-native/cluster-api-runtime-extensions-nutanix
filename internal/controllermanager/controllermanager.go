@@ -14,8 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
-	clusteraddonsv1alpha1 "github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/internal/controllers"
+	capiextv1alpha1 "github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 )
 
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
@@ -59,7 +58,7 @@ func (m *Manager) AddFlags(prefix string, fs *pflag.FlagSet) {
 func (m *Manager) Start(ctx context.Context) error {
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(clusteraddonsv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(capiextv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(capiv1beta1.AddToScheme(scheme))
 
 	setupLog := ctrl.Log.WithName("controllers")
@@ -70,20 +69,12 @@ func (m *Manager) Start(ctx context.Context) error {
 		Port:                          int(m.port),
 		HealthProbeBindAddress:        m.probeAddr,
 		LeaderElection:                m.enableLeaderElection,
-		LeaderElectionID:              clusteraddonsv1alpha1.GroupVersion.Group,
+		LeaderElectionID:              capiextv1alpha1.GroupVersion.Group,
 		LeaderElectionReleaseOnCancel: true,
 		CertDir:                       m.webhookCertDir,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to create manager")
-		return err
-	}
-
-	if err = (&controllers.ClusterAddonSetReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ClusterAddonSet")
 		return err
 	}
 
