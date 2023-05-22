@@ -8,7 +8,7 @@ go 1.20
 require (
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/sync v0.2.0
-	k8s.io/apimachinery v0.26.4
+	k8s.io/apimachinery v0.26.5
 	k8s.io/component-base v0.26.4
 	k8s.io/klog/v2 v2.90.1
 	sigs.k8s.io/cluster-api v1.4.2
