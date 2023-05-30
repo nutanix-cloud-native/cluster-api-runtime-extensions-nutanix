@@ -10,7 +10,7 @@ require (
 	golang.org/x/sync v0.2.0
 	k8s.io/apimachinery v0.27.2
 	k8s.io/component-base v0.27.2
-	k8s.io/klog/v2 v2.90.1
+	k8s.io/klog/v2 v2.100.1
 	sigs.k8s.io/cluster-api v1.4.0-beta.2.0.20230527123250-e111168cdff3
 	sigs.k8s.io/controller-runtime v0.15.0
 )
