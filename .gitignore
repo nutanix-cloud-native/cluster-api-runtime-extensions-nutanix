@@ -29,3 +29,5 @@ dist/
 capd-kubeconfig
 
 ct_previous_*/
+
+.envrc.local*
