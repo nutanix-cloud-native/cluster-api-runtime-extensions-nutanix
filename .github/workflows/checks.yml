@@ -26,10 +26,20 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Install asdf
-        uses: asdf-vm/actions/setup@v2
+      - name: Install devbox
+        uses: jetpack-io/devbox-install-action@v0.5.0
         with:
-          asdf_branch: v0.11.3
+          enable-cache: true
+
+      - name: Go cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Run unit tests
         run: make test
@@ -48,10 +58,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install asdf
-        uses: asdf-vm/actions/setup@v2
+      - name: Install devbox
+        uses: jetpack-io/devbox-install-action@v0.5.0
         with:
-          asdf_branch: v0.11.3
+          enable-cache: true
+
+      - name: Go cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Build and install on KinD
         run: make dev.run-on-kind
@@ -73,17 +93,34 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Gather tool versions
-        uses: endorama/asdf-parse-tool-versions@v1
+      - name: Install devbox
+        uses: jetpack-io/devbox-install-action@v0.5.0
+        with:
+          enable-cache: true
+
+      - name: Go cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Export golang and golangci-lint versions
         id: versions
+        run: |
+          echo "golangci-lint=v$(devbox run -- golangci-lint version --format short)" >>$GITHUB_OUTPUT
+          echo "golang=$(devbox run -- go version | grep -o "[[:digit:]]\+.[[:digit:]]\+\(.[[:digit:]]\+\)\?")" >>$GITHUB_OUTPUT
 
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v2
         with:
           fail_on_error: true
           reporter: github-pr-review
-          golangci_lint_version: v${{ fromJson(steps.versions.outputs.tools).golangci-lint }}
-          go_version: v${{ fromJson(steps.versions.outputs.tools).golang }}
+          golangci_lint_version: v${{ steps.versions.outputs.golangci-lint }}
+          go_version: v${{ steps.versions.outputs.golang }}
 
   pre-commit:
     runs-on: ubuntu-22.04
@@ -91,31 +128,29 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Gather tool versions
-        uses: endorama/asdf-parse-tool-versions@v1
-        id: versions
-
-      - uses: actions/setup-go@v4
+      - name: Install devbox
+        uses: jetpack-io/devbox-install-action@v0.5.0
         with:
-          go-version: ${{ fromJson(steps.versions.outputs.tools).golang }}
-          check-latest: false
-          cache: true
+          enable-cache: true
 
-      - uses: mfinelli/setup-shfmt@v2
+      - name: Go cache
+        uses: actions/cache@v3
         with:
-          shfmt-version: ${{ fromJson(steps.versions.outputs.tools).shfmt }}
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-      - name: Install asdf
-        uses: asdf-vm/actions/setup@v2
+      - name: Set up pre-commit cache
+        uses: actions/cache@v3
         with:
-          asdf_branch: v0.11.3
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Install helm-docs
-        run: make install-tool.helm-docs
-
-      - uses: pre-commit/action@v3.0.0
-        with:
-          extra_args: --all-files --show-diff-on-failure
+      - name: Run pre-commit
+        run: devbox run -- make pre-commit
         env:
           SKIP: no-commit-to-branch,golangci-lint
 
@@ -127,70 +162,62 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Gather tool versions
-        uses: endorama/asdf-parse-tool-versions@v1
-        id: versions
-
-      - name: Set up Helm
-        uses: azure/setup-helm@v3
+      - name: Install devbox
+        uses: jetpack-io/devbox-install-action@v0.5.0
         with:
-          version: v${{ fromJson(steps.versions.outputs.tools).helm }}
+          enable-cache: true
 
-      - uses: actions/setup-python@v4
+      - name: Go cache
+        uses: actions/cache@v3
         with:
-          python-version: '3.10'
-          check-latest: true
-
-      - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2
-        with:
-          version: v${{ fromJson(steps.versions.outputs.tools).helm-ct }}
-          yamllint_version: ${{ fromJson(steps.versions.outputs.tools).yamllint }}
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }})
+          changed=$(devbox run -- ct list-changed --target-branch ${{ github.event.repository.default_branch }})
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (lint)
-        run: ct lint --config charts/ct-config.yaml
+        run: devbox run -- ct lint --config charts/ct-config.yaml
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Create kind cluster
-        uses: helm/kind-action@v1
-        with:
-          version: v${{ fromJson(steps.versions.outputs.tools).kind }}
-          kubectl_version: v${{ fromJson(steps.versions.outputs.tools).kubectl }}
-          node_image: ghcr.io/mesosphere/kind-node:v${{ fromJson(steps.versions.outputs.tools).kubectl }}
+        run: |
+          devbox run -- kind create cluster \
+            --image=ghcr.io/mesosphere/kind-node:$(kubectl version --output=json --client | gojq --raw-output .clientVersion.gitVersion) \
+            --name=chart-testing
         env:
           KUBECONFIG: ct-kind-kubeconfig
 
       - if: steps.list-changed.outputs.changed == 'true'
-        name: Install asdf
-        uses: asdf-vm/actions/setup@v2
-        with:
-          asdf_branch: v0.11.3
-
-      - if: steps.list-changed.outputs.changed == 'true'
         name: Build Docker images
-        run: make release-snapshot
+        run: devbox run -- make release-snapshot
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Sideload docker image
-        run: kind load docker-image --name chart-testing "$(jq -r '.[] | select(.type == "Docker Image" and .goos == "linux" and .goarch == "amd64").name' dist/artifacts.json)"
+        run: devbox run -- kind load docker-image --name chart-testing "$(jq -r '.[] | select(.type == "Docker Image" and .goos == "linux" and .goarch == "amd64").name' dist/artifacts.json)"
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
-        run: make clusterctl.init
+        run: devbox run -- make clusterctl.init
         env:
           KIND_KUBECONFIG: ct-kind-kubeconfig
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (install)
-        run: ct install --config charts/ct-config.yaml --helm-extra-set-args "--set=image.tag=$(jq -r .version dist/metadata.json)"
+        run: devbox run -- ct install --config charts/ct-config.yaml --helm-extra-set-args "--set=image.tag=$(jq -r .version dist/metadata.json)"
         env:
           KUBECONFIG: ct-kind-kubeconfig
+
+      - if: steps.list-changed.outputs.changed == 'true' && always()
+        name:
+        run: devbox run -- kind delete cluster --name chart-testing || true

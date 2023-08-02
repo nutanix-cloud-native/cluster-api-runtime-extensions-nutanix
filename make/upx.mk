@@ -12,7 +12,6 @@ upx: ; $(info $(M) skipping packing $(UPX_REAL_TARGET) - $(GOOS)/$(GOARCH) is no
 else ifeq ($(GOOS)/$(GOARCH),darwin/arm64)
 upx: ; $(info $(M) skipping packing $(UPX_REAL_TARGET) - $(GOOS)/$(GOARCH) has a bug in packing - https://github.com/upx/upx/issues/628 - should be fixed in 4.0.2)
 else
-upx: install-tool.upx
 upx: ## Pack executable using upx
 upx: ; $(info $(M) packing $(UPX_REAL_TARGET))
 	(upx -l $(UPX_REAL_TARGET) &>/dev/null && echo $(UPX_REAL_TARGET) is already packed) || upx -9 --lzma $(UPX_REAL_TARGET)

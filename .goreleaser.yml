@@ -50,7 +50,7 @@ archives:
 dockers:
   - image_templates:
       # Specify the image tag including `-amd64` suffix if the build is not a snapshot build or is not being built on
-      # arm64 machine. This allows for using the snapshot image build without the archtecture specific suffix
+      # arm64 machine. This allows for using the snapshot image build without the architecture specific suffix
       # consistently on local machines, i.e. can always use `ghcr.io/d2iq-labs/capi-runtime-extensions:v<VERSION>` on the machine the snapshot
       # is built on.
       #
@@ -69,7 +69,7 @@ dockers:
       - "--label=org.opencontainers.image.source={{.GitURL}}"
   - image_templates:
       # Specify the image tag including `-amd64v8` suffix if the build is not a snapshot build or is not being built on
-      # arm64 machine. This allows for using the snapshot image build without the archtecture specific suffix
+      # arm64 machine. This allows for using the snapshot image build without the architecture specific suffix
       # consistently on local machines, i.e. can always use `ghcr.io/d2iq-labs/capi-runtime-extensions:v<VERSION>` on the machine the snapshot
       # is built on.
       #

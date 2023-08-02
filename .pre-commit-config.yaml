@@ -45,7 +45,8 @@ repos:
   rev: v0.19.1
   hooks:
   - id: gitlint
-    stages: [commit-msg]
+  - id: gitlint-ci
+    args: ["--commits", "origin/main..HEAD"]
 - repo: https://github.com/jumanjihouse/pre-commit-hooks
   rev: 3.0.0
   hooks:
