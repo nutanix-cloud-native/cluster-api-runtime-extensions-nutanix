@@ -1,4 +1,4 @@
-# Copyright 2023 D2iQ, Inc. All rights reserved.
+# Copyright 2021-2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 linters:
@@ -38,11 +38,11 @@ linters:
 
 linters-settings:
   depguard:
-    list-type: blacklist
-    packages:
-      - k8s.io/kubernetes
-    packages-with-error-messages:
-      k8s.io/kubernetes: "do not use k8s.io/kubernetes directly"
+    rules:
+      main:
+        deny:
+          - pkg: k8s.io/kubernetes
+            desc: "do not use k8s.io/kubernetes directly"
   errcheck:
     exclude-functions:
       - encoding/json.Marshal
@@ -53,6 +53,7 @@ linters-settings:
     sections:
       - Standard
       - Default
+      - Prefix(github.com/d2iq-labs)
       - Prefix(github.com/d2iq-labs/capi-runtime-extensions)
   gocritic:
     enabled-tags:
@@ -62,7 +63,6 @@ linters-settings:
       - performance
       - style
   gofumpt:
-    lang-version: "1.17"
     extra-rules: true
   lll:
     line-length: 120

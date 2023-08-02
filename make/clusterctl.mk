@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: clusterctl.init
-clusterctl.init: install-tool.clusterctl
+clusterctl.init:
 	env CLUSTER_TOPOLOGY=true \
 			EXP_RUNTIME_SDK=true \
 			EXP_CLUSTER_RESOURCE_SET=true \
@@ -12,5 +12,5 @@ clusterctl.init: install-tool.clusterctl
 		--wait-providers
 
 .PHONY: clusterctl.delete
-clusterctl.delete: install-tool.clusterctl
+clusterctl.delete:
 	clusterctl delete --kubeconfig=$(KIND_KUBECONFIG) --all

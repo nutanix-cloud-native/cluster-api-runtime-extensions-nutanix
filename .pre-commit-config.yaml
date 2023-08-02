@@ -41,11 +41,21 @@ repos:
     stages: [commit]
   - id: end-of-file-fixer
     stages: [commit]
+- repo: https://github.com/rhysd/actionlint
+  rev: v1.6.25
+  hooks:
+  - id: actionlint-system
+    stages: [commit]
+- repo: https://github.com/hadolint/hadolint
+  rev: v2.12.0
+  hooks:
+  - id: hadolint
 - repo: https://github.com/jorisroovers/gitlint
   rev: v0.19.1
   hooks:
   - id: gitlint
-    stages: [commit-msg]
+  - id: gitlint-ci
+    args: ["--commits", "origin/main..HEAD"]
 - repo: https://github.com/jumanjihouse/pre-commit-hooks
   rev: 3.0.0
   hooks:

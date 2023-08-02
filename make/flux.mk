@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: flux.install
-flux.install: install-tool.flux2
+flux.install:
 	flux install --components=source-controller,helm-controller

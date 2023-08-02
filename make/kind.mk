@@ -24,7 +24,7 @@ kind.recreate: kind.delete kind.create
 
 .PHONY: kind.create
 kind.create: ## Creates new KinD cluster
-kind.create: install-tool.kubectl install-tool.kind install-tool.go.envsubst ; $(info $(M) creating kind cluster - $(KIND_CLUSTER_NAME))
+kind.create: ; $(info $(M) creating kind cluster - $(KIND_CLUSTER_NAME))
 	(kind get clusters | grep -Eq '^$(KIND_CLUSTER_NAME)$$' && echo '$(KIND_CLUSTER_NAME) already exists') || \
 		env KUBECONFIG=$(KIND_KUBECONFIG) $(REPO_ROOT)/hack/kind/create-cluster.sh \
 		  --cluster-name $(KIND_CLUSTER_NAME) \
@@ -34,7 +34,7 @@ kind.create: install-tool.kubectl install-tool.kind install-tool.go.envsubst ; $
 
 .PHONY: kind.delete
 kind.delete: ## Deletes KinD cluster
-kind.delete: install-tool.kind ; $(info $(M) deleting kind cluster - $(KIND_CLUSTER_NAME))
+kind.delete: ; $(info $(M) deleting kind cluster - $(KIND_CLUSTER_NAME))
 	(kind get clusters | grep -Eq '^$(KIND_CLUSTER_NAME)$$' && kind delete cluster --name $(KIND_CLUSTER_NAME)) || \
 	  echo '$(KIND_CLUSTER_NAME) does not exist'
 	rm -rf $(KIND_DIR)/$(KIND_CLUSTER_NAME)

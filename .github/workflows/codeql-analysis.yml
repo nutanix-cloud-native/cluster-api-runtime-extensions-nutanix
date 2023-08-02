@@ -30,13 +30,13 @@ jobs:
       with:
         languages: ${{ matrix.language }}
 
-    - name: Install tools via asdf
-      uses: asdf-vm/actions/install@master
+    - name: Install devbox
+      uses: jetpack-io/devbox-install-action@v0.5.0
       with:
-        asdf_branch: v0.11.3
+        enable-cache: true
 
     - name: Build
-      run: make build-snapshot
+      run: devbox run -- make build-snapshot
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2

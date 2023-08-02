@@ -3,7 +3,7 @@
 
 REPO_ROOT := $(CURDIR)
 
-# Versions for tools that are not managed by asdf.
-ENVTEST_VERSION=1.25.x
+# Versions for tools that are not managed by devbox.
+ENVTEST_VERSION=1.27.x
 
 include make/all.mk
