@@ -14,4 +14,5 @@ ifeq ($(wildcard $(PRE_COMMIT_CONFIG_FILE)),)
 	$(error Cannot find pre-commit config file $(PRE_COMMIT_CONFIG_FILE). Specify the config file via PRE_COMMIT_CONFIG_FILE variable)
 endif
 	env SKIP=$(SKIP) pre-commit run -a --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_FILE)
-	git fetch origin main && pre-commit run --hook-stage manual gitlint-ci
+	git fetch origin main
+	pre-commit run --hook-stage manual gitlint-ci
