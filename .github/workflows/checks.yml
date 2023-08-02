@@ -98,16 +98,6 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Go cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Export golang and golangci-lint versions
         id: versions
         run: |
