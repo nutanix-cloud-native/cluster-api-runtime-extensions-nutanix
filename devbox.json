@@ -24,7 +24,8 @@
     "gotestsum@latest",
     "golines@latest",
     "envsubst@latest",
-    "kubernetes-controller-tools@latest"
+    "kubernetes-controller-tools@latest",
+    "actionlint@latest"
   ],
   "shell": {
     "init_hook": [

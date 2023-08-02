@@ -41,6 +41,11 @@ repos:
     stages: [commit]
   - id: end-of-file-fixer
     stages: [commit]
+- repo: https://github.com/rhysd/actionlint
+  rev: v1.6.25
+  hooks:
+  - id: actionlint-system
+    stages: [commit]
 - repo: https://github.com/jorisroovers/gitlint
   rev: v0.19.1
   hooks:

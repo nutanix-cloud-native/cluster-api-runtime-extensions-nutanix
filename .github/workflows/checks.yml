@@ -87,7 +87,7 @@ jobs:
         if: always()
         run: make kind.delete
 
-  lint:
+  lint-go:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out code
@@ -111,8 +111,8 @@ jobs:
       - name: Export golang and golangci-lint versions
         id: versions
         run: |
-          echo "golangci-lint=$(devbox run -- golangci-lint version --format short)" >>$GITHUB_OUTPUT
-          echo "golang=$(devbox run -- go version | grep -o "[[:digit:]]\+.[[:digit:]]\+\(.[[:digit:]]\+\)\?")" >>$GITHUB_OUTPUT
+          echo "golangci-lint=$(devbox run -- golangci-lint version --format short)" >>"${GITHUB_OUTPUT}"
+          echo "golang=$(devbox run -- go version | grep -o "[[:digit:]]\+.[[:digit:]]\+\(.[[:digit:]]\+\)\?")" >>"${GITHUB_OUTPUT}"
 
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v2
@@ -121,6 +121,18 @@ jobs:
           reporter: github-pr-review
           golangci_lint_version: v${{ steps.versions.outputs.golangci-lint }}
           go_version: v${{ steps.versions.outputs.golang }}
+
+  lint-gha:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: actionlint
+        uses: reviewdog/action-actionlint@v1
+        with:
+          fail_on_error: true
+          reporter: github-pr-review
 
   pre-commit:
     runs-on: ubuntu-22.04
@@ -152,7 +164,7 @@ jobs:
       - name: Run pre-commit
         run: devbox run -- make pre-commit
         env:
-          SKIP: no-commit-to-branch,golangci-lint
+          SKIP: no-commit-to-branch,golangci-lint,actionlint-system
 
   lint-test-helm:
     runs-on: ubuntu-22.04
@@ -193,7 +205,7 @@ jobs:
         name: Create kind cluster
         run: |
           devbox run -- kind create cluster \
-            --image=ghcr.io/mesosphere/kind-node:$(kubectl version --output=json --client | gojq --raw-output .clientVersion.gitVersion) \
+            --image=ghcr.io/mesosphere/kind-node:"$(kubectl version --output=json --client | gojq --raw-output .clientVersion.gitVersion)" \
             --name=chart-testing
         env:
           KUBECONFIG: ct-kind-kubeconfig
