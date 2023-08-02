@@ -25,7 +25,8 @@
     "golines@latest",
     "envsubst@latest",
     "kubernetes-controller-tools@latest",
-    "actionlint@latest"
+    "actionlint@latest",
+    "hadolint@latest"
   ],
   "shell": {
     "init_hook": [
