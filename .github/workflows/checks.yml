@@ -152,57 +152,74 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Install devbox
         uses: jetpack-io/devbox-install-action@v0.5.0
         with:
           enable-cache: true
 
-      - if: github.ref != 'refs/heads/main'
-        name: Fetch main if necessary
-        run: git fetch origin main:main
-
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(devbox run -- ct list-changed --target-branch ${{ github.event.repository.default_branch }})
+          changed="$(devbox run -- \
+            ct list-changed --config charts/ct-config.yaml \
+          )"
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (lint)
-        run: devbox run -- ct lint --config charts/ct-config.yaml
+        run: |
+          devbox run -- \
+            ct lint --config charts/ct-config.yaml
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Create kind cluster
         run: |
-          devbox run -- kind create cluster \
-            --image=ghcr.io/mesosphere/kind-node:"$(kubectl version --output=json --client | gojq --raw-output .clientVersion.gitVersion)" \
-            --name=chart-testing
+          devbox run -- \
+            kind create cluster \
+              --image=ghcr.io/mesosphere/kind-node:"$(devbox run -- kubectl version --output=json --client | devbox run -- gojq --raw-output .clientVersion.gitVersion)" \
+              --name=chart-testing
         env:
           KUBECONFIG: ct-kind-kubeconfig
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Build Docker images
-        run: devbox run -- make release-snapshot
+        run: |
+          devbox run -- \
+            make release-snapshot
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Sideload docker image
-        run: devbox run -- kind load docker-image --name chart-testing "$(jq -r '.[] | select(.type == "Docker Image" and .goos == "linux" and .goarch == "amd64").name' dist/artifacts.json)"
+        run: |
+          devbox run -- \
+            kind load docker-image \
+              --name chart-testing \
+              "$(devbox run -- gojq -r '.[] | select(.type == "Docker Image" and .goos == "linux" and .goarch == "amd64").name' dist/artifacts.json)"
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
-        run: devbox run -- make clusterctl.init
+        run: |
+          devbox run -- \
+            make clusterctl.init
         env:
           KIND_KUBECONFIG: ct-kind-kubeconfig
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (install)
-        run: devbox run -- ct install --config charts/ct-config.yaml --helm-extra-set-args "--set=image.tag=$(jq -r .version dist/metadata.json)"
+        run: |
+          devbox run -- \
+            ct install \
+              --config charts/ct-config.yaml \
+              --helm-extra-set-args "--set=image.tag=$(devbox run -- jq -r .version dist/metadata.json)"
         env:
           KUBECONFIG: ct-kind-kubeconfig
 
       - if: steps.list-changed.outputs.changed == 'true' && always()
         name:
-        run: devbox run -- kind delete cluster --name chart-testing || true
+        run: |
+          devbox run -- \
+            kind delete cluster --name chart-testing || true

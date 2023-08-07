@@ -126,7 +126,6 @@ endif
 .PHONY: lint.%
 lint.%: ## Runs golangci-lint for a specific module
 lint.%: ; $(info $(M) linting $* module)
-	$(if $(filter-out root,$*),cd $* && )go fix ./...
 	$(if $(filter-out root,$*),cd $* && )golines -w $$(go list ./... | sed "s|^$$(go list -m)|.|")
 	$(if $(filter-out root,$*),cd $* && )golangci-lint run --fix --config=$(GOLANGCI_CONFIG_FILE)
 	$(if $(filter-out root,$*),cd $* && )golines -w $$(go list ./... | sed "s|^$$(go list -m)|.|")
@@ -160,6 +159,20 @@ go-clean.%: ## Cleans go build, test and modules caches for a specific module
 go-clean.%: ; $(info $(M) running go clean for $* module)
 	$(if $(filter-out root,$*),cd $* && )go clean -r -i -cache -testcache -modcache
 
+.PHONY: go-fix
+go-fix: ## Runs go fix for all modules in repository
+ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
+go-fix: go-fix.root
+endif
+ifneq ($(words $(GO_SUBMODULES_NO_TOOLS)),0)
+go-fix: $(addprefix go-fix.,$(GO_SUBMODULES_NO_TOOLS:/go.mod=))
+endif
+
+.PHONY: go-fix.%
+go-fix.%: ## Runs golangci-lint for a specific module
+go-fix.%: ; $(info $(M) linting $* module)
+	$(if $(filter-out root,$*),cd $* && )go fix ./...
+
 .PHONY: go-generate
 go-generate: ## Runs go generate
 go-generate: ; $(info $(M) running go generate)
@@ -168,6 +181,7 @@ go-generate: ; $(info $(M) running go generate)
 		output:crd:artifacts:config=charts/capi-runtime-extensions/crds \
 		output:rbac:artifacts:config=charts/capi-runtime-extensions/templates
 	controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(MAKE) go-fix
 
 .PHONY: go-mod-upgrade
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades
