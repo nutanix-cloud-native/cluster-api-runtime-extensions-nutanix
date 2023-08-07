@@ -13,8 +13,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/lifecycle"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
 )
 
 type Server struct {
@@ -78,68 +78,87 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 
-	// Create the ExtensionHandlers for the lifecycle hooks
-	lifecycleExtensionHandlers := lifecycle.NewExtensionHandlers(client)
+	allHandlers := []handlers.NamedHandler{servicelbgc.New(client)}
 
-	// Register extension handlers.
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.BeforeClusterCreate,
-		Name:        "before-cluster-create",
-		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterCreate,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		return err
-	}
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.AfterControlPlaneInitialized,
-		Name:        "after-control-plane-initialized",
-		HandlerFunc: lifecycleExtensionHandlers.DoAfterControlPlaneInitialized,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		return err
-	}
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.BeforeClusterUpgrade,
-		Name:        "before-cluster-upgrade",
-		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterUpgrade,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		return err
-	}
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.BeforeClusterDelete,
-		Name:        "before-cluster-delete",
-		HandlerFunc: lifecycleExtensionHandlers.DoBeforeClusterDelete,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		return err
-	}
+	for idx := range allHandlers {
+		h := allHandlers[idx]
 
-	// Create the ExtensionHandlers for the topology mutation hooks
-	topologyMutationHandlers := mutation.NewExtensionHandlers(client)
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.DiscoverVariables,
-		Name:        "discover-variables",
-		HandlerFunc: topologyMutationHandlers.DoDiscoverVariables,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		return err
-	}
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.GeneratePatches,
-		Name:        "generate-patches",
-		HandlerFunc: topologyMutationHandlers.DoGeneratePatches,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		return err
-	}
-	if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
-		Hook:        runtimehooksv1.ValidateTopology,
-		Name:        "validate-topology",
-		HandlerFunc: topologyMutationHandlers.DoValidateTopology,
-	}); err != nil {
-		setupLog.Error(err, "error adding handler")
-		return err
+		if t, ok := h.(handlers.BeforeClusterCreateLifecycleHandler); ok {
+			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+				Hook:        runtimehooksv1.BeforeClusterCreate,
+				Name:        h.Name(),
+				HandlerFunc: t.BeforeClusterCreate,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
+
+		if t, ok := h.(handlers.AfterControlPlaneInitializedLifecycleHandler); ok {
+			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+				Hook:        runtimehooksv1.AfterControlPlaneInitialized,
+				Name:        h.Name(),
+				HandlerFunc: t.AfterControlPlaneInitialized,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
+
+		if t, ok := h.(handlers.BeforeClusterUpgradeLifecycleHandler); ok {
+			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+				Hook:        runtimehooksv1.BeforeClusterUpgrade,
+				Name:        h.Name(),
+				HandlerFunc: t.BeforeClusterUpgrade,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
+
+		if t, ok := h.(handlers.BeforeClusterDeleteLifecycleHandler); ok {
+			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+				Hook:        runtimehooksv1.BeforeClusterDelete,
+				Name:        h.Name(),
+				HandlerFunc: t.BeforeClusterDelete,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
+
+		if t, ok := h.(handlers.DiscoverVariablesMutationHandler); ok {
+			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+				Hook:        runtimehooksv1.DiscoverVariables,
+				Name:        h.Name(),
+				HandlerFunc: t.DiscoverVariables,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
+
+		if t, ok := h.(handlers.GeneratePatchesMutationHandler); ok {
+			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+				Hook:        runtimehooksv1.GeneratePatches,
+				Name:        h.Name(),
+				HandlerFunc: t.GeneratePatches,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
+
+		if t, ok := h.(handlers.ValidateTopologyMutationHandler); ok {
+			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+				Hook:        runtimehooksv1.ValidateTopology,
+				Name:        h.Name(),
+				HandlerFunc: t.ValidateTopology,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
 	}
 
 	// Start the https server.
