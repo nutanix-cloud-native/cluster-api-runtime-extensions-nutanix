@@ -1,41 +1,36 @@
 {
   "packages": [
+    "actionlint@latest",
+    "chart-testing@3.8.0",
     "clusterctl@latest",
+    "crane@latest",
+    "envsubst@latest",
+    "findutils@latest",
     "fluxcd@latest",
     "ginkgo@latest",
+    "git@latest",
     "github-cli@latest",
-    "gojq@latest",
+    "gnumake@latest",
+    "gnused@latest",
     "go@latest",
+    "gojq@latest",
     "golangci-lint@latest",
+    "golines@latest",
+    "google-cloud-sdk@latest",
     "goreleaser@latest",
-    "kubernetes-helm@latest",
+    "gotestsum@latest",
+    "hadolint@latest",
     "helm-docs@latest",
     "kind@latest",
     "kubebuilder@latest",
     "kubectl@latest",
+    "kubernetes-controller-tools@latest",
+    "kubernetes-helm@latest",
     "kustomize@latest",
     "pre-commit@latest",
     "shfmt@latest",
     "upx@latest",
-    "yamllint@latest",
-    "chart-testing@latest",
-    "google-cloud-sdk@latest",
-    "crane@latest",
-    "gotestsum@latest",
-    "golines@latest",
-    "envsubst@latest",
-    "kubernetes-controller-tools@latest",
-    "actionlint@latest",
-    "hadolint@latest"
-  ],
-  "shell": {
-    "init_hook": [
-      "echo 'Welcome to devbox!' > /dev/null"
-    ],
-    "scripts": {
-      "test": [
-        "echo \"Error: no test specified\" && exit 1"
-      ]
-    }
-  }
+    "yamale@latest",
+    "yamllint@latest"
+  ]
 }
