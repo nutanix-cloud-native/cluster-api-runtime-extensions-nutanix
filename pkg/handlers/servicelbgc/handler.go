@@ -78,13 +78,14 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 	err = deleteServicesWithLoadBalancer(ctx, remoteClient, log)
 	switch {
 	case errors.Is(err, ErrFailedToDeleteService):
-		resp.Status = runtimehooksv1.ResponseStatusFailure
-		resp.Message = err.Error()
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+		resp.SetRetryAfterSeconds(5)
 	case errors.Is(err, ErrServicesStillExist):
-		resp.Status = runtimehooksv1.ResponseStatusSuccess
-		resp.Message = err.Error()
-		resp.RetryAfterSeconds = 5
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetMessage(err.Error())
+		resp.SetRetryAfterSeconds(5)
 	default:
-		resp.Status = runtimehooksv1.ResponseStatusSuccess
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	}
 }
