@@ -170,7 +170,7 @@ endif
 
 .PHONY: go-fix.%
 go-fix.%: ## Runs golangci-lint for a specific module
-go-fix.%: ; $(info $(M) linting $* module)
+go-fix.%: ; $(info $(M) go fixing $* module)
 	$(if $(filter-out root,$*),cd $* && )go fix ./...
 
 .PHONY: go-generate

@@ -105,7 +105,7 @@ func failedToDeleteServicesError(svcsFailedToBeDeleted []client.ObjectKey) error
 	return fmt.Errorf("%w: the following Services could not be deleted "+
 		"and must cleaned up manually before deleting the cluster: %s",
 		ErrFailedToDeleteService,
-		strings.Join(toStringSlice(svcsFailedToBeDeleted), ","),
+		strings.Join(toStringSlice(svcsFailedToBeDeleted), ", "),
 	)
 }
 
