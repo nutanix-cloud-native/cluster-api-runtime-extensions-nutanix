@@ -177,10 +177,11 @@ go-fix.%: ; $(info $(M) go fixing $* module)
 go-generate: ## Runs go generate
 go-generate: ; $(info $(M) running go generate)
 	go generate -x ./...
-	controller-gen rbac:roleName=capi-runtime-extensions-manager-role crd webhook paths="./..." \
-		output:crd:artifacts:config=charts/capi-runtime-extensions/crds \
-		output:rbac:artifacts:config=charts/capi-runtime-extensions/templates
-	controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	controller-gen \
+		rbac:headerFile="hack/license-header.yaml.txt",roleName=capi-runtime-extensions-manager-role \
+		object:headerFile="hack/license-header.go.txt" \
+		output:rbac:artifacts:config=charts/capi-runtime-extensions/templates \
+		paths="./..."
 	$(MAKE) go-fix
 
 .PHONY: go-mod-upgrade

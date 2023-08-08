@@ -85,7 +85,7 @@ repos:
     files: "(.*\\.go|go.mod)$"
     args:
       - --license-filepath
-      - header.txt
+      - hack/license-header.txt
       - --comment-style
       - //
       - --use-current-year
@@ -95,9 +95,8 @@ repos:
     files: (^Makefile|\.(ya?ml|mk))$
     args:
       - --license-filepath
-      - header.txt
+      - hack/license-header.txt
       - --use-current-year
-    exclude: ^(pkg/addons/templates/.+\.yaml|charts/.+/templates/role\.yaml||charts/.+/crds/.+\.yaml)$
   - id: insert-license
     name: License headers - Markdown
     stages: [commit]
@@ -105,7 +104,7 @@ repos:
     exclude: ^CHANGELOG.md$
     args:
       - --license-filepath
-      - header.txt
+      - hack/license-header.txt
       - --comment-style
       - <!--|| -->
       - --use-current-year
