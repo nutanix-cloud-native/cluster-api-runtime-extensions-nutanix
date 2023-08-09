@@ -4,17 +4,7 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: labs.d2iq.io
 layout:
-- go.kubebuilder.io/v4-alpha
+- go.kubebuilder.io/v4
 projectName: capi-runtime-extensions
 repo: github.com/d2iq-labs/capi-runtime-extensions
-resources:
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: labs.d2iq.io
-  group: clusteraddons
-  kind: ClusterAddon
-  path: github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1
-  version: v1alpha1
 version: "3"
