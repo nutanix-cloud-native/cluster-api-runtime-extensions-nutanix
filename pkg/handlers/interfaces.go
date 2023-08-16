@@ -23,7 +23,7 @@ type BeforeClusterCreateLifecycleHandler interface {
 type AfterControlPlaneInitializedLifecycleHandler interface {
 	AfterControlPlaneInitialized(
 		context.Context,
-		*runtimehooksv1.BeforeClusterCreateRequest, *runtimehooksv1.BeforeClusterCreateResponse)
+		*runtimehooksv1.AfterControlPlaneInitializedRequest, *runtimehooksv1.AfterControlPlaneInitializedResponse)
 }
 type BeforeClusterUpgradeLifecycleHandler interface {
 	BeforeClusterUpgrade(
