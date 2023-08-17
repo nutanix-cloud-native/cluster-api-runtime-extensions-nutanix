@@ -17,9 +17,6 @@ import (
 	capiextv1alpha1 "github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 )
 
-//+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch
-//+kubebuilder:rbac:groups="",resources=namespaces;configmaps;secrets,verbs=watch;list;get;create;patch;update;delete
-
 type Manager struct {
 	port                 uint16
 	webhookCertDir       string

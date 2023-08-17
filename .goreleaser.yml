@@ -23,6 +23,9 @@ release:
     ### Summary
     **Full Changelog**: https://github.com/d2iq-labs/{{.ProjectName}}/compare/{{ .PreviousTag }}...{{ .Tag }}
 
+gomod:
+  proxy: true
+
 builds:
   - id: capi-runtime-extensions
     dir: ./cmd/capi-runtime-extensions

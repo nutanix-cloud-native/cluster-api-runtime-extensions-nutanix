@@ -10,8 +10,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - namespaces
-  - secrets
   verbs:
   - create
   - delete
@@ -21,10 +19,14 @@ rules:
   - update
   - watch
 - apiGroups:
-  - cluster.x-k8s.io
+  - addons.cluster.x-k8s.io
   resources:
-  - clusters
+  - clusterresourcesets
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
+  - update
   - watch

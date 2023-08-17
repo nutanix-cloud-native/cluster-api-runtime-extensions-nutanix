@@ -17,11 +17,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 )
 
 const (
-	LoadBalancerGCAnnotation = "capiext.labs.d2iq.io/loadbalancer-gc"
+	LoadBalancerGCAnnotation = handlers.MetadataDomain + "/loadbalancer-gc"
 )
 
 var (
@@ -31,7 +33,7 @@ var (
 
 func deleteServicesWithLoadBalancer(
 	ctx context.Context,
-	c client.Client,
+	c ctrlclient.Client,
 	log logr.Logger,
 ) error {
 	log.Info("Listing Services with type LoadBalancer")
@@ -42,12 +44,12 @@ func deleteServicesWithLoadBalancer(
 	}
 
 	var (
-		svcsFailedToBeDeleted []client.ObjectKey
-		svcsStillExisting     []client.ObjectKey
+		svcsFailedToBeDeleted []ctrlclient.ObjectKey
+		svcsStillExisting     []ctrlclient.ObjectKey
 	)
 	for idx := range services.Items {
 		svc := &services.Items[idx]
-		svcKey := client.ObjectKeyFromObject(svc)
+		svcKey := ctrlclient.ObjectKeyFromObject(svc)
 		if needsDelete(svc) {
 			svcsStillExisting = append(svcsStillExisting, svcKey)
 
@@ -57,7 +59,7 @@ func deleteServicesWithLoadBalancer(
 
 			log.Info(fmt.Sprintf("Deleting Service %s", svcKey))
 			if err = c.Delete(ctx, svc); err != nil {
-				if client.IgnoreNotFound(err) == nil {
+				if ctrlclient.IgnoreNotFound(err) == nil {
 					continue
 				}
 				log.Error(
@@ -101,7 +103,7 @@ func toStringSlice[T fmt.Stringer](stringers []T) []string {
 	return strs
 }
 
-func failedToDeleteServicesError(svcsFailedToBeDeleted []client.ObjectKey) error {
+func failedToDeleteServicesError(svcsFailedToBeDeleted []ctrlclient.ObjectKey) error {
 	return fmt.Errorf("%w: the following Services could not be deleted "+
 		"and must cleaned up manually before deleting the cluster: %s",
 		ErrFailedToDeleteService,
@@ -109,7 +111,7 @@ func failedToDeleteServicesError(svcsFailedToBeDeleted []client.ObjectKey) error
 	)
 }
 
-func servicesStillExistError(svcsStillExisting []client.ObjectKey) error {
+func servicesStillExistError(svcsStillExisting []ctrlclient.ObjectKey) error {
 	return fmt.Errorf("%w: waiting for the following services to be fully deleted: %s",
 		ErrServicesStillExist,
 		strings.Join(toStringSlice(svcsStillExisting), ","),

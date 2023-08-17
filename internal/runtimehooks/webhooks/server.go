@@ -7,6 +7,11 @@ import (
 	"context"
 
 	"github.com/spf13/pflag"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/server"
@@ -14,6 +19,7 @@ import (
 	ctrclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
 )
 
@@ -72,13 +78,21 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 
-	client, err := ctrclient.New(restConfig, ctrclient.Options{})
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(crsv1.AddToScheme(scheme))
+	utilruntime.Must(capiv1.AddToScheme(scheme))
+
+	client, err := ctrclient.New(restConfig, ctrclient.Options{Scheme: scheme})
 	if err != nil {
 		setupLog.Error(err, "error creating client to the cluster")
 		return err
 	}
 
-	allHandlers := []handlers.NamedHandler{servicelbgc.New(client)}
+	allHandlers := []handlers.NamedHandler{
+		servicelbgc.New(client),
+		calico.New(client),
+	}
 
 	for idx := range allHandlers {
 		h := allHandlers[idx]

@@ -23,7 +23,8 @@ example), run:
 make SKIP_BUILD=true dev.run-on-kind
 ```
 
-To create a cluster with [clusterctl](https://cluster-api.sigs.k8s.io/user/quick-start.html), run:
+To create a cluster with [clusterctl](https://cluster-api.sigs.k8s.io/user/quick-start.html), and label it for Calico
+CNI at the same time, run:
 
 ```shell
 env POD_SECURITY_STANDARD_ENABLED=false \
@@ -32,6 +33,7 @@ env POD_SECURITY_STANDARD_ENABLED=false \
     --kubernetes-version v1.27.2 \
     --control-plane-machine-count=1 \
     --worker-machine-count=1 | \
+  kubectl label -f - --local --dry-run=client -oyaml capiext.labs.d2iq.io/cni=calico | \
   kubectl apply --server-side -f -
 ```
 
@@ -53,19 +55,6 @@ If you are not on Linux, you will also need to fix the generated kubeconfig's `s
 kubectl config set-cluster capi-quickstart \
   --kubeconfig capd-kubeconfig \
   --server=https://$(docker port capi-quickstart-lb 6443/tcp)
-```
-
-Deploy Calico to the workload cluster (TODO deploy via lifecycle hook):
-
-```shell
-helm repo add --force-update projectcalico https://docs.tigera.io/calico/charts
-helm upgrade --install calico projectcalico/tigera-operator \
-  --version v3.26.1 \
-  --namespace tigera-operator \
-  --create-namespace \
-  --wait \
-  --wait-for-jobs \
-  --kubeconfig capd-kubeconfig
 ```
 
 Wait until all nodes are ready (this indicates that CNI has been deployed successfully):

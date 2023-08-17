@@ -1,0 +1,11 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: NA
+spec:
+  template:
+    spec:
+      priorityClassName: system-cluster-critical
