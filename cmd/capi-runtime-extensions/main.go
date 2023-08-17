@@ -14,6 +14,7 @@ import (
 	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
 	logsv1 "k8s.io/component-base/logs/api/v1"
+	"k8s.io/component-base/version/verflag"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -52,6 +53,8 @@ func main() {
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
+
+	verflag.PrintAndExitIfRequested()
 
 	// Validates logs flags using Kubernetes component-base machinery and applies them
 	if err := logsv1.ValidateAndApply(logOptions, nil); err != nil {
