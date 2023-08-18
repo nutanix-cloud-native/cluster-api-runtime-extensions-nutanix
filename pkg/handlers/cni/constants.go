@@ -6,5 +6,7 @@ package cni
 import "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 
 const (
-	CNILabelKey = handlers.MetadataDomain + "/cni"
+	CNIProviderLabelKey = handlers.MetadataDomain + "/cni"
+
+	PodSubnetAnnotationKey = handlers.MetadataDomain + "/pod-subnet"
 )

@@ -11,11 +11,11 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructuredscheme"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -33,8 +33,6 @@ import (
 
 const (
 	CNILabelValue = "calico"
-
-	DefaultPodSubnet = "192.168.0.0/16"
 )
 
 type CalicoCNI struct {
@@ -88,38 +86,54 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 	// will update for failure response properly.
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 
-	if v, ok := req.Cluster.GetLabels()[cni.CNILabelKey]; !ok || v != CNILabelValue {
-		log.V(4).Info("Skipping Calico CNI handler, CNI provider is not calico")
+	if v, ok := req.Cluster.GetLabels()[cni.CNIProviderLabelKey]; !ok || v != CNILabelValue {
+		log.V(4).Info(
+			fmt.Sprintf(
+				"Skipping Calico CNI handler, cluster does not specify %q as value of CNI provider label %q",
+				CNILabelValue,
+				cni.CNIProviderLabelKey,
+			),
+		)
 		return
 	}
 
 	manifestsFS, ok := providerManifestsFS[req.Cluster.Spec.InfrastructureRef.Kind]
 	if !ok {
-		log.V(4).Info("Skipping Calico CNI handler, unknown CNI provider")
+		log.V(4).Info(
+			fmt.Sprintf(
+				"Skipping Calico CNI handler, no default configured for infrastructure provider %q",
+				req.Cluster.Spec.InfrastructureRef.Kind,
+			),
+		)
 		return
 	}
 
-	if err := applyTigeraOperatorCRS(ctx, s.client, &req.Cluster, log); err != nil {
+	log.Info("Ensuring Tigera CRS and manifests ConfigMap exist in cluster namespace")
+	tigeraObjs := generateTigeraOperatorCRS(&req.Cluster)
+	if err := client.ServerSideApply(ctx, s.client, tigeraObjs...); err != nil {
 		log.Error(err, "failed to apply Tigera ClusterResourceSet")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(fmt.Sprintf("failed to apply Tigera ClusterResourceSet: %v", err))
+		return
 	}
 
-	if err := applyProviderCNICRS(ctx, manifestsFS, s.client, &req.Cluster, log); err != nil {
+	log.Info("Ensuring Calico installation CRS and ConfigMap exist in cluster namespace")
+	calicoCNIObjs, err := generateProviderCNICRS(manifestsFS, &req.Cluster, s.client.Scheme())
+	if err != nil {
+		log.Error(err, "failed to generate provider CNI CRS")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to generate provider CNI CRS: %v", err))
+		return
+	}
+
+	if err := client.ServerSideApply(ctx, s.client, calicoCNIObjs...); err != nil {
 		log.Error(err, "failed to apply CNI installation ClusterResourceSet")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(fmt.Sprintf("failed to apply CNI installation ClusterResourceSet: %v", err))
 	}
 }
 
-func applyTigeraOperatorCRS(
-	ctx context.Context,
-	c ctrlclient.Client,
-	cluster *capiv1.Cluster,
-	log logr.Logger,
-) error {
-	log.Info("Ensuring Tigera CRS and manifests ConfigMap exist in cluster namespace")
-
+func generateTigeraOperatorCRS(cluster *capiv1.Cluster) []ctrlclient.Object {
 	// Set the namespace on the tigera configmap to apply by deep copying and then mutating.
 	namespacedTigeraConfigMap := &corev1.ConfigMap{}
 	tigeraConfigMap.DeepCopyInto(namespacedTigeraConfigMap)
@@ -141,32 +155,24 @@ func applyTigeraOperatorCRS(
 			}},
 			Strategy: string(crsv1.ClusterResourceSetStrategyReconcile),
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{cni.CNILabelKey: CNILabelValue},
+				MatchLabels: map[string]string{cni.CNIProviderLabelKey: CNILabelValue},
 			},
 		},
 	}
 
-	return client.ServerSideApply(ctx, c, namespacedTigeraConfigMap, tigeraCRS)
+	return []ctrlclient.Object{namespacedTigeraConfigMap, tigeraCRS}
 }
 
-func applyProviderCNICRS(
-	ctx context.Context,
-	manifestsFS fs.FS,
-	c ctrlclient.Client,
-	cluster *capiv1.Cluster,
-	log logr.Logger,
-) error {
-	log.Info("Ensuring Calico installation CRS and ConfigMap exist in cluster namespace")
-
+func generateProviderCNICRS(manifestsFS fs.FS, cluster *capiv1.Cluster, scheme *runtime.Scheme) ([]ctrlclient.Object, error) {
 	readers, cleanup, err := readersForManifestsInFS(manifestsFS)
 	if err != nil {
-		return fmt.Errorf("failed to read embedded manifests: %w", err)
+		return nil, fmt.Errorf("failed to read embedded manifests: %w", err)
 	}
 	defer func() { _ = cleanup() }()
 
 	parsed, err := parser.ReadersToUnstructured(readers...)
 	if err != nil {
-		return fmt.Errorf("failed to parse embedded manifests: %w", err)
+		return nil, fmt.Errorf("failed to parse embedded manifests: %w", err)
 	}
 
 	cm := &corev1.ConfigMap{
@@ -191,10 +197,14 @@ func applyProviderCNICRS(
 		},
 	)
 
+	podSubnet, podSubnetSpecified := cluster.GetAnnotations()[cni.PodSubnetAnnotationKey]
+
 	var b bytes.Buffer
 
 	for _, o := range parsed {
-		if o.GetObjectKind().GroupVersionKind().GroupKind() == calicoInstallationGK {
+		if podSubnetSpecified &&
+			podSubnet != "" &&
+			o.GetObjectKind().GroupVersionKind().GroupKind() == calicoInstallationGK {
 			obj := o.(*unstructured.Unstructured).Object
 
 			ipPoolsRef, exists, err := unstructured.NestedFieldNoCopy(
@@ -202,31 +212,31 @@ func applyProviderCNICRS(
 				"spec", "calicoNetwork", "ipPools",
 			)
 			if err != nil {
-				return fmt.Errorf("failed to get ipPools from unstructured object: %w", err)
+				return nil, fmt.Errorf("failed to get ipPools from unstructured object: %w", err)
 			}
 			if !exists {
-				return fmt.Errorf("missing ipPools in unstructured object")
+				return nil, fmt.Errorf("missing ipPools in unstructured object")
 			}
 
 			ipPools := ipPoolsRef.([]interface{})
 
 			err = unstructured.SetNestedField(
 				ipPools[0].(map[string]interface{}),
-				DefaultPodSubnet,
+				podSubnet,
 				"cidr",
 			)
 			if err != nil {
-				return fmt.Errorf("failed to set default pod subnet: %w", err)
+				return nil, fmt.Errorf("failed to set default pod subnet: %w", err)
 			}
 
 			err = unstructured.SetNestedSlice(obj, ipPools, "spec", "calicoNetwork", "ipPools")
 			if err != nil {
-				return fmt.Errorf("failed to update ipPools: %w", err)
+				return nil, fmt.Errorf("failed to update ipPools: %w", err)
 			}
 		}
 
 		if err := yamlSerializer.Encode(o, &b); err != nil {
-			return fmt.Errorf("failed to serialize manifests: %w", err)
+			return nil, fmt.Errorf("failed to serialize manifests: %w", err)
 		}
 
 		_, _ = b.WriteString("\n---\n")
@@ -234,8 +244,8 @@ func applyProviderCNICRS(
 
 	cm.Data["manifests"] = b.String()
 
-	if err := controllerutil.SetOwnerReference(cluster, cm, c.Scheme()); err != nil {
-		return fmt.Errorf("failed to set owner reference: %w", err)
+	if err := controllerutil.SetOwnerReference(cluster, cm, scheme); err != nil {
+		return nil, fmt.Errorf("failed to set owner reference: %w", err)
 	}
 
 	crs := &crsv1.ClusterResourceSet{
@@ -259,11 +269,11 @@ func applyProviderCNICRS(
 		},
 	}
 
-	if err := controllerutil.SetOwnerReference(cluster, crs, c.Scheme()); err != nil {
-		return fmt.Errorf("failed to set owner reference: %w", err)
+	if err := controllerutil.SetOwnerReference(cluster, crs, scheme); err != nil {
+		return nil, fmt.Errorf("failed to set owner reference: %w", err)
 	}
 
-	return client.ServerSideApply(ctx, c, cm, crs)
+	return []ctrlclient.Object{cm, crs}, nil
 }
 
 func readersForManifestsInFS(
