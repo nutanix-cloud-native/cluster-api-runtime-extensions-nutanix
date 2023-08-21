@@ -283,13 +283,15 @@ func generateProviderCNICRS(
 		},
 	)
 
-	podSubnet, podSubnetSpecified := cluster.GetAnnotations()[cni.PodSubnetAnnotationKey]
+	podSubnet, err := cni.PodCIDR(cluster)
+	if err != nil {
+		return nil, err
+	}
 
 	var b bytes.Buffer
 
 	for _, o := range parsed {
-		if podSubnetSpecified &&
-			podSubnet != "" &&
+		if podSubnet != "" &&
 			o.GetObjectKind().GroupVersionKind().GroupKind() == calicoInstallationGK {
 			obj := o.(*unstructured.Unstructured).Object
 

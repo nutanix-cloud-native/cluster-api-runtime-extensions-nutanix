@@ -7,6 +7,4 @@ import "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 
 const (
 	CNIProviderLabelKey = handlers.MetadataDomain + "/cni"
-
-	PodSubnetAnnotationKey = handlers.MetadataDomain + "/pod-subnet"
 )
