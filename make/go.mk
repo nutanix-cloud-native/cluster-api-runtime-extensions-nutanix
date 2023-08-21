@@ -6,7 +6,7 @@
 export GOPRIVATE ?=
 
 ALL_GO_SUBMODULES := $(shell PATH='$(PATH)'; find -mindepth 2 -maxdepth 2 -name go.mod -printf '%P\n' | sort)
-GO_SUBMODULES_NO_TOOLS := $(filter-out $(addsuffix /go.mod,tools),$(ALL_GO_SUBMODULES))
+GO_SUBMODULES_NO_DOCS := $(filter-out $(addsuffix /go.mod,docs),$(ALL_GO_SUBMODULES))
 
 ifndef GOOS
 export GOOS := $(OS)
@@ -119,8 +119,8 @@ lint: ## Runs golangci-lint for all modules in repository
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
 lint: lint.root
 endif
-ifneq ($(words $(GO_SUBMODULES_NO_TOOLS)),0)
-lint: $(addprefix lint.,$(GO_SUBMODULES_NO_TOOLS:/go.mod=))
+ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
+lint: $(addprefix lint.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
 .PHONY: lint.%
