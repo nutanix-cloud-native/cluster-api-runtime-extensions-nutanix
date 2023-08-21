@@ -1,0 +1,35 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if and .Values.handlers.CalicoCNI.enabled .Values.handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.name }}'
+data:
+  calico-installation: |
+{{- if .Values.handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.content -}}
+    {{ .Values.handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.content | nindent 4}}
+{{- else -}}
+    # This section includes base Calico installation configuration.
+    # For more information, see: https://docs.projectcalico.org/reference/installation/api
+    apiVersion: operator.tigera.io/v1
+    kind: Installation
+    metadata:
+      name: default
+    spec:
+      cni:
+        type: Calico
+      # Configures Calico networking.
+      calicoNetwork:
+        # Note: The ipPools section cannot be modified post-install.
+        ipPools:
+        - blockSize: 26
+          cidr: {{ .Values.handlers.CalicoCNI.defaultPodSubnet }}
+          encapsulation: VXLANCrossSubnet
+          natOutgoing: Enabled
+          nodeSelector: all()
+      nodeMetricsPort: 9091
+      typhaMetricsPort: 9093
+{{- end -}}
+{{- end -}}

@@ -14,16 +14,16 @@
       "version": "3.8.0"
     },
     "clusterctl@latest": {
-      "last_modified": "2023-07-23T03:35:12Z",
-      "resolved": "github:NixOS/nixpkgs/af8cd5ded7735ca1df1a1174864daab75feeb64a#clusterctl",
+      "last_modified": "2023-08-08T03:07:33Z",
+      "resolved": "github:NixOS/nixpkgs/844ffa82bbe2a2779c86ab3a72ff1b4176cec467#clusterctl",
       "source": "devbox-search",
-      "version": "1.4.4"
+      "version": "1.5.0"
     },
     "crane@latest": {
-      "last_modified": "2023-06-30T04:44:22Z",
-      "resolved": "github:NixOS/nixpkgs/3c614fbc76fc152f3e1bc4b2263da6d90adf80fb#crane",
+      "last_modified": "2023-08-08T03:07:33Z",
+      "resolved": "github:NixOS/nixpkgs/844ffa82bbe2a2779c86ab3a72ff1b4176cec467#crane",
       "source": "devbox-search",
-      "version": "0.15.2"
+      "version": "0.16.1"
     },
     "envsubst@latest": {
       "last_modified": "2023-06-30T04:44:22Z",
@@ -140,10 +140,10 @@
       "version": "3.11.1"
     },
     "kubectl@latest": {
-      "last_modified": "2023-06-30T04:44:22Z",
-      "resolved": "github:NixOS/nixpkgs/3c614fbc76fc152f3e1bc4b2263da6d90adf80fb#kubectl",
+      "last_modified": "2023-08-08T03:07:33Z",
+      "resolved": "github:NixOS/nixpkgs/844ffa82bbe2a2779c86ab3a72ff1b4176cec467#kubectl",
       "source": "devbox-search",
-      "version": "1.27.3"
+      "version": "1.27.4"
     },
     "kubernetes-controller-tools@latest": {
       "last_modified": "2023-07-23T03:35:12Z",
@@ -170,8 +170,8 @@
       "version": "3.3.3"
     },
     "shfmt@latest": {
-      "last_modified": "2023-06-30T04:44:22Z",
-      "resolved": "github:NixOS/nixpkgs/3c614fbc76fc152f3e1bc4b2263da6d90adf80fb#shfmt",
+      "last_modified": "2023-08-08T03:07:33Z",
+      "resolved": "github:NixOS/nixpkgs/844ffa82bbe2a2779c86ab3a72ff1b4176cec467#shfmt",
       "source": "devbox-search",
       "version": "3.7.0"
     },

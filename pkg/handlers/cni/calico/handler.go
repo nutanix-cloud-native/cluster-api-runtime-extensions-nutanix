@@ -6,11 +6,9 @@ package calico
 import (
 	"bytes"
 	"context"
-	"embed"
 	"fmt"
-	"io"
-	"io/fs"
 
+	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -35,39 +33,58 @@ const (
 	CNILabelValue = "calico"
 )
 
+type CalicoCNIConfig struct {
+	defaultsNamespace string
+
+	defaultTigeraOperatorConfigMapName        string
+	defaultProviderInstallationConfigMapNames map[string]string
+}
+
+func (c *CalicoCNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+	flags.StringVar(
+		&c.defaultsNamespace,
+		prefix+".defaultsNamespace",
+		corev1.NamespaceDefault,
+		"name of the ConfigMap used to deploy Tigera Operator",
+	)
+
+	flags.StringVar(
+		&c.defaultTigeraOperatorConfigMapName,
+		prefix+".default-tigera-operator-configmap-name",
+		"tigera-operator",
+		"name of the ConfigMap used to deploy Tigera Operator",
+	)
+	flags.StringToStringVar(
+		&c.defaultProviderInstallationConfigMapNames,
+		prefix+".default-provider-installation-configmap-names",
+		map[string]string{
+			"DockerCluster": "calico-cni-installation-dockercluster",
+		},
+		"map of provider cluster implementation type to default installation ConfigMap name",
+	)
+}
+
 type CalicoCNI struct {
 	client ctrlclient.Client
+	config CalicoCNIConfig
 }
 
 var (
 	_ handlers.NamedHandler                                 = &CalicoCNI{}
 	_ handlers.AfterControlPlaneInitializedLifecycleHandler = &CalicoCNI{}
 
-	//go:embed manifests/tigera-operator-configmap.yaml
-	tigeraConfigMapBytes []byte
-
-	// Only need to parse this on start-up and only once. If this isn't a valid configmap then this
-	// will panic on startup, and exit early.
-	tigeraConfigMap = parser.MustParseToObjects[*corev1.ConfigMap](tigeraConfigMapBytes)[0].(*corev1.ConfigMap)
-
-	//go:embed manifests/docker
-	dockerCNIManifests embed.FS
-
-	providerManifestsFS = map[string]embed.FS{
-		"DockerCluster": dockerCNIManifests,
-	}
-
 	calicoInstallationGK = schema.GroupKind{Group: "operator.tigera.io", Kind: "Installation"}
 )
 
-func New(c ctrlclient.Client) *CalicoCNI {
+func New(c ctrlclient.Client, cfg CalicoCNIConfig) *CalicoCNI {
 	return &CalicoCNI{
 		client: c,
+		config: cfg,
 	}
 }
 
 func (s *CalicoCNI) Name() string {
-	return "calico-cni"
+	return "CalicoCNI"
 }
 
 func (s *CalicoCNI) AfterControlPlaneInitialized(
@@ -97,11 +114,11 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 		return
 	}
 
-	manifestsFS, ok := providerManifestsFS[req.Cluster.Spec.InfrastructureRef.Kind]
+	defaultInstallationConfigMapName, ok := s.config.defaultProviderInstallationConfigMapNames[req.Cluster.Spec.InfrastructureRef.Kind] //nolint:lll // Just a long line...
 	if !ok {
 		log.V(4).Info(
 			fmt.Sprintf(
-				"Skipping Calico CNI handler, no default configured for infrastructure provider %q",
+				"Skipping Calico CNI handler, no default installation ConfigMap configured for infrastructure provider %q",
 				req.Cluster.Spec.InfrastructureRef.Kind,
 			),
 		)
@@ -109,7 +126,34 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 	}
 
 	log.Info("Ensuring Tigera CRS and manifests ConfigMap exist in cluster namespace")
-	tigeraObjs := generateTigeraOperatorCRS(&req.Cluster)
+	defaultTigeraOperatorConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: s.config.defaultsNamespace,
+			Name:      s.config.defaultTigeraOperatorConfigMapName,
+		},
+	}
+	defaultTigeraOperatorConfigMapObjName := ctrlclient.ObjectKeyFromObject(
+		defaultTigeraOperatorConfigMap,
+	)
+	err := s.client.Get(ctx, defaultTigeraOperatorConfigMapObjName, defaultTigeraOperatorConfigMap)
+	if err != nil {
+		log.Error(
+			err,
+			fmt.Sprintf(
+				"failed to retrieve default Tigera Operator ConfigMap %q",
+				defaultTigeraOperatorConfigMapObjName,
+			),
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("failed to retrieve default Tigera Operator ConfigMap %q: %v",
+				defaultTigeraOperatorConfigMapObjName,
+				err,
+			),
+		)
+		return
+	}
+	tigeraObjs := generateTigeraOperatorCRS(defaultTigeraOperatorConfigMap, &req.Cluster)
 	if err := client.ServerSideApply(ctx, s.client, tigeraObjs...); err != nil {
 		log.Error(err, "failed to apply Tigera ClusterResourceSet")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -118,7 +162,39 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 	}
 
 	log.Info("Ensuring Calico installation CRS and ConfigMap exist in cluster namespace")
-	calicoCNIObjs, err := generateProviderCNICRS(manifestsFS, &req.Cluster, s.client.Scheme())
+	defaultInstallationConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: s.config.defaultsNamespace,
+			Name:      defaultInstallationConfigMapName,
+		},
+	}
+	defaultInstallationConfigMapObjName := ctrlclient.ObjectKeyFromObject(
+		defaultInstallationConfigMap,
+	)
+	err = s.client.Get(ctx, defaultInstallationConfigMapObjName, defaultInstallationConfigMap)
+	if err != nil {
+		log.Error(
+			err,
+			fmt.Sprintf(
+				"failed to retrieve default default installation ConfigMap %q",
+				defaultInstallationConfigMapObjName,
+			),
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf(
+				"failed to retrieve default default installation ConfigMap %q: %v",
+				defaultInstallationConfigMapObjName,
+				err,
+			),
+		)
+		return
+	}
+	calicoCNIObjs, err := generateProviderCNICRS(
+		defaultInstallationConfigMap,
+		&req.Cluster,
+		s.client.Scheme(),
+	)
 	if err != nil {
 		log.Error(err, "failed to generate provider CNI CRS")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -133,11 +209,21 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 	}
 }
 
-func generateTigeraOperatorCRS(cluster *capiv1.Cluster) []ctrlclient.Object {
-	// Set the namespace on the tigera configmap to apply by deep copying and then mutating.
-	namespacedTigeraConfigMap := &corev1.ConfigMap{}
-	tigeraConfigMap.DeepCopyInto(namespacedTigeraConfigMap)
-	namespacedTigeraConfigMap.SetNamespace(cluster.GetNamespace())
+func generateTigeraOperatorCRS(
+	defaultTigeraOperatorConfigMap *corev1.ConfigMap, cluster *capiv1.Cluster,
+) []ctrlclient.Object {
+	namespacedTigeraConfigMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cluster.GetNamespace(),
+			Name:      defaultTigeraOperatorConfigMap.Name,
+		},
+		Data:       defaultTigeraOperatorConfigMap.Data,
+		BinaryData: defaultTigeraOperatorConfigMap.BinaryData,
+	}
 
 	tigeraCRS := &crsv1.ClusterResourceSet{
 		TypeMeta: metav1.TypeMeta{
@@ -163,14 +249,14 @@ func generateTigeraOperatorCRS(cluster *capiv1.Cluster) []ctrlclient.Object {
 	return []ctrlclient.Object{namespacedTigeraConfigMap, tigeraCRS}
 }
 
-func generateProviderCNICRS(manifestsFS fs.FS, cluster *capiv1.Cluster, scheme *runtime.Scheme) ([]ctrlclient.Object, error) {
-	readers, cleanup, err := readersForManifestsInFS(manifestsFS)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read embedded manifests: %w", err)
+func generateProviderCNICRS(
+	installationConfigMap *corev1.ConfigMap, cluster *capiv1.Cluster, scheme *runtime.Scheme,
+) ([]ctrlclient.Object, error) {
+	defaultManifestStrings := make([]string, 0, len(installationConfigMap.Data))
+	for _, v := range installationConfigMap.Data {
+		defaultManifestStrings = append(defaultManifestStrings, v)
 	}
-	defer func() { _ = cleanup() }()
-
-	parsed, err := parser.ReadersToUnstructured(readers...)
+	parsed, err := parser.StringsToUnstructured(defaultManifestStrings...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse embedded manifests: %w", err)
 	}
@@ -274,47 +360,4 @@ func generateProviderCNICRS(manifestsFS fs.FS, cluster *capiv1.Cluster, scheme *
 	}
 
 	return []ctrlclient.Object{cm, crs}, nil
-}
-
-func readersForManifestsInFS(
-	manifestsFS fs.FS,
-) (readers []io.Reader, cleanup func() error, err error) {
-	var manifestFiles []string
-	err = fs.WalkDir(manifestsFS, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return nil
-		}
-
-		manifestFiles = append(manifestFiles, path)
-
-		return nil
-	})
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to walk embedded filesystem: %w", err)
-	}
-
-	readers = make([]io.Reader, 0, len(manifestFiles))
-	for _, mf := range manifestFiles {
-		f, err := manifestsFS.Open(mf)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to open embedded manifests: %w", err)
-		}
-		readers = append(readers, f)
-	}
-
-	cleanup = func() error {
-		for _, r := range readers {
-			if err := r.(io.ReadCloser).Close(); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-
-	return readers, cleanup, nil
 }

@@ -8,4 +8,4 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: tigera-operator
+  name: '{{ .Values.handlers.CalicoCNI.defaultTigeraOperatorConfigMap.name }}'
