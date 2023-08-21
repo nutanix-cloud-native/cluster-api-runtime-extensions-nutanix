@@ -22,6 +22,7 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxyconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
 )
 
@@ -108,6 +109,7 @@ func (s *Server) Start(ctx context.Context) error {
 	allHandlers := []handlers.NamedHandler{
 		servicelbgc.New(client),
 		calico.New(client, *s.calicoCNIConfig),
+		httpproxyconfig.New(),
 	}
 
 	for idx := range allHandlers {
