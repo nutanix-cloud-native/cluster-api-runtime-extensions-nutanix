@@ -12,7 +12,7 @@ handlers:
         create: true
         configMap:
           name: calico-cni-installation-dockercluster
-          content:
+          content: ""
   ServiceLoadBalancerGC:
     enabled: true
 
