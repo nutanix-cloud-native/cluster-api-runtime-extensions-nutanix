@@ -32,6 +32,13 @@ type BeforeClusterUpgradeLifecycleHandler interface {
 		*runtimehooksv1.BeforeClusterUpgradeResponse,
 	)
 }
+type AfterControlPlaneUpgradeLifecycleHandler interface {
+	AfterControlPlaneUpgrade(
+		context.Context,
+		*runtimehooksv1.AfterControlPlaneUpgradeRequest,
+		*runtimehooksv1.AfterControlPlaneUpgradeResponse,
+	)
+}
 type BeforeClusterDeleteLifecycleHandler interface {
 	BeforeClusterDelete(
 		context.Context,

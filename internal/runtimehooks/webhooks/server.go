@@ -116,6 +116,17 @@ func (s *Server) Start(ctx context.Context) error {
 			}
 		}
 
+		if t, ok := h.(handlers.AfterControlPlaneUpgradeLifecycleHandler); ok {
+			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+				Hook:        runtimehooksv1.AfterControlPlaneUpgrade,
+				Name:        h.Name(),
+				HandlerFunc: t.AfterControlPlaneUpgrade,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
+
 		if t, ok := h.(handlers.BeforeClusterDeleteLifecycleHandler); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterDelete,
