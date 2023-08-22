@@ -23,6 +23,13 @@ example), run:
 make SKIP_BUILD=true dev.run-on-kind
 ```
 
+Download the clusterclass quick start template:
+
+```shell
+wget https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.5.0/clusterclass-quick-start.yaml
+kubectl apply -f clusterclass-quick-start.yaml
+```
+
 To create a cluster with [clusterctl](https://cluster-api.sigs.k8s.io/user/quick-start.html), run:
 
 ```shell
