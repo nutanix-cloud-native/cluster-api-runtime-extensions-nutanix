@@ -175,15 +175,6 @@ func requestItem(uid string, object any, holderRef runtimehooksv1.HolderReferenc
 	}
 }
 
-// // responseItem returns a GeneratePatchesResponseItem of PatchType JSONPatch with the passed uid and patch.
-// func responseItem(uid, patch string, format runtimehooksv1.PatchType) runtimehooksv1.GeneratePatchesResponseItem {
-// 	return runtimehooksv1.GeneratePatchesResponseItem{
-// 		UID:       types.UID(uid),
-// 		PatchType: format,
-// 		Patch:     toJSON(patch),
-// 	}
-// }
-
 // newVariable returns a runtimehooksv1.Variable with the passed name and value.
 func newVariable(name string, value any) runtimehooksv1.Variable {
 	return runtimehooksv1.Variable{
