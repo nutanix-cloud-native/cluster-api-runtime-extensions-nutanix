@@ -21,6 +21,7 @@
     "gotestsum@latest",
     "hadolint@latest",
     "helm-docs@latest",
+    "hugo@0.116.1",
     "kind@latest",
     "kubebuilder@latest",
     "kubectl@latest",

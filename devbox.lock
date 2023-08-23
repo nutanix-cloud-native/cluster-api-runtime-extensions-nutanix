@@ -127,6 +127,12 @@
       "source": "devbox-search",
       "version": "1.11.0"
     },
+    "hugo@0.116.1": {
+      "last_modified": "2023-08-08T03:07:33Z",
+      "resolved": "github:NixOS/nixpkgs/844ffa82bbe2a2779c86ab3a72ff1b4176cec467#hugo",
+      "source": "devbox-search",
+      "version": "0.116.1"
+    },
     "kind@latest": {
       "last_modified": "2023-06-30T04:44:22Z",
       "resolved": "github:NixOS/nixpkgs/3c614fbc76fc152f3e1bc4b2263da6d90adf80fb#kind",

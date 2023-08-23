@@ -31,3 +31,8 @@ capd-kubeconfig
 ct_previous_*/
 
 .envrc.local*
+
+public/
+resources/
+node_modules/
+.hugo_build.lock

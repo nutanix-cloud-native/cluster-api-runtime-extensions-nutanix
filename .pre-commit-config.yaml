@@ -13,7 +13,8 @@ repos:
 - repo: https://github.com/tekwizely/pre-commit-golang
   rev: v1.0.0-rc.1
   hooks:
-  - id: go-mod-tidy-repo
+  - id: go-mod-tidy
+    exclude: ^docs/
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.4.0
   hooks:
@@ -102,7 +103,7 @@ repos:
     name: License headers - Markdown
     stages: [commit]
     files: \.md$
-    exclude: ^CHANGELOG.md$
+    exclude: ^(CHANGELOG.md$|docs/)
     args:
       - --license-filepath
       - hack/license-header.txt
