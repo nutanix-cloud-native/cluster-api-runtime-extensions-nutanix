@@ -136,7 +136,7 @@ metadata:
 	},
 }}
 
-func runTests(t *testing.T, fn func([]string) ([]client.Object, error)) {
+func runUnstructuredTests(t *testing.T, fn func([]string) ([]client.Object, error)) {
 	t.Helper()
 	t.Parallel()
 	for idx := range tests {
@@ -154,28 +154,34 @@ func runTests(t *testing.T, fn func([]string) ([]client.Object, error)) {
 	}
 }
 
-func TestDecodeReaderToObjects(t *testing.T) {
-	runTests(t, func(inputs []string) ([]client.Object, error) {
+func TestDecodeReaderToUnstructured(t *testing.T) {
+	runUnstructuredTests(t, func(inputs []string) ([]client.Object, error) {
 		readers := make([]io.Reader, 0, len(inputs))
 		for _, s := range inputs {
 			readers = append(readers, strings.NewReader(s))
 		}
-		return parser.DecodeReadersToObjects(readers...)
+		return parser.ReadersToUnstructured(readers...)
 	})
 }
 
-func TestBytesToObjects(t *testing.T) {
-	runTests(t, func(inputs []string) ([]client.Object, error) {
+func TestBytesToUnstructured(t *testing.T) {
+	runUnstructuredTests(t, func(inputs []string) ([]client.Object, error) {
 		bs := make([][]byte, 0, len(inputs))
 		for _, s := range inputs {
 			bs = append(bs, []byte(s))
 		}
-		return parser.BytesToObjects(bs...)
+		return parser.BytesToUnstructured(bs...)
+	})
+}
+
+func TestStringsToUnstructured(t *testing.T) {
+	runUnstructuredTests(t, func(inputs []string) ([]client.Object, error) {
+		return parser.StringsToUnstructured(inputs...)
 	})
 }
 
 func TestStringsToObjects(t *testing.T) {
-	runTests(t, func(inputs []string) ([]client.Object, error) {
-		return parser.StringsToObjects(inputs...)
+	runUnstructuredTests(t, func(inputs []string) ([]client.Object, error) {
+		return parser.StringsToUnstructured(inputs...)
 	})
 }

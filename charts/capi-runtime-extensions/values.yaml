@@ -1,6 +1,21 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+handlers:
+  CalicoCNI:
+    enabled: true
+    defaultPodSubnet: 192.168.0.0/16
+    defaultTigeraOperatorConfigMap:
+      name: tigera-operator
+    defaultInstallationConfigMaps:
+      DockerCluster:
+        create: true
+        configMap:
+          name: calico-cni-installation-dockercluster
+          content: ""
+  ServiceLoadBalancerGC:
+    enabled: true
+
 deployment:
   replicas: 1
 

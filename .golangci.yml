@@ -78,3 +78,6 @@ issues:
     - source: "flags.Parse|response.WriteError"
       linters:
         - errcheck
+    - source: "^// \\+kubebuilder:"
+      linters:
+        - lll

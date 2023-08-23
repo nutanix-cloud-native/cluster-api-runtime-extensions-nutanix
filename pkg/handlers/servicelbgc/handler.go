@@ -30,7 +30,7 @@ func New(client ctrlclient.Client) *ServiceLoadBalancerGC {
 }
 
 func (s *ServiceLoadBalancerGC) Name() string {
-	return "service-loadbalancer-gc"
+	return "ServiceLoadBalancerGC"
 }
 
 func (s *ServiceLoadBalancerGC) BeforeClusterDelete(

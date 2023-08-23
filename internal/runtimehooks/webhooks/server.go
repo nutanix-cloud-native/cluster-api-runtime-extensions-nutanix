@@ -5,8 +5,15 @@ package webhooks
 
 import (
 	"context"
+	"strings"
 
 	"github.com/spf13/pflag"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/strings/slices"
+	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/server"
@@ -14,6 +21,7 @@ import (
 	ctrclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
 )
 
@@ -22,6 +30,10 @@ type Server struct {
 	webhookCertDir string
 
 	catalog *runtimecatalog.Catalog
+
+	enabledHandlers []string
+
+	calicoCNIConfig *calico.CalicoCNIConfig
 }
 
 func NewServer() *Server {
@@ -31,9 +43,10 @@ func NewServer() *Server {
 	_ = runtimehooksv1.AddToCatalog(catalog)
 
 	return &Server{
-		catalog:        catalog,
-		webhookPort:    9443,
-		webhookCertDir: "/runtimehooks-certs/",
+		catalog:         catalog,
+		webhookPort:     9443,
+		webhookCertDir:  "/runtimehooks-certs/",
+		calicoCNIConfig: &calico.CalicoCNIConfig{},
 	}
 }
 
@@ -46,6 +59,15 @@ func (s *Server) AddFlags(prefix string, fs *pflag.FlagSet) {
 		s.webhookCertDir,
 		"Runtime hooks server cert dir.",
 	)
+
+	fs.StringSliceVar(
+		&s.enabledHandlers,
+		prefix+".enabled-handlers",
+		[]string{"ServiceLoadBalancerGC", "CalicoCNI"},
+		"list of all enabled handlers",
+	)
+
+	s.calicoCNIConfig.AddFlags(prefix+".calicocni", fs)
 }
 
 func (s *Server) Start(ctx context.Context) error {
@@ -72,21 +94,33 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 
-	client, err := ctrclient.New(restConfig, ctrclient.Options{})
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(crsv1.AddToScheme(scheme))
+	utilruntime.Must(capiv1.AddToScheme(scheme))
+
+	client, err := ctrclient.New(restConfig, ctrclient.Options{Scheme: scheme})
 	if err != nil {
 		setupLog.Error(err, "error creating client to the cluster")
 		return err
 	}
 
-	allHandlers := []handlers.NamedHandler{servicelbgc.New(client)}
+	allHandlers := []handlers.NamedHandler{
+		servicelbgc.New(client),
+		calico.New(client, *s.calicoCNIConfig),
+	}
 
 	for idx := range allHandlers {
 		h := allHandlers[idx]
 
+		if !slices.Contains(s.enabledHandlers, h.Name()) {
+			continue
+		}
+
 		if t, ok := h.(handlers.BeforeClusterCreateLifecycleHandler); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterCreate,
-				Name:        h.Name(),
+				Name:        strings.ToLower(h.Name()),
 				HandlerFunc: t.BeforeClusterCreate,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -97,7 +131,7 @@ func (s *Server) Start(ctx context.Context) error {
 		if t, ok := h.(handlers.AfterControlPlaneInitializedLifecycleHandler); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.AfterControlPlaneInitialized,
-				Name:        h.Name(),
+				Name:        strings.ToLower(h.Name()),
 				HandlerFunc: t.AfterControlPlaneInitialized,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -108,7 +142,7 @@ func (s *Server) Start(ctx context.Context) error {
 		if t, ok := h.(handlers.BeforeClusterUpgradeLifecycleHandler); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterUpgrade,
-				Name:        h.Name(),
+				Name:        strings.ToLower(h.Name()),
 				HandlerFunc: t.BeforeClusterUpgrade,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -130,7 +164,7 @@ func (s *Server) Start(ctx context.Context) error {
 		if t, ok := h.(handlers.BeforeClusterDeleteLifecycleHandler); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterDelete,
-				Name:        h.Name(),
+				Name:        strings.ToLower(h.Name()),
 				HandlerFunc: t.BeforeClusterDelete,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -141,7 +175,7 @@ func (s *Server) Start(ctx context.Context) error {
 		if t, ok := h.(handlers.DiscoverVariablesMutationHandler); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.DiscoverVariables,
-				Name:        h.Name(),
+				Name:        strings.ToLower(h.Name()),
 				HandlerFunc: t.DiscoverVariables,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -152,7 +186,7 @@ func (s *Server) Start(ctx context.Context) error {
 		if t, ok := h.(handlers.GeneratePatchesMutationHandler); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.GeneratePatches,
-				Name:        h.Name(),
+				Name:        strings.ToLower(h.Name()),
 				HandlerFunc: t.GeneratePatches,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -163,7 +197,7 @@ func (s *Server) Start(ctx context.Context) error {
 		if t, ok := h.(handlers.ValidateTopologyMutationHandler); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.ValidateTopology,
-				Name:        h.Name(),
+				Name:        strings.ToLower(h.Name()),
 				HandlerFunc: t.ValidateTopology,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")

@@ -31,6 +31,13 @@ A Helm chart for capi-runtime-extensions
 | controllers.enableLeaderElection | bool | `false` |  |
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
+| handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.content | string | `""` |  |
+| handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.name | string | `"calico-cni-installation-dockercluster"` |  |
+| handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.create | bool | `true` |  |
+| handlers.CalicoCNI.defaultPodSubnet | string | `"192.168.0.0/16"` |  |
+| handlers.CalicoCNI.defaultTigeraOperatorConfigMap.name | string | `"tigera-operator"` |  |
+| handlers.CalicoCNI.enabled | bool | `true` |  |
+| handlers.ServiceLoadBalancerGC.enabled | bool | `true` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/d2iq-labs/capi-runtime-extensions"` |  |
 | image.tag | string | `""` |  |

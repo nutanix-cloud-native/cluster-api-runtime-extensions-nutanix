@@ -6,11 +6,16 @@ package handlers
 import (
 	"context"
 
+	"github.com/spf13/pflag"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 )
 
 type NamedHandler interface {
 	Name() string
+}
+
+type FlagConfigurableHandler interface {
+	AddFlags(prefix string, fs *pflag.FlagSet)
 }
 
 type BeforeClusterCreateLifecycleHandler interface {
