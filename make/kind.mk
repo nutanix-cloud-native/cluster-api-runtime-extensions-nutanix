@@ -26,7 +26,7 @@ kind.recreate: kind.delete kind.create
 .PHONY: kind.create
 kind.create: ## Creates new KinD cluster
 kind.create: ; $(info $(M) creating kind cluster - $(KIND_CLUSTER_NAME))
-	(kind get clusters | grep -Eq '^$(KIND_CLUSTER_NAME)$$' && echo '$(KIND_CLUSTER_NAME) already exists') || \
+	(kind get clusters 2>/dev/null | grep -Eq '^$(KIND_CLUSTER_NAME)$$' && echo '$(KIND_CLUSTER_NAME) already exists') || \
 		env KUBECONFIG=$(KIND_KUBECONFIG) $(REPO_ROOT)/hack/kind/create-cluster.sh \
 		  --cluster-name $(KIND_CLUSTER_NAME) \
 		  --kindest-image $(KINDEST_IMAGE) \
@@ -36,7 +36,7 @@ kind.create: ; $(info $(M) creating kind cluster - $(KIND_CLUSTER_NAME))
 .PHONY: kind.delete
 kind.delete: ## Deletes KinD cluster
 kind.delete: ; $(info $(M) deleting kind cluster - $(KIND_CLUSTER_NAME))
-	(kind get clusters | grep -Eq '^$(KIND_CLUSTER_NAME)$$' && kind delete cluster --name $(KIND_CLUSTER_NAME)) || \
+	(kind get clusters 2>/dev/null | grep -Eq '^$(KIND_CLUSTER_NAME)$$' && kind delete cluster --name $(KIND_CLUSTER_NAME)) || \
 	  echo '$(KIND_CLUSTER_NAME) does not exist'
 	rm -rf $(KIND_DIR)/$(KIND_CLUSTER_NAME)
 

@@ -27,14 +27,14 @@ To create a cluster with [clusterctl](https://cluster-api.sigs.k8s.io/user/quick
 CNI at the same time, run:
 
 ```shell
-env POD_SECURITY_STANDARD_ENABLED=false \
-  clusterctl generate cluster capi-quickstart \
-    --flavor development \
-    --kubernetes-version v1.27.2 \
-    --control-plane-machine-count=1 \
-    --worker-machine-count=1 | \
-  kubectl label -f - --local --dry-run=client -oyaml capiext.labs.d2iq.io/cni=calico | \
-  kubectl apply --server-side -f -
+clusterctl generate cluster capi-quickstart \
+  --flavor development \
+  --kubernetes-version v1.27.2 \
+  --control-plane-machine-count=1 \
+  --worker-machine-count=1 | \
+gojq --yaml-input --yaml-output \
+  '. | (select(.kind=="Cluster").metadata.labels["capiext.labs.d2iq.io/cni"]|="calico")' | \
+kubectl apply --server-side -f -
 ```
 
 Wait until control plane is ready:
