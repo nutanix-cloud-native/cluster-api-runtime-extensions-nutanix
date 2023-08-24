@@ -51,7 +51,7 @@ func New() *httpProxyConfigHandler {
 }
 
 func (h *httpProxyConfigHandler) Name() string {
-	return "http-proxy" // NOTE(mh): "http-proxy@v1" ?
+	return "http-proxy"
 }
 
 func (h *httpProxyConfigHandler) GeneratePatches(
