@@ -1,3 +1,6 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package httpproxyconfig_test
 
 import (
@@ -165,7 +168,11 @@ func toJSON(v any) []byte {
 }
 
 // requestItem returns a GeneratePatchesRequestItem with the given uid, variables and object.
-func requestItem(uid string, object any, holderRef runtimehooksv1.HolderReference) runtimehooksv1.GeneratePatchesRequestItem {
+func requestItem(
+	uid string,
+	object any,
+	holderRef runtimehooksv1.HolderReference,
+) runtimehooksv1.GeneratePatchesRequestItem {
 	return runtimehooksv1.GeneratePatchesRequestItem{
 		UID: types.UID(uid),
 		Object: runtime.RawExtension{

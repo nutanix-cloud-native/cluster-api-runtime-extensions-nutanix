@@ -1,3 +1,6 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package httpproxyconfig
 
 import (
@@ -8,7 +11,7 @@ import (
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 )
 
-// GetVariable finds and parses variable to given type
+// GetVariable finds and parses variable to given type.
 func GetVariable[T any](variables map[string]apiextensionsv1.JSON, name string) (T, bool, error) {
 	var v T
 	variable, found, err := topologymutation.GetVariable(variables, name)

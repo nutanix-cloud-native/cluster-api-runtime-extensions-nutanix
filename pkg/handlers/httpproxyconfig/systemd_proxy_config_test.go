@@ -1,10 +1,12 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package httpproxyconfig
 
 import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 )
 
@@ -97,8 +99,12 @@ func TestGenerate_NoProxyMultipleURLs(t *testing.T) {
 	})
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(content).To(And(
-		ContainSubstring(`Environment="NO_PROXY=https://no-proxy.example.com,https://no-proxy-1.example.com"`),
-		ContainSubstring(`Environment="no_proxy=https://no-proxy.example.com,https://no-proxy-1.example.com"`),
+		ContainSubstring(
+			`Environment="NO_PROXY=https://no-proxy.example.com,https://no-proxy-1.example.com"`,
+		),
+		ContainSubstring(
+			`Environment="no_proxy=https://no-proxy.example.com,https://no-proxy-1.example.com"`,
+		),
 	))
 }
 

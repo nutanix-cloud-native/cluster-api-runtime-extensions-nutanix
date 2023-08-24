@@ -1,3 +1,6 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 // This code re-implements private matcher for CAPI inline patch selector.
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/46412f0a4ea65d8f02478d2ad09ce12925485f56/api/v1beta1/clusterclass_types.go#L509-L523
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/46412f0a4ea65d8f02478d2ad09ce12925485f56/internal/controllers/topology/cluster/patches/inline/json_patch_generator.go#L125
@@ -14,7 +17,12 @@ import (
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 )
 
-func matchSelector(selector clusterv1.PatchSelector, obj runtime.Object, holderRef runtimehooksv1.HolderReference, templateVariables map[string]apiextensionsv1.JSON) bool {
+func matchSelector(
+	selector clusterv1.PatchSelector,
+	obj runtime.Object,
+	holderRef runtimehooksv1.HolderReference,
+	templateVariables map[string]apiextensionsv1.JSON,
+) bool {
 	if !matchGVK(selector.APIVersion, selector.Kind, obj) {
 		return false
 	}
@@ -32,7 +40,11 @@ func matchSelector(selector clusterv1.PatchSelector, obj runtime.Object, holderR
 	}
 
 	if selector.MatchResources.MachineDeploymentClass != nil {
-		if !matchMachineDeployment(holderRef, selector.MatchResources.MachineDeploymentClass.Names, templateVariables) {
+		if !matchMachineDeployment(
+			holderRef,
+			selector.MatchResources.MachineDeploymentClass.Names,
+			templateVariables,
+		) {
 			return false
 		}
 	}
@@ -80,12 +92,19 @@ func matchControlPlane(holderRef runtimehooksv1.HolderReference) bool {
 
 // Check if the request is for a BootstrapConfigTemplate or an InfrastructureMachineTemplate
 // of one of the configured MachineDeploymentClasses.
-func matchMachineDeployment(holderRef runtimehooksv1.HolderReference, names []string, templateVariables map[string]apiextensionsv1.JSON) bool {
+func matchMachineDeployment(
+	holderRef runtimehooksv1.HolderReference,
+	names []string,
+	templateVariables map[string]apiextensionsv1.JSON,
+) bool {
 	if holderRef.Kind == "MachineDeployment" &&
 		(holderRef.FieldPath == "spec.template.spec.bootstrap.configRef" ||
 			holderRef.FieldPath == "spec.template.spec.infrastructureRef") {
 		// Read the builtin.machineDeployment.class variable.
-		templateMDClassJSON, found, err := topologymutation.GetVariable(templateVariables, "builtin.machineDeployment.class")
+		templateMDClassJSON, found, err := topologymutation.GetVariable(
+			templateVariables,
+			"builtin.machineDeployment.class",
+		)
 
 		// If the builtin variable could be read.
 		if found && err == nil {
@@ -96,10 +115,12 @@ func matchMachineDeployment(holderRef runtimehooksv1.HolderReference, names []st
 					return true
 				}
 				unquoted, _ := strconv.Unquote(string(templateMDClassJSON.Raw))
-				if strings.HasPrefix(mdClass, "*") && strings.HasSuffix(unquoted, strings.TrimPrefix(mdClass, "*")) {
+				if strings.HasPrefix(mdClass, "*") &&
+					strings.HasSuffix(unquoted, strings.TrimPrefix(mdClass, "*")) {
 					return true
 				}
-				if strings.HasSuffix(mdClass, "*") && strings.HasPrefix(unquoted, strings.TrimSuffix(mdClass, "*")) {
+				if strings.HasSuffix(mdClass, "*") &&
+					strings.HasPrefix(unquoted, strings.TrimSuffix(mdClass, "*")) {
 					return true
 				}
 			}

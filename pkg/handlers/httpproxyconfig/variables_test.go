@@ -1,10 +1,12 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package httpproxyconfig
 
 import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
@@ -16,7 +18,7 @@ func TestGetVariable(t *testing.T) {
 	}
 	sampleValue := []byte(`{"foo": "bar"}`)
 	variables := map[string]apiextensionsv1.JSON{
-		"sampleVar": apiextensionsv1.JSON{Raw: sampleValue},
+		"sampleVar": {Raw: sampleValue},
 	}
 	parsed, found, err := GetVariable[sampleStruct](variables, "sampleVar")
 	g.Expect(err).NotTo(HaveOccurred())

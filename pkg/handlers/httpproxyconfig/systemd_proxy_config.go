@@ -1,3 +1,6 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package httpproxyconfig
 
 import (
@@ -44,7 +47,8 @@ func (g *systemdConfigGenerator) Generate(vars HTTPProxyVariables) (string, erro
 }
 
 func (g *systemdConfigGenerator) AddSystemdFiles(
-	vars HTTPProxyVariables, dest []bootstrapv1.File) ([]bootstrapv1.File, error) {
+	vars HTTPProxyVariables, dest []bootstrapv1.File,
+) ([]bootstrapv1.File, error) {
 	content, err := g.Generate(vars)
 	if err != nil {
 		return nil, err

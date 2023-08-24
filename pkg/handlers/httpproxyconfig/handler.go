@@ -59,9 +59,16 @@ func (h *httpProxyConfigHandler) GeneratePatches(
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
 ) {
-	topologymutation.WalkTemplates(ctx, h.decoder, req, resp,
+	topologymutation.WalkTemplates(
+		ctx,
+		h.decoder,
+		req,
+		resp,
 		func(ctx context.Context, obj runtime.Object, variables map[string]apiextensionsv1.JSON, holderRef runtimehooksv1.HolderReference) error {
-			httpProxyVariable, found, err := GetVariable[HTTPProxyVariables](variables, VariableName)
+			httpProxyVariable, found, err := GetVariable[HTTPProxyVariables](
+				variables,
+				VariableName,
+			)
 			if err != nil {
 				return err
 			}
