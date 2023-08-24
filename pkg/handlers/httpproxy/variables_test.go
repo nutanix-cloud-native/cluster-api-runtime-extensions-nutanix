@@ -9,7 +9,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
-	"sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
@@ -18,8 +17,8 @@ import (
 func TestDiscoverVariables(t *testing.T) {
 	g := NewWithT(t)
 	h := httpproxy.NewVariable()
-	resp := &v1alpha1.DiscoverVariablesResponse{}
-	h.DiscoverVariables(context.Background(), &v1alpha1.DiscoverVariablesRequest{}, resp)
+	resp := &runtimehooksv1.DiscoverVariablesResponse{}
+	h.DiscoverVariables(context.Background(), &runtimehooksv1.DiscoverVariablesRequest{}, resp)
 
 	g.Expect(resp.Status).To(Equal(runtimehooksv1.ResponseStatusSuccess))
 	g.Expect(resp.Variables).To(HaveLen(1))
