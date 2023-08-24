@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package httpproxyconfig_test
+package httpproxy_test
 
 import (
 	"bytes"
@@ -18,32 +18,14 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	"sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxyconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
 )
-
-func TestDiscoverVariables(t *testing.T) {
-	g := NewWithT(t)
-	h := httpproxyconfig.New()
-	resp := &v1alpha1.DiscoverVariablesResponse{}
-	h.DiscoverVariables(context.Background(), &v1alpha1.DiscoverVariablesRequest{}, resp)
-
-	g.Expect(resp.Status).To(Equal(runtimehooksv1.ResponseStatusSuccess))
-	g.Expect(resp.Variables).To(HaveLen(1))
-
-	variable := resp.Variables[0]
-	g.Expect(variable).To(MatchFields(IgnoreExtras, Fields{
-		"Name":     Equal(httpproxyconfig.VariableName),
-		"Required": BeFalse(),
-		"Schema":   Equal(httpproxyconfig.HTTPProxyVariables{}.VariableSchema()),
-	}))
-}
 
 func TestGeneratePatches(t *testing.T) {
 	g := NewWithT(t)
-	h := httpproxyconfig.New()
+	h := httpproxy.NewInject()
 	req := &runtimehooksv1.GeneratePatchesRequest{}
 	resp := &runtimehooksv1.GeneratePatchesResponse{}
 	h.GeneratePatches(context.Background(), req, resp)
@@ -52,10 +34,10 @@ func TestGeneratePatches(t *testing.T) {
 
 func TestGeneratePatches_KubeadmControlPlaneTemplate(t *testing.T) {
 	g := NewWithT(t)
-	h := httpproxyconfig.New()
+	h := httpproxy.NewInject()
 	req := &runtimehooksv1.GeneratePatchesRequest{
 		Variables: []runtimehooksv1.Variable{
-			newVariable(httpproxyconfig.VariableName, httpproxyconfig.HTTPProxyVariables{
+			newVariable(httpproxy.VariableName, httpproxy.HTTPProxyVariables{
 				HTTP:  "http://example.com",
 				HTTPS: "https://example.com",
 				NO:    []string{"https://no-proxy.example.com"},
@@ -102,10 +84,10 @@ func TestGeneratePatches_KubeadmControlPlaneTemplate(t *testing.T) {
 
 func TestGeneratePatches_KubeadmConfigTemplate(t *testing.T) {
 	g := NewWithT(t)
-	h := httpproxyconfig.New()
+	h := httpproxy.NewInject()
 	req := &runtimehooksv1.GeneratePatchesRequest{
 		Variables: []runtimehooksv1.Variable{
-			newVariable(httpproxyconfig.VariableName, httpproxyconfig.HTTPProxyVariables{
+			newVariable(httpproxy.VariableName, httpproxy.HTTPProxyVariables{
 				HTTP:  "http://example.com",
 				HTTPS: "https://example.com",
 				NO:    []string{"https://no-proxy.example.com"},

@@ -15,6 +15,10 @@ handlers:
           content: ""
   ServiceLoadBalancerGC:
     enabled: true
+  http-proxy-vars:
+    enabled: true
+  http-proxy-inject:
+    enabled: true
 
 deployment:
   replicas: 1

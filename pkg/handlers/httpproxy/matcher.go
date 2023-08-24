@@ -4,7 +4,7 @@
 // This code re-implements private matcher for CAPI inline patch selector.
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/46412f0a4ea65d8f02478d2ad09ce12925485f56/api/v1beta1/clusterclass_types.go#L509-L523
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/46412f0a4ea65d8f02478d2ad09ce12925485f56/internal/controllers/topology/cluster/patches/inline/json_patch_generator.go#L125
-package httpproxyconfig
+package httpproxy
 
 import (
 	"strconv"

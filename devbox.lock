@@ -133,11 +133,11 @@
       "source": "devbox-search",
       "version": "0.116.1"
     },
-    "kind@latest": {
-      "last_modified": "2023-06-30T04:44:22Z",
-      "resolved": "github:NixOS/nixpkgs/3c614fbc76fc152f3e1bc4b2263da6d90adf80fb#kind",
+    "kind@0.19.0": {
+      "last_modified": "2023-06-01T03:57:58Z",
+      "resolved": "github:NixOS/nixpkgs/8d4d822bc0efa9de6eddc79cb0d82897a9baa750#kind",
       "source": "devbox-search",
-      "version": "0.20.0"
+      "version": "0.19.0"
     },
     "kubebuilder@latest": {
       "last_modified": "2023-07-23T03:35:12Z",
