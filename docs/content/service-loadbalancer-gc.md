@@ -10,7 +10,7 @@ and thus triggering the cloud provider interface to clean up the external resour
 load-balancer services have been fully deleted, indicating that the cloud provider interface has cleaned up the external
 resources.
 
-This hook is enabled by default, and can be explicitly disabled by omitting the `LoadBalancerGC` hook from the
+This hook is enabled by default, and can be explicitly disabled by omitting the `ServiceLoadBalancerGC` hook from the
 `--runtimehooks.enabled-handlers` flag.
 
 If deploying via Helm, then this can be disabled by setting `handlers.ServiceLoadBalancerGC.enabled=false`.
