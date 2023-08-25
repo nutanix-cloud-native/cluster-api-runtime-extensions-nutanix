@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -15,6 +16,7 @@ import (
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
@@ -73,6 +75,10 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 			variables map[string]apiextensionsv1.JSON,
 			holderRef runtimehooksv1.HolderReference,
 		) error {
+			log := ctrl.LoggerFrom(ctx).WithValues(
+				"holderRef", holderRef,
+			)
+
 			httpProxyVariable, found, err := capi.GetVariable[HTTPProxyVariables](
 				variables,
 				VariableName,
@@ -81,7 +87,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				return err
 			}
 			if !found {
-				return fmt.Errorf("missing variable %q value", VariableName)
+				return nil
 			}
 
 			controlPlaneSelector := clusterv1.PatchSelector{
@@ -92,9 +98,10 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				},
 			}
 			if err := generatePatch(
-				obj, variables, holderRef, controlPlaneSelector,
+				obj, variables, holderRef, controlPlaneSelector, log,
 				func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 					var err error
+					log.Info("adding files to kubeadm config spec")
 					obj.Spec.Template.Spec.KubeadmConfigSpec.Files, err = h.generator.AddSystemdFiles(
 						httpProxyVariable, obj.Spec.Template.Spec.KubeadmConfigSpec.Files)
 					return err
@@ -114,9 +121,10 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				},
 			}
 			if err := generatePatch(
-				obj, variables, holderRef, defaultWorkerSelector,
+				obj, variables, holderRef, defaultWorkerSelector, log,
 				func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 					var err error
+					log.Info("adding files to worker node kubeadm config template")
 					obj.Spec.Template.Spec.Files, err = h.generator.AddSystemdFiles(httpProxyVariable, obj.Spec.Template.Spec.Files)
 					return err
 				}); err != nil {
@@ -133,14 +141,20 @@ func generatePatch[T runtime.Object](
 	variables map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	patchSelector clusterv1.PatchSelector,
+	log logr.Logger,
 	mutFn func(T) error,
 ) error {
 	typed, ok := obj.(T)
 	if !ok {
+		log.V(5).WithValues(
+			"objType", fmt.Sprintf("%T", obj),
+			"expectedType", fmt.Sprintf("%T", *new(T)),
+		).Info("not matching type")
 		return nil
 	}
 
 	if !matchSelector(patchSelector, obj, holderRef, variables) {
+		log.WithValues("selector", patchSelector).Info("not matching selector")
 		return nil
 	}
 
