@@ -1,12 +1,12 @@
 ---
-title: "HTTP proxy for CAPI components"
+title: "HTTP proxy"
 ---
 
 In some network environments it is necessary to use HTTP proxy to successfuly execute HTTP requests.
-To configure Kubernetes components (`containerd`, `kubelet`) to use HTTP proxy use the `http-proxy`
+To configure Kubernetes components (`containerd`, `kubelet`) to use HTTP proxy use the `http-proxy-inject`
 external patch that will generate appropriate configuration for control plane and worker nodes.
 
-To enable the http proxy enable the `http-proxy` external patch on `ClusterClass`.
+To enable the http proxy enable the `http-proxy-inject` external patch on `ClusterClass`.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
