@@ -11,6 +11,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
@@ -87,8 +88,11 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				return err
 			}
 			if !found {
+				log.Info("http proxy variable not defined")
 				return nil
 			}
+
+			log = log.WithValues("httpProxyVariable", httpProxyVariable)
 
 			controlPlaneSelector := clusterv1.PatchSelector{
 				APIVersion: controlplanev1.GroupVersion.String(),
@@ -101,7 +105,10 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				obj, variables, holderRef, controlPlaneSelector, log,
 				func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 					var err error
-					log.Info("adding files to kubeadm config spec")
+					log.WithValues("namespacedName", types.NamespacedName{
+						Name:      obj.Name,
+						Namespace: obj.Namespace,
+					}).Info("adding files to kubeadm config spec")
 					obj.Spec.Template.Spec.KubeadmConfigSpec.Files, err = h.generator.AddSystemdFiles(
 						httpProxyVariable, obj.Spec.Template.Spec.KubeadmConfigSpec.Files)
 					return err
@@ -124,7 +131,10 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				obj, variables, holderRef, defaultWorkerSelector, log,
 				func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 					var err error
-					log.Info("adding files to worker node kubeadm config template")
+					log.WithValues("namespacedName", types.NamespacedName{
+						Name:      obj.Name,
+						Namespace: obj.Namespace,
+					}).Info("adding files to worker node kubeadm config template")
 					obj.Spec.Template.Spec.Files, err = h.generator.AddSystemdFiles(httpProxyVariable, obj.Spec.Template.Spec.Files)
 					return err
 				}); err != nil {
