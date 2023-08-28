@@ -22,7 +22,6 @@
     "hadolint@latest",
     "helm-docs@latest",
     "hugo@0.116.1",
-    "kind@0.19.0",
     "kubebuilder@latest",
     "kubectl@latest",
     "kubernetes-controller-tools@latest",
@@ -32,6 +31,7 @@
     "shfmt@latest",
     "upx@latest",
     "yamale@latest",
-    "yamllint@latest"
+    "yamllint@latest",
+    "kind@latest"
   ]
 }
