@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	// HandlerNameInject is the name of the inject handler.
-	HandlerNameInject = "HTTPProxyPatch"
+	// HandlerNamePatch is the name of the inject handler.
+	HandlerNamePatch = "HTTPProxyPatch"
 )
 
 type httpProxyPatchHandler struct {
@@ -54,7 +54,7 @@ func NewPatch() *httpProxyPatchHandler {
 }
 
 func (h *httpProxyPatchHandler) Name() string {
-	return HandlerNameInject
+	return HandlerNamePatch
 }
 
 func (h *httpProxyPatchHandler) GeneratePatches(
