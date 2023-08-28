@@ -37,9 +37,9 @@ A Helm chart for capi-runtime-extensions
 | handlers.CalicoCNI.defaultPodSubnet | string | `"192.168.0.0/16"` |  |
 | handlers.CalicoCNI.defaultTigeraOperatorConfigMap.name | string | `"tigera-operator"` |  |
 | handlers.CalicoCNI.enabled | bool | `true` |  |
+| handlers.HTTPProxyPatch.enabled | bool | `true` |  |
+| handlers.HTTPProxyVars.enabled | bool | `true` |  |
 | handlers.ServiceLoadBalancerGC.enabled | bool | `true` |  |
-| handlers.http-proxy-inject.enabled | bool | `true` |  |
-| handlers.http-proxy-vars.enabled | bool | `true` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/d2iq-labs/capi-runtime-extensions"` |  |
 | image.tag | string | `""` |  |
