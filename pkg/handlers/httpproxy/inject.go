@@ -25,7 +25,7 @@ import (
 
 const (
 	// HandlerNameInject is the name of the inject handler.
-	HandlerNameInject = "HTTProxyPatch"
+	HandlerNameInject = "HTTPProxyPatch"
 )
 
 type httpProxyPatchHandler struct {
