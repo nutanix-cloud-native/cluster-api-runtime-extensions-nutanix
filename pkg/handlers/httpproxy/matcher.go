@@ -40,7 +40,7 @@ func matchSelector(
 	}
 
 	if selector.MatchResources.MachineDeploymentClass != nil {
-		if !matchMachineDeployment(
+		if !matchMachineDeploymentClass(
 			holderRef,
 			selector.MatchResources.MachineDeploymentClass.Names,
 			templateVariables,
@@ -92,7 +92,7 @@ func matchControlPlane(holderRef runtimehooksv1.HolderReference) bool {
 
 // Check if the request is for a BootstrapConfigTemplate or an InfrastructureMachineTemplate
 // of one of the configured MachineDeploymentClasses.
-func matchMachineDeployment(
+func matchMachineDeploymentClass(
 	holderRef runtimehooksv1.HolderReference,
 	names []string,
 	templateVariables map[string]apiextensionsv1.JSON,
@@ -107,22 +107,24 @@ func matchMachineDeployment(
 		)
 
 		// If the builtin variable could be read.
-		if found && err == nil {
-			// If templateMDClass matches one of the configured MachineDeploymentClasses.
-			for _, mdClass := range names {
-				// We have to quote mdClass as templateMDClassJSON is a JSON string (e.g. "default-worker").
-				if mdClass == "*" || string(templateMDClassJSON.Raw) == strconv.Quote(mdClass) {
-					return true
-				}
-				unquoted, _ := strconv.Unquote(string(templateMDClassJSON.Raw))
-				if strings.HasPrefix(mdClass, "*") &&
-					strings.HasSuffix(unquoted, strings.TrimPrefix(mdClass, "*")) {
-					return true
-				}
-				if strings.HasSuffix(mdClass, "*") &&
-					strings.HasPrefix(unquoted, strings.TrimSuffix(mdClass, "*")) {
-					return true
-				}
+		if err != nil || !found {
+			return false
+		}
+
+		// If templateMDClass matches one of the configured MachineDeploymentClasses.
+		for _, mdClass := range names {
+			// We have to quote mdClass as templateMDClassJSON is a JSON string (e.g. "default-worker").
+			if mdClass == "*" || string(templateMDClassJSON.Raw) == strconv.Quote(mdClass) {
+				return true
+			}
+			unquoted, _ := strconv.Unquote(string(templateMDClassJSON.Raw))
+			if strings.HasPrefix(mdClass, "*") &&
+				strings.HasSuffix(unquoted, strings.TrimPrefix(mdClass, "*")) {
+				return true
+			}
+			if strings.HasSuffix(mdClass, "*") &&
+				strings.HasPrefix(unquoted, strings.TrimSuffix(mdClass, "*")) {
+				return true
 			}
 		}
 	}
