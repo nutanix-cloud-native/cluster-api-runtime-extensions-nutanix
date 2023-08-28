@@ -15,9 +15,9 @@ handlers:
           content: ""
   ServiceLoadBalancerGC:
     enabled: true
-  http-proxy-vars:
+  HTTPProxyVars:
     enabled: true
-  http-proxy-inject:
+  HTTPProxyPatch:
     enabled: true
 
 deployment:

@@ -25,7 +25,7 @@ import (
 
 func TestGeneratePatches(t *testing.T) {
 	g := NewWithT(t)
-	h := httpproxy.NewInject()
+	h := httpproxy.NewPatch()
 	req := &runtimehooksv1.GeneratePatchesRequest{}
 	resp := &runtimehooksv1.GeneratePatchesResponse{}
 	h.GeneratePatches(context.Background(), req, resp)
@@ -34,7 +34,7 @@ func TestGeneratePatches(t *testing.T) {
 
 func TestGeneratePatches_KubeadmControlPlaneTemplate(t *testing.T) {
 	g := NewWithT(t)
-	h := httpproxy.NewInject()
+	h := httpproxy.NewPatch()
 	req := &runtimehooksv1.GeneratePatchesRequest{
 		Variables: []runtimehooksv1.Variable{
 			newVariable(httpproxy.VariableName, httpproxy.HTTPProxyVariables{
@@ -84,7 +84,7 @@ func TestGeneratePatches_KubeadmControlPlaneTemplate(t *testing.T) {
 
 func TestGeneratePatches_KubeadmConfigTemplate(t *testing.T) {
 	g := NewWithT(t)
-	h := httpproxy.NewInject()
+	h := httpproxy.NewPatch()
 	req := &runtimehooksv1.GeneratePatchesRequest{
 		Variables: []runtimehooksv1.Variable{
 			newVariable(httpproxy.VariableName, httpproxy.HTTPProxyVariables{

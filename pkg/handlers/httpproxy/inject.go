@@ -24,11 +24,8 @@ import (
 )
 
 const (
-	// VariableName is http proxy external patch variable name.
-	VariableName = "proxy"
-
 	// HandlerNameInject is the name of the inject handler.
-	HandlerNameInject = "http-proxy-inject"
+	HandlerNameInject = "HTTProxyPatch"
 )
 
 type httpProxyPatchHandler struct {
@@ -41,7 +38,7 @@ var (
 	_ handlers.GeneratePatchesMutationHandler = &httpProxyPatchHandler{}
 )
 
-func NewInject() *httpProxyPatchHandler {
+func NewPatch() *httpProxyPatchHandler {
 	scheme := runtime.NewScheme()
 	_ = bootstrapv1.AddToScheme(scheme)
 	_ = controlplanev1.AddToScheme(scheme)

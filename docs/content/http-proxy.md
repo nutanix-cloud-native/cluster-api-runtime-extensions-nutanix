@@ -3,10 +3,10 @@ title: "HTTP proxy"
 ---
 
 In some network environments it is necessary to use HTTP proxy to successfuly execute HTTP requests.
-To configure Kubernetes components (`containerd`, `kubelet`) to use HTTP proxy use the `http-proxy-inject`
+To configure Kubernetes components (`containerd`, `kubelet`) to use HTTP proxy use the `httpproxypatch`
 external patch that will generate appropriate configuration for control plane and worker nodes.
 
-To enable the http proxy enable the `http-proxy-inject` external patch on `ClusterClass`.
+To enable the http proxy enable the `httpproxypatch` external patch on `ClusterClass`.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -17,8 +17,8 @@ spec:
   patches:
     - name: http-proxy
       external:
-        generateExtension: "http-proxy-inject.<external-config-name>"
-        discoverVariablesExtension: "http-proxy-vars.<external-config-name>"
+        generateExtension: "httpproxypatch.<external-config-name>"
+        discoverVariablesExtension: "httpproxyvars.<external-config-name>"
 ```
 
 On the cluster resource then specify desired HTTP proxy values:
@@ -43,8 +43,8 @@ spec:
 Applying this configuration will result in new bootstrap files on the `KubeadmControlPlaneTemplate`
 and `KubeadmConfigTemplate`.
 
-This hook is enabled by default, and can be explicitly disabled by omitting the `http-proxy-vars`
-and `http-proxy-inject` hook from the `--runtimehooks.enabled-handlers` flag.
+This hook is enabled by default, and can be explicitly disabled by omitting the `HTTPProxyVars`
+and `HTTPProxyPatch` hook from the `--runtimehooks.enabled-handlers` flag.
 
-If deploying via Helm, then this can be disabled by setting `handlers.http-proxy-vars.enabled=false` and
-`handlers.http-proxy-inject.enabled=false`.
+If deploying via Helm, then this can be disabled by setting `handlers.HTTProxyVars.enabled=false` and
+`handlers.HTTPProxyPatch.enabled=false`.

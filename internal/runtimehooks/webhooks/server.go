@@ -110,7 +110,7 @@ func (s *Server) Start(ctx context.Context) error {
 		servicelbgc.New(client),
 		calico.New(client, *s.calicoCNIConfig),
 		httpproxy.NewVariable(),
-		httpproxy.NewInject(),
+		httpproxy.NewPatch(),
 	}
 
 	for idx := range allHandlers {

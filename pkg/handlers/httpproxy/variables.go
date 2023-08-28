@@ -18,8 +18,11 @@ var (
 )
 
 const (
-	// HandlerNameInject is the name of the variable handler.
-	HandlerNameVariable = "http-proxy-vars"
+	// VariableName is http proxy external patch variable name.
+	VariableName = "proxy"
+
+	// HandlerNameVariable is the name of the variable handler.
+	HandlerNameVariable = "HTTPProxyVars"
 )
 
 func NewVariable() *httpProxyVariableHandler {
