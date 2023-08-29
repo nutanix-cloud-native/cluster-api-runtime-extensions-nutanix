@@ -13,13 +13,12 @@ import (
 	capiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	capiextv1alpha1 "github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 )
 
 type Manager struct {
-	port                 uint16
-	webhookCertDir       string
 	metricsAddr          string
 	enableLeaderElection bool
 	probeAddr            string
@@ -27,8 +26,6 @@ type Manager struct {
 
 func New() *Manager {
 	return &Manager{
-		port:                 8443,
-		webhookCertDir:       "/controller-webhooks-certs/",
 		metricsAddr:          ":8080",
 		probeAddr:            ":8081",
 		enableLeaderElection: false,
@@ -36,11 +33,6 @@ func New() *Manager {
 }
 
 func (m *Manager) AddFlags(prefix string, fs *pflag.FlagSet) {
-	fs.Uint16Var(&m.port, prefix+".port", m.port, "The address the metric endpoint binds to.")
-
-	fs.StringVar(&m.webhookCertDir, prefix+".cert-dir", m.webhookCertDir,
-		"Controller webhook server cert dir.")
-
 	fs.StringVar(&m.metricsAddr, prefix+".metrics-bind-address", m.metricsAddr,
 		"The address the metric endpoint binds to.")
 
@@ -61,14 +53,14 @@ func (m *Manager) Start(ctx context.Context) error {
 	setupLog := ctrl.Log.WithName("controllers")
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                        scheme,
-		MetricsBindAddress:            m.metricsAddr,
-		Port:                          int(m.port),
+		Scheme: scheme,
+		Metrics: server.Options{
+			BindAddress: m.metricsAddr,
+		},
 		HealthProbeBindAddress:        m.probeAddr,
 		LeaderElection:                m.enableLeaderElection,
 		LeaderElectionID:              capiextv1alpha1.GroupVersion.Group,
 		LeaderElectionReleaseOnCancel: true,
-		CertDir:                       m.webhookCertDir,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to create manager")
