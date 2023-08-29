@@ -21,7 +21,7 @@
     "gotestsum@latest",
     "hadolint@latest",
     "helm-docs@latest",
-    "hugo@0.116.1",
+    "hugo@0.117.0",
     "kubebuilder@latest",
     "kubectl@latest",
     "kubernetes-controller-tools@latest",

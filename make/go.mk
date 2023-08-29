@@ -135,8 +135,8 @@ mod-tidy: ## Run go mod tidy for all modules
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
 mod-tidy: mod-tidy.root
 endif
-ifneq ($(words $(ALL_GO_SUBMODULES)),0)
-mod-tidy: $(addprefix mod-tidy.,$(ALL_GO_SUBMODULES:/go.mod=))
+ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
+mod-tidy: $(addprefix mod-tidy.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
 .PHONY: mod-tidy.%
