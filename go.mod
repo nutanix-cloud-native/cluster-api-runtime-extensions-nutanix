@@ -12,11 +12,11 @@ require (
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sync v0.3.0
 	gomodules.xyz/jsonpatch/v2 v2.3.0
-	k8s.io/api v0.28.0
-	k8s.io/apiextensions-apiserver v0.27.2
-	k8s.io/apimachinery v0.28.0
-	k8s.io/client-go v0.28.0
-	k8s.io/component-base v0.28.0
+	k8s.io/api v0.28.1
+	k8s.io/apiextensions-apiserver v0.28.1
+	k8s.io/apimachinery v0.28.1
+	k8s.io/client-go v0.28.1
+	k8s.io/component-base v0.28.1
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 	sigs.k8s.io/cluster-api v1.5.0
