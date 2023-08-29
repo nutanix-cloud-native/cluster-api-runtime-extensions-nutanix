@@ -134,8 +134,8 @@
       "version": "0.116.1"
     },
     "kind@latest": {
-      "last_modified": "2023-06-30T04:44:22Z",
-      "resolved": "github:NixOS/nixpkgs/3c614fbc76fc152f3e1bc4b2263da6d90adf80fb#kind",
+      "last_modified": "2023-06-18T15:53:58Z",
+      "resolved": "github:NixOS/nixpkgs/91430887645a0953568da2f3e9a3a3bb0a0378ac#kind",
       "source": "devbox-search",
       "version": "0.20.0"
     },

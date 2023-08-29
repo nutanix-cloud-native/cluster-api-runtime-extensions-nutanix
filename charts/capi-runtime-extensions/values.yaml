@@ -15,6 +15,10 @@ handlers:
           content: ""
   ServiceLoadBalancerGC:
     enabled: true
+  HTTPProxyVars:
+    enabled: true
+  HTTPProxyPatch:
+    enabled: true
 
 deployment:
   replicas: 1

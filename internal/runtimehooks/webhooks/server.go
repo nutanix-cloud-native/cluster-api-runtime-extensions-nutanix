@@ -22,6 +22,7 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
 )
 
@@ -63,7 +64,7 @@ func (s *Server) AddFlags(prefix string, fs *pflag.FlagSet) {
 	fs.StringSliceVar(
 		&s.enabledHandlers,
 		prefix+".enabled-handlers",
-		[]string{"ServiceLoadBalancerGC", "CalicoCNI"},
+		[]string{"ServiceLoadBalancerGC", "CalicoCNI", "HTTPProxyPatch", "HTTPProxyVars"},
 		"list of all enabled handlers",
 	)
 
@@ -108,6 +109,8 @@ func (s *Server) Start(ctx context.Context) error {
 	allHandlers := []handlers.NamedHandler{
 		servicelbgc.New(client),
 		calico.New(client, *s.calicoCNIConfig),
+		httpproxy.NewVariable(),
+		httpproxy.NewPatch(),
 	}
 
 	for idx := range allHandlers {
