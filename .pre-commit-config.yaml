@@ -10,6 +10,12 @@ repos:
     language: system
     files: "(.*\\.go|go.mod|go.sum|go.mk)$"
     pass_filenames: false
+  - id: hugo-mod-tidy
+    name: hugo-mod-tidy
+    entry: bash -c "cd docs && hugo mod tidy"
+    language: system
+    files: "^docs/"
+    pass_filenames: false
 - repo: https://github.com/tekwizely/pre-commit-golang
   rev: v1.0.0-rc.1
   hooks:
