@@ -85,12 +85,6 @@
       "source": "devbox-search",
       "version": "0.12.13"
     },
-    "golangci-lint@latest": {
-      "last_modified": "2023-08-22T06:04:29Z",
-      "resolved": "github:NixOS/nixpkgs/9d757ec498666cc1dcc6f2be26db4fd3e1e9ab37#golangci-lint",
-      "source": "devbox-search",
-      "version": "1.54.2"
-    },
     "golines@latest": {
       "last_modified": "2023-06-30T04:44:22Z",
       "resolved": "github:NixOS/nixpkgs/3c614fbc76fc152f3e1bc4b2263da6d90adf80fb#golines",
