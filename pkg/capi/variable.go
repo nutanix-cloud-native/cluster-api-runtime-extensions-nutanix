@@ -11,13 +11,15 @@ import (
 )
 
 // GetVariable finds and parses variable to given type.
-func GetVariable[T any](variables map[string]apiextensionsv1.JSON, name string) (T, bool, error) {
-	var v T
+func GetVariable[T any](
+	variables map[string]apiextensionsv1.JSON,
+	name string,
+) (value T, found bool, err error) {
 	variable, found, err := topologymutation.GetVariable(variables, name)
 	if err != nil || !found {
-		return v, found, err
+		return value, found, err
 	}
 
-	err = json.Unmarshal(variable.Raw, &v)
-	return v, err == nil, err
+	err = json.Unmarshal(variable.Raw, &value)
+	return value, err == nil, err
 }

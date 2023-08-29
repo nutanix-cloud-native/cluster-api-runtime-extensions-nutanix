@@ -52,7 +52,7 @@ func TestGeneratePatches_KubeadmControlPlaneTemplate(t *testing.T) {
 						APIVersion: controlplanev1.GroupVersion.String(),
 					},
 				},
-				runtimehooksv1.HolderReference{
+				&runtimehooksv1.HolderReference{
 					Kind:      "Cluster",
 					FieldPath: "spec.controlPlaneRef",
 				},
@@ -107,7 +107,7 @@ func TestGeneratePatches_KubeadmConfigTemplate(t *testing.T) {
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
 				},
-				runtimehooksv1.HolderReference{
+				&runtimehooksv1.HolderReference{
 					Kind:      "MachineDeployment",
 					FieldPath: "spec.template.spec.infrastructureRef",
 				},
@@ -153,14 +153,14 @@ func toJSON(v any) []byte {
 func requestItem(
 	uid string,
 	object any,
-	holderRef runtimehooksv1.HolderReference,
+	holderRef *runtimehooksv1.HolderReference,
 ) runtimehooksv1.GeneratePatchesRequestItem {
 	return runtimehooksv1.GeneratePatchesRequestItem{
 		UID: types.UID(uid),
 		Object: runtime.RawExtension{
 			Raw: toJSON(object),
 		},
-		HolderReference: holderRef,
+		HolderReference: *holderRef,
 	}
 }
 

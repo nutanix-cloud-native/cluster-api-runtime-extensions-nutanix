@@ -99,7 +99,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				},
 			}
 			if err := generatePatch(
-				obj, variables, holderRef, controlPlaneSelector, log,
+				obj, variables, &holderRef, controlPlaneSelector, log,
 				func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 					var err error
 					log.WithValues("namespacedName", types.NamespacedName{
@@ -125,7 +125,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				},
 			}
 			if err := generatePatch(
-				obj, variables, holderRef, defaultWorkerSelector, log,
+				obj, variables, &holderRef, defaultWorkerSelector, log,
 				func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 					var err error
 					log.WithValues("namespacedName", types.NamespacedName{
@@ -146,7 +146,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 func generatePatch[T runtime.Object](
 	obj runtime.Object,
 	variables map[string]apiextensionsv1.JSON,
-	holderRef runtimehooksv1.HolderReference,
+	holderRef *runtimehooksv1.HolderReference,
 	patchSelector clusterv1.PatchSelector,
 	log logr.Logger,
 	mutFn func(T) error,

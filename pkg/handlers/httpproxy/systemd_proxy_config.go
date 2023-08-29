@@ -12,19 +12,17 @@ import (
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 )
 
-//go:embed templates
-var sources embed.FS
+var (
+	//go:embed templates
+	sources embed.FS
 
-var templates *template.Template
+	templates *template.Template = template.Must(template.ParseFS(sources, "templates/*.tmpl"))
 
-func init() {
-	templates = template.Must(template.ParseFS(sources, "templates/*.tmpl"))
-}
-
-var systemdUnitPaths = []string{
-	"/etc/systemd/system/containerd.service.d/http-proxy.conf",
-	"/etc/systemd/system/kubelet.service.d/http-proxy.conf",
-}
+	systemdUnitPaths = []string{
+		"/etc/systemd/system/containerd.service.d/http-proxy.conf",
+		"/etc/systemd/system/kubelet.service.d/http-proxy.conf",
+	}
+)
 
 type systemdConfigGenerator struct {
 	template *template.Template
