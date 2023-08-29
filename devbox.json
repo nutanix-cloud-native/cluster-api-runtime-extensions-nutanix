@@ -14,7 +14,7 @@
     "gnused@latest",
     "go@latest",
     "gojq@latest",
-    "golangci-lint@latest",
+    "path:./hack/flakes/golangci-lint",
     "golines@latest",
     "google-cloud-sdk@latest",
     "goreleaser@latest",
