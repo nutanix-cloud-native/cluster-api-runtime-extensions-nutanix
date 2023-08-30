@@ -29,54 +29,41 @@ func MatchesSelector(
 		return false
 	}
 
-	if selector.MatchResources.InfrastructureCluster {
-		if !MatchesInfrastructure(holderRef) {
-			return false
-		}
+	if selector.MatchResources.InfrastructureCluster && MatchesInfrastructure(holderRef) {
+		return true
 	}
 
-	if selector.MatchResources.ControlPlane {
-		if !MatchesControlPlane(holderRef) {
-			return false
-		}
+	if selector.MatchResources.ControlPlane && MatchesControlPlane(holderRef) {
+		return true
 	}
 
-	if selector.MatchResources.MachineDeploymentClass != nil {
-		if !MatchesMachineDeploymentClass(
+	if selector.MatchResources.MachineDeploymentClass != nil &&
+		MatchesMachineDeploymentClass(
 			holderRef,
 			selector.MatchResources.MachineDeploymentClass.Names,
 			templateVariables,
 		) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// Check if the apiVersion and kind are matching.
-func MatchesGVK(apiVersion, kind string, obj runtime.Object) bool {
-	objAPIVersion, objKind := obj.GetObjectKind().GroupVersionKind().ToAPIVersionAndKind()
-	// Check if the apiVersion and kind are matching.
-	if objAPIVersion != apiVersion {
-		return false
-	}
-	if objKind != kind {
-		return false
-	}
-	return true
-}
-
-// Check if the request is for an InfrastructureCluster.
-func MatchesInfrastructure(holderRef *runtimehooksv1.HolderReference) bool {
-	// Cluster.spec.infrastructureRef holds the InfrastructureCluster.
-	if holderRef.Kind == "Cluster" && holderRef.FieldPath == "spec.infrastructureRef" {
 		return true
 	}
+
 	return false
 }
 
-// Check if the request is for a ControlPlane or the InfrastructureMachineTemplate of a ControlPlane.
+// MatchesGVK checks if the apiVersion and kind are matching.
+func MatchesGVK(apiVersion, kind string, obj runtime.Object) bool {
+	gvk := obj.GetObjectKind().GroupVersionKind()
+
+	return gvk.GroupVersion().String() == apiVersion && gvk.Kind == kind
+}
+
+// MatchesInfrastructure checks if the request is for an InfrastructureCluster.
+// Cluster.spec.infrastructureRef holds the InfrastructureCluster.
+func MatchesInfrastructure(holderRef *runtimehooksv1.HolderReference) bool {
+	return holderRef.Kind == "Cluster" && holderRef.FieldPath == "spec.infrastructureRef"
+}
+
+// MatchesControlPlane checks if the request is for a ControlPlane or the InfrastructureMachineTemplate of a
+// ControlPlane.
 func MatchesControlPlane(holderRef *runtimehooksv1.HolderReference) bool {
 	// Cluster.spec.controlPlaneRef holds the ControlPlane.
 	if holderRef.Kind == "Cluster" && holderRef.FieldPath == "spec.controlPlaneRef" {
@@ -92,8 +79,8 @@ func MatchesControlPlane(holderRef *runtimehooksv1.HolderReference) bool {
 	return false
 }
 
-// Check if the request is for a BootstrapConfigTemplate or an InfrastructureMachineTemplate
-// of one of the configured MachineDeploymentClasses.
+// MatchesMachineDeploymentClass checks if the request is for a BootstrapConfigTemplate or an
+// InfrastructureMachineTemplate of one of the configured MachineDeploymentClasses.
 func MatchesMachineDeploymentClass(
 	holderRef *runtimehooksv1.HolderReference,
 	names []string,
@@ -130,5 +117,6 @@ func MatchesMachineDeploymentClass(
 			}
 		}
 	}
+
 	return false
 }
