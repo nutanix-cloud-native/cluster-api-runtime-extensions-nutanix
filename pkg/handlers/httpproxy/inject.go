@@ -19,7 +19,8 @@ import (
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/patches/matchers"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 )
 
@@ -66,15 +67,15 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 		func(
 			ctx context.Context,
 			obj runtime.Object,
-			variables map[string]apiextensionsv1.JSON,
+			vars map[string]apiextensionsv1.JSON,
 			holderRef runtimehooksv1.HolderReference,
 		) error {
 			log := ctrl.LoggerFrom(ctx).WithValues(
 				"holderRef", holderRef,
 			)
 
-			httpProxyVariable, found, err := capi.GetVariable[HTTPProxyVariables](
-				variables,
+			httpProxyVariable, found, err := variables.Get[HTTPProxyVariables](
+				vars,
 				VariableName,
 			)
 			if err != nil {
@@ -95,7 +96,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				},
 			}
 			if err := generatePatch(
-				obj, variables, &holderRef, controlPlaneSelector, log,
+				obj, vars, &holderRef, controlPlaneSelector, log,
 				func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 					log.WithValues("namespacedName", types.NamespacedName{
 						Name:      obj.Name,
@@ -122,7 +123,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				},
 			}
 			if err := generatePatch(
-				obj, variables, &holderRef, defaultWorkerSelector, log,
+				obj, vars, &holderRef, defaultWorkerSelector, log,
 				func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 					log.WithValues("namespacedName", types.NamespacedName{
 						Name:      obj.Name,
@@ -144,7 +145,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 
 func generatePatch[T runtime.Object](
 	obj runtime.Object,
-	variables map[string]apiextensionsv1.JSON,
+	vars map[string]apiextensionsv1.JSON,
 	holderRef *runtimehooksv1.HolderReference,
 	patchSelector clusterv1.PatchSelector,
 	log logr.Logger,
@@ -159,7 +160,7 @@ func generatePatch[T runtime.Object](
 		return nil
 	}
 
-	if !matchSelector(patchSelector, obj, holderRef, variables) {
+	if !matchers.MatchesSelector(patchSelector, obj, holderRef, vars) {
 		log.WithValues("selector", patchSelector).Info("not matching selector")
 		return nil
 	}
