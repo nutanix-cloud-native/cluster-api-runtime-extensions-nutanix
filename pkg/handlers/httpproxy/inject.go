@@ -29,8 +29,7 @@ const (
 )
 
 type httpProxyPatchHandler struct {
-	decoder   runtime.Decoder
-	generator *systemdConfigGenerator
+	decoder runtime.Decoder
 }
 
 var (
@@ -47,9 +46,6 @@ func NewPatch() *httpProxyPatchHandler {
 			controlplanev1.GroupVersion,
 			bootstrapv1.GroupVersion,
 		),
-		generator: &systemdConfigGenerator{
-			template: templates.Lookup("systemd.conf.tmpl"),
-		},
 	}
 }
 
@@ -101,14 +97,15 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 			if err := generatePatch(
 				obj, variables, &holderRef, controlPlaneSelector, log,
 				func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-					var err error
 					log.WithValues("namespacedName", types.NamespacedName{
 						Name:      obj.Name,
 						Namespace: obj.Namespace,
 					}).Info("adding files to kubeadm config spec")
-					obj.Spec.Template.Spec.KubeadmConfigSpec.Files, err = h.generator.AddSystemdFiles(
-						httpProxyVariable, obj.Spec.Template.Spec.KubeadmConfigSpec.Files)
-					return err
+					obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
+						obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+						generateSystemdFiles(httpProxyVariable)...,
+					)
+					return nil
 				}); err != nil {
 				return err
 			}
@@ -127,13 +124,15 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 			if err := generatePatch(
 				obj, variables, &holderRef, defaultWorkerSelector, log,
 				func(obj *bootstrapv1.KubeadmConfigTemplate) error {
-					var err error
 					log.WithValues("namespacedName", types.NamespacedName{
 						Name:      obj.Name,
 						Namespace: obj.Namespace,
 					}).Info("adding files to worker node kubeadm config template")
-					obj.Spec.Template.Spec.Files, err = h.generator.AddSystemdFiles(httpProxyVariable, obj.Spec.Template.Spec.Files)
-					return err
+					obj.Spec.Template.Spec.Files = append(
+						obj.Spec.Template.Spec.Files,
+						generateSystemdFiles(httpProxyVariable)...,
+					)
+					return nil
 				}); err != nil {
 				return err
 			}

@@ -16,7 +16,7 @@ var (
 	//go:embed templates
 	sources embed.FS
 
-	templates *template.Template = template.Must(template.ParseFS(sources, "templates/*.tmpl"))
+	templates *template.Template = template.Must(template.ParseFS(sources, "templates/systemd.conf.tmpl")).Templates()[0]
 
 	systemdUnitPaths = []string{
 		"/etc/systemd/system/containerd.service.d/http-proxy.conf",
@@ -24,11 +24,11 @@ var (
 	}
 )
 
-type systemdConfigGenerator struct {
-	template *template.Template
-}
+func generateSystemdFiles(vars HTTPProxyVariables) []bootstrapv1.File {
+	if vars.HTTP == "" && vars.HTTPS == "" && len(vars.NO) == 0 {
+		return nil
+	}
 
-func (g *systemdConfigGenerator) Generate(vars HTTPProxyVariables) (string, error) {
 	tplVars := struct {
 		HTTP  string
 		HTTPS string
@@ -41,23 +41,19 @@ func (g *systemdConfigGenerator) Generate(vars HTTPProxyVariables) (string, erro
 
 	var buf bytes.Buffer
 	err := templates.ExecuteTemplate(&buf, "systemd.conf.tmpl", tplVars)
-	return buf.String(), err
-}
-
-func (g *systemdConfigGenerator) AddSystemdFiles(
-	vars HTTPProxyVariables, dest []bootstrapv1.File,
-) ([]bootstrapv1.File, error) {
-	content, err := g.Generate(vars)
 	if err != nil {
-		return nil, err
+		panic(err) // This should be impossible with the simple template we have.
 	}
+
+	files := make([]bootstrapv1.File, 0, len(systemdUnitPaths))
 
 	for _, path := range systemdUnitPaths {
-		dest = append(dest, bootstrapv1.File{
+		files = append(files, bootstrapv1.File{
 			Path:        path,
 			Permissions: "0640",
-			Content:     content,
+			Content:     buf.String(),
+			Owner:       "root",
 		})
 	}
-	return dest, nil
+	return files
 }
