@@ -6,7 +6,7 @@
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/46412f0a4ea65d8f02478d2ad09ce12925485f56/internal/controllers/topology/cluster/patches/inline/json_patch_generator.go#L125
 //
 //nolint:lll // Long URLs in comments above. Adding nolint:lll here because it doesn't work in comment lines. See: https://github.com/golangci/golangci-lint/issues/3983
-package httpproxy
+package matchers
 
 import (
 	"strconv"
@@ -19,30 +19,30 @@ import (
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 )
 
-func matchSelector(
+func MatchesSelector(
 	selector clusterv1.PatchSelector,
 	obj runtime.Object,
 	holderRef *runtimehooksv1.HolderReference,
 	templateVariables map[string]apiextensionsv1.JSON,
 ) bool {
-	if !matchGVK(selector.APIVersion, selector.Kind, obj) {
+	if !MatchesGVK(selector.APIVersion, selector.Kind, obj) {
 		return false
 	}
 
 	if selector.MatchResources.InfrastructureCluster {
-		if !matchInfrastructure(holderRef) {
+		if !MatchesInfrastructure(holderRef) {
 			return false
 		}
 	}
 
 	if selector.MatchResources.ControlPlane {
-		if !matchControlPlane(holderRef) {
+		if !MatchesControlPlane(holderRef) {
 			return false
 		}
 	}
 
 	if selector.MatchResources.MachineDeploymentClass != nil {
-		if !matchMachineDeploymentClass(
+		if !MatchesMachineDeploymentClass(
 			holderRef,
 			selector.MatchResources.MachineDeploymentClass.Names,
 			templateVariables,
@@ -55,7 +55,7 @@ func matchSelector(
 }
 
 // Check if the apiVersion and kind are matching.
-func matchGVK(apiVersion, kind string, obj runtime.Object) bool {
+func MatchesGVK(apiVersion, kind string, obj runtime.Object) bool {
 	objAPIVersion, objKind := obj.GetObjectKind().GroupVersionKind().ToAPIVersionAndKind()
 	// Check if the apiVersion and kind are matching.
 	if objAPIVersion != apiVersion {
@@ -68,7 +68,7 @@ func matchGVK(apiVersion, kind string, obj runtime.Object) bool {
 }
 
 // Check if the request is for an InfrastructureCluster.
-func matchInfrastructure(holderRef *runtimehooksv1.HolderReference) bool {
+func MatchesInfrastructure(holderRef *runtimehooksv1.HolderReference) bool {
 	// Cluster.spec.infrastructureRef holds the InfrastructureCluster.
 	if holderRef.Kind == "Cluster" && holderRef.FieldPath == "spec.infrastructureRef" {
 		return true
@@ -77,7 +77,7 @@ func matchInfrastructure(holderRef *runtimehooksv1.HolderReference) bool {
 }
 
 // Check if the request is for a ControlPlane or the InfrastructureMachineTemplate of a ControlPlane.
-func matchControlPlane(holderRef *runtimehooksv1.HolderReference) bool {
+func MatchesControlPlane(holderRef *runtimehooksv1.HolderReference) bool {
 	// Cluster.spec.controlPlaneRef holds the ControlPlane.
 	if holderRef.Kind == "Cluster" && holderRef.FieldPath == "spec.controlPlaneRef" {
 		return true
@@ -94,7 +94,7 @@ func matchControlPlane(holderRef *runtimehooksv1.HolderReference) bool {
 
 // Check if the request is for a BootstrapConfigTemplate or an InfrastructureMachineTemplate
 // of one of the configured MachineDeploymentClasses.
-func matchMachineDeploymentClass(
+func MatchesMachineDeploymentClass(
 	holderRef *runtimehooksv1.HolderReference,
 	names []string,
 	templateVariables map[string]apiextensionsv1.JSON,

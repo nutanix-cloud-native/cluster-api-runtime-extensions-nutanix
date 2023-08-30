@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package capi
+package variables
 
 import (
 	"encoding/json"
@@ -10,8 +10,8 @@ import (
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 )
 
-// GetVariable finds and parses variable to given type.
-func GetVariable[T any](
+// Get finds and parses variable to given type.
+func Get[T any](
 	variables map[string]apiextensionsv1.JSON,
 	name string,
 ) (value T, found bool, err error) {
