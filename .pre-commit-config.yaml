@@ -101,6 +101,7 @@ repos:
     name: License headers - YAML and Makefiles
     stages: [commit]
     files: (^Makefile|\.(ya?ml|mk))$
+    exclude: ^pkg/handlers/.+/embedded/.+\.ya?ml$
     args:
       - --license-filepath
       - hack/license-header.txt

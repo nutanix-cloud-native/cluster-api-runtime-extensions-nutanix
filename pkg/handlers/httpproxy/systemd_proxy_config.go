@@ -5,7 +5,7 @@ package httpproxy
 
 import (
 	"bytes"
-	"embed"
+	_ "embed"
 	"strings"
 	"text/template"
 
@@ -13,10 +13,12 @@ import (
 )
 
 var (
-	//go:embed templates
-	sources embed.FS
+	//go:embed templates/systemd.conf.tmpl
+	systemdProxyTemplateContents string
 
-	templates *template.Template = template.Must(template.ParseFS(sources, "templates/systemd.conf.tmpl")).Templates()[0]
+	systemdProxyTemplate *template.Template = template.Must(
+		template.New("systemd.conf.tmpl").Parse(systemdProxyTemplateContents),
+	)
 
 	systemdUnitPaths = []string{
 		"/etc/systemd/system/containerd.service.d/http-proxy.conf",
@@ -40,7 +42,7 @@ func generateSystemdFiles(vars HTTPProxyVariables) []bootstrapv1.File {
 	}
 
 	var buf bytes.Buffer
-	err := templates.ExecuteTemplate(&buf, "systemd.conf.tmpl", tplVars)
+	err := systemdProxyTemplate.Execute(&buf, tplVars)
 	if err != nil {
 		panic(err) // This should be impossible with the simple template we have.
 	}

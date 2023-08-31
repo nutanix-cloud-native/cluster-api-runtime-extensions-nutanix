@@ -19,6 +19,8 @@ handlers:
     enabled: true
   HTTPProxyPatch:
     enabled: true
+  AuditPolicyPatch:
+    enabled: true
 
 deployment:
   replicas: 1

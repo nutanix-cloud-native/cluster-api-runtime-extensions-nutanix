@@ -64,7 +64,13 @@ func (s *Server) AddFlags(prefix string, fs *pflag.FlagSet) {
 	fs.StringSliceVar(
 		&s.enabledHandlers,
 		prefix+".enabled-handlers",
-		[]string{"ServiceLoadBalancerGC", "CalicoCNI", "HTTPProxyPatch", "HTTPProxyVars"},
+		[]string{
+			"ServiceLoadBalancerGC",
+			"CalicoCNI",
+			"HTTPProxyPatch",
+			"HTTPProxyVars",
+			"AuditPolicyPatch",
+		},
 		"list of all enabled handlers",
 	)
 
