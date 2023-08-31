@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package webhooks
+package server
 
 import (
 	"context"
@@ -9,45 +9,36 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/server"
 	ctrl "sigs.k8s.io/controller-runtime"
-	ctrclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
+	"github.com/d2iq-labs/capi-runtime-extensions/server/pkg/handlers"
 )
 
 type Server struct {
+	allExtensionHandlers []handlers.NamedHandler
+
 	webhookPort    int
 	webhookCertDir string
 
 	catalog *runtimecatalog.Catalog
 
 	enabledHandlers []string
-
-	calicoCNIConfig *calico.CalicoCNIConfig
 }
 
-func NewServer() *Server {
+func NewServer(extensionHandlers ...handlers.NamedHandler) *Server {
 	// catalog contains all information about RuntimeHooks.
 	catalog := runtimecatalog.New()
 
 	_ = runtimehooksv1.AddToCatalog(catalog)
 
 	return &Server{
-		catalog:         catalog,
-		webhookPort:     9443,
-		webhookCertDir:  "/runtimehooks-certs/",
-		calicoCNIConfig: &calico.CalicoCNIConfig{},
+		allExtensionHandlers: extensionHandlers,
+		catalog:              catalog,
+		webhookPort:          9443,
+		webhookCertDir:       "/runtimehooks-certs/",
 	}
 }
 
@@ -61,20 +52,17 @@ func (s *Server) AddFlags(prefix string, fs *pflag.FlagSet) {
 		"Runtime hooks server cert dir.",
 	)
 
+	handlerNames := make([]string, 0, len(s.allExtensionHandlers))
+	for _, h := range s.allExtensionHandlers {
+		handlerNames = append(handlerNames, h.Name())
+	}
+
 	fs.StringSliceVar(
 		&s.enabledHandlers,
 		prefix+".enabled-handlers",
-		[]string{
-			"ServiceLoadBalancerGC",
-			"CalicoCNI",
-			"HTTPProxyPatch",
-			"HTTPProxyVars",
-			"AuditPolicyPatch",
-		},
+		handlerNames,
 		"list of all enabled handlers",
 	)
-
-	s.calicoCNIConfig.AddFlags(prefix+".calicocni", fs)
 }
 
 func (s *Server) Start(ctx context.Context) error {
@@ -92,35 +80,8 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 
-	// Lifecycle Hooks
-
-	// Gets a client to access the Kubernetes cluster where this RuntimeExtension will be deployed to
-	restConfig, err := ctrl.GetConfig()
-	if err != nil {
-		setupLog.Error(err, "error getting config for the cluster")
-		return err
-	}
-
-	scheme := runtime.NewScheme()
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(crsv1.AddToScheme(scheme))
-	utilruntime.Must(capiv1.AddToScheme(scheme))
-
-	client, err := ctrclient.New(restConfig, ctrclient.Options{Scheme: scheme})
-	if err != nil {
-		setupLog.Error(err, "error creating client to the cluster")
-		return err
-	}
-
-	allHandlers := []handlers.NamedHandler{
-		servicelbgc.New(client),
-		calico.New(client, *s.calicoCNIConfig),
-		httpproxy.NewVariable(),
-		httpproxy.NewPatch(),
-	}
-
-	for idx := range allHandlers {
-		h := allHandlers[idx]
+	for idx := range s.allExtensionHandlers {
+		h := s.allExtensionHandlers[idx]
 
 		if !slices.Contains(s.enabledHandlers, h.Name()) {
 			continue

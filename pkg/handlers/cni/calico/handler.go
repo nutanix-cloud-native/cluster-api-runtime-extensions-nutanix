@@ -23,10 +23,10 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/parser"
+	"github.com/d2iq-labs/capi-runtime-extensions/server/pkg/handlers"
 )
 
 const (
@@ -66,7 +66,7 @@ func (c *CalicoCNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 
 type CalicoCNI struct {
 	client ctrlclient.Client
-	config CalicoCNIConfig
+	config *CalicoCNIConfig
 }
 
 var (
@@ -76,7 +76,7 @@ var (
 	calicoInstallationGK = schema.GroupKind{Group: "operator.tigera.io", Kind: "Installation"}
 )
 
-func New(c ctrlclient.Client, cfg CalicoCNIConfig) *CalicoCNI {
+func New(c ctrlclient.Client, cfg *CalicoCNIConfig) *CalicoCNI {
 	return &CalicoCNI{
 		client: c,
 		config: cfg,

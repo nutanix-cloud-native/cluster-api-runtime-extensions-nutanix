@@ -52,8 +52,8 @@ github.com/cespare/xxhash/v2 v2.2.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/coredns/caddy v1.1.0 h1:ezvsPrT/tA/7pYDBZxu0cT0VmWk75AfIaf6GSYCNMf0=
 github.com/coredns/caddy v1.1.0/go.mod h1:A6ntJQlAWuQfFlsd9hvigKbo2WS0VUs2l1e2F+BawD4=
-github.com/coredns/corefile-migration v1.0.20 h1:MdOkT6F3ehju/n9tgxlGct8XAajOX2vN+wG7To4BWSI=
-github.com/coredns/corefile-migration v1.0.20/go.mod h1:XnhgULOEouimnzgn0t4WPuFDN2/PJQcTxdWKC5eXNGE=
+github.com/coredns/corefile-migration v1.0.21 h1:W/DCETrHDiFo0Wj03EyMkaQ9fwsmSgqTCQDHpceaSsE=
+github.com/coredns/corefile-migration v1.0.21/go.mod h1:XnhgULOEouimnzgn0t4WPuFDN2/PJQcTxdWKC5eXNGE=
 github.com/coreos/bbolt v1.3.2/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=
 github.com/coreos/etcd v3.3.13+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/go-semver v0.3.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
@@ -567,8 +567,8 @@ k8s.io/utils v0.0.0-20230406110748-d93618cff8a2/go.mod h1:OLgZIPagt7ERELqWJFomSt
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.1.2 h1:trsWhjU5jZrx6UvFu4WzQDrN7Pga4a7Qg+zcfcj64PA=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.1.2/go.mod h1:+qG7ISXqCDVVcyO8hLn12AKVYYUjM7ftlqsqmrhMZE0=
-sigs.k8s.io/cluster-api v1.5.0 h1:pwXvzScbAwnrB7EWHTApzW+VQfrj2OSrWAQDC9+bcbU=
-sigs.k8s.io/cluster-api v1.5.0/go.mod h1:ZSEP01t8oT6104gB4ljsOwwp5uJcI8SWy8IFp2HUvrc=
+sigs.k8s.io/cluster-api v1.5.1 h1:+oO4EbVQcbBJr5wjqmdjvewPHSTbVLigXZqPk3ZO8t0=
+sigs.k8s.io/cluster-api v1.5.1/go.mod h1:EGJUNpFWi7dF426tO8MG/jE+w7T0UO5KyMnOwQ5riUY=
 sigs.k8s.io/controller-runtime v0.16.0 h1:5koYaaRVBHDr0LZAJjO5dWzUjMsh6cwa7q1Mmusrdvk=
 sigs.k8s.io/controller-runtime v0.16.0/go.mod h1:77DnuwA8+J7AO0njzv3wbNlMOnGuLrwFr8JPNwx3J7g=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd h1:EDPBXCAspyGV4jQlpZSudPeMmr1bNJefnuqLsRAsHZo=

@@ -13,7 +13,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/server/pkg/handlers"
 )
 
 type ServiceLoadBalancerGC struct {
