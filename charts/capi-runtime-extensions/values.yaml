@@ -21,6 +21,10 @@ handlers:
     enabled: true
   AuditPolicyPatch:
     enabled: true
+  APIServerCertSANsVars:
+    enabled: true
+  APIServerCertSANsPatch:
+    enabled: true
 
 deployment:
   replicas: 1

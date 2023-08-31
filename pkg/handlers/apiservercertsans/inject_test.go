@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package auditpolicy_test
+package apiservercertsans
 
 import (
 	"bytes"
@@ -12,28 +12,34 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"gomodules.xyz/jsonpatch/v2"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/auditpolicy"
 )
 
 func TestGeneratePatches(t *testing.T) {
 	g := NewWithT(t)
-	h := auditpolicy.NewPatch()
+	h := NewPatch()
 	req := &runtimehooksv1.GeneratePatchesRequest{}
 	resp := &runtimehooksv1.GeneratePatchesResponse{}
 	h.GeneratePatches(context.Background(), req, resp)
 	g.Expect(resp.Status).To(Equal(runtimehooksv1.ResponseStatusSuccess))
+	g.Expect(resp.Items).To(BeEmpty())
 }
 
 func TestGeneratePatches_KubeadmControlPlaneTemplate(t *testing.T) {
 	g := NewWithT(t)
-	h := auditpolicy.NewPatch()
+	h := NewPatch()
 	req := &runtimehooksv1.GeneratePatchesRequest{
+		Variables: []runtimehooksv1.Variable{
+			newVariable(
+				VariableName,
+				APIServerCertSANsVariables{"a.b.c.example.com", "d.e.f.example.com"},
+			),
+		},
 		Items: []runtimehooksv1.GeneratePatchesRequestItem{
 			requestItem(
 				"1",
@@ -64,50 +70,17 @@ func TestGeneratePatches_KubeadmControlPlaneTemplate(t *testing.T) {
 				}
 				return operations, nil
 			},
-			ConsistOf(
-				MatchAllFields(Fields{
-					"Operation": Equal("add"),
-					"Path":      Equal("/spec/template/spec/kubeadmConfigSpec/files"),
-					"Value":     HaveLen(1),
-				}),
-				MatchAllFields(Fields{
-					"Operation": Equal("add"),
-					"Path": Equal(
-						"/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
+			ConsistOf(MatchAllFields(Fields{
+				"Operation": Equal("add"),
+				"Path":      Equal("/spec/template/spec/kubeadmConfigSpec/clusterConfiguration"),
+				"Value": HaveKeyWithValue(
+					"apiServer",
+					HaveKeyWithValue(
+						"certSANs",
+						[]interface{}{"a.b.c.example.com", "d.e.f.example.com"},
 					),
-					"Value": HaveKeyWithValue(
-						"apiServer",
-						SatisfyAll(
-							HaveKeyWithValue(
-								"extraArgs",
-								map[string]interface{}{
-									"audit-log-maxbackup": "10",
-									"audit-log-maxsize":   "100",
-									"audit-log-path":      "/var/log/audit/kube-apiserver-audit.log",
-									"audit-policy-file":   "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml",
-									"audit-log-maxage":    "30",
-								},
-							),
-							HaveKeyWithValue(
-								"extraVolumes",
-								[]interface{}{
-									map[string]interface{}{
-										"hostPath":  "/etc/kubernetes/audit-policy/",
-										"mountPath": "/etc/kubernetes/audit-policy/",
-										"name":      "audit-policy",
-										"readOnly":  true,
-									},
-									map[string]interface{}{
-										"name":      "audit-logs",
-										"hostPath":  "/var/log/kubernetes/audit",
-										"mountPath": "/var/log/audit/",
-									},
-								},
-							),
-						),
-					),
-				}),
-			),
+				),
+			})),
 		),
 	})))
 }
@@ -136,5 +109,13 @@ func requestItem(
 			Raw: toJSON(object),
 		},
 		HolderReference: *holderRef,
+	}
+}
+
+// newVariable returns a runtimehooksv1.Variable with the passed name and value.
+func newVariable(name string, value any) runtimehooksv1.Variable {
+	return runtimehooksv1.Variable{
+		Name:  name,
+		Value: apiextensionsv1.JSON{Raw: toJSON(value)},
 	}
 }

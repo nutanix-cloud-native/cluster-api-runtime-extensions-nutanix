@@ -31,13 +31,13 @@ metadata:
 spec:
   topology:
     variables:
-      name: proxy
-      values:
-        http: http://example.com
-        https: http://example.com
-        no:
-          - http://no-proxy-1.example.com
-          - http://no-proxy-2.example.com
+      - name: proxy
+        value:
+          http: http://example.com
+          https: http://example.com
+          no:
+            - http://no-proxy-1.example.com
+            - http://no-proxy-2.example.com
 ```
 
 Applying this configuration will result in new bootstrap files on the `KubeadmControlPlaneTemplate`

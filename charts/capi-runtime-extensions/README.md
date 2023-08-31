@@ -31,6 +31,8 @@ A Helm chart for capi-runtime-extensions
 | controllers.enableLeaderElection | bool | `false` |  |
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
+| handlers.APIServerCertSANsPatch.enabled | bool | `true` |  |
+| handlers.APIServerCertSANsVars.enabled | bool | `true` |  |
 | handlers.AuditPolicyPatch.enabled | bool | `true` |  |
 | handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.content | string | `""` |  |
 | handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.name | string | `"calico-cni-installation-dockercluster"` |  |

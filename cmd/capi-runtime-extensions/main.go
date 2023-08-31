@@ -25,6 +25,7 @@ import (
 	ctrclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/internal/controllermanager"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/apiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
@@ -79,6 +80,8 @@ func main() {
 		calico.New(client, calicoCNIConfig),
 		httpproxy.NewVariable(),
 		httpproxy.NewPatch(),
+		apiservercertsans.NewVariable(),
+		apiservercertsans.NewPatch(),
 	)
 
 	// Initialize and parse command line flags.
