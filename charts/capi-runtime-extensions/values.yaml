@@ -25,6 +25,10 @@ handlers:
     enabled: true
   ExtraAPIServerCertSANsPatch:
     enabled: true
+  DNSVars:
+    enabled: true
+  DNSPatch:
+    enabled: true
 
 deployment:
   replicas: 1

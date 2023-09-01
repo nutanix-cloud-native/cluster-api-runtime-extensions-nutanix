@@ -27,6 +27,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
 	"github.com/d2iq-labs/capi-runtime-extensions/internal/controllermanager"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/dns"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/extraapiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
@@ -82,6 +83,8 @@ func main() {
 		httpproxy.NewPatch(),
 		extraapiservercertsans.NewVariable(),
 		extraapiservercertsans.NewPatch(),
+		dns.NewVariable(),
+		dns.NewPatch(),
 	)
 
 	// Initialize and parse command line flags.

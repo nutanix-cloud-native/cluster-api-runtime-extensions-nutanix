@@ -149,6 +149,24 @@
               "default": true
             }
           }
+        },
+        "DNSVars": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "DNSPatch": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            }
+          }
         }
       }
     },
