@@ -38,6 +38,8 @@ A Helm chart for capi-runtime-extensions
 | handlers.CalicoCNI.defaultPodSubnet | string | `"192.168.0.0/16"` |  |
 | handlers.CalicoCNI.defaultTigeraOperatorConfigMap.name | string | `"tigera-operator"` |  |
 | handlers.CalicoCNI.enabled | bool | `true` |  |
+| handlers.ExtraAPIServerCertSANsPatch.enabled | bool | `true` |  |
+| handlers.ExtraAPIServerCertSANsVars.enabled | bool | `true` |  |
 | handlers.HTTPProxyPatch.enabled | bool | `true` |  |
 | handlers.HTTPProxyVars.enabled | bool | `true` |  |
 | handlers.ServiceLoadBalancerGC.enabled | bool | `true` |  |

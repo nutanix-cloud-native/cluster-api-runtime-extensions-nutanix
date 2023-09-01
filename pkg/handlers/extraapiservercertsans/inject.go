@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package auditpolicy
+package extraapiservercertsans
 
 import (
 	"context"
@@ -20,32 +20,28 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/patches/selectors"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/variables"
 )
 
 const (
 	// HandlerNamePatch is the name of the inject handler.
-	HandlerNamePatch = "AuditPolicy"
+	HandlerNamePatch = "ExtraAPIServerCertSANsPatch"
 )
 
-type auditPolicyPatchHandler struct {
+type extraAPIServerCertSANsPatchHandler struct {
 	decoder runtime.Decoder
 }
 
 var (
-	_ handlers.NamedHandler                   = &auditPolicyPatchHandler{}
-	_ handlers.GeneratePatchesMutationHandler = &auditPolicyPatchHandler{}
-
-	//go:embed embedded/apiserver-audit-policy.yaml
-	auditPolicy string
+	_ handlers.NamedHandler                   = &extraAPIServerCertSANsPatchHandler{}
+	_ handlers.GeneratePatchesMutationHandler = &extraAPIServerCertSANsPatchHandler{}
 )
 
-const auditPolicyPath = "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml"
-
-func NewPatch() *auditPolicyPatchHandler {
+func NewPatch() *extraAPIServerCertSANsPatchHandler {
 	scheme := runtime.NewScheme()
 	_ = bootstrapv1.AddToScheme(scheme)
 	_ = controlplanev1.AddToScheme(scheme)
-	return &auditPolicyPatchHandler{
+	return &extraAPIServerCertSANsPatchHandler{
 		decoder: serializer.NewCodecFactory(scheme).UniversalDecoder(
 			controlplanev1.GroupVersion,
 			bootstrapv1.GroupVersion,
@@ -53,11 +49,11 @@ func NewPatch() *auditPolicyPatchHandler {
 	}
 }
 
-func (h *auditPolicyPatchHandler) Name() string {
+func (h *extraAPIServerCertSANsPatchHandler) Name() string {
 	return HandlerNamePatch
 }
 
-func (h *auditPolicyPatchHandler) GeneratePatches(
+func (h *extraAPIServerCertSANsPatchHandler) GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
@@ -77,55 +73,37 @@ func (h *auditPolicyPatchHandler) GeneratePatches(
 				"holderRef", holderRef,
 			)
 
+			extraAPIServerCertSANsVar, found, err := variables.Get[ExtraAPIServerCertSANsVariables](
+				vars,
+				VariableName,
+			)
+			if err != nil {
+				return err
+			}
+			if !found {
+				log.V(5).Info("Extra API server cert SANs variable not defined")
+				return nil
+			}
+
+			log = log.WithValues(
+				"variableName",
+				VariableName,
+				"variableValue",
+				extraAPIServerCertSANsVar,
+			)
+
 			return patches.Generate(
 				obj, vars, &holderRef, selectors.ControlPlane(), log,
 				func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 					log.WithValues(
 						"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 						"patchedObjectName", client.ObjectKeyFromObject(obj),
-					).Info("adding files and updating API server extra args in kubeadm config spec")
-
-					obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
-						obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-						bootstrapv1.File{
-							Path:        auditPolicyPath,
-							Permissions: "0600",
-							Content:     auditPolicy,
-						},
-					)
+					).Info("adding API server extra cert SANs in kubeadm config spec")
 
 					if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 						obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
 					}
-					apiServer := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer
-					if apiServer.ExtraArgs == nil {
-						apiServer.ExtraArgs = make(map[string]string, 5)
-					}
-
-					apiServer.ExtraArgs["audit-log-path"] = "/var/log/audit/kube-apiserver-audit.log"
-					apiServer.ExtraArgs["audit-log-maxage"] = "30"
-					apiServer.ExtraArgs["audit-log-maxbackup"] = "10"
-					apiServer.ExtraArgs["audit-log-maxsize"] = "100"
-					apiServer.ExtraArgs["audit-policy-file"] = auditPolicyPath
-
-					if apiServer.ExtraVolumes == nil {
-						apiServer.ExtraVolumes = make([]bootstrapv1.HostPathMount, 0, 2)
-					}
-
-					apiServer.ExtraVolumes = append(
-						apiServer.ExtraVolumes,
-						bootstrapv1.HostPathMount{
-							Name:      "audit-policy",
-							HostPath:  "/etc/kubernetes/audit-policy/",
-							MountPath: "/etc/kubernetes/audit-policy/",
-							ReadOnly:  true,
-						},
-						bootstrapv1.HostPathMount{
-							Name:      "audit-logs",
-							HostPath:  "/var/log/kubernetes/audit",
-							MountPath: "/var/log/audit/",
-						},
-					)
+					obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.CertSANs = extraAPIServerCertSANsVar
 
 					return nil
 				},

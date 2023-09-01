@@ -7,7 +7,7 @@
             "path": "."
         },
         {
-            "path": "./server"
+            "path": "./common"
         }
     ],
     "settings": {
