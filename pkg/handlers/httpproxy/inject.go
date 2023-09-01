@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/variables"
@@ -32,8 +33,8 @@ type httpProxyPatchHandler struct {
 }
 
 var (
-	_ handlers.NamedHandler                   = &httpProxyPatchHandler{}
-	_ handlers.GeneratePatchesMutationHandler = &httpProxyPatchHandler{}
+	_ handlers.Named           = &httpProxyPatchHandler{}
+	_ mutation.GeneratePatches = &httpProxyPatchHandler{}
 )
 
 func NewPatch() *httpProxyPatchHandler {

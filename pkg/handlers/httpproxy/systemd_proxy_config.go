@@ -27,7 +27,7 @@ var (
 )
 
 func generateSystemdFiles(vars HTTPProxyVariables) []bootstrapv1.File {
-	if vars.HTTP == "" && vars.HTTPS == "" && len(vars.NO) == 0 {
+	if vars.HTTP == "" && vars.HTTPS == "" && len(vars.No) == 0 {
 		return nil
 	}
 
@@ -38,7 +38,7 @@ func generateSystemdFiles(vars HTTPProxyVariables) []bootstrapv1.File {
 	}{
 		HTTP:  vars.HTTP,
 		HTTPS: vars.HTTPS,
-		NO:    strings.Join(vars.NO, ","),
+		NO:    strings.Join(vars.No, ","),
 	}
 
 	var buf bytes.Buffer

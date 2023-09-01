@@ -40,7 +40,7 @@ func TestGeneratePatches_KubeadmControlPlaneTemplate(t *testing.T) {
 			newVariable(httpproxy.VariableName, httpproxy.HTTPProxyVariables{
 				HTTP:  "http://example.com",
 				HTTPS: "https://example.com",
-				NO:    []string{"https://no-proxy.example.com"},
+				No:    []string{"https://no-proxy.example.com"},
 			}),
 		},
 		Items: []runtimehooksv1.GeneratePatchesRequestItem{
@@ -90,7 +90,7 @@ func TestGeneratePatches_KubeadmConfigTemplate(t *testing.T) {
 			newVariable(httpproxy.VariableName, httpproxy.HTTPProxyVariables{
 				HTTP:  "http://example.com",
 				HTTPS: "https://example.com",
-				NO:    []string{"https://no-proxy.example.com"},
+				No:    []string{"https://no-proxy.example.com"},
 			}),
 			newVariable("builtin", map[string]any{
 				"machineDeployment": map[string]any{
