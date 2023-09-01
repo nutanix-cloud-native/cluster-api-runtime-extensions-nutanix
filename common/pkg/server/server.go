@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/cluster-api/exp/runtime/server"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/server/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
 )
 
 type Server struct {

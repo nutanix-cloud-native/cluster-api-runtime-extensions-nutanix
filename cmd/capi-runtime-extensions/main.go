@@ -24,12 +24,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
 	"github.com/d2iq-labs/capi-runtime-extensions/internal/controllermanager"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/apiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/extraapiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
-	"github.com/d2iq-labs/capi-runtime-extensions/server/pkg/server"
 )
 
 var (
@@ -80,8 +80,8 @@ func main() {
 		calico.New(client, calicoCNIConfig),
 		httpproxy.NewVariable(),
 		httpproxy.NewPatch(),
-		apiservercertsans.NewVariable(),
-		apiservercertsans.NewPatch(),
+		extraapiservercertsans.NewVariable(),
+		extraapiservercertsans.NewPatch(),
 	)
 
 	// Initialize and parse command line flags.

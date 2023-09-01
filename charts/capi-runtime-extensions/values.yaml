@@ -21,9 +21,9 @@ handlers:
     enabled: true
   AuditPolicyPatch:
     enabled: true
-  APIServerCertSANsVars:
+  ExtraAPIServerCertSANsVars:
     enabled: true
-  APIServerCertSANsPatch:
+  ExtraAPIServerCertSANsPatch:
     enabled: true
 
 deployment:

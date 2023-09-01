@@ -31,8 +31,6 @@ A Helm chart for capi-runtime-extensions
 | controllers.enableLeaderElection | bool | `false` |  |
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
-| handlers.APIServerCertSANsPatch.enabled | bool | `true` |  |
-| handlers.APIServerCertSANsVars.enabled | bool | `true` |  |
 | handlers.AuditPolicyPatch.enabled | bool | `true` |  |
 | handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.content | string | `""` |  |
 | handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.name | string | `"calico-cni-installation-dockercluster"` |  |
@@ -40,6 +38,8 @@ A Helm chart for capi-runtime-extensions
 | handlers.CalicoCNI.defaultPodSubnet | string | `"192.168.0.0/16"` |  |
 | handlers.CalicoCNI.defaultTigeraOperatorConfigMap.name | string | `"tigera-operator"` |  |
 | handlers.CalicoCNI.enabled | bool | `true` |  |
+| handlers.ExtraAPIServerCertSANsPatch.enabled | bool | `true` |  |
+| handlers.ExtraAPIServerCertSANsVars.enabled | bool | `true` |  |
 | handlers.HTTPProxyPatch.enabled | bool | `true` |  |
 | handlers.HTTPProxyVars.enabled | bool | `true` |  |
 | handlers.ServiceLoadBalancerGC.enabled | bool | `true` |  |

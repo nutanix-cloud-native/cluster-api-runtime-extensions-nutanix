@@ -33,7 +33,7 @@ func Generate[T runtime.Object](
 	}
 
 	if !matchers.MatchesSelector(patchSelector, obj, holderRef, vars) {
-		log.WithValues("selector", patchSelector).Info("not matching selector")
+		log.V(5).WithValues("selector", patchSelector).Info("not matching selector")
 		return nil
 	}
 

@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package apiservercertsans
+package extraapiservercertsans
 
 import (
 	"bytes"
@@ -37,7 +37,7 @@ func TestGeneratePatches_KubeadmControlPlaneTemplate(t *testing.T) {
 		Variables: []runtimehooksv1.Variable{
 			newVariable(
 				VariableName,
-				APIServerCertSANsVariables{"a.b.c.example.com", "d.e.f.example.com"},
+				ExtraAPIServerCertSANsVariables{"a.b.c.example.com", "d.e.f.example.com"},
 			),
 		},
 		Items: []runtimehooksv1.GeneratePatchesRequestItem{
