@@ -32,13 +32,16 @@ spec:
   topology:
     variables:
       - name: proxy
-        value:
+        values:
           http: http://example.com
-          https: https://example.com
-          no:
+          https: http://example.com
+          additionalNo:
             - no-proxy-1.example.com
             - no-proxy-2.example.com
 ```
+
+The `additionalNo` list will be added to default pre-calculated values that apply on k8s networking
+`localhost,127.0.0.1,<POD CIDRS>,<SERVICE CIDRS>,kubernetes,kubernetes.default,.svc,.svc.cluster.local`.
 
 Applying this configuration will result in new bootstrap files on the `KubeadmControlPlaneTemplate`
 and `KubeadmConfigTemplate`.

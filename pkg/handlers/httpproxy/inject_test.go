@@ -8,7 +8,9 @@ import (
 
 	. "github.com/onsi/gomega"
 	"k8s.io/apiserver/pkg/storage/names"
+	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
 )
@@ -16,7 +18,10 @@ import (
 func TestGeneratePatches(t *testing.T) {
 	capitest.ValidateGeneratePatches(
 		t,
-		NewPatch,
+		func() *httpProxyPatchHandler {
+			fakeClient := fake.NewClientBuilder().Build()
+			return NewPatch(fakeClient)
+		},
 		capitest.PatchTestDef{
 			Name: "unset variable",
 		},
@@ -26,9 +31,9 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					VariableName,
 					HTTPProxyVariables{
-						HTTP:  "http://example.com",
-						HTTPS: "https://example.com",
-						No:    []string{"no-proxy.example.com"},
+						HTTP:         "http://example.com",
+						HTTPS:        "https://example.com",
+						AdditionalNo: []string{"no-proxy.example.com"},
 					},
 				),
 				capitest.VariableWithValue(
@@ -53,9 +58,9 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					VariableName,
 					HTTPProxyVariables{
-						HTTP:  "http://example.com",
-						HTTPS: "https://example.com",
-						No:    []string{"no-proxy.example.com"},
+						HTTP:         "http://example.com",
+						HTTPS:        "https://example.com",
+						AdditionalNo: []string{"no-proxy.example.com"},
 					},
 				),
 				capitest.VariableWithValue(
@@ -80,9 +85,9 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					VariableName,
 					HTTPProxyVariables{
-						HTTP:  "http://example.com",
-						HTTPS: "https://example.com",
-						No:    []string{"no-proxy.example.com"},
+						HTTP:         "http://example.com",
+						HTTPS:        "https://example.com",
+						AdditionalNo: []string{"no-proxy.example.com"},
 					},
 				),
 			},
@@ -94,4 +99,98 @@ func TestGeneratePatches(t *testing.T) {
 			}},
 		},
 	)
+}
+
+func TestGenerateNoProxy(t *testing.T) {
+	t.Parallel()
+	g := NewWithT(t)
+
+	testCases := []struct {
+		name            string
+		cluster         *capiv1.Cluster
+		expectedNoProxy []string
+	}{
+		{
+			name:    "no networking config",
+			cluster: &capiv1.Cluster{},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+				".svc", ".svc.cluster.local",
+			},
+		},
+		{
+			name: "custom pod network",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					ClusterNetwork: &capiv1.ClusterNetwork{
+						Pods: &capiv1.NetworkRanges{
+							CIDRBlocks: []string{"10.0.0.0/24", "10.0.1.0/24"},
+						},
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "10.0.0.0/24", "10.0.1.0/24", "kubernetes",
+				"kubernetes.default", ".svc", ".svc.cluster.local",
+			},
+		},
+		{
+			name: "custom service network",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					ClusterNetwork: &capiv1.ClusterNetwork{
+						Services: &capiv1.NetworkRanges{
+							CIDRBlocks: []string{"172.16.0.0/24", "172.16.1.0/24"},
+						},
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "172.16.0.0/24", "172.16.1.0/24", "kubernetes",
+				"kubernetes.default", ".svc", ".svc.cluster.local",
+			},
+		},
+		{
+			name: "custom servicedomain",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					ClusterNetwork: &capiv1.ClusterNetwork{
+						ServiceDomain: "foo.bar",
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+				".svc", ".svc.foo.bar",
+			},
+		},
+		{
+			name: "all options",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					ClusterNetwork: &capiv1.ClusterNetwork{
+						Pods: &capiv1.NetworkRanges{
+							CIDRBlocks: []string{"10.10.0.0/16"},
+						},
+						Services: &capiv1.NetworkRanges{
+							CIDRBlocks: []string{"172.16.0.0/16"},
+						},
+						ServiceDomain: "foo.bar",
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "10.10.0.0/16", "172.16.0.0/16", "kubernetes",
+				"kubernetes.default", ".svc", ".svc.foo.bar",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(tt *testing.T) {
+			tt.Parallel()
+			g.Expect(generateNoProxy(tc.cluster)).To(Equal(tc.expectedNoProxy))
+		})
+	}
 }

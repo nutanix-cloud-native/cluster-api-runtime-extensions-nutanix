@@ -26,10 +26,14 @@ var (
 	}
 )
 
-func generateSystemdFiles(vars HTTPProxyVariables) []bootstrapv1.File {
-	if vars.HTTP == "" && vars.HTTPS == "" && len(vars.No) == 0 {
+func generateSystemdFiles(vars HTTPProxyVariables, noProxy []string) []bootstrapv1.File {
+	if vars.HTTP == "" && vars.HTTPS == "" && len(vars.AdditionalNo) == 0 {
 		return nil
 	}
+
+	allNoProxy := []string{}
+	allNoProxy = append(allNoProxy, noProxy...)
+	allNoProxy = append(allNoProxy, vars.AdditionalNo...)
 
 	tplVars := struct {
 		HTTP  string
@@ -38,7 +42,7 @@ func generateSystemdFiles(vars HTTPProxyVariables) []bootstrapv1.File {
 	}{
 		HTTP:  vars.HTTP,
 		HTTPS: vars.HTTPS,
-		NO:    strings.Join(vars.No, ","),
+		NO:    strings.Join(allNoProxy, ","),
 	}
 
 	var buf bytes.Buffer

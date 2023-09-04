@@ -58,8 +58,11 @@ type HTTPProxyVariables struct {
 	// HTTPS proxy.
 	HTTPS string `json:"https,omitempty"`
 
-	// No Proxy list.
-	No []string `json:"no,omitempty"`
+	// AdditionalNo Proxy list that will be added to the automatically calculated
+	// values that will apply no_proxy configuration for cluster internal network.
+	// Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
+	//   ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
+	AdditionalNo []string `json:"additionalNo"`
 }
 
 // VariableSchema provides Cluster Class variable schema definition.
@@ -76,9 +79,12 @@ func (HTTPProxyVariables) VariableSchema() clusterv1.VariableSchema {
 					Description: "HTTPS proxy value.",
 					Type:        "string",
 				},
-				"no": {
-					Description: "No Proxy list.",
-					Type:        "array",
+				"additionalNo": {
+					Description: "Additional No Proxy list that will be added to the automatically calculated " +
+						"values that will apply no_proxy configuration for cluster internal network. " +
+						"Default value: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes," +
+						"kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>",
+					Type: "array",
 					Items: &clusterv1.JSONSchemaProps{
 						Type: "string",
 					},

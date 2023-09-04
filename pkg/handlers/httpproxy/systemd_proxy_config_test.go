@@ -16,68 +16,84 @@ func TestGenerateSystemdFiles(t *testing.T) {
 	tests := []struct {
 		name             string
 		vars             HTTPProxyVariables
+		noProxy          []string
 		expectedContents string
-	}{{
-		name: "no proxy configuration",
-	}, {
-		name: "all vars set",
-		vars: HTTPProxyVariables{
-			HTTP:  "http://example.com",
-			HTTPS: "https://example.com",
-			No: []string{
-				"https://no-proxy.example.com",
+	}{
+		{
+			name: "no proxy configuration",
+		}, {
+			name: "all vars set",
+			vars: HTTPProxyVariables{
+				HTTP:  "http://example.com",
+				HTTPS: "https://example.com",
+				AdditionalNo: []string{
+					"no-proxy.example.com",
+				},
 			},
-		},
-		expectedContents: `[Service]
+			expectedContents: `[Service]
 Environment="HTTP_PROXY=http://example.com"
 Environment="http_proxy=http://example.com"
 Environment="HTTPS_PROXY=https://example.com"
 Environment="https_proxy=https://example.com"
-Environment="NO_PROXY=https://no-proxy.example.com"
-Environment="no_proxy=https://no-proxy.example.com"
+Environment="NO_PROXY=no-proxy.example.com"
+Environment="no_proxy=no-proxy.example.com"
 `,
-	}, {
-		name: "http only",
-		vars: HTTPProxyVariables{
-			HTTP: "http://example.com",
-		},
-		expectedContents: `[Service]
+		}, {
+			name: "http only",
+			vars: HTTPProxyVariables{
+				HTTP: "http://example.com",
+			},
+			expectedContents: `[Service]
 Environment="HTTP_PROXY=http://example.com"
 Environment="http_proxy=http://example.com"
 `,
-	}, {
-		name: "https only",
-		vars: HTTPProxyVariables{
-			HTTPS: "https://example.com",
-		},
-		expectedContents: `[Service]
+		}, {
+			name: "https only",
+			vars: HTTPProxyVariables{
+				HTTPS: "https://example.com",
+			},
+			expectedContents: `[Service]
 Environment="HTTPS_PROXY=https://example.com"
 Environment="https_proxy=https://example.com"
 `,
-	}, {
-		name: "no proxy only",
-		vars: HTTPProxyVariables{
-			No: []string{
-				"https://no-proxy.example.com",
+		}, {
+			name: "no proxy only",
+			vars: HTTPProxyVariables{
+				AdditionalNo: []string{
+					"no-proxy.example.com",
+				},
 			},
-		},
-		expectedContents: `[Service]
-Environment="NO_PROXY=https://no-proxy.example.com"
-Environment="no_proxy=https://no-proxy.example.com"
+			expectedContents: `[Service]
+Environment="NO_PROXY=no-proxy.example.com"
+Environment="no_proxy=no-proxy.example.com"
 `,
-	}, {
-		name: "multiple no proxy only",
-		vars: HTTPProxyVariables{
-			No: []string{
-				"https://no-proxy.example.com",
-				"https://no-proxy-1.example.com",
+		}, {
+			name: "multiple no proxy only",
+			vars: HTTPProxyVariables{
+				AdditionalNo: []string{
+					"no-proxy.example.com",
+					"no-proxy-1.example.com",
+				},
 			},
-		},
-		expectedContents: `[Service]
-Environment="NO_PROXY=https://no-proxy.example.com,https://no-proxy-1.example.com"
-Environment="no_proxy=https://no-proxy.example.com,https://no-proxy-1.example.com"
+			expectedContents: `[Service]
+Environment="NO_PROXY=no-proxy.example.com,no-proxy-1.example.com"
+Environment="no_proxy=no-proxy.example.com,no-proxy-1.example.com"
 `,
-	}}
+		}, {
+			name: "default no proxy values",
+			vars: HTTPProxyVariables{
+				AdditionalNo: []string{
+					"no-proxy.example.com",
+					"no-proxy-1.example.com",
+				},
+			},
+			noProxy: []string{"localhost", "127.0.0.1"},
+			expectedContents: `[Service]
+Environment="NO_PROXY=localhost,127.0.0.1,no-proxy.example.com,no-proxy-1.example.com"
+Environment="no_proxy=localhost,127.0.0.1,no-proxy.example.com,no-proxy-1.example.com"
+`,
+		},
+	}
 
 	for idx := range tests {
 		tt := tests[idx]
@@ -101,7 +117,7 @@ Environment="no_proxy=https://no-proxy.example.com,https://no-proxy-1.example.co
 				}}
 			}
 
-			g.Expect(generateSystemdFiles(tt.vars)).Should(Equal(expectedFiles))
+			g.Expect(generateSystemdFiles(tt.vars, tt.noProxy)).Should(Equal(expectedFiles))
 		})
 	}
 }

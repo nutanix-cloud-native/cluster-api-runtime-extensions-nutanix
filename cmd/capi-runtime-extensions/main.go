@@ -79,7 +79,7 @@ func main() {
 		servicelbgc.New(client),
 		calico.New(client, calicoCNIConfig),
 		httpproxy.NewVariable(),
-		httpproxy.NewPatch(),
+		httpproxy.NewPatch(client),
 		extraapiservercertsans.NewVariable(),
 		extraapiservercertsans.NewPatch(),
 	)
