@@ -25,7 +25,7 @@ type VariableTestDef struct {
 	ExpectError bool
 }
 
-func ValidateVariable[T mutation.DiscoverVariables](
+func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 	t *testing.T,
 	variableName string,
 	variableSchema *clusterv1.VariableSchema,

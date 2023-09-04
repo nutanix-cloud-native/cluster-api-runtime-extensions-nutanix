@@ -12,7 +12,7 @@ import (
 )
 
 func TestVariableValidation(t *testing.T) {
-	capitest.ValidateVariable(
+	capitest.ValidateDiscoverVariables(
 		t,
 		VariableName,
 		ptr.To(ExtraAPIServerCertSANsVariables{}.VariableSchema()),
