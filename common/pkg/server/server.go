@@ -15,10 +15,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers/lifecycle"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers/mutation"
 )
 
 type Server struct {
-	allExtensionHandlers []handlers.NamedHandler
+	allExtensionHandlers []handlers.Named
 
 	webhookPort    int
 	webhookCertDir string
@@ -28,7 +30,7 @@ type Server struct {
 	enabledHandlers []string
 }
 
-func NewServer(extensionHandlers ...handlers.NamedHandler) *Server {
+func NewServer(extensionHandlers ...handlers.Named) *Server {
 	// catalog contains all information about RuntimeHooks.
 	catalog := runtimecatalog.New()
 
@@ -87,7 +89,7 @@ func (s *Server) Start(ctx context.Context) error {
 			continue
 		}
 
-		if t, ok := h.(handlers.BeforeClusterCreateLifecycleHandler); ok {
+		if t, ok := h.(lifecycle.BeforeClusterCreate); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterCreate,
 				Name:        strings.ToLower(h.Name()),
@@ -98,7 +100,7 @@ func (s *Server) Start(ctx context.Context) error {
 			}
 		}
 
-		if t, ok := h.(handlers.AfterControlPlaneInitializedLifecycleHandler); ok {
+		if t, ok := h.(lifecycle.AfterControlPlaneInitialized); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.AfterControlPlaneInitialized,
 				Name:        strings.ToLower(h.Name()),
@@ -109,7 +111,7 @@ func (s *Server) Start(ctx context.Context) error {
 			}
 		}
 
-		if t, ok := h.(handlers.BeforeClusterUpgradeLifecycleHandler); ok {
+		if t, ok := h.(lifecycle.BeforeClusterUpgrade); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterUpgrade,
 				Name:        strings.ToLower(h.Name()),
@@ -120,7 +122,7 @@ func (s *Server) Start(ctx context.Context) error {
 			}
 		}
 
-		if t, ok := h.(handlers.AfterControlPlaneUpgradeLifecycleHandler); ok {
+		if t, ok := h.(lifecycle.AfterControlPlaneUpgrade); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.AfterControlPlaneUpgrade,
 				Name:        h.Name(),
@@ -131,7 +133,7 @@ func (s *Server) Start(ctx context.Context) error {
 			}
 		}
 
-		if t, ok := h.(handlers.BeforeClusterDeleteLifecycleHandler); ok {
+		if t, ok := h.(lifecycle.BeforeClusterDelete); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterDelete,
 				Name:        strings.ToLower(h.Name()),
@@ -142,7 +144,7 @@ func (s *Server) Start(ctx context.Context) error {
 			}
 		}
 
-		if t, ok := h.(handlers.DiscoverVariablesMutationHandler); ok {
+		if t, ok := h.(mutation.DiscoverVariables); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.DiscoverVariables,
 				Name:        strings.ToLower(h.Name()),
@@ -153,7 +155,7 @@ func (s *Server) Start(ctx context.Context) error {
 			}
 		}
 
-		if t, ok := h.(handlers.GeneratePatchesMutationHandler); ok {
+		if t, ok := h.(mutation.GeneratePatches); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.GeneratePatches,
 				Name:        strings.ToLower(h.Name()),
@@ -164,7 +166,7 @@ func (s *Server) Start(ctx context.Context) error {
 			}
 		}
 
-		if t, ok := h.(handlers.ValidateTopologyMutationHandler); ok {
+		if t, ok := h.(mutation.ValidateTopology); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
 				Hook:        runtimehooksv1.ValidateTopology,
 				Name:        strings.ToLower(h.Name()),

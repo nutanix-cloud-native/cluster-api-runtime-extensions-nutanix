@@ -34,10 +34,10 @@ spec:
       - name: proxy
         value:
           http: http://example.com
-          https: http://example.com
+          https: https://example.com
           no:
-            - http://no-proxy-1.example.com
-            - http://no-proxy-2.example.com
+            - no-proxy-1.example.com
+            - no-proxy-2.example.com
 ```
 
 Applying this configuration will result in new bootstrap files on the `KubeadmControlPlaneTemplate`

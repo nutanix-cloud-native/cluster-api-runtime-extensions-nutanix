@@ -14,6 +14,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers/lifecycle"
 )
 
 type ServiceLoadBalancerGC struct {
@@ -21,8 +22,8 @@ type ServiceLoadBalancerGC struct {
 }
 
 var (
-	_ handlers.NamedHandler                        = &ServiceLoadBalancerGC{}
-	_ handlers.BeforeClusterDeleteLifecycleHandler = &ServiceLoadBalancerGC{}
+	_ handlers.Named                = &ServiceLoadBalancerGC{}
+	_ lifecycle.BeforeClusterDelete = &ServiceLoadBalancerGC{}
 )
 
 func New(client ctrlclient.Client) *ServiceLoadBalancerGC {

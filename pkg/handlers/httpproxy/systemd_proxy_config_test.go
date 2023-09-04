@@ -24,7 +24,7 @@ func TestGenerateSystemdFiles(t *testing.T) {
 		vars: HTTPProxyVariables{
 			HTTP:  "http://example.com",
 			HTTPS: "https://example.com",
-			NO: []string{
+			No: []string{
 				"https://no-proxy.example.com",
 			},
 		},
@@ -57,7 +57,7 @@ Environment="https_proxy=https://example.com"
 	}, {
 		name: "no proxy only",
 		vars: HTTPProxyVariables{
-			NO: []string{
+			No: []string{
 				"https://no-proxy.example.com",
 			},
 		},
@@ -68,7 +68,7 @@ Environment="no_proxy=https://no-proxy.example.com"
 	}, {
 		name: "multiple no proxy only",
 		vars: HTTPProxyVariables{
-			NO: []string{
+			No: []string{
 				"https://no-proxy.example.com",
 				"https://no-proxy-1.example.com",
 			},

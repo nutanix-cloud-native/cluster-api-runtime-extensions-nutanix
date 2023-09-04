@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/patches/selectors"
 )
@@ -32,8 +33,8 @@ type auditPolicyPatchHandler struct {
 }
 
 var (
-	_ handlers.NamedHandler                   = &auditPolicyPatchHandler{}
-	_ handlers.GeneratePatchesMutationHandler = &auditPolicyPatchHandler{}
+	_ handlers.Named           = &auditPolicyPatchHandler{}
+	_ mutation.GeneratePatches = &auditPolicyPatchHandler{}
 
 	//go:embed embedded/apiserver-audit-policy.yaml
 	auditPolicy string

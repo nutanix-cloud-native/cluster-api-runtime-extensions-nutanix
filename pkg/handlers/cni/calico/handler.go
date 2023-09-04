@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers/lifecycle"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/parser"
@@ -70,8 +71,8 @@ type CalicoCNI struct {
 }
 
 var (
-	_ handlers.NamedHandler                                 = &CalicoCNI{}
-	_ handlers.AfterControlPlaneInitializedLifecycleHandler = &CalicoCNI{}
+	_ handlers.Named                         = &CalicoCNI{}
+	_ lifecycle.AfterControlPlaneInitialized = &CalicoCNI{}
 
 	calicoInstallationGK = schema.GroupKind{Group: "operator.tigera.io", Kind: "Installation"}
 )

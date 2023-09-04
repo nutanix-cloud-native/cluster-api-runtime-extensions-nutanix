@@ -10,11 +10,12 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers/mutation"
 )
 
 var (
-	_ handlers.NamedHandler                     = &httpProxyVariableHandler{}
-	_ handlers.DiscoverVariablesMutationHandler = &httpProxyVariableHandler{}
+	_ handlers.Named             = &httpProxyVariableHandler{}
+	_ mutation.DiscoverVariables = &httpProxyVariableHandler{}
 )
 
 const (
@@ -52,13 +53,13 @@ func (h *httpProxyVariableHandler) DiscoverVariables(
 // HTTPProxyVariables required for providing proxy configuration.
 type HTTPProxyVariables struct {
 	// HTTP proxy.
-	HTTP string `json:"http"`
+	HTTP string `json:"http,omitempty"`
 
 	// HTTPS proxy.
-	HTTPS string `json:"https"`
+	HTTPS string `json:"https,omitempty"`
 
 	// No Proxy list.
-	NO []string `json:"no"`
+	No []string `json:"no,omitempty"`
 }
 
 // VariableSchema provides Cluster Class variable schema definition.
