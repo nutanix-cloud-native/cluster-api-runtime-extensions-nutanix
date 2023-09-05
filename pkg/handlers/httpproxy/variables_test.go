@@ -20,9 +20,9 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "valid values",
 			Vals: HTTPProxyVariables{
-				HTTP:  "http://a.b.c.example.com",
-				HTTPS: "https://a.b.c.example.com",
-				No:    []string{"d.e.f.example.com"},
+				HTTP:         "http://a.b.c.example.com",
+				HTTPS:        "https://a.b.c.example.com",
+				AdditionalNo: []string{"d.e.f.example.com"},
 			},
 		},
 	)
