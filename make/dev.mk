@@ -13,7 +13,6 @@ endif
 		$$(gojq -r '.[] | select(.type=="Docker Image") | select(.goarch=="$(GOARCH)") | .name' dist/artifacts.json)
 	helm upgrade --install capi-runtime-extensions ./charts/capi-runtime-extensions \
 		--set-string image.tag=$$(gojq -r .version dist/metadata.json) \
-		--set-string addons.provider=$(ADDONS_PROVIDER) \
 		--wait --wait-for-jobs
 	kubectl rollout restart deployment capi-runtime-extensions
 	kubectl rollout status deployment capi-runtime-extensions

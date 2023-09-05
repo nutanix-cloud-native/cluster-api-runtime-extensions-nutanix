@@ -49,6 +49,6 @@ gojq --yaml-input \
   <"${CALICO_CNI_ASSETS_DIR}/kustomized.yaml" \
   >"${CALICO_CNI_ASSETS_DIR}/tigera-operator.json"
 
-kubectl create configmap "{{ .Values.handlers.CalicoCNI.defaultTigeraOperatorConfigMap.name }}" --dry-run=client --output yaml \
+kubectl create configmap "{{ .Values.hooks.CalicoCNI.defaultTigeraOperatorConfigMap.name }}" --dry-run=client --output yaml \
   --from-file "${CALICO_CNI_ASSETS_DIR}/tigera-operator.json" \
   >"${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/cni/calico/manifests/tigera-operator-configmap.yaml"

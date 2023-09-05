@@ -28,12 +28,8 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default $.Chart.AppVersion }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         args:
-        - --controllermanager.leader-elect={{ if gt (.Values.deployment.replicas | int) 1 }}true{{ else }}{{ .Values.controllers.enableLeaderElection }}{{ end }}
-        - --runtimehooks.cert-dir=/runtimehooks-certs/
-        {{- range $key, $value := .Values.handlers }}{{ if $value.enabled }}
-        - --runtimehooks.enabled-handlers={{ $key }}
-        {{ end }}{{- end }}
-        - --runtimehooks.calicocni.defaultsNamespace=$(POD_NAMESPACE)
+        - --webhook-cert-dir=/runtimehooks-certs/
+        - --calicocni.defaultsNamespace=$(POD_NAMESPACE)
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}

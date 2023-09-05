@@ -5,7 +5,6 @@ package server
 
 import (
 	"context"
-	"slices"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -20,50 +19,42 @@ import (
 )
 
 type Server struct {
-	allExtensionHandlers []handlers.Named
-
-	webhookPort    int
-	webhookCertDir string
-
 	catalog *runtimecatalog.Catalog
+	hooks   []handlers.Named
 
-	enabledHandlers []string
+	opts *ServerOptions
 }
 
-func NewServer(extensionHandlers ...handlers.Named) *Server {
+func NewServer(opts *ServerOptions, hooks ...handlers.Named) *Server {
 	// catalog contains all information about RuntimeHooks.
 	catalog := runtimecatalog.New()
 
 	_ = runtimehooksv1.AddToCatalog(catalog)
 
 	return &Server{
-		allExtensionHandlers: extensionHandlers,
-		catalog:              catalog,
-		webhookPort:          9443,
-		webhookCertDir:       "/runtimehooks-certs/",
+		catalog: catalog,
+		opts:    opts,
+		hooks:   hooks,
 	}
 }
 
-func (s *Server) AddFlags(prefix string, fs *pflag.FlagSet) {
-	fs.IntVar(&s.webhookPort, prefix+".port", s.webhookPort, "Webhook Server port")
+type ServerOptions struct {
+	webhookPort    int
+	webhookCertDir string
+}
+
+func NewServerOptions() *ServerOptions {
+	return &ServerOptions{}
+}
+
+func (s *ServerOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.IntVar(&s.webhookPort, "webhook-port", s.webhookPort, "Webhook Server port")
 
 	fs.StringVar(
 		&s.webhookCertDir,
-		prefix+".cert-dir",
+		"webhook-cert-dir",
 		s.webhookCertDir,
 		"Runtime hooks server cert dir.",
-	)
-
-	handlerNames := make([]string, 0, len(s.allExtensionHandlers))
-	for _, h := range s.allExtensionHandlers {
-		handlerNames = append(handlerNames, h.Name())
-	}
-
-	fs.StringSliceVar(
-		&s.enabledHandlers,
-		prefix+".enabled-handlers",
-		handlerNames,
-		"list of all enabled handlers",
 	)
 }
 
@@ -74,20 +65,16 @@ func (s *Server) Start(ctx context.Context) error {
 	// Create a http server for serving runtime extensions
 	webhookServer, err := server.New(server.Options{
 		Catalog: s.catalog,
-		Port:    s.webhookPort,
-		CertDir: s.webhookCertDir,
+		Port:    s.opts.webhookPort,
+		CertDir: s.opts.webhookCertDir,
 	})
 	if err != nil {
 		setupLog.Error(err, "error creating webhook server")
 		return err
 	}
 
-	for idx := range s.allExtensionHandlers {
-		h := s.allExtensionHandlers[idx]
-
-		if !slices.Contains(s.enabledHandlers, h.Name()) {
-			continue
-		}
+	for idx := range s.hooks {
+		h := s.hooks[idx]
 
 		if t, ok := h.(lifecycle.BeforeClusterCreate); ok {
 			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
