@@ -45,9 +45,3 @@ The `additionalNo` list will be added to default pre-calculated values that appl
 
 Applying this configuration will result in new bootstrap files on the `KubeadmControlPlaneTemplate`
 and `KubeadmConfigTemplate`.
-
-This hook is enabled by default, and can be explicitly disabled by omitting the `HTTPProxyVars`
-and `HTTPProxyPatch` hook from the `--runtimehooks.enabled-handlers` flag.
-
-If deploying via Helm, then this can be disabled by setting `handlers.HTTProxyVars.enabled=false` and
-`handlers.HTTPProxyPatch.enabled=false`.

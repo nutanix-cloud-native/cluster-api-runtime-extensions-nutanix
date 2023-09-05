@@ -1,9 +1,8 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-handlers:
+hooks:
   CalicoCNI:
-    enabled: true
     defaultPodSubnet: 192.168.0.0/16
     defaultTigeraOperatorConfigMap:
       name: tigera-operator
@@ -13,24 +12,9 @@ handlers:
         configMap:
           name: calico-cni-installation-dockercluster
           content: ""
-  ServiceLoadBalancerGC:
-    enabled: true
-  HTTPProxyVars:
-    enabled: true
-  HTTPProxyPatch:
-    enabled: true
-  AuditPolicyPatch:
-    enabled: true
-  ExtraAPIServerCertSANsVars:
-    enabled: true
-  ExtraAPIServerCertSANsPatch:
-    enabled: true
 
 deployment:
   replicas: 1
-
-controllers:
-  enableLeaderElection: false
 
 image:
   repository: ghcr.io/d2iq-labs/capi-runtime-extensions

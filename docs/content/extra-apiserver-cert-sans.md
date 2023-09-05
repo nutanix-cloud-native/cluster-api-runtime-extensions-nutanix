@@ -39,9 +39,3 @@ spec:
 
 Applying this configuration will result in the certificate SANs being correctly set in the
 `KubeadmControlPlaneTemplate`.
-
-This hook is enabled by default, and can be explicitly disabled by omitting the `ExtraAPIServerCertSANsVars`
-and `ExtraAPIServerCertSANsPatch` hook from the `--runtimehooks.enabled-handlers` flag.
-
-If deploying via Helm, then this can be disabled by setting `handlers.ExtraAPIServerCertSANsVars.enabled=false` and
-`handlers.ExtraAPIServerCertSANsPatch.enabled=false`.

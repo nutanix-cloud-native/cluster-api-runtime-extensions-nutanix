@@ -22,8 +22,3 @@ spec:
 ```
 
 Applying this configuration will result in new bootstrap files on the `KubeadmControlPlaneTemplate`.
-
-This hook is enabled by default, and can be explicitly disabled by omitting the `AuditPolicyPatch` hook from the
-`--runtimehooks.enabled-handlers` flag.
-
-If deploying via Helm, then this can be disabled by setting `handlers.AuditPolicyPatch.enabled=false`.

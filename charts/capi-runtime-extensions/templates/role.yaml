@@ -19,6 +19,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - addons.cluster.x-k8s.io
   resources:
   - clusterresourcesets
