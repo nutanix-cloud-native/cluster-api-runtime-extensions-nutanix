@@ -46,7 +46,7 @@ endif
 
 .PHONY: test.%
 test.%: ## Runs go tests for a specific module
-test.%: install-tool.go.setup-envtest ; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
+test.%: ; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
 	$(if $(filter-out root,$*),cd $* && )$(call go_test)
 
 .PHONY: integration-test
@@ -186,5 +186,5 @@ go-generate: ; $(info $(M) running go generate)
 
 .PHONY: go-mod-upgrade
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades
-go-mod-upgrade: install-tool.go.go-mod-upgrade; $(info $(M) checking for direct module dependency upgrades)
+go-mod-upgrade: ; $(info $(M) checking for direct module dependency upgrades)
 	go-mod-upgrade
