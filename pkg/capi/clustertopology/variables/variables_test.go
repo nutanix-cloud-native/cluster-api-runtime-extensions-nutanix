@@ -51,3 +51,57 @@ func TestGetVariable_ParseError(t *testing.T) {
 	g.Expect(found).To(BeFalse())
 	g.Expect(parsed).To(BeEmpty())
 }
+
+func TestGet_ValidNestedFieldAsStruct(t *testing.T) {
+	g := NewWithT(t)
+
+	type nestedStruct struct {
+		Bar string `json:"bar"`
+	}
+	sampleValue := []byte(`{"foo": {"bar": "baz"}}`)
+	vars := map[string]apiextensionsv1.JSON{
+		"sampleVar": {Raw: sampleValue},
+	}
+	parsed, found, err := variables.Get[nestedStruct](vars, "sampleVar", "foo")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(found).To(BeTrue())
+	g.Expect(parsed).To(Equal(nestedStruct{
+		Bar: "baz",
+	}))
+}
+
+func TestGet_ValidNestedFieldAsScalar(t *testing.T) {
+	g := NewWithT(t)
+
+	sampleValue := []byte(`{"foo": {"bar": "baz"}}`)
+	vars := map[string]apiextensionsv1.JSON{
+		"sampleVar": {Raw: sampleValue},
+	}
+	parsed, found, err := variables.Get[string](vars, "sampleVar", "foo", "bar")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(found).To(BeTrue())
+	g.Expect(parsed).To(Equal("baz"))
+}
+
+func TestGet_InvalidNestedFieldType(t *testing.T) {
+	g := NewWithT(t)
+
+	sampleValue := []byte(`{"foo": {"bar": "baz"}}`)
+	vars := map[string]apiextensionsv1.JSON{
+		"sampleVar": {Raw: sampleValue},
+	}
+	_, _, err := variables.Get[int](vars, "sampleVar", "foo", "bar")
+	g.Expect(err).To(HaveOccurred())
+}
+
+func TestGet_MissingNestedField(t *testing.T) {
+	g := NewWithT(t)
+
+	sampleValue := []byte(`{"foo": {"bar": "baz"}}`)
+	vars := map[string]apiextensionsv1.JSON{
+		"sampleVar": {Raw: sampleValue},
+	}
+	_, found, err := variables.Get[string](vars, "sampleVar", "foo", "nonexistent")
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(found).To(BeFalse())
+}
