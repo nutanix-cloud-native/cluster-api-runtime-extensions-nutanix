@@ -44,10 +44,10 @@
       "version": "2.1.0"
     },
     "ginkgo@latest": {
-      "last_modified": "2023-06-30T04:44:22Z",
-      "resolved": "github:NixOS/nixpkgs/3c614fbc76fc152f3e1bc4b2263da6d90adf80fb#ginkgo",
+      "last_modified": "2023-09-04T16:24:30Z",
+      "resolved": "github:NixOS/nixpkgs/3c15feef7770eb5500a4b8792623e2d6f598c9c1#ginkgo",
       "source": "devbox-search",
-      "version": "2.11.0"
+      "version": "2.12.0"
     },
     "git@latest": {
       "last_modified": "2023-07-23T03:35:12Z",
@@ -98,10 +98,10 @@
       "version": "433.0.1"
     },
     "goreleaser@latest": {
-      "last_modified": "2023-07-23T03:35:12Z",
-      "resolved": "github:NixOS/nixpkgs/af8cd5ded7735ca1df1a1174864daab75feeb64a#goreleaser",
+      "last_modified": "2023-09-04T16:24:30Z",
+      "resolved": "github:NixOS/nixpkgs/3c15feef7770eb5500a4b8792623e2d6f598c9c1#goreleaser",
       "source": "devbox-search",
-      "version": "1.19.2"
+      "version": "1.20.0"
     },
     "gotestsum@latest": {
       "last_modified": "2023-07-23T03:35:12Z",
@@ -140,16 +140,16 @@
       "version": "3.11.1"
     },
     "kubectl@latest": {
-      "last_modified": "2023-08-08T03:07:33Z",
-      "resolved": "github:NixOS/nixpkgs/844ffa82bbe2a2779c86ab3a72ff1b4176cec467#kubectl",
+      "last_modified": "2023-09-04T16:24:30Z",
+      "resolved": "github:NixOS/nixpkgs/3c15feef7770eb5500a4b8792623e2d6f598c9c1#kubectl",
       "source": "devbox-search",
-      "version": "1.27.4"
+      "version": "1.28.1"
     },
     "kubernetes-controller-tools@latest": {
-      "last_modified": "2023-07-23T03:35:12Z",
-      "resolved": "github:NixOS/nixpkgs/af8cd5ded7735ca1df1a1174864daab75feeb64a#kubernetes-controller-tools",
+      "last_modified": "2023-09-04T16:24:30Z",
+      "resolved": "github:NixOS/nixpkgs/3c15feef7770eb5500a4b8792623e2d6f598c9c1#kubernetes-controller-tools",
       "source": "devbox-search",
-      "version": "0.12.1"
+      "version": "0.13.0"
     },
     "kubernetes-helm@latest": {
       "last_modified": "2023-07-23T03:35:12Z",
@@ -163,6 +163,9 @@
       "source": "devbox-search",
       "version": "5.1.1"
     },
+    "path:./hack/flakes/go-mod-upgrade": {},
+    "path:./hack/flakes/golangci-lint": {},
+    "path:./hack/flakes/setup-envtest": {},
     "pre-commit@latest": {
       "last_modified": "2023-06-30T04:44:22Z",
       "resolved": "github:NixOS/nixpkgs/3c614fbc76fc152f3e1bc4b2263da6d90adf80fb#pre-commit",
