@@ -23,11 +23,11 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers/lifecycle"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/parser"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/client"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/parser"
 )
 
 const (

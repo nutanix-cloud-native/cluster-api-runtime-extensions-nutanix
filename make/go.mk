@@ -40,8 +40,8 @@ test: ## Runs go tests for all modules in repository
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
 test: test.root
 endif
-ifneq ($(words $(GO_SUBMODULES_NO_TOOLS)),0)
-test: $(addprefix test.,$(GO_SUBMODULES_NO_TOOLS:/go.mod=))
+ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
+test: $(addprefix test.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
 .PHONY: test.%
@@ -64,8 +64,8 @@ bench: ## Runs go benchmarks for all modules in repository
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
 bench: bench.root
 endif
-ifneq ($(words $(GO_SUBMODULES_NO_TOOLS)),0)
-bench: $(addprefix bench.,$(GO_SUBMODULES_NO_TOOLS:/go.mod=))
+ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
+bench: $(addprefix bench.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
 .PHONY: bench.%
@@ -164,8 +164,8 @@ go-fix: ## Runs go fix for all modules in repository
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
 go-fix: go-fix.root
 endif
-ifneq ($(words $(GO_SUBMODULES_NO_TOOLS)),0)
-go-fix: $(addprefix go-fix.,$(GO_SUBMODULES_NO_TOOLS:/go.mod=))
+ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
+go-fix: $(addprefix go-fix.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
 .PHONY: go-fix.%
