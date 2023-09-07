@@ -21,11 +21,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/handlers/mutation"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/patches"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/patches/selectors"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 )
 
 const (

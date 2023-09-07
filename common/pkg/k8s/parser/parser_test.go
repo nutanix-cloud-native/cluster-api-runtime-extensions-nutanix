@@ -13,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/k8s/parser"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/parser"
 )
 
-func dummyUnstructured(apiVersion, kind, namespace, name string) *unstructured.Unstructured {
+func placeholderUnstructured(apiVersion, kind, namespace, name string) *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
 	u.SetAPIVersion(apiVersion)
 	u.SetKind(kind)
@@ -63,7 +63,7 @@ metadata:
   namespace: a
   name: b
 `},
-	want: []client.Object{dummyUnstructured("some.api/v1", "Something", "a", "b")},
+	want: []client.Object{placeholderUnstructured("some.api/v1", "Something", "a", "b")},
 }, {
 	name: "valid multiple k8s object YAML",
 	inputs: []string{`apiVersion: some.api/v1
@@ -79,8 +79,8 @@ metadata:
   name: d
 `},
 	want: []client.Object{
-		dummyUnstructured("some.api/v1", "Something", "a", "b"),
-		dummyUnstructured("another.api/v1", "SomethingElse", "c", "d"),
+		placeholderUnstructured("some.api/v1", "Something", "a", "b"),
+		placeholderUnstructured("another.api/v1", "SomethingElse", "c", "d"),
 	},
 }, {
 	name: "valid multiple k8s object YAML including empty docs",
@@ -99,8 +99,8 @@ metadata:
 ---
 `},
 	want: []client.Object{
-		dummyUnstructured("some.api/v1", "Something", "a", "b"),
-		dummyUnstructured("another.api/v1", "SomethingElse", "c", "d"),
+		placeholderUnstructured("some.api/v1", "Something", "a", "b"),
+		placeholderUnstructured("another.api/v1", "SomethingElse", "c", "d"),
 	},
 }, {
 	name: "valid multiple k8s object YAML across multiple inputs",
@@ -129,10 +129,10 @@ metadata:
   name: h`,
 	},
 	want: []client.Object{
-		dummyUnstructured("some.api/v1", "Something", "a", "b"),
-		dummyUnstructured("another.api/v1", "SomethingElse", "c", "d"),
-		dummyUnstructured("some.api/v2", "Something2", "e", "f"),
-		dummyUnstructured("another.api/v2", "SomethingElse2", "g", "h"),
+		placeholderUnstructured("some.api/v1", "Something", "a", "b"),
+		placeholderUnstructured("another.api/v1", "SomethingElse", "c", "d"),
+		placeholderUnstructured("some.api/v2", "Something2", "e", "f"),
+		placeholderUnstructured("another.api/v2", "SomethingElse2", "g", "h"),
 	},
 }}
 

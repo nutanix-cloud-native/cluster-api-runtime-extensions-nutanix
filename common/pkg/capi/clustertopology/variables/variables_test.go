@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 )
 
 func TestGet(t *testing.T) {
@@ -70,7 +70,7 @@ func TestGet_ValidNestedFieldAsStruct(t *testing.T) {
 	}))
 }
 
-func TestGet_ValidNestedFieldAsScalar(t *testing.T) {
+func TestGet_ValidNestedFieldAsPrimitive(t *testing.T) {
 	g := NewWithT(t)
 
 	sampleValue := []byte(`{"foo": {"bar": "baz"}}`)
