@@ -13,7 +13,7 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	k8s.io/apiextensions-apiserver v0.28.1
 	k8s.io/apimachinery v0.28.1
-	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
+	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/cluster-api v1.5.1
 	sigs.k8s.io/controller-runtime v0.16.1
 )
