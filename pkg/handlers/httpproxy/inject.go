@@ -31,6 +31,10 @@ import (
 const (
 	// HandlerNamePatch is the name of the inject handler.
 	HandlerNamePatch = "HTTPProxyPatch"
+
+	// instanceMetadataIP is the IPv4 address used to retrieve
+	// instance metadata in AWS, Azure, OpenStack, etc.
+	instanceMetadataIP = "169.254.169.254"
 )
 
 type httpProxyPatchHandler struct {
@@ -201,5 +205,34 @@ func generateNoProxy(cluster *capiv1.Cluster) []string {
 		fmt.Sprintf(".svc.%s", strings.TrimLeft(serviceDomain, ".")),
 	)
 
+	if cluster.Spec.InfrastructureRef == nil {
+		return noProxy
+	}
+
+	// Add infra-specific entries
+	switch cluster.Spec.InfrastructureRef.Kind {
+	case "AWSCluster", "AWSManagedCluster":
+		noProxy = append(noProxy,
+			// Exclude the instance metadata service
+			instanceMetadataIP,
+			// Exclude the control plane endpoint
+			".elb.amazonaws.com",
+		)
+	case "AzureCluster", "AzureManagedControlPlane":
+		noProxy = append(noProxy,
+			// Exclude the instance metadata service
+			instanceMetadataIP)
+	case "GCPCluster":
+		noProxy = append(noProxy,
+			// Exclude the instance metadata service
+			instanceMetadataIP,
+			// Exclude aliases for instance metadata service.
+			// See https://cloud.google.com/vpc/docs/special-configurations
+			"metadata",
+			"metadata.google.internal",
+		)
+	default:
+		// Unknown infrastructure. Do nothing.
+	}
 	return noProxy
 }
