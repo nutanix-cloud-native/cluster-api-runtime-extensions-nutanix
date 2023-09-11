@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apiserver/pkg/storage/names"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -132,6 +133,90 @@ func TestGenerateNoProxy(t *testing.T) {
 			expectedNoProxy: []string{
 				"localhost", "127.0.0.1", "10.0.0.0/24", "10.0.1.0/24", "kubernetes",
 				"kubernetes.default", ".svc", ".svc.cluster.local",
+			},
+		},
+		{
+			name: "Unknown infrastructure cluster",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					InfrastructureRef: &v1.ObjectReference{
+						Kind: "SomeFakeInfrastructureCluster",
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+				".svc", ".svc.cluster.local",
+			},
+		},
+		{
+			name: "AWS cluster",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					InfrastructureRef: &v1.ObjectReference{
+						Kind: "AWSCluster",
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+				".svc", ".svc.cluster.local", "169.254.169.254", ".elb.amazonaws.com",
+			},
+		},
+		{
+			name: "AWS managed (EKS) cluster",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					InfrastructureRef: &v1.ObjectReference{
+						Kind: "AWSManagedCluster",
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+				".svc", ".svc.cluster.local", "169.254.169.254", ".elb.amazonaws.com",
+			},
+		},
+		{
+			name: "Azure cluster",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					InfrastructureRef: &v1.ObjectReference{
+						Kind: "AzureCluster",
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+				".svc", ".svc.cluster.local", "169.254.169.254",
+			},
+		},
+		{
+			name: "Azure managed (AKS) cluster",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					InfrastructureRef: &v1.ObjectReference{
+						Kind: "AzureCluster",
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+				".svc", ".svc.cluster.local", "169.254.169.254",
+			},
+		},
+		{
+			name: "GCP cluster",
+			cluster: &capiv1.Cluster{
+				Spec: capiv1.ClusterSpec{
+					InfrastructureRef: &v1.ObjectReference{
+						Kind: "GCPCluster",
+					},
+				},
+			},
+			expectedNoProxy: []string{
+				"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+				".svc", ".svc.cluster.local", "169.254.169.254", "metadata", "metadata.google.internal",
 			},
 		},
 		{
