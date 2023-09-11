@@ -177,11 +177,6 @@ go-fix.%: ; $(info $(M) go fixing $* module)
 go-generate: ## Runs go generate
 go-generate: ; $(info $(M) running go generate)
 	go generate -x ./...
-	controller-gen \
-		rbac:headerFile="hack/license-header.yaml.txt",roleName=capi-runtime-extensions-manager-role \
-		object:headerFile="hack/license-header.go.txt" \
-		output:rbac:artifacts:config=charts/capi-runtime-extensions/templates \
-		paths="./..."
 	$(MAKE) go-fix
 
 .PHONY: go-mod-upgrade

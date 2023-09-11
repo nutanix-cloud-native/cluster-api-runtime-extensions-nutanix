@@ -8,6 +8,7 @@ import (
 
 	"k8s.io/utils/ptr"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
 )
 
@@ -15,7 +16,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		VariableName,
-		ptr.To(ExtraAPIServerCertSANsVariables{}.VariableSchema()),
+		ptr.To(v1alpha1.ExtraAPIServerCertSANs{}.VariableSchema()),
 		NewVariable,
 		capitest.VariableTestDef{
 			Name: "single valid SAN",

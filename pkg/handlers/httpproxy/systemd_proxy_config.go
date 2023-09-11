@@ -10,6 +10,8 @@ import (
 	"text/template"
 
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 )
 
 var (
@@ -26,7 +28,7 @@ var (
 	}
 )
 
-func generateSystemdFiles(vars HTTPProxyVariables, noProxy []string) []bootstrapv1.File {
+func generateSystemdFiles(vars v1alpha1.HTTPProxy, noProxy []string) []bootstrapv1.File {
 	if vars.HTTP == "" && vars.HTTPS == "" && len(vars.AdditionalNo) == 0 {
 		return nil
 	}

@@ -26,7 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/auditpolicy"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/extraapiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
@@ -130,12 +133,29 @@ func main() {
 
 	runtimeWebhookServer := server.NewServer(
 		runtimeWebhookServerOpts,
+
 		servicelbgc.New(mgr.GetClient()),
+
 		calico.New(mgr.GetClient(), calicoCNIConfig),
+
 		httpproxy.NewVariable(),
-		httpproxy.NewPatch(mgr.GetClient()),
+		httpproxy.NewPatch(mgr.GetClient(), httpproxy.VariableName),
+
 		extraapiservercertsans.NewVariable(),
-		extraapiservercertsans.NewPatch(),
+		extraapiservercertsans.NewPatch(extraapiservercertsans.VariableName),
+
+		auditpolicy.NewPatch(),
+
+		clusterconfig.NewVariable(),
+		mutation.NewMetaGeneratePatchesHandler(
+			"clusterConfigPatch",
+			httpproxy.NewPatch(mgr.GetClient(), clusterconfig.VariableName, httpproxy.VariableName),
+			extraapiservercertsans.NewPatch(
+				clusterconfig.VariableName,
+				extraapiservercertsans.VariableName,
+			),
+			auditpolicy.NewPatch(),
+		),
 	)
 	if err := mgr.Add(runtimeWebhookServer); err != nil {
 		setupLog.Error(err, "unable to add runtime webhook server runnable to controller manager")

@@ -21,6 +21,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
@@ -40,6 +41,9 @@ const (
 type httpProxyPatchHandler struct {
 	decoder runtime.Decoder
 	client  ctrlclient.Reader
+
+	variableName      string
+	variableFieldPath []string
 }
 
 var (
@@ -47,7 +51,11 @@ var (
 	_ mutation.GeneratePatches = &httpProxyPatchHandler{}
 )
 
-func NewPatch(cl ctrlclient.Reader) *httpProxyPatchHandler {
+func NewPatch(
+	cl ctrlclient.Reader,
+	variableName string,
+	variableFieldPath ...string,
+) *httpProxyPatchHandler {
 	scheme := runtime.NewScheme()
 	_ = bootstrapv1.AddToScheme(scheme)
 	_ = controlplanev1.AddToScheme(scheme)
@@ -56,7 +64,9 @@ func NewPatch(cl ctrlclient.Reader) *httpProxyPatchHandler {
 			controlplanev1.GroupVersion,
 			bootstrapv1.GroupVersion,
 		),
-		client: cl,
+		client:            cl,
+		variableName:      variableName,
+		variableFieldPath: variableFieldPath,
 	}
 }
 
@@ -90,9 +100,10 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				"holderRef", holderRef,
 			)
 
-			httpProxyVariable, found, err := variables.Get[HTTPProxyVariables](
+			httpProxyVariable, found, err := variables.Get[v1alpha1.HTTPProxy](
 				vars,
-				VariableName,
+				h.variableName,
+				h.variableFieldPath...,
 			)
 			if err != nil {
 				return err
@@ -102,7 +113,14 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 				return nil
 			}
 
-			log = log.WithValues("variableName", VariableName, "variableValue", httpProxyVariable)
+			log = log.WithValues(
+				"variableName",
+				h.variableName,
+				"variableFieldPath",
+				h.variableFieldPath,
+				"variableValue",
+				httpProxyVariable,
+			)
 
 			if err := patches.Generate(
 				obj, vars, &holderRef, selectors.ControlPlane(), log,

@@ -8,6 +8,7 @@ import (
 
 	"k8s.io/utils/ptr"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
 )
 
@@ -15,11 +16,11 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		VariableName,
-		ptr.To(HTTPProxyVariables{}.VariableSchema()),
+		ptr.To(v1alpha1.HTTPProxy{}.VariableSchema()),
 		NewVariable,
 		capitest.VariableTestDef{
 			Name: "valid values",
-			Vals: HTTPProxyVariables{
+			Vals: v1alpha1.HTTPProxy{
 				HTTP:         "http://a.b.c.example.com",
 				HTTPS:        "https://a.b.c.example.com",
 				AdditionalNo: []string{"d.e.f.example.com"},

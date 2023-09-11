@@ -9,6 +9,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 )
@@ -41,55 +42,10 @@ func (h *httpProxyVariableHandler) DiscoverVariables(
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
-	variable := HTTPProxyVariables{}
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     VariableName,
 		Required: false,
-		Schema:   variable.VariableSchema(),
+		Schema:   v1alpha1.HTTPProxy{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-}
-
-// HTTPProxyVariables required for providing proxy configuration.
-type HTTPProxyVariables struct {
-	// HTTP proxy.
-	HTTP string `json:"http,omitempty"`
-
-	// HTTPS proxy.
-	HTTPS string `json:"https,omitempty"`
-
-	// AdditionalNo Proxy list that will be added to the automatically calculated
-	// values that will apply no_proxy configuration for cluster internal network.
-	// Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
-	//   ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
-	AdditionalNo []string `json:"additionalNo"`
-}
-
-// VariableSchema provides Cluster Class variable schema definition.
-func (HTTPProxyVariables) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"http": {
-					Description: "HTTP proxy value.",
-					Type:        "string",
-				},
-				"https": {
-					Description: "HTTPS proxy value.",
-					Type:        "string",
-				},
-				"additionalNo": {
-					Description: "Additional No Proxy list that will be added to the automatically calculated " +
-						"values that will apply no_proxy configuration for cluster internal network. " +
-						"Default value: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes," +
-						"kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>",
-					Type: "array",
-					Items: &clusterv1.JSONSchemaProps{
-						Type: "string",
-					},
-				},
-			},
-		},
-	}
 }

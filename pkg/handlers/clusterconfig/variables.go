@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package extraapiservercertsans
+package clusterconfig
 
 import (
 	"context"
@@ -15,29 +15,29 @@ import (
 )
 
 var (
-	_ handlers.Named             = &extraAPIServerCertSANsVariableHandler{}
-	_ mutation.DiscoverVariables = &extraAPIServerCertSANsVariableHandler{}
+	_ handlers.Named             = &clusterConfigVariableHandler{}
+	_ mutation.DiscoverVariables = &clusterConfigVariableHandler{}
 )
 
 const (
 	// VariableName is http proxy external patch variable name.
-	VariableName = "extraAPIServerCertSANs"
+	VariableName = "clusterConfig"
 
 	// HandlerNameVariable is the name of the variable handler.
-	HandlerNameVariable = "ExtraAPIServerCertSANsVars"
+	HandlerNameVariable = "ClusterConfigVars"
 )
 
-func NewVariable() *extraAPIServerCertSANsVariableHandler {
-	return &extraAPIServerCertSANsVariableHandler{}
+func NewVariable() *clusterConfigVariableHandler {
+	return &clusterConfigVariableHandler{}
 }
 
-type extraAPIServerCertSANsVariableHandler struct{}
+type clusterConfigVariableHandler struct{}
 
-func (h *extraAPIServerCertSANsVariableHandler) Name() string {
+func (h *clusterConfigVariableHandler) Name() string {
 	return HandlerNameVariable
 }
 
-func (h *extraAPIServerCertSANsVariableHandler) DiscoverVariables(
+func (h *clusterConfigVariableHandler) DiscoverVariables(
 	ctx context.Context,
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
@@ -45,7 +45,7 @@ func (h *extraAPIServerCertSANsVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     VariableName,
 		Required: false,
-		Schema:   v1alpha1.ExtraAPIServerCertSANs{}.VariableSchema(),
+		Schema:   v1alpha1.ClusterConfigSpec{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

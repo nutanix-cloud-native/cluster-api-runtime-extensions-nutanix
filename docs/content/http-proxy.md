@@ -34,7 +34,7 @@ spec:
       - name: proxy
         values:
           http: http://example.com
-          https: http://example.com
+          https: https://example.com
           additionalNo:
             - no-proxy-1.example.com
             - no-proxy-2.example.com
