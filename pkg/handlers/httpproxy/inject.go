@@ -193,15 +193,12 @@ func generateNoProxy(cluster *capiv1.Cluster) []string {
 		serviceDomain = cluster.Spec.ClusterNetwork.ServiceDomain
 	}
 
-	noProxy = append(noProxy, []string{
+	noProxy = append(
+		noProxy,
 		"kubernetes",
 		"kubernetes.default",
 		".svc",
-	}...)
-
-	// append .svc.<SERVICE_DOMAIN>
-	noProxy = append(
-		noProxy,
+		// append .svc.<SERVICE_DOMAIN>
 		fmt.Sprintf(".svc.%s", strings.TrimLeft(serviceDomain, ".")),
 	)
 
@@ -212,18 +209,22 @@ func generateNoProxy(cluster *capiv1.Cluster) []string {
 	// Add infra-specific entries
 	switch cluster.Spec.InfrastructureRef.Kind {
 	case "AWSCluster", "AWSManagedCluster":
-		noProxy = append(noProxy,
+		noProxy = append(
+			noProxy,
 			// Exclude the instance metadata service
 			instanceMetadataIP,
 			// Exclude the control plane endpoint
 			".elb.amazonaws.com",
 		)
 	case "AzureCluster", "AzureManagedControlPlane":
-		noProxy = append(noProxy,
+		noProxy = append(
+			noProxy,
 			// Exclude the instance metadata service
-			instanceMetadataIP)
+			instanceMetadataIP,
+		)
 	case "GCPCluster":
-		noProxy = append(noProxy,
+		noProxy = append(
+			noProxy,
 			// Exclude the instance metadata service
 			instanceMetadataIP,
 			// Exclude aliases for instance metadata service.
