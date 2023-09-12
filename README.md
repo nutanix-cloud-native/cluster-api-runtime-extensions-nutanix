@@ -23,18 +23,16 @@ example), run:
 make SKIP_BUILD=true dev.run-on-kind
 ```
 
-To create a cluster with [clusterctl](https://cluster-api.sigs.k8s.io/user/quick-start.html), and label it for Calico
-CNI at the same time, run:
+To create the ClusterClass and it's Templates with this runtime extension enabled, run:
 
 ```shell
-clusterctl generate cluster capi-quickstart \
-  --flavor development \
-  --kubernetes-version v1.27.2 \
-  --control-plane-machine-count=1 \
-  --worker-machine-count=1 | \
-gojq --yaml-input --yaml-output \
-  '. | (select(.kind=="Cluster").metadata.labels["capiext.labs.d2iq.io/cni"]|="calico")' | \
-kubectl apply --server-side -f -
+kubectl apply --server-side -f examples/capi-quickstart/cluster-class.yaml
+```
+
+To create a cluster, update `clusterConfig` variable and run:
+
+```shell
+kubectl apply --server-side -f examples/capi-quickstart/cluster.yaml
 ```
 
 Wait until control plane is ready:
