@@ -26,6 +26,9 @@ type ClusterConfigSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// +optional
+	ImageRepository *ImageRepository `json:"imageRepository,omitempty"`
+
+	// +optional
 	Proxy *HTTPProxy `json:"proxy,omitempty"`
 
 	// +optional
@@ -38,11 +41,28 @@ func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 			Description: "Cluster configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
+				"imageRepository":        ImageRepository("").VariableSchema().OpenAPIV3Schema,
 				"proxy":                  HTTPProxy{}.VariableSchema().OpenAPIV3Schema,
 				"extraAPIServerCertSANs": ExtraAPIServerCertSANs{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
+}
+
+// ImageRepository required for overriding Kubernetes image repository.
+type ImageRepository string
+
+func (ImageRepository) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Sets the imageRepository used for the KubeadmControlPlane.",
+			Type:        "string",
+		},
+	}
+}
+
+func (v ImageRepository) String() string {
+	return string(v)
 }
 
 // HTTPProxy required for providing proxy configuration.
