@@ -18,7 +18,7 @@ spec:
   patches:
     - name: audit-policy
       external:
-        generateExtension: "auditpolicypatch.<external-config-name>"
+        generateExtension: "auditpolicypatch.capi-runtime-extensions"
 ```
 
 Applying this configuration will result in new bootstrap files on the `KubeadmControlPlaneTemplate`.
