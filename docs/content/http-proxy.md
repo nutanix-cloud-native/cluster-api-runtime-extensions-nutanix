@@ -17,8 +17,8 @@ spec:
   patches:
     - name: http-proxy
       external:
-        generateExtension: "httpproxypatch.<external-config-name>"
-        discoverVariablesExtension: "httpproxyvars.<external-config-name>"
+        generateExtension: "httpproxypatch.capi-runtime-extensions"
+        discoverVariablesExtension: "httpproxyvars.capi-runtime-extensions"
 ```
 
 On the cluster resource then specify desired HTTP proxy values:

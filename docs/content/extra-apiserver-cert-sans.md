@@ -17,8 +17,8 @@ spec:
   patches:
     - name: apiserver-cert-sans
       external:
-        generateExtension: "extraapiservercertsanspatch.<external-config-name>"
-        discoverVariablesExtension: "extraapiservercertsansvars.<external-config-name>"
+        generateExtension: "extraapiservercertsanspatch.capi-runtime-extensions"
+        discoverVariablesExtension: "extraapiservercertsansvars.capi-runtime-extensions"
 ```
 
 On the cluster resource then specify desired certificate SANs values:

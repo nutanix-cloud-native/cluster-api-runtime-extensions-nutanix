@@ -19,8 +19,8 @@ spec:
   patches:
     - name: cluster-config
       external:
-        generateExtension: "clusterconfigpatch.<external-config-name>"
-        discoverVariablesExtension: "clusterconfigvars.<external-config-name>"
+        generateExtension: "clusterconfigpatch.capi-runtime-extensions"
+        discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
 ```
 
 On the cluster resource then specify desired certificate SANs values:
