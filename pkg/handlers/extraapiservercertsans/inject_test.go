@@ -9,13 +9,15 @@ import (
 	. "github.com/onsi/gomega"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
 )
 
 func TestGeneratePatches(t *testing.T) {
 	capitest.ValidateGeneratePatches(
 		t,
-		NewPatch,
+		func() mutation.GeneratePatches { return NewPatch(VariableName) },
 		capitest.PatchTestDef{
 			Name: "unset variable",
 		},
@@ -24,7 +26,7 @@ func TestGeneratePatches(t *testing.T) {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					VariableName,
-					ExtraAPIServerCertSANsVariables{"a.b.c.example.com", "d.e.f.example.com"},
+					v1alpha1.ExtraAPIServerCertSANs{"a.b.c.example.com", "d.e.f.example.com"},
 				),
 			},
 			RequestItem: capitest.NewKubeadmControlPlaneTemplateRequestItem(),

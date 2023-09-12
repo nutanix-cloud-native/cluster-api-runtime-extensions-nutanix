@@ -8,6 +8,8 @@ import (
 
 	. "github.com/onsi/gomega"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 )
 
 func TestGenerateSystemdFiles(t *testing.T) {
@@ -15,7 +17,7 @@ func TestGenerateSystemdFiles(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		vars             HTTPProxyVariables
+		vars             v1alpha1.HTTPProxy
 		noProxy          []string
 		expectedContents string
 	}{
@@ -23,7 +25,7 @@ func TestGenerateSystemdFiles(t *testing.T) {
 			name: "no proxy configuration",
 		}, {
 			name: "all vars set",
-			vars: HTTPProxyVariables{
+			vars: v1alpha1.HTTPProxy{
 				HTTP:  "http://example.com",
 				HTTPS: "https://example.com",
 				AdditionalNo: []string{
@@ -40,7 +42,7 @@ Environment="no_proxy=no-proxy.example.com"
 `,
 		}, {
 			name: "http only",
-			vars: HTTPProxyVariables{
+			vars: v1alpha1.HTTPProxy{
 				HTTP: "http://example.com",
 			},
 			expectedContents: `[Service]
@@ -49,7 +51,7 @@ Environment="http_proxy=http://example.com"
 `,
 		}, {
 			name: "https only",
-			vars: HTTPProxyVariables{
+			vars: v1alpha1.HTTPProxy{
 				HTTPS: "https://example.com",
 			},
 			expectedContents: `[Service]
@@ -58,7 +60,7 @@ Environment="https_proxy=https://example.com"
 `,
 		}, {
 			name: "no proxy only",
-			vars: HTTPProxyVariables{
+			vars: v1alpha1.HTTPProxy{
 				AdditionalNo: []string{
 					"no-proxy.example.com",
 				},
@@ -69,7 +71,7 @@ Environment="no_proxy=no-proxy.example.com"
 `,
 		}, {
 			name: "multiple no proxy only",
-			vars: HTTPProxyVariables{
+			vars: v1alpha1.HTTPProxy{
 				AdditionalNo: []string{
 					"no-proxy.example.com",
 					"no-proxy-1.example.com",
@@ -81,7 +83,7 @@ Environment="no_proxy=no-proxy.example.com,no-proxy-1.example.com"
 `,
 		}, {
 			name: "default no proxy values",
-			vars: HTTPProxyVariables{
+			vars: v1alpha1.HTTPProxy{
 				AdditionalNo: []string{
 					"no-proxy.example.com",
 					"no-proxy-1.example.com",

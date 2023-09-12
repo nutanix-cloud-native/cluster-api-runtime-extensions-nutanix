@@ -13,6 +13,7 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
 )
 
@@ -21,7 +22,7 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		func() *httpProxyPatchHandler {
 			fakeClient := fake.NewClientBuilder().Build()
-			return NewPatch(fakeClient)
+			return NewPatch(fakeClient, VariableName)
 		},
 		capitest.PatchTestDef{
 			Name: "unset variable",
@@ -31,7 +32,7 @@ func TestGeneratePatches(t *testing.T) {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					VariableName,
-					HTTPProxyVariables{
+					v1alpha1.HTTPProxy{
 						HTTP:         "http://example.com",
 						HTTPS:        "https://example.com",
 						AdditionalNo: []string{"no-proxy.example.com"},
@@ -58,7 +59,7 @@ func TestGeneratePatches(t *testing.T) {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					VariableName,
-					HTTPProxyVariables{
+					v1alpha1.HTTPProxy{
 						HTTP:         "http://example.com",
 						HTTPS:        "https://example.com",
 						AdditionalNo: []string{"no-proxy.example.com"},
@@ -85,7 +86,7 @@ func TestGeneratePatches(t *testing.T) {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					VariableName,
-					HTTPProxyVariables{
+					v1alpha1.HTTPProxy{
 						HTTP:         "http://example.com",
 						HTTPS:        "https://example.com",
 						AdditionalNo: []string{"no-proxy.example.com"},

@@ -3,8 +3,8 @@
 
 package handlers
 
-const (
-	MetadataDomain = "capiext.labs.d2iq.io"
+import "github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 
-	CAPIProviderLabel = MetadataDomain + "/capi-provider"
+const (
+	MetadataDomain = v1alpha1.APIGroup
 )

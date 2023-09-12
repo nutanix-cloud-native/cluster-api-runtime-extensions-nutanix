@@ -28,7 +28,7 @@ gomod:
 
 builds:
   - id: capi-runtime-extensions
-    dir: ./cmd/capi-runtime-extensions
+    dir: ./cmd
     env:
       - CGO_ENABLED=0
     flags:

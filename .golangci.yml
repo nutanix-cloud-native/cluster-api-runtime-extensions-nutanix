@@ -81,3 +81,7 @@ issues:
     - source: "^// \\+kubebuilder:"
       linters:
         - lll
+    # Idiomatic to use init functions to register APIs with scheme
+    - path: "api/*"
+      linters:
+        - gochecknoinits

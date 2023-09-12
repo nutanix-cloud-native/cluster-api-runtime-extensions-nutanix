@@ -7,4 +7,13 @@ layout:
 - go.kubebuilder.io/v4
 projectName: capi-runtime-extensions
 repo: github.com/d2iq-labs/capi-runtime-extensions
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: labs.d2iq.io
+  group: capiext.labs.d2iq.io
+  kind: ClusterConfig
+  path: github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1
+  version: v1alpha1
 version: "3"
