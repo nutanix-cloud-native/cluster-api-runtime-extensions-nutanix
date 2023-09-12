@@ -45,4 +45,8 @@ func (mgp metaGeneratePatches) GeneratePatches(
 			return
 		}
 	}
+
+	if resp.Status == "" {
+		resp.Status = runtimehooksv1.ResponseStatusSuccess
+	}
 }
