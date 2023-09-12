@@ -40,8 +40,8 @@ func (mgp metaGeneratePatches) GeneratePatches(
 		if wrappedResp.Message != "" {
 			resp.Message = strings.TrimPrefix(resp.Message+"\n"+wrappedResp.Message, "\n")
 		}
-		if wrappedResp.Status != runtimehooksv1.ResponseStatusSuccess {
-			wrappedResp.Status = runtimehooksv1.ResponseStatusSuccess
+		resp.Status = wrappedResp.Status
+		if resp.Status == runtimehooksv1.ResponseStatusFailure {
 			return
 		}
 	}
