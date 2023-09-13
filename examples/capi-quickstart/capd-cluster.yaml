@@ -6,8 +6,7 @@ kind: Cluster
 metadata:
   labels:
     capiext.labs.d2iq.io/cni: calico
-  name: capi-quickstart
-  namespace: default
+  name: capd-quick-start
 spec:
   clusterNetwork:
     pods:
@@ -18,26 +17,14 @@ spec:
       cidrBlocks:
         - 10.128.0.0/12
   topology:
-    class: quick-start
+    class: capd-quick-start
     controlPlane:
       metadata: {}
       replicas: 1
     variables:
-      - name: imageRepository
-        value: ""
-      - name: etcdImageTag
-        value: ""
-      - name: coreDNSImageTag
-        value: ""
-      - name: podSecurityStandard
-        value:
-          audit: restricted
-          enabled: true
-          enforce: baseline
-          warn: restricted
       - name: clusterConfig
         value: {}
-    version: v1.27.5
+    version: v1.27.2
     workers:
       machineDeployments:
         - class: default-worker

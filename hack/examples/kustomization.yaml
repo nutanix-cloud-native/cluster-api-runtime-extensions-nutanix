@@ -1,0 +1,61 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+sortOptions:
+  order: fifo
+
+resources:
+- ./bases/capd
+
+patches:
+- target:
+    group: cluster.x-k8s.io
+    kind: ClusterClass
+  patch: |-
+    - op: "add"
+      path: "/spec/patches"
+      value:
+        - name: "cluster-config"
+          external:
+            generateExtension: "clusterconfigpatch.capi-runtime-extensions"
+            discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
+    - op: "remove"
+      path: "/spec/variables"
+- target:
+    group: cluster.x-k8s.io
+    kind: Cluster
+  patch: |-
+    - op: "remove"
+      path: "/metadata/namespace"
+    - op: "add"
+      path: "/spec/topology/version"
+      value: "v1.27.2"
+    - op: "add"
+      path: "/spec/clusterNetwork/pods/cidrBlocks"
+      value:
+        - "192.168.0.0/16"
+    - op: "add"
+      path: "/spec/clusterNetwork/services/cidrBlocks"
+      value:
+        - "10.128.0.0/12"
+    - op: "add"
+      path: "/spec/clusterNetwork/serviceDomain"
+      value: "cluster.local"
+    - op: "add"
+      path: "/spec/topology/controlPlane/replicas"
+      value: 1
+    - op: "add"
+      path: "/spec/topology/workers/machineDeployments/0/replicas"
+      value: 1
+    - op: "add"
+      path: "/spec/topology/variables"
+      value:
+        - name: "clusterConfig"
+          value: {}
+    - op: "add"
+      path: "/metadata/labels"
+      value:
+        capiext.labs.d2iq.io/cni: calico
