@@ -58,6 +58,12 @@ func (s *ServerOptions) AddFlags(fs *pflag.FlagSet) {
 	)
 }
 
+// NeedLeaderElection implements the LeaderElectionRunnable interface, which indicates
+// the webhook server doesn't need leader election.
+func (*Server) NeedLeaderElection() bool {
+	return false
+}
+
 func (s *Server) Start(ctx context.Context) error {
 	// Creates a logger to be used during the main func.
 	setupLog := ctrl.Log.WithName("runtimehooks")
