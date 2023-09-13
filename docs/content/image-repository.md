@@ -4,8 +4,7 @@ title: "Image Repository"
 
 Override the container image repository used when pulling Kubernetes images.
 
-To enable the API server certificate SANs enable the `extraapiservercertsansvars` and `extraapiservercertsanspatch`
-external patches on `ClusterClass`.
+To enable this handler set the `imagerepositorypatch` and `imagerepositoryvars` external patches on `ClusterClass`.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -14,13 +13,13 @@ metadata:
   name: <NAME>
 spec:
   patches:
-    - name: apiserver-cert-sans
+    - name: image-repository
       external:
         generateExtension: "imagerepositorypatch.capi-runtime-extensions"
         discoverVariablesExtension: "imagerepositoryvars.capi-runtime-extensions"
 ```
 
-On the cluster resource then specify desired certificate SANs values:
+On the cluster resource then specify desired image repository value:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
