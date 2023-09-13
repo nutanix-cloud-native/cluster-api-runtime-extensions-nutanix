@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package imagerepository
+package kubernetesimagerepository
 
 import (
 	"context"
@@ -21,7 +21,7 @@ var (
 
 const (
 	// VariableName is http proxy external patch variable name.
-	VariableName = "imageRepository"
+	VariableName = "kubernetesImageRepository"
 
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "ImageRepositoryVars"
@@ -45,7 +45,7 @@ func (h *imageRepositoryVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     VariableName,
 		Required: false,
-		Schema:   v1alpha1.ImageRepository("").VariableSchema(),
+		Schema:   v1alpha1.KubernetesImageRepository("").VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

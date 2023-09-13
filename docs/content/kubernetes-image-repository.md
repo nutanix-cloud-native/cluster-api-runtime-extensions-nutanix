@@ -1,5 +1,5 @@
 ---
-title: "Image Repository"
+title: "Kubernete Image Repository"
 ---
 
 Override the container image repository used when pulling Kubernetes images.
@@ -19,7 +19,7 @@ spec:
         discoverVariablesExtension: "imagerepositoryvars.capi-runtime-extensions"
 ```
 
-On the cluster resource then specify desired image repository value:
+On the cluster resource then specify desired Kubernetes image repository value:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -29,7 +29,7 @@ metadata:
 spec:
   topology:
     variables:
-      - name: imageRepository
+      - name: kubernetesImageRepository
         value: "my-registry.io/my-org/my-repo"
 ```
 

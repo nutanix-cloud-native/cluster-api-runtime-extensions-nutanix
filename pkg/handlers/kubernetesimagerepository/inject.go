@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package imagerepository
+package kubernetesimagerepository
 
 import (
 	"context"
@@ -82,7 +82,7 @@ func (h *imageRepositoryPatchHandler) GeneratePatches(
 				"holderRef", holderRef,
 			)
 
-			imageRepositoryVar, found, err := variables.Get[v1alpha1.ImageRepository](
+			imageRepositoryVar, found, err := variables.Get[v1alpha1.KubernetesImageRepository](
 				vars,
 				h.variableName,
 				h.variableFieldPath...,
@@ -91,7 +91,7 @@ func (h *imageRepositoryPatchHandler) GeneratePatches(
 				return err
 			}
 			if !found {
-				log.V(5).Info("imageRepository variable not defined")
+				log.V(5).Info("kubernetesImageRepository variable not defined")
 				return nil
 			}
 
@@ -110,7 +110,7 @@ func (h *imageRepositoryPatchHandler) GeneratePatches(
 					log.WithValues(
 						"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 						"patchedObjectName", client.ObjectKeyFromObject(obj),
-					).Info("setting imageRepository in kubeadm config spec")
+					).Info("setting kubernetesImageRepository in kubeadm config spec")
 
 					if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 						obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
