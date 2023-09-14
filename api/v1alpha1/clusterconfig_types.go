@@ -34,6 +34,9 @@ type ClusterConfigSpec struct {
 	KubernetesImageRegistry *KubernetesImageRegistry `json:"kubernetesImageRegistry,omitempty"`
 
 	// +optional
+	Etcd *Etcd `json:"etcd,omitempty"`
+
+	// +optional
 	Proxy *HTTPProxy `json:"proxy,omitempty"`
 
 	// +optional
@@ -53,6 +56,7 @@ func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 					"",
 				).VariableSchema().
 					OpenAPIV3Schema,
+				"etcd":                   Etcd{}.VariableSchema().OpenAPIV3Schema,
 				"proxy":                  HTTPProxy{}.VariableSchema().OpenAPIV3Schema,
 				"extraAPIServerCertSANs": ExtraAPIServerCertSANs{}.VariableSchema().OpenAPIV3Schema,
 				"cni":                    CNI{}.VariableSchema().OpenAPIV3Schema,
@@ -75,6 +79,32 @@ func (KubernetesImageRegistry) VariableSchema() clusterv1.VariableSchema {
 
 func (v KubernetesImageRegistry) String() string {
 	return string(v)
+}
+
+type Etcd struct {
+	// ImageRepository required for overriding etcd image repository.
+	ImageRepository string `json:"imageRepository,omitempty"`
+
+	// ImageTag required for overriding etcd image tag.
+	ImageTag string `json:"imageTag,omitempty"`
+}
+
+func (Etcd) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"imageRepository": {
+					Description: "Image repository for etcd.",
+					Type:        "string",
+				},
+				"imageTag": {
+					Description: "Image tag for etcd.",
+					Type:        "string",
+				},
+			},
+		},
+	}
 }
 
 // HTTPProxy required for providing proxy configuration.

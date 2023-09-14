@@ -29,6 +29,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/auditpolicy"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/etcd"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/extraapiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/kubernetesimageregistry"
@@ -129,6 +130,9 @@ func main() {
 		kubernetesimageregistry.NewVariable(),
 		kubernetesimageregistry.NewPatch(kubernetesimageregistry.VariableName),
 
+		etcd.NewVariable(),
+		etcd.NewPatch(etcd.VariableName),
+
 		clusterconfig.NewVariable(),
 		mutation.NewMetaGeneratePatchesHandler(
 			"clusterConfigPatch",
@@ -142,6 +146,7 @@ func main() {
 				clusterconfig.VariableName,
 				kubernetesimageregistry.VariableName,
 			),
+			etcd.NewPatch(clusterconfig.VariableName, etcd.VariableName),
 		),
 	)
 	if err := mgr.Add(runtimeWebhookServer); err != nil {
