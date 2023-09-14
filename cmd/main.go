@@ -6,9 +6,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
-	"time"
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,21 +34,14 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
 )
 
-var (
-	// Flags.
-	profilerAddress string
-	logOptions      = logs.NewOptions()
-)
+// Flags.
+var logOptions = logs.NewOptions()
 
 // initFlags initializes the flags.
 func initFlags(fs *pflag.FlagSet) {
 	// Initialize logs flags using Kubernetes component-base machinery.
 	logs.AddFlags(fs, logs.SkipLoggingConfigurationFlags())
 	logsv1.AddFlags(logOptions, fs)
-
-	// Add test-extension specific flags
-	fs.StringVar(&profilerAddress, "profiler-address", "",
-		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
 }
 
 func main() {
@@ -85,6 +76,9 @@ func main() {
 		"The address the probe endpoint binds to.",
 	)
 
+	pflag.CommandLine.StringVar(&mgrOptions.PprofBindAddress, "profiler-address", "",
+		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
+
 	calicoCNIConfig := &calico.CalicoCNIConfig{}
 
 	runtimeWebhookServerOpts := server.NewServerOptions()
@@ -107,21 +101,6 @@ func main() {
 
 	// Add the klog logger in the context.
 	ctrl.SetLogger(klog.Background())
-
-	// Initialize the golang profiler server, if required.
-	if profilerAddress != "" {
-		klog.Infof("Profiler listening for requests at %s", profilerAddress)
-		go func() {
-			profilerServer := &http.Server{
-				Addr:              profilerAddress,
-				Handler:           nil,
-				MaxHeaderBytes:    1 << 20,
-				IdleTimeout:       90 * time.Second, // matches http.DefaultTransport keep-alive timeout
-				ReadHeaderTimeout: 32 * time.Second,
-			}
-			klog.Info(profilerServer.ListenAndServe())
-		}()
-	}
 
 	signalCtx := ctrl.SetupSignalHandler()
 
