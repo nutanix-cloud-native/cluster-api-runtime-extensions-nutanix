@@ -21,7 +21,7 @@ var (
 
 const (
 	// VariableName is http proxy external patch variable name.
-	VariableName = "kubernetesImageRepository"
+	variableName = "kubernetesImageRepository"
 
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "ImageRepositoryVars"
@@ -43,7 +43,7 @@ func (h *imageRepositoryVariableHandler) DiscoverVariables(
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     VariableName,
+		Name:     variableName,
 		Required: false,
 		Schema:   v1alpha1.KubernetesImageRepository("").VariableSchema(),
 	})

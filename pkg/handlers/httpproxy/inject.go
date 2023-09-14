@@ -53,6 +53,18 @@ var (
 
 func NewPatch(
 	cl ctrlclient.Reader,
+) *httpProxyPatchHandler {
+	return newHTTPProxyPatchHandler(cl, variableName)
+}
+
+func NewMetaPatch(
+	cl ctrlclient.Reader,
+) *httpProxyPatchHandler {
+	return newHTTPProxyPatchHandler(cl, mutation.MetaVariableName, variableName)
+}
+
+func newHTTPProxyPatchHandler(
+	cl ctrlclient.Reader,
 	variableName string,
 	variableFieldPath ...string,
 ) *httpProxyPatchHandler {

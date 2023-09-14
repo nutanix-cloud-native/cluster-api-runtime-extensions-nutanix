@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/auditpolicy"
@@ -112,43 +113,52 @@ func main() {
 		os.Exit(1)
 	}
 
-	runtimeWebhookServer := server.NewServer(
-		runtimeWebhookServerOpts,
-
+	// Handlers for lifecycle hooks.
+	lifeCycleHandlers := []handlers.Named{
 		servicelbgc.New(mgr.GetClient()),
-
-		calico.New(mgr.GetClient(), calicoCNIConfig, clusterconfig.VariableName, "cni"),
-
-		httpproxy.NewVariable(),
-		httpproxy.NewPatch(mgr.GetClient(), httpproxy.VariableName),
-
-		extraapiservercertsans.NewVariable(),
-		extraapiservercertsans.NewPatch(extraapiservercertsans.VariableName),
-
+	}
+	// Handlers that apply patches to the Cluster object and its objects.
+	// Used by CAPI's GeneratePatches hook.
+	patchHandlers := []handlers.Named{
+		httpproxy.NewPatch(mgr.GetClient()),
+		extraapiservercertsans.NewPatch(),
 		auditpolicy.NewPatch(),
-
+		kubernetesimagerepository.NewPatch(),
+		etcd.NewPatch(),
+	}
+	// Handlers used by CAPI's DiscoverVariables hook.
+	// It's ok that this does not match patchHandlers.
+	// Some of those handlers may always get applied and not have a corresponding variable.
+	variableHandlers := []handlers.Named{
+		httpproxy.NewVariable(),
+		extraapiservercertsans.NewVariable(),
 		kubernetesimagerepository.NewVariable(),
-		kubernetesimagerepository.NewPatch(kubernetesimagerepository.VariableName),
-
-		etcd.NewVariable(),
-		etcd.NewPatch(etcd.VariableName),
-
+	}
+	// This metaPatchHandlers combines all other patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	metaPatchHandlers := []mutation.GeneratePatches{
+		httpproxy.NewMetaPatch(mgr.GetClient()),
+		extraapiservercertsans.NewMetaPatch(),
+		auditpolicy.NewPatch(),
+		kubernetesimagerepository.NewMetaPatch(),
+		etcd.NewMetaPatch(),
+	}
+	metaHandlers := []handlers.Named{
+		// This Calico handler relies on a variable but does not generate a patch.
+		// Instead it creates other resources in the API.
+		calico.NewMetaHandler(mgr.GetClient(), calicoCNIConfig),
 		clusterconfig.NewVariable(),
-		mutation.NewMetaGeneratePatchesHandler(
-			"clusterConfigPatch",
-			httpproxy.NewPatch(mgr.GetClient(), clusterconfig.VariableName, httpproxy.VariableName),
-			extraapiservercertsans.NewPatch(
-				clusterconfig.VariableName,
-				extraapiservercertsans.VariableName,
-			),
-			auditpolicy.NewPatch(),
-			kubernetesimagerepository.NewPatch(
-				clusterconfig.VariableName,
-				kubernetesimagerepository.VariableName,
-			),
-			etcd.NewPatch(clusterconfig.VariableName, etcd.VariableName),
-		),
-	)
+		mutation.NewMetaGeneratePatchesHandler("clusterConfigPatch", metaPatchHandlers...),
+	}
+
+	var allHandlers []handlers.Named
+	allHandlers = append(allHandlers, lifeCycleHandlers...)
+	allHandlers = append(allHandlers, patchHandlers...)
+	allHandlers = append(allHandlers, variableHandlers...)
+	allHandlers = append(allHandlers, metaHandlers...)
+
+	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
+
 	if err := mgr.Add(runtimeWebhookServer); err != nil {
 		setupLog.Error(err, "unable to add runtime webhook server runnable to controller manager")
 		os.Exit(1)

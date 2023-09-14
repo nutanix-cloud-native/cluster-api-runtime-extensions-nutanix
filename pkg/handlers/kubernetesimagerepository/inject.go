@@ -41,7 +41,15 @@ var (
 	_ mutation.GeneratePatches = &imageRepositoryPatchHandler{}
 )
 
-func NewPatch(
+func NewPatch() *imageRepositoryPatchHandler {
+	return newImageRegistryPatchHandler(variableName)
+}
+
+func NewMetaPatch() *imageRepositoryPatchHandler {
+	return newImageRegistryPatchHandler(mutation.MetaVariableName, variableName)
+}
+
+func newImageRegistryPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *imageRepositoryPatchHandler {

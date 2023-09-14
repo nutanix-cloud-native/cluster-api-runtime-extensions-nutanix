@@ -15,7 +15,7 @@ import (
 func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		VariableName,
+		variableName,
 		ptr.To(v1alpha1.HTTPProxy{}.VariableSchema()),
 		NewVariable,
 		capitest.VariableTestDef{

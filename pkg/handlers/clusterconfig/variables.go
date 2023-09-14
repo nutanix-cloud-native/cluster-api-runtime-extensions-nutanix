@@ -20,9 +20,6 @@ var (
 )
 
 const (
-	// VariableName is http proxy external patch variable name.
-	VariableName = "clusterConfig"
-
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "ClusterConfigVars"
 )
@@ -43,7 +40,7 @@ func (h *clusterConfigVariableHandler) DiscoverVariables(
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     VariableName,
+		Name:     mutation.MetaVariableName,
 		Required: false,
 		Schema:   v1alpha1.ClusterConfigSpec{}.VariableSchema(),
 	})

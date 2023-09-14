@@ -17,7 +17,7 @@ import (
 func TestGeneratePatches(t *testing.T) {
 	capitest.ValidateGeneratePatches(
 		t,
-		func() mutation.GeneratePatches { return NewPatch(VariableName) },
+		func() mutation.GeneratePatches { return NewPatch() },
 		capitest.PatchTestDef{
 			Name: "unset variable",
 		},
@@ -25,7 +25,7 @@ func TestGeneratePatches(t *testing.T) {
 			Name: "etcd imageRepository and imageTag set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					VariableName,
+					variableName,
 					v1alpha1.Etcd{
 						Image: &v1alpha1.Image{
 							Repository: "my-registry.io/my-org/my-repo",
@@ -55,7 +55,7 @@ func TestGeneratePatches(t *testing.T) {
 			Name: "etcd imageRepository set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					VariableName,
+					variableName,
 					v1alpha1.Etcd{
 						Image: &v1alpha1.Image{
 							Repository: "my-registry.io/my-org/my-repo",
@@ -83,7 +83,7 @@ func TestGeneratePatches(t *testing.T) {
 			Name: "etcd imageTag set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					VariableName,
+					variableName,
 					v1alpha1.Etcd{
 						Image: &v1alpha1.Image{
 							Tag: "v3.5.99_custom.0",

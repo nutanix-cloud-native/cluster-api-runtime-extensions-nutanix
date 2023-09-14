@@ -41,7 +41,15 @@ var (
 	_ mutation.GeneratePatches = &extraAPIServerCertSANsPatchHandler{}
 )
 
-func NewPatch(
+func NewPatch() *extraAPIServerCertSANsPatchHandler {
+	return newExtraAPIServerCertSANsPatchHandler(variableName)
+}
+
+func NewMetaPatch() *extraAPIServerCertSANsPatchHandler {
+	return newExtraAPIServerCertSANsPatchHandler(mutation.MetaVariableName, variableName)
+}
+
+func newExtraAPIServerCertSANsPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *extraAPIServerCertSANsPatchHandler {

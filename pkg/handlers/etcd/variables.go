@@ -20,8 +20,8 @@ var (
 )
 
 const (
-	// VariableName is http proxy external patch variable name.
-	VariableName = "etcd"
+	// variableName is etcd external patch variable name.
+	variableName = "etcd"
 
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "etcdVars"
@@ -43,7 +43,7 @@ func (h *etcdVariableHandler) DiscoverVariables(
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     VariableName,
+		Name:     variableName,
 		Required: false,
 		Schema:   v1alpha1.Etcd{}.VariableSchema(),
 	})

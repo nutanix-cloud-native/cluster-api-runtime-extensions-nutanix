@@ -41,7 +41,15 @@ var (
 	_ mutation.GeneratePatches = &etcdPatchHandler{}
 )
 
-func NewPatch(
+func NewPatch() *etcdPatchHandler {
+	return newEtcdPatchHandler(variableName)
+}
+
+func NewMetaPatch() *etcdPatchHandler {
+	return newEtcdPatchHandler(mutation.MetaVariableName, variableName)
+}
+
+func newEtcdPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *etcdPatchHandler {
