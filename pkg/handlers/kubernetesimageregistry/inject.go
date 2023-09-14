@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package kubernetesimagerepository
+package kubernetesimageregistry
 
 import (
 	"context"
@@ -27,28 +27,28 @@ import (
 
 const (
 	// HandlerNamePatch is the name of the inject handler.
-	HandlerNamePatch = "ImageRepositoryPatch"
+	HandlerNamePatch = "ImageRegistryPatch"
 )
 
-type imageRepositoryPatchHandler struct {
+type imageRegistryPatchHandler struct {
 	decoder           runtime.Decoder
 	variableName      string
 	variableFieldPath []string
 }
 
 var (
-	_ handlers.Named           = &imageRepositoryPatchHandler{}
-	_ mutation.GeneratePatches = &imageRepositoryPatchHandler{}
+	_ handlers.Named           = &imageRegistryPatchHandler{}
+	_ mutation.GeneratePatches = &imageRegistryPatchHandler{}
 )
 
 func NewPatch(
 	variableName string,
 	variableFieldPath ...string,
-) *imageRepositoryPatchHandler {
+) *imageRegistryPatchHandler {
 	scheme := runtime.NewScheme()
 	_ = bootstrapv1.AddToScheme(scheme)
 	_ = controlplanev1.AddToScheme(scheme)
-	return &imageRepositoryPatchHandler{
+	return &imageRegistryPatchHandler{
 		decoder: serializer.NewCodecFactory(scheme).UniversalDecoder(
 			controlplanev1.GroupVersion,
 			bootstrapv1.GroupVersion,
@@ -58,11 +58,11 @@ func NewPatch(
 	}
 }
 
-func (h *imageRepositoryPatchHandler) Name() string {
+func (h *imageRegistryPatchHandler) Name() string {
 	return HandlerNamePatch
 }
 
-func (h *imageRepositoryPatchHandler) GeneratePatches(
+func (h *imageRegistryPatchHandler) GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
@@ -82,7 +82,7 @@ func (h *imageRepositoryPatchHandler) GeneratePatches(
 				"holderRef", holderRef,
 			)
 
-			imageRepositoryVar, found, err := variables.Get[v1alpha1.KubernetesImageRepository](
+			imageRegistryVar, found, err := variables.Get[v1alpha1.KubernetesImageRegistry](
 				vars,
 				h.variableName,
 				h.variableFieldPath...,
@@ -91,7 +91,7 @@ func (h *imageRepositoryPatchHandler) GeneratePatches(
 				return err
 			}
 			if !found {
-				log.V(5).Info("kubernetesImageRepository variable not defined")
+				log.V(5).Info("kubernetesImageRegistry variable not defined")
 				return nil
 			}
 
@@ -101,7 +101,7 @@ func (h *imageRepositoryPatchHandler) GeneratePatches(
 				"variableFieldPath",
 				h.variableFieldPath,
 				"variableValue",
-				imageRepositoryVar,
+				imageRegistryVar,
 			)
 
 			return patches.Generate(
@@ -110,12 +110,12 @@ func (h *imageRepositoryPatchHandler) GeneratePatches(
 					log.WithValues(
 						"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 						"patchedObjectName", client.ObjectKeyFromObject(obj),
-					).Info("setting kubernetesImageRepository in kubeadm config spec")
+					).Info("setting imageRepository in kubeadm config spec")
 
 					if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 						obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
 					}
-					obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.ImageRepository = imageRepositoryVar.String()
+					obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.ImageRepository = imageRegistryVar.String()
 
 					return nil
 				},

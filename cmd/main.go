@@ -31,7 +31,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/extraapiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/kubernetesimagerepository"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/kubernetesimageregistry"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
 )
 
@@ -126,8 +126,8 @@ func main() {
 
 		auditpolicy.NewPatch(),
 
-		kubernetesimagerepository.NewVariable(),
-		kubernetesimagerepository.NewPatch(kubernetesimagerepository.VariableName),
+		kubernetesimageregistry.NewVariable(),
+		kubernetesimageregistry.NewPatch(kubernetesimageregistry.VariableName),
 
 		clusterconfig.NewVariable(),
 		mutation.NewMetaGeneratePatchesHandler(
@@ -138,9 +138,9 @@ func main() {
 				extraapiservercertsans.VariableName,
 			),
 			auditpolicy.NewPatch(),
-			kubernetesimagerepository.NewPatch(
+			kubernetesimageregistry.NewPatch(
 				clusterconfig.VariableName,
-				kubernetesimagerepository.VariableName,
+				kubernetesimageregistry.VariableName,
 			),
 		),
 	)

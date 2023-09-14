@@ -26,7 +26,7 @@ type ClusterConfigSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// +optional
-	KubernetesImageRepository *KubernetesImageRepository `json:"kubernetesImageRepository,omitempty"`
+	KubernetesImageRegistry *KubernetesImageRegistry `json:"kubernetesImageRegistry,omitempty"`
 
 	// +optional
 	Proxy *HTTPProxy `json:"proxy,omitempty"`
@@ -41,7 +41,7 @@ func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 			Description: "Cluster configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"kubernetesImageRepository": KubernetesImageRepository(
+				"kubernetesImageRegistry": KubernetesImageRegistry(
 					"",
 				).VariableSchema().
 					OpenAPIV3Schema,
@@ -52,19 +52,19 @@ func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
-// KubernetesImageRepository required for overriding Kubernetes image repository.
-type KubernetesImageRepository string
+// KubernetesImageRegistry required for overriding Kubernetes image registry.
+type KubernetesImageRegistry string
 
-func (KubernetesImageRepository) VariableSchema() clusterv1.VariableSchema {
+func (KubernetesImageRegistry) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Sets the Kubernetes imageRepository used for the KubeadmControlPlane.",
+			Description: "Sets the Kubernetes image registry used for the KubeadmControlPlane.",
 			Type:        "string",
 		},
 	}
 }
 
-func (v KubernetesImageRepository) String() string {
+func (v KubernetesImageRegistry) String() string {
 	return string(v)
 }
 

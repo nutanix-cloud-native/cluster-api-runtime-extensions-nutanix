@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package kubernetesimagerepository
+package kubernetesimageregistry
 
 import (
 	"context"
@@ -15,29 +15,29 @@ import (
 )
 
 var (
-	_ handlers.Named             = &imageRepositoryVariableHandler{}
-	_ mutation.DiscoverVariables = &imageRepositoryVariableHandler{}
+	_ handlers.Named             = &imageRegistryVariableHandler{}
+	_ mutation.DiscoverVariables = &imageRegistryVariableHandler{}
 )
 
 const (
 	// VariableName is http proxy external patch variable name.
-	VariableName = "kubernetesImageRepository"
+	VariableName = "kubernetesImageRegistry"
 
 	// HandlerNameVariable is the name of the variable handler.
-	HandlerNameVariable = "ImageRepositoryVars"
+	HandlerNameVariable = "ImageRegistryVars"
 )
 
-func NewVariable() *imageRepositoryVariableHandler {
-	return &imageRepositoryVariableHandler{}
+func NewVariable() *imageRegistryVariableHandler {
+	return &imageRegistryVariableHandler{}
 }
 
-type imageRepositoryVariableHandler struct{}
+type imageRegistryVariableHandler struct{}
 
-func (h *imageRepositoryVariableHandler) Name() string {
+func (h *imageRegistryVariableHandler) Name() string {
 	return HandlerNameVariable
 }
 
-func (h *imageRepositoryVariableHandler) DiscoverVariables(
+func (h *imageRegistryVariableHandler) DiscoverVariables(
 	ctx context.Context,
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
@@ -45,7 +45,7 @@ func (h *imageRepositoryVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     VariableName,
 		Required: false,
-		Schema:   v1alpha1.KubernetesImageRepository("").VariableSchema(),
+		Schema:   v1alpha1.KubernetesImageRegistry("").VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
