@@ -26,6 +26,30 @@ spec:
         discoverVariablesExtension: clusterconfigvars.capi-runtime-extensions
         generateExtension: clusterconfigpatch.capi-runtime-extensions
       name: cluster-config
+    - definitions:
+        - jsonPatches:
+            - op: add
+              path: /spec/template/spec/customImage
+              valueFrom:
+                template: ghcr.io/mesosphere/kind-node:{{ .builtin.machineDeployment.version }}
+          selector:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            kind: DockerMachineTemplate
+            matchResources:
+              machineDeploymentClass:
+                names:
+                  - '*'
+        - jsonPatches:
+            - op: add
+              path: /spec/template/spec/customImage
+              valueFrom:
+                template: ghcr.io/mesosphere/kind-node:{{ .builtin.controlPlane.version }}
+          selector:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            kind: DockerMachineTemplate
+            matchResources:
+              controlPlane: true
+      name: customKinDNodeImageForWorkers
   workers:
     machineDeployments:
       - class: default-worker

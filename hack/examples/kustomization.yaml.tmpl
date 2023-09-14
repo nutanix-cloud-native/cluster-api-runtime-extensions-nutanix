@@ -26,13 +26,45 @@ patches:
       path: "/spec/variables"
 - target:
     group: cluster.x-k8s.io
+    kind: ClusterClass
+    name: capd-quick-start
+  patch: |-
+    - op: "add"
+      path: "/spec/patches/-"
+      value:
+        name: customKinDNodeImageForWorkers
+        definitions:
+          - selector:
+              apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+              kind: DockerMachineTemplate
+              matchResources:
+                machineDeploymentClass:
+                  names:
+                    - "*"
+            jsonPatches:
+              - op: add
+                path: /spec/template/spec/customImage
+                valueFrom:
+                  template: ghcr.io/mesosphere/kind-node:{{ .builtin.machineDeployment.version }}
+          - selector:
+              apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+              kind: DockerMachineTemplate
+              matchResources:
+                controlPlane: true
+            jsonPatches:
+              - op: add
+                path: /spec/template/spec/customImage
+                valueFrom:
+                  template: ghcr.io/mesosphere/kind-node:{{ .builtin.controlPlane.version }}
+- target:
+    group: cluster.x-k8s.io
     kind: Cluster
   patch: |-
     - op: "remove"
       path: "/metadata/namespace"
     - op: "add"
       path: "/spec/topology/version"
-      value: "v1.27.2"
+      value: "${KUBERNETES_VERSION}"
     - op: "add"
       path: "/spec/clusterNetwork/pods/cidrBlocks"
       value:

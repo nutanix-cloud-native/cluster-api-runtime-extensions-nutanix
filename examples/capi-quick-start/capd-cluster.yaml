@@ -24,7 +24,7 @@ spec:
     variables:
       - name: clusterConfig
         value: {}
-    version: v1.27.2
+    version: v1.27.5
     workers:
       machineDeployments:
         - class: default-worker
