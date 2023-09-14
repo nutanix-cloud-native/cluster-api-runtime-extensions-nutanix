@@ -116,7 +116,7 @@ func main() {
 
 		servicelbgc.New(mgr.GetClient()),
 
-		calico.New(mgr.GetClient(), calicoCNIConfig),
+		calico.New(mgr.GetClient(), calicoCNIConfig, clusterconfig.VariableName, "cni"),
 
 		httpproxy.NewVariable(),
 		httpproxy.NewPatch(mgr.GetClient(), httpproxy.VariableName),
