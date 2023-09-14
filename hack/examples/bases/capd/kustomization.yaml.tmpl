@@ -1,0 +1,23 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+configurations:
+- kustomizeconfig.yaml
+
+resources:
+- https://github.com/kubernetes-sigs/cluster-api/releases/download/${CLUSTERCTL_VERSION}/clusterclass-quick-start.yaml
+- https://github.com/kubernetes-sigs/cluster-api/releases/download/${CLUSTERCTL_VERSION}/cluster-template-development.yaml
+
+namePrefix: capd-
+
+patches:
+- target:
+    group: cluster.x-k8s.io
+    kind: Cluster
+  patch: |-
+    - op: "add"
+      path: "/metadata/name"
+      value: "quick-start"

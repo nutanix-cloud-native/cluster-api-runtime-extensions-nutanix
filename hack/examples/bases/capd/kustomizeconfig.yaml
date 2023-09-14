@@ -1,0 +1,42 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+nameReference:
+- group: infrastructure.cluster.x-k8s.io
+  kind: DockerMachineTemplate
+  name: quick-start-control-plane
+  fieldSpecs:
+  - group: cluster.x-k8s.io
+    kind: ClusterClass
+    path: spec/controlPlane/machineInfrastructure/ref/name
+- group: controlplane.cluster.x-k8s.io
+  kind: KubeadmControlPlaneTemplate
+  fieldSpecs:
+  - group: cluster.x-k8s.io
+    kind: ClusterClass
+    path: spec/controlPlane/ref/name
+- group: infrastructure.cluster.x-k8s.io
+  kind: DockerClusterTemplate
+  fieldSpecs:
+  - group: cluster.x-k8s.io
+    kind: ClusterClass
+    path: spec/infrastructure/ref/name
+- group: bootstrap.cluster.x-k8s.io
+  kind: KubeadmConfigTemplate
+  fieldSpecs:
+  - group: cluster.x-k8s.io
+    kind: ClusterClass
+    path: spec/workers/machineDeployments/template/bootstrap/ref/name
+- group: infrastructure.cluster.x-k8s.io
+  kind: DockerMachineTemplate
+  name: quick-start-default-worker-machinetemplate
+  fieldSpecs:
+  - group: cluster.x-k8s.io
+    kind: ClusterClass
+    path: spec/workers/machineDeployments/template/infrastructure/ref/name
+- group: cluster.x-k8s.io
+  kind: ClusterClass
+  fieldSpecs:
+  - group: cluster.x-k8s.io
+    kind: Cluster
+    path: spec/topology/class

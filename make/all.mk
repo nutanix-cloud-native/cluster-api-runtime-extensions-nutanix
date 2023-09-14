@@ -20,3 +20,4 @@ include $(INCLUDE_DIR)clusterctl.mk
 include $(INCLUDE_DIR)flux.mk
 include $(INCLUDE_DIR)dev.mk
 include $(INCLUDE_DIR)helm.mk
+include $(INCLUDE_DIR)examples.mk
