@@ -35,6 +35,7 @@ spec:
     variables:
       - name: clusterConfig
         value:
+          kubernetesImageRegistry: "my-registry.io/my-org/my-repo"
           extraAPIServerCertSANs:
             - a.b.c.example.com
             - d.e.f.example.com
