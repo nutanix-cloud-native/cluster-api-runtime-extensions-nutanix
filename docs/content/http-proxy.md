@@ -32,7 +32,7 @@ spec:
   topology:
     variables:
       - name: proxy
-        values:
+        value:
           http: http://example.com
           https: http://example.com
           additionalNo:
