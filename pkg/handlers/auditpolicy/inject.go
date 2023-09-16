@@ -25,7 +25,7 @@ import (
 
 const (
 	// HandlerNamePatch is the name of the inject handler.
-	HandlerNamePatch = "AuditPolicy"
+	HandlerNamePatch = "AuditPolicyPatch"
 )
 
 type auditPolicyPatchHandler struct {
