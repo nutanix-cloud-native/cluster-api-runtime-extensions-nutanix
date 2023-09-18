@@ -7,7 +7,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/openapi/patterns"
+)
+
+const (
+	CNIProviderCalico = "calico"
 )
 
 //+kubebuilder:object:root=true
@@ -33,6 +38,9 @@ type ClusterConfigSpec struct {
 
 	// +optional
 	ExtraAPIServerCertSANs ExtraAPIServerCertSANs `json:"extraAPIServerCertSANs,omitempty"`
+
+	// +optional
+	CNI *CNI `json:"cni,omitempty"`
 }
 
 func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
@@ -47,6 +55,7 @@ func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 					OpenAPIV3Schema,
 				"proxy":                  HTTPProxy{}.VariableSchema().OpenAPIV3Schema,
 				"extraAPIServerCertSANs": ExtraAPIServerCertSANs{}.VariableSchema().OpenAPIV3Schema,
+				"cni":                    CNI{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -123,6 +132,33 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 			Items: &clusterv1.JSONSchemaProps{
 				Type:    "string",
 				Pattern: patterns.Anchored(patterns.DNS1123Subdomain),
+			},
+		},
+	}
+}
+
+// CNI required for providing CNI configuration.
+type CNI struct {
+	Provider string `json:"provider,omitempty"`
+}
+
+func (CNI) VariableSchema() clusterv1.VariableSchema {
+	supportedCNIProviders := []string{CNIProviderCalico}
+
+	cniProviderEnumVals, err := variables.ValuesToEnumJSON(supportedCNIProviders...)
+	if err != nil {
+		panic(err)
+	}
+
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"provider": {
+					Description: "CNI provider to deploy",
+					Type:        "string",
+					Enum:        cniProviderEnumVals,
+				},
 			},
 		},
 	}

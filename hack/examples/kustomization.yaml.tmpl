@@ -86,8 +86,6 @@ patches:
       path: "/spec/topology/variables"
       value:
         - name: "clusterConfig"
-          value: {}
-    - op: "add"
-      path: "/metadata/labels"
-      value:
-        capiext.labs.d2iq.io/cni: calico
+          value:
+            cni:
+              provider: calico

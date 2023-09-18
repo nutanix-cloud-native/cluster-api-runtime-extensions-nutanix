@@ -23,15 +23,13 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/parser"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni"
-)
-
-const (
-	CNILabelValue = "calico"
 )
 
 type CalicoCNIConfig struct {
@@ -68,6 +66,9 @@ func (c *CalicoCNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 type CalicoCNI struct {
 	client ctrlclient.Client
 	config *CalicoCNIConfig
+
+	variableName string
+	variablePath []string
 }
 
 var (
@@ -77,10 +78,17 @@ var (
 	calicoInstallationGK = schema.GroupKind{Group: "operator.tigera.io", Kind: "Installation"}
 )
 
-func New(c ctrlclient.Client, cfg *CalicoCNIConfig) *CalicoCNI {
+func New(
+	c ctrlclient.Client,
+	cfg *CalicoCNIConfig,
+	variableName string,
+	variablePath ...string,
+) *CalicoCNI {
 	return &CalicoCNI{
-		client: c,
-		config: cfg,
+		client:       c,
+		config:       cfg,
+		variableName: variableName,
+		variablePath: variablePath,
 	}
 }
 
@@ -100,22 +108,34 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 		clusterKey,
 	)
 
-	// Safe to set this to success response before we actually do the apply as the error handling
-	// will update for failure response properly.
-	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	if v, ok := req.Cluster.GetLabels()[cni.CNIProviderLabelKey]; !ok || v != CNILabelValue {
+	cniVar, found, err := variables.Get[v1alpha1.CNI](varMap, s.variableName, s.variablePath...)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to read CNI provider from cluster definition",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("failed to read CNI provider from cluster definition: %v",
+				err,
+			),
+		)
+		return
+	}
+	if !found || cniVar.Provider != v1alpha1.CNIProviderCalico {
 		log.V(4).Info(
 			fmt.Sprintf(
-				"Skipping Calico CNI handler, cluster does not specify %q as value of CNI provider label %q",
-				CNILabelValue,
-				cni.CNIProviderLabelKey,
+				"Skipping Calico CNI handler, cluster does not specify %q as value of CNI provider variable",
+				v1alpha1.CNIProviderCalico,
 			),
 		)
 		return
 	}
 
-	defaultInstallationConfigMapName, ok := s.config.defaultProviderInstallationConfigMapNames[req.Cluster.Spec.InfrastructureRef.Kind] //nolint:lll // Just a long line...
+	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
+	defaultInstallationConfigMapName, ok := s.config.defaultProviderInstallationConfigMapNames[infraKind]
 	if !ok {
 		log.V(4).Info(
 			fmt.Sprintf(
@@ -126,7 +146,92 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 		return
 	}
 
-	log.Info("Ensuring Tigera CRS and manifests ConfigMap exist in cluster namespace")
+	log.Info("Ensuring Tigera manifests ConfigMap exist in cluster namespace")
+	if err := s.ensureTigeraOperatorConfigMap(ctx, &req.Cluster); err != nil {
+		log.Error(
+			err,
+			"failed to ensure Tigera Operator manifests ConfigMap exists in cluster namespace",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf(
+				"failed to ensure Tigera Operator manifests ConfigMap exists in cluster namespace: %v",
+				err,
+			),
+		)
+		return
+	}
+
+	log.Info("Ensuring Calico installation CRS and ConfigMap exist for cluster")
+	err = s.ensureCNICRSForCluster(ctx, &req.Cluster, defaultInstallationConfigMapName)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to ensure Calico installation manifests ConfigMap and ClusterResourceSet exist in cluster namespace",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf(
+				"failed to ensure Tigera Operator manifests ConfigMap exists in cluster namespace: %v",
+				err,
+			),
+		)
+		return
+	}
+
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+}
+
+func (s *CalicoCNI) ensureCNICRSForCluster(
+	ctx context.Context,
+	cluster *capiv1.Cluster,
+	defaultInstallationConfigMapName string,
+) error {
+	defaultInstallationConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: s.config.defaultsNamespace,
+			Name:      defaultInstallationConfigMapName,
+		},
+	}
+	defaultInstallationConfigMapObjName := ctrlclient.ObjectKeyFromObject(
+		defaultInstallationConfigMap,
+	)
+	err := s.client.Get(ctx, defaultInstallationConfigMapObjName, defaultInstallationConfigMap)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to retrieve default default installation ConfigMap %q: %w",
+			defaultInstallationConfigMapObjName,
+			err,
+		)
+	}
+
+	calicoCNIObjs, err := generateProviderCNICRS(
+		defaultInstallationConfigMap,
+		s.config.defaultTigeraOperatorConfigMapName,
+		cluster,
+		s.client.Scheme(),
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to generate Calico provider CNI CRS: %w",
+			err,
+		)
+	}
+
+	if err := client.ServerSideApply(ctx, s.client, calicoCNIObjs...); err != nil {
+		return fmt.Errorf(
+			"failed to apply Calico CNI installation CRS: %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
+func (s *CalicoCNI) ensureTigeraOperatorConfigMap(
+	ctx context.Context,
+	cluster *capiv1.Cluster,
+) error {
 	defaultTigeraOperatorConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: s.config.defaultsNamespace,
@@ -138,120 +243,48 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 	)
 	err := s.client.Get(ctx, defaultTigeraOperatorConfigMapObjName, defaultTigeraOperatorConfigMap)
 	if err != nil {
-		log.Error(
+		return fmt.Errorf(
+			"failed to retrieve default Tigera Operator manifests ConfigMap %q: %w",
+			defaultTigeraOperatorConfigMapObjName,
 			err,
-			fmt.Sprintf(
-				"failed to retrieve default Tigera Operator ConfigMap %q",
-				defaultTigeraOperatorConfigMapObjName,
-			),
 		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("failed to retrieve default Tigera Operator ConfigMap %q: %v",
-				defaultTigeraOperatorConfigMapObjName,
-				err,
-			),
-		)
-		return
-	}
-	tigeraObjs := generateTigeraOperatorCRS(defaultTigeraOperatorConfigMap, &req.Cluster)
-	if err := client.ServerSideApply(ctx, s.client, tigeraObjs...); err != nil {
-		log.Error(err, "failed to apply Tigera ClusterResourceSet")
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to apply Tigera ClusterResourceSet: %v", err))
-		return
 	}
 
-	log.Info("Ensuring Calico installation CRS and ConfigMap exist in cluster namespace")
-	defaultInstallationConfigMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.config.defaultsNamespace,
-			Name:      defaultInstallationConfigMapName,
-		},
-	}
-	defaultInstallationConfigMapObjName := ctrlclient.ObjectKeyFromObject(
-		defaultInstallationConfigMap,
-	)
-	err = s.client.Get(ctx, defaultInstallationConfigMapObjName, defaultInstallationConfigMap)
-	if err != nil {
-		log.Error(
+	tigeraConfigMap := generateTigeraOperatorConfigMap(defaultTigeraOperatorConfigMap, cluster)
+	if err := client.ServerSideApply(ctx, s.client, tigeraConfigMap); err != nil {
+		return fmt.Errorf(
+			"failed to apply Tigera Operator manifests ConfigMap: %w",
 			err,
-			fmt.Sprintf(
-				"failed to retrieve default default installation ConfigMap %q",
-				defaultInstallationConfigMapObjName,
-			),
 		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf(
-				"failed to retrieve default default installation ConfigMap %q: %v",
-				defaultInstallationConfigMapObjName,
-				err,
-			),
-		)
-		return
-	}
-	calicoCNIObjs, err := generateProviderCNICRS(
-		defaultInstallationConfigMap,
-		&req.Cluster,
-		s.client.Scheme(),
-	)
-	if err != nil {
-		log.Error(err, "failed to generate provider CNI CRS")
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to generate provider CNI CRS: %v", err))
-		return
 	}
 
-	if err := client.ServerSideApply(ctx, s.client, calicoCNIObjs...); err != nil {
-		log.Error(err, "failed to apply CNI installation ClusterResourceSet")
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to apply CNI installation ClusterResourceSet: %v", err))
-	}
+	return nil
 }
 
-func generateTigeraOperatorCRS(
+func generateTigeraOperatorConfigMap(
 	defaultTigeraOperatorConfigMap *corev1.ConfigMap, cluster *capiv1.Cluster,
-) []ctrlclient.Object {
+) ctrlclient.Object {
 	namespacedTigeraConfigMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.GetNamespace(),
+			Namespace: cluster.Namespace,
 			Name:      defaultTigeraOperatorConfigMap.Name,
 		},
 		Data:       defaultTigeraOperatorConfigMap.Data,
 		BinaryData: defaultTigeraOperatorConfigMap.BinaryData,
 	}
 
-	tigeraCRS := &crsv1.ClusterResourceSet{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: crsv1.GroupVersion.String(),
-			Kind:       "ClusterResourceSet",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.GetNamespace(),
-			Name:      namespacedTigeraConfigMap.GetName(),
-		},
-		Spec: crsv1.ClusterResourceSetSpec{
-			Resources: []crsv1.ResourceRef{{
-				Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
-				Name: namespacedTigeraConfigMap.GetName(),
-			}},
-			Strategy: string(crsv1.ClusterResourceSetStrategyReconcile),
-			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{cni.CNIProviderLabelKey: CNILabelValue},
-			},
-		},
-	}
-
-	return []ctrlclient.Object{namespacedTigeraConfigMap, tigeraCRS}
+	return namespacedTigeraConfigMap
 }
 
 func generateProviderCNICRS(
-	installationConfigMap *corev1.ConfigMap, cluster *capiv1.Cluster, scheme *runtime.Scheme,
+	installationConfigMap *corev1.ConfigMap,
+	tigeraOperatorConfigMapName string,
+	cluster *capiv1.Cluster,
+	scheme *runtime.Scheme,
 ) ([]ctrlclient.Object, error) {
 	defaultManifestStrings := make([]string, 0, len(installationConfigMap.Data))
 	for _, v := range installationConfigMap.Data {
@@ -343,17 +376,20 @@ func generateProviderCNICRS(
 			Kind:       "ClusterResourceSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.GetNamespace(),
-			Name:      cm.GetName(),
+			Namespace: cluster.Namespace,
+			Name:      cm.Name,
 		},
 		Spec: crsv1.ClusterResourceSetSpec{
 			Resources: []crsv1.ResourceRef{{
 				Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
-				Name: cm.GetName(),
+				Name: tigeraOperatorConfigMapName,
+			}, {
+				Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
+				Name: cm.Name,
 			}},
 			Strategy: string(crsv1.ClusterResourceSetStrategyReconcile),
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{capiv1.ClusterNameLabel: cluster.GetName()},
+				MatchLabels: map[string]string{capiv1.ClusterNameLabel: cluster.Name},
 			},
 		},
 	}
