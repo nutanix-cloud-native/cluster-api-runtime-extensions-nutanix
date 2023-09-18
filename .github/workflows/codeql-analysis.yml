@@ -36,6 +36,7 @@ jobs:
         enable-cache: true
 
     - name: Build
+      shell: bash
       run: devbox run -- make build-snapshot
 
     - name: Perform CodeQL Analysis

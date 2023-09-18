@@ -1,7 +1,7 @@
 # `gitlint` is used to validate commit messages via `pre-commit` hook, enabled
 # via `pre-commit install -t commit-msg`.
 #
-# The format of this file is detailed at https://jorisroovers.com/gitlint/#configuration.
+# The format of this file is detailed at https://jorisroovers.com/gitlint/latest/configuration/gitlint_file/.
 
 [general]
 # Validate the commit title conforms to conventional commits (https://www.conventionalcommits.org/en/v1.0.0/).
@@ -14,8 +14,12 @@ regex-style-search=True
 line-length=120
 
 [ignore-body-lines]
-# Ignore dependabot long lines.
-regex=^Bumps .+ from .+ to .+\.$
+regex=https?://
+
+[ignore-by-author-name]
+regex=(.*)dependabot(.*) #
+ignore=T1,body-min-length
+
 
 [contrib-title-conventional-commits]
 # Specify allowed commit types. For details see: https://www.conventionalcommits.org/

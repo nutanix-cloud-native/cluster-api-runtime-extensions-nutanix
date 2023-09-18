@@ -35,6 +35,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release
+        shell: bash
         run: devbox run -- make release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
