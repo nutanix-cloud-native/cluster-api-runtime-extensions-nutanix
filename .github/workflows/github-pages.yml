@@ -36,10 +36,12 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
       - name: Install necessary packages
+        shell: bash
         run: npm ci
         working-directory: ./docs/
 
       - name: Build
+        shell: bash
         run: hugo --minify
         working-directory: ./docs/
 

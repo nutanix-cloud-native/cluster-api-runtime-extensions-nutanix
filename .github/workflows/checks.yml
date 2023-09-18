@@ -32,6 +32,7 @@ jobs:
           enable-cache: true
 
       - name: Run unit tests
+        shell: bash
         run: devbox run -- make test
 
       - name: Annotate tests
@@ -60,18 +61,21 @@ jobs:
 
       - if: steps.check_e2e_tests_exist.outputs.files_exists == 'true'
         name: Build and install on KinD
+        shell: bash
         run: devbox run -- make dev.run-on-kind
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - if: steps.check_e2e_tests_exist.outputs.files_exists == 'true'
         name: Run e2e tests
+        shell: bash
         run: devbox run -- make e2e-test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - if: steps.check_e2e_tests_exist.outputs.files_exists == 'true' && always()
         name: Cleanup KinD cluster
+        shell: bash
         run: devbox run -- make kind.delete
 
   lint-go:
@@ -87,6 +91,7 @@ jobs:
 
       - name: Export golang and golangci-lint versions
         id: versions
+        shell: bash
         run: |
           echo "golangci-lint=$(devbox run -- golangci-lint version --format short)" >>"${GITHUB_OUTPUT}"
           echo "golang=$(devbox run -- go version | grep -o "[[:digit:]]\+.[[:digit:]]\+\(.[[:digit:]]\+\)\?")" >>"${GITHUB_OUTPUT}"
@@ -143,6 +148,7 @@ jobs:
           key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Run pre-commit
+        shell: bash
         run: devbox run -- make pre-commit
         env:
           SKIP: no-commit-to-branch,golangci-lint,actionlint-system
@@ -162,6 +168,7 @@ jobs:
 
       - name: Run chart-testing (list-changed)
         id: list-changed
+        shell: bash
         run: |
           changed="$(devbox run -- \
             ct list-changed --config charts/ct-config.yaml \
@@ -172,12 +179,14 @@ jobs:
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (lint)
+        shell: bash
         run: |
           devbox run -- \
             ct lint --config charts/ct-config.yaml
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Create kind cluster
+        shell: bash
         run: |
           devbox run -- \
             kind create cluster \
@@ -188,12 +197,14 @@ jobs:
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Build Docker images
+        shell: bash
         run: |
           devbox run -- \
             make release-snapshot
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Sideload docker image
+        shell: bash
         run: |
           devbox run -- \
             kind load docker-image \
@@ -202,6 +213,7 @@ jobs:
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
+        shell: bash
         run: |
           devbox run -- \
             make clusterctl.init
@@ -210,6 +222,7 @@ jobs:
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (install)
+        shell: bash
         run: |
           devbox run -- \
             ct install \
@@ -219,7 +232,8 @@ jobs:
           KUBECONFIG: ct-kind-kubeconfig
 
       - if: steps.list-changed.outputs.changed == 'true' && always()
-        name:
+        name: Delete chart-testing KinD cluster
+        shell: bash
         run: |
           devbox run -- \
             kind delete cluster --name chart-testing || true

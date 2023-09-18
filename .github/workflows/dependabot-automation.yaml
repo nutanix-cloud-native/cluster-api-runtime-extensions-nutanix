@@ -22,6 +22,7 @@ jobs:
         uses: dependabot/fetch-metadata@v1
       - uses: actions/checkout@v4
       - name: Approve a PR if not already approved
+        shell: bash
         run: |
           gh pr checkout "$PR_URL" # sets the upstream metadata for `gh pr status`
           if [ "$(gh pr status --json reviewDecision -q .currentBranch.reviewDecision)" != "APPROVED" ]; then
@@ -41,6 +42,7 @@ jobs:
         id: dependabot-metadata
         uses: dependabot/fetch-metadata@v1
       - name: Enable auto-merge for Dependabot PRs
+        shell: bash
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
