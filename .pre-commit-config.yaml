@@ -49,6 +49,7 @@ repos:
     stages: [commit]
   - id: end-of-file-fixer
     stages: [commit]
+    exclude: ^charts/capi-runtime-extensions/README.md$
 - repo: https://github.com/rhysd/actionlint
   rev: v1.6.25
   hooks:

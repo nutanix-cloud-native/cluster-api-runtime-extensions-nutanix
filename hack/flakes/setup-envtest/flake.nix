@@ -15,7 +15,7 @@
       (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          version = "0.16.1";
+          version = "0.16.2";
         in
         {
           packages = {
@@ -30,13 +30,13 @@
                 rev = "v${version}";
                 # When changing the version, if there is a problem with the hashes, uncomment the following line
                 # and re-run the install, then update with the correct hash as output in the error message..
-                # hash = pkgs.lib.fakeSha256
-                hash = "sha256-qwehmICfsVfrhnta1x3IrXTGfsvW/crx1bHuo1wdyJM=";
+                # hash = pkgs.lib.fakeHash;
+                hash = "sha256-lCR408PTwJ6ZbfJQBpjpvGOnUis8w7GM/JUi+QhYhJQ=";
               }+"/tools/setup-envtest";
 
               # When changing the version, if there is a problem with the hashes, uncomment the following line
               # and re-run the install, then update with the correct hash as output in the error message..
-              # vendorHash = pkgs.lib.fakeSha256
+              # vendorHash = pkgs.lib.fakeHash;
               vendorHash = "sha256-ISVGxhFQh4e0eag9Sw0Zj4u1cG0tudZLhJcGdH5tDo4=";
 
               CGO_ENABLED = 0;
