@@ -115,8 +115,8 @@ func TestMetaGeneratePatches(t *testing.T) {
 				Patch: jsonPatch(
 					jsonpatch.NewOperation(
 						"add",
-						"/spec/template/spec/postKubeadmCommands",
-						[]string{"worker-extra-post-kubeadm-0"},
+						"/spec/template/spec/postKubeadmCommands/1",
+						"worker-extra-post-kubeadm-1",
 					),
 				),
 			}, {
@@ -155,8 +155,13 @@ func TestMetaGeneratePatches(t *testing.T) {
 				Patch: jsonPatch(
 					jsonpatch.NewOperation(
 						"add",
-						"/spec/template/spec/postKubeadmCommands",
-						[]string{"worker-extra-post-kubeadm-0", "worker-extra-post-kubeadm-1"},
+						"/spec/template/spec/postKubeadmCommands/1",
+						"worker-extra-post-kubeadm-1",
+					),
+					jsonpatch.NewOperation(
+						"add",
+						"/spec/template/spec/postKubeadmCommands/2",
+						"worker-extra-post-kubeadm-2",
 					),
 				),
 			}, {

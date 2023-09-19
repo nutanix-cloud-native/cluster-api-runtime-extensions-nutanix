@@ -41,6 +41,13 @@ func NewKubeadmConfigTemplateRequestItem(uid types.UID) runtimehooksv1.GenerateP
 				Kind:       "KubeadmConfigTemplate",
 				APIVersion: bootstrapv1.GroupVersion.String(),
 			},
+			Spec: bootstrapv1.KubeadmConfigTemplateSpec{
+				Template: bootstrapv1.KubeadmConfigTemplateResource{
+					Spec: bootstrapv1.KubeadmConfigSpec{
+						PostKubeadmCommands: []string{"initial-post-kubeadm"},
+					},
+				},
+			},
 		},
 		&runtimehooksv1.HolderReference{
 			Kind:      "MachineDeployment",
