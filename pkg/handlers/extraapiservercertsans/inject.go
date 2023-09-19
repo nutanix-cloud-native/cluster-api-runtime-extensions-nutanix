@@ -18,11 +18,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 )
 
 const (
@@ -37,7 +38,7 @@ type extraAPIServerCertSANsPatchHandler struct {
 }
 
 var (
-	_ handlers.Named           = &extraAPIServerCertSANsPatchHandler{}
+	_ commonhandlers.Named     = &extraAPIServerCertSANsPatchHandler{}
 	_ mutation.GeneratePatches = &extraAPIServerCertSANsPatchHandler{}
 )
 
@@ -46,7 +47,7 @@ func NewPatch() *extraAPIServerCertSANsPatchHandler {
 }
 
 func NewMetaPatch() *extraAPIServerCertSANsPatchHandler {
-	return newExtraAPIServerCertSANsPatchHandler(mutation.MetaVariableName, variableName)
+	return newExtraAPIServerCertSANsPatchHandler(handlers.MetaVariableName, variableName)
 }
 
 func newExtraAPIServerCertSANsPatchHandler(

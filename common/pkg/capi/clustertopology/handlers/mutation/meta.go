@@ -12,11 +12,6 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 )
 
-const (
-	// MetaVariableName is the meta cluster config patch variable name.
-	MetaVariableName = "clusterConfig"
-)
-
 type metaGeneratePatches struct {
 	name            string
 	wrappedHandlers []GeneratePatches

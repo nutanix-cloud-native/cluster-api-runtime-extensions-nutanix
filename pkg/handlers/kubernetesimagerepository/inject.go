@@ -18,11 +18,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 )
 
 const (
@@ -37,7 +38,7 @@ type imageRepositoryPatchHandler struct {
 }
 
 var (
-	_ handlers.Named           = &imageRepositoryPatchHandler{}
+	_ commonhandlers.Named     = &imageRepositoryPatchHandler{}
 	_ mutation.GeneratePatches = &imageRepositoryPatchHandler{}
 )
 
@@ -46,7 +47,7 @@ func NewPatch() *imageRepositoryPatchHandler {
 }
 
 func NewMetaPatch() *imageRepositoryPatchHandler {
-	return newImageRegistryPatchHandler(mutation.MetaVariableName, variableName)
+	return newImageRegistryPatchHandler(handlers.MetaVariableName, variableName)
 }
 
 func newImageRegistryPatchHandler(

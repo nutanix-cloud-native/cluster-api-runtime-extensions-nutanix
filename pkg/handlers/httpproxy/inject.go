@@ -22,11 +22,12 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 )
 
 const (
@@ -47,7 +48,7 @@ type httpProxyPatchHandler struct {
 }
 
 var (
-	_ handlers.Named           = &httpProxyPatchHandler{}
+	_ commonhandlers.Named     = &httpProxyPatchHandler{}
 	_ mutation.GeneratePatches = &httpProxyPatchHandler{}
 )
 
@@ -60,7 +61,7 @@ func NewPatch(
 func NewMetaPatch(
 	cl ctrlclient.Reader,
 ) *httpProxyPatchHandler {
-	return newHTTPProxyPatchHandler(cl, mutation.MetaVariableName, variableName)
+	return newHTTPProxyPatchHandler(cl, handlers.MetaVariableName, variableName)
 }
 
 func newHTTPProxyPatchHandler(

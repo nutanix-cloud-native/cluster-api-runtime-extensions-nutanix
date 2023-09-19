@@ -9,14 +9,14 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 )
 
 func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		mutation.MetaVariableName,
+		handlers.MetaVariableName,
 		ptr.To(v1alpha1.ClusterConfigSpec{}.VariableSchema()),
 		NewVariable,
 		capitest.VariableTestDef{
