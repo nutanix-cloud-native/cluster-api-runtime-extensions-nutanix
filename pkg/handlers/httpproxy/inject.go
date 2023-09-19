@@ -5,14 +5,12 @@ package httpproxy
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/types"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
@@ -87,16 +85,83 @@ func (h *httpProxyPatchHandler) Name() string {
 	return HandlerNamePatch
 }
 
+func (h *httpProxyPatchHandler) Mutate(
+	ctx context.Context,
+	obj runtime.Object,
+	vars map[string]apiextensionsv1.JSON,
+	holderRef runtimehooksv1.HolderReference,
+	clusterKey ctrlclient.ObjectKey,
+) error {
+	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
+
+	noProxy, err := h.detectNoProxy(ctx, clusterKey)
+	if err != nil {
+		log.Error(err, "failed to resolve no proxy value")
+	}
+
+	httpProxyVariable, found, err := variables.Get[v1alpha1.HTTPProxy](
+		vars,
+		h.variableName,
+		h.variableFieldPath...,
+	)
+	if err != nil {
+		return err
+	}
+	if !found {
+		log.Info("http proxy variable not defined")
+		return nil
+	}
+
+	log = log.WithValues(
+		"variableName",
+		h.variableName,
+		"variableFieldPath",
+		h.variableFieldPath,
+		"variableValue",
+		httpProxyVariable,
+	)
+
+	if err := patches.Generate(
+		obj, vars, &holderRef, selectors.ControlPlane(), log,
+		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("adding files to control plane kubeadm config spec")
+			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
+				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+				generateSystemdFiles(httpProxyVariable, noProxy)...,
+			)
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	if err := patches.Generate(
+		obj, vars, &holderRef, selectors.AllWorkersSelector(), log,
+		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("adding files to worker node kubeadm config template")
+			obj.Spec.Template.Spec.Files = append(
+				obj.Spec.Template.Spec.Files,
+				generateSystemdFiles(httpProxyVariable, noProxy)...,
+			)
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (h *httpProxyPatchHandler) GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
 ) {
-	log := ctrl.LoggerFrom(ctx)
-	noProxy, err := h.detectNoProxy(ctx, req)
-	if err != nil {
-		log.Error(err, "failed to resolve no proxy value")
-	}
+	clusterKey := commonhandlers.ClusterKeyFromReq(req)
 
 	topologymutation.WalkTemplates(
 		ctx,
@@ -109,88 +174,15 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 			vars map[string]apiextensionsv1.JSON,
 			holderRef runtimehooksv1.HolderReference,
 		) error {
-			log = log.WithValues(
-				"holderRef", holderRef,
-			)
-
-			httpProxyVariable, found, err := variables.Get[v1alpha1.HTTPProxy](
-				vars,
-				h.variableName,
-				h.variableFieldPath...,
-			)
-			if err != nil {
-				return err
-			}
-			if !found {
-				log.Info("http proxy variable not defined")
-				return nil
-			}
-
-			log = log.WithValues(
-				"variableName",
-				h.variableName,
-				"variableFieldPath",
-				h.variableFieldPath,
-				"variableValue",
-				httpProxyVariable,
-			)
-
-			if err := patches.Generate(
-				obj, vars, &holderRef, selectors.ControlPlane(), log,
-				func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-					log.WithValues(
-						"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-						"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-					).Info("adding files to control plane kubeadm config spec")
-					obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
-						obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-						generateSystemdFiles(httpProxyVariable, noProxy)...,
-					)
-					return nil
-				}); err != nil {
-				return err
-			}
-
-			if err := patches.Generate(
-				obj, vars, &holderRef, selectors.AllWorkersSelector(), log,
-				func(obj *bootstrapv1.KubeadmConfigTemplate) error {
-					log.WithValues(
-						"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-						"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-					).Info("adding files to worker node kubeadm config template")
-					obj.Spec.Template.Spec.Files = append(
-						obj.Spec.Template.Spec.Files,
-						generateSystemdFiles(httpProxyVariable, noProxy)...,
-					)
-					return nil
-				}); err != nil {
-				return err
-			}
-
-			return nil
+			return h.Mutate(ctx, obj, vars, holderRef, clusterKey)
 		},
 	)
 }
 
 func (h *httpProxyPatchHandler) detectNoProxy(
 	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
+	clusterKey ctrlclient.ObjectKey,
 ) ([]string, error) {
-	clusterKey := types.NamespacedName{}
-
-	for i := range req.Items {
-		item := req.Items[i]
-		if item.HolderReference.Kind == "Cluster" &&
-			item.HolderReference.APIVersion == capiv1.GroupVersion.String() {
-			clusterKey.Name = item.HolderReference.Name
-			clusterKey.Namespace = item.HolderReference.Namespace
-		}
-	}
-
-	if clusterKey.Name == "" {
-		return nil, errors.New("failed to detect cluster name from GeneratePatch request")
-	}
-
 	cluster := &capiv1.Cluster{}
 	if err := h.client.Get(ctx, clusterKey, cluster); err != nil {
 		return nil, err

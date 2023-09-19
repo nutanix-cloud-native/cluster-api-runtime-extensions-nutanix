@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
 )
 
 func TestGeneratePatches(t *testing.T) {
@@ -20,7 +21,7 @@ func TestGeneratePatches(t *testing.T) {
 		},
 		capitest.PatchTestDef{
 			Name:        "http proxy set for KubeadmControlPlaneTemplate",
-			RequestItem: capitest.NewKubeadmControlPlaneTemplateRequestItem(),
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/kubeadmConfigSpec/files",

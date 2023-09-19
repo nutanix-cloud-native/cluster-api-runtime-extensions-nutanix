@@ -5,22 +5,46 @@ package mutation
 
 import (
 	"context"
-	"strings"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 )
 
-type metaGeneratePatches struct {
-	name            string
-	wrappedHandlers []GeneratePatches
+type MetaMutater interface {
+	Mutate(
+		ctx context.Context,
+		obj runtime.Object,
+		vars map[string]apiextensionsv1.JSON,
+		holderRef runtimehooksv1.HolderReference,
+		clusterKey client.ObjectKey,
+	) error
 }
 
-func NewMetaGeneratePatchesHandler(name string, gp ...GeneratePatches) handlers.Named {
+type metaGeneratePatches struct {
+	name     string
+	decoder  runtime.Decoder
+	mutaters []MetaMutater
+}
+
+func NewMetaGeneratePatchesHandler(name string, m ...MetaMutater) handlers.Named {
+	scheme := runtime.NewScheme()
+	_ = bootstrapv1.AddToScheme(scheme)
+	_ = controlplanev1.AddToScheme(scheme)
 	return metaGeneratePatches{
-		name:            name,
-		wrappedHandlers: gp,
+		name: name,
+		decoder: serializer.NewCodecFactory(scheme).UniversalDecoder(
+			controlplanev1.GroupVersion,
+			bootstrapv1.GroupVersion,
+		),
+		mutaters: m,
 	}
 }
 
@@ -33,20 +57,26 @@ func (mgp metaGeneratePatches) GeneratePatches(
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
 ) {
-	for _, h := range mgp.wrappedHandlers {
-		wrappedResp := &runtimehooksv1.GeneratePatchesResponse{}
-		h.GeneratePatches(ctx, req, wrappedResp)
-		resp.Items = append(resp.Items, wrappedResp.Items...)
-		if wrappedResp.Message != "" {
-			resp.Message = strings.TrimPrefix(resp.Message+"\n"+wrappedResp.Message, "\n")
-		}
-		resp.Status = wrappedResp.Status
-		if resp.Status == runtimehooksv1.ResponseStatusFailure {
-			return
-		}
-	}
+	clusterKey := handlers.ClusterKeyFromReq(req)
 
-	if resp.Status == "" {
-		resp.Status = runtimehooksv1.ResponseStatusSuccess
-	}
+	topologymutation.WalkTemplates(
+		ctx,
+		mgp.decoder,
+		req,
+		resp,
+		func(
+			ctx context.Context,
+			obj runtime.Object,
+			vars map[string]apiextensionsv1.JSON,
+			holderRef runtimehooksv1.HolderReference,
+		) error {
+			for _, h := range mgp.mutaters {
+				if err := h.Mutate(ctx, obj, vars, holderRef, clusterKey); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	)
 }

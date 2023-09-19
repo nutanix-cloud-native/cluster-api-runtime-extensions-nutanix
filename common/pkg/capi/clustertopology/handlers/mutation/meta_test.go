@@ -5,26 +5,78 @@ package mutation
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/onsi/gomega"
+	"gomodules.xyz/jsonpatch/v2"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
 )
 
 type testHandler struct {
-	resp *runtimehooksv1.GeneratePatchesResponse
+	returnErr          bool
+	mutateControlPlane bool
 }
 
-var _ GeneratePatches = &testHandler{}
+var _ MetaMutater = &testHandler{}
 
-func (h *testHandler) GeneratePatches(
+func (h *testHandler) Mutate(
 	_ context.Context,
-	_ *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	resp.Items = append(resp.Items, h.resp.Items...)
-	resp.Message = h.resp.Message
-	resp.Status = h.resp.Status
+	obj runtime.Object,
+	_ map[string]apiextensionsv1.JSON,
+	holderRef runtimehooksv1.HolderReference,
+	_ client.ObjectKey,
+) error {
+	if h.returnErr {
+		return fmt.Errorf("This is a failure")
+	}
+
+	if h.mutateControlPlane {
+		return patches.Generate(
+			obj, nil, &holderRef, selectors.ControlPlane(), logr.Discard(),
+			func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.PostKubeadmCommands = append(
+					obj.Spec.Template.Spec.KubeadmConfigSpec.PostKubeadmCommands,
+					fmt.Sprintf(
+						"control-plane-extra-post-kubeadm-%d",
+						len(obj.Spec.Template.Spec.KubeadmConfigSpec.PostKubeadmCommands),
+					),
+				)
+				return nil
+			},
+		)
+	}
+
+	return patches.Generate(
+		obj, machineVars(), &holderRef, selectors.AllWorkersSelector(), logr.Discard(),
+		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
+			obj.Spec.Template.Spec.PostKubeadmCommands = append(
+				obj.Spec.Template.Spec.PostKubeadmCommands,
+				fmt.Sprintf(
+					"worker-extra-post-kubeadm-%d",
+					len(obj.Spec.Template.Spec.PostKubeadmCommands),
+				),
+			)
+			return nil
+		},
+	)
+}
+
+func machineVars() map[string]apiextensionsv1.JSON {
+	return map[string]apiextensionsv1.JSON{
+		"builtin": {Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`)},
+	}
 }
 
 func TestMetaGeneratePatches(t *testing.T) {
@@ -32,7 +84,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		wrappedHandlers  []GeneratePatches
+		mutaters         []MetaMutater
 		expectedResponse *runtimehooksv1.GeneratePatchesResponse
 	}{{
 		name: "no handlers",
@@ -40,45 +92,46 @@ func TestMetaGeneratePatches(t *testing.T) {
 			CommonResponse: runtimehooksv1.CommonResponse{
 				Status: runtimehooksv1.ResponseStatusSuccess,
 			},
+			Items: []runtimehooksv1.GeneratePatchesResponseItem{{
+				UID:       "kubeadm-config",
+				PatchType: runtimehooksv1.JSONPatchType,
+				Patch:     jsonPatch([]jsonpatch.Operation{}...),
+			}, {
+				UID:       "kubeadm-control-plane",
+				PatchType: runtimehooksv1.JSONPatchType,
+				Patch:     jsonPatch([]jsonpatch.Operation{}...),
+			}},
 		},
 	}, {
 		name: "single success handler",
-		wrappedHandlers: []GeneratePatches{
-			&testHandler{
-				resp: &runtimehooksv1.GeneratePatchesResponse{
-					CommonResponse: runtimehooksv1.CommonResponse{
-						Status:  runtimehooksv1.ResponseStatusSuccess,
-						Message: "This is a success",
-					},
-					Items: []runtimehooksv1.GeneratePatchesResponseItem{{
-						UID:       "1234",
-						PatchType: runtimehooksv1.JSONPatchType,
-						Patch:     []byte(`this is a patch`),
-					}},
-				},
-			},
+		mutaters: []MetaMutater{
+			&testHandler{},
 		},
 		expectedResponse: &runtimehooksv1.GeneratePatchesResponse{
 			CommonResponse: runtimehooksv1.CommonResponse{
-				Status:  runtimehooksv1.ResponseStatusSuccess,
-				Message: "This is a success",
+				Status: runtimehooksv1.ResponseStatusSuccess,
 			},
 			Items: []runtimehooksv1.GeneratePatchesResponseItem{{
-				UID:       "1234",
+				UID:       "kubeadm-config",
 				PatchType: runtimehooksv1.JSONPatchType,
-				Patch:     []byte(`this is a patch`),
+				Patch: jsonPatch(
+					jsonpatch.NewOperation(
+						"add",
+						"/spec/template/spec/postKubeadmCommands/1",
+						"worker-extra-post-kubeadm-1",
+					),
+				),
+			}, {
+				UID:       "kubeadm-control-plane",
+				PatchType: runtimehooksv1.JSONPatchType,
+				Patch:     jsonPatch([]jsonpatch.Operation{}...),
 			}},
 		},
 	}, {
 		name: "single failure handler",
-		wrappedHandlers: []GeneratePatches{
+		mutaters: []MetaMutater{
 			&testHandler{
-				resp: &runtimehooksv1.GeneratePatchesResponse{
-					CommonResponse: runtimehooksv1.CommonResponse{
-						Status:  runtimehooksv1.ResponseStatusFailure,
-						Message: "This is a failure",
-					},
-				},
+				returnErr: true,
 			},
 		},
 		expectedResponse: &runtimehooksv1.GeneratePatchesResponse{
@@ -89,131 +142,62 @@ func TestMetaGeneratePatches(t *testing.T) {
 		},
 	}, {
 		name: "multiple success handlers",
-		wrappedHandlers: []GeneratePatches{
-			&testHandler{
-				resp: &runtimehooksv1.GeneratePatchesResponse{
-					CommonResponse: runtimehooksv1.CommonResponse{
-						Status:  runtimehooksv1.ResponseStatusSuccess,
-						Message: "This is a success",
-					},
-					Items: []runtimehooksv1.GeneratePatchesResponseItem{{
-						UID:       "1234",
-						PatchType: runtimehooksv1.JSONPatchType,
-						Patch:     []byte(`this is a patch`),
-					}, {
-						UID:       "12345",
-						PatchType: runtimehooksv1.JSONPatchType,
-						Patch:     []byte(`this is another patch`),
-					}},
-				},
-			},
-			&testHandler{
-				resp: &runtimehooksv1.GeneratePatchesResponse{
-					CommonResponse: runtimehooksv1.CommonResponse{
-						Status:  runtimehooksv1.ResponseStatusSuccess,
-						Message: "This is also a success",
-					},
-					Items: []runtimehooksv1.GeneratePatchesResponseItem{{
-						UID:       "123456",
-						PatchType: runtimehooksv1.JSONPatchType,
-						Patch:     []byte(`this is also a patch`),
-					}},
-				},
-			},
+		mutaters: []MetaMutater{
+			&testHandler{},
+			&testHandler{},
+			&testHandler{mutateControlPlane: true},
 		},
 		expectedResponse: &runtimehooksv1.GeneratePatchesResponse{
 			CommonResponse: runtimehooksv1.CommonResponse{
 				Status: runtimehooksv1.ResponseStatusSuccess,
-				Message: `This is a success
-This is also a success`,
 			},
 			Items: []runtimehooksv1.GeneratePatchesResponseItem{{
-				UID:       "1234",
+				UID:       "kubeadm-config",
 				PatchType: runtimehooksv1.JSONPatchType,
-				Patch:     []byte(`this is a patch`),
+				Patch: jsonPatch(
+					jsonpatch.NewOperation(
+						"add",
+						"/spec/template/spec/postKubeadmCommands/1",
+						"worker-extra-post-kubeadm-1",
+					),
+					jsonpatch.NewOperation(
+						"add",
+						"/spec/template/spec/postKubeadmCommands/2",
+						"worker-extra-post-kubeadm-2",
+					),
+				),
 			}, {
-				UID:       "12345",
+				UID:       "kubeadm-control-plane",
 				PatchType: runtimehooksv1.JSONPatchType,
-				Patch:     []byte(`this is another patch`),
-			}, {
-				UID:       "123456",
-				PatchType: runtimehooksv1.JSONPatchType,
-				Patch:     []byte(`this is also a patch`),
+				Patch: jsonPatch(
+					jsonpatch.NewOperation(
+						"add",
+						"/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands",
+						[]string{"control-plane-extra-post-kubeadm-0"},
+					)),
 			}},
 		},
 	}, {
 		name: "success handler followed by failure handler",
-		wrappedHandlers: []GeneratePatches{
+		mutaters: []MetaMutater{
+			&testHandler{},
 			&testHandler{
-				resp: &runtimehooksv1.GeneratePatchesResponse{
-					CommonResponse: runtimehooksv1.CommonResponse{
-						Status:  runtimehooksv1.ResponseStatusSuccess,
-						Message: "This is a success",
-					},
-					Items: []runtimehooksv1.GeneratePatchesResponseItem{{
-						UID:       "1234",
-						PatchType: runtimehooksv1.JSONPatchType,
-						Patch:     []byte(`this is a patch`),
-					}, {
-						UID:       "12345",
-						PatchType: runtimehooksv1.JSONPatchType,
-						Patch:     []byte(`this is another patch`),
-					}},
-				},
-			},
-			&testHandler{
-				resp: &runtimehooksv1.GeneratePatchesResponse{
-					CommonResponse: runtimehooksv1.CommonResponse{
-						Status:  runtimehooksv1.ResponseStatusFailure,
-						Message: "This is a failure",
-					},
-				},
+				returnErr: true,
 			},
 		},
 		expectedResponse: &runtimehooksv1.GeneratePatchesResponse{
 			CommonResponse: runtimehooksv1.CommonResponse{
-				Status: runtimehooksv1.ResponseStatusFailure,
-				Message: `This is a success
-This is a failure`,
+				Status:  runtimehooksv1.ResponseStatusFailure,
+				Message: "This is a failure",
 			},
-			Items: []runtimehooksv1.GeneratePatchesResponseItem{{
-				UID:       "1234",
-				PatchType: runtimehooksv1.JSONPatchType,
-				Patch:     []byte(`this is a patch`),
-			}, {
-				UID:       "12345",
-				PatchType: runtimehooksv1.JSONPatchType,
-				Patch:     []byte(`this is another patch`),
-			}},
 		},
 	}, {
 		name: "failure handler followed by success handler",
-		wrappedHandlers: []GeneratePatches{
+		mutaters: []MetaMutater{
 			&testHandler{
-				resp: &runtimehooksv1.GeneratePatchesResponse{
-					CommonResponse: runtimehooksv1.CommonResponse{
-						Status:  runtimehooksv1.ResponseStatusFailure,
-						Message: "This is a failure",
-					},
-				},
+				returnErr: true,
 			},
-			&testHandler{
-				resp: &runtimehooksv1.GeneratePatchesResponse{
-					CommonResponse: runtimehooksv1.CommonResponse{
-						Status:  runtimehooksv1.ResponseStatusSuccess,
-						Message: "This is a success",
-					},
-					Items: []runtimehooksv1.GeneratePatchesResponseItem{{
-						UID:       "1234",
-						PatchType: runtimehooksv1.JSONPatchType,
-						Patch:     []byte(`this is a patch`),
-					}, {
-						UID:       "12345",
-						PatchType: runtimehooksv1.JSONPatchType,
-						Patch:     []byte(`this is another patch`),
-					}},
-				},
-			},
+			&testHandler{},
 		},
 		expectedResponse: &runtimehooksv1.GeneratePatchesResponse{
 			CommonResponse: runtimehooksv1.CommonResponse{
@@ -231,12 +215,24 @@ This is a failure`,
 
 			g := gomega.NewWithT(t)
 
-			h := NewMetaGeneratePatchesHandler("", tt.wrappedHandlers...).(GeneratePatches)
+			h := NewMetaGeneratePatchesHandler("", tt.mutaters...).(GeneratePatches)
 
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
-			h.GeneratePatches(context.Background(), &runtimehooksv1.GeneratePatchesRequest{}, resp)
+			h.GeneratePatches(context.Background(), &runtimehooksv1.GeneratePatchesRequest{
+				Items: []runtimehooksv1.GeneratePatchesRequestItem{
+					request.NewKubeadmConfigTemplateRequestItem("kubeadm-config"),
+					request.NewKubeadmControlPlaneTemplateRequestItem("kubeadm-control-plane"),
+				},
+			}, resp)
 
 			g.Expect(resp).To(gomega.Equal(tt.expectedResponse))
 		})
 	}
+}
+
+func jsonPatch(operations ...jsonpatch.Operation) []byte {
+	b, _ := json.Marshal( //nolint:errchkjson // OK to do this in a test when the type can be marshalled.
+		operations,
+	)
+	return b
 }
