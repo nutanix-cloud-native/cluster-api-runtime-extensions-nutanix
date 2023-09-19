@@ -44,14 +44,14 @@ var (
 )
 
 func NewPatch() *imageRepositoryPatchHandler {
-	return newImageRegistryPatchHandler(variableName)
+	return newImageRepositoryPatchHandler(variableName)
 }
 
 func NewMetaPatch() *imageRepositoryPatchHandler {
-	return newImageRegistryPatchHandler(handlers.MetaVariableName, variableName)
+	return newImageRepositoryPatchHandler(handlers.MetaVariableName, variableName)
 }
 
-func newImageRegistryPatchHandler(
+func newImageRepositoryPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *imageRepositoryPatchHandler {
