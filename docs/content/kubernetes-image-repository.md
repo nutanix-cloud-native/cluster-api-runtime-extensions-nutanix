@@ -2,7 +2,7 @@
 title: "Kubernete Image Repository"
 ---
 
-Override the container image registry used when pulling Kubernetes images.
+Override the container image repository used when pulling Kubernetes images.
 
 To enable this handler set the `imagerepositorypatch` and `imagerepositoryvars` external patches on `ClusterClass`.
 
@@ -19,7 +19,7 @@ spec:
         discoverVariablesExtension: "imagerepositoryvars.capi-runtime-extensions"
 ```
 
-On the cluster resource then specify desired Kubernetes image registry value:
+On the cluster resource then specify desired Kubernetes image repository value:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1

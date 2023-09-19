@@ -2,7 +2,7 @@
 title: "etcd"
 ---
 
-Override the container image registry and tag for [etcd](https://github.com/etcd-io/etcd).
+Override the container image repository and tag for [etcd](https://github.com/etcd-io/etcd).
 
 To enable this handler set the `etcdpatch` and `etcdvars` external patches on `ClusterClass`.
 
@@ -19,7 +19,7 @@ spec:
         discoverVariablesExtension: "etcdvars.capi-runtime-extensions"
 ```
 
-On the cluster resource then specify desired etcd image registry and/or image tag values:
+On the cluster resource then specify desired etcd image repository and/or image tag values:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
