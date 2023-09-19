@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package kubernetesimageregistry
+package kubernetesimagerepository
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		VariableName,
-		ptr.To(v1alpha1.KubernetesImageRegistry("").VariableSchema()),
+		ptr.To(v1alpha1.KubernetesImageRepository("").VariableSchema()),
 		NewVariable,
 		capitest.VariableTestDef{
 			Name: "set",

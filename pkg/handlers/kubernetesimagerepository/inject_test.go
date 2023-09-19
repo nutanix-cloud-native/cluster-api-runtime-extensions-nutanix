@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package kubernetesimageregistry
+package kubernetesimagerepository
 
 import (
 	"testing"
@@ -22,11 +22,11 @@ func TestGeneratePatches(t *testing.T) {
 			Name: "unset variable",
 		},
 		capitest.PatchTestDef{
-			Name: "kubernetesImageRegistry set",
+			Name: "kubernetesImageRepository set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					VariableName,
-					v1alpha1.KubernetesImageRegistry("my-registry.io/my-org/my-repo"),
+					v1alpha1.KubernetesImageRepository("my-registry.io/my-org/my-repo"),
 				),
 			},
 			RequestItem: capitest.NewKubeadmControlPlaneTemplateRequestItem(),

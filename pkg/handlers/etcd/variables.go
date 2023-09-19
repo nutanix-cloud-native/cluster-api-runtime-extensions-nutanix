@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package kubernetesimageregistry
+package etcd
 
 import (
 	"context"
@@ -15,29 +15,29 @@ import (
 )
 
 var (
-	_ handlers.Named             = &imageRegistryVariableHandler{}
-	_ mutation.DiscoverVariables = &imageRegistryVariableHandler{}
+	_ handlers.Named             = &etcdVariableHandler{}
+	_ mutation.DiscoverVariables = &etcdVariableHandler{}
 )
 
 const (
 	// VariableName is http proxy external patch variable name.
-	VariableName = "kubernetesImageRegistry"
+	VariableName = "etcd"
 
 	// HandlerNameVariable is the name of the variable handler.
-	HandlerNameVariable = "ImageRegistryVars"
+	HandlerNameVariable = "etcdVars"
 )
 
-func NewVariable() *imageRegistryVariableHandler {
-	return &imageRegistryVariableHandler{}
+func NewVariable() *etcdVariableHandler {
+	return &etcdVariableHandler{}
 }
 
-type imageRegistryVariableHandler struct{}
+type etcdVariableHandler struct{}
 
-func (h *imageRegistryVariableHandler) Name() string {
+func (h *etcdVariableHandler) Name() string {
 	return HandlerNameVariable
 }
 
-func (h *imageRegistryVariableHandler) DiscoverVariables(
+func (h *etcdVariableHandler) DiscoverVariables(
 	ctx context.Context,
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
@@ -45,7 +45,7 @@ func (h *imageRegistryVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     VariableName,
 		Required: false,
-		Schema:   v1alpha1.KubernetesImageRegistry("").VariableSchema(),
+		Schema:   v1alpha1.Etcd{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

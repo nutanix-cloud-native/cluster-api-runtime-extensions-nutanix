@@ -1,10 +1,10 @@
 ---
-title: "Kubernete Image Registry"
+title: "Kubernete Image Repository"
 ---
 
 Override the container image registry used when pulling Kubernetes images.
 
-To enable this handler set the `imageregistrypatch` and `imageregistryvars` external patches on `ClusterClass`.
+To enable this handler set the `imagerepositorypatch` and `imagerepositoryvars` external patches on `ClusterClass`.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -13,10 +13,10 @@ metadata:
   name: <NAME>
 spec:
   patches:
-    - name: image-registry
+    - name: image-repository
       external:
-        generateExtension: "imageregistrypatch.capi-runtime-extensions"
-        discoverVariablesExtension: "imageregistryvars.capi-runtime-extensions"
+        generateExtension: "imagerepositorypatch.capi-runtime-extensions"
+        discoverVariablesExtension: "imagerepositoryvars.capi-runtime-extensions"
 ```
 
 On the cluster resource then specify desired Kubernetes image registry value:
@@ -29,7 +29,7 @@ metadata:
 spec:
   topology:
     variables:
-      - name: kubernetesImageRegistry
+      - name: kubernetesImageRepository
         value: "my-registry.io/my-org/my-repo"
 ```
 

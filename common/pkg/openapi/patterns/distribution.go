@@ -7,9 +7,15 @@ const (
 	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L53
 	NameSeparator = `(?:[._]|__|[-]+)`
 
-	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L123C18-L123C65
+	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L123
 	PathComponent = Alphanumeric + `(` + NameSeparator + Alphanumeric + `)*`
 
-	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L130
-	ImageRegistry = `(` + DNS1123Subdomain + `|` + IPv6 + `)` + OptionalPort + `(/` + PathComponent + `)*`
+	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L125-L130
+	ImageRepository = `(` + HostAndOptionalPort + `/)?` + PathComponent + `(/` + PathComponent + `)*`
+
+	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L68
+	Tag = `[\w][\w.-]{0,127}`
+
+	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L81
+	Digest = `[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,}`
 )

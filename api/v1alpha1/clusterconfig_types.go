@@ -27,11 +27,11 @@ type ClusterConfig struct {
 
 // ClusterConfigSpec defines the desired state of ClusterConfig.
 type ClusterConfigSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +optional
+	KubernetesImageRepository *KubernetesImageRepository `json:"kubernetesImageRepository,omitempty"`
 
 	// +optional
-	KubernetesImageRegistry *KubernetesImageRegistry `json:"kubernetesImageRegistry,omitempty"`
+	Etcd *Etcd `json:"etcd,omitempty"`
 
 	// +optional
 	Proxy *HTTPProxy `json:"proxy,omitempty"`
@@ -49,32 +49,81 @@ func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 			Description: "Cluster configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"kubernetesImageRegistry": KubernetesImageRegistry(
+				"cni":                    CNI{}.VariableSchema().OpenAPIV3Schema,
+				"etcd":                   Etcd{}.VariableSchema().OpenAPIV3Schema,
+				"extraAPIServerCertSANs": ExtraAPIServerCertSANs{}.VariableSchema().OpenAPIV3Schema,
+				"proxy":                  HTTPProxy{}.VariableSchema().OpenAPIV3Schema,
+				"kubernetesImageRepository": KubernetesImageRepository(
 					"",
 				).VariableSchema().
 					OpenAPIV3Schema,
-				"proxy":                  HTTPProxy{}.VariableSchema().OpenAPIV3Schema,
-				"extraAPIServerCertSANs": ExtraAPIServerCertSANs{}.VariableSchema().OpenAPIV3Schema,
-				"cni":                    CNI{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
 }
 
-// KubernetesImageRegistry required for overriding Kubernetes image registry.
-type KubernetesImageRegistry string
+// KubernetesImageRepository required for overriding Kubernetes image repository.
+type KubernetesImageRepository string
 
-func (KubernetesImageRegistry) VariableSchema() clusterv1.VariableSchema {
+func (KubernetesImageRepository) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Sets the Kubernetes image registry used for the KubeadmControlPlane.",
+			Description: "Sets the Kubernetes image repository used for the KubeadmControlPlane.",
 			Type:        "string",
+			Pattern:     patterns.Anchored(patterns.ImageRepository),
 		},
 	}
 }
 
-func (v KubernetesImageRegistry) String() string {
+func (v KubernetesImageRepository) String() string {
 	return string(v)
+}
+
+type Image struct {
+	// Repository is used to override the image repository to pull from.
+	//+optional
+	Repository string `json:"repository,omitempty"`
+
+	// Tag is used to override the default image tag.
+	//+optional
+	Tag string `json:"tag,omitempty"`
+}
+
+func (Image) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"repository": {
+					Description: "Image repository to pull from.",
+					Type:        "string",
+					Pattern:     patterns.Anchored(patterns.ImageRepository),
+				},
+				"tag": {
+					Description: "Image tag to use.",
+					Type:        "string",
+					Pattern:     patterns.Anchored(patterns.Tag),
+				},
+			},
+		},
+	}
+}
+
+type Etcd struct {
+	// Image required for overriding etcd image details.
+	//+optional
+	Image *Image `json:"image,omitempty"`
+}
+
+func (Etcd) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"image": Image{}.VariableSchema().OpenAPIV3Schema,
+			},
+		},
+	}
 }
 
 // HTTPProxy required for providing proxy configuration.
