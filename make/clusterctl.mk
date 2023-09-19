@@ -6,9 +6,11 @@ clusterctl.init:
 	env CLUSTER_TOPOLOGY=true \
 			EXP_RUNTIME_SDK=true \
 			EXP_CLUSTER_RESOURCE_SET=true \
+			EXP_MACHINE_POOL=true \
+			AWS_B64ENCODED_CREDENTIALS= \
 			clusterctl init \
 		--kubeconfig=$(KIND_KUBECONFIG) \
-		--infrastructure docker \
+		--infrastructure docker,aws \
 		--wait-providers
 
 .PHONY: clusterctl.delete
