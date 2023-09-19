@@ -31,8 +31,9 @@ spec:
     variables:
       - name: etcd
         values:
-          imageRepository: my-registry.io/my-org/my-repo
-          imageTag: "v3.5.99_custom.0"
+          image:
+            repository: my-registry.io/my-org/my-repo
+            tag: "v3.5.99_custom.0"
 ```
 
 Applying this configuration will result in the following value being set:

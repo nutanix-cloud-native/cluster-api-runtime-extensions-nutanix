@@ -120,11 +120,11 @@ func (h *etcdPatchHandler) GeneratePatches(
 					}
 
 					localEtcd := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local
-					if etcd.ImageTag != "" {
-						localEtcd.ImageTag = etcd.ImageTag
+					if etcd.Image != nil && etcd.Image.Tag != "" {
+						localEtcd.ImageTag = etcd.Image.Tag
 					}
-					if etcd.ImageRepository != "" {
-						localEtcd.ImageRepository = etcd.ImageRepository
+					if etcd.Image != nil && etcd.Image.Repository != "" {
+						localEtcd.ImageRepository = etcd.Image.Repository
 					}
 
 					return nil

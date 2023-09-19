@@ -27,8 +27,10 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					VariableName,
 					v1alpha1.Etcd{
-						ImageRepository: "my-registry.io/my-org/my-repo",
-						ImageTag:        "v3.5.99_custom.0",
+						Image: &v1alpha1.Image{
+							Repository: "my-registry.io/my-org/my-repo",
+							Tag:        "v3.5.99_custom.0",
+						},
 					},
 				),
 			},
@@ -55,7 +57,9 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					VariableName,
 					v1alpha1.Etcd{
-						ImageRepository: "my-registry.io/my-org/my-repo",
+						Image: &v1alpha1.Image{
+							Repository: "my-registry.io/my-org/my-repo",
+						},
 					},
 				),
 			},
@@ -81,7 +85,9 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					VariableName,
 					v1alpha1.Etcd{
-						ImageTag: "v3.5.99_custom.0",
+						Image: &v1alpha1.Image{
+							Tag: "v3.5.99_custom.0",
+						},
 					},
 				),
 			},
