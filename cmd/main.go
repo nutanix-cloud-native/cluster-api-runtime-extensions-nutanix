@@ -136,7 +136,7 @@ func main() {
 	}
 	// This metaPatchHandlers combines all other patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
-	metaPatchHandlers := []mutation.GeneratePatches{
+	metaPatchHandlers := []mutation.MetaMutater{
 		httpproxy.NewMetaPatch(mgr.GetClient()),
 		extraapiservercertsans.NewMetaPatch(),
 		auditpolicy.NewPatch(),

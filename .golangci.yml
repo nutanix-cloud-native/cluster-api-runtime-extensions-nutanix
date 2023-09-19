@@ -85,3 +85,7 @@ issues:
     - path: "api/*"
       linters:
         - gochecknoinits
+    # Idiomatic to use init functions to register APIs with scheme
+    - text: "hugeParam: holderRef is heavy"
+      linters:
+        - gocritic

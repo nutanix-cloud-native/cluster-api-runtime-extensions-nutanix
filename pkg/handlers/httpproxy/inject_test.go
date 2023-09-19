@@ -15,6 +15,7 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
 )
 
 func TestGeneratePatches(t *testing.T) {
@@ -47,7 +48,7 @@ func TestGeneratePatches(t *testing.T) {
 					},
 				),
 			},
-			RequestItem: capitest.NewKubeadmConfigTemplateRequestItem(),
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/files",
@@ -74,7 +75,7 @@ func TestGeneratePatches(t *testing.T) {
 					},
 				),
 			},
-			RequestItem: capitest.NewKubeadmConfigTemplateRequestItem(),
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/files",
@@ -93,7 +94,7 @@ func TestGeneratePatches(t *testing.T) {
 					},
 				),
 			},
-			RequestItem: capitest.NewKubeadmControlPlaneTemplateRequestItem(),
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/kubeadmConfigSpec/files",

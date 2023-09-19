@@ -40,6 +40,7 @@ type imageRepositoryPatchHandler struct {
 var (
 	_ commonhandlers.Named     = &imageRepositoryPatchHandler{}
 	_ mutation.GeneratePatches = &imageRepositoryPatchHandler{}
+	_ mutation.MetaMutater     = &imageRepositoryPatchHandler{}
 )
 
 func NewPatch() *imageRepositoryPatchHandler {
@@ -71,6 +72,56 @@ func (h *imageRepositoryPatchHandler) Name() string {
 	return HandlerNamePatch
 }
 
+func (h *imageRepositoryPatchHandler) Mutate(
+	ctx context.Context,
+	obj runtime.Object,
+	vars map[string]apiextensionsv1.JSON,
+	holderRef runtimehooksv1.HolderReference,
+) error {
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"holderRef", holderRef,
+	)
+
+	imageRepositoryVar, found, err := variables.Get[v1alpha1.KubernetesImageRepository](
+		vars,
+		h.variableName,
+		h.variableFieldPath...,
+	)
+	if err != nil {
+		return err
+	}
+	if !found {
+		log.V(5).Info("kubernetesImageRepository variable not defined")
+		return nil
+	}
+
+	log = log.WithValues(
+		"variableName",
+		h.variableName,
+		"variableFieldPath",
+		h.variableFieldPath,
+		"variableValue",
+		imageRepositoryVar,
+	)
+
+	return patches.Generate(
+		obj, vars, &holderRef, selectors.ControlPlane(), log,
+		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", client.ObjectKeyFromObject(obj),
+			).Info("setting imageRepository in kubeadm config spec")
+
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
+			}
+			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.ImageRepository = imageRepositoryVar.String()
+
+			return nil
+		},
+	)
+}
+
 func (h *imageRepositoryPatchHandler) GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
@@ -81,54 +132,6 @@ func (h *imageRepositoryPatchHandler) GeneratePatches(
 		h.decoder,
 		req,
 		resp,
-		func(
-			ctx context.Context,
-			obj runtime.Object,
-			vars map[string]apiextensionsv1.JSON,
-			holderRef runtimehooksv1.HolderReference,
-		) error {
-			log := ctrl.LoggerFrom(ctx).WithValues(
-				"holderRef", holderRef,
-			)
-
-			imageRepositoryVar, found, err := variables.Get[v1alpha1.KubernetesImageRepository](
-				vars,
-				h.variableName,
-				h.variableFieldPath...,
-			)
-			if err != nil {
-				return err
-			}
-			if !found {
-				log.V(5).Info("kubernetesImageRepository variable not defined")
-				return nil
-			}
-
-			log = log.WithValues(
-				"variableName",
-				h.variableName,
-				"variableFieldPath",
-				h.variableFieldPath,
-				"variableValue",
-				imageRepositoryVar,
-			)
-
-			return patches.Generate(
-				obj, vars, &holderRef, selectors.ControlPlane(), log,
-				func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-					log.WithValues(
-						"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-						"patchedObjectName", client.ObjectKeyFromObject(obj),
-					).Info("setting imageRepository in kubeadm config spec")
-
-					if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
-						obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
-					}
-					obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.ImageRepository = imageRepositoryVar.String()
-
-					return nil
-				},
-			)
-		},
+		h.Mutate,
 	)
 }

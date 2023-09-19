@@ -40,6 +40,7 @@ type etcdPatchHandler struct {
 var (
 	_ commonhandlers.Named     = &etcdPatchHandler{}
 	_ mutation.GeneratePatches = &etcdPatchHandler{}
+	_ mutation.MetaMutater     = &etcdPatchHandler{}
 )
 
 func NewPatch() *etcdPatchHandler {
@@ -71,6 +72,66 @@ func (h *etcdPatchHandler) Name() string {
 	return HandlerNamePatch
 }
 
+func (h *etcdPatchHandler) Mutate(
+	ctx context.Context,
+	obj runtime.Object,
+	vars map[string]apiextensionsv1.JSON,
+	holderRef runtimehooksv1.HolderReference,
+) error {
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"holderRef", holderRef,
+	)
+
+	etcd, found, err := variables.Get[v1alpha1.Etcd](
+		vars,
+		h.variableName,
+		h.variableFieldPath...,
+	)
+	if err != nil {
+		return err
+	}
+	if !found {
+		log.V(5).Info("etcd variable not defined")
+		return nil
+	}
+
+	log = log.WithValues(
+		"variableName",
+		h.variableName,
+		"variableFieldPath",
+		h.variableFieldPath,
+		"variableValue",
+		etcd,
+	)
+
+	return patches.Generate(
+		obj, vars, &holderRef, selectors.ControlPlane(), log,
+		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", client.ObjectKeyFromObject(obj),
+			).Info("setting etcd configuration in kubeadm config spec")
+
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
+			}
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local == nil {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local = &bootstrapv1.LocalEtcd{}
+			}
+
+			localEtcd := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local
+			if etcd.Image != nil && etcd.Image.Tag != "" {
+				localEtcd.ImageTag = etcd.Image.Tag
+			}
+			if etcd.Image != nil && etcd.Image.Repository != "" {
+				localEtcd.ImageRepository = etcd.Image.Repository
+			}
+
+			return nil
+		},
+	)
+}
+
 func (h *etcdPatchHandler) GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
@@ -81,64 +142,6 @@ func (h *etcdPatchHandler) GeneratePatches(
 		h.decoder,
 		req,
 		resp,
-		func(
-			ctx context.Context,
-			obj runtime.Object,
-			vars map[string]apiextensionsv1.JSON,
-			holderRef runtimehooksv1.HolderReference,
-		) error {
-			log := ctrl.LoggerFrom(ctx).WithValues(
-				"holderRef", holderRef,
-			)
-
-			etcd, found, err := variables.Get[v1alpha1.Etcd](
-				vars,
-				h.variableName,
-				h.variableFieldPath...,
-			)
-			if err != nil {
-				return err
-			}
-			if !found {
-				log.V(5).Info("etcd variable not defined")
-				return nil
-			}
-
-			log = log.WithValues(
-				"variableName",
-				h.variableName,
-				"variableFieldPath",
-				h.variableFieldPath,
-				"variableValue",
-				etcd,
-			)
-
-			return patches.Generate(
-				obj, vars, &holderRef, selectors.ControlPlane(), log,
-				func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-					log.WithValues(
-						"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-						"patchedObjectName", client.ObjectKeyFromObject(obj),
-					).Info("setting etcd configuration in kubeadm config spec")
-
-					if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
-						obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
-					}
-					if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local == nil {
-						obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local = &bootstrapv1.LocalEtcd{}
-					}
-
-					localEtcd := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local
-					if etcd.Image != nil && etcd.Image.Tag != "" {
-						localEtcd.ImageTag = etcd.Image.Tag
-					}
-					if etcd.Image != nil && etcd.Image.Repository != "" {
-						localEtcd.ImageRepository = etcd.Image.Repository
-					}
-
-					return nil
-				},
-			)
-		},
+		h.Mutate,
 	)
 }

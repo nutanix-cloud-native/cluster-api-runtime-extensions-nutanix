@@ -12,6 +12,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
 )
 
 func TestGeneratePatches(t *testing.T) {
@@ -29,7 +30,7 @@ func TestGeneratePatches(t *testing.T) {
 					v1alpha1.KubernetesImageRepository("my-registry.io/my-org/my-repo"),
 				),
 			},
-			RequestItem: capitest.NewKubeadmControlPlaneTemplateRequestItem(),
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
