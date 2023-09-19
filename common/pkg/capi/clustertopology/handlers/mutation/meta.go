@@ -13,6 +13,7 @@ import (
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 )
@@ -23,6 +24,7 @@ type MetaMutater interface {
 		obj runtime.Object,
 		vars map[string]apiextensionsv1.JSON,
 		holderRef runtimehooksv1.HolderReference,
+		clusterKey client.ObjectKey,
 	) error
 }
 
@@ -55,7 +57,7 @@ func (mgp metaGeneratePatches) GeneratePatches(
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
 ) {
-	ctx = handlers.ClusterKeyInto(ctx, req)
+	clusterKey := handlers.ClusterKeyFromReq(req)
 
 	topologymutation.WalkTemplates(
 		ctx,
@@ -69,7 +71,7 @@ func (mgp metaGeneratePatches) GeneratePatches(
 			holderRef runtimehooksv1.HolderReference,
 		) error {
 			for _, h := range mgp.mutaters {
-				if err := h.Mutate(ctx, obj, vars, holderRef); err != nil {
+				if err := h.Mutate(ctx, obj, vars, holderRef, clusterKey); err != nil {
 					return err
 				}
 			}

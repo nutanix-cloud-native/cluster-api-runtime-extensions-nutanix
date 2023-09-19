@@ -77,6 +77,7 @@ func (h *etcdPatchHandler) Mutate(
 	obj runtime.Object,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
+	_ client.ObjectKey,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
@@ -142,6 +143,13 @@ func (h *etcdPatchHandler) GeneratePatches(
 		h.decoder,
 		req,
 		resp,
-		h.Mutate,
+		func(
+			ctx context.Context,
+			obj runtime.Object,
+			vars map[string]apiextensionsv1.JSON,
+			holderRef runtimehooksv1.HolderReference,
+		) error {
+			return h.Mutate(ctx, obj, vars, holderRef, client.ObjectKey{})
+		},
 	)
 }

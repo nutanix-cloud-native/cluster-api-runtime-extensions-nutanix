@@ -90,10 +90,11 @@ func (h *httpProxyPatchHandler) Mutate(
 	obj runtime.Object,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
+	clusterKey ctrlclient.ObjectKey,
 ) error {
 	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
 
-	noProxy, err := h.detectNoProxy(ctx)
+	noProxy, err := h.detectNoProxy(ctx, clusterKey)
 	if err != nil {
 		log.Error(err, "failed to resolve no proxy value")
 	}
@@ -160,23 +161,28 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
 ) {
-	ctx = commonhandlers.ClusterKeyInto(ctx, req)
+	clusterKey := commonhandlers.ClusterKeyFromReq(req)
 
 	topologymutation.WalkTemplates(
 		ctx,
 		h.decoder,
 		req,
 		resp,
-		h.Mutate,
+		func(
+			ctx context.Context,
+			obj runtime.Object,
+			vars map[string]apiextensionsv1.JSON,
+			holderRef runtimehooksv1.HolderReference,
+		) error {
+			return h.Mutate(ctx, obj, vars, holderRef, clusterKey)
+		},
 	)
 }
 
-func (h *httpProxyPatchHandler) detectNoProxy(ctx context.Context) ([]string, error) {
-	clusterKey, err := commonhandlers.ClusterKeyFrom(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func (h *httpProxyPatchHandler) detectNoProxy(
+	ctx context.Context,
+	clusterKey ctrlclient.ObjectKey,
+) ([]string, error) {
 	cluster := &capiv1.Cluster{}
 	if err := h.client.Get(ctx, clusterKey, cluster); err != nil {
 		return nil, err

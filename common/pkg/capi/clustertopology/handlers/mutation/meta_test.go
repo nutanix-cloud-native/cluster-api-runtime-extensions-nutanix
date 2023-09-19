@@ -17,6 +17,7 @@ import (
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
@@ -35,6 +36,7 @@ func (h *testHandler) Mutate(
 	obj runtime.Object,
 	_ map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
+	_ client.ObjectKey,
 ) error {
 	if h.returnErr {
 		return fmt.Errorf("This is a failure")
