@@ -7,7 +7,7 @@ ClusterClasses, allowing for a single configuration variable with nested values.
 with the least configuration. The included patches are usable individually, but require declaring all the individual
 patch and variable handlers in the ClusterClass.
 
-To enable the API server certificate SANs enable the `clusterconfigvars` and `clusterconfigpatch`
+To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch`
 external patches on `ClusterClass`.
 
 ```yaml
@@ -23,7 +23,7 @@ spec:
         discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
 ```
 
-On the cluster resource then specify desired certificate SANs values:
+On the cluster resource then specify desired values:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -49,7 +49,6 @@ spec:
             additionalNo:
               - no-proxy-1.example.com
               - no-proxy-2.example.com
+          cni:
+            provider: calico
 ```
-
-Applying this configuration will result in the certificate SANs being correctly set in the
-`KubeadmControlPlaneTemplate`.
