@@ -17,7 +17,7 @@ import (
 func TestGeneratePatches(t *testing.T) {
 	capitest.ValidateGeneratePatches(
 		t,
-		func() mutation.GeneratePatches { return NewPatch(VariableName) },
+		func() mutation.GeneratePatches { return NewPatch() },
 		capitest.PatchTestDef{
 			Name: "unset variable",
 		},
@@ -25,7 +25,7 @@ func TestGeneratePatches(t *testing.T) {
 			Name: "kubernetesImageRepository set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					VariableName,
+					variableName,
 					v1alpha1.KubernetesImageRepository("my-registry.io/my-org/my-repo"),
 				),
 			},

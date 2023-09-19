@@ -24,12 +24,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/parser"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/cni"
+)
+
+const (
+	variableName = "cni"
 )
 
 type CalicoCNIConfig struct {
@@ -72,23 +77,21 @@ type CalicoCNI struct {
 }
 
 var (
-	_ handlers.Named                         = &CalicoCNI{}
+	_ commonhandlers.Named                   = &CalicoCNI{}
 	_ lifecycle.AfterControlPlaneInitialized = &CalicoCNI{}
 
 	calicoInstallationGK = schema.GroupKind{Group: "operator.tigera.io", Kind: "Installation"}
 )
 
-func New(
+func NewMetaHandler(
 	c ctrlclient.Client,
 	cfg *CalicoCNIConfig,
-	variableName string,
-	variablePath ...string,
 ) *CalicoCNI {
 	return &CalicoCNI{
 		client:       c,
 		config:       cfg,
-		variableName: variableName,
-		variablePath: variablePath,
+		variableName: handlers.MetaVariableName,
+		variablePath: []string{variableName},
 	}
 }
 

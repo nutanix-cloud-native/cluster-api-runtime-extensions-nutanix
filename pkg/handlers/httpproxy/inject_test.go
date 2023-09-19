@@ -22,7 +22,7 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		func() *httpProxyPatchHandler {
 			fakeClient := fake.NewClientBuilder().Build()
-			return NewPatch(fakeClient, VariableName)
+			return NewPatch(fakeClient)
 		},
 		capitest.PatchTestDef{
 			Name: "unset variable",
@@ -31,7 +31,7 @@ func TestGeneratePatches(t *testing.T) {
 			Name: "http proxy set for KubeadmConfigTemplate default-worker",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					VariableName,
+					variableName,
 					v1alpha1.HTTPProxy{
 						HTTP:         "http://example.com",
 						HTTPS:        "https://example.com",
@@ -58,7 +58,7 @@ func TestGeneratePatches(t *testing.T) {
 			Name: "http proxy set for KubeadmConfigTemplate generic worker",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					VariableName,
+					variableName,
 					v1alpha1.HTTPProxy{
 						HTTP:         "http://example.com",
 						HTTPS:        "https://example.com",
@@ -85,7 +85,7 @@ func TestGeneratePatches(t *testing.T) {
 			Name: "http proxy set for KubeadmControlPlaneTemplate",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					VariableName,
+					variableName,
 					v1alpha1.HTTPProxy{
 						HTTP:         "http://example.com",
 						HTTPS:        "https://example.com",

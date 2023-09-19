@@ -18,11 +18,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 )
 
 const (
@@ -37,11 +38,19 @@ type etcdPatchHandler struct {
 }
 
 var (
-	_ handlers.Named           = &etcdPatchHandler{}
+	_ commonhandlers.Named     = &etcdPatchHandler{}
 	_ mutation.GeneratePatches = &etcdPatchHandler{}
 )
 
-func NewPatch(
+func NewPatch() *etcdPatchHandler {
+	return newEtcdPatchHandler(variableName)
+}
+
+func NewMetaPatch() *etcdPatchHandler {
+	return newEtcdPatchHandler(handlers.MetaVariableName, variableName)
+}
+
+func newEtcdPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *etcdPatchHandler {

@@ -10,19 +10,17 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 )
 
 var (
-	_ handlers.Named             = &clusterConfigVariableHandler{}
+	_ commonhandlers.Named       = &clusterConfigVariableHandler{}
 	_ mutation.DiscoverVariables = &clusterConfigVariableHandler{}
 )
 
 const (
-	// VariableName is http proxy external patch variable name.
-	VariableName = "clusterConfig"
-
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "ClusterConfigVars"
 )
@@ -43,7 +41,7 @@ func (h *clusterConfigVariableHandler) DiscoverVariables(
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     VariableName,
+		Name:     handlers.MetaVariableName,
 		Required: false,
 		Schema:   v1alpha1.ClusterConfigSpec{}.VariableSchema(),
 	})
