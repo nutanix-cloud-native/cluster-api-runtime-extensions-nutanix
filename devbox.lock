@@ -37,12 +37,6 @@
       "source": "devbox-search",
       "version": "4.9.0"
     },
-    "fluxcd@latest": {
-      "last_modified": "2023-08-25T03:28:31Z",
-      "resolved": "github:NixOS/nixpkgs/1e44a037bbf4fcaba041436e65e87be88f3f495b#fluxcd",
-      "source": "devbox-search",
-      "version": "2.1.0"
-    },
     "ginkgo@latest": {
       "last_modified": "2023-09-04T16:24:30Z",
       "resolved": "github:NixOS/nixpkgs/3c15feef7770eb5500a4b8792623e2d6f598c9c1#ginkgo",

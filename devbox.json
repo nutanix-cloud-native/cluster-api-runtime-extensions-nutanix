@@ -6,7 +6,6 @@
     "crane@latest",
     "envsubst@latest",
     "findutils@latest",
-    "fluxcd@latest",
     "ginkgo@latest",
     "git@latest",
     "github-cli@latest",

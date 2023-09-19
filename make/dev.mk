@@ -5,7 +5,7 @@ ADDONS_PROVIDER := ClusterResourceSet
 
 .PHONY: dev.run-on-kind
 dev.run-on-kind: export KUBECONFIG := $(KIND_KUBECONFIG)
-dev.run-on-kind: kind.create flux.install clusterctl.init
+dev.run-on-kind: kind.create clusterctl.init
 ifndef SKIP_BUILD
 	$(MAKE) release-snapshot
 endif
