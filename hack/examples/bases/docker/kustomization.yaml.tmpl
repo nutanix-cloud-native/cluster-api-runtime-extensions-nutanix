@@ -11,13 +11,18 @@ resources:
 - https://github.com/kubernetes-sigs/cluster-api/releases/download/${CLUSTERCTL_VERSION}/clusterclass-quick-start.yaml
 - https://github.com/kubernetes-sigs/cluster-api/releases/download/${CLUSTERCTL_VERSION}/cluster-template-development.yaml
 
-namePrefix: capd-
+namePrefix: docker-
+
+commonLabels:
+  cluster.x-k8s.io/provider: docker
 
 patches:
 - target:
     group: cluster.x-k8s.io
     kind: Cluster
   patch: |-
+    - op: "remove"
+      path: "/metadata/namespace"
     - op: "add"
       path: "/metadata/name"
       value: "quick-start"

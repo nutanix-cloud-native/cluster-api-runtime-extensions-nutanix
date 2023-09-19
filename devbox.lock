@@ -19,6 +19,12 @@
       "source": "devbox-search",
       "version": "1.5.1"
     },
+    "coreutils@latest": {
+      "last_modified": "2023-09-17T10:54:49Z",
+      "resolved": "github:NixOS/nixpkgs/5148520bfab61f99fd25fb9ff7bfbb50dad3c9db#coreutils",
+      "source": "devbox-search",
+      "version": "9.3"
+    },
     "crane@latest": {
       "last_modified": "2023-08-08T03:07:33Z",
       "resolved": "github:NixOS/nixpkgs/844ffa82bbe2a2779c86ab3a72ff1b4176cec467#crane",

@@ -4,52 +4,30 @@
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: ClusterClass
 metadata:
-  name: capd-quick-start
+  labels:
+    cluster.x-k8s.io/provider: docker
+  name: docker-quick-start
 spec:
   controlPlane:
     machineInfrastructure:
       ref:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: DockerMachineTemplate
-        name: capd-quick-start-control-plane
+        name: aws-quick-start-control-plane
     ref:
       apiVersion: controlplane.cluster.x-k8s.io/v1beta1
       kind: KubeadmControlPlaneTemplate
-      name: capd-quick-start-control-plane
+      name: docker-quick-start-control-plane
   infrastructure:
     ref:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       kind: DockerClusterTemplate
-      name: capd-quick-start-cluster
+      name: docker-quick-start-cluster
   patches:
     - external:
         discoverVariablesExtension: clusterconfigvars.capi-runtime-extensions
         generateExtension: clusterconfigpatch.capi-runtime-extensions
       name: cluster-config
-    - definitions:
-        - jsonPatches:
-            - op: add
-              path: /spec/template/spec/customImage
-              valueFrom:
-                template: ghcr.io/mesosphere/kind-node:{{ .builtin.machineDeployment.version }}
-          selector:
-            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-            kind: DockerMachineTemplate
-            matchResources:
-              machineDeploymentClass:
-                names:
-                  - '*'
-        - jsonPatches:
-            - op: add
-              path: /spec/template/spec/customImage
-              valueFrom:
-                template: ghcr.io/mesosphere/kind-node:{{ .builtin.controlPlane.version }}
-          selector:
-            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-            kind: DockerMachineTemplate
-            matchResources:
-              controlPlane: true
-      name: customKinDNodeImageForWorkers
   workers:
     machineDeployments:
       - class: default-worker
@@ -58,17 +36,19 @@ spec:
             ref:
               apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
               kind: KubeadmConfigTemplate
-              name: capd-quick-start-default-worker-bootstraptemplate
+              name: docker-quick-start-default-worker-bootstraptemplate
           infrastructure:
             ref:
               apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
               kind: DockerMachineTemplate
-              name: capd-quick-start-default-worker-machinetemplate
+              name: docker-quick-start-default-worker-machinetemplate
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerClusterTemplate
 metadata:
-  name: capd-quick-start-cluster
+  labels:
+    cluster.x-k8s.io/provider: docker
+  name: docker-quick-start-cluster
 spec:
   template:
     spec: {}
@@ -76,7 +56,9 @@ spec:
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlaneTemplate
 metadata:
-  name: capd-quick-start-control-plane
+  labels:
+    cluster.x-k8s.io/provider: docker
+  name: docker-quick-start-control-plane
 spec:
   template:
     spec:
@@ -99,7 +81,9 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerMachineTemplate
 metadata:
-  name: capd-quick-start-control-plane
+  labels:
+    cluster.x-k8s.io/provider: docker
+  name: docker-quick-start-control-plane
 spec:
   template:
     spec:
@@ -110,7 +94,9 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerMachineTemplate
 metadata:
-  name: capd-quick-start-default-worker-machinetemplate
+  labels:
+    cluster.x-k8s.io/provider: docker
+  name: docker-quick-start-default-worker-machinetemplate
 spec:
   template:
     spec:
@@ -121,7 +107,9 @@ spec:
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
 metadata:
-  name: capd-quick-start-default-worker-bootstraptemplate
+  labels:
+    cluster.x-k8s.io/provider: docker
+  name: docker-quick-start-default-worker-bootstraptemplate
 spec:
   template:
     spec:
