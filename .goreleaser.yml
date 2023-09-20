@@ -22,6 +22,8 @@ release:
   footer: |
     ### Summary
     **Full Changelog**: https://github.com/d2iq-labs/{{.ProjectName}}/compare/{{ .PreviousTag }}...{{ .Tag }}
+  extra_files:
+    - glob: ./examples/capi-quick-start/*.yaml
 
 builds:
   - id: capi-runtime-extensions
