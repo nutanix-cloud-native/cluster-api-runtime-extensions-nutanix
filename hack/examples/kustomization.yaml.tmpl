@@ -87,5 +87,7 @@ patches:
       value:
         - name: "clusterConfig"
           value:
-            cni:
-              provider: calico
+            addons:
+              cni:
+                provider: calico
+              nfd: {}

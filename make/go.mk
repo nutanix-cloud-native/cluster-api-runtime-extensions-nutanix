@@ -38,15 +38,15 @@ endef
 .PHONY: test
 test: ## Runs go tests for all modules in repository
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
-test: test.root
+test: go-generate test.root
 endif
 ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
-test: $(addprefix test.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
+test: go-generate $(addprefix test.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
 .PHONY: test.%
 test.%: ## Runs go tests for a specific module
-test.%: ; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
+test.%: go-generate ; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
 	$(if $(filter-out root,$*),cd $* && )$(call go_test)
 
 .PHONY: integration-test

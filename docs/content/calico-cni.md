@@ -39,8 +39,9 @@ spec:
     variables:
       - name: clusterConfig
         value:
-          cni:
-            provider: calico
+          addons:
+            cni:
+              provider: calico
 ```
 
 As ClusterResourceSets must exist in the same name as the cluster they apply to, the lifecycle hook copies default

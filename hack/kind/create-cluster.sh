@@ -79,7 +79,7 @@ function run_cmd() {
 
   # create/override base config
   export KINDEST_IMAGE="${kindest_image}"
-  envsubst <"$base_config" >"$cluster_config"
+  envsubst -no-unset <"$base_config" >"$cluster_config"
 
   kind create cluster --name "$cluster_name" --config "$cluster_config"
 }
