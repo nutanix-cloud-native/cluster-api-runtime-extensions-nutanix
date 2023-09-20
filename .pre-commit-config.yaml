@@ -16,6 +16,12 @@ repos:
     language: system
     files: "^docs/"
     pass_filenames: false
+  - id: examples-sync
+    name: examples-sync
+    entry: make examples.sync
+    language: system
+    files: "^hack/examples/"
+    pass_filenames: false
 - repo: https://github.com/tekwizely/pre-commit-golang
   rev: v1.0.0-rc.1
   hooks:
@@ -102,7 +108,7 @@ repos:
     name: License headers - YAML and Makefiles
     stages: [commit]
     files: (^Makefile|\.(ya?ml|mk))$
-    exclude: ^pkg/handlers/.+/embedded/.+\.ya?ml$
+    exclude: ^(pkg/handlers/.+/embedded|examples)/.+\.ya?ml$
     args:
       - --license-filepath
       - hack/license-header.txt
