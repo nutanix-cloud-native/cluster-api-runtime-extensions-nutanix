@@ -2,10 +2,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-HELM_VERSION_TAG=3.6.3
-
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly MANIFESTS_DIR="${SCRIPT_DIR}/manifests"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
 
 # shellcheck source=hack/common.sh
 source "${SCRIPT_DIR}/../common.sh"
@@ -14,32 +12,19 @@ if [ -z "${NODE_FEATURE_VERSION:-}" ]; then
   echo "Missing environment variable: NODE_FEATURE_VERSION"
   exit 1
 fi
-readonly ASSETS_DIR="${GIT_REPO_ROOT}/.local/nfd/${NODE_FEATURE_VERSION}"
-mkdir -p "${ASSETS_DIR}"
 
-FILE_NAME="node-feature-discovery.yaml"
-FILE_NAME_TEMP="temp.yaml"
-CHART_REPO_URL="https://kubernetes-sigs.github.io/node-feature-discovery/charts"
+ASSETS_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}")"
+readonly ASSETS_DIR
+trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
-kubectl create namespace node-feature-discovery --dry-run=client -o yaml \
-  >"${ASSETS_DIR}/${FILE_NAME}"
+readonly FILE_NAME="node-feature-discovery.yaml"
 
-# run docker command to template
-# Run helm to overlay our NFD configuration on the upstream configuration.
-docker run -v "${ASSETS_DIR}":"${ASSETS_DIR}" -v "${MANIFESTS_DIR}":"${MANIFESTS_DIR}" dtzar/helm-kubectl:${HELM_VERSION_TAG} /bin/bash -c \
-  "helm repo add nfd ${CHART_REPO_URL} > /dev/null; helm repo update > /dev/null; helm template node-feature-discovery nfd/node-feature-discovery --namespace=node-feature-discovery --version=${NODE_FEATURE_VERSION} --set image.tag=v${NODE_FEATURE_VERSION}-minimal --values=${MANIFESTS_DIR}/node-feature-discovery-values.yaml" \
-  >"${ASSETS_DIR}/${FILE_NAME_TEMP}"
+readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/nfd/"
+envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
+cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
+kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
 
-echo "---" >>"${ASSETS_DIR}/${FILE_NAME}"
-
-kubectl create -n node-feature-discovery -f "${ASSETS_DIR}/${FILE_NAME_TEMP}" --dry-run=client -o yaml >>"${ASSETS_DIR}/${FILE_NAME}"
-
-KUSTOMIZE_BASE_DIR=${GIT_REPO_ROOT}/hack/addons/kustomize/nfd/
-mv "${ASSETS_DIR}/${FILE_NAME}" "${KUSTOMIZE_BASE_DIR}"/"${FILE_NAME}"
-kustomize --load-restrictor=LoadRestrictionsNone build --reorder=none "${KUSTOMIZE_BASE_DIR}" >>"${ASSETS_DIR}/${FILE_NAME}"
-rm "${KUSTOMIZE_BASE_DIR}"/"${FILE_NAME}"
-
-kubectl create configmap node-feature-discovery-$\{CLUSTER_NAME\} --dry-run=client --output yaml \
+kubectl create configmap node-feature-discovery --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/${FILE_NAME}" \
   >"${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/nfd/manifests/node-feature-discovery-configmap.yaml"
 
@@ -52,4 +37,5 @@ cat <<EOF >"${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/nfd/manife
 $(cat "${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/nfd/manifests/node-feature-discovery-configmap.yaml")
 EOF
 
-mv "${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/nfd/manifests/node-feature-discovery-configmap-temp.yaml" "${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/nfd/manifests/node-feature-discovery-configmap.yaml"
+mv "${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/nfd/manifests/node-feature-discovery-configmap-temp.yaml" \
+  "${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/nfd/manifests/node-feature-discovery-configmap.yaml"

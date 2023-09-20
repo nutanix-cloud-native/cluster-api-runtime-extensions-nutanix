@@ -40,10 +40,7 @@ type ClusterConfigSpec struct {
 	ExtraAPIServerCertSANs ExtraAPIServerCertSANs `json:"extraAPIServerCertSANs,omitempty"`
 
 	// +optional
-	CNI *CNI `json:"cni,omitempty"`
-
-	// +optional
-	NFD *NFD `json:"nfd,omitempty"`
+	Addons *Addons `json:"addons,omitempty"`
 }
 
 func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
@@ -52,7 +49,7 @@ func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 			Description: "Cluster configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"cni":                    CNI{}.VariableSchema().OpenAPIV3Schema,
+				"addons":                 Addons{}.VariableSchema().OpenAPIV3Schema,
 				"etcd":                   Etcd{}.VariableSchema().OpenAPIV3Schema,
 				"extraAPIServerCertSANs": ExtraAPIServerCertSANs{}.VariableSchema().OpenAPIV3Schema,
 				"proxy":                  HTTPProxy{}.VariableSchema().OpenAPIV3Schema,
@@ -189,6 +186,27 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
+type Addons struct {
+	// +optional
+	CNI *CNI `json:"cni,omitempty"`
+
+	// +optional
+	NFD *NFD `json:"nfd,omitempty"`
+}
+
+func (Addons) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Cluster configuration",
+			Type:        "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"cni": CNI{}.VariableSchema().OpenAPIV3Schema,
+				"nfd": NFD{}.VariableSchema().OpenAPIV3Schema,
+			},
+		},
+	}
+}
+
 // CNI required for providing CNI configuration.
 type CNI struct {
 	Provider string `json:"provider,omitempty"`
@@ -212,6 +230,7 @@ func (CNI) VariableSchema() clusterv1.VariableSchema {
 					Enum:        cniProviderEnumVals,
 				},
 			},
+			Required: []string{"provider"},
 		},
 	}
 }
@@ -222,7 +241,7 @@ type NFD struct{}
 func (NFD) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "Object",
+			Type: "object",
 		},
 	}
 }

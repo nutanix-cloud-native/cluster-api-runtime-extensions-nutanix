@@ -17,7 +17,7 @@ trap 'rm -rf ${CAPD_KUSTOMIZATION_FILE} ${EXAMPLES_KUSTOMIZATION_FILE}' EXIT
 CLUSTERCTL_VERSION=$(clusterctl version -o short 2>/dev/null) envsubst \
   <"${CAPD_KUSTOMIZATION_FILE}.tmpl" >"${CAPD_KUSTOMIZATION_FILE}"
 # replace the kubernetes version
-envsubst <"${EXAMPLES_KUSTOMIZATION_FILE}.tmpl" >"${EXAMPLES_KUSTOMIZATION_FILE}"
+envsubst -no-unset <"${EXAMPLES_KUSTOMIZATION_FILE}.tmpl" >"${EXAMPLES_KUSTOMIZATION_FILE}"
 
 mkdir -p examples/capi-quick-start
 # Sync ClusterClass and all Templates

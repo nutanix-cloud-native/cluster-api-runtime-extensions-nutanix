@@ -91,7 +91,7 @@ func NewMetaHandler(
 		client:       c,
 		config:       cfg,
 		variableName: handlers.MetaVariableName,
-		variablePath: []string{variableName},
+		variablePath: []string{"addons", variableName},
 	}
 }
 

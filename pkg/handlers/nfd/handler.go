@@ -1,13 +1,12 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package nfd
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +15,12 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 )
 
 type NFDConfig struct {
@@ -58,7 +63,7 @@ func NewMetaHandler(
 		client:       c,
 		config:       cfg,
 		variableName: handlers.MetaVariableName,
-		variablePath: []string{variableName},
+		variablePath: []string{"addons", variableName},
 	}
 }
 
@@ -88,30 +93,28 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 	// If the variable isn't there or disabled we can ignore it.
 	if !found {
 		log.V(4).Info(
-			fmt.Sprint(
-				"Skipping NFD handler. Not specified in cluster config.",
-			),
+			"Skipping NFD handler. Not specified in cluster config.",
 		)
 		return
-
 	}
-	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+
 	cm, err := n.ensureNFDConfigmapForCluster(ctx, &req.Cluster)
 	if err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		log.Error(err, "failed to get NFD configmap")
+		log.Error(err, "failed to apply NFD ConfigMap for cluster")
 		return
 	}
 	err = n.ensureNFDCRSForCluster(ctx, &req.Cluster, cm)
 	if err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		log.Error(err, "failed to get NFD variable")
+		log.Error(err, "failed to apply NFD ClusterResourceSet for cluster")
 		return
 	}
-	return
+
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
 
-// ensureNFDConfigmapForCluster is a private function that creates a configMap from the
+// ensureNFDConfigmapForCluster is a private function that creates a configMap for the cluster.
 func (n *DefaultNFD) ensureNFDConfigmapForCluster(
 	ctx context.Context,
 	cluster *capiv1.Cluster,
@@ -124,12 +127,12 @@ func (n *DefaultNFD) ensureNFDConfigmapForCluster(
 	err := n.client.Get(ctx, key, cm)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to fetch the configmap specified by %v with error %w",
+			"failed to fetch the configmap specified by %v: %w",
 			n.config,
 			err,
 		)
 	}
-	//base configmap is there now we create one in the cluster namespace if needed
+	// Base configmap is there now we create one in the cluster namespace if needed.
 	cmForCluster := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -143,11 +146,7 @@ func (n *DefaultNFD) ensureNFDConfigmapForCluster(
 	}
 	err = client.ServerSideApply(ctx, n.client, cmForCluster)
 	if err != nil {
-		return nil, fmt.Errorf("failed to server side apply %w", err)
-	}
-	err = n.client.Get(ctx, ctrlclient.ObjectKeyFromObject(cmForCluster), cmForCluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch server side applied configmap %w", err)
+		return nil, fmt.Errorf("failed to apply NFD ConfigMap for cluster: %w", err)
 	}
 	return cmForCluster, nil
 }
@@ -164,20 +163,24 @@ func (n *DefaultNFD) ensureNFDCRSForCluster(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      cm.Name,
+			Name:      cm.Name + "-" + cluster.Name,
 		},
 		Spec: crsv1.ClusterResourceSetSpec{
-			Resources: []crsv1.ResourceRef{
-				{
-					Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
-					Name: cm.Name,
-				}},
+			Resources: []crsv1.ResourceRef{{
+				Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
+				Name: cm.Name,
+			}},
 			Strategy: string(crsv1.ClusterResourceSetStrategyReconcile),
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{capiv1.ClusterNameLabel: cluster.Name},
 			},
 		},
 	}
+
+	if err := controllerutil.SetOwnerReference(cluster, crs, n.client.Scheme()); err != nil {
+		return fmt.Errorf("failed to set owner reference: %w", err)
+	}
+
 	err := client.ServerSideApply(ctx, n.client, crs)
 	if err != nil {
 		return fmt.Errorf("failed to server side apply %w", err)
