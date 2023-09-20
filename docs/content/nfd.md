@@ -24,7 +24,7 @@ spec:
         discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
 ```
 
-On the cluster resource then specify this `cni` value:
+On the cluster resource then specify this `nfd` value:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
