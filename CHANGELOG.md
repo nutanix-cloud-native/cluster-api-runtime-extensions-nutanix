@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.2 (2023-09-20)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* build: Use correct ghcr.io registry for multiplatform image manifest by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/167
+
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.1.1...v0.1.2
+
 ## 0.1.1 (2023-09-20)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
