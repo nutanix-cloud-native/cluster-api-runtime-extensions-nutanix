@@ -95,7 +95,7 @@ dockers:
       - "--label=org.opencontainers.image.version={{.Version}}"
       - "--label=org.opencontainers.image.source={{.GitURL}}"
 docker_manifests:
-  - name_template: d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}
+  - name_template: ghcr.io/d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}
     image_templates:
     - ghcr.io/d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}-amd64
     - ghcr.io/d2iq-labs/{{.ProjectName}}:v{{trimprefix .Version "v"}}-arm64v8
