@@ -34,6 +34,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/extraapiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/httpproxy"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/kubernetesimagerepository"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nfd"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/servicelbgc"
 )
 
@@ -83,12 +84,14 @@ func main() {
 		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
 
 	calicoCNIConfig := &calico.CalicoCNIConfig{}
+	nfdConfig := &nfd.NFDConfig{}
 
 	runtimeWebhookServerOpts := server.NewServerOptions()
 
 	// Initialize and parse command line flags.
 	initFlags(pflag.CommandLine)
 	runtimeWebhookServerOpts.AddFlags(pflag.CommandLine)
+	nfdConfig.AddFlags("nfd", pflag.CommandLine)
 	calicoCNIConfig.AddFlags("calicocni", pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -147,6 +150,7 @@ func main() {
 		// This Calico handler relies on a variable but does not generate a patch.
 		// Instead it creates other resources in the API.
 		calico.NewMetaHandler(mgr.GetClient(), calicoCNIConfig),
+		nfd.NewMetaHandler(mgr.GetClient(), nfdConfig),
 		clusterconfig.NewVariable(),
 		mutation.NewMetaGeneratePatchesHandler("clusterConfigPatch", metaPatchHandlers...),
 	}

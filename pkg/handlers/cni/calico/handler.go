@@ -49,7 +49,7 @@ func (c *CalicoCNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 		&c.defaultsNamespace,
 		prefix+".defaultsNamespace",
 		corev1.NamespaceDefault,
-		"name of the ConfigMap used to deploy Tigera Operator",
+		"namespace of the ConfigMap used to deploy Tigera Operator",
 	)
 
 	flags.StringVar(

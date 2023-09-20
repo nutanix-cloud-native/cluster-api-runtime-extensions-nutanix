@@ -41,6 +41,9 @@ type ClusterConfigSpec struct {
 
 	// +optional
 	CNI *CNI `json:"cni,omitempty"`
+
+	// +optional
+	NFD *NFD `json:"nfd,omitempty"`
 }
 
 func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
@@ -209,6 +212,17 @@ func (CNI) VariableSchema() clusterv1.VariableSchema {
 					Enum:        cniProviderEnumVals,
 				},
 			},
+		},
+	}
+}
+
+// NFD tells us to enable or disable the node feature discovery addon.
+type NFD struct{}
+
+func (NFD) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "Object",
 		},
 	}
 }
