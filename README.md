@@ -29,6 +29,22 @@ To create the ClusterClass and it's Templates with this runtime extension enable
 kubectl apply --server-side -f examples/capi-quick-start/docker-cluster-class.yaml
 ```
 
+If creating an AWS cluster using the example files, you will also need to create a secret with your AWS credentials:
+
+```shell
+kubectl apply --server-side -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "aws-quick-start-creds"
+  namespace: capa-system
+stringData:
+ AccessKeyID: ${AWS_ACCESS_KEY_ID}
+ SecretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+ SessionToken: ${AWS_SESSION_TOKEN}
+EOF
+```
+
 To create a cluster, update `clusterConfig` variable and run:
 
 ```shell

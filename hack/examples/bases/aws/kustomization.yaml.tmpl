@@ -6,6 +6,7 @@ kind: Kustomization
 
 resources:
 - https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/${CAPA_VERSION}/cluster-template-simple-clusterclass.yaml
+- AWSClusterStaticIdentity.yaml
 
 namePrefix: aws-
 
@@ -61,6 +62,21 @@ patches:
                 matchResources:
                   infrastructureCluster: true
           description: aws region to target for cluster creation
+        - name: identityRef
+          definitions:
+            - jsonPatches:
+                - op: add
+                  path: /spec/template/spec/identityRef
+                  valueFrom:
+                    template: |
+                      kind: AWSClusterStaticIdentity
+                      name: {{ .builtin.cluster.name }}
+              selector:
+                apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+                kind: AWSClusterTemplate
+                matchResources:
+                  infrastructureCluster: true
+          description: AWSClusterStaticIdentity identityRef to use when creating the cluster
     - op: "add"
       path: "/spec/variables"
       value:

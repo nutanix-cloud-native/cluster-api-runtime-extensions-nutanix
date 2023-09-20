@@ -39,6 +39,21 @@ spec:
               infrastructureCluster: true
       description: aws region to target for cluster creation
       name: region
+    - definitions:
+        - jsonPatches:
+            - op: add
+              path: /spec/template/spec/identityRef
+              valueFrom:
+                template: |
+                  kind: AWSClusterStaticIdentity
+                  name: {{ .builtin.cluster.name }}
+          selector:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+            kind: AWSClusterTemplate
+            matchResources:
+              infrastructureCluster: true
+      description: AWSClusterStaticIdentity identityRef to use when creating the cluster
+      name: identityRef
   variables:
     - name: region
       schema:

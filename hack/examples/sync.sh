@@ -19,6 +19,6 @@ mkdir -p examples/capi-quick-start
 kustomize build ./hack/examples |
   tee >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "docker" and .kind != "Cluster")' >examples/capi-quick-start/docker-cluster-class.yaml) \
     >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "docker" and .kind == "Cluster")' >examples/capi-quick-start/docker-cluster.yaml) \
-    >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and .kind != "Cluster")' >examples/capi-quick-start/aws-cluster-class.yaml) \
-    >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and .kind == "Cluster")' >examples/capi-quick-start/aws-cluster.yaml) \
+    >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and ( .kind != "Cluster" and .kind != "AWSClusterStaticIdentity"))' >examples/capi-quick-start/aws-cluster-class.yaml) \
+    >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and ( .kind == "Cluster" or .kind == "AWSClusterStaticIdentity"))' >examples/capi-quick-start/aws-cluster.yaml) \
     >/dev/null
