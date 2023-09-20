@@ -46,7 +46,31 @@ patches:
       value: "aws-quick-start-worker-machinetemplate"
     - op: "add"
       path: "/spec/patches"
-      value: []
+      value:
+        - name: region
+          definitions:
+            - jsonPatches:
+                - op: add
+                  path: /spec/template/spec/region
+                  valueFrom:
+                    template: |
+                      {{ if .region }}{{ .region }}{{ else }}us-west-2{{ end }}
+              selector:
+                apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+                kind: AWSClusterTemplate
+                matchResources:
+                  infrastructureCluster: true
+          description: aws region to target for cluster creation
+    - op: "add"
+      path: "/spec/variables"
+      value:
+        - name: region
+          schema:
+            openAPIV3Schema:
+              description: aws region to target for cluster creation
+              example: us-west-2
+              type: string
+              default: us-west-2
 - target:
     group: infrastructure.cluster.x-k8s.io
     kind: AWSMachineTemplate

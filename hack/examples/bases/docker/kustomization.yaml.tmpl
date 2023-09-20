@@ -72,3 +72,5 @@ patches:
                   path: /spec/template/spec/customImage
                   valueFrom:
                     template: ghcr.io/mesosphere/kind-node:{{ .builtin.controlPlane.version }}
+    - op: "remove"
+      path: "/spec/variables"
