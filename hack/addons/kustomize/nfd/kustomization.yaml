@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: node-feature-discovery-kustomize
+bases:
+- node-feature-discovery.yaml
+patches:
+- path: overlays/ds-tolerations.yaml
+  target:
+    kind: DaemonSet
+    name: node-feature-discovery-worker
+    namespace: node-feature-discovery

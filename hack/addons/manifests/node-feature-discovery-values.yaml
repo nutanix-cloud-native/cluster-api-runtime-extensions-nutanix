@@ -1,0 +1,16 @@
+---
+master:
+  extraLabelNs:
+    - nvidia.com
+    - beta.amd.com
+    - amd.com
+
+worker:
+### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
+  config:
+    sources:
+      pci:
+        deviceLabelFields:
+          - "class"
+          - "vendor"
+### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
