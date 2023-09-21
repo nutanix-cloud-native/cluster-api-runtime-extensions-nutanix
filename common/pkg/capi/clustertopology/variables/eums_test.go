@@ -58,8 +58,7 @@ func TestValuesToEnumJSON(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// Call the function under test
-			jsonData, err := ValuesToEnumJSON(tt.input...)
-			g.Expect(err).NotTo(gomega.HaveOccurred())
+			jsonData := MustMarshalValuesToEnumJSON(tt.input...)
 
 			// Assert the result
 			g.Expect(jsonData).To(gomega.HaveLen(len(tt.expected)))
