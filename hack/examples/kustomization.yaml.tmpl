@@ -8,7 +8,8 @@ sortOptions:
   order: fifo
 
 resources:
-- ./bases/capd
+- ./bases/docker
+- ./bases/aws
 
 patches:
 - target:
@@ -16,62 +17,28 @@ patches:
     kind: ClusterClass
   patch: |-
     - op: "add"
-      path: "/spec/patches"
+      path: "/spec/patches/0"
       value:
-        - name: "cluster-config"
-          external:
-            generateExtension: "clusterconfigpatch.capi-runtime-extensions"
-            discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
-    - op: "remove"
-      path: "/spec/variables"
-- target:
-    group: cluster.x-k8s.io
-    kind: ClusterClass
-    name: capd-quick-start
-  patch: |-
-    - op: "add"
-      path: "/spec/patches/-"
-      value:
-        name: customKinDNodeImageForWorkers
-        definitions:
-          - selector:
-              apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-              kind: DockerMachineTemplate
-              matchResources:
-                machineDeploymentClass:
-                  names:
-                    - "*"
-            jsonPatches:
-              - op: add
-                path: /spec/template/spec/customImage
-                valueFrom:
-                  template: ghcr.io/mesosphere/kind-node:{{ .builtin.machineDeployment.version }}
-          - selector:
-              apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-              kind: DockerMachineTemplate
-              matchResources:
-                controlPlane: true
-            jsonPatches:
-              - op: add
-                path: /spec/template/spec/customImage
-                valueFrom:
-                  template: ghcr.io/mesosphere/kind-node:{{ .builtin.controlPlane.version }}
+        name: "cluster-config"
+        external:
+          generateExtension: "clusterconfigpatch.capi-runtime-extensions"
+          discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
 - target:
     group: cluster.x-k8s.io
     kind: Cluster
   patch: |-
-    - op: "remove"
-      path: "/metadata/namespace"
     - op: "add"
       path: "/spec/topology/version"
       value: "${KUBERNETES_VERSION}"
     - op: "add"
-      path: "/spec/clusterNetwork/pods/cidrBlocks"
+      path: "/spec/clusterNetwork/pods"
       value:
+        cidrBlocks:
         - "192.168.0.0/16"
     - op: "add"
-      path: "/spec/clusterNetwork/services/cidrBlocks"
+      path: "/spec/clusterNetwork/services"
       value:
+        cidrBlocks:
         - "10.128.0.0/12"
     - op: "add"
       path: "/spec/clusterNetwork/serviceDomain"

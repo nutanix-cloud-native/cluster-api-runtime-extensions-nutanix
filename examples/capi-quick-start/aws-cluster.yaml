@@ -1,10 +1,9 @@
-# Copyright 2023 D2iQ, Inc. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
-  name: capd-quick-start
+  labels:
+    cluster.x-k8s.io/provider: aws
+  name: aws-quick-start
 spec:
   clusterNetwork:
     pods:
@@ -15,9 +14,8 @@ spec:
       cidrBlocks:
         - 10.128.0.0/12
   topology:
-    class: capd-quick-start
+    class: aws-quick-start
     controlPlane:
-      metadata: {}
       replicas: 1
     variables:
       - name: clusterConfig
@@ -32,3 +30,15 @@ spec:
         - class: default-worker
           name: md-0
           replicas: 1
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AWSClusterStaticIdentity
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: aws
+  name: aws-quick-start
+spec:
+  allowedNamespaces:
+    list:
+      - default
+  secretRef: aws-quick-start-creds

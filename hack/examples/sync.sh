@@ -9,20 +9,16 @@ IFS=$'\n\t'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 
-readonly EXAMPLES_KUSTOMIZATION_FILE="${SCRIPT_DIR}/kustomization.yaml"
-readonly CAPD_KUSTOMIZATION_FILE="${SCRIPT_DIR}/bases/capd/kustomization.yaml"
+trap 'find "${SCRIPT_DIR}" -name kustomization.yaml -delete' EXIT
 
-trap 'rm -rf ${CAPD_KUSTOMIZATION_FILE} ${EXAMPLES_KUSTOMIZATION_FILE}' EXIT
-# download the quick-start files that match the clusterctl version
-CLUSTERCTL_VERSION=$(clusterctl version -o short 2>/dev/null) envsubst \
-  <"${CAPD_KUSTOMIZATION_FILE}.tmpl" >"${CAPD_KUSTOMIZATION_FILE}"
-# replace the kubernetes version
-envsubst -no-unset <"${EXAMPLES_KUSTOMIZATION_FILE}.tmpl" >"${EXAMPLES_KUSTOMIZATION_FILE}"
+find "${SCRIPT_DIR}" -name kustomization.yaml.tmpl \
+  -exec bash -ec 'envsubst -no-unset <"{}" >"$(dirname {})/$(basename -s .tmpl {})"' \;
 
 mkdir -p examples/capi-quick-start
-# Sync ClusterClass and all Templates
+# Sync ClusterClasses (including Templates) and Clusters to separate files
 kustomize build ./hack/examples |
-  gojq --yaml-input --yaml-output '. | select(.kind != "Cluster")' >examples/capi-quick-start/capd-cluster-class.yaml
-# Sync Cluster
-kustomize build ./hack/examples |
-  gojq --yaml-input --yaml-output '. | select(.kind == "Cluster")' >examples/capi-quick-start/capd-cluster.yaml
+  tee >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "docker" and .kind != "Cluster")' >examples/capi-quick-start/docker-cluster-class.yaml) \
+    >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "docker" and .kind == "Cluster")' >examples/capi-quick-start/docker-cluster.yaml) \
+    >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and ( .kind != "Cluster" and .kind != "AWSClusterStaticIdentity"))' >examples/capi-quick-start/aws-cluster-class.yaml) \
+    >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and ( .kind == "Cluster" or .kind == "AWSClusterStaticIdentity"))' >examples/capi-quick-start/aws-cluster.yaml) \
+    >/dev/null

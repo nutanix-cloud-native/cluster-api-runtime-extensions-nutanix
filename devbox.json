@@ -3,6 +3,7 @@
     "actionlint@latest",
     "chart-testing@3.8.0",
     "clusterctl@latest",
+    "coreutils@latest",
     "crane@latest",
     "envsubst@latest",
     "findutils@latest",

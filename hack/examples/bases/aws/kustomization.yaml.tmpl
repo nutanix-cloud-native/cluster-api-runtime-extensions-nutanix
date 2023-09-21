@@ -1,0 +1,121 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/${CAPA_VERSION}/cluster-template-simple-clusterclass.yaml
+- AWSClusterStaticIdentity.yaml
+
+namePrefix: aws-
+
+commonLabels:
+  cluster.x-k8s.io/provider: aws
+
+patches:
+- target:
+    group: cluster.x-k8s.io
+    kind: Cluster
+  patch: |-
+    - op: "add"
+      path: "/metadata/name"
+      value: "quick-start"
+    - op: "add"
+      path: "/spec/topology/class"
+      value: "aws-quick-start"
+    - op: "remove"
+      path: "/metadata/labels/cni"
+- target:
+    group: cluster.x-k8s.io
+    kind: ClusterClass
+  patch: |-
+    - op: "add"
+      path: "/spec/controlPlane/machineInfrastructure/ref/name"
+      value: "aws-quick-start-control-plane"
+    - op: "add"
+      path: "/spec/controlPlane/ref/name"
+      value: "aws-quick-start-control-plane"
+    - op: "add"
+      path: "/spec/infrastructure/ref/name"
+      value: "aws-quick-start"
+    - op: "add"
+      path: "/spec/workers/machineDeployments/0/template/bootstrap/ref/name"
+      value: "aws-quick-start-worker-bootstraptemplate"
+    - op: "add"
+      path: "/spec/workers/machineDeployments/0/template/infrastructure/ref/name"
+      value: "aws-quick-start-worker-machinetemplate"
+    - op: "add"
+      path: "/spec/patches"
+      value:
+        - name: region
+          definitions:
+            - jsonPatches:
+                - op: add
+                  path: /spec/template/spec/region
+                  valueFrom:
+                    template: |
+                      {{ if .region }}{{ .region }}{{ else }}us-west-2{{ end }}
+              selector:
+                apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+                kind: AWSClusterTemplate
+                matchResources:
+                  infrastructureCluster: true
+          description: aws region to target for cluster creation
+        - name: identityRef
+          definitions:
+            - jsonPatches:
+                - op: add
+                  path: /spec/template/spec/identityRef
+                  valueFrom:
+                    template: |
+                      kind: AWSClusterStaticIdentity
+                      name: {{ .builtin.cluster.name }}
+              selector:
+                apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+                kind: AWSClusterTemplate
+                matchResources:
+                  infrastructureCluster: true
+          description: AWSClusterStaticIdentity identityRef to use when creating the cluster
+    - op: "add"
+      path: "/spec/variables"
+      value:
+        - name: region
+          schema:
+            openAPIV3Schema:
+              description: aws region to target for cluster creation
+              example: us-west-2
+              type: string
+              default: us-west-2
+- target:
+    group: infrastructure.cluster.x-k8s.io
+    kind: AWSMachineTemplate
+    name: quick-start-worker-machinetemplate
+  patch: |-
+    - op: "add"
+      path: "/spec/template/spec/instanceType"
+      value: "m5.2xlarge"
+- target:
+    group: infrastructure.cluster.x-k8s.io
+    kind: AWSMachineTemplate
+    name: quick-start-control-plane
+  patch: |-
+    - op: "add"
+      path: "/spec/template/spec/instanceType"
+      value: "m5.xlarge"
+- target:
+    kind: ConfigMap
+  patch: |
+    $$patch: delete
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: aws-cni-$${CLUSTER_NAME}-crs-0
+- target:
+    kind: ClusterResourceSet
+  patch: |
+    $$patch: delete
+    apiVersion: addons.cluster.x-k8s.io/v1beta1
+    kind: ConfigMap
+    metadata:
+      name: aws-$${CLUSTER_NAME}-crs-0
