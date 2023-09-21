@@ -215,11 +215,6 @@ type CNI struct {
 func (CNI) VariableSchema() clusterv1.VariableSchema {
 	supportedCNIProviders := []string{CNIProviderCalico}
 
-	cniProviderEnumVals, err := variables.ValuesToEnumJSON(supportedCNIProviders...)
-	if err != nil {
-		panic(err)
-	}
-
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
@@ -227,7 +222,7 @@ func (CNI) VariableSchema() clusterv1.VariableSchema {
 				"provider": {
 					Description: "CNI provider to deploy",
 					Type:        "string",
-					Enum:        cniProviderEnumVals,
+					Enum:        variables.MustMarshalValuesToEnumJSON(supportedCNIProviders...),
 				},
 			},
 			Required: []string{"provider"},
