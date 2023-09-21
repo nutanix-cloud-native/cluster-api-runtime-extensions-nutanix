@@ -23,7 +23,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
 const (
@@ -48,7 +48,7 @@ func NewPatch() *etcdPatchHandler {
 }
 
 func NewMetaPatch() *etcdPatchHandler {
-	return newEtcdPatchHandler(handlers.MetaVariableName, variableName)
+	return newEtcdPatchHandler(clusterconfig.MetaVariableName, variableName)
 }
 
 func newEtcdPatchHandler(

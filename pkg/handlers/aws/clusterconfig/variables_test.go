@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package extraapiservercertsans
+package clusterconfig
 
 import (
 	"testing"
@@ -15,22 +15,21 @@ import (
 func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		variableName,
-		ptr.To(v1alpha1.ExtraAPIServerCertSANs{}.VariableSchema()),
-		false,
+		MetaVariableName,
+		ptr.To(v1alpha1.AWSClusterConfigSpec{}.VariableSchema()),
+		true,
 		NewVariable,
 		capitest.VariableTestDef{
-			Name: "single valid SAN",
-			Vals: []string{"a.b.c.example.com"},
+			Name: "valid region",
+			Vals: v1alpha1.AWSClusterConfigSpec{
+				Region: ptr.To(v1alpha1.RegionUSWest2),
+			},
 		},
 		capitest.VariableTestDef{
-			Name:        "single invalid SAN",
-			Vals:        []string{"invalid:san"},
-			ExpectError: true,
-		},
-		capitest.VariableTestDef{
-			Name:        "duplicate valid SANs",
-			Vals:        []string{"a.b.c.example.com", "a.b.c.example.com"},
+			Name: "invalid region",
+			Vals: v1alpha1.AWSClusterConfigSpec{
+				Region: ptr.To(v1alpha1.Region("invalid region")),
+			},
 			ExpectError: true,
 		},
 	)

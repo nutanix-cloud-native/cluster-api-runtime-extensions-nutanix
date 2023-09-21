@@ -45,6 +45,22 @@ stringData:
 EOF
 ```
 
+If you are using an `AWS_PROFILE` to log in use the following:
+
+```shell
+kubectl apply --server-side -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "aws-quick-start-creds"
+  namespace: capa-system
+stringData:
+ AccessKeyID: $(aws configure get aws_access_key_id)
+ SecretAccessKey: $(aws configure get aws_secret_access_key)
+ SessionToken: $(aws configure get aws_session_token)
+EOF
+```
+
 To create a cluster, update `clusterConfig` variable and run:
 
 ```shell

@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package extraapiservercertsans
+package region
 
 import (
 	"testing"
@@ -16,21 +16,16 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		variableName,
-		ptr.To(v1alpha1.ExtraAPIServerCertSANs{}.VariableSchema()),
+		ptr.To(v1alpha1.Region("").VariableSchema()),
 		false,
 		NewVariable,
 		capitest.VariableTestDef{
-			Name: "single valid SAN",
-			Vals: []string{"a.b.c.example.com"},
+			Name: "valid",
+			Vals: "us-west-2",
 		},
 		capitest.VariableTestDef{
-			Name:        "single invalid SAN",
-			Vals:        []string{"invalid:san"},
-			ExpectError: true,
-		},
-		capitest.VariableTestDef{
-			Name:        "duplicate valid SANs",
-			Vals:        []string{"a.b.c.example.com", "a.b.c.example.com"},
+			Name:        "invalid",
+			Vals:        "invalid region",
 			ExpectError: true,
 		},
 	)

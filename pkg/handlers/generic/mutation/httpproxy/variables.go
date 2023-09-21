@@ -20,7 +20,7 @@ var (
 )
 
 const (
-	// variableName is http proxy external patch variable name.
+	// variableName is the external patch variable name.
 	variableName = "proxy"
 
 	// HandlerNameVariable is the name of the variable handler.

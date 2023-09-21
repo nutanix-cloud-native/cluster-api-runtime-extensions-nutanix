@@ -20,7 +20,7 @@ var (
 )
 
 const (
-	// VariableName is http proxy external patch variable name.
+	// variableName is the external patch variable name.
 	variableName = "kubernetesImageRepository"
 
 	// HandlerNameVariable is the name of the variable handler.

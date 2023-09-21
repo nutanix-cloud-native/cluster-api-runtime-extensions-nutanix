@@ -15,9 +15,9 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/serializer"
 )
 
-// requestItem returns a GeneratePatchesRequestItem with the given variables and object.
-func requestItem(
-	object any,
+// NewRequestItem returns a GeneratePatchesRequestItem with the given variables and object.
+func NewRequestItem(
+	object runtime.Object,
 	holderRef *runtimehooksv1.HolderReference,
 	uid types.UID,
 ) runtimehooksv1.GeneratePatchesRequestItem {
@@ -35,7 +35,7 @@ func requestItem(
 }
 
 func NewKubeadmConfigTemplateRequestItem(uid types.UID) runtimehooksv1.GeneratePatchesRequestItem {
-	return requestItem(
+	return NewRequestItem(
 		&bootstrapv1.KubeadmConfigTemplate{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "KubeadmConfigTemplate",
@@ -60,7 +60,7 @@ func NewKubeadmConfigTemplateRequestItem(uid types.UID) runtimehooksv1.GenerateP
 func NewKubeadmControlPlaneTemplateRequestItem(
 	uid types.UID,
 ) runtimehooksv1.GeneratePatchesRequestItem {
-	return requestItem(
+	return NewRequestItem(
 		&controlplanev1.KubeadmControlPlaneTemplate{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "KubeadmControlPlaneTemplate",

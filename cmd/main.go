@@ -27,7 +27,9 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
+	genericclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/servicelbgc"
@@ -117,12 +119,12 @@ func main() {
 	}
 
 	// Handlers for lifecycle hooks.
-	lifeCycleHandlers := []handlers.Named{
+	genericLifeCycleHandlers := []handlers.Named{
 		servicelbgc.New(mgr.GetClient()),
 	}
 	// Handlers that apply patches to the Cluster object and its objects.
 	// Used by CAPI's GeneratePatches hook.
-	patchHandlers := []handlers.Named{
+	genericPatchHandlers := []handlers.Named{
 		httpproxy.NewPatch(mgr.GetClient()),
 		extraapiservercertsans.NewPatch(),
 		auditpolicy.NewPatch(),
@@ -132,34 +134,45 @@ func main() {
 	// Handlers used by CAPI's DiscoverVariables hook.
 	// It's ok that this does not match patchHandlers.
 	// Some of those handlers may always get applied and not have a corresponding variable.
-	variableHandlers := []handlers.Named{
+	genericVariableHandlers := []handlers.Named{
 		httpproxy.NewVariable(),
 		extraapiservercertsans.NewVariable(),
 		kubernetesimagerepository.NewVariable(),
 	}
-	// This metaPatchHandlers combines all other patch and variable handlers under a single handler.
+	// This genericMetaPatchHandlers combines all other patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
-	metaPatchHandlers := []mutation.MetaMutater{
+	genericMetaPatchHandlers := []mutation.MetaMutater{
 		httpproxy.NewMetaPatch(mgr.GetClient()),
 		extraapiservercertsans.NewMetaPatch(),
 		auditpolicy.NewPatch(),
 		kubernetesimagerepository.NewMetaPatch(),
 		etcd.NewMetaPatch(),
 	}
-	metaHandlers := []handlers.Named{
+	genericMetaHandlers := []handlers.Named{
 		// This Calico handler relies on a variable but does not generate a patch.
 		// Instead it creates other resources in the API.
 		calico.NewMetaHandler(mgr.GetClient(), calicoCNIConfig),
 		nfd.NewMetaHandler(mgr.GetClient(), nfdConfig),
-		clusterconfig.NewVariable(),
-		mutation.NewMetaGeneratePatchesHandler("clusterConfigPatch", metaPatchHandlers...),
+		genericclusterconfig.NewVariable(),
+		mutation.NewMetaGeneratePatchesHandler("clusterConfigPatch", genericMetaPatchHandlers...),
+	}
+
+	// This awsMetaPatchHandlers combines all AWS patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	awsMetaPatchHandlers := []mutation.MetaMutater{
+		region.NewMetaPatch(),
+	}
+	awsMetaHandlers := []handlers.Named{
+		awsclusterconfig.NewVariable(),
+		mutation.NewMetaGeneratePatchesHandler("awsClusterConfigPatch", awsMetaPatchHandlers...),
 	}
 
 	var allHandlers []handlers.Named
-	allHandlers = append(allHandlers, lifeCycleHandlers...)
-	allHandlers = append(allHandlers, patchHandlers...)
-	allHandlers = append(allHandlers, variableHandlers...)
-	allHandlers = append(allHandlers, metaHandlers...)
+	allHandlers = append(allHandlers, genericLifeCycleHandlers...)
+	allHandlers = append(allHandlers, genericPatchHandlers...)
+	allHandlers = append(allHandlers, genericVariableHandlers...)
+	allHandlers = append(allHandlers, genericMetaHandlers...)
+	allHandlers = append(allHandlers, awsMetaHandlers...)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
 

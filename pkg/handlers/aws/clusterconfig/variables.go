@@ -15,37 +15,37 @@ import (
 )
 
 var (
-	_ commonhandlers.Named       = &clusterConfigVariableHandler{}
-	_ mutation.DiscoverVariables = &clusterConfigVariableHandler{}
+	_ commonhandlers.Named       = &awsClusterConfigVariableHandler{}
+	_ mutation.DiscoverVariables = &awsClusterConfigVariableHandler{}
 )
 
 const (
 	// MetaVariableName is the meta cluster config patch variable name.
-	MetaVariableName = "clusterConfig"
+	MetaVariableName = "awsClusterConfig"
 
 	// HandlerNameVariable is the name of the variable handler.
-	HandlerNameVariable = "ClusterConfigVars"
+	HandlerNameVariable = "AWSClusterConfigVars"
 )
 
-func NewVariable() *clusterConfigVariableHandler {
-	return &clusterConfigVariableHandler{}
+func NewVariable() *awsClusterConfigVariableHandler {
+	return &awsClusterConfigVariableHandler{}
 }
 
-type clusterConfigVariableHandler struct{}
+type awsClusterConfigVariableHandler struct{}
 
-func (h *clusterConfigVariableHandler) Name() string {
+func (h *awsClusterConfigVariableHandler) Name() string {
 	return HandlerNameVariable
 }
 
-func (h *clusterConfigVariableHandler) DiscoverVariables(
+func (h *awsClusterConfigVariableHandler) DiscoverVariables(
 	ctx context.Context,
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     MetaVariableName,
-		Required: false,
-		Schema:   v1alpha1.ClusterConfigSpec{}.VariableSchema(),
+		Required: true,
+		Schema:   v1alpha1.AWSClusterConfigSpec{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

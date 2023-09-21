@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package clusterconfig
+package region
 
 import (
 	"context"
@@ -10,42 +10,42 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 )
 
 var (
-	_ commonhandlers.Named       = &clusterConfigVariableHandler{}
-	_ mutation.DiscoverVariables = &clusterConfigVariableHandler{}
+	_ handlers.Named             = &awsRegionVariableHandler{}
+	_ mutation.DiscoverVariables = &awsRegionVariableHandler{}
 )
 
 const (
-	// MetaVariableName is the meta cluster config patch variable name.
-	MetaVariableName = "clusterConfig"
+	// variableName is the external patch variable name.
+	variableName = "region"
 
 	// HandlerNameVariable is the name of the variable handler.
-	HandlerNameVariable = "ClusterConfigVars"
+	HandlerNameVariable = "AWSRegionVars"
 )
 
-func NewVariable() *clusterConfigVariableHandler {
-	return &clusterConfigVariableHandler{}
+func NewVariable() *awsRegionVariableHandler {
+	return &awsRegionVariableHandler{}
 }
 
-type clusterConfigVariableHandler struct{}
+type awsRegionVariableHandler struct{}
 
-func (h *clusterConfigVariableHandler) Name() string {
+func (h *awsRegionVariableHandler) Name() string {
 	return HandlerNameVariable
 }
 
-func (h *clusterConfigVariableHandler) DiscoverVariables(
+func (h *awsRegionVariableHandler) DiscoverVariables(
 	ctx context.Context,
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     MetaVariableName,
+		Name:     variableName,
 		Required: false,
-		Schema:   v1alpha1.ClusterConfigSpec{}.VariableSchema(),
+		Schema:   v1alpha1.Region("").VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

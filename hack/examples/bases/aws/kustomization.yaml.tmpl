@@ -26,6 +26,11 @@ patches:
       value: "aws-quick-start"
     - op: "remove"
       path: "/metadata/labels/cni"
+    - op: "add"
+      path: "/spec/topology/variables"
+      value:
+        - name: "awsClusterConfig"
+          value: {}
 - target:
     group: cluster.x-k8s.io
     kind: ClusterClass
@@ -48,20 +53,6 @@ patches:
     - op: "add"
       path: "/spec/patches"
       value:
-        - name: region
-          definitions:
-            - jsonPatches:
-                - op: add
-                  path: /spec/template/spec/region
-                  valueFrom:
-                    template: |
-                      {{ if .region }}{{ .region }}{{ else }}us-west-2{{ end }}
-              selector:
-                apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
-                kind: AWSClusterTemplate
-                matchResources:
-                  infrastructureCluster: true
-          description: aws region to target for cluster creation
         - name: identityRef
           definitions:
             - jsonPatches:
@@ -78,15 +69,14 @@ patches:
                   infrastructureCluster: true
           description: AWSClusterStaticIdentity identityRef to use when creating the cluster
     - op: "add"
-      path: "/spec/variables"
+      path: "/spec/patches/0"
       value:
-        - name: region
-          schema:
-            openAPIV3Schema:
-              description: aws region to target for cluster creation
-              example: us-west-2
-              type: string
-              default: us-west-2
+        name: "aws-cluster-config"
+        external:
+          generateExtension: "awsclusterconfigpatch.capi-runtime-extensions"
+          discoverVariablesExtension: "awsclusterconfigvars.capi-runtime-extensions"
+    - op: "remove"
+      path: "/spec/variables"
 - target:
     group: infrastructure.cluster.x-k8s.io
     kind: AWSMachineTemplate

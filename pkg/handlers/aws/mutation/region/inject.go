@@ -1,17 +1,16 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package kubernetesimagerepository
+package region
 
 import (
 	"context"
 	_ "embed"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,56 +22,55 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 )
 
 const (
 	// HandlerNamePatch is the name of the inject handler.
-	HandlerNamePatch = "ImageRepositoryPatch"
+	HandlerNamePatch = "AWSRegionPatch"
 )
 
-type imageRepositoryPatchHandler struct {
+type awsRegionPatchHandler struct {
 	decoder           runtime.Decoder
 	variableName      string
 	variableFieldPath []string
 }
 
 var (
-	_ commonhandlers.Named     = &imageRepositoryPatchHandler{}
-	_ mutation.GeneratePatches = &imageRepositoryPatchHandler{}
-	_ mutation.MetaMutater     = &imageRepositoryPatchHandler{}
+	_ commonhandlers.Named     = &awsRegionPatchHandler{}
+	_ mutation.GeneratePatches = &awsRegionPatchHandler{}
+	_ mutation.MetaMutater     = &awsRegionPatchHandler{}
 )
 
-func NewPatch() *imageRepositoryPatchHandler {
+func NewPatch() *awsRegionPatchHandler {
 	return newImageRepositoryPatchHandler(variableName)
 }
 
-func NewMetaPatch() *imageRepositoryPatchHandler {
+func NewMetaPatch() *awsRegionPatchHandler {
 	return newImageRepositoryPatchHandler(clusterconfig.MetaVariableName, variableName)
 }
 
 func newImageRepositoryPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
-) *imageRepositoryPatchHandler {
-	scheme := runtime.NewScheme()
-	_ = bootstrapv1.AddToScheme(scheme)
-	_ = controlplanev1.AddToScheme(scheme)
-	return &imageRepositoryPatchHandler{
-		decoder: serializer.NewCodecFactory(scheme).UniversalDecoder(
-			controlplanev1.GroupVersion,
-			bootstrapv1.GroupVersion,
+) *awsRegionPatchHandler {
+	return &awsRegionPatchHandler{
+		decoder: json.NewSerializerWithOptions(
+			json.DefaultMetaFactory,
+			nil,
+			nil,
+			json.SerializerOptions{},
 		),
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
 }
 
-func (h *imageRepositoryPatchHandler) Name() string {
+func (h *awsRegionPatchHandler) Name() string {
 	return HandlerNamePatch
 }
 
-func (h *imageRepositoryPatchHandler) Mutate(
+func (h *awsRegionPatchHandler) Mutate(
 	ctx context.Context,
 	obj runtime.Object,
 	vars map[string]apiextensionsv1.JSON,
@@ -83,7 +81,7 @@ func (h *imageRepositoryPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	imageRepositoryVar, found, err := variables.Get[v1alpha1.KubernetesImageRepository](
+	regionVar, found, err := variables.Get[v1alpha1.Region](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -92,7 +90,7 @@ func (h *imageRepositoryPatchHandler) Mutate(
 		return err
 	}
 	if !found {
-		log.V(5).Info("kubernetesImageRepository variable not defined")
+		log.V(5).Info("AWS region variable not defined")
 		return nil
 	}
 
@@ -102,35 +100,41 @@ func (h *imageRepositoryPatchHandler) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		imageRepositoryVar,
+		regionVar,
 	)
 
 	return patches.Generate(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		obj,
+		vars,
+		&holderRef,
+		selectors.InfrastructureCluster("v1beta2", "AWSClusterTemplate"),
+		log,
+		func(obj *unstructured.Unstructured) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting imageRepository in kubeadm config spec")
+			).Info("setting region in AWSCluster spec")
 
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
-			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.ImageRepository = imageRepositoryVar.String()
-
-			return nil
+			return unstructured.SetNestedField(
+				obj.Object,
+				string(regionVar),
+				"spec",
+				"template",
+				"spec",
+				"region",
+			)
 		},
 	)
 }
 
-func (h *imageRepositoryPatchHandler) GeneratePatches(
+func (h *awsRegionPatchHandler) GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		h.decoder,
+		unstructured.UnstructuredJSONScheme,
 		req,
 		resp,
 		func(
