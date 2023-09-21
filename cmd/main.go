@@ -39,6 +39,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistrycredentials"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
 )
 
@@ -135,6 +136,7 @@ func main() {
 		extraapiservercertsans.NewMetaPatch(),
 		httpproxy.NewMetaPatch(mgr.GetClient()),
 		kubernetesimagerepository.NewMetaPatch(),
+		imageregistrycredentials.NewMetaPatch(mgr.GetClient()),
 	}
 
 	// awsMetaPatchHandlers combines all AWS patch and variable handlers under a single handler.

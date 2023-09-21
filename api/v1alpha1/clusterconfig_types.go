@@ -28,6 +28,10 @@ type GenericClusterConfig struct {
 	// +optional
 	ExtraAPIServerCertSANs ExtraAPIServerCertSANs `json:"extraAPIServerCertSANs,omitempty"`
 
+	// TODO: Add support for multiple registries.
+	// +optional
+	ImageRegistryCredentials ImageRegistryCredentials `json:"imageRegistryCredentials,omitempty"`
+
 	// +optional
 	Addons *Addons `json:"addons,omitempty"`
 }
@@ -46,6 +50,7 @@ func (GenericClusterConfig) VariableSchema() clusterv1.VariableSchema {
 					"",
 				).VariableSchema().
 					OpenAPIV3Schema,
+				"imageRegistryCredentials": ImageRegistryCredentials{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -171,6 +176,40 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 				Type:    "string",
 				Pattern: patterns.Anchored(patterns.DNS1123Subdomain),
 			},
+		},
+	}
+}
+
+// ImageRegistryCredentials required for providing credentials for an image registry URL.
+type ImageRegistryCredentials struct {
+	// Registry URL.
+	URL string `json:"url"`
+
+	// Name of the Secret containing the registry credentials.
+	// The Secret should have keys 'username' and 'password'.
+	// This credentials Secret is not required for some registries, e.g. ECR.
+	// +optional
+	Secret string `json:"secret,omitempty"`
+}
+
+func (ImageRegistryCredentials) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Extra Subject Alternative Names for the API Server signing cert",
+			Type:        "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"url": {
+					Description: "Registry URL.",
+					Type:        "string",
+				},
+				"secret": {
+					Description: "Name of the Secret containing the registry credentials. " +
+						"The Secret should have keys 'username' and 'password'. " +
+						"This credentials Secret is not required for some registries, e.g. ECR.",
+					Type: "string",
+				},
+			},
+			Required: []string{"url"},
 		},
 	}
 }

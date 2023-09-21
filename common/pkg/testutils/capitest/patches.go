@@ -6,6 +6,7 @@ package capitest
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -55,7 +56,7 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 			}
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
 			h.GeneratePatches(context.Background(), req, resp)
-			g.Expect(resp.Status).To(gomega.Equal(runtimehooksv1.ResponseStatusSuccess))
+			g.Expect(resp.Status).To(gomega.Equal(runtimehooksv1.ResponseStatusSuccess), fmt.Sprintf("Message: %s", resp.Message))
 
 			if len(tt.ExpectedPatchMatchers) == 0 {
 				g.Expect(resp.Items).To(gomega.BeEmpty())
