@@ -4,6 +4,7 @@
 package selectors
 
 import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
@@ -43,6 +44,22 @@ func AllWorkersSelector() clusterv1.PatchSelector {
 					"*",
 				},
 			},
+		},
+	}
+}
+
+// InfrastructureCluster selector matches against infrastructure clusters.
+// Passing in the API version (not the API group) is required because different providers could support different API
+// versions. This also allows for a oatch to select multiple infrastructure versions for the same provider.
+func InfrastructureCluster(capiInfrastructureAPIVersion, kind string) clusterv1.PatchSelector {
+	return clusterv1.PatchSelector{
+		APIVersion: schema.GroupVersion{
+			Group:   "infrastructure.cluster.x-k8s.io",
+			Version: capiInfrastructureAPIVersion,
+		}.String(),
+		Kind: kind,
+		MatchResources: clusterv1.PatchSelectorMatch{
+			InfrastructureCluster: true,
 		},
 	}
 }

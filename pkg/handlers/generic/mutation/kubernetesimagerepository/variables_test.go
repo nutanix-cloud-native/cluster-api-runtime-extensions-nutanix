@@ -17,6 +17,7 @@ func TestVariableValidation(t *testing.T) {
 		t,
 		variableName,
 		ptr.To(v1alpha1.KubernetesImageRepository("").VariableSchema()),
+		false,
 		NewVariable,
 		capitest.VariableTestDef{
 			Name: "set",

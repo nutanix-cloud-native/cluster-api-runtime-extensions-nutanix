@@ -29,7 +29,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/parser"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/cni"
 )
 
@@ -90,7 +90,7 @@ func NewMetaHandler(
 	return &CalicoCNI{
 		client:       c,
 		config:       cfg,
-		variableName: handlers.MetaVariableName,
+		variableName: clusterconfig.MetaVariableName,
 		variablePath: []string{"addons", variableName},
 	}
 }

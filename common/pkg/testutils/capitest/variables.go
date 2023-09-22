@@ -29,6 +29,7 @@ func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 	t *testing.T,
 	variableName string,
 	variableSchema *clusterv1.VariableSchema,
+	variableRequired bool,
 	handlerCreator func() T,
 	variableTestDefs ...VariableTestDef,
 ) {
@@ -57,7 +58,7 @@ func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 			variable := resp.Variables[0]
 			g.Expect(variable).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 				"Name":     gomega.Equal(variableName),
-				"Required": gomega.BeFalse(),
+				"Required": gomega.Equal(variableRequired),
 				"Schema":   gomega.Equal(*variableSchema),
 			}))
 

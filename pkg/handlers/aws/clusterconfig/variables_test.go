@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package httpproxy
+package clusterconfig
 
 import (
 	"testing"
@@ -15,16 +15,14 @@ import (
 func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		variableName,
-		ptr.To(v1alpha1.HTTPProxy{}.VariableSchema()),
-		false,
+		MetaVariableName,
+		ptr.To(v1alpha1.AWSClusterConfigSpec{}.VariableSchema()),
+		true,
 		NewVariable,
 		capitest.VariableTestDef{
-			Name: "valid values",
-			Vals: v1alpha1.HTTPProxy{
-				HTTP:         "http://a.b.c.example.com",
-				HTTPS:        "https://a.b.c.example.com",
-				AdditionalNo: []string{"d.e.f.example.com"},
+			Name: "specified region",
+			Vals: v1alpha1.AWSClusterConfigSpec{
+				Region: ptr.To(v1alpha1.Region("a-specified-region")),
 			},
 		},
 	)

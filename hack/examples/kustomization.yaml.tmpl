@@ -50,11 +50,11 @@ patches:
       path: "/spec/topology/workers/machineDeployments/0/replicas"
       value: 1
     - op: "add"
-      path: "/spec/topology/variables"
+      path: "/spec/topology/variables/0"
       value:
-        - name: "clusterConfig"
-          value:
-            addons:
-              cni:
-                provider: calico
-              nfd: {}
+        name: "clusterConfig"
+        value:
+          addons:
+            cni:
+              provider: calico
+            nfd: {}

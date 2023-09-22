@@ -25,7 +25,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
 const (
@@ -59,7 +59,7 @@ func NewPatch(
 func NewMetaPatch(
 	cl ctrlclient.Reader,
 ) *httpProxyPatchHandler {
-	return newHTTPProxyPatchHandler(cl, handlers.MetaVariableName, variableName)
+	return newHTTPProxyPatchHandler(cl, clusterconfig.MetaVariableName, variableName)
 }
 
 func newHTTPProxyPatchHandler(

@@ -25,20 +25,10 @@ spec:
         discoverVariablesExtension: clusterconfigvars.capi-runtime-extensions
         generateExtension: clusterconfigpatch.capi-runtime-extensions
       name: cluster-config
-    - definitions:
-        - jsonPatches:
-            - op: add
-              path: /spec/template/spec/region
-              valueFrom:
-                template: |
-                  {{ if .region }}{{ .region }}{{ else }}us-west-2{{ end }}
-          selector:
-            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
-            kind: AWSClusterTemplate
-            matchResources:
-              infrastructureCluster: true
-      description: aws region to target for cluster creation
-      name: region
+    - external:
+        discoverVariablesExtension: awsclusterconfigvars.capi-runtime-extensions
+        generateExtension: awsclusterconfigpatch.capi-runtime-extensions
+      name: aws-cluster-config
     - definitions:
         - jsonPatches:
             - op: add
@@ -54,14 +44,6 @@ spec:
               infrastructureCluster: true
       description: AWSClusterStaticIdentity identityRef to use when creating the cluster
       name: identityRef
-  variables:
-    - name: region
-      schema:
-        openAPIV3Schema:
-          default: us-west-2
-          description: aws region to target for cluster creation
-          example: us-west-2
-          type: string
   workers:
     machineDeployments:
       - class: default-worker

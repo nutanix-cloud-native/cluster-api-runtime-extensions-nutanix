@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package httpproxy
+package region
 
 import (
 	"testing"
@@ -16,16 +16,12 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		variableName,
-		ptr.To(v1alpha1.HTTPProxy{}.VariableSchema()),
+		ptr.To(v1alpha1.Region("").VariableSchema()),
 		false,
 		NewVariable,
 		capitest.VariableTestDef{
-			Name: "valid values",
-			Vals: v1alpha1.HTTPProxy{
-				HTTP:         "http://a.b.c.example.com",
-				HTTPS:        "https://a.b.c.example.com",
-				AdditionalNo: []string{"d.e.f.example.com"},
-			},
+			Name: "valid",
+			Vals: "us-west-2",
 		},
 	)
 }

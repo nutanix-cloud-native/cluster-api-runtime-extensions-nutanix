@@ -6,10 +6,21 @@ package serializer
 import (
 	"bytes"
 	"encoding/json"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func ToJSON(v any) []byte {
-	data, err := json.Marshal(v)
+	var (
+		data []byte
+		err  error
+	)
+	if u, ok := v.(*unstructured.Unstructured); ok {
+		data, err = u.MarshalJSON()
+	} else {
+		data, err = json.Marshal(v)
+	}
+
 	if err != nil {
 		panic(err)
 	}
