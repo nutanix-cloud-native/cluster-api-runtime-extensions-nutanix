@@ -7,7 +7,8 @@ ClusterClasses, allowing for a single configuration variable with nested values.
 with the least configuration. The included patches are usable individually, but require declaring all the individual
 patch and variable handlers in the ClusterClass.
 
-To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch` external patches on `ClusterClass`.
+To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch`
+external patches on `ClusterClass`.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1

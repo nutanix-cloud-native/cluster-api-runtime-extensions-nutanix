@@ -4,7 +4,7 @@ title: "etcd"
 
 Override the container image repository and tag for [etcd](https://github.com/etcd-io/etcd).
 
-To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch` external patches on `ClusterClass`.
+To enable this handler set the `etcdpatch` and `etcdvars` external patches on `ClusterClass`.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -13,10 +13,10 @@ metadata:
   name: <NAME>
 spec:
   patches:
-    - name: cluster-config
+    - name: image-registry
       external:
-        generateExtension: "clusterconfigpatch.capi-runtime-extensions"
-        discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
+        generateExtension: "etcdpatch.capi-runtime-extensions"
+        discoverVariablesExtension: "etcdvars.capi-runtime-extensions"
 ```
 
 On the cluster resource then specify desired etcd image repository and/or image tag values:
@@ -29,12 +29,11 @@ metadata:
 spec:
   topology:
     variables:
-      - name: clusterConfig
-        value:
-          etcd:
-            image:
-              repository: my-registry.io/my-org/my-repo
-              tag: "v3.5.99_custom.0"
+      - name: etcd
+        values:
+          image:
+            repository: my-registry.io/my-org/my-repo
+            tag: "v3.5.99_custom.0"
 ```
 
 Applying this configuration will result in the following value being set:

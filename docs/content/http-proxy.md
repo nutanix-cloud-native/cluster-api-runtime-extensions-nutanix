@@ -6,7 +6,7 @@ In some network environments it is necessary to use HTTP proxy to successfuly ex
 To configure Kubernetes components (`containerd`, `kubelet`) to use HTTP proxy use the `httpproxypatch`
 external patch that will generate appropriate configuration for control plane and worker nodes.
 
-To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch` external patches on `ClusterClass`.
+To enable the http proxy enable the `httpproxypatch` external patch on `ClusterClass`.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -15,10 +15,10 @@ metadata:
   name: <NAME>
 spec:
   patches:
-    - name: cluster-config
+    - name: http-proxy
       external:
-        generateExtension: "clusterconfigpatch.capi-runtime-extensions"
-        discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
+        generateExtension: "httpproxypatch.capi-runtime-extensions"
+        discoverVariablesExtension: "httpproxyvars.capi-runtime-extensions"
 ```
 
 On the cluster resource then specify desired HTTP proxy values:
@@ -31,14 +31,13 @@ metadata:
 spec:
   topology:
     variables:
-      - name: clusterConfig
+      - name: proxy
         value:
-          proxy:
-            http: http://example.com
-            https: https://example.com
-            additionalNo:
-              - no-proxy-1.example.com
-              - no-proxy-2.example.com
+          http: http://example.com
+          https: http://example.com
+          additionalNo:
+            - no-proxy-1.example.com
+            - no-proxy-2.example.com
 ```
 
 The `additionalNo` list will be added to default pre-calculated values that apply on k8s networking

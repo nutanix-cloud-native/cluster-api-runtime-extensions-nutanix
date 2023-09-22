@@ -11,7 +11,8 @@ The hook creates two `ClusterResourceSets`: one to deploy the Tigera Operator, a
 Calico via the Tigera `Installation` CRD. The Tigera Operator CRS is shared between all clusters in the operator,
 whereas the Calico installation CRS is unique per cluster.
 
-To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch` external patches on `ClusterClass`.
+To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch`
+external patches on `ClusterClass`.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
