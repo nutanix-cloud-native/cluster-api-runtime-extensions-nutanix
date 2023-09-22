@@ -4,7 +4,7 @@ title: "Kubernete Image Repository"
 
 Override the container image repository used when pulling Kubernetes images.
 
-To enable this handler set the `imagerepositorypatch` and `imagerepositoryvars` external patches on `ClusterClass`.
+To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch` external patches on `ClusterClass`.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -13,10 +13,10 @@ metadata:
   name: <NAME>
 spec:
   patches:
-    - name: image-repository
+    - name: cluster-config
       external:
-        generateExtension: "imagerepositorypatch.capi-runtime-extensions"
-        discoverVariablesExtension: "imagerepositoryvars.capi-runtime-extensions"
+        generateExtension: "clusterconfigpatch.capi-runtime-extensions"
+        discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
 ```
 
 On the cluster resource then specify desired Kubernetes image repository value:
@@ -27,10 +27,10 @@ kind: Cluster
 metadata:
   name: <NAME>
 spec:
-  topology:
-    variables:
-      - name: kubernetesImageRepository
-        value: "my-registry.io/my-org/my-repo"
+  variables:
+    - name: clusterConfig
+      value:
+        imageRepository: my-registry.io/my-org/my-repo
 ```
 
 Applying this configuration will result in the following value being set:
