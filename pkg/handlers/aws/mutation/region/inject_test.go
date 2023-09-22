@@ -12,7 +12,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
@@ -51,7 +50,7 @@ func TestGeneratePatches(t *testing.T) {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.RegionUSWest1,
+					"a-specific-region",
 				),
 			},
 			RequestItem: newAWSClusterTemplateRequestItem("1234"),
@@ -61,7 +60,7 @@ func TestGeneratePatches(t *testing.T) {
 				ValueMatcher: gomega.Equal(map[string]interface{}{
 					"template": map[string]interface{}{
 						"spec": map[string]interface{}{
-							"region": string(v1alpha1.RegionUSWest1),
+							"region": "a-specific-region",
 						},
 					},
 				}),

@@ -23,10 +23,5 @@ func TestVariableValidation(t *testing.T) {
 			Name: "valid",
 			Vals: "us-west-2",
 		},
-		capitest.VariableTestDef{
-			Name:        "invalid",
-			Vals:        "invalid region",
-			ExpectError: true,
-		},
 	)
 }

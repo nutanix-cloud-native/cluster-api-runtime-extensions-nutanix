@@ -20,17 +20,10 @@ func TestVariableValidation(t *testing.T) {
 		true,
 		NewVariable,
 		capitest.VariableTestDef{
-			Name: "valid region",
+			Name: "specified region",
 			Vals: v1alpha1.AWSClusterConfigSpec{
-				Region: ptr.To(v1alpha1.RegionUSWest2),
+				Region: ptr.To(v1alpha1.Region("a-specified-region")),
 			},
-		},
-		capitest.VariableTestDef{
-			Name: "invalid region",
-			Vals: v1alpha1.AWSClusterConfigSpec{
-				Region: ptr.To(v1alpha1.Region("invalid region")),
-			},
-			ExpectError: true,
 		},
 	)
 }
