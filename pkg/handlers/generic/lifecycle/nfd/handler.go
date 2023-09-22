@@ -55,7 +55,7 @@ const (
 	variableName = "nfd"
 )
 
-func NewMetaHandler(
+func New(
 	c ctrlclient.Client,
 	cfg *NFDConfig,
 ) *DefaultNFD {

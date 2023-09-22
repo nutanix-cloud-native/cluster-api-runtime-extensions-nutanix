@@ -24,8 +24,6 @@ spec:
             cni:
               provider: calico
             nfd: {}
-      - name: awsClusterConfig
-        value: {}
     version: v1.27.5
     workers:
       machineDeployments:

@@ -22,8 +22,8 @@ spec:
       name: docker-quick-start-cluster
   patches:
     - external:
-        discoverVariablesExtension: clusterconfigvars.capi-runtime-extensions
-        generateExtension: clusterconfigpatch.capi-runtime-extensions
+        discoverVariablesExtension: dockerclusterconfigvars.capi-runtime-extensions
+        generateExtension: dockerclusterconfigpatch.capi-runtime-extensions
       name: cluster-config
     - definitions:
         - jsonPatches:

@@ -83,7 +83,7 @@ var (
 	calicoInstallationGK = schema.GroupKind{Group: "operator.tigera.io", Kind: "Installation"}
 )
 
-func NewMetaHandler(
+func New(
 	c ctrlclient.Client,
 	cfg *CalicoCNIConfig,
 ) *CalicoCNI {

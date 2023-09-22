@@ -16,26 +16,26 @@ import (
 )
 
 var (
-	_ commonhandlers.Named       = &awsClusterConfigVariableHandler{}
-	_ mutation.DiscoverVariables = &awsClusterConfigVariableHandler{}
+	_ commonhandlers.Named       = &dockerClusterConfigVariableHandler{}
+	_ mutation.DiscoverVariables = &dockerClusterConfigVariableHandler{}
 )
 
 const (
 	// HandlerNameVariable is the name of the variable handler.
-	HandlerNameVariable = "AWSClusterConfigVars"
+	HandlerNameVariable = "DockerClusterConfigVars"
 )
 
-func NewVariable() *awsClusterConfigVariableHandler {
-	return &awsClusterConfigVariableHandler{}
+func NewVariable() *dockerClusterConfigVariableHandler {
+	return &dockerClusterConfigVariableHandler{}
 }
 
-type awsClusterConfigVariableHandler struct{}
+type dockerClusterConfigVariableHandler struct{}
 
-func (h *awsClusterConfigVariableHandler) Name() string {
+func (h *dockerClusterConfigVariableHandler) Name() string {
 	return HandlerNameVariable
 }
 
-func (h *awsClusterConfigVariableHandler) DiscoverVariables(
+func (h *dockerClusterConfigVariableHandler) DiscoverVariables(
 	ctx context.Context,
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
@@ -43,7 +43,7 @@ func (h *awsClusterConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     clusterconfig.MetaVariableName,
 		Required: true,
-		Schema:   v1alpha1.AWSClusterConfigSpec{}.VariableSchema(),
+		Schema:   v1alpha1.DockerClusterConfigSpec{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

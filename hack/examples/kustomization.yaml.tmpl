@@ -14,17 +14,6 @@ resources:
 patches:
 - target:
     group: cluster.x-k8s.io
-    kind: ClusterClass
-  patch: |-
-    - op: "add"
-      path: "/spec/patches/0"
-      value:
-        name: "cluster-config"
-        external:
-          generateExtension: "clusterconfigpatch.capi-runtime-extensions"
-          discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
-- target:
-    group: cluster.x-k8s.io
     kind: Cluster
   patch: |-
     - op: "add"
@@ -50,11 +39,8 @@ patches:
       path: "/spec/topology/workers/machineDeployments/0/replicas"
       value: 1
     - op: "add"
-      path: "/spec/topology/variables/0"
+      path: "/spec/topology/variables/0/value/addons"
       value:
-        name: "clusterConfig"
-        value:
-          addons:
-            cni:
-              provider: calico
-            nfd: {}
+        cni:
+          provider: calico
+        nfd: {}

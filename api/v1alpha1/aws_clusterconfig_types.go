@@ -4,6 +4,8 @@
 package v1alpha1
 
 import (
+	"maps"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
@@ -24,17 +26,26 @@ type AWSClusterConfig struct {
 type AWSClusterConfigSpec struct {
 	// +optional
 	Region *Region `json:"region,omitempty"`
+
+	GenericClusterConfig `json:",inline"`
 }
 
 func (AWSClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
+	clusterConfigProps := GenericClusterConfig{}.VariableSchema().OpenAPIV3Schema.Properties
+
+	maps.Copy(
+		clusterConfigProps,
+		map[string]clusterv1.JSONSchemaProps{
+			"region": Region("").VariableSchema().OpenAPIV3Schema,
+		},
+	)
+
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "AWS Cluster configuration",
+			Description: "AWS cluster configuration",
 			Type:        "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"region": Region("").VariableSchema().OpenAPIV3Schema,
-			},
-			Required: []string{"region"},
+			Properties:  clusterConfigProps,
+			Required:    []string{"region"},
 		},
 	}
 }

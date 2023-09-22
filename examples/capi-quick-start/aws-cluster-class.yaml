@@ -22,13 +22,9 @@ spec:
       name: aws-quick-start
   patches:
     - external:
-        discoverVariablesExtension: clusterconfigvars.capi-runtime-extensions
-        generateExtension: clusterconfigpatch.capi-runtime-extensions
-      name: cluster-config
-    - external:
         discoverVariablesExtension: awsclusterconfigvars.capi-runtime-extensions
         generateExtension: awsclusterconfigpatch.capi-runtime-extensions
-      name: aws-cluster-config
+      name: cluster-config
     - definitions:
         - jsonPatches:
             - op: add
