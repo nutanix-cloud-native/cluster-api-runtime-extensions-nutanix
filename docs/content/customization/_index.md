@@ -3,28 +3,17 @@ title = "Cluster customizations"
 weight = 1
 +++
 
-The Cluster Config handlers wrap all the other mutation handlers in a convenient single patch for inclusion in your
-ClusterClasses, allowing for a single configuration variable with nested values. This provides the most flexibility
-with the least configuration. The included patches are usable individually, but require declaring all the individual
-patch and variable handlers in the ClusterClass.
+The cluster configuration handlers wrap all the other mutation handlers in a convenient single patch for inclusion in
+your ClusterClasses, allowing for a single configuration variable with nested values. This provides the most flexibility
+with the least configuration.
 
-To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch`
-external patches on `ClusterClass`.
+To enable the handler, add the provider-specific `clusterconfigvars` and `clusterconfigpatch` external patches on
+`ClusterClass`. This will enable all of the [generic cluster customizations]({{< ref "generic" >}}), along with the
+relevant provider-specific variables.
 
-```yaml
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: ClusterClass
-metadata:
-  name: <NAME>
-spec:
-  patches:
-    - name: cluster-config
-      external:
-        generateExtension: "clusterconfigpatch.capi-runtime-extensions"
-        discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
-```
-
-On the cluster resource then specify desired values:
+Regardless of provider, a single variable called `clusterConfig` will be available for use on the `ClusterClass`. The
+schema (and therefore the configuration options) will be customized for each provider. To use the exposed configuration
+options, specify the desired values on the `Cluster` resource:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -52,4 +41,38 @@ spec:
               - no-proxy-2.example.com
           cni:
             provider: calico
+```
+
+## AWS
+
+See [AWS customizations]({{< ref "aws" >}}) for the AWS specific customizations.
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+metadata:
+  name: <NAME>
+spec:
+  patches:
+    - name: cluster-config
+      external:
+        generateExtension: "awsclusterconfigpatch.capi-runtime-extensions"
+        discoverVariablesExtension: "awsclusterconfigvars.capi-runtime-extensions"
+```
+
+## Docker
+
+See [generic customizations]({{< ref "generic" >}}) for the Docker specific customizations.
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+metadata:
+  name: <NAME>
+spec:
+  patches:
+    - name: cluster-config
+      external:
+        generateExtension: "dockerclusterconfigpatch.capi-runtime-extensions"
+        discoverVariablesExtension: "dockerclusterconfigvars.capi-runtime-extensions"
 ```
