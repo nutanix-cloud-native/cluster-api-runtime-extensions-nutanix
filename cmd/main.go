@@ -150,7 +150,10 @@ func main() {
 
 	// dockerMetaPatchHandlers combines all Docker patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
-	dockerMetaPatchHandlers := []mutation.MetaMutater{}
+	dockerMetaPatchHandlers := append(
+		[]mutation.MetaMutater{},
+		genericMetaPatchHandlers...,
+	)
 	dockerMetaHandlers := []handlers.Named{
 		dockerclusterconfig.NewVariable(),
 		mutation.NewMetaGeneratePatchesHandler(
