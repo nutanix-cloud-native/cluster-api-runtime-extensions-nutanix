@@ -35,5 +35,12 @@
     "yamale@latest",
     "yamllint@latest",
     "kind@latest"
-  ]
+  ],
+  "shell": {
+    "scripts": {
+      "preview-docs": [
+        "cd docs && hugo serve -F -D"
+      ]
+    }
+  }
 }

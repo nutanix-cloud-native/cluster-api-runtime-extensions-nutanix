@@ -1,33 +1,20 @@
----
-title: "Calico CNI"
----
++++
+title = "Calico CNI"
++++
 
 When deploying a cluster with CAPI, deployment and configuration of CNI is up to the user. By leveraging CAPI cluster
 lifecycle hooks, this handler deploys Calico CNI on the new cluster via `ClusterResourceSets` at the
 `AfterControlPlaneInitialized` phase.
 
-Deployment of Calico is opt-in using the following configuration for the lifecycle hook to perform any actions.
+Deployment of Calico is opt-in via the  [provider-specific cluster configuration]({{< ref ".." >}}).
+
 The hook creates two `ClusterResourceSets`: one to deploy the Tigera Operator, and one to deploy
 Calico via the Tigera `Installation` CRD. The Tigera Operator CRS is shared between all clusters in the operator,
 whereas the Calico installation CRS is unique per cluster.
 
-To enable the meta handler enable the `clusterconfigvars` and `clusterconfigpatch`
-external patches on `ClusterClass`.
+## Example
 
-```yaml
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: ClusterClass
-metadata:
-  name: <NAME>
-spec:
-  patches:
-    - name: cluster-config
-      external:
-        generateExtension: "clusterconfigpatch.capi-runtime-extensions"
-        discoverVariablesExtension: "clusterconfigvars.capi-runtime-extensions"
-```
-
-On the cluster resource then specify this `cni` value:
+To enable deployment of Calico on a cluster, specify the following values:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1

@@ -1,6 +1,7 @@
----
-title: "Cluster Config"
----
++++
+title = "Cluster customizations"
+weight = 1
++++
 
 The Cluster Config handlers wrap all the other mutation handlers in a convenient single patch for inclusion in your
 ClusterClasses, allowing for a single configuration variable with nested values. This provides the most flexibility
