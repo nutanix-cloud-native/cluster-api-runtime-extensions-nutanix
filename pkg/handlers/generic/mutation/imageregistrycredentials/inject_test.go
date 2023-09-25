@@ -72,8 +72,10 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.ImageRegistryCredentials{
-						URL:    "https://my-registry.io",
-						Secret: validSecretName,
+						URL: "https://my-registry.io",
+						Secret: &corev1.ObjectReference{
+							Name: validSecretName,
+						},
 					},
 				),
 			},
@@ -129,8 +131,10 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.ImageRegistryCredentials{
-						URL:    "https://my-registry.io",
-						Secret: validSecretName,
+						URL: "https://my-registry.io",
+						Secret: &corev1.ObjectReference{
+							Name: validSecretName,
+						},
 					},
 				),
 				capitest.VariableWithValue(

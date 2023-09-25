@@ -296,14 +296,19 @@ func secretForImageRegistryCredentials(
 	ctx context.Context,
 	c ctrlclient.Reader,
 	credentials v1alpha1.ImageRegistryCredentials,
-	namespace string,
+	objectNamespace string,
 ) (*corev1.Secret, error) {
-	if credentials.Secret == "" {
+	if credentials.Secret == nil {
 		return nil, nil
 	}
 
+	namespace := objectNamespace
+	if credentials.Secret.Namespace != "" {
+		namespace = credentials.Secret.Namespace
+	}
+
 	key := ctrlclient.ObjectKey{
-		Name:      credentials.Secret,
+		Name:      credentials.Secret.Name,
 		Namespace: namespace,
 	}
 	secret := &corev1.Secret{}

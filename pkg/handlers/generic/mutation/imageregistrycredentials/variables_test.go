@@ -6,6 +6,7 @@ package imageregistrycredentials
 import (
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
@@ -28,8 +29,10 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "with a Secret",
 			Vals: v1alpha1.ImageRegistryCredentials{
-				URL:    "http://a.b.c.example.com",
-				Secret: "a.b.c.example.com-creds",
+				URL: "http://a.b.c.example.com",
+				Secret: &corev1.ObjectReference{
+					Name: "a.b.c.example.com-creds",
+				},
 			},
 		},
 	)

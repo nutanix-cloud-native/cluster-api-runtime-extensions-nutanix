@@ -41,7 +41,8 @@ spec:
               - no-proxy-2.example.com
           imageRegistryCredentials:
             url: https://my-registry.io
-            secret: my-registry-credentials
+            secretRef:
+              name: my-registry-credentials
           cni:
             provider: calico
 ```

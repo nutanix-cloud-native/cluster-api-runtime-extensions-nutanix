@@ -37,7 +37,8 @@ spec:
         value:
           imageRegistryCredentials:
             url: https://my-registry.io
-            secret: my-registry-credentials
+            secretRef:
+              name: my-registry-credentials
 ```
 
 Applying this configuration will result in new files and preKubeadmCommands

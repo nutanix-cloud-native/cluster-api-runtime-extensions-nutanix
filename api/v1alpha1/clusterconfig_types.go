@@ -4,6 +4,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
@@ -185,11 +186,11 @@ type ImageRegistryCredentials struct {
 	// Registry URL.
 	URL string `json:"url"`
 
-	// Name of the Secret containing the registry credentials.
+	// The Secret containing the registry credentials.
 	// The Secret should have keys 'username' and 'password'.
 	// This credentials Secret is not required for some registries, e.g. ECR.
 	// +optional
-	Secret string `json:"secret,omitempty"`
+	Secret *corev1.ObjectReference `json:"secretRef,omitempty"`
 }
 
 func (ImageRegistryCredentials) VariableSchema() clusterv1.VariableSchema {
@@ -202,11 +203,23 @@ func (ImageRegistryCredentials) VariableSchema() clusterv1.VariableSchema {
 					Description: "Registry URL.",
 					Type:        "string",
 				},
-				"secret": {
-					Description: "Name of the Secret containing the registry credentials. " +
+				"secretRef": {
+					Description: "The Secret containing the registry credentials. " +
 						"The Secret should have keys 'username' and 'password'. " +
 						"This credentials Secret is not required for some registries, e.g. ECR.",
-					Type: "string",
+					Type: "object",
+					Properties: map[string]clusterv1.JSONSchemaProps{
+						"name": {
+							Description: "The name of the Secret containing the registry credentials.",
+							Type:        "string",
+						},
+						"namespace": {
+							Description: "The namespace of the Secret containing the registry credentials. " +
+								"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate" +
+								" that reference this variable.",
+							Type: "string",
+						},
+					},
 				},
 			},
 			Required: []string{"url"},
