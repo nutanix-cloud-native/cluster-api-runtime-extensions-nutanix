@@ -29,7 +29,7 @@ patches:
     - op: "add"
       path: "/spec/topology/variables"
       value:
-        - name: "awsClusterConfig"
+        - name: "clusterConfig"
           value: {}
 - target:
     group: cluster.x-k8s.io
@@ -71,7 +71,7 @@ patches:
     - op: "add"
       path: "/spec/patches/0"
       value:
-        name: "aws-cluster-config"
+        name: "cluster-config"
         external:
           generateExtension: "awsclusterconfigpatch.capi-runtime-extensions"
           discoverVariablesExtension: "awsclusterconfigvars.capi-runtime-extensions"

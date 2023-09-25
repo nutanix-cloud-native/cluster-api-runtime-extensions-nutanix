@@ -29,7 +29,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
 	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
-	genericclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/servicelbgc"
@@ -119,60 +119,49 @@ func main() {
 	}
 
 	// Handlers for lifecycle hooks.
-	genericLifeCycleHandlers := []handlers.Named{
+	genericLifecycleHandlers := []handlers.Named{
+		calico.New(mgr.GetClient(), calicoCNIConfig),
+		nfd.New(mgr.GetClient(), nfdConfig),
 		servicelbgc.New(mgr.GetClient()),
 	}
-	// Handlers that apply patches to the Cluster object and its objects.
-	// Used by CAPI's GeneratePatches hook.
-	genericPatchHandlers := []handlers.Named{
-		httpproxy.NewPatch(mgr.GetClient()),
-		extraapiservercertsans.NewPatch(),
-		auditpolicy.NewPatch(),
-		kubernetesimagerepository.NewPatch(),
-		etcd.NewPatch(),
-	}
-	// Handlers used by CAPI's DiscoverVariables hook.
-	// It's ok that this does not match patchHandlers.
-	// Some of those handlers may always get applied and not have a corresponding variable.
-	genericVariableHandlers := []handlers.Named{
-		httpproxy.NewVariable(),
-		extraapiservercertsans.NewVariable(),
-		kubernetesimagerepository.NewVariable(),
-	}
+
 	// This genericMetaPatchHandlers combines all other patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
 	genericMetaPatchHandlers := []mutation.MetaMutater{
-		httpproxy.NewMetaPatch(mgr.GetClient()),
-		extraapiservercertsans.NewMetaPatch(),
 		auditpolicy.NewPatch(),
-		kubernetesimagerepository.NewMetaPatch(),
 		etcd.NewMetaPatch(),
-	}
-	genericMetaHandlers := []handlers.Named{
-		// This Calico handler relies on a variable but does not generate a patch.
-		// Instead it creates other resources in the API.
-		calico.NewMetaHandler(mgr.GetClient(), calicoCNIConfig),
-		nfd.NewMetaHandler(mgr.GetClient(), nfdConfig),
-		genericclusterconfig.NewVariable(),
-		mutation.NewMetaGeneratePatchesHandler("clusterConfigPatch", genericMetaPatchHandlers...),
+		extraapiservercertsans.NewMetaPatch(),
+		httpproxy.NewMetaPatch(mgr.GetClient()),
+		kubernetesimagerepository.NewMetaPatch(),
 	}
 
-	// This awsMetaPatchHandlers combines all AWS patch and variable handlers under a single handler.
+	// awsMetaPatchHandlers combines all AWS patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
-	awsMetaPatchHandlers := []mutation.MetaMutater{
-		region.NewMetaPatch(),
-	}
+	awsMetaPatchHandlers := append(
+		[]mutation.MetaMutater{
+			region.NewMetaPatch(),
+		},
+		genericMetaPatchHandlers...,
+	)
 	awsMetaHandlers := []handlers.Named{
 		awsclusterconfig.NewVariable(),
 		mutation.NewMetaGeneratePatchesHandler("awsClusterConfigPatch", awsMetaPatchHandlers...),
 	}
 
+	// dockerMetaPatchHandlers combines all Docker patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	dockerMetaPatchHandlers := []mutation.MetaMutater{}
+	dockerMetaHandlers := []handlers.Named{
+		dockerclusterconfig.NewVariable(),
+		mutation.NewMetaGeneratePatchesHandler(
+			"dockerClusterConfigPatch",
+			dockerMetaPatchHandlers...),
+	}
+
 	var allHandlers []handlers.Named
-	allHandlers = append(allHandlers, genericLifeCycleHandlers...)
-	allHandlers = append(allHandlers, genericPatchHandlers...)
-	allHandlers = append(allHandlers, genericVariableHandlers...)
-	allHandlers = append(allHandlers, genericMetaHandlers...)
+	allHandlers = append(allHandlers, genericLifecycleHandlers...)
 	allHandlers = append(allHandlers, awsMetaHandlers...)
+	allHandlers = append(allHandlers, dockerMetaHandlers...)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
 

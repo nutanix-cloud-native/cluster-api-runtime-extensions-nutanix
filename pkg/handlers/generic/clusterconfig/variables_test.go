@@ -16,12 +16,12 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		MetaVariableName,
-		ptr.To(v1alpha1.ClusterConfigSpec{}.VariableSchema()),
+		ptr.To(v1alpha1.GenericClusterConfig{}.VariableSchema()),
 		false,
 		NewVariable,
 		capitest.VariableTestDef{
 			Name: "valid proxy config only",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.GenericClusterConfig{
 				Proxy: &v1alpha1.HTTPProxy{
 					HTTP:         "http://a.b.c.example.com",
 					HTTPS:        "https://a.b.c.example.com",
@@ -31,20 +31,20 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "single valid SAN",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.GenericClusterConfig{
 				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{"a.b.c.example.com"},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "single invalid SAN",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.GenericClusterConfig{
 				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{"invalid:san"},
 			},
 			ExpectError: true,
 		},
 		capitest.VariableTestDef{
 			Name: "duplicate valid SANs",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.GenericClusterConfig{
 				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
 					"a.b.c.example.com",
 					"a.b.c.example.com",
@@ -53,7 +53,7 @@ func TestVariableValidation(t *testing.T) {
 			ExpectError: true,
 		}, capitest.VariableTestDef{
 			Name: "valid config",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.GenericClusterConfig{
 				Proxy: &v1alpha1.HTTPProxy{
 					HTTP:         "http://a.b.c.example.com",
 					HTTPS:        "https://a.b.c.example.com",

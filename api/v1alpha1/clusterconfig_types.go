@@ -4,7 +4,6 @@
 package v1alpha1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
@@ -15,18 +14,8 @@ const (
 	CNIProviderCalico = "calico"
 )
 
-//+kubebuilder:object:root=true
-
-// ClusterConfig is the Schema for the clusterconfigs API.
-type ClusterConfig struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec ClusterConfigSpec `json:"spec,omitempty"`
-}
-
-// ClusterConfigSpec defines the desired state of ClusterConfig.
-type ClusterConfigSpec struct {
+// GenericClusterConfig defines the generic cluster configdesired.
+type GenericClusterConfig struct {
 	// +optional
 	KubernetesImageRepository *KubernetesImageRepository `json:"kubernetesImageRepository,omitempty"`
 
@@ -43,7 +32,7 @@ type ClusterConfigSpec struct {
 	Addons *Addons `json:"addons,omitempty"`
 }
 
-func (ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
+func (GenericClusterConfig) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Cluster configuration",
@@ -239,9 +228,4 @@ func (NFD) VariableSchema() clusterv1.VariableSchema {
 			Type: "object",
 		},
 	}
-}
-
-// +kubebuilder:object:root=true
-func init() {
-	SchemeBuilder.Register(&ClusterConfig{})
 }

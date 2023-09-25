@@ -1,6 +1,6 @@
----
-title: "LoadBalancer Services Garbage Collection"
----
++++
+title = "LoadBalancer Services Garbage Collection"
++++
 
 When using Kubernetes `LoadBalancer` services, the relevant cloud provider interface creates and configures external
 resources. If the `LoadBalancer` services are not deleted prior to deleting the Kubernetes cluster, then these external
