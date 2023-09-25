@@ -16,6 +16,9 @@ permissions:
 jobs:
   release-tag:
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,7 +38,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release
-        shell: bash
         run: devbox run -- make release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
