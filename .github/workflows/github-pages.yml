@@ -12,6 +12,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
     permissions:
       contents: write
     concurrency:
@@ -36,12 +39,10 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
       - name: Install necessary packages
-        shell: bash
         run: npm ci
         working-directory: ./docs/
 
       - name: Build
-        shell: bash
         run: hugo --minify
         working-directory: ./docs/
 

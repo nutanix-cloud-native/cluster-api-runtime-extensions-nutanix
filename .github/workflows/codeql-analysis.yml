@@ -11,6 +11,9 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
     permissions:
       actions: read
       contents: read
@@ -36,7 +39,6 @@ jobs:
         enable-cache: true
 
     - name: Build
-      shell: bash
       run: devbox run -- make build-snapshot
 
     - name: Perform CodeQL Analysis
