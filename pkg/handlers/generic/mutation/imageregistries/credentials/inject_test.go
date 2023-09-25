@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package imageregistrycredentials
+package credentials
 
 import (
 	"testing"
@@ -27,7 +27,7 @@ const (
 func TestGeneratePatches(t *testing.T) {
 	capitest.ValidateGeneratePatches(
 		t,
-		func() *imageRegistryCredentialsPatchHandler {
+		func() *imageRegistriesPatchHandler {
 			// Server side apply does not work with the fake client, hack around it by pre-creating empty Secrets
 			// https://github.com/kubernetes-sigs/controller-runtime/issues/2341
 			fakeClient := fake.NewClientBuilder().WithObjects(
@@ -48,7 +48,9 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.ImageRegistryCredentials{
-						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+						v1alpha1.ImageRegistryCredentialsResource{
+							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+						},
 					},
 				),
 			},
@@ -72,9 +74,11 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.ImageRegistryCredentials{
-						URL: "https://my-registry.io",
-						Secret: &corev1.ObjectReference{
-							Name: validSecretName,
+						v1alpha1.ImageRegistryCredentialsResource{
+							URL: "https://my-registry.io",
+							Secret: &corev1.ObjectReference{
+								Name: validSecretName,
+							},
 						},
 					},
 				),
@@ -99,7 +103,9 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.ImageRegistryCredentials{
-						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+						v1alpha1.ImageRegistryCredentialsResource{
+							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+						},
 					},
 				),
 				capitest.VariableWithValue(
@@ -131,9 +137,11 @@ func TestGeneratePatches(t *testing.T) {
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.ImageRegistryCredentials{
-						URL: "https://my-registry.io",
-						Secret: &corev1.ObjectReference{
-							Name: validSecretName,
+						v1alpha1.ImageRegistryCredentialsResource{
+							URL: "https://my-registry.io",
+							Secret: &corev1.ObjectReference{
+								Name: validSecretName,
+							},
 						},
 					},
 				),

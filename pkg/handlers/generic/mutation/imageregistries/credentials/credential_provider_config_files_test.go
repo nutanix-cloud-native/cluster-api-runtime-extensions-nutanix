@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package imageregistrycredentials
+package credentials
 
 import (
 	"testing"
@@ -14,13 +14,13 @@ import (
 func Test_templateKubeletCredentialProviderConfig(t *testing.T) {
 	tests := []struct {
 		name        string
-		credentials imageRegistryCredentials
+		credentials providerInput
 		want        *cabpkv1.File
 		wantErr     error
 	}{
 		{
 			name:        "ECR image registry",
-			credentials: imageRegistryCredentials{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+			credentials: providerInput{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
 				Owner:       "",
@@ -50,7 +50,7 @@ providers:
 		},
 		{
 			name: "image registry with static credentials",
-			credentials: imageRegistryCredentials{
+			credentials: providerInput{
 				URL:      "https://myregistry.com",
 				Username: "myuser",
 				Password: "mypassword",
@@ -97,13 +97,13 @@ providers:
 func Test_templateDynamicCredentialProviderConfig(t *testing.T) {
 	tests := []struct {
 		name        string
-		credentials imageRegistryCredentials
+		credentials providerInput
 		want        *cabpkv1.File
 		wantErr     error
 	}{
 		{
 			name:        "ECR image registry",
-			credentials: imageRegistryCredentials{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+			credentials: providerInput{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/dynamic-credential-provider-config.yaml",
 				Owner:       "",
@@ -132,7 +132,7 @@ credentialProviders:
 		},
 		{
 			name: "image registry with static credentials",
-			credentials: imageRegistryCredentials{
+			credentials: providerInput{
 				URL:      "https://myregistry.com",
 				Username: "myuser",
 				Password: "mypassword",

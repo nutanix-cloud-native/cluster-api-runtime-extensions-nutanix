@@ -2,4 +2,4 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=watch;list;get;patch
-package imageregistrycredentials
+package credentials

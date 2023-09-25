@@ -6,7 +6,7 @@ package credentialprovider_test
 import (
 	"testing"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistrycredentials/credentialprovider"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials/credentialprovider"
 )
 
 func TestURLsMatch(t *testing.T) {

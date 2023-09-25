@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package imageregistrycredentials
+package credentials
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ const (
 	secretKeyForStaticCredentialProviderConfig = "static-credential-provider"
 )
 
-func generateCredentialsSecretFile(credentials imageRegistryCredentials, ownerName string) []cabpkv1.File {
+func generateCredentialsSecretFile(credentials providerInput, ownerName string) []cabpkv1.File {
 	if credentials.isCredentialsEmpty() {
 		return nil
 	}
@@ -43,7 +43,7 @@ func generateCredentialsSecretFile(credentials imageRegistryCredentials, ownerNa
 // generateCredentialsSecret generates a Secret containing the credentials for the image registry mirror.
 // The function needs the cluster name to add the required move and cluster name labels.
 func generateCredentialsSecret(
-	credentials imageRegistryCredentials, clusterName, ownerName, namespace string,
+	credentials providerInput, clusterName, ownerName, namespace string,
 ) (*corev1.Secret, error) {
 	if credentials.isCredentialsEmpty() {
 		return nil, nil
@@ -72,7 +72,7 @@ func generateCredentialsSecret(
 	}, nil
 }
 
-func kubeletStaticCredentialProviderSecretContents(credentials imageRegistryCredentials) (string, error) {
+func kubeletStaticCredentialProviderSecretContents(credentials providerInput) (string, error) {
 	mirrorURL, err := url.ParseRequestURI(credentials.URL)
 	if err != nil {
 		return "", fmt.Errorf("failed parsing registry mirror: %w", err)

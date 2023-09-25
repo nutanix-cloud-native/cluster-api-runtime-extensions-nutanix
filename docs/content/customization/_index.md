@@ -39,10 +39,11 @@ spec:
             additionalNo:
               - no-proxy-1.example.com
               - no-proxy-2.example.com
-          imageRegistryCredentials:
-            url: https://my-registry.io
-            secretRef:
-              name: my-registry-credentials
+          imageRegistries:
+            credentials:
+              - url: https://my-registry.io
+                secretRef:
+                  name: my-registry-credentials
           cni:
             provider: calico
 ```

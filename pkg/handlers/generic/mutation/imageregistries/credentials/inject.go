@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package imageregistrycredentials
+package credentials
 
 import (
 	"context"
@@ -28,6 +28,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries"
 )
 
 const (
@@ -35,7 +36,7 @@ const (
 	HandlerNamePatch = "ImageRegistryCredentialsPatch"
 )
 
-type imageRegistryCredentialsPatchHandler struct {
+type imageRegistriesPatchHandler struct {
 	decoder runtime.Decoder
 	client  ctrlclient.Client
 
@@ -44,32 +45,32 @@ type imageRegistryCredentialsPatchHandler struct {
 }
 
 var (
-	_ commonhandlers.Named     = &imageRegistryCredentialsPatchHandler{}
-	_ mutation.GeneratePatches = &imageRegistryCredentialsPatchHandler{}
-	_ mutation.MetaMutater     = &imageRegistryCredentialsPatchHandler{}
+	_ commonhandlers.Named     = &imageRegistriesPatchHandler{}
+	_ mutation.GeneratePatches = &imageRegistriesPatchHandler{}
+	_ mutation.MetaMutater     = &imageRegistriesPatchHandler{}
 )
 
 func NewPatch(
 	cl ctrlclient.Client,
-) *imageRegistryCredentialsPatchHandler {
-	return newImageRegistryCredentialsPatchHandler(cl, variableName)
+) *imageRegistriesPatchHandler {
+	return newImageRegistriesPatchHandler(cl, variableName)
 }
 
 func NewMetaPatch(
 	cl ctrlclient.Client,
-) *imageRegistryCredentialsPatchHandler {
-	return newImageRegistryCredentialsPatchHandler(cl, clusterconfig.MetaVariableName, variableName)
+) *imageRegistriesPatchHandler {
+	return newImageRegistriesPatchHandler(cl, clusterconfig.MetaVariableName, imageregistries.VariableName, variableName)
 }
 
-func newImageRegistryCredentialsPatchHandler(
+func newImageRegistriesPatchHandler(
 	cl ctrlclient.Client,
 	variableName string,
 	variableFieldPath ...string,
-) *imageRegistryCredentialsPatchHandler {
+) *imageRegistriesPatchHandler {
 	scheme := runtime.NewScheme()
 	_ = bootstrapv1.AddToScheme(scheme)
 	_ = controlplanev1.AddToScheme(scheme)
-	return &imageRegistryCredentialsPatchHandler{
+	return &imageRegistriesPatchHandler{
 		decoder: serializer.NewCodecFactory(scheme).UniversalDecoder(
 			controlplanev1.GroupVersion,
 			bootstrapv1.GroupVersion,
@@ -80,11 +81,11 @@ func newImageRegistryCredentialsPatchHandler(
 	}
 }
 
-func (h *imageRegistryCredentialsPatchHandler) Name() string {
+func (h *imageRegistriesPatchHandler) Name() string {
 	return HandlerNamePatch
 }
 
-func (h *imageRegistryCredentialsPatchHandler) Mutate(
+func (h *imageRegistriesPatchHandler) Mutate(
 	ctx context.Context,
 	obj runtime.Object,
 	vars map[string]apiextensionsv1.JSON,
@@ -95,7 +96,7 @@ func (h *imageRegistryCredentialsPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	credentials, found, err := variables.Get[v1alpha1.ImageRegistryCredentials](
+	imageRegistryCredentials, found, err := variables.Get[v1alpha1.ImageRegistryCredentials](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -107,6 +108,13 @@ func (h *imageRegistryCredentialsPatchHandler) Mutate(
 		log.V(5).Info("Image Registry Credentials variable not defined")
 		return nil
 	}
+
+	// TODO: Add support for multiple registries.
+	if len(imageRegistryCredentials) > 1 {
+		return fmt.Errorf("multiple Image Registry Credentials are not supported at this time")
+	}
+
+	credentials := imageRegistryCredentials[0]
 
 	log = log.WithValues(
 		"variableName",
@@ -196,7 +204,7 @@ func (h *imageRegistryCredentialsPatchHandler) Mutate(
 	return nil
 }
 
-func (h *imageRegistryCredentialsPatchHandler) GeneratePatches(
+func (h *imageRegistriesPatchHandler) GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
@@ -222,10 +230,10 @@ func (h *imageRegistryCredentialsPatchHandler) GeneratePatches(
 func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	ctx context.Context,
 	c ctrlclient.Client,
-	credentials v1alpha1.ImageRegistryCredentials,
+	credentials v1alpha1.ImageRegistryCredentialsResource,
 	obj ctrlclient.Object,
-) (imageRegistryCredentials, error) {
-	registryWithOptionalCredentials := imageRegistryCredentials{
+) (providerInput, error) {
+	registryWithOptionalCredentials := providerInput{
 		URL: credentials.URL,
 	}
 	secret, err := secretForImageRegistryCredentials(
@@ -235,7 +243,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 		obj.GetNamespace(),
 	)
 	if err != nil {
-		return imageRegistryCredentials{}, fmt.Errorf(
+		return providerInput{}, fmt.Errorf(
 			"error getting secret %s/%s from Image Registry Credentials variable: %w",
 			obj.GetNamespace(),
 			credentials.Secret,
@@ -252,7 +260,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 }
 
 func generateFilesAndCommands(
-	registryWithOptionalCredentials imageRegistryCredentials,
+	registryWithOptionalCredentials providerInput,
 	objName string,
 ) ([]cabpkv1.File, []string, error) {
 
@@ -273,7 +281,7 @@ func generateFilesAndCommands(
 func createSecretIfNeeded(
 	ctx context.Context,
 	c ctrlclient.Client,
-	registryWithOptionalCredentials imageRegistryCredentials,
+	registryWithOptionalCredentials providerInput,
 	obj ctrlclient.Object,
 	clusterKey ctrlclient.ObjectKey,
 ) error {
@@ -295,7 +303,7 @@ func createSecretIfNeeded(
 func secretForImageRegistryCredentials(
 	ctx context.Context,
 	c ctrlclient.Reader,
-	credentials v1alpha1.ImageRegistryCredentials,
+	credentials v1alpha1.ImageRegistryCredentialsResource,
 	objectNamespace string,
 ) (*corev1.Secret, error) {
 	if credentials.Secret == nil {

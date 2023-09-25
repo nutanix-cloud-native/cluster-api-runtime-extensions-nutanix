@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package imageregistrycredentials
+package credentials
 
 import (
 	"context"
@@ -21,7 +21,7 @@ var (
 
 const (
 	// variableName is the external patch variable name.
-	variableName = "imageRegistryCredentials"
+	variableName = "credentials"
 
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "ImageRegistryCredentialsVars"

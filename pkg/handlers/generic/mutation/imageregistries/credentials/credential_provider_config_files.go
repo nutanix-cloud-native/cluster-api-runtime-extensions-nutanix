@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package imageregistrycredentials
+package credentials
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ import (
 	credentialproviderv1beta1 "k8s.io/kubelet/pkg/apis/credentialprovider/v1beta1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistrycredentials/credentialprovider"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials/credentialprovider"
 )
 
 const (
@@ -51,18 +51,18 @@ var (
 	installKubeletCredentialProvidersScript []byte
 )
 
-type imageRegistryCredentials struct {
+type providerInput struct {
 	URL      string
 	Username string
 	Password string
 }
 
-func (c imageRegistryCredentials) isCredentialsEmpty() bool {
+func (c providerInput) isCredentialsEmpty() bool {
 	return c.Username == "" &&
 		c.Password == ""
 }
 
-func templateFilesForImageCredentialProviderConfigs(credentials imageRegistryCredentials) ([]cabpkv1.File, error) {
+func templateFilesForImageCredentialProviderConfigs(credentials providerInput) ([]cabpkv1.File, error) {
 	var files []cabpkv1.File
 
 	kubeletCredentialProviderConfigFile, err := templateKubeletCredentialProviderConfig(credentials)
@@ -84,7 +84,7 @@ func templateFilesForImageCredentialProviderConfigs(credentials imageRegistryCre
 	return files, nil
 }
 
-func templateKubeletCredentialProviderConfig(credentials imageRegistryCredentials) (*cabpkv1.File, error) {
+func templateKubeletCredentialProviderConfig(credentials providerInput) (*cabpkv1.File, error) {
 	return templateCredentialProviderConfig(
 		credentials,
 		imageCredentialProviderConfigPatch,
@@ -94,7 +94,7 @@ func templateKubeletCredentialProviderConfig(credentials imageRegistryCredential
 }
 
 func templateDynamicCredentialProviderConfig(
-	credentials imageRegistryCredentials,
+	credentials providerInput,
 ) (*cabpkv1.File, error) {
 	return templateCredentialProviderConfig(
 		credentials,
@@ -105,7 +105,7 @@ func templateDynamicCredentialProviderConfig(
 }
 
 func templateCredentialProviderConfig(
-	credentials imageRegistryCredentials,
+	credentials providerInput,
 	inputTemplate []byte,
 	filePath string,
 	providerFunc func(
@@ -113,7 +113,6 @@ func templateCredentialProviderConfig(
 		host string,
 	) (providerBinary string, providerArgs []string, providerAPIVersion string, err error),
 ) (*cabpkv1.File, error) {
-
 	mirrorURL, err := url.ParseRequestURI(credentials.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing registry mirror: %w", err)

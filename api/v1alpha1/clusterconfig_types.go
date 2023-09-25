@@ -29,9 +29,8 @@ type GenericClusterConfig struct {
 	// +optional
 	ExtraAPIServerCertSANs ExtraAPIServerCertSANs `json:"extraAPIServerCertSANs,omitempty"`
 
-	// TODO: Add support for multiple registries.
 	// +optional
-	ImageRegistryCredentials ImageRegistryCredentials `json:"imageRegistryCredentials,omitempty"`
+	ImageRegistries ImageRegistries `json:"imageRegistries,omitempty"`
 
 	// +optional
 	Addons *Addons `json:"addons,omitempty"`
@@ -51,7 +50,7 @@ func (GenericClusterConfig) VariableSchema() clusterv1.VariableSchema {
 					"",
 				).VariableSchema().
 					OpenAPIV3Schema,
-				"imageRegistryCredentials": ImageRegistryCredentials{}.VariableSchema().OpenAPIV3Schema,
+				"imageRegistries": ImageRegistries{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -181,8 +180,72 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
-// ImageRegistryCredentials required for providing credentials for an image registry URL.
-type ImageRegistryCredentials struct {
+type ImageRegistries struct {
+	// +optional
+	ImageRegistryCredentials ImageRegistryCredentials `json:"credentials,omitempty"`
+}
+
+func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Configuration for image registries.",
+			Type:        "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"credentials": imageRegistryCredentialsSchema,
+			},
+		},
+	}
+}
+
+var (
+	imageRegistryCredentialsSchema = clusterv1.JSONSchemaProps{
+		Type:        "array",
+		UniqueItems: true,
+		Items:       &imageRegistryCredentialsResourceSchema,
+	}
+
+	imageRegistryCredentialsResourceSchema = clusterv1.JSONSchemaProps{
+		Description: "Image registry credentials to set up on all Nodes in the cluster. " +
+			"Enabling this will the Kubelets with https://kubernetes.io/docs/tasks/administer-cluster/kubelet-credential-provider/.",
+		Type: "object",
+		Properties: map[string]clusterv1.JSONSchemaProps{
+			"url": {
+				Description: "Registry URL.",
+				Type:        "string",
+			},
+			"secretRef": {
+				Description: "The Secret containing the registry credentials. " +
+					"The Secret should have keys 'username' and 'password'. " +
+					"This credentials Secret is not required for some registries, e.g. ECR.",
+				Type: "object",
+				Properties: map[string]clusterv1.JSONSchemaProps{
+					"name": {
+						Description: "The name of the Secret containing the registry credentials.",
+						Type:        "string",
+					},
+					"namespace": {
+						Description: "The namespace of the Secret containing the registry credentials. " +
+							"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate" +
+							" that reference this variable.",
+						Type: "string",
+					},
+				},
+			},
+		},
+		Required: []string{"url"},
+	}
+)
+
+type ImageRegistryCredentials []ImageRegistryCredentialsResource
+
+func (ImageRegistryCredentials) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: imageRegistryCredentialsSchema,
+	}
+}
+
+// ImageRegistryCredentialsResource required for providing credentials for an image registry URL.
+type ImageRegistryCredentialsResource struct {
 	// Registry URL.
 	URL string `json:"url"`
 
@@ -193,37 +256,9 @@ type ImageRegistryCredentials struct {
 	Secret *corev1.ObjectReference `json:"secretRef,omitempty"`
 }
 
-func (ImageRegistryCredentials) VariableSchema() clusterv1.VariableSchema {
+func (ImageRegistryCredentialsResource) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Extra Subject Alternative Names for the API Server signing cert",
-			Type:        "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"url": {
-					Description: "Registry URL.",
-					Type:        "string",
-				},
-				"secretRef": {
-					Description: "The Secret containing the registry credentials. " +
-						"The Secret should have keys 'username' and 'password'. " +
-						"This credentials Secret is not required for some registries, e.g. ECR.",
-					Type: "object",
-					Properties: map[string]clusterv1.JSONSchemaProps{
-						"name": {
-							Description: "The name of the Secret containing the registry credentials.",
-							Type:        "string",
-						},
-						"namespace": {
-							Description: "The namespace of the Secret containing the registry credentials. " +
-								"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate" +
-								" that reference this variable.",
-							Type: "string",
-						},
-					},
-				},
-			},
-			Required: []string{"url"},
-		},
+		OpenAPIV3Schema: imageRegistryCredentialsResourceSchema,
 	}
 }
 

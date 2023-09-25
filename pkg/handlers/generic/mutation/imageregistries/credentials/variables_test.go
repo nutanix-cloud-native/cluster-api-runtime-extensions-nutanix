@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package imageregistrycredentials
+package credentials
 
 import (
 	"testing"
@@ -23,15 +23,19 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "without a Secret",
 			Vals: v1alpha1.ImageRegistryCredentials{
-				URL: "http://a.b.c.example.com",
+				v1alpha1.ImageRegistryCredentialsResource{
+					URL: "http://a.b.c.example.com",
+				},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "with a Secret",
 			Vals: v1alpha1.ImageRegistryCredentials{
-				URL: "http://a.b.c.example.com",
-				Secret: &corev1.ObjectReference{
-					Name: "a.b.c.example.com-creds",
+				v1alpha1.ImageRegistryCredentialsResource{
+					URL: "http://a.b.c.example.com",
+					Secret: &corev1.ObjectReference{
+						Name: "a.b.c.example.com-creds",
+					},
 				},
 			},
 		},
