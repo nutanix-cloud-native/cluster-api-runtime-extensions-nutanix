@@ -1,0 +1,1 @@
+NIX_HARDENING_ENABLE="stackprotector pic strictoverflow format relro bindnow"
