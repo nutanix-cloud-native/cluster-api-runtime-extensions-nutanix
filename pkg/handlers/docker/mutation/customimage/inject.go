@@ -117,7 +117,7 @@ func (h *customImagePatchHandler) Mutate(
 				}
 				if !found {
 					return fmt.Errorf(
-						"missing required builtin variable: %s",
+						"missing required variable: %s",
 						strings.Join(fieldPath, "."),
 					)
 				}
@@ -130,6 +130,7 @@ func (h *customImagePatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
+				"customImage", customImageVar,
 			).Info("setting customImage in workers DockerMachineTemplate spec")
 
 			return unstructured.SetNestedField(
@@ -166,7 +167,7 @@ func (h *customImagePatchHandler) Mutate(
 				}
 				if !found {
 					return fmt.Errorf(
-						"missing required builtin variable: %s",
+						"missing required variable: %s",
 						strings.Join(fieldPath, "."),
 					)
 				}
@@ -179,6 +180,7 @@ func (h *customImagePatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
+				"customImage", customImageVar,
 			).Info("setting customImage in control plane DockerMachineTemplate spec")
 
 			return unstructured.SetNestedField(

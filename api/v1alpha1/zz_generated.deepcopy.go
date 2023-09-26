@@ -130,7 +130,7 @@ func (in *DockerClusterConfigSpec) DeepCopyInto(out *DockerClusterConfigSpec) {
 	in.GenericClusterConfig.DeepCopyInto(&out.GenericClusterConfig)
 	if in.CustomImage != nil {
 		in, out := &in.CustomImage, &out.CustomImage
-		*out = new(string)
+		*out = new(OCIImage)
 		**out = **in
 	}
 }

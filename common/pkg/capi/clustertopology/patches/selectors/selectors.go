@@ -36,7 +36,7 @@ func WorkersKubeadmConfigTemplateSelector() clusterv1.PatchSelector {
 
 // InfrastructureCluster selector matches against infrastructure clusters.
 // Passing in the API version (not the API group) is required because different providers could support different API
-// versions. This also allows for a oatch to select multiple infrastructure versions for the same provider.
+// versions. This also allows for a patch to select multiple infrastructure versions for the same provider.
 func InfrastructureCluster(capiInfrastructureAPIVersion, kind string) clusterv1.PatchSelector {
 	return clusterv1.PatchSelector{
 		APIVersion: schema.GroupVersion{
@@ -52,7 +52,7 @@ func InfrastructureCluster(capiInfrastructureAPIVersion, kind string) clusterv1.
 
 // InfrastructureWorkerMachineTemplates selector matches against infrastructure machines.
 // Passing in the API version (not the API group) is required because different providers could support different API
-// versions. This also allows for a oatch to select multiple infrastructure versions for the same provider.
+// versions. This also allows for a patch to select multiple infrastructure versions for the same provider.
 func InfrastructureWorkerMachineTemplates(
 	capiInfrastructureAPIVersion, kind string,
 ) clusterv1.PatchSelector {
@@ -70,7 +70,7 @@ func InfrastructureWorkerMachineTemplates(
 	}
 }
 
-// InfrastructureWorkers selector matches against infrastructure machines.
+// InfrastructureControlPlaneMachines selector matches against infrastructure control-plane machines.
 // Passing in the API version (not the API group) is required because different providers could support different API
 // versions. This also allows for a oatch to select multiple infrastructure versions for the same provider.
 func InfrastructureControlPlaneMachines(
