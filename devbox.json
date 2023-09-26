@@ -34,7 +34,8 @@
     "upx@latest",
     "yamale@latest",
     "yamllint@latest",
-    "kind@latest"
+    "kind@latest",
+    "rsync@3.2.7"
   ],
   "shell": {
     "scripts": {
