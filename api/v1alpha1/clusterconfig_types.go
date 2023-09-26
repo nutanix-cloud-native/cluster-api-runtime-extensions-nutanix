@@ -91,7 +91,7 @@ func (Image) VariableSchema() clusterv1.VariableSchema {
 				"tag": {
 					Description: "Image tag to use.",
 					Type:        "string",
-					Pattern:     patterns.Anchored(patterns.Tag),
+					Pattern:     patterns.Anchored(patterns.ImageTag),
 				},
 			},
 		},

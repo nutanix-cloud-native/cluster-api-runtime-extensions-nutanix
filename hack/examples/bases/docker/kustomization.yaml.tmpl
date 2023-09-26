@@ -53,36 +53,9 @@ patches:
     - op: "add"
       path: "/spec/patches"
       value:
-        - name: customKinDNodeImageForWorkers
-          definitions:
-            - selector:
-                apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-                kind: DockerMachineTemplate
-                matchResources:
-                  machineDeploymentClass:
-                    names:
-                      - "*"
-              jsonPatches:
-                - op: add
-                  path: /spec/template/spec/customImage
-                  valueFrom:
-                    template: ghcr.io/mesosphere/kind-node:{{ .builtin.machineDeployment.version }}
-            - selector:
-                apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-                kind: DockerMachineTemplate
-                matchResources:
-                  controlPlane: true
-              jsonPatches:
-                - op: add
-                  path: /spec/template/spec/customImage
-                  valueFrom:
-                    template: ghcr.io/mesosphere/kind-node:{{ .builtin.controlPlane.version }}
-    - op: "add"
-      path: "/spec/patches/0"
-      value:
-        name: "cluster-config"
-        external:
-          generateExtension: "dockerclusterconfigpatch.capi-runtime-extensions"
-          discoverVariablesExtension: "dockerclusterconfigvars.capi-runtime-extensions"
+        - name: "cluster-config"
+          external:
+            generateExtension: "dockerclusterconfigpatch.capi-runtime-extensions"
+            discoverVariablesExtension: "dockerclusterconfigvars.capi-runtime-extensions"
     - op: "remove"
       path: "/spec/variables"

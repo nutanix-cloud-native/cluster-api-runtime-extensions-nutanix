@@ -10,7 +10,6 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,7 +30,6 @@ const (
 )
 
 type awsRegionPatchHandler struct {
-	decoder           runtime.Decoder
 	variableName      string
 	variableFieldPath []string
 }
@@ -43,24 +41,18 @@ var (
 )
 
 func NewPatch() *awsRegionPatchHandler {
-	return newImageRepositoryPatchHandler(variableName)
+	return newAWSRegionPatchHandler(variableName)
 }
 
 func NewMetaPatch() *awsRegionPatchHandler {
-	return newImageRepositoryPatchHandler(clusterconfig.MetaVariableName, variableName)
+	return newAWSRegionPatchHandler(clusterconfig.MetaVariableName, variableName)
 }
 
-func newImageRepositoryPatchHandler(
+func newAWSRegionPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *awsRegionPatchHandler {
 	return &awsRegionPatchHandler{
-		decoder: json.NewSerializerWithOptions(
-			json.DefaultMetaFactory,
-			nil,
-			nil,
-			json.SerializerOptions{},
-		),
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}

@@ -59,7 +59,11 @@ func (h *testHandler) Mutate(
 	}
 
 	return patches.Generate(
-		obj, machineVars(), &holderRef, selectors.AllWorkersSelector(), logr.Discard(),
+		obj,
+		machineVars(),
+		&holderRef,
+		selectors.WorkersKubeadmConfigTemplateSelector(),
+		logr.Discard(),
 		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 			obj.Spec.Template.Spec.PostKubeadmCommands = append(
 				obj.Spec.Template.Spec.PostKubeadmCommands,
