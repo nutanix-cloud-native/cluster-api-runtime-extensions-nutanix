@@ -14,8 +14,11 @@ const (
 	ImageRepository = `(` + HostAndOptionalPort + `/)?` + PathComponent + `(/` + PathComponent + `)*`
 
 	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L68
-	Tag = `[\w][\w.-]{0,127}`
+	ImageTag = `[\w][\w.-]{0,127}`
 
 	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L81
-	Digest = `[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,}`
+	ImageDigest = `[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,}`
+
+	// See: https://github.com/distribution/reference/blob/v0.5.0/regexp.go#L136C2-L136C14
+	ImageReference = ImageRepository + `(:` + ImageTag + `)?` + `(@` + ImageDigest + `)?`
 )

@@ -20,21 +20,7 @@ func ControlPlane() clusterv1.PatchSelector {
 	}
 }
 
-func DefaultWorkerSelector() clusterv1.PatchSelector {
-	return clusterv1.PatchSelector{
-		APIVersion: bootstrapv1.GroupVersion.String(),
-		Kind:       "KubeadmConfigTemplate",
-		MatchResources: clusterv1.PatchSelectorMatch{
-			MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
-				Names: []string{
-					"default-worker",
-				},
-			},
-		},
-	}
-}
-
-func AllWorkersSelector() clusterv1.PatchSelector {
+func WorkersKubeadmConfigTemplateSelector() clusterv1.PatchSelector {
 	return clusterv1.PatchSelector{
 		APIVersion: bootstrapv1.GroupVersion.String(),
 		Kind:       "KubeadmConfigTemplate",
@@ -60,6 +46,44 @@ func InfrastructureCluster(capiInfrastructureAPIVersion, kind string) clusterv1.
 		Kind: kind,
 		MatchResources: clusterv1.PatchSelectorMatch{
 			InfrastructureCluster: true,
+		},
+	}
+}
+
+// InfrastructureWorkerMachineTemplates selector matches against infrastructure machines.
+// Passing in the API version (not the API group) is required because different providers could support different API
+// versions. This also allows for a oatch to select multiple infrastructure versions for the same provider.
+func InfrastructureWorkerMachineTemplates(
+	capiInfrastructureAPIVersion, kind string,
+) clusterv1.PatchSelector {
+	return clusterv1.PatchSelector{
+		APIVersion: schema.GroupVersion{
+			Group:   "infrastructure.cluster.x-k8s.io",
+			Version: capiInfrastructureAPIVersion,
+		}.String(),
+		Kind: kind,
+		MatchResources: clusterv1.PatchSelectorMatch{
+			MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
+				Names: []string{"*"},
+			},
+		},
+	}
+}
+
+// InfrastructureWorkers selector matches against infrastructure machines.
+// Passing in the API version (not the API group) is required because different providers could support different API
+// versions. This also allows for a oatch to select multiple infrastructure versions for the same provider.
+func InfrastructureControlPlaneMachines(
+	capiInfrastructureAPIVersion, kind string,
+) clusterv1.PatchSelector {
+	return clusterv1.PatchSelector{
+		APIVersion: schema.GroupVersion{
+			Group:   "infrastructure.cluster.x-k8s.io",
+			Version: capiInfrastructureAPIVersion,
+		}.String(),
+		Kind: kind,
+		MatchResources: clusterv1.PatchSelectorMatch{
+			ControlPlane: true,
 		},
 	}
 }

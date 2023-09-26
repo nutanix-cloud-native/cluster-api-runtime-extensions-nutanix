@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"slices"
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,6 +30,7 @@ import (
 	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
 	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation/customimage"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/servicelbgc"
@@ -151,7 +151,12 @@ func main() {
 
 	// dockerMetaPatchHandlers combines all Docker patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
-	dockerMetaPatchHandlers := slices.Clone(genericMetaPatchHandlers)
+	dockerMetaPatchHandlers := append(
+		[]mutation.MetaMutater{
+			customimage.NewMetaPatch(),
+		},
+		genericMetaPatchHandlers...,
+	)
 	dockerMetaHandlers := []handlers.Named{
 		dockerclusterconfig.NewVariable(),
 		mutation.NewMetaGeneratePatchesHandler(

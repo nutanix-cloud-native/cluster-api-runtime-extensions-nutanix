@@ -4,8 +4,12 @@
 package v1alpha1
 
 import (
+	"maps"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/openapi/patterns"
 )
 
 //+kubebuilder:object:root=true
@@ -21,16 +25,38 @@ type DockerClusterConfig struct {
 // DockerClusterConfigSpec defines the desired state of DockerClusterConfig.
 type DockerClusterConfigSpec struct {
 	GenericClusterConfig `json:",inline"`
+
+	//+optional
+	CustomImage *string `json:"customImage,omitempty"`
 }
 
 func (DockerClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 	clusterConfigProps := GenericClusterConfig{}.VariableSchema().OpenAPIV3Schema.Properties
+
+	maps.Copy(
+		clusterConfigProps,
+		map[string]clusterv1.JSONSchemaProps{
+			"customImage": OCIImage("").VariableSchema().OpenAPIV3Schema,
+		},
+	)
 
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Docker cluster configuration",
 			Type:        "object",
 			Properties:  clusterConfigProps,
+		},
+	}
+}
+
+type OCIImage string
+
+func (OCIImage) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Custom OCI image for control plane and worker nodes.",
+			Type:        "string",
+			Pattern:     patterns.Anchored(patterns.ImageReference),
 		},
 	}
 }

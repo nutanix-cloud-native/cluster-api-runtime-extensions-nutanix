@@ -138,7 +138,7 @@ func (h *httpProxyPatchHandler) Mutate(
 	}
 
 	if err := patches.Generate(
-		obj, vars, &holderRef, selectors.AllWorkersSelector(), log,
+		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
 		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
