@@ -8,17 +8,11 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/decoder"
-	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
-	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 )
 
 type MetaMutater interface {
@@ -37,24 +31,15 @@ type metaGeneratePatches struct {
 	mutaters []MetaMutater
 }
 
-func NewMetaGeneratePatchesHandler(name string, m ...MetaMutater) handlers.Named {
-	scheme := runtime.NewScheme()
-	_ = bootstrapv1.AddToScheme(scheme)
-	_ = controlplanev1.AddToScheme(scheme)
-	_ = capav1.AddToScheme(scheme)
-	_ = capdv1.AddToScheme(scheme)
-
-	capiDecoder := serializer.NewCodecFactory(scheme).UniversalDecoder(
-		controlplanev1.GroupVersion,
-		bootstrapv1.GroupVersion,
-		capav1.GroupVersion,
-		capdv1.GroupVersion,
-	)
-
+func NewMetaGeneratePatchesHandler(
+	name string,
+	decoder runtime.Decoder,
+	mutators ...MetaMutater,
+) handlers.Named {
 	return metaGeneratePatches{
 		name:     name,
-		decoder:  decoder.NewDecoderWithUnstructuredFallback(capiDecoder),
-		mutaters: m,
+		decoder:  decoder,
+		mutaters: mutators,
 	}
 }
 

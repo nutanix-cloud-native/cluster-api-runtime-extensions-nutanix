@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
@@ -55,13 +56,13 @@ func main() {
 	// Creates a logger to be used during the main func.
 	setupLog := ctrl.Log.WithName("main")
 
-	scheme := runtime.NewScheme()
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(crsv1.AddToScheme(scheme))
-	utilruntime.Must(capiv1.AddToScheme(scheme))
+	clientScheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+	utilruntime.Must(crsv1.AddToScheme(clientScheme))
+	utilruntime.Must(capiv1.AddToScheme(clientScheme))
 
 	mgrOptions := &ctrl.Options{
-		Scheme: scheme,
+		Scheme: clientScheme,
 		Metrics: metricsserver.Options{
 			BindAddress: ":8080",
 		},
@@ -144,9 +145,13 @@ func main() {
 		},
 		genericMetaPatchHandlers...,
 	)
+
 	awsMetaHandlers := []handlers.Named{
 		awsclusterconfig.NewVariable(),
-		mutation.NewMetaGeneratePatchesHandler("awsClusterConfigPatch", awsMetaPatchHandlers...),
+		mutation.NewMetaGeneratePatchesHandler(
+			"awsClusterConfigPatch",
+			apis.CAPADecoder(),
+			awsMetaPatchHandlers...),
 	}
 
 	// dockerMetaPatchHandlers combines all Docker patch and variable handlers under a single handler.
@@ -157,11 +162,14 @@ func main() {
 		},
 		genericMetaPatchHandlers...,
 	)
+
 	dockerMetaHandlers := []handlers.Named{
 		dockerclusterconfig.NewVariable(),
 		mutation.NewMetaGeneratePatchesHandler(
 			"dockerClusterConfigPatch",
-			dockerMetaPatchHandlers...),
+			apis.CAPDDecoder(),
+			dockerMetaPatchHandlers...,
+		),
 	}
 
 	var allHandlers []handlers.Named
