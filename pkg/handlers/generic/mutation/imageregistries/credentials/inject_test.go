@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	validSecretName = "myregistry-config"
+	validSecretName = "myregistry-credentials"
 )
 
 func TestGeneratePatches(t *testing.T) {

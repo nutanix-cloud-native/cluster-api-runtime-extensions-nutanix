@@ -13,15 +13,15 @@ import (
 )
 
 const (
-	//nolint:gosec // Does not contain hard coded config.
+	//nolint:gosec // Does not contain hard coded credentials.
 	installKubeletCredentialProvidersScriptOnRemote = "/etc/konvoy/install-kubelet-credential-providers.sh"
 
 	installKubeletCredentialProvidersScriptOnRemoteCommand = "/bin/bash " + installKubeletCredentialProvidersScriptOnRemote
 
-	//nolint:gosec // Does not contain hard coded config.
+	//nolint:gosec // Does not contain hard coded credentials.
 	dynamicCredentialProviderImage = "ghcr.io/mesosphere/dynamic-credential-provider:v0.2.0"
 
-	//nolint:gosec // Does not contain hard coded config.
+	//nolint:gosec // Does not contain hard coded credentials.
 	credentialProviderTargetDir = "/etc/kubernetes/image-credential-provider/"
 )
 

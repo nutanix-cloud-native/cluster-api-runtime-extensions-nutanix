@@ -32,7 +32,7 @@ kind: CredentialProviderConfig
 providers:
 - name: dynamic-credential-provider
   args:
-  - get-config
+  - get-credentials
   - -c
   - /etc/kubernetes/dynamic-credential-provider-config.yaml
   matchImages:
@@ -65,7 +65,7 @@ kind: CredentialProviderConfig
 providers:
 - name: dynamic-credential-provider
   args:
-  - get-config
+  - get-credentials
   - -c
   - /etc/kubernetes/dynamic-credential-provider-config.yaml
   matchImages:
@@ -117,7 +117,7 @@ credentialProviders:
   providers:
   - name: ecr-credential-provider
     args:
-    - get-config
+    - get-credentials
     matchImages:
     - "123456789.dkr.ecr.us-east-1.amazonaws.com"
     defaultCacheDuration: "0s"
@@ -126,7 +126,7 @@ credentialProviders:
 			},
 		},
 		{
-			name: "image registry with static config",
+			name: "image registry with static credentials",
 			credentials: providerConfig{
 				URL:      "https://myregistry.com",
 				Username: "myuser",
@@ -147,7 +147,7 @@ credentialProviders:
   providers:
   - name: static-credential-provider
     args:
-    - /etc/kubernetes/static-image-config.json
+    - /etc/kubernetes/static-image-credentials.json
     matchImages:
     - "myregistry.com"
     defaultCacheDuration: "0s"
@@ -156,7 +156,7 @@ credentialProviders:
 			},
 		},
 		{
-			name: "docker.io registry with static config",
+			name: "docker.io registry with static credentials",
 			credentials: providerConfig{
 				URL:      "https://registry-1.docker.io",
 				Username: "myuser",
@@ -177,7 +177,7 @@ credentialProviders:
   providers:
   - name: static-credential-provider
     args:
-    - /etc/kubernetes/static-image-config.json
+    - /etc/kubernetes/static-image-credentials.json
     matchImages:
     - "registry-1.docker.io"
     - "docker.io"
@@ -187,7 +187,7 @@ credentialProviders:
 			},
 		},
 		{
-			name: "image registry with static config",
+			name: "error for a registry with no credentials",
 			credentials: providerConfig{
 				URL: "https://myregistry.com",
 			},

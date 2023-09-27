@@ -21,7 +21,7 @@ var (
 
 const (
 	// variableName is the external patch variable name.
-	variableName = "config"
+	variableName = "credentials"
 
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "ImageRegistryCredentialsVars"

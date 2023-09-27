@@ -20,13 +20,13 @@ import (
 )
 
 const (
-	//nolint:gosec // Does not contain hard coded config.
-	kubeletStaticCredentialProviderCredentialsOnRemote = "/etc/kubernetes/static-image-config.json"
+	//nolint:gosec // Does not contain hard coded credentials.
+	kubeletStaticCredentialProviderCredentialsOnRemote = "/etc/kubernetes/static-image-credentials.json"
 
-	//nolint:gosec // Does not contain hard coded config.
+	//nolint:gosec // Does not contain hard coded credentials.
 	kubeletImageCredentialProviderConfigOnRemote = "/etc/kubernetes/image-credential-provider-config.yaml"
 
-	//nolint:gosec // Does not contain hard coded config.
+	//nolint:gosec // Does not contain hard coded credentials.
 	kubeletDynamicCredentialProviderConfigOnRemote = "/etc/kubernetes/dynamic-credential-provider-config.yaml"
 
 	azureCloudConfigFilePath = "/etc/kubernetes/azure.json"
@@ -153,7 +153,7 @@ func kubeletCredentialProvider() (
 	providerBinary string, providerArgs []string, providerAPIVersion string, err error,
 ) {
 	return "dynamic-credential-provider",
-		[]string{"get-config", "-c", kubeletDynamicCredentialProviderConfigOnRemote},
+		[]string{"get-credentials", "-c", kubeletDynamicCredentialProviderConfigOnRemote},
 		credentialproviderv1beta1.SchemeGroupVersion.String(),
 		nil
 }
@@ -162,12 +162,12 @@ func dynamicCredentialProvider(host string) (
 	providerBinary string, providerArgs []string, providerAPIVersion string, err error,
 ) {
 	if matches, err := credentialprovider.URLMatchesECR(host); matches || err != nil {
-		return "ecr-credential-provider", []string{"get-config"},
+		return "ecr-credential-provider", []string{"get-credentials"},
 			credentialproviderv1alpha1.SchemeGroupVersion.String(), err
 	}
 
 	if matches, err := credentialprovider.URLMatchesGCR(host); matches || err != nil {
-		return "gcr-credential-provider", []string{"get-config"},
+		return "gcr-credential-provider", []string{"get-credentials"},
 			credentialproviderv1alpha1.SchemeGroupVersion.String(), err
 	}
 

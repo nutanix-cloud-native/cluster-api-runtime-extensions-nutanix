@@ -287,7 +287,7 @@ func createSecretIfNeeded(
 ) error {
 	credentialsSecret, err := generateCredentialsSecret(registryWithOptionalCredentials, clusterKey.Name, obj.GetName(), obj.GetNamespace())
 	if err != nil {
-		return fmt.Errorf("error generating config Secret for Image Registry Credentials variable: %w", err)
+		return fmt.Errorf("error generating crdentials Secret for Image Registry Credentials variable: %w", err)
 	}
 	if credentialsSecret != nil {
 		if err := client.ServerSideApply(ctx, c, credentialsSecret); err != nil {
