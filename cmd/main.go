@@ -31,6 +31,7 @@ import (
 	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
 	dockermutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle"
+	awsebs "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/csi/aws-ebs"
 )
 
 // Flags.
@@ -78,6 +79,8 @@ func main() {
 	pflag.CommandLine.StringVar(&mgrOptions.PprofBindAddress, "profiler-address", "",
 		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
 
+	ebsConfig := &awsebs.AWSEBSConfig{}
+
 	runtimeWebhookServerOpts := server.NewServerOptions()
 
 	genericLifecycleHandlers := lifecycle.New()
@@ -109,8 +112,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// awsMetaHandlers combines all AWS patch and variable handlers under a single handler.
+	// This genericMetaPatchHandlers combines all other patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
+	// awsMetaHandlers combines all AWS patch and variable handlers under a single handler.
 	awsMetaHandlers := []handlers.Named{
 		awsclusterconfig.NewVariable(),
 		awsmutation.MetaPatchHandler(mgr),
