@@ -19,7 +19,7 @@ apis.sync: api.sync.capa api.sync.capd go-fix.common
 api.sync.%: ## Syncs an infrastructure provider's API
 api.sync.%: PROVIDER_MODULE_DIR=$(REPO_ROOT)/hack/third-party/$*
 api.sync.%: PROVIDER_API_DIR=common/pkg/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH_$*)/$(PROVIDER_API_VERSION_$*)/
-api.sync.%:
+api.sync.%: ; $(info $(M) syncing external API: $(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH_$*)/$(PROVIDER_API_VERSION_$*))
 	cd $(PROVIDER_MODULE_DIR) && go mod tidy
 	mkdir -p $(PROVIDER_API_DIR)
 	rsync \
