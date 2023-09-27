@@ -22,8 +22,8 @@ const (
 	secretKeyForStaticCredentialProviderConfig = "static-credential-provider"
 )
 
-func generateCredentialsSecretFile(credentials providerInput, ownerName string) []cabpkv1.File {
-	if credentials.isCredentialsEmpty() {
+func generateCredentialsSecretFile(config providerConfig, ownerName string) []cabpkv1.File {
+	if config.isCredentialsEmpty() {
 		return nil
 	}
 	return []cabpkv1.File{
@@ -40,16 +40,16 @@ func generateCredentialsSecretFile(credentials providerInput, ownerName string) 
 	}
 }
 
-// generateCredentialsSecret generates a Secret containing the credentials for the image registry.
+// generateCredentialsSecret generates a Secret containing the config for the image registry.
 // The function needs the cluster name to add the required move and cluster name labels.
 func generateCredentialsSecret(
-	credentials providerInput, clusterName, ownerName, namespace string,
+	config providerConfig, clusterName, ownerName, namespace string,
 ) (*corev1.Secret, error) {
-	if credentials.isCredentialsEmpty() {
+	if config.isCredentialsEmpty() {
 		return nil, nil
 	}
 
-	staticCredentialProviderSecretContents, err := kubeletStaticCredentialProviderSecretContents(credentials)
+	staticCredentialProviderSecretContents, err := kubeletStaticCredentialProviderSecretContents(config)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +72,8 @@ func generateCredentialsSecret(
 	}, nil
 }
 
-func kubeletStaticCredentialProviderSecretContents(credentials providerInput) (string, error) {
-	registryURL, err := url.ParseRequestURI(credentials.URL)
+func kubeletStaticCredentialProviderSecretContents(config providerConfig) (string, error) {
+	registryURL, err := url.ParseRequestURI(config.URL)
 	if err != nil {
 		return "", fmt.Errorf("failed parsing registry URL: %w", err)
 	}
@@ -84,8 +84,8 @@ func kubeletStaticCredentialProviderSecretContents(credentials providerInput) (s
 		Password     string
 	}{
 		RegistryHost: registryURL.Host,
-		Username:     credentials.Username,
-		Password:     credentials.Password,
+		Username:     config.Username,
+		Password:     config.Password,
 	}
 	t, err := template.New("").Parse(string(staticCredentialProviderConfigPatch))
 	if err != nil {
@@ -102,7 +102,7 @@ func kubeletStaticCredentialProviderSecretContents(credentials providerInput) (s
 }
 
 func credentialSecretName(ownerName string) string {
-	return fmt.Sprintf("%s-registry-credentials", ownerName)
+	return fmt.Sprintf("%s-registry-config", ownerName)
 }
 
 type labelFn func(labels map[string]string)

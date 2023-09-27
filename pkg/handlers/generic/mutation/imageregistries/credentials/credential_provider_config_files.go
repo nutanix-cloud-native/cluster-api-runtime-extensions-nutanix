@@ -19,21 +19,21 @@ import (
 )
 
 const (
-	//nolint:gosec // Does not contain hard coded credentials.
-	kubeletStaticCredentialProviderCredentialsOnRemote = "/etc/kubernetes/static-image-credentials.json"
+	//nolint:gosec // Does not contain hard coded config.
+	kubeletStaticCredentialProviderCredentialsOnRemote = "/etc/kubernetes/static-image-config.json"
 
-	//nolint:gosec // Does not contain hard coded credentials.
+	//nolint:gosec // Does not contain hard coded config.
 	kubeletImageCredentialProviderConfigOnRemote = "/etc/kubernetes/image-credential-provider-config.yaml"
 
-	//nolint:gosec // Does not contain hard coded credentials.
+	//nolint:gosec // Does not contain hard coded config.
 	kubeletDynamicCredentialProviderConfigOnRemote = "/etc/kubernetes/dynamic-credential-provider-config.yaml"
 
 	azureCloudConfigFilePath = "/etc/kubernetes/azure.json"
 
-	//nolint:gosec // Does not contain hard coded credentials.
+	//nolint:gosec // Does not contain hard coded config.
 	dynamicCredentialProviderImage = "ghcr.io/mesosphere/dynamic-credential-provider:v0.2.0"
 
-	//nolint:gosec // Does not contain hard coded credentials.
+	//nolint:gosec // Does not contain hard coded config.
 	credentialProviderTargetDir = "/etc/kubernetes/image-credential-provider/"
 )
 
@@ -51,21 +51,21 @@ var (
 	installKubeletCredentialProvidersScript []byte
 )
 
-type providerInput struct {
+type providerConfig struct {
 	URL      string
 	Username string
 	Password string
 }
 
-func (c providerInput) isCredentialsEmpty() bool {
+func (c providerConfig) isCredentialsEmpty() bool {
 	return c.Username == "" &&
 		c.Password == ""
 }
 
-func templateFilesForImageCredentialProviderConfigs(credentials providerInput) ([]cabpkv1.File, error) {
+func templateFilesForImageCredentialProviderConfigs(config providerConfig) ([]cabpkv1.File, error) {
 	var files []cabpkv1.File
 
-	kubeletCredentialProviderConfigFile, err := templateKubeletCredentialProviderConfig(credentials)
+	kubeletCredentialProviderConfigFile, err := templateKubeletCredentialProviderConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func templateFilesForImageCredentialProviderConfigs(credentials providerInput) (
 		files = append(files, *kubeletCredentialProviderConfigFile)
 	}
 
-	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(credentials)
+	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -84,9 +84,9 @@ func templateFilesForImageCredentialProviderConfigs(credentials providerInput) (
 	return files, nil
 }
 
-func templateKubeletCredentialProviderConfig(credentials providerInput) (*cabpkv1.File, error) {
+func templateKubeletCredentialProviderConfig(config providerConfig) (*cabpkv1.File, error) {
 	return templateCredentialProviderConfig(
-		credentials,
+		config,
 		kubeletImageCredentialProviderConfigPatch,
 		kubeletImageCredentialProviderConfigOnRemote,
 		kubeletCredentialProvider,
@@ -94,10 +94,10 @@ func templateKubeletCredentialProviderConfig(credentials providerInput) (*cabpkv
 }
 
 func templateDynamicCredentialProviderConfig(
-	credentials providerInput,
+	config providerConfig,
 ) (*cabpkv1.File, error) {
 	return templateCredentialProviderConfig(
-		credentials,
+		config,
 		dynamicCredentialProviderConfigPatch,
 		kubeletDynamicCredentialProviderConfigOnRemote,
 		dynamicCredentialProvider,
@@ -105,7 +105,7 @@ func templateDynamicCredentialProviderConfig(
 }
 
 func templateCredentialProviderConfig(
-	credentials providerInput,
+	config providerConfig,
 	inputTemplate []byte,
 	filePath string,
 	providerFunc func(
@@ -113,7 +113,7 @@ func templateCredentialProviderConfig(
 		host string,
 	) (providerBinary string, providerArgs []string, providerAPIVersion string, err error),
 ) (*cabpkv1.File, error) {
-	registryURL, err := url.ParseRequestURI(credentials.URL)
+	registryURL, err := url.ParseRequestURI(config.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing registry URL: %w", err)
 	}
@@ -133,7 +133,7 @@ func templateCredentialProviderConfig(
 	}
 
 	providerBinary, providerArgs, providerAPIVersion, err := providerFunc(
-		!credentials.isCredentialsEmpty(),
+		!config.isCredentialsEmpty(),
 		registryHostWithPath,
 	)
 	if err != nil {
@@ -175,7 +175,7 @@ func kubeletCredentialProvider(hasStaticCredentials bool, host string) (
 		return "", nil, "", err
 	}
 	return "dynamic-credential-provider",
-		[]string{"get-credentials", "-c", kubeletDynamicCredentialProviderConfigOnRemote},
+		[]string{"get-config", "-c", kubeletDynamicCredentialProviderConfigOnRemote},
 		credentialproviderv1beta1.SchemeGroupVersion.String(),
 		nil
 }
@@ -191,12 +191,12 @@ func dynamicCredentialProvider(hasStaticCredentials bool, host string) (
 	}
 
 	if matches, err := credentialprovider.URLMatchesECR(host); matches || err != nil {
-		return "ecr-credential-provider", []string{"get-credentials"},
+		return "ecr-credential-provider", []string{"get-config"},
 			credentialproviderv1alpha1.SchemeGroupVersion.String(), err
 	}
 
 	if matches, err := credentialprovider.URLMatchesGCR(host); matches || err != nil {
-		return "gcr-credential-provider", []string{"get-credentials"},
+		return "gcr-credential-provider", []string{"get-config"},
 			credentialproviderv1alpha1.SchemeGroupVersion.String(), err
 	}
 

@@ -13,14 +13,14 @@ import (
 
 func Test_templateKubeletCredentialProviderConfig(t *testing.T) {
 	tests := []struct {
-		name        string
-		credentials providerInput
-		want        *cabpkv1.File
-		wantErr     error
+		name    string
+		config  providerConfig
+		want    *cabpkv1.File
+		wantErr error
 	}{
 		{
-			name:        "ECR image registry",
-			credentials: providerInput{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+			name:   "ECR image registry",
+			config: providerConfig{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
 				Owner:       "",
@@ -32,7 +32,7 @@ kind: CredentialProviderConfig
 providers:
 - name: dynamic-credential-provider
   args:
-  - get-credentials
+  - get-config
   - -c
   - /etc/kubernetes/dynamic-credential-provider-config.yaml
   matchImages:
@@ -48,8 +48,8 @@ providers:
 			},
 		},
 		{
-			name: "image registry with static credentials",
-			credentials: providerInput{
+			name: "image registry with static config",
+			config: providerConfig{
 				URL:      "https://myregistry.com",
 				Username: "myuser",
 				Password: "mypassword",
@@ -65,7 +65,7 @@ kind: CredentialProviderConfig
 providers:
 - name: dynamic-credential-provider
   args:
-  - get-credentials
+  - get-config
   - -c
   - /etc/kubernetes/dynamic-credential-provider-config.yaml
   matchImages:
@@ -85,7 +85,7 @@ providers:
 		tt := tests[idx]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			file, err := templateKubeletCredentialProviderConfig(tt.credentials)
+			file, err := templateKubeletCredentialProviderConfig(tt.config)
 			assert.ErrorIs(t, err, tt.wantErr)
 			assert.Equal(t, tt.want, file)
 		})
@@ -95,13 +95,13 @@ providers:
 func Test_templateDynamicCredentialProviderConfig(t *testing.T) {
 	tests := []struct {
 		name        string
-		credentials providerInput
+		credentials providerConfig
 		want        *cabpkv1.File
 		wantErr     error
 	}{
 		{
 			name:        "ECR image registry",
-			credentials: providerInput{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+			credentials: providerConfig{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/dynamic-credential-provider-config.yaml",
 				Owner:       "",
@@ -117,7 +117,7 @@ credentialProviders:
   providers:
   - name: ecr-credential-provider
     args:
-    - get-credentials
+    - get-config
     matchImages:
     - "123456789.dkr.ecr.us-east-1.amazonaws.com"
     defaultCacheDuration: "0s"
@@ -126,8 +126,8 @@ credentialProviders:
 			},
 		},
 		{
-			name: "image registry with static credentials",
-			credentials: providerInput{
+			name: "image registry with static config",
+			credentials: providerConfig{
 				URL:      "https://myregistry.com",
 				Username: "myuser",
 				Password: "mypassword",
@@ -147,7 +147,7 @@ credentialProviders:
   providers:
   - name: static-credential-provider
     args:
-    - /etc/kubernetes/static-image-credentials.json
+    - /etc/kubernetes/static-image-config.json
     matchImages:
     - "myregistry.com"
     defaultCacheDuration: "0s"

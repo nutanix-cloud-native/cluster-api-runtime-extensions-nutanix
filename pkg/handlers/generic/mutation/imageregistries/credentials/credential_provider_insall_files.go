@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	//nolint:gosec // Does not contain hard coded credentials.
+	//nolint:gosec // Does not contain hard coded config.
 	installKubeletCredentialProvidersScriptOnRemote = "/etc/konvoy/install-kubelet-credential-providers.sh"
 
 	installKubeletCredentialProvidersScriptOnRemoteCommand = "/bin/bash " + installKubeletCredentialProvidersScriptOnRemote

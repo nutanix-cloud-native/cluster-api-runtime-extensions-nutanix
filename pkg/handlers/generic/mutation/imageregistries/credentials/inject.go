@@ -232,8 +232,8 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	c ctrlclient.Client,
 	credentials v1alpha1.ImageRegistryCredentialsResource,
 	obj ctrlclient.Object,
-) (providerInput, error) {
-	registryWithOptionalCredentials := providerInput{
+) (providerConfig, error) {
+	registryWithOptionalCredentials := providerConfig{
 		URL: credentials.URL,
 	}
 	secret, err := secretForImageRegistryCredentials(
@@ -243,7 +243,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 		obj.GetNamespace(),
 	)
 	if err != nil {
-		return providerInput{}, fmt.Errorf(
+		return providerConfig{}, fmt.Errorf(
 			"error getting secret %s/%s from Image Registry Credentials variable: %w",
 			obj.GetNamespace(),
 			credentials.Secret,
@@ -260,7 +260,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 }
 
 func generateFilesAndCommands(
-	registryWithOptionalCredentials providerInput,
+	registryWithOptionalCredentials providerConfig,
 	objName string,
 ) ([]cabpkv1.File, []string, error) {
 
@@ -281,13 +281,13 @@ func generateFilesAndCommands(
 func createSecretIfNeeded(
 	ctx context.Context,
 	c ctrlclient.Client,
-	registryWithOptionalCredentials providerInput,
+	registryWithOptionalCredentials providerConfig,
 	obj ctrlclient.Object,
 	clusterKey ctrlclient.ObjectKey,
 ) error {
 	credentialsSecret, err := generateCredentialsSecret(registryWithOptionalCredentials, clusterKey.Name, obj.GetName(), obj.GetNamespace())
 	if err != nil {
-		return fmt.Errorf("error generating credentials Secret for Image Registry Credentials variable: %w", err)
+		return fmt.Errorf("error generating config Secret for Image Registry Credentials variable: %w", err)
 	}
 	if credentialsSecret != nil {
 		if err := client.ServerSideApply(ctx, c, credentialsSecret); err != nil {
