@@ -19,7 +19,12 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "gomod"
-    directory: "/external/cluster-api-provider-aws/v2"
+    directory: "/hack/third-party/capa"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "gomod"
+    directory: "/hack/third-party/capd"
     schedule:
       interval: "weekly"
 

@@ -98,7 +98,7 @@ repos:
     name: License headers - Go
     stages: [commit]
     files: "(.*\\.go|go.mod)$"
-    exclude: ^(common/pkg/external/)
+    exclude: ^common/pkg/external/
     args:
       - --license-filepath
       - hack/license-header.txt

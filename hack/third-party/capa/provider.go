@@ -1,8 +1,8 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package v2
+package main
 
 import (
-	_ "sigs.k8s.io/cluster-api-provider-aws/v2"
+	_ "sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 )
