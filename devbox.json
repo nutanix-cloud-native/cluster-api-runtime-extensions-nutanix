@@ -23,19 +23,19 @@
     "hadolint@latest",
     "helm-docs@latest",
     "hugo@0.117.0",
+    "kind@latest",
     "kubebuilder@latest",
     "kubectl@latest",
     "kubernetes-controller-tools@latest",
     "kubernetes-helm@latest",
     "kustomize@latest",
     "pre-commit@latest",
+    "rsync@latest",
     "path:./hack/flakes/setup-envtest",
     "shfmt@latest",
     "upx@latest",
     "yamale@latest",
-    "yamllint@latest",
-    "kind@latest",
-    "rsync@3.2.7"
+    "yamllint@latest"
   ],
   "shell": {
     "scripts": {

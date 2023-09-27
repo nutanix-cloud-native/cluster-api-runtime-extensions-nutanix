@@ -172,7 +172,7 @@
       "source": "devbox-search",
       "version": "3.3.3"
     },
-    "rsync@3.2.7": {
+    "rsync@latest": {
       "last_modified": "2023-09-19T14:14:51Z",
       "resolved": "github:NixOS/nixpkgs/8b5ab8341e33322e5b66fb46ce23d724050f6606#rsync",
       "source": "devbox-search",
