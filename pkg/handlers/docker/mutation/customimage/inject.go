@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
@@ -18,11 +17,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
@@ -34,6 +35,7 @@ const (
 )
 
 type customImagePatchHandler struct {
+	decoder           runtime.Decoder
 	variableName      string
 	variableFieldPath []string
 }
@@ -57,6 +59,7 @@ func newCustomImagePatchHandler(
 	variableFieldPath ...string,
 ) *customImagePatchHandler {
 	return &customImagePatchHandler{
+		decoder:           apis.CAPDDecoder(),
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -104,7 +107,7 @@ func (h *customImagePatchHandler) Mutate(
 		&holderRef,
 		selectors.InfrastructureWorkerMachineTemplates("v1beta1", "DockerMachineTemplate"),
 		log,
-		func(obj *unstructured.Unstructured) error {
+		func(obj *capdv1.DockerMachineTemplate) error {
 			fieldPath := []string{"builtin", "machineDeployment", "version"}
 
 			if customImageVar == "" {
@@ -133,14 +136,9 @@ func (h *customImagePatchHandler) Mutate(
 				"customImage", customImageVar,
 			).Info("setting customImage in workers DockerMachineTemplate spec")
 
-			return unstructured.SetNestedField(
-				obj.Object,
-				string(customImageVar),
-				"spec",
-				"template",
-				"spec",
-				"customImage",
-			)
+			obj.Spec.Template.Spec.CustomImage = string(customImageVar)
+
+			return nil
 		},
 	)
 
@@ -154,21 +152,21 @@ func (h *customImagePatchHandler) Mutate(
 		&holderRef,
 		selectors.InfrastructureControlPlaneMachines("v1beta1", "DockerMachineTemplate"),
 		log,
-		func(obj *unstructured.Unstructured) error {
-			fieldPath := []string{"builtin", "controlPlane", "version"}
+		func(obj *capdv1.DockerMachineTemplate) error {
+			variablePath := []string{"builtin", "controlPlane", "version"}
 
 			if customImageVar == "" {
 				kubernetesVersion, found, err := variables.Get[string](
 					vars,
-					fieldPath[0],
-					fieldPath[1:]...)
+					variablePath[0],
+					variablePath[1:]...)
 				if err != nil {
 					return err
 				}
 				if !found {
 					return fmt.Errorf(
 						"missing required variable: %s",
-						strings.Join(fieldPath, "."),
+						strings.Join(variablePath, "."),
 					)
 				}
 
@@ -183,14 +181,9 @@ func (h *customImagePatchHandler) Mutate(
 				"customImage", customImageVar,
 			).Info("setting customImage in control plane DockerMachineTemplate spec")
 
-			return unstructured.SetNestedField(
-				obj.Object,
-				string(customImageVar),
-				"spec",
-				"template",
-				"spec",
-				"customImage",
-			)
+			obj.Spec.Template.Spec.CustomImage = string(customImageVar)
+
+			return nil
 		},
 	)
 }
@@ -202,7 +195,7 @@ func (h *customImagePatchHandler) GeneratePatches(
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		unstructured.UnstructuredJSONScheme,
+		h.decoder,
 		req,
 		resp,
 		func(

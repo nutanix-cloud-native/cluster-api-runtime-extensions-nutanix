@@ -9,7 +9,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -18,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
@@ -55,14 +55,8 @@ func newExtraAPIServerCertSANsPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *extraAPIServerCertSANsPatchHandler {
-	scheme := runtime.NewScheme()
-	_ = bootstrapv1.AddToScheme(scheme)
-	_ = controlplanev1.AddToScheme(scheme)
 	return &extraAPIServerCertSANsPatchHandler{
-		decoder: serializer.NewCodecFactory(scheme).UniversalDecoder(
-			controlplanev1.GroupVersion,
-			bootstrapv1.GroupVersion,
-		),
+		decoder:           apis.CAPIDecoder(),
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}

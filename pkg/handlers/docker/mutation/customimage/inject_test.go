@@ -81,15 +81,9 @@ func TestGeneratePatches(t *testing.T) {
 			},
 			RequestItem: newWorkerDockerMachineTemplateRequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation: "add",
-				Path:      "/spec",
-				ValueMatcher: gomega.Equal(map[string]interface{}{
-					"template": map[string]interface{}{
-						"spec": map[string]interface{}{
-							"customImage": "ghcr.io/mesosphere/kind-node:v1.2.3",
-						},
-					},
-				}),
+				Operation:    "add",
+				Path:         "/spec/template/spec/customImage",
+				ValueMatcher: gomega.Equal("ghcr.io/mesosphere/kind-node:v1.2.3"),
 			}},
 		},
 		capitest.PatchTestDef{
@@ -108,15 +102,9 @@ func TestGeneratePatches(t *testing.T) {
 			},
 			RequestItem: newWorkerDockerMachineTemplateRequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation: "add",
-				Path:      "/spec",
-				ValueMatcher: gomega.Equal(map[string]interface{}{
-					"template": map[string]interface{}{
-						"spec": map[string]interface{}{
-							"customImage": "a-specific-image",
-						},
-					},
-				}),
+				Operation:    "add",
+				Path:         "/spec/template/spec/customImage",
+				ValueMatcher: gomega.Equal("a-specific-image"),
 			}},
 		},
 		capitest.PatchTestDef{
@@ -129,15 +117,9 @@ func TestGeneratePatches(t *testing.T) {
 			},
 			RequestItem: newCPDockerMachineTemplateRequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation: "add",
-				Path:      "/spec",
-				ValueMatcher: gomega.Equal(map[string]interface{}{
-					"template": map[string]interface{}{
-						"spec": map[string]interface{}{
-							"customImage": "ghcr.io/mesosphere/kind-node:v1.2.3",
-						},
-					},
-				}),
+				Operation:    "add",
+				Path:         "/spec/template/spec/customImage",
+				ValueMatcher: gomega.Equal("ghcr.io/mesosphere/kind-node:v1.2.3"),
 			}},
 		},
 		capitest.PatchTestDef{
@@ -156,15 +138,9 @@ func TestGeneratePatches(t *testing.T) {
 			},
 			RequestItem: newCPDockerMachineTemplateRequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation: "add",
-				Path:      "/spec",
-				ValueMatcher: gomega.Equal(map[string]interface{}{
-					"template": map[string]interface{}{
-						"spec": map[string]interface{}{
-							"customImage": "a-specific-image",
-						},
-					},
-				}),
+				Operation:    "add",
+				Path:         "/spec/template/spec/customImage",
+				ValueMatcher: gomega.Equal("a-specific-image"),
 			}},
 		},
 	)
