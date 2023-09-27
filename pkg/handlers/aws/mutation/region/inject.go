@@ -21,7 +21,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/cluster-api-provider-aws/api/v1beta2"
+	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 

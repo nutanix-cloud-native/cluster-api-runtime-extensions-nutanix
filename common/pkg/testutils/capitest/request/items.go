@@ -12,7 +12,7 @@ import (
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
-	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/cluster-api-provider-aws/api/v1beta2"
+	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/serializer"
 )
 

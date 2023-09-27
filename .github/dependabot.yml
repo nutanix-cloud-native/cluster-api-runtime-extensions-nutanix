@@ -18,6 +18,11 @@ updates:
     schedule:
       interval: "weekly"
 
+  - package-ecosystem: "gomod"
+    directory: "/external/cluster-api-provider-aws/v2"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "npm"
     directory: "/docs"
     schedule:
