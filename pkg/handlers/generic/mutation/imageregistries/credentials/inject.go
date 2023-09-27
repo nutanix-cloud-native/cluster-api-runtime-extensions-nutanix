@@ -161,6 +161,27 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				return generateErr
 			}
 
+			initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
+			if initConfiguration == nil {
+				initConfiguration = &cabpkv1.InitConfiguration{}
+			}
+			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = initConfiguration
+			if initConfiguration.NodeRegistration.KubeletExtraArgs == nil {
+				initConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
+			}
+			addImageCredentialProviderArgs(initConfiguration.NodeRegistration.KubeletExtraArgs)
+
+			joinConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration
+			if joinConfiguration == nil {
+				joinConfiguration = &cabpkv1.JoinConfiguration{}
+			}
+			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = joinConfiguration
+			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
+				joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
+			}
+			addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
+
+			fmt.Printf("%v", joinConfiguration)
 			return nil
 		}); err != nil {
 		return err
@@ -195,6 +216,16 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			if generateErr != nil {
 				return generateErr
 			}
+
+			joinConfiguration := obj.Spec.Template.Spec.JoinConfiguration
+			if joinConfiguration == nil {
+				joinConfiguration = &cabpkv1.JoinConfiguration{}
+			}
+			obj.Spec.Template.Spec.JoinConfiguration = joinConfiguration
+			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
+				joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
+			}
+			addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
 
 			return nil
 		}); err != nil {

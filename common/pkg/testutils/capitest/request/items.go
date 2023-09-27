@@ -58,6 +58,9 @@ func NewKubeadmConfigTemplateRequestItem(uid types.UID) runtimehooksv1.GenerateP
 				Template: bootstrapv1.KubeadmConfigTemplateResource{
 					Spec: bootstrapv1.KubeadmConfigSpec{
 						PostKubeadmCommands: []string{"initial-post-kubeadm"},
+						JoinConfiguration: &bootstrapv1.JoinConfiguration{
+							NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
+						},
 					},
 				},
 			},
@@ -82,6 +85,20 @@ func NewKubeadmControlPlaneTemplateRequestItem(
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      KubeadmControlPlaneTemplateRequestObjectName,
 				Namespace: Namespace,
+			},
+			Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
+				Template: controlplanev1.KubeadmControlPlaneTemplateResource{
+					Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
+						KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
+							InitConfiguration: &bootstrapv1.InitConfiguration{
+								NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
+							},
+							JoinConfiguration: &bootstrapv1.JoinConfiguration{
+								NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
+							},
+						},
+					},
+				},
 			},
 		},
 		&runtimehooksv1.HolderReference{

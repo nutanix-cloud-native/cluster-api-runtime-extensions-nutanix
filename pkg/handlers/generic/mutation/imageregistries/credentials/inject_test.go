@@ -66,6 +66,22 @@ func TestGeneratePatches(t *testing.T) {
 					Path:         "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 					ValueMatcher: gomega.HaveLen(1),
 				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs",
+					ValueMatcher: gomega.HaveKeyWithValue(
+						"image-credential-provider-bin-dir",
+						"/etc/kubernetes/image-credential-provider/",
+					),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
+					ValueMatcher: gomega.HaveKeyWithValue(
+						"image-credential-provider-config",
+						"/etc/kubernetes/image-credential-provider-config.yaml",
+					),
+				},
 			},
 		},
 		capitest.PatchTestDef{
@@ -94,6 +110,22 @@ func TestGeneratePatches(t *testing.T) {
 					Operation:    "add",
 					Path:         "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 					ValueMatcher: gomega.HaveLen(1),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs",
+					ValueMatcher: gomega.HaveKeyWithValue(
+						"image-credential-provider-bin-dir",
+						"/etc/kubernetes/image-credential-provider/",
+					),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
+					ValueMatcher: gomega.HaveKeyWithValue(
+						"image-credential-provider-config",
+						"/etc/kubernetes/image-credential-provider-config.yaml",
+					),
 				},
 			},
 		},
@@ -128,6 +160,14 @@ func TestGeneratePatches(t *testing.T) {
 					Operation:    "add",
 					Path:         "/spec/template/spec/preKubeadmCommands",
 					ValueMatcher: gomega.HaveLen(1),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
+					ValueMatcher: gomega.HaveKeyWithValue(
+						"image-credential-provider-bin-dir",
+						"/etc/kubernetes/image-credential-provider/",
+					),
 				},
 			},
 		},
@@ -165,6 +205,14 @@ func TestGeneratePatches(t *testing.T) {
 					Operation:    "add",
 					Path:         "/spec/template/spec/preKubeadmCommands",
 					ValueMatcher: gomega.HaveLen(1),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
+					ValueMatcher: gomega.HaveKeyWithValue(
+						"image-credential-provider-bin-dir",
+						"/etc/kubernetes/image-credential-provider/",
+					),
 				},
 			},
 		},
