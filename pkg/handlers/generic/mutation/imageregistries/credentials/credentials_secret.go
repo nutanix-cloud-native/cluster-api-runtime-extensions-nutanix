@@ -40,7 +40,7 @@ func generateCredentialsSecretFile(credentials providerInput, ownerName string) 
 	}
 }
 
-// generateCredentialsSecret generates a Secret containing the credentials for the image registry mirror.
+// generateCredentialsSecret generates a Secret containing the credentials for the image registry.
 // The function needs the cluster name to add the required move and cluster name labels.
 func generateCredentialsSecret(
 	credentials providerInput, clusterName, ownerName, namespace string,
@@ -73,19 +73,19 @@ func generateCredentialsSecret(
 }
 
 func kubeletStaticCredentialProviderSecretContents(credentials providerInput) (string, error) {
-	mirrorURL, err := url.ParseRequestURI(credentials.URL)
+	registryURL, err := url.ParseRequestURI(credentials.URL)
 	if err != nil {
-		return "", fmt.Errorf("failed parsing registry mirror: %w", err)
+		return "", fmt.Errorf("failed parsing registry URL: %w", err)
 	}
 
 	templateInput := struct {
-		MirrorHost string
-		Username   string
-		Password   string
+		RegistryHost string
+		Username     string
+		Password     string
 	}{
-		MirrorHost: mirrorURL.Host,
-		Username:   credentials.Username,
-		Password:   credentials.Password,
+		RegistryHost: registryURL.Host,
+		Username:     credentials.Username,
+		Password:     credentials.Password,
 	}
 	t, err := template.New("").Parse(string(staticCredentialProviderConfigPatch))
 	if err != nil {

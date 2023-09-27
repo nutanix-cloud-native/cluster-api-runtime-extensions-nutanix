@@ -36,7 +36,6 @@ providers:
   - -c
   - /etc/kubernetes/dynamic-credential-provider-config.yaml
   matchImages:
-  - "123456789.dkr.ecr.us-east-1.amazonaws.com"
   - "*"
   - "*.*"
   - "*.*.*"
@@ -70,7 +69,6 @@ providers:
   - -c
   - /etc/kubernetes/dynamic-credential-provider-config.yaml
   matchImages:
-  - "myregistry.com"
   - "*"
   - "*.*"
   - "*.*.*"
@@ -113,9 +111,6 @@ func Test_templateDynamicCredentialProviderConfig(t *testing.T) {
 				Content: `apiVersion: credentialprovider.d2iq.com/v1alpha1
 kind: DynamicCredentialProviderConfig
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
-mirror:
-  endpoint: "123456789.dkr.ecr.us-east-1.amazonaws.com"
-  credentialsStrategy: MirrorCredentialsOnly
 credentialProviders:
   apiVersion: kubelet.config.k8s.io/v1beta1
   kind: CredentialProviderConfig
@@ -146,9 +141,6 @@ credentialProviders:
 				Content: `apiVersion: credentialprovider.d2iq.com/v1alpha1
 kind: DynamicCredentialProviderConfig
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
-mirror:
-  endpoint: "myregistry.com"
-  credentialsStrategy: MirrorCredentialsOnly
 credentialProviders:
   apiVersion: kubelet.config.k8s.io/v1beta1
   kind: CredentialProviderConfig

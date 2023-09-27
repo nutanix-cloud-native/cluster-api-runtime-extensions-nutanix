@@ -44,8 +44,8 @@ var (
 	//go:embed templates/static-credential-provider.json.gotmpl
 	staticCredentialProviderConfigPatch []byte
 
-	//go:embed templates/image-credential-provider-config.yaml.gotmpl
-	imageCredentialProviderConfigPatch []byte
+	//go:embed templates/kubelet-image-credential-provider-config.yaml.gotmpl
+	kubeletImageCredentialProviderConfigPatch []byte
 
 	//go:embed templates/install-kubelet-credential-providers.sh.gotmpl
 	installKubeletCredentialProvidersScript []byte
@@ -87,7 +87,7 @@ func templateFilesForImageCredentialProviderConfigs(credentials providerInput) (
 func templateKubeletCredentialProviderConfig(credentials providerInput) (*cabpkv1.File, error) {
 	return templateCredentialProviderConfig(
 		credentials,
-		imageCredentialProviderConfigPatch,
+		kubeletImageCredentialProviderConfigPatch,
 		kubeletImageCredentialProviderConfigOnRemote,
 		kubeletCredentialProvider,
 	)
@@ -113,9 +113,9 @@ func templateCredentialProviderConfig(
 		host string,
 	) (providerBinary string, providerArgs []string, providerAPIVersion string, err error),
 ) (*cabpkv1.File, error) {
-	mirrorURL, err := url.ParseRequestURI(credentials.URL)
+	registryURL, err := url.ParseRequestURI(credentials.URL)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing registry mirror: %w", err)
+		return nil, fmt.Errorf("failed parsing registry URL: %w", err)
 	}
 
 	t := template.New("")
@@ -127,14 +127,14 @@ func templateCredentialProviderConfig(
 		return nil, fmt.Errorf("failed to parse go template: %w", err)
 	}
 
-	mirrorHostWithPath := mirrorURL.Host
-	if mirrorURL.Path != "" {
-		mirrorHostWithPath = path.Join(mirrorURL.Host, mirrorURL.Path)
+	registryHostWithPath := registryURL.Host
+	if registryURL.Path != "" {
+		registryHostWithPath = path.Join(registryURL.Host, registryURL.Path)
 	}
 
 	providerBinary, providerArgs, providerAPIVersion, err := providerFunc(
 		!credentials.isCredentialsEmpty(),
-		mirrorHostWithPath,
+		registryHostWithPath,
 	)
 	if err != nil {
 		return nil, err
@@ -144,12 +144,12 @@ func templateCredentialProviderConfig(
 	}
 
 	templateInput := struct {
-		MirrorHost         string
+		RegistryHost       string
 		ProviderBinary     string
 		ProviderArgs       []string
 		ProviderAPIVersion string
 	}{
-		MirrorHost:         mirrorHostWithPath,
+		RegistryHost:       registryHostWithPath,
 		ProviderBinary:     providerBinary,
 		ProviderArgs:       providerArgs,
 		ProviderAPIVersion: providerAPIVersion,
