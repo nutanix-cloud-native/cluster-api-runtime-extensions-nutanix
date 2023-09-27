@@ -5,6 +5,7 @@ package credentials
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"text/template"
 
@@ -16,6 +17,17 @@ const (
 	installKubeletCredentialProvidersScriptOnRemote = "/etc/konvoy/install-kubelet-credential-providers.sh"
 
 	installKubeletCredentialProvidersScriptOnRemoteCommand = "/bin/bash " + installKubeletCredentialProvidersScriptOnRemote
+
+	//nolint:gosec // Does not contain hard coded config.
+	dynamicCredentialProviderImage = "ghcr.io/mesosphere/dynamic-credential-provider:v0.2.0"
+
+	//nolint:gosec // Does not contain hard coded config.
+	credentialProviderTargetDir = "/etc/kubernetes/image-credential-provider/"
+)
+
+var (
+	//go:embed templates/install-kubelet-credential-providers.sh.gotmpl
+	installKubeletCredentialProvidersScript []byte
 )
 
 func templateFilesAndCommandsForInstallKubeletCredentialProviders() ([]cabpkv1.File, []string, error) {

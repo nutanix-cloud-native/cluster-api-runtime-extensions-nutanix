@@ -5,6 +5,7 @@ package credentials
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"net/url"
 	"strings"
@@ -20,6 +21,11 @@ import (
 
 const (
 	secretKeyForStaticCredentialProviderConfig = "static-credential-provider"
+)
+
+var (
+	//go:embed templates/static-credential-provider.json.gotmpl
+	staticCredentialProviderConfigPatch []byte
 )
 
 func generateCredentialsSecretFile(config providerConfig, ownerName string) []cabpkv1.File {

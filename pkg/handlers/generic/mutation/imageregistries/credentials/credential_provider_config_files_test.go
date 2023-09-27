@@ -85,7 +85,7 @@ providers:
 		tt := tests[idx]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			file, err := templateKubeletCredentialProviderConfig(tt.config)
+			file, err := templateKubeletCredentialProviderConfig()
 			assert.ErrorIs(t, err, tt.wantErr)
 			assert.Equal(t, tt.want, file)
 		})
@@ -154,6 +154,44 @@ credentialProviders:
     apiVersion: credentialprovider.kubelet.k8s.io/v1beta1
 `,
 			},
+		},
+		{
+			name: "docker.io registry with static config",
+			credentials: providerConfig{
+				URL:      "https://registry-1.docker.io",
+				Username: "myuser",
+				Password: "mypassword",
+			},
+			want: &cabpkv1.File{
+				Path:        "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+				Owner:       "",
+				Permissions: "0600",
+				Encoding:    "",
+				Append:      false,
+				Content: `apiVersion: credentialprovider.d2iq.com/v1alpha1
+kind: DynamicCredentialProviderConfig
+credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
+credentialProviders:
+  apiVersion: kubelet.config.k8s.io/v1beta1
+  kind: CredentialProviderConfig
+  providers:
+  - name: static-credential-provider
+    args:
+    - /etc/kubernetes/static-image-config.json
+    matchImages:
+    - "registry-1.docker.io"
+    - "docker.io"
+    defaultCacheDuration: "0s"
+    apiVersion: credentialprovider.kubelet.k8s.io/v1beta1
+`,
+			},
+		},
+		{
+			name: "image registry with static config",
+			credentials: providerConfig{
+				URL: "https://myregistry.com",
+			},
+			wantErr: ErrCredentialsNotFound,
 		},
 	}
 	for idx := range tests {

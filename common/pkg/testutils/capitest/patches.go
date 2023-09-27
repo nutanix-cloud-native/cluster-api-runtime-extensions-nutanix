@@ -25,6 +25,7 @@ type PatchTestDef struct {
 	Vars                  []runtimehooksv1.Variable
 	RequestItem           runtimehooksv1.GeneratePatchesRequestItem
 	ExpectedPatchMatchers []JSONPatchMatcher
+	ExpectedFailure       bool
 }
 
 type JSONPatchMatcher struct {
@@ -56,7 +57,11 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 			}
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
 			h.GeneratePatches(context.Background(), req, resp)
-			g.Expect(resp.Status).To(gomega.Equal(runtimehooksv1.ResponseStatusSuccess), fmt.Sprintf("Message: %s", resp.Message))
+			expectedStatus := runtimehooksv1.ResponseStatusSuccess
+			if tt.ExpectedFailure {
+				expectedStatus = runtimehooksv1.ResponseStatusFailure
+			}
+			g.Expect(resp.Status).To(gomega.Equal(expectedStatus), fmt.Sprintf("Message: %s", resp.Message))
 
 			if len(tt.ExpectedPatchMatchers) == 0 {
 				g.Expect(resp.Items).To(gomega.BeEmpty())

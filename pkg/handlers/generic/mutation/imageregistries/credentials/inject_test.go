@@ -168,6 +168,21 @@ func TestGeneratePatches(t *testing.T) {
 				},
 			},
 		},
+		capitest.PatchTestDef{
+			Name: "error for a registry with no credentials",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					variableName,
+					v1alpha1.ImageRegistryCredentials{
+						v1alpha1.ImageRegistryCredentialsResource{
+							URL: "https://my-registry.io",
+						},
+					},
+				),
+			},
+			RequestItem:     request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedFailure: true,
+		},
 	)
 }
 
