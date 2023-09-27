@@ -8,8 +8,8 @@ import (
 	_ "embed"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,6 +21,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
@@ -30,6 +31,7 @@ const (
 )
 
 type awsRegionPatchHandler struct {
+	decoder           runtime.Decoder
 	variableName      string
 	variableFieldPath []string
 }
@@ -52,7 +54,12 @@ func newAWSRegionPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *awsRegionPatchHandler {
+	scheme := runtime.NewScheme()
+	_ = capav1.AddToScheme(scheme)
 	return &awsRegionPatchHandler{
+		decoder: serializer.NewCodecFactory(scheme).UniversalDecoder(
+			capav1.GroupVersion,
+		),
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -99,22 +106,17 @@ func (h *awsRegionPatchHandler) Mutate(
 		obj,
 		vars,
 		&holderRef,
-		selectors.InfrastructureCluster("v1beta2", "AWSClusterTemplate"),
+		selectors.InfrastructureCluster(capav1.GroupVersion.Version, "AWSClusterTemplate"),
 		log,
-		func(obj *unstructured.Unstructured) error {
+		func(obj *capav1.AWSClusterTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting region in AWSCluster spec")
 
-			return unstructured.SetNestedField(
-				obj.Object,
-				string(regionVar),
-				"spec",
-				"template",
-				"spec",
-				"region",
-			)
+			obj.Spec.Template.Spec.Region = string(regionVar)
+
+			return nil
 		},
 	)
 }
@@ -126,7 +128,7 @@ func (h *awsRegionPatchHandler) GeneratePatches(
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		unstructured.UnstructuredJSONScheme,
+		h.decoder,
 		req,
 		resp,
 		func(

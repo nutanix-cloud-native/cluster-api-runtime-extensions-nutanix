@@ -17,6 +17,8 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/decoder"
+	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 )
 
 type MetaMutater interface {
@@ -39,10 +41,14 @@ func NewMetaGeneratePatchesHandler(name string, m ...MetaMutater) handlers.Named
 	scheme := runtime.NewScheme()
 	_ = bootstrapv1.AddToScheme(scheme)
 	_ = controlplanev1.AddToScheme(scheme)
+	_ = capav1.AddToScheme(scheme)
+	_ = capdv1.AddToScheme(scheme)
 
 	capiDecoder := serializer.NewCodecFactory(scheme).UniversalDecoder(
 		controlplanev1.GroupVersion,
 		bootstrapv1.GroupVersion,
+		capav1.GroupVersion,
+		capdv1.GroupVersion,
 	)
 
 	return metaGeneratePatches{

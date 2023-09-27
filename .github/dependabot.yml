@@ -18,6 +18,16 @@ updates:
     schedule:
       interval: "weekly"
 
+  - package-ecosystem: "gomod"
+    directory: "/hack/third-party/capa"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "gomod"
+    directory: "/hack/third-party/capd"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "npm"
     directory: "/docs"
     schedule:

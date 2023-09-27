@@ -5,7 +5,6 @@ package request
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/uuid"
@@ -13,6 +12,7 @@ import (
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/serializer"
 )
 
@@ -76,18 +76,20 @@ func NewKubeadmControlPlaneTemplateRequestItem(
 	)
 }
 
-func NewUnstructuredRequestItem(
-	apiVersion, kind string,
-	holderRef *runtimehooksv1.HolderReference,
+func NewAWSClusterTemplateRequestItem(
 	uid types.UID,
 ) runtimehooksv1.GeneratePatchesRequestItem {
-	obj := &unstructured.Unstructured{}
-	obj.SetAPIVersion(apiVersion)
-	obj.SetKind(kind)
-
 	return NewRequestItem(
-		obj,
-		holderRef,
+		&capav1.AWSClusterTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: capav1.GroupVersion.String(),
+				Kind:       "AWSClusterTemplate",
+			},
+		},
+		&runtimehooksv1.HolderReference{
+			Kind:      "Cluster",
+			FieldPath: "spec.infrastructureRef",
+		},
 		uid,
 	)
 }
