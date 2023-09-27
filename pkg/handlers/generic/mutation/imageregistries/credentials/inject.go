@@ -167,7 +167,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	}
 
 	if err = patches.Generate(
-		obj, vars, &holderRef, selectors.AllWorkersSelector(), log,
+		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
 		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 			registryWithOptionalCredentials, generateErr :=
 				registryWithOptionalCredentialsFromImageRegistryCredentials(ctx, h.client, credentials, obj)
