@@ -11,6 +11,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
 )
 
@@ -22,5 +23,6 @@ func MetaMutaters(mgr manager.Manager) []mutation.MetaMutater {
 		extraapiservercertsans.NewMetaPatch(),
 		httpproxy.NewMetaPatch(mgr.GetClient()),
 		kubernetesimagerepository.NewMetaPatch(),
+		credentials.NewMetaPatch(mgr.GetClient()),
 	}
 }

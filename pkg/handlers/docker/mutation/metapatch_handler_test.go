@@ -14,6 +14,17 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation/customimage"
 	customimagetests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation/customimage/tests"
+	auditpolicytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
+	etcdtests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans"
+	extraapiservercertsanstests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy"
+	httpproxytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy/tests"
+	imageregistrycredentials "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials"
+	imageregistrycredentialstests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
+	kubernetesimagerepositorytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository/tests"
 )
 
 func metaPatchGeneratorFunc(mgr manager.Manager) func() mutation.GeneratePatches {
@@ -39,5 +50,47 @@ func TestGeneratePatches(t *testing.T) {
 		metaPatchGeneratorFunc(mgr),
 		"clusterConfig",
 		customimage.VariableName,
+	)
+
+	auditpolicytests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+	)
+
+	httpproxytests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		"clusterConfig",
+		httpproxy.VariableName,
+	)
+
+	etcdtests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		"clusterConfig",
+		etcd.VariableName,
+	)
+
+	extraapiservercertsanstests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		"clusterConfig",
+		extraapiservercertsans.VariableName,
+	)
+
+	kubernetesimagerepositorytests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		"clusterConfig",
+		kubernetesimagerepository.VariableName,
+	)
+
+	imageregistrycredentialstests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		mgr.GetClient(),
+		"clusterConfig",
+		"imageRegistries",
+		imageregistrycredentials.VariableName,
 	)
 }

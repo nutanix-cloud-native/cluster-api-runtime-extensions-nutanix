@@ -6,6 +6,7 @@ package capitest
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -24,6 +25,7 @@ type PatchTestDef struct {
 	Vars                  []runtimehooksv1.Variable
 	RequestItem           runtimehooksv1.GeneratePatchesRequestItem
 	ExpectedPatchMatchers []JSONPatchMatcher
+	ExpectedFailure       bool
 }
 
 type JSONPatchMatcher struct {
@@ -53,7 +55,12 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 			}
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
 			h.GeneratePatches(context.Background(), req, resp)
-			g.Expect(resp.Status).To(gomega.Equal(runtimehooksv1.ResponseStatusSuccess))
+			expectedStatus := runtimehooksv1.ResponseStatusSuccess
+			if tt.ExpectedFailure {
+				expectedStatus = runtimehooksv1.ResponseStatusFailure
+			}
+			g.Expect(resp.Status).
+				To(gomega.Equal(expectedStatus), fmt.Sprintf("Message: %s", resp.Message))
 
 			if len(tt.ExpectedPatchMatchers) == 0 {
 				g.Expect(resp.Items).To(gomega.BeEmpty())
@@ -101,6 +108,7 @@ func VariableWithValue(
 
 		for _, p := range variablePath[:len(variablePath)-1] {
 			nestedValue[p] = make(map[string]any, 1)
+			nestedValue = nestedValue[p].(map[string]any)
 		}
 
 		nestedValue[variablePath[len(variablePath)-1]] = value

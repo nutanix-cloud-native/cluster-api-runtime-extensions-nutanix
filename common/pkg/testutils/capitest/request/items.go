@@ -4,6 +4,7 @@
 package request
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -14,6 +15,13 @@ import (
 
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/serializer"
+)
+
+const (
+	ClusterName                                  = "test-cluster"
+	KubeadmConfigTemplateRequestObjectName       = "test-kubeadmconfigtemplate"
+	KubeadmControlPlaneTemplateRequestObjectName = "test-kubeadmcontrolplanetemplate"
+	Namespace                                    = corev1.NamespaceDefault
 )
 
 // NewRequestItem returns a GeneratePatchesRequestItem with the given variables and object.
@@ -42,10 +50,17 @@ func NewKubeadmConfigTemplateRequestItem(uid types.UID) runtimehooksv1.GenerateP
 				APIVersion: bootstrapv1.GroupVersion.String(),
 				Kind:       "KubeadmConfigTemplate",
 			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      KubeadmConfigTemplateRequestObjectName,
+				Namespace: Namespace,
+			},
 			Spec: bootstrapv1.KubeadmConfigTemplateSpec{
 				Template: bootstrapv1.KubeadmConfigTemplateResource{
 					Spec: bootstrapv1.KubeadmConfigSpec{
 						PostKubeadmCommands: []string{"initial-post-kubeadm"},
+						JoinConfiguration: &bootstrapv1.JoinConfiguration{
+							NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
+						},
 					},
 				},
 			},
@@ -67,10 +82,30 @@ func NewKubeadmControlPlaneTemplateRequestItem(
 				APIVersion: controlplanev1.GroupVersion.String(),
 				Kind:       "KubeadmControlPlaneTemplate",
 			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      KubeadmControlPlaneTemplateRequestObjectName,
+				Namespace: Namespace,
+			},
+			Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
+				Template: controlplanev1.KubeadmControlPlaneTemplateResource{
+					Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
+						KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
+							InitConfiguration: &bootstrapv1.InitConfiguration{
+								NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
+							},
+							JoinConfiguration: &bootstrapv1.JoinConfiguration{
+								NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
+							},
+						},
+					},
+				},
+			},
 		},
 		&runtimehooksv1.HolderReference{
 			Kind:      "Cluster",
 			FieldPath: "spec.controlPlaneRef",
+			Name:      ClusterName,
+			Namespace: Namespace,
 		},
 		uid,
 	)

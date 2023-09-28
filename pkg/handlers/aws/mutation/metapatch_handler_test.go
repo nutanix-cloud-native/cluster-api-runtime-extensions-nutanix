@@ -21,6 +21,8 @@ import (
 	extraapiservercertsanstests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy"
 	httpproxytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy/tests"
+	imageregistrycredentials "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials"
+	imageregistrycredentialstests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
 	kubernetesimagerepositorytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository/tests"
 )
@@ -81,5 +83,14 @@ func TestGeneratePatches(t *testing.T) {
 		metaPatchGeneratorFunc(mgr),
 		"clusterConfig",
 		kubernetesimagerepository.VariableName,
+	)
+
+	imageregistrycredentialstests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		mgr.GetClient(),
+		"clusterConfig",
+		"imageRegistries",
+		imageregistrycredentials.VariableName,
 	)
 }

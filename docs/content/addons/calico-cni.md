@@ -38,6 +38,6 @@ configure defaults specific for their environment rather than compiling the defa
 The Helm chart comes with default configurations for the Calico Installation CRS per supported provider, but overriding
 is possible. To do so, specify:
 
-```bash
+```shell
 --set-file handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.content=<file>
 ```
