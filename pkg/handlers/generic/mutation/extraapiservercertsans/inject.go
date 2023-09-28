@@ -44,11 +44,11 @@ var (
 )
 
 func NewPatch() *extraAPIServerCertSANsPatchHandler {
-	return newExtraAPIServerCertSANsPatchHandler(variableName)
+	return newExtraAPIServerCertSANsPatchHandler(VariableName)
 }
 
 func NewMetaPatch() *extraAPIServerCertSANsPatchHandler {
-	return newExtraAPIServerCertSANsPatchHandler(clusterconfig.MetaVariableName, variableName)
+	return newExtraAPIServerCertSANsPatchHandler(clusterconfig.MetaVariableName, VariableName)
 }
 
 func newExtraAPIServerCertSANsPatchHandler(

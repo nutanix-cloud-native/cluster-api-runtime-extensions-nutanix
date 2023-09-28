@@ -6,61 +6,12 @@ package auditpolicy
 import (
 	"testing"
 
-	. "github.com/onsi/gomega"
-
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy/tests"
 )
 
 func TestGeneratePatches(t *testing.T) {
-	capitest.ValidateGeneratePatches(
-		t,
-		NewPatch,
-		capitest.PatchTestDef{
-			Name: "unset variable",
-		},
-		capitest.PatchTestDef{
-			Name:        "http proxy set for KubeadmControlPlaneTemplate",
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/kubeadmConfigSpec/files",
-				ValueMatcher: HaveLen(1),
-			}, {
-				Operation: "add",
-				Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
-				ValueMatcher: HaveKeyWithValue(
-					"apiServer",
-					SatisfyAll(
-						HaveKeyWithValue(
-							"extraArgs",
-							map[string]interface{}{
-								"audit-log-maxbackup": "10",
-								"audit-log-maxsize":   "100",
-								"audit-log-path":      "/var/log/audit/kube-apiserver-audit.log",
-								"audit-policy-file":   "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml",
-								"audit-log-maxage":    "30",
-							},
-						),
-						HaveKeyWithValue(
-							"extraVolumes",
-							[]interface{}{
-								map[string]interface{}{
-									"hostPath":  "/etc/kubernetes/audit-policy/",
-									"mountPath": "/etc/kubernetes/audit-policy/",
-									"name":      "audit-policy",
-									"readOnly":  true,
-								},
-								map[string]interface{}{
-									"name":      "audit-logs",
-									"hostPath":  "/var/log/kubernetes/audit",
-									"mountPath": "/var/log/audit/",
-								},
-							},
-						),
-					),
-				),
-			}},
-		},
-	)
+	t.Parallel()
+
+	tests.TestGeneratePatches(t, func() mutation.GeneratePatches { return NewPatch() })
 }

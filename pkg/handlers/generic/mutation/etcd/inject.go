@@ -44,11 +44,11 @@ var (
 )
 
 func NewPatch() *etcdPatchHandler {
-	return newEtcdPatchHandler(variableName)
+	return newEtcdPatchHandler(VariableName)
 }
 
 func NewMetaPatch() *etcdPatchHandler {
-	return newEtcdPatchHandler(clusterconfig.MetaVariableName, variableName)
+	return newEtcdPatchHandler(clusterconfig.MetaVariableName, VariableName)
 }
 
 func newEtcdPatchHandler(

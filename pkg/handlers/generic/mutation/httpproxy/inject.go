@@ -53,13 +53,13 @@ var (
 func NewPatch(
 	cl ctrlclient.Reader,
 ) *httpProxyPatchHandler {
-	return newHTTPProxyPatchHandler(cl, variableName)
+	return newHTTPProxyPatchHandler(cl, VariableName)
 }
 
 func NewMetaPatch(
 	cl ctrlclient.Reader,
 ) *httpProxyPatchHandler {
-	return newHTTPProxyPatchHandler(cl, clusterconfig.MetaVariableName, variableName)
+	return newHTTPProxyPatchHandler(cl, clusterconfig.MetaVariableName, VariableName)
 }
 
 func newHTTPProxyPatchHandler(
