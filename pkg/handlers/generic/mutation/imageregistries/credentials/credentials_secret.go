@@ -11,22 +11,19 @@ import (
 	"strings"
 	"text/template"
 
-	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 )
 
 const (
-	secretKeyForStaticCredentialProviderConfig = "static-credential-provider"
+	secretKeyForStaticCredentialProviderConfig = "static-credential-provider" //nolint:gosec // Not a credential.
 )
 
-var (
-	//go:embed templates/static-credential-provider.json.gotmpl
-	staticCredentialProviderConfigPatch []byte
-)
+//go:embed templates/static-credential-provider.json.gotmpl
+var staticCredentialProviderConfigPatch []byte
 
 func generateCredentialsSecretFile(config providerConfig, ownerName string) []cabpkv1.File {
 	if config.isCredentialsEmpty() {
@@ -55,7 +52,9 @@ func generateCredentialsSecret(
 		return nil, nil
 	}
 
-	staticCredentialProviderSecretContents, err := kubeletStaticCredentialProviderSecretContents(config)
+	staticCredentialProviderSecretContents, err := kubeletStaticCredentialProviderSecretContents(
+		config,
+	)
 	if err != nil {
 		return nil, err
 	}

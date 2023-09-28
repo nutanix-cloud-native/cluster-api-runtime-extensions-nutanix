@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 )
 
 func Test_templateKubeletCredentialProviderConfig(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		config  providerConfig
@@ -93,6 +94,8 @@ providers:
 }
 
 func Test_templateDynamicCredentialProviderConfig(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		credentials providerConfig

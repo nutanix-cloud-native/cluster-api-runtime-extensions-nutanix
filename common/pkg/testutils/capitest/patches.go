@@ -61,7 +61,8 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 			if tt.ExpectedFailure {
 				expectedStatus = runtimehooksv1.ResponseStatusFailure
 			}
-			g.Expect(resp.Status).To(gomega.Equal(expectedStatus), fmt.Sprintf("Message: %s", resp.Message))
+			g.Expect(resp.Status).
+				To(gomega.Equal(expectedStatus), fmt.Sprintf("Message: %s", resp.Message))
 
 			if len(tt.ExpectedPatchMatchers) == 0 {
 				g.Expect(resp.Items).To(gomega.BeEmpty())

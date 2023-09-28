@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
@@ -59,7 +58,12 @@ func NewPatch(
 func NewMetaPatch(
 	cl ctrlclient.Client,
 ) *imageRegistriesPatchHandler {
-	return newImageRegistriesPatchHandler(cl, clusterconfig.MetaVariableName, imageregistries.VariableName, variableName)
+	return newImageRegistriesPatchHandler(
+		cl,
+		clusterconfig.MetaVariableName,
+		imageregistries.VariableName,
+		variableName,
+	)
 }
 
 func newImageRegistriesPatchHandler(
@@ -125,11 +129,12 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		credentials,
 	)
 
-	if err = patches.Generate(
+	if err := patches.Generate(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-			registryWithOptionalCredentials, generateErr :=
-				registryWithOptionalCredentialsFromImageRegistryCredentials(ctx, h.client, credentials, obj)
+			registryWithOptionalCredentials, generateErr := registryWithOptionalCredentialsFromImageRegistryCredentials(
+				ctx, h.client, credentials, obj,
+			)
 			if generateErr != nil {
 				return generateErr
 			}
@@ -163,7 +168,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 
 			initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
 			if initConfiguration == nil {
-				initConfiguration = &cabpkv1.InitConfiguration{}
+				initConfiguration = &bootstrapv1.InitConfiguration{}
 			}
 			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = initConfiguration
 			if initConfiguration.NodeRegistration.KubeletExtraArgs == nil {
@@ -173,25 +178,24 @@ func (h *imageRegistriesPatchHandler) Mutate(
 
 			joinConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration
 			if joinConfiguration == nil {
-				joinConfiguration = &cabpkv1.JoinConfiguration{}
+				joinConfiguration = &bootstrapv1.JoinConfiguration{}
 			}
 			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = joinConfiguration
 			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
 				joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
 			}
 			addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
-
-			fmt.Printf("%v", joinConfiguration)
 			return nil
 		}); err != nil {
 		return err
 	}
 
-	if err = patches.Generate(
+	if err := patches.Generate(
 		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
 		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
-			registryWithOptionalCredentials, generateErr :=
-				registryWithOptionalCredentialsFromImageRegistryCredentials(ctx, h.client, credentials, obj)
+			registryWithOptionalCredentials, generateErr := registryWithOptionalCredentialsFromImageRegistryCredentials(
+				ctx, h.client, credentials, obj,
+			)
 			if generateErr != nil {
 				return generateErr
 			}
@@ -219,7 +223,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 
 			joinConfiguration := obj.Spec.Template.Spec.JoinConfiguration
 			if joinConfiguration == nil {
-				joinConfiguration = &cabpkv1.JoinConfiguration{}
+				joinConfiguration = &bootstrapv1.JoinConfiguration{}
 			}
 			obj.Spec.Template.Spec.JoinConfiguration = joinConfiguration
 			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
@@ -293,18 +297,27 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 func generateFilesAndCommands(
 	registryWithOptionalCredentials providerConfig,
 	objName string,
-) ([]cabpkv1.File, []string, error) {
-
+) ([]bootstrapv1.File, []string, error) {
 	files, commands, err := templateFilesAndCommandsForInstallKubeletCredentialProviders()
 	if err != nil {
-		return nil, nil, fmt.Errorf("error generating insall files and commands for Image Registry Credentials variable: %w", err)
+		return nil, nil, fmt.Errorf(
+			"error generating insall files and commands for Image Registry Credentials variable: %w",
+			err,
+		)
 	}
-	imageCredentialProviderConfigFiles, err := templateFilesForImageCredentialProviderConfigs(registryWithOptionalCredentials)
+	imageCredentialProviderConfigFiles, err := templateFilesForImageCredentialProviderConfigs(
+		registryWithOptionalCredentials,
+	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error generating files for Image Registry Credentials variable: %w", err)
+		return nil, nil, fmt.Errorf(
+			"error generating files for Image Registry Credentials variable: %w",
+			err,
+		)
 	}
 	files = append(files, imageCredentialProviderConfigFiles...)
-	files = append(files, generateCredentialsSecretFile(registryWithOptionalCredentials, objName)...)
+	files = append(
+		files,
+		generateCredentialsSecretFile(registryWithOptionalCredentials, objName)...)
 
 	return files, commands, err
 }
@@ -316,9 +329,17 @@ func createSecretIfNeeded(
 	obj ctrlclient.Object,
 	clusterKey ctrlclient.ObjectKey,
 ) error {
-	credentialsSecret, err := generateCredentialsSecret(registryWithOptionalCredentials, clusterKey.Name, obj.GetName(), obj.GetNamespace())
+	credentialsSecret, err := generateCredentialsSecret(
+		registryWithOptionalCredentials,
+		clusterKey.Name,
+		obj.GetName(),
+		obj.GetNamespace(),
+	)
 	if err != nil {
-		return fmt.Errorf("error generating crdentials Secret for Image Registry Credentials variable: %w", err)
+		return fmt.Errorf(
+			"error generating crdentials Secret for Image Registry Credentials variable: %w",
+			err,
+		)
 	}
 	if credentialsSecret != nil {
 		if err := client.ServerSideApply(ctx, c, credentialsSecret); err != nil {

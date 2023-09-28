@@ -6,12 +6,10 @@ package credentials
 import (
 	"testing"
 
-	"k8s.io/apiserver/pkg/storage/names"
-
+	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/onsi/gomega"
+	"k8s.io/apiserver/pkg/storage/names"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -33,9 +31,17 @@ func TestGeneratePatches(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(
 				newTestSecret(validSecretName, request.Namespace),
 				newEmptySecret(
-					credentialSecretName(request.KubeadmControlPlaneTemplateRequestObjectName), request.Namespace),
+					credentialSecretName(
+						request.KubeadmControlPlaneTemplateRequestObjectName,
+					),
+					request.Namespace,
+				),
 				newEmptySecret(
-					credentialSecretName(request.KubeadmConfigTemplateRequestObjectName), request.Namespace),
+					credentialSecretName(
+						request.KubeadmConfigTemplateRequestObjectName,
+					),
+					request.Namespace,
+				),
 			).Build()
 			return NewPatch(fakeClient)
 		},

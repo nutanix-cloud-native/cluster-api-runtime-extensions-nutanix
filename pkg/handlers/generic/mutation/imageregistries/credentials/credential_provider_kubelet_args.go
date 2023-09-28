@@ -3,8 +3,6 @@
 
 package credentials
 
-const ()
-
 func addImageCredentialProviderArgs(args map[string]string) {
 	args["image-credential-provider-bin-dir"] = credentialProviderTargetDir
 	args["image-credential-provider-config"] = kubeletImageCredentialProviderConfigOnRemote

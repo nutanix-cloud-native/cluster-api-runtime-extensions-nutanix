@@ -25,23 +25,20 @@ const (
 	credentialProviderTargetDir = "/etc/kubernetes/image-credential-provider/"
 )
 
-var (
-	//go:embed templates/install-kubelet-credential-providers.sh.gotmpl
-	installKubeletCredentialProvidersScript []byte
-)
+//go:embed templates/install-kubelet-credential-providers.sh.gotmpl
+var installKubeletCredentialProvidersScript []byte
 
 func templateFilesAndCommandsForInstallKubeletCredentialProviders() ([]cabpkv1.File, []string, error) {
 	var files []cabpkv1.File
 	var commands []string
 
-	installKubeletCredentialProvidersScriptFile, installKubeletCredentialProvidersScriptCommand, err :=
-		templateInstallKubeletCredentialProviders()
+	installKCPScriptFile, installKCPScriptCommand, err := templateInstallKubeletCredentialProviders()
 	if err != nil {
 		return nil, nil, err
 	}
-	if installKubeletCredentialProvidersScriptFile != nil {
-		files = append(files, *installKubeletCredentialProvidersScriptFile)
-		commands = append(commands, installKubeletCredentialProvidersScriptCommand)
+	if installKCPScriptFile != nil {
+		files = append(files, *installKCPScriptFile)
+		commands = append(commands, installKCPScriptCommand)
 	}
 
 	return files, commands, nil

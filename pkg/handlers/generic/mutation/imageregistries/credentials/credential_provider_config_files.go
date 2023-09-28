@@ -40,9 +40,7 @@ var (
 	kubeletImageCredentialProviderConfigPatch []byte
 )
 
-var (
-	ErrCredentialsNotFound = errors.New("registry credentials not found")
-)
+var ErrCredentialsNotFound = errors.New("registry credentials not found")
 
 type providerConfig struct {
 	URL      string
@@ -66,7 +64,9 @@ func templateFilesForImageCredentialProviderConfigs(config providerConfig) ([]ca
 		files = append(files, *kubeletCredentialProviderConfigFile)
 	}
 
-	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(config)
+	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(
+		config,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -84,10 +84,7 @@ func templateKubeletCredentialProviderConfig() (*cabpkv1.File, error) {
 		return nil, fmt.Errorf("failed to parse go template: %w", err)
 	}
 
-	providerBinary, providerArgs, providerAPIVersion, err := kubeletCredentialProvider()
-	if err != nil {
-		return nil, err
-	}
+	providerBinary, providerArgs, providerAPIVersion := kubeletCredentialProvider()
 
 	templateInput := struct {
 		ProviderBinary     string
@@ -129,7 +126,9 @@ func templateDynamicCredentialProviderConfig(
 		return nil, ErrCredentialsNotFound
 	}
 
-	providerBinary, providerArgs, providerAPIVersion, err := dynamicCredentialProvider(registryHostWithPath)
+	providerBinary, providerArgs, providerAPIVersion, err := dynamicCredentialProvider(
+		registryHostWithPath,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -149,13 +148,10 @@ func templateDynamicCredentialProviderConfig(
 	return fileFromTemplate(t, templateInput, kubeletDynamicCredentialProviderConfigOnRemote)
 }
 
-func kubeletCredentialProvider() (
-	providerBinary string, providerArgs []string, providerAPIVersion string, err error,
-) {
+func kubeletCredentialProvider() (providerBinary string, providerArgs []string, providerAPIVersion string) {
 	return "dynamic-credential-provider",
 		[]string{"get-credentials", "-c", kubeletDynamicCredentialProviderConfigOnRemote},
-		credentialproviderv1beta1.SchemeGroupVersion.String(),
-		nil
+		credentialproviderv1beta1.SchemeGroupVersion.String()
 }
 
 func dynamicCredentialProvider(host string) (
@@ -187,7 +183,7 @@ func dynamicCredentialProvider(host string) (
 func fileFromTemplate(
 	t *template.Template,
 	templateInput any,
-	path string,
+	fPath string,
 ) (*cabpkv1.File, error) {
 	var b bytes.Buffer
 	err := t.Execute(&b, templateInput)
@@ -196,7 +192,7 @@ func fileFromTemplate(
 	}
 
 	return &cabpkv1.File{
-		Path:        path,
+		Path:        fPath,
 		Content:     b.String(),
 		Permissions: "0600",
 	}, nil

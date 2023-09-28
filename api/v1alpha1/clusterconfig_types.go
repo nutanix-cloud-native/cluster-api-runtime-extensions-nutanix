@@ -191,56 +191,25 @@ func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
 			Description: "Configuration for image registries.",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"credentials": imageRegistryCredentialsSchema,
+				"credentials": ImageRegistryCredentials{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
 }
 
-var (
-	imageRegistryCredentialsSchema = clusterv1.JSONSchemaProps{
-		Type:        "array",
-		UniqueItems: true,
-		Items:       &imageRegistryCredentialsResourceSchema,
-	}
-
-	imageRegistryCredentialsResourceSchema = clusterv1.JSONSchemaProps{
-		Description: "Image registry credentials to set up on all Nodes in the cluster. " +
-			"Enabling this will the Kubelets with https://kubernetes.io/docs/tasks/administer-cluster/kubelet-credential-provider/.",
-		Type: "object",
-		Properties: map[string]clusterv1.JSONSchemaProps{
-			"url": {
-				Description: "Registry URL.",
-				Type:        "string",
-			},
-			"secretRef": {
-				Description: "The Secret containing the registry credentials. " +
-					"The Secret should have keys 'username' and 'password'. " +
-					"This credentials Secret is not required for some registries, e.g. ECR.",
-				Type: "object",
-				Properties: map[string]clusterv1.JSONSchemaProps{
-					"name": {
-						Description: "The name of the Secret containing the registry credentials.",
-						Type:        "string",
-					},
-					"namespace": {
-						Description: "The namespace of the Secret containing the registry credentials. " +
-							"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate" +
-							" that reference this variable.",
-						Type: "string",
-					},
-				},
-			},
-		},
-		Required: []string{"url"},
-	}
-)
-
 type ImageRegistryCredentials []ImageRegistryCredentialsResource
 
 func (ImageRegistryCredentials) VariableSchema() clusterv1.VariableSchema {
+	resourceSchema := ImageRegistryCredentialsResource{}.VariableSchema().OpenAPIV3Schema
+
 	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: imageRegistryCredentialsSchema,
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Image registry credentials to set up on all Nodes in the cluster. " +
+				"Enabling this will configure the Kubelets with " +
+				"https://kubernetes.io/docs/tasks/administer-cluster/kubelet-credential-provider/.",
+			Type:  "array",
+			Items: &resourceSchema,
+		},
 	}
 }
 
@@ -258,7 +227,34 @@ type ImageRegistryCredentialsResource struct {
 
 func (ImageRegistryCredentialsResource) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: imageRegistryCredentialsResourceSchema,
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"url": {
+					Description: "Registry URL.",
+					Type:        "string",
+				},
+				"secretRef": {
+					Description: "The Secret containing the registry credentials. " +
+						"The Secret should have keys 'username' and 'password'. " +
+						"This credentials Secret is not required for some registries, e.g. ECR.",
+					Type: "object",
+					Properties: map[string]clusterv1.JSONSchemaProps{
+						"name": {
+							Description: "The name of the Secret containing the registry credentials.",
+							Type:        "string",
+						},
+						"namespace": {
+							Description: "The namespace of the Secret containing the registry credentials. " +
+								"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate" +
+								" that reference this variable.",
+							Type: "string",
+						},
+					},
+				},
+			},
+			Required: []string{"url"},
+		},
 	}
 }
 
