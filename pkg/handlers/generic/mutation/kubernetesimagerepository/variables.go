@@ -20,8 +20,8 @@ var (
 )
 
 const (
-	// variableName is the external patch variable name.
-	variableName = "kubernetesImageRepository"
+	// VariableName is the external patch variable name.
+	VariableName = "kubernetesImageRepository"
 
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "ImageRepositoryVars"
@@ -43,7 +43,7 @@ func (h *imageRepositoryVariableHandler) DiscoverVariables(
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     variableName,
+		Name:     VariableName,
 		Required: false,
 		Schema:   v1alpha1.KubernetesImageRepository("").VariableSchema(),
 	})

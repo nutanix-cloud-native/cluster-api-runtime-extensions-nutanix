@@ -8,99 +8,21 @@ import (
 
 	"github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apiserver/pkg/storage/names"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy/tests"
 )
 
 func TestGeneratePatches(t *testing.T) {
-	capitest.ValidateGeneratePatches(
+	tests.TestGeneratePatches(
 		t,
-		func() *httpProxyPatchHandler {
+		func() mutation.GeneratePatches {
 			fakeClient := fake.NewClientBuilder().Build()
 			return NewPatch(fakeClient)
 		},
-		capitest.PatchTestDef{
-			Name: "unset variable",
-		},
-		capitest.PatchTestDef{
-			Name: "http proxy set for KubeadmConfigTemplate default-worker",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					variableName,
-					v1alpha1.HTTPProxy{
-						HTTP:         "http://example.com",
-						HTTPS:        "https://example.com",
-						AdditionalNo: []string{"no-proxy.example.com"},
-					},
-				),
-				capitest.VariableWithValue(
-					"builtin",
-					map[string]any{
-						"machineDeployment": map[string]any{
-							"class": "default-worker",
-						},
-					},
-				),
-			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/files",
-				ValueMatcher: gomega.HaveLen(2),
-			}},
-		},
-		capitest.PatchTestDef{
-			Name: "http proxy set for KubeadmConfigTemplate generic worker",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					variableName,
-					v1alpha1.HTTPProxy{
-						HTTP:         "http://example.com",
-						HTTPS:        "https://example.com",
-						AdditionalNo: []string{"no-proxy.example.com"},
-					},
-				),
-				capitest.VariableWithValue(
-					"builtin",
-					map[string]any{
-						"machineDeployment": map[string]any{
-							"class": names.SimpleNameGenerator.GenerateName("worker-"),
-						},
-					},
-				),
-			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/files",
-				ValueMatcher: gomega.HaveLen(2),
-			}},
-		},
-		capitest.PatchTestDef{
-			Name: "http proxy set for KubeadmControlPlaneTemplate",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					variableName,
-					v1alpha1.HTTPProxy{
-						HTTP:         "http://example.com",
-						HTTPS:        "https://example.com",
-						AdditionalNo: []string{"no-proxy.example.com"},
-					},
-				),
-			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/kubeadmConfigSpec/files",
-				ValueMatcher: gomega.HaveLen(2),
-			}},
-		},
+		VariableName,
 	)
 }
 

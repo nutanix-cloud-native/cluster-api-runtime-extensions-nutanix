@@ -15,7 +15,7 @@ import (
 func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		variableName,
+		VariableName,
 		ptr.To(v1alpha1.KubernetesImageRepository("").VariableSchema()),
 		false,
 		NewVariable,
