@@ -41,8 +41,6 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 ) {
 	t.Helper()
 
-	t.Parallel()
-
 	for testIdx := range testDefs {
 		tt := testDefs[testIdx]
 
@@ -98,10 +96,27 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 	}
 }
 
-// v returns a runtimehooksv1.Variable with the passed name and value.
-func VariableWithValue(name string, value any) runtimehooksv1.Variable {
+// VariableWithValue returns a runtimehooksv1.Variable with the passed name and value.
+func VariableWithValue(
+	variableName string,
+	value any,
+	variablePath ...string,
+) runtimehooksv1.Variable {
+	if len(variablePath) > 0 {
+		rootValue := make(map[string]any, 1)
+		nestedValue := rootValue
+
+		for _, p := range variablePath[:len(variablePath)-1] {
+			nestedValue[p] = make(map[string]any, 1)
+			nestedValue = nestedValue[p].(map[string]any)
+		}
+
+		nestedValue[variablePath[len(variablePath)-1]] = value
+		value = rootValue
+	}
+
 	return runtimehooksv1.Variable{
-		Name:  name,
+		Name:  variableName,
 		Value: apiextensionsv1.JSON{Raw: serializer.ToJSON(value)},
 	}
 }

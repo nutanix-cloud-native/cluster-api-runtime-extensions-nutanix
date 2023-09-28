@@ -44,11 +44,11 @@ var (
 )
 
 func NewPatch() *imageRepositoryPatchHandler {
-	return newImageRepositoryPatchHandler(variableName)
+	return newImageRepositoryPatchHandler(VariableName)
 }
 
 func NewMetaPatch() *imageRepositoryPatchHandler {
-	return newImageRepositoryPatchHandler(clusterconfig.MetaVariableName, variableName)
+	return newImageRepositoryPatchHandler(clusterconfig.MetaVariableName, VariableName)
 }
 
 func newImageRepositoryPatchHandler(

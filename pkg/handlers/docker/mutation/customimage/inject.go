@@ -47,11 +47,11 @@ var (
 )
 
 func NewPatch() *customImagePatchHandler {
-	return newCustomImagePatchHandler(variableName)
+	return newCustomImagePatchHandler(VariableName)
 }
 
 func NewMetaPatch() *customImagePatchHandler {
-	return newCustomImagePatchHandler(clusterconfig.MetaVariableName, variableName)
+	return newCustomImagePatchHandler(clusterconfig.MetaVariableName, VariableName)
 }
 
 func newCustomImagePatchHandler(

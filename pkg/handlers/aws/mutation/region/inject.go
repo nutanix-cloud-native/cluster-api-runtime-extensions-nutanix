@@ -43,11 +43,11 @@ var (
 )
 
 func NewPatch() *awsRegionPatchHandler {
-	return newAWSRegionPatchHandler(variableName)
+	return newAWSRegionPatchHandler(VariableName)
 }
 
 func NewMetaPatch() *awsRegionPatchHandler {
-	return newAWSRegionPatchHandler(clusterconfig.MetaVariableName, variableName)
+	return newAWSRegionPatchHandler(clusterconfig.MetaVariableName, VariableName)
 }
 
 func newAWSRegionPatchHandler(

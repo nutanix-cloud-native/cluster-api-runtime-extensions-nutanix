@@ -52,7 +52,7 @@ var (
 func NewPatch(
 	cl ctrlclient.Client,
 ) *imageRegistriesPatchHandler {
-	return newImageRegistriesPatchHandler(cl, variableName)
+	return newImageRegistriesPatchHandler(cl, VariableName)
 }
 
 func NewMetaPatch(
@@ -62,7 +62,7 @@ func NewMetaPatch(
 		cl,
 		clusterconfig.MetaVariableName,
 		imageregistries.VariableName,
-		variableName,
+		VariableName,
 	)
 }
 

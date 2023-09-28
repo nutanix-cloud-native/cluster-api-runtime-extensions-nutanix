@@ -24,23 +24,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
 	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
+	awsmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation"
 	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation/customimage"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/cni/calico"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/nfd"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/servicelbgc"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy"
-	imageregistrycredentials "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
+	dockermutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle"
 )
 
 // Flags.
@@ -88,16 +78,14 @@ func main() {
 	pflag.CommandLine.StringVar(&mgrOptions.PprofBindAddress, "profiler-address", "",
 		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
 
-	calicoCNIConfig := &calico.CalicoCNIConfig{}
-	nfdConfig := &nfd.NFDConfig{}
-
 	runtimeWebhookServerOpts := server.NewServerOptions()
+
+	genericLifecycleHandlers := lifecycle.New()
 
 	// Initialize and parse command line flags.
 	initFlags(pflag.CommandLine)
 	runtimeWebhookServerOpts.AddFlags(pflag.CommandLine)
-	nfdConfig.AddFlags("nfd", pflag.CommandLine)
-	calicoCNIConfig.AddFlags("calicocni", pflag.CommandLine)
+	genericLifecycleHandlers.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
@@ -106,7 +94,7 @@ func main() {
 
 	// Validates logs flags using Kubernetes component-base machinery and applies them
 	if err := logsv1.ValidateAndApply(logOptions, nil); err != nil {
-		setupLog.Error(err, "unable to start extension")
+		setupLog.Error(err, "unable to apply logging configuration")
 		os.Exit(1)
 	}
 
@@ -121,61 +109,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Handlers for lifecycle hooks.
-	genericLifecycleHandlers := []handlers.Named{
-		calico.New(mgr.GetClient(), calicoCNIConfig),
-		nfd.New(mgr.GetClient(), nfdConfig),
-		servicelbgc.New(mgr.GetClient()),
-	}
-
-	// This genericMetaPatchHandlers combines all other patch and variable handlers under a single handler.
+	// awsMetaHandlers combines all AWS patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
-	genericMetaPatchHandlers := []mutation.MetaMutater{
-		auditpolicy.NewPatch(),
-		etcd.NewMetaPatch(),
-		extraapiservercertsans.NewMetaPatch(),
-		httpproxy.NewMetaPatch(mgr.GetClient()),
-		kubernetesimagerepository.NewMetaPatch(),
-		imageregistrycredentials.NewMetaPatch(mgr.GetClient()),
-	}
-
-	// awsMetaPatchHandlers combines all AWS patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	awsMetaPatchHandlers := append(
-		[]mutation.MetaMutater{
-			region.NewMetaPatch(),
-		},
-		genericMetaPatchHandlers...,
-	)
-
 	awsMetaHandlers := []handlers.Named{
 		awsclusterconfig.NewVariable(),
-		mutation.NewMetaGeneratePatchesHandler(
-			"awsClusterConfigPatch",
-			apis.CAPADecoder(),
-			awsMetaPatchHandlers...),
+		awsmutation.MetaPatchHandler(mgr),
 	}
 
-	// dockerMetaPatchHandlers combines all Docker patch and variable handlers under a single handler.
+	// dockerMetaHandlers combines all Docker patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
-	dockerMetaPatchHandlers := append(
-		[]mutation.MetaMutater{
-			customimage.NewMetaPatch(),
-		},
-		genericMetaPatchHandlers...,
-	)
-
 	dockerMetaHandlers := []handlers.Named{
 		dockerclusterconfig.NewVariable(),
-		mutation.NewMetaGeneratePatchesHandler(
-			"dockerClusterConfigPatch",
-			apis.CAPDDecoder(),
-			dockerMetaPatchHandlers...,
-		),
+		dockermutation.MetaPatchHandler(mgr),
 	}
 
 	var allHandlers []handlers.Named
-	allHandlers = append(allHandlers, genericLifecycleHandlers...)
+	allHandlers = append(allHandlers, genericLifecycleHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, awsMetaHandlers...)
 	allHandlers = append(allHandlers, dockerMetaHandlers...)
 
