@@ -399,7 +399,8 @@ func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
 						Properties: map[string]clusterv1.JSONSchemaProps{
 							"name": {
 								Type: "string",
-								Enum: variables.MustMarshalValuesToEnumJSON(supportedCSIProviders...),
+								Enum: variables.MustMarshalValuesToEnumJSON(
+									supportedCSIProviders...),
 							},
 						},
 					},

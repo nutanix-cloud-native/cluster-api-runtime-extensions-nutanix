@@ -1,3 +1,6 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package csi
 
 import (
@@ -67,7 +70,10 @@ func (a *CSIHandler) AfterControlPlaneInitialized(
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-	csiProviders, found, err := variables.Get[v1alpha1.CSIProviders](varMap, a.variableName, a.variablePath...)
+	csiProviders, found, err := variables.Get[v1alpha1.CSIProviders](
+		varMap,
+		a.variableName,
+		a.variablePath...)
 	if err != nil {
 		log.Error(
 			err,
@@ -105,7 +111,10 @@ func (a *CSIHandler) AfterControlPlaneInitialized(
 		if err != nil {
 			log.Error(
 				err,
-				fmt.Sprintf("failed to ensure %s csi driver installation manifests ConfigMap", provider.Name),
+				fmt.Sprintf(
+					"failed to ensure %s csi driver installation manifests ConfigMap",
+					provider.Name,
+				),
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		}
@@ -113,7 +122,10 @@ func (a *CSIHandler) AfterControlPlaneInitialized(
 		if err != nil {
 			log.Error(
 				err,
-				fmt.Sprintf("failed to ensure %s csi driver installation manifests ConfigMap", provider.Name),
+				fmt.Sprintf(
+					"failed to ensure %s csi driver installation manifests ConfigMap",
+					provider.Name,
+				),
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		}

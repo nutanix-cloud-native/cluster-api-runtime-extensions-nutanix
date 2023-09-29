@@ -1,3 +1,6 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package aws
 
 import (
@@ -49,7 +52,10 @@ func New(
 	}
 }
 
-func (a *AWSEBS) EnsureCSIConfigMapForCluster(ctx context.Context, cluster *clusterv1.Cluster) (*corev1.ConfigMap, error) {
+func (a *AWSEBS) EnsureCSIConfigMapForCluster(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+) (*corev1.ConfigMap, error) {
 	awsEBSCSIConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: a.config.defaultsNamespace,
@@ -98,7 +104,11 @@ func generateAWSEBSCSIConfigMap(
 	return namespacedTigeraConfigMap
 }
 
-func (a *AWSEBS) EnsureCSICRSForCluster(ctx context.Context, cluster *clusterv1.Cluster, cm *corev1.ConfigMap) error {
+func (a *AWSEBS) EnsureCSICRSForCluster(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	cm *corev1.ConfigMap,
+) error {
 	crs := &crsv1.ClusterResourceSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: crsv1.GroupVersion.String(),
