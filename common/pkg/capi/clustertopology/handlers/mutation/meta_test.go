@@ -30,7 +30,7 @@ type testHandler struct {
 	mutateControlPlane bool
 }
 
-var _ MetaMutater = &testHandler{}
+var _ MetaMutator = &testHandler{}
 
 func (h *testHandler) Mutate(
 	_ context.Context,
@@ -89,7 +89,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		mutaters         []MetaMutater
+		mutaters         []MetaMutator
 		expectedResponse *runtimehooksv1.GeneratePatchesResponse
 	}{{
 		name: "no handlers",
@@ -109,7 +109,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 		},
 	}, {
 		name: "single success handler",
-		mutaters: []MetaMutater{
+		mutaters: []MetaMutator{
 			&testHandler{},
 		},
 		expectedResponse: &runtimehooksv1.GeneratePatchesResponse{
@@ -134,7 +134,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 		},
 	}, {
 		name: "single failure handler",
-		mutaters: []MetaMutater{
+		mutaters: []MetaMutator{
 			&testHandler{
 				returnErr: true,
 			},
@@ -147,7 +147,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 		},
 	}, {
 		name: "multiple success handlers",
-		mutaters: []MetaMutater{
+		mutaters: []MetaMutator{
 			&testHandler{},
 			&testHandler{},
 			&testHandler{mutateControlPlane: true},
@@ -184,7 +184,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 		},
 	}, {
 		name: "success handler followed by failure handler",
-		mutaters: []MetaMutater{
+		mutaters: []MetaMutator{
 			&testHandler{},
 			&testHandler{
 				returnErr: true,
@@ -198,7 +198,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 		},
 	}, {
 		name: "failure handler followed by success handler",
-		mutaters: []MetaMutater{
+		mutaters: []MetaMutator{
 			&testHandler{
 				returnErr: true,
 			},

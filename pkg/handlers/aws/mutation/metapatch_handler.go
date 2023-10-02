@@ -16,10 +16,10 @@ import (
 // MetaPatchHandler returns a meta patch handler for mutating CAPD clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
-		[]mutation.MetaMutater{
+		[]mutation.MetaMutator{
 			region.NewMetaPatch(),
 		},
-		genericmutation.MetaMutaters(mgr)...,
+		genericmutation.MetaMutators(mgr)...,
 	)
 
 	return mutation.NewMetaGeneratePatchesHandler(

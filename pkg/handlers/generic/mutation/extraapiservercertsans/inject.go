@@ -32,7 +32,6 @@ const (
 )
 
 type extraAPIServerCertSANsPatchHandler struct {
-	decoder           runtime.Decoder
 	variableName      string
 	variableFieldPath []string
 }
@@ -40,7 +39,7 @@ type extraAPIServerCertSANsPatchHandler struct {
 var (
 	_ commonhandlers.Named     = &extraAPIServerCertSANsPatchHandler{}
 	_ mutation.GeneratePatches = &extraAPIServerCertSANsPatchHandler{}
-	_ mutation.MetaMutater     = &extraAPIServerCertSANsPatchHandler{}
+	_ mutation.MetaMutator     = &extraAPIServerCertSANsPatchHandler{}
 )
 
 func NewPatch() *extraAPIServerCertSANsPatchHandler {
@@ -56,7 +55,6 @@ func newExtraAPIServerCertSANsPatchHandler(
 	variableFieldPath ...string,
 ) *extraAPIServerCertSANsPatchHandler {
 	return &extraAPIServerCertSANsPatchHandler{
-		decoder:           apis.CAPIDecoder(),
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -124,7 +122,7 @@ func (h *extraAPIServerCertSANsPatchHandler) GeneratePatches(
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		h.decoder,
+		apis.CAPIDecoder(),
 		req,
 		resp,
 		func(

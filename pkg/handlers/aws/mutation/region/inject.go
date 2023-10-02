@@ -31,7 +31,6 @@ const (
 )
 
 type awsRegionPatchHandler struct {
-	decoder           runtime.Decoder
 	variableName      string
 	variableFieldPath []string
 }
@@ -39,7 +38,7 @@ type awsRegionPatchHandler struct {
 var (
 	_ commonhandlers.Named     = &awsRegionPatchHandler{}
 	_ mutation.GeneratePatches = &awsRegionPatchHandler{}
-	_ mutation.MetaMutater     = &awsRegionPatchHandler{}
+	_ mutation.MetaMutator     = &awsRegionPatchHandler{}
 )
 
 func NewPatch() *awsRegionPatchHandler {
@@ -55,7 +54,6 @@ func newAWSRegionPatchHandler(
 	variableFieldPath ...string,
 ) *awsRegionPatchHandler {
 	return &awsRegionPatchHandler{
-		decoder:           apis.CAPADecoder(),
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -124,7 +122,7 @@ func (h *awsRegionPatchHandler) GeneratePatches(
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		h.decoder,
+		apis.CAPADecoder(),
 		req,
 		resp,
 		func(

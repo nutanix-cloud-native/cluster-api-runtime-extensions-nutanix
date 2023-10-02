@@ -11,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -20,6 +19,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
@@ -36,8 +36,7 @@ const (
 )
 
 type imageRegistriesPatchHandler struct {
-	decoder runtime.Decoder
-	client  ctrlclient.Client
+	client ctrlclient.Client
 
 	variableName      string
 	variableFieldPath []string
@@ -46,7 +45,7 @@ type imageRegistriesPatchHandler struct {
 var (
 	_ commonhandlers.Named     = &imageRegistriesPatchHandler{}
 	_ mutation.GeneratePatches = &imageRegistriesPatchHandler{}
-	_ mutation.MetaMutater     = &imageRegistriesPatchHandler{}
+	_ mutation.MetaMutator     = &imageRegistriesPatchHandler{}
 )
 
 func NewPatch(
@@ -75,10 +74,6 @@ func newImageRegistriesPatchHandler(
 	_ = bootstrapv1.AddToScheme(scheme)
 	_ = controlplanev1.AddToScheme(scheme)
 	return &imageRegistriesPatchHandler{
-		decoder: serializer.NewCodecFactory(scheme).UniversalDecoder(
-			controlplanev1.GroupVersion,
-			bootstrapv1.GroupVersion,
-		),
 		client:            cl,
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
@@ -248,7 +243,7 @@ func (h *imageRegistriesPatchHandler) GeneratePatches(
 
 	topologymutation.WalkTemplates(
 		ctx,
-		h.decoder,
+		apis.CAPIDecoder(),
 		req,
 		resp,
 		func(

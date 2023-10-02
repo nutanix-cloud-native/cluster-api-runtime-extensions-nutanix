@@ -32,7 +32,6 @@ const (
 )
 
 type imageRepositoryPatchHandler struct {
-	decoder           runtime.Decoder
 	variableName      string
 	variableFieldPath []string
 }
@@ -40,7 +39,7 @@ type imageRepositoryPatchHandler struct {
 var (
 	_ commonhandlers.Named     = &imageRepositoryPatchHandler{}
 	_ mutation.GeneratePatches = &imageRepositoryPatchHandler{}
-	_ mutation.MetaMutater     = &imageRepositoryPatchHandler{}
+	_ mutation.MetaMutator     = &imageRepositoryPatchHandler{}
 )
 
 func NewPatch() *imageRepositoryPatchHandler {
@@ -56,7 +55,6 @@ func newImageRepositoryPatchHandler(
 	variableFieldPath ...string,
 ) *imageRepositoryPatchHandler {
 	return &imageRepositoryPatchHandler{
-		decoder:           apis.CAPIDecoder(),
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -124,7 +122,7 @@ func (h *imageRepositoryPatchHandler) GeneratePatches(
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		h.decoder,
+		apis.CAPIDecoder(),
 		req,
 		resp,
 		func(

@@ -32,7 +32,6 @@ const (
 )
 
 type etcdPatchHandler struct {
-	decoder           runtime.Decoder
 	variableName      string
 	variableFieldPath []string
 }
@@ -40,7 +39,7 @@ type etcdPatchHandler struct {
 var (
 	_ commonhandlers.Named     = &etcdPatchHandler{}
 	_ mutation.GeneratePatches = &etcdPatchHandler{}
-	_ mutation.MetaMutater     = &etcdPatchHandler{}
+	_ mutation.MetaMutator     = &etcdPatchHandler{}
 )
 
 func NewPatch() *etcdPatchHandler {
@@ -56,7 +55,6 @@ func newEtcdPatchHandler(
 	variableFieldPath ...string,
 ) *etcdPatchHandler {
 	return &etcdPatchHandler{
-		decoder:           apis.CAPIDecoder(),
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -134,7 +132,7 @@ func (h *etcdPatchHandler) GeneratePatches(
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		h.decoder,
+		apis.CAPIDecoder(),
 		req,
 		resp,
 		func(

@@ -38,8 +38,7 @@ const (
 )
 
 type httpProxyPatchHandler struct {
-	decoder runtime.Decoder
-	client  ctrlclient.Reader
+	client ctrlclient.Reader
 
 	variableName      string
 	variableFieldPath []string
@@ -68,7 +67,6 @@ func newHTTPProxyPatchHandler(
 	variableFieldPath ...string,
 ) *httpProxyPatchHandler {
 	return &httpProxyPatchHandler{
-		decoder:           apis.CAPIDecoder(),
 		client:            cl,
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
@@ -159,7 +157,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 
 	topologymutation.WalkTemplates(
 		ctx,
-		h.decoder,
+		apis.CAPIDecoder(),
 		req,
 		resp,
 		func(
