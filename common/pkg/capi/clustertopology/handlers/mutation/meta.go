@@ -15,7 +15,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 )
 
-type MetaMutater interface {
+type MetaMutator interface {
 	Mutate(
 		ctx context.Context,
 		obj runtime.Object,
@@ -28,18 +28,18 @@ type MetaMutater interface {
 type metaGeneratePatches struct {
 	name     string
 	decoder  runtime.Decoder
-	mutaters []MetaMutater
+	mutators []MetaMutator
 }
 
 func NewMetaGeneratePatchesHandler(
 	name string,
 	decoder runtime.Decoder,
-	mutators ...MetaMutater,
+	mutators ...MetaMutator,
 ) handlers.Named {
 	return metaGeneratePatches{
 		name:     name,
 		decoder:  decoder,
-		mutaters: mutators,
+		mutators: mutators,
 	}
 }
 
@@ -65,7 +65,7 @@ func (mgp metaGeneratePatches) GeneratePatches(
 			vars map[string]apiextensionsv1.JSON,
 			holderRef runtimehooksv1.HolderReference,
 		) error {
-			for _, h := range mgp.mutaters {
+			for _, h := range mgp.mutators {
 				if err := h.Mutate(ctx, obj, vars, holderRef, clusterKey); err != nil {
 					return err
 				}

@@ -15,9 +15,9 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
 )
 
-// MetaMutaters returns all generic patch handlers.
-func MetaMutaters(mgr manager.Manager) []mutation.MetaMutater {
-	return []mutation.MetaMutater{
+// MetaMutators returns all generic patch handlers.
+func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
+	return []mutation.MetaMutator{
 		auditpolicy.NewPatch(),
 		etcd.NewMetaPatch(),
 		extraapiservercertsans.NewMetaPatch(),

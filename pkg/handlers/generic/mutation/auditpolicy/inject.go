@@ -28,14 +28,12 @@ const (
 	HandlerNamePatch = "AuditPolicyPatch"
 )
 
-type auditPolicyPatchHandler struct {
-	decoder runtime.Decoder
-}
+type auditPolicyPatchHandler struct{}
 
 var (
 	_ handlers.Named           = &auditPolicyPatchHandler{}
 	_ mutation.GeneratePatches = &auditPolicyPatchHandler{}
-	_ mutation.MetaMutater     = &auditPolicyPatchHandler{}
+	_ mutation.MetaMutator     = &auditPolicyPatchHandler{}
 
 	//go:embed embedded/apiserver-audit-policy.yaml
 	auditPolicy string
@@ -44,9 +42,7 @@ var (
 const auditPolicyPath = "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml"
 
 func NewPatch() *auditPolicyPatchHandler {
-	return &auditPolicyPatchHandler{
-		decoder: apis.CAPIDecoder(),
-	}
+	return &auditPolicyPatchHandler{}
 }
 
 func (h *auditPolicyPatchHandler) Name() string {
@@ -126,7 +122,7 @@ func (h *auditPolicyPatchHandler) GeneratePatches(
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		h.decoder,
+		apis.CAPIDecoder(),
 		req,
 		resp,
 		func(
