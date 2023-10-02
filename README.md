@@ -23,12 +23,6 @@ example), run:
 make SKIP_BUILD=true dev.run-on-kind
 ```
 
-To create the ClusterClass and it's Templates with this runtime extension enabled, run:
-
-```shell
-kubectl apply --server-side -f examples/capi-quick-start/docker-cluster-class.yaml
-```
-
 If creating an AWS cluster using the example files, you will also need to create a secret with your AWS credentials:
 
 ```shell

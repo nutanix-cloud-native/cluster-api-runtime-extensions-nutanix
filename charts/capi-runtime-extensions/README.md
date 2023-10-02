@@ -28,6 +28,7 @@ A Helm chart for capi-runtime-extensions
 | certificates.issuer.kind | string | `"Issuer"` |  |
 | certificates.issuer.name | string | `""` |  |
 | certificates.issuer.selfSigned | bool | `true` |  |
+| deployDefaultClusterClasses | bool | `true` |  |
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
 | hooks.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.content | string | `""` |  |
