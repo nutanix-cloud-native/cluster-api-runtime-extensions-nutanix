@@ -25,9 +25,14 @@ type AWSClusterConfig struct {
 // AWSClusterConfigSpec defines the desired state of AWSClusterConfig.
 type AWSClusterConfigSpec struct {
 	// +optional
-	Region *Region `json:"region,omitempty"`
+	AWS *AWSSpec `json:"aws,omitempty"`
 
 	GenericClusterConfig `json:",inline"`
+}
+
+type AWSSpec struct {
+	// +optional
+	Region *Region `json:"region,omitempty"`
 }
 
 func (AWSClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
@@ -36,16 +41,28 @@ func (AWSClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 	maps.Copy(
 		clusterConfigProps,
 		map[string]clusterv1.JSONSchemaProps{
-			"region": Region("").VariableSchema().OpenAPIV3Schema,
+			"aws": AWSSpec{}.VariableSchema().OpenAPIV3Schema,
 		},
 	)
 
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "AWS cluster configuration",
+			Description: "Cluster configuration",
 			Type:        "object",
 			Properties:  clusterConfigProps,
-			Required:    []string{"region"},
+		},
+	}
+}
+
+func (AWSSpec) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "AWS cluster configuration",
+			Type:        "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"region": Region("").VariableSchema().OpenAPIV3Schema,
+			},
+			Required: []string{"region"},
 		},
 	}
 }
