@@ -31,7 +31,6 @@ import (
 	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
 	dockermutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle"
-	awsebs "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/csi/aws-ebs"
 )
 
 // Flags.
@@ -78,8 +77,6 @@ func main() {
 
 	pflag.CommandLine.StringVar(&mgrOptions.PprofBindAddress, "profiler-address", "",
 		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
-
-	ebsConfig := &awsebs.AWSEBSConfig{}
 
 	runtimeWebhookServerOpts := server.NewServerOptions()
 
