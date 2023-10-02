@@ -1,0 +1,8 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: NA
+spec:
+  template:
+    spec:
+      priorityClassName: system-node-critical
