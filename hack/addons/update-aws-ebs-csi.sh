@@ -88,7 +88,7 @@ rm "${KUSTOMIZE_BASE_DIR}"/"${FILENAME}"
 
 readonly OUTPUT_FILE=aws-ebs-configmap
 
-kubectl create configmap aws-ebs-csi-$\{CLUSTER_NAME\} --dry-run=client --output yaml \
+kubectl create configmap aws-ebs-csi-crs-cm --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/${FILENAME}" \
   >"${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/csi/aws-ebs/${OUTPUT_FILE}.yaml"
 

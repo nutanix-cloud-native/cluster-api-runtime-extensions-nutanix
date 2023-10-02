@@ -2047,4 +2047,4 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: aws-ebs-csi-${CLUSTER_NAME}
+  name: aws-ebs-csi-crs-cm
