@@ -32,6 +32,10 @@
         }
       }
     },
+    "deployDefaultClusterClasses": {
+      "type": "boolean",
+      "default": true
+    },
     "deployment": {
       "type": "object",
       "properties": {
@@ -44,113 +48,6 @@
     "env": {
       "type": "object",
       "additionalProperties": { "type": "string" }
-    },
-    "handlers": {
-      "type": "object",
-      "properties": {
-        "CalicoCNI": {
-          "type": "object",
-          "properties": {
-            "defaultInstallationConfigMaps": {
-              "type": "object",
-              "properties": {
-                "DockerCluster": {
-                  "type": "object",
-                  "properties": {
-                    "configMap": {
-                      "type": "object",
-                      "properties": {
-                        "content": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        }
-                      },
-                      "required": ["name"]
-                    },
-                    "create": {
-                      "type": "boolean",
-                      "default": true
-                    }
-                  }
-                }
-              }
-            },
-            "defaultPodSubnet": {
-              "type": "string",
-              "default": "192.168.0.0/16"
-            },
-            "defaultTigeraOperatorConfigMap": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                }
-              },
-              "required": ["name"]
-            },
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        },
-        "ServiceLoadBalancerGC": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        },
-        "HTTPProxyVars": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        },
-        "HTTPProxyPatch": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        },
-        "AuditPolicyPatch": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        },
-        "APIServerCertSANsVars": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        },
-        "APIServerCertSANsPatch": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        }
-      }
     },
     "image": {
       "type": "object",

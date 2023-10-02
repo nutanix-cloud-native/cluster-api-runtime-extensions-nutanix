@@ -13,6 +13,8 @@ hooks:
           name: calico-cni-installation-dockercluster
           content: ""
 
+deployDefaultClusterClasses: true
+
 deployment:
   replicas: 1
 
