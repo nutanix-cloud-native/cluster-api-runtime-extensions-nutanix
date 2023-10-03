@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 export CALICO_VERSION := v3.26.1
-export NODE_FEATURE_VERSION := 0.14.1
+export NODE_FEATURE_DISCOVERY_VERSION := 0.14.1
+
+.PHONY: addons.sync
+addons.sync: $(addprefix update-addon.,calico nfd)
 
 .PHONY: update-addon.calico
 update-addon.calico: ; $(info $(M) updating calico manifests)
