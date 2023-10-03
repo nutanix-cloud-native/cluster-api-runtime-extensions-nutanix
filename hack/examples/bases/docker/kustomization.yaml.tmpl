@@ -30,7 +30,8 @@ patches:
       path: "/spec/topology/variables"
       value:
         - name: "clusterConfig"
-          value: {}
+          value:
+            docker: {}
 - target:
     group: cluster.x-k8s.io
     kind: ClusterClass

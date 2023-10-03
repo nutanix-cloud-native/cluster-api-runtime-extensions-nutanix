@@ -17,12 +17,12 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.AWSClusterConfigSpec{}.VariableSchema()),
+		ptr.To(v1alpha1.ClusterConfigSpec{AWS: &v1alpha1.AWSSpec{}}.VariableSchema()),
 		true,
 		NewVariable,
 		capitest.VariableTestDef{
 			Name: "specified region",
-			Vals: v1alpha1.AWSClusterConfigSpec{
+			Vals: v1alpha1.ClusterConfigSpec{
 				AWS: &v1alpha1.AWSSpec{
 					Region: ptr.To(v1alpha1.Region("a-specified-region")),
 				},
