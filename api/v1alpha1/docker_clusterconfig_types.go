@@ -22,9 +22,14 @@ type DockerClusterConfig struct {
 	Spec DockerClusterConfigSpec `json:"spec,omitempty"`
 }
 
+type DockerSpec struct {
+	GenericClusterConfig `json:",inline"`
+}
+
 // DockerClusterConfigSpec defines the desired state of DockerClusterConfig.
 type DockerClusterConfigSpec struct {
-	GenericClusterConfig `json:",inline"`
+	// +optional
+	Docker *DockerSpec `json:"docker,omitempty"`
 
 	//+optional
 	CustomImage *OCIImage `json:"customImage,omitempty"`
@@ -36,15 +41,27 @@ func (DockerClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
 	maps.Copy(
 		clusterConfigProps,
 		map[string]clusterv1.JSONSchemaProps{
-			"customImage": OCIImage("").VariableSchema().OpenAPIV3Schema,
+			"docker": DockerSpec{}.VariableSchema().OpenAPIV3Schema,
 		},
 	)
 
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Docker cluster configuration",
+			Description: "Cluster configuration",
 			Type:        "object",
 			Properties:  clusterConfigProps,
+		},
+	}
+}
+
+func (DockerSpec) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Docker cluster configuration",
+			Type:        "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"customImage": OCIImage("").VariableSchema().OpenAPIV3Schema,
+			},
 		},
 	}
 }

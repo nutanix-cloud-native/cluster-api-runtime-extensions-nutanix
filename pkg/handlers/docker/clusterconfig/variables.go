@@ -23,6 +23,9 @@ var (
 const (
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "DockerClusterConfigVars"
+
+	// DockerVariableName is the Docker config patch variable name.
+	DockerVariableName = "docker"
 )
 
 func NewVariable() *dockerClusterConfigVariableHandler {

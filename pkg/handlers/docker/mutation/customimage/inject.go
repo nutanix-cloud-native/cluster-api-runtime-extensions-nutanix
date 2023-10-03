@@ -24,6 +24,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
+	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
@@ -50,7 +51,11 @@ func NewPatch() *customImagePatchHandler {
 }
 
 func NewMetaPatch() *customImagePatchHandler {
-	return newCustomImagePatchHandler(clusterconfig.MetaVariableName, VariableName)
+	return newCustomImagePatchHandler(
+		clusterconfig.MetaVariableName,
+		dockerclusterconfig.DockerVariableName,
+		VariableName,
+	)
 }
 
 func newCustomImagePatchHandler(
