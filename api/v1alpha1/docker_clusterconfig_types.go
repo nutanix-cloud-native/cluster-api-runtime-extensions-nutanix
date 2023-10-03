@@ -10,7 +10,8 @@ import (
 )
 
 type DockerSpec struct {
-	GenericClusterConfig `json:",inline"`
+	//+optional
+	CustomImage *OCIImage `json:"customImage,omitempty"`
 }
 
 func (DockerSpec) VariableSchema() clusterv1.VariableSchema {
