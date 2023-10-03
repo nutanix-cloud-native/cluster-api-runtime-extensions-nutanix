@@ -32,7 +32,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
 func MetaWorkerPatchHandler() handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
-		customimage.NewMetaWorkerPatch(),
+		customimage.NewWorkerMetaPatch(),
 	}
 
 	return mutation.NewMetaGeneratePatchesHandler(

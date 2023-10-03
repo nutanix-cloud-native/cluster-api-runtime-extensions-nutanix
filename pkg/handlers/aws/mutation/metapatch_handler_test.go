@@ -14,8 +14,11 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	calicotests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile"
+	iaminstanceprofiletests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
 	regiontests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region/tests"
+	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	auditpolicytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/cni"
@@ -30,11 +33,18 @@ import (
 	imageregistrycredentialstests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
 	kubernetesimagerepositorytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 )
 
 func metaPatchGeneratorFunc(mgr manager.Manager) func() mutation.GeneratePatches {
 	return func() mutation.GeneratePatches {
 		return MetaPatchHandler(mgr).(mutation.GeneratePatches)
+	}
+}
+
+func workerPatchGeneratorFunc() func() mutation.GeneratePatches {
+	return func() mutation.GeneratePatches {
+		return MetaWorkerPatchHandler().(mutation.GeneratePatches)
 	}
 }
 
@@ -56,6 +66,23 @@ func TestGeneratePatches(t *testing.T) {
 		clusterconfig.MetaVariableName,
 		awsclusterconfig.AWSVariableName,
 		region.VariableName,
+	)
+
+	iaminstanceprofiletests.TestControlPlaneGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		clusterconfig.MetaControlPlaneConfigName,
+		awsclusterconfig.AWSVariableName,
+		iaminstanceprofile.VariableName,
+	)
+
+	iaminstanceprofiletests.TestWorkerGeneratePatches(
+		t,
+		workerPatchGeneratorFunc(),
+		workerconfig.MetaVariableName,
+		awsworkerconfig.AWSVariableName,
+		iaminstanceprofile.VariableName,
 	)
 
 	calicotests.TestGeneratePatches(

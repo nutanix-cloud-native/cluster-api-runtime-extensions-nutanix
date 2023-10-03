@@ -14,7 +14,9 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/serializer"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 const (
@@ -136,6 +138,98 @@ func NewAWSClusterTemplateRequestItem(
 		&runtimehooksv1.HolderReference{
 			Kind:      "Cluster",
 			FieldPath: "spec.infrastructureRef",
+		},
+		uid,
+	)
+}
+
+func NewCPDockerMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		&capdv1.DockerMachineTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: capdv1.GroupVersion.String(),
+				Kind:       "DockerMachineTemplate",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "docker-machine-template",
+				Namespace: "docker-cluster",
+			},
+		},
+		&runtimehooksv1.HolderReference{
+			APIVersion: controlplanev1.GroupVersion.String(),
+			Kind:       "KubeadmControlPlane",
+			FieldPath:  "spec.machineTemplate.infrastructureRef",
+		},
+		uid,
+	)
+}
+
+func NewWorkerDockerMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		&capdv1.DockerMachineTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: capdv1.GroupVersion.String(),
+				Kind:       "DockerMachineTemplate",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "docker-machine-template",
+				Namespace: "docker-cluster",
+			},
+		},
+		&runtimehooksv1.HolderReference{
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       "MachineDeployment",
+			FieldPath:  "spec.template.spec.infrastructureRef",
+		},
+		uid,
+	)
+}
+
+func NewCPAWSMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		&capav1.AWSMachineTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: capav1.GroupVersion.String(),
+				Kind:       "AWSMachineTemplate",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "aws-machine-template",
+				Namespace: "aws-cluster",
+			},
+		},
+		&runtimehooksv1.HolderReference{
+			APIVersion: controlplanev1.GroupVersion.String(),
+			Kind:       "KubeadmControlPlane",
+			FieldPath:  "spec.machineTemplate.infrastructureRef",
+		},
+		uid,
+	)
+}
+
+func NewWorkerAWSMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		&capav1.AWSMachineTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: capav1.GroupVersion.String(),
+				Kind:       "AWSMachineTemplate",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "aws-machine-template",
+				Namespace: "aws-cluster",
+			},
+		},
+		&runtimehooksv1.HolderReference{
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       "MachineDeployment",
+			FieldPath:  "spec.template.spec.infrastructureRef",
 		},
 		uid,
 	)

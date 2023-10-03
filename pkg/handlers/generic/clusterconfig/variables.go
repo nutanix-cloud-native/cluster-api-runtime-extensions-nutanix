@@ -23,9 +23,6 @@ const (
 	// MetaVariableName is the meta cluster config patch variable name.
 	MetaVariableName = "clusterConfig"
 
-	// MetaWorkerConfigName is the meta worker config patch variable name.
-	MetaWorkerConfigName = "workers"
-
 	// MetaControlPlaneConfigName is the meta control-plane config patch variable name.
 	MetaControlPlaneConfigName = "controlPlane"
 
