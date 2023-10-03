@@ -49,6 +49,7 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		metaPatchGeneratorFunc(mgr),
 		"clusterConfig",
+		"docker",
 		customimage.VariableName,
 	)
 
