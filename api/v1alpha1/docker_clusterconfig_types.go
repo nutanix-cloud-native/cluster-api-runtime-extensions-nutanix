@@ -19,7 +19,7 @@ type DockerClusterConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec AWSClusterConfigSpec `json:"spec,omitempty"`
+	Spec DockerClusterConfigSpec `json:"spec,omitempty"`
 }
 
 // DockerClusterConfigSpec defines the desired state of DockerClusterConfig.
