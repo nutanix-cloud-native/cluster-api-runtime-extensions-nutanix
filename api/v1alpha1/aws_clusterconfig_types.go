@@ -4,6 +4,8 @@
 package v1alpha1
 
 import (
+	"maps"
+
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
@@ -12,10 +14,12 @@ import (
 type AWSSpec struct {
 	// +optional
 	Region *Region `json:"region,omitempty"`
+
+	AWSWorkerSpec `json:",inline"`
 }
 
 func (AWSSpec) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
+	schema := clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "AWS cluster configuration",
 			Type:        "object",
@@ -25,6 +29,13 @@ func (AWSSpec) VariableSchema() clusterv1.VariableSchema {
 			Required: []string{"region"},
 		},
 	}
+
+	maps.Copy(
+		schema.OpenAPIV3Schema.Properties,
+		AWSWorkerSpecProperties,
+	)
+
+	return schema
 }
 
 type Region string

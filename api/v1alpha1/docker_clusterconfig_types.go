@@ -4,18 +4,17 @@
 package v1alpha1
 
 import (
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"maps"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/openapi/patterns"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 type DockerSpec struct {
-	//+optional
-	CustomImage *OCIImage `json:"customImage,omitempty"`
+	DockerWorkerSpec `json:",inline"`
 }
 
 func (DockerSpec) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
+	schema := clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Docker cluster configuration",
 			Type:        "object",
@@ -24,16 +23,11 @@ func (DockerSpec) VariableSchema() clusterv1.VariableSchema {
 			},
 		},
 	}
-}
 
-type OCIImage string
+	maps.Copy(
+		schema.OpenAPIV3Schema.Properties,
+		DockerWorkerSpecProperties,
+	)
 
-func (OCIImage) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Custom OCI image for control plane and worker nodes.",
-			Type:        "string",
-			Pattern:     patterns.Anchored(patterns.ImageReference),
-		},
-	}
+	return schema
 }

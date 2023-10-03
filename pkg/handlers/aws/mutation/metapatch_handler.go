@@ -30,3 +30,14 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 		patchHandlers...,
 	)
 }
+
+// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
+func MetaWorkerPatchHandler() handlers.Named {
+	patchHandlers := []mutation.MetaMutator{}
+
+	return mutation.NewMetaGeneratePatchesHandler(
+		"awsWorkerConfigPatch",
+		apis.CAPADecoder(),
+		patchHandlers...,
+	)
+}

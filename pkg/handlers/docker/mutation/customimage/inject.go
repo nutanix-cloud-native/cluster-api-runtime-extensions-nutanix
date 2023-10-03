@@ -25,7 +25,9 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
+	dockerworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 )
 
 const (
@@ -54,6 +56,14 @@ func NewMetaPatch() *customImagePatchHandler {
 	return newCustomImagePatchHandler(
 		clusterconfig.MetaVariableName,
 		dockerclusterconfig.DockerVariableName,
+		VariableName,
+	)
+}
+
+func NewMetaWorkerPatch() *customImagePatchHandler {
+	return newCustomImagePatchHandler(
+		workerconfig.MetaVariableName,
+		dockerworkerconfig.DockerVariableName,
 		VariableName,
 	)
 }
@@ -147,6 +157,10 @@ func (h *customImagePatchHandler) Mutate(
 
 	if err != nil {
 		return err
+	}
+
+	if h.variableName == workerconfig.MetaVariableName {
+		return nil
 	}
 
 	return patches.Generate(

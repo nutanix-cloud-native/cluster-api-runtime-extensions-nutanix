@@ -25,6 +25,10 @@ spec:
         discoverVariablesExtension: dockerclusterconfigvars.capi-runtime-extensions
         generateExtension: dockerclusterconfigpatch.capi-runtime-extensions
       name: cluster-config
+    - external:
+        discoverVariablesExtension: dockerworkerconfigvars.capi-runtime-extensions
+        generateExtension: dockerworkerconfigpatch.capi-runtime-extensions
+      name: worker-config
   workers:
     machineDeployments:
       - class: default-worker
