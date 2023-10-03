@@ -14,34 +14,41 @@ import (
 	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 )
 
-func CAPIScheme() *runtime.Scheme {
+func NewScheme(registerFuncs ...func(*runtime.Scheme) error) *runtime.Scheme {
+	sb := runtime.NewSchemeBuilder(registerFuncs...)
 	scheme := runtime.NewScheme()
-
-	utilruntime.Must(bootstrapv1.AddToScheme(scheme))
-	utilruntime.Must(controlplanev1.AddToScheme(scheme))
-	utilruntime.Must(capiv1.AddToScheme(scheme))
-
+	utilruntime.Must(sb.AddToScheme(scheme))
 	return scheme
+}
+
+func CAPIRegisterFuncs() []func(*runtime.Scheme) error {
+	return []func(*runtime.Scheme) error{
+		bootstrapv1.AddToScheme,
+		controlplanev1.AddToScheme,
+		capiv1.AddToScheme,
+	}
+}
+
+func CAPARegisterFuncs() []func(*runtime.Scheme) error {
+	return []func(*runtime.Scheme) error{
+		capav1.AddToScheme,
+	}
+}
+
+func CAPDRegisterFuncs() []func(*runtime.Scheme) error {
+	return []func(*runtime.Scheme) error{
+		capdv1.AddToScheme,
+	}
+}
+
+func CAPIScheme() *runtime.Scheme {
+	return NewScheme(CAPIRegisterFuncs()...)
 }
 
 func CAPAScheme() *runtime.Scheme {
-	scheme := runtime.NewScheme()
-
-	utilruntime.Must(bootstrapv1.AddToScheme(scheme))
-	utilruntime.Must(controlplanev1.AddToScheme(scheme))
-	utilruntime.Must(capiv1.AddToScheme(scheme))
-	utilruntime.Must(capav1.AddToScheme(scheme))
-
-	return scheme
+	return NewScheme(append(CAPIRegisterFuncs(), CAPARegisterFuncs()...)...)
 }
 
 func CAPDScheme() *runtime.Scheme {
-	scheme := runtime.NewScheme()
-
-	utilruntime.Must(bootstrapv1.AddToScheme(scheme))
-	utilruntime.Must(controlplanev1.AddToScheme(scheme))
-	utilruntime.Must(capiv1.AddToScheme(scheme))
-	utilruntime.Must(capdv1.AddToScheme(scheme))
-
-	return scheme
+	return NewScheme(append(CAPIRegisterFuncs(), CAPDRegisterFuncs()...)...)
 }
