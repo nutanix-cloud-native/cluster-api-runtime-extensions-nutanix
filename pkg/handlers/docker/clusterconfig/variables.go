@@ -23,6 +23,9 @@ var (
 const (
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "DockerClusterConfigVars"
+
+	// DockerVariableName is the Docker config patch variable name.
+	DockerVariableName = "docker"
 )
 
 func NewVariable() *dockerClusterConfigVariableHandler {
@@ -43,7 +46,7 @@ func (h *dockerClusterConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     clusterconfig.MetaVariableName,
 		Required: true,
-		Schema:   v1alpha1.DockerClusterConfigSpec{}.VariableSchema(),
+		Schema:   v1alpha1.ClusterConfigSpec{Docker: &v1alpha1.DockerSpec{}}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

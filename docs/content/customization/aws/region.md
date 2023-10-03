@@ -21,7 +21,8 @@ spec:
     variables:
       - name: clusterConfig
         values:
-          region: us-west-2
+          aws:
+            region: us-west-2
 ```
 
 Applying this configuration will result in the following value being set:

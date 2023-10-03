@@ -4,7 +4,10 @@
 package v1alpha1
 
 import (
+	"maps"
+
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
@@ -14,6 +17,60 @@ import (
 const (
 	CNIProviderCalico = "calico"
 )
+
+//+kubebuilder:object:root=true
+
+// ClusterConfig is the Schema for the clusterconfigs API.
+type ClusterConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	//+optional
+	Spec ClusterConfigSpec `json:"spec,omitempty"`
+}
+
+// ClusterConfigSpec defines the desired state of ClusterConfig.
+type ClusterConfigSpec struct {
+	// +optional
+	AWS *AWSSpec `json:"aws,omitempty"`
+	// +optional
+	Docker *DockerSpec `json:"docker,omitempty"`
+
+	GenericClusterConfig `json:",inline"`
+}
+
+func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	clusterConfigProps := GenericClusterConfig{}.VariableSchema()
+
+	switch {
+	case s.AWS != nil:
+		maps.Copy(
+			clusterConfigProps.OpenAPIV3Schema.Properties,
+			map[string]clusterv1.JSONSchemaProps{
+				"aws": AWSSpec{}.VariableSchema().OpenAPIV3Schema,
+			},
+		)
+
+		clusterConfigProps.OpenAPIV3Schema.Required = append(
+			clusterConfigProps.OpenAPIV3Schema.Required,
+			"aws",
+		)
+	case s.Docker != nil:
+		maps.Copy(
+			clusterConfigProps.OpenAPIV3Schema.Properties,
+			map[string]clusterv1.JSONSchemaProps{
+				"docker": DockerSpec{}.VariableSchema().OpenAPIV3Schema,
+			},
+		)
+
+		clusterConfigProps.OpenAPIV3Schema.Required = append(
+			clusterConfigProps.OpenAPIV3Schema.Required,
+			"docker",
+		)
+	}
+
+	return clusterConfigProps
+}
 
 // GenericClusterConfig defines the generic cluster configdesired.
 type GenericClusterConfig struct {
@@ -311,4 +368,8 @@ func (NFD) VariableSchema() clusterv1.VariableSchema {
 			Type: "object",
 		},
 	}
+}
+
+func init() {
+	SchemeBuilder.Register(&ClusterConfig{})
 }

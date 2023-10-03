@@ -22,6 +22,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
@@ -46,7 +47,11 @@ func NewPatch() *awsRegionPatchHandler {
 }
 
 func NewMetaPatch() *awsRegionPatchHandler {
-	return newAWSRegionPatchHandler(clusterconfig.MetaVariableName, VariableName)
+	return newAWSRegionPatchHandler(
+		clusterconfig.MetaVariableName,
+		awsclusterconfig.AWSVariableName,
+		VariableName,
+	)
 }
 
 func newAWSRegionPatchHandler(

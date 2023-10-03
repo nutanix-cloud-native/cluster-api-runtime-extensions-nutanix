@@ -4,48 +4,25 @@
 package v1alpha1
 
 import (
-	"maps"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 )
 
-//+kubebuilder:object:root=true
-
-// AWSClusterConfig is the Schema for the awsclusterconfigs API.
-type AWSClusterConfig struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec AWSClusterConfigSpec `json:"spec,omitempty"`
-}
-
-// AWSClusterConfigSpec defines the desired state of AWSClusterConfig.
-type AWSClusterConfigSpec struct {
+type AWSSpec struct {
 	// +optional
 	Region *Region `json:"region,omitempty"`
-
-	GenericClusterConfig `json:",inline"`
 }
 
-func (AWSClusterConfigSpec) VariableSchema() clusterv1.VariableSchema {
-	clusterConfigProps := GenericClusterConfig{}.VariableSchema().OpenAPIV3Schema.Properties
-
-	maps.Copy(
-		clusterConfigProps,
-		map[string]clusterv1.JSONSchemaProps{
-			"region": Region("").VariableSchema().OpenAPIV3Schema,
-		},
-	)
-
+func (AWSSpec) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "AWS cluster configuration",
 			Type:        "object",
-			Properties:  clusterConfigProps,
-			Required:    []string{"region"},
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"region": Region("").VariableSchema().OpenAPIV3Schema,
+			},
+			Required: []string{"region"},
 		},
 	}
 }
@@ -60,8 +37,4 @@ func (Region) VariableSchema() clusterv1.VariableSchema {
 			Description: "AWS region to create cluster in",
 		},
 	}
-}
-
-func init() {
-	SchemeBuilder.Register(&AWSClusterConfig{})
 }
