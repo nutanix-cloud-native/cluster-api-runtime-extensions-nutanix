@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans"
@@ -24,5 +25,6 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		httpproxy.NewMetaPatch(mgr.GetClient()),
 		kubernetesimagerepository.NewMetaPatch(),
 		credentials.NewMetaPatch(mgr.GetClient()),
+		calico.NewMetaPatch(),
 	}
 }

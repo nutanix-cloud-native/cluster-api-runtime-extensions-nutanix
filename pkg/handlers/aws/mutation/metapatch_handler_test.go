@@ -12,9 +12,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	calicotests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
 	regiontests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region/tests"
 	auditpolicytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/cni"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
 	etcdtests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans"
@@ -93,5 +95,12 @@ func TestGeneratePatches(t *testing.T) {
 		"clusterConfig",
 		"imageRegistries",
 		imageregistrycredentials.VariableName,
+	)
+
+	calicotests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		"clusterConfig",
+		cni.VariableName,
 	)
 }

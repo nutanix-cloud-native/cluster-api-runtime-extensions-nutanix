@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 
 func ToJSON(v any) []byte {
@@ -21,12 +22,9 @@ func ToJSON(v any) []byte {
 		data, err = json.Marshal(v)
 	}
 
-	if err != nil {
-		panic(err)
-	}
+	utilruntime.Must(err)
+
 	compacted := &bytes.Buffer{}
-	if err := json.Compact(compacted, data); err != nil {
-		panic(err)
-	}
+	utilruntime.Must(json.Compact(compacted, data))
 	return compacted.Bytes()
 }
