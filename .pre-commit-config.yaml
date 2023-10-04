@@ -116,7 +116,7 @@ repos:
       - hack/license-header.txt
       - --comment-style
       - //
-      - --use-current-year
+      - --allow-past-years
   - id: insert-license
     name: License headers - YAML and Makefiles
     stages: [commit]
@@ -125,7 +125,7 @@ repos:
     args:
       - --license-filepath
       - hack/license-header.txt
-      - --use-current-year
+      - --allow-past-years
   - id: insert-license
     name: License headers - Markdown
     stages: [commit]
@@ -136,7 +136,7 @@ repos:
       - hack/license-header.txt
       - --comment-style
       - <!--|| -->
-      - --use-current-year
+      - --allow-past-years
 - repo: https://github.com/norwoodj/helm-docs
   rev: v1.11.1
   hooks:
