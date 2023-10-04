@@ -66,7 +66,7 @@ func (a *AWSEBS) EnsureCSIConfigMapForCluster(
 	err := a.client.Get(ctx, defaultAWSEBSCSIConfigMapObjName, awsEBSCSIConfigMap)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to retrieve default Tigera Operator manifests ConfigMap %q: %w",
+			"failed to retrieve default AWS EBS CSI manifests ConfigMap %q: %w",
 			defaultAWSEBSCSIConfigMapObjName,
 			err,
 		)
@@ -75,7 +75,7 @@ func (a *AWSEBS) EnsureCSIConfigMapForCluster(
 	awsEBSConfigMap := generateAWSEBSCSIConfigMap(awsEBSCSIConfigMap, cluster)
 	if err := client.ServerSideApply(ctx, a.client, awsEBSConfigMap); err != nil {
 		return nil, fmt.Errorf(
-			"failed to apply Tigera Operator manifests ConfigMap: %w",
+			"failed to apply AWS EBS CSI manifests ConfigMap: %w",
 			err,
 		)
 	}
@@ -86,7 +86,7 @@ func (a *AWSEBS) EnsureCSIConfigMapForCluster(
 func generateAWSEBSCSIConfigMap(
 	defaultAWSEBSCSIConfigMap *corev1.ConfigMap, cluster *clusterv1.Cluster,
 ) *corev1.ConfigMap {
-	namespacedTigeraConfigMap := &corev1.ConfigMap{
+	namespacedAWSEBSConfigMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "ConfigMap",
@@ -99,5 +99,5 @@ func generateAWSEBSCSIConfigMap(
 		BinaryData: defaultAWSEBSCSIConfigMap.BinaryData,
 	}
 
-	return namespacedTigeraConfigMap
+	return namespacedAWSEBSConfigMap
 }

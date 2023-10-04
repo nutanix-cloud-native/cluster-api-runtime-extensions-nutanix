@@ -56,7 +56,7 @@ func New(
 }
 
 func (c *CSIHandler) Name() string {
-	return "CSIHANDLER"
+	return "CSIHandler"
 }
 
 func (c *CSIHandler) AfterControlPlaneInitialized(
