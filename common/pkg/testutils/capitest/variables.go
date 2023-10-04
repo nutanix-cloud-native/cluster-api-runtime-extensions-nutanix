@@ -37,6 +37,25 @@ func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 
 	t.Parallel()
 
+	g := gomega.NewWithT(t)
+	h := handlerCreator()
+	resp := &runtimehooksv1.DiscoverVariablesResponse{}
+	h.DiscoverVariables(
+		context.Background(),
+		&runtimehooksv1.DiscoverVariablesRequest{},
+		resp,
+	)
+
+	g.Expect(resp.Status).To(gomega.Equal(runtimehooksv1.ResponseStatusSuccess))
+	g.Expect(resp.Variables).To(gomega.HaveLen(1))
+
+	variable := resp.Variables[0]
+	g.Expect(variable).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+		"Name":     gomega.Equal(variableName),
+		"Required": gomega.Equal(variableRequired),
+		"Schema":   gomega.Equal(*variableSchema),
+	}))
+
 	for idx := range variableTestDefs {
 		tt := variableTestDefs[idx]
 
@@ -44,23 +63,6 @@ func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 			t.Parallel()
 
 			g := gomega.NewWithT(t)
-			h := handlerCreator()
-			resp := &runtimehooksv1.DiscoverVariablesResponse{}
-			h.DiscoverVariables(
-				context.Background(),
-				&runtimehooksv1.DiscoverVariablesRequest{},
-				resp,
-			)
-
-			g.Expect(resp.Status).To(gomega.Equal(runtimehooksv1.ResponseStatusSuccess))
-			g.Expect(resp.Variables).To(gomega.HaveLen(1))
-
-			variable := resp.Variables[0]
-			g.Expect(variable).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-				"Name":     gomega.Equal(variableName),
-				"Required": gomega.Equal(variableRequired),
-				"Schema":   gomega.Equal(*variableSchema),
-			}))
 
 			encodedVals, err := json.Marshal(tt.Vals)
 			g.Expect(err).NotTo(gomega.HaveOccurred())

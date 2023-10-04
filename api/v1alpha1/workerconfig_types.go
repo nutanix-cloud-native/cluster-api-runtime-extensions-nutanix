@@ -7,7 +7,6 @@ import (
 	"maps"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -32,7 +31,7 @@ type WorkerConfigSpec struct {
 	Docker *DockerWorkerSpec `json:"docker,omitempty"`
 }
 
-func (s WorkerConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s WorkerConfigSpec) VariableSchema() clusterv1.VariableSchema {
 	workerConfigProps := GenericWorkerConfig{}.VariableSchema()
 
 	switch {
@@ -65,8 +64,7 @@ func (s WorkerConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:g
 	return workerConfigProps
 }
 
-type GenericWorkerConfig struct {
-}
+type GenericWorkerConfig struct{}
 
 func (GenericWorkerConfig) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
