@@ -21,8 +21,21 @@ spec:
     variables:
       - name: clusterConfig
         value:
-          docker:
-            customImage: ghcr.io/mesosphere/kind-node:v1.2.3-cp
+          controlPlane:
+            docker:
+              customImage: ghcr.io/mesosphere/kind-node:v1.2.3-cp
+          workers:
+            docker:
+              customImage: ghcr.io/mesosphere/kind-node:v1.2.3-worker
+```
+
+The configuration above will apply customImage to all workers.
+You can further customize individual MachineDeployments by using the `overrides` field with the following configuration:
+
+```yaml
+spec:
+  topology:
+    # ...
     workers:
       machineDeployments:
         - class: default-worker
@@ -32,7 +45,7 @@ spec:
               - name: workerConfig
                 value:
                   docker:
-                    customImage: ghcr.io/mesosphere/kind-node:v1.2.3-worker
+                    customImage: ghcr.io/mesosphere/kind-node:v1.2.3-custom
 ```
 
 Applying this configuration will result in the following value being set:

@@ -9,21 +9,19 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/openapi/patterns"
 )
 
-type DockerWorkerSpec struct {
+type DockerNodeSpec struct {
 	//+optional
 	CustomImage *OCIImage `json:"customImage,omitempty"`
 }
 
-var DockerWorkerSpecProperties = map[string]clusterv1.JSONSchemaProps{
-	"customImage": OCIImage("").VariableSchema().OpenAPIV3Schema,
-}
-
-func (DockerWorkerSpec) VariableSchema() clusterv1.VariableSchema {
+func (DockerNodeSpec) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Docker worker configuration",
+			Description: "Docker Node configuration",
 			Type:        "object",
-			Properties:  DockerWorkerSpecProperties,
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"customImage": OCIImage("").VariableSchema().OpenAPIV3Schema,
+			},
 		},
 	}
 }
@@ -33,7 +31,7 @@ type OCIImage string
 func (OCIImage) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Custom OCI image for control plane and worker nodes.",
+			Description: "Custom OCI image for control plane and worker Nodes.",
 			Type:        "string",
 			Pattern:     patterns.Anchored(patterns.ImageReference),
 		},

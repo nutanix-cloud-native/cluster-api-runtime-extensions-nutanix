@@ -46,7 +46,7 @@ func (h *dockerWorkerConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     workerconfig.MetaVariableName,
 		Required: false,
-		Schema:   v1alpha1.WorkerConfigSpec{Docker: &v1alpha1.DockerWorkerSpec{}}.VariableSchema(),
+		Schema:   v1alpha1.NodeConfigSpec{Docker: &v1alpha1.DockerNodeSpec{}}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

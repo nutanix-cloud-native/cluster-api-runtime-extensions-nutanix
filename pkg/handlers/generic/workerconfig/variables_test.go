@@ -16,7 +16,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		MetaVariableName,
-		ptr.To(v1alpha1.GenericWorkerConfig{}.VariableSchema()),
+		ptr.To(v1alpha1.GenericNodeConfig{}.VariableSchema()),
 		false,
 		NewVariable,
 	)
