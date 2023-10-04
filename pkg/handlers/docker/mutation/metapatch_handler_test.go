@@ -28,11 +28,18 @@ import (
 	imageregistrycredentialstests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
 	kubernetesimagerepositorytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 )
 
 func metaPatchGeneratorFunc(mgr manager.Manager) func() mutation.GeneratePatches {
 	return func() mutation.GeneratePatches {
 		return MetaPatchHandler(mgr).(mutation.GeneratePatches)
+	}
+}
+
+func workerPatchGeneratorFunc() func() mutation.GeneratePatches {
+	return func() mutation.GeneratePatches {
+		return MetaWorkerPatchHandler().(mutation.GeneratePatches)
 	}
 }
 
@@ -48,10 +55,28 @@ func TestGeneratePatches(t *testing.T) {
 		},
 	)
 
-	customimagetests.TestGeneratePatches(
+	customimagetests.TestControlPlaneGeneratePatches(
 		t,
 		metaPatchGeneratorFunc(mgr),
 		clusterconfig.MetaVariableName,
+		"controlPlane",
+		dockerclusterconfig.DockerVariableName,
+		customimage.VariableName,
+	)
+
+	customimagetests.TestWorkerGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		"workers",
+		dockerclusterconfig.DockerVariableName,
+		customimage.VariableName,
+	)
+
+	customimagetests.TestWorkerGeneratePatches(
+		t,
+		workerPatchGeneratorFunc(),
+		workerconfig.MetaVariableName,
 		dockerclusterconfig.DockerVariableName,
 		customimage.VariableName,
 	)

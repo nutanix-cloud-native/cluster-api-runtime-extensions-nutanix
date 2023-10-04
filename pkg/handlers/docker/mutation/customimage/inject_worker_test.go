@@ -10,12 +10,12 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation/customimage/tests"
 )
 
-func TestGeneratePatches(t *testing.T) {
+func TestWorkerGeneratePatches(t *testing.T) {
 	t.Parallel()
 
-	tests.TestGeneratePatches(
+	tests.TestWorkerGeneratePatches(
 		t,
-		func() mutation.GeneratePatches { return NewPatch() },
+		func() mutation.GeneratePatches { return NewWorkerPatch() },
 		VariableName,
 	)
 }

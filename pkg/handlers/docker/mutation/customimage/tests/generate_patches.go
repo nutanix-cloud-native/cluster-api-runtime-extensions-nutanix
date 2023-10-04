@@ -16,6 +16,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 )
 
 func newWorkerDockerMachineTemplateRequestItem(
@@ -56,14 +57,66 @@ func newCPDockerMachineTemplateRequestItem(
 			},
 		},
 		&runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: controlplanev1.GroupVersion.String(),
+			Kind:       "KubeadmControlPlane",
 			FieldPath:  "spec.machineTemplate.infrastructureRef",
 		},
 		uid,
 	)
 }
 
-func TestGeneratePatches(
+func TestControlPlaneGeneratePatches(
+	t *testing.T,
+	generatorFunc func() mutation.GeneratePatches,
+	variableName string,
+	variablePath ...string,
+) {
+	t.Helper()
+
+	capitest.ValidateGeneratePatches(
+		t,
+		generatorFunc,
+		capitest.PatchTestDef{
+			Name: "image unset for control plane",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					"builtin",
+					apiextensionsv1.JSON{Raw: []byte(`{"controlPlane": {"version": "v1.2.3"}}`)},
+				),
+			},
+			RequestItem: newCPDockerMachineTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/customImage",
+				ValueMatcher: gomega.Equal("ghcr.io/mesosphere/kind-node:v1.2.3"),
+			}},
+		},
+		capitest.PatchTestDef{
+			Name: "image set for control plane",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					variableName,
+					"a-specific-image",
+					variablePath...,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+					},
+				),
+			},
+			RequestItem: newCPDockerMachineTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/customImage",
+				ValueMatcher: gomega.Equal("a-specific-image"),
+			}},
+		},
+	)
+}
+
+func TestWorkerGeneratePatches(
 	t *testing.T,
 	generatorFunc func() mutation.GeneratePatches,
 	variableName string,
@@ -109,43 +162,6 @@ func TestGeneratePatches(
 				),
 			},
 			RequestItem: newWorkerDockerMachineTemplateRequestItem("1234"),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/customImage",
-				ValueMatcher: gomega.Equal("a-specific-image"),
-			}},
-		},
-		capitest.PatchTestDef{
-			Name: "image unset for control plane",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					"builtin",
-					apiextensionsv1.JSON{Raw: []byte(`{"controlPlane": {"version": "v1.2.3"}}`)},
-				),
-			},
-			RequestItem: newCPDockerMachineTemplateRequestItem("1234"),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/customImage",
-				ValueMatcher: gomega.Equal("ghcr.io/mesosphere/kind-node:v1.2.3"),
-			}},
-		},
-		capitest.PatchTestDef{
-			Name: "image set for control plane",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					variableName,
-					"a-specific-image",
-					variablePath...,
-				),
-				capitest.VariableWithValue(
-					"builtin",
-					apiextensionsv1.JSON{
-						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
-					},
-				),
-			},
-			RequestItem: newCPDockerMachineTemplateRequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/customImage",

@@ -17,7 +17,8 @@ import (
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
-			customimage.NewMetaPatch(),
+			customimage.NewControlPlaneMetaPatch(),
+			customimage.NewWorkerInClusterConfigMetaPatch(),
 		},
 		genericmutation.MetaMutators(mgr)...,
 	)
