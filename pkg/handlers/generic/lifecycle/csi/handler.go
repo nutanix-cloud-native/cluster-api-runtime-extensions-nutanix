@@ -121,16 +121,18 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		}
-		err = c.EnsureCSICRSForCluster(ctx, &req.Cluster, cm)
-		if err != nil {
-			log.Error(
-				err,
-				fmt.Sprintf(
-					"failed to ensure %s csi driver installation manifests ConfigMap",
-					provider.Name,
-				),
-			)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		if cm != nil {
+			err = c.EnsureCSICRSForCluster(ctx, &req.Cluster, cm)
+			if err != nil {
+				log.Error(
+					err,
+					fmt.Sprintf(
+						"failed to ensure %s csi driver installation manifests ConfigMap",
+						provider.Name,
+					),
+				)
+				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			}
 		}
 	}
 }

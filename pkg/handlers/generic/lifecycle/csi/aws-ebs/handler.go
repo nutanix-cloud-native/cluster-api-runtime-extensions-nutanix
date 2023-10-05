@@ -30,7 +30,7 @@ func (a *AWSEBSConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		&a.defaultAWSEBSConfigMapName,
 		prefix+".aws-ebs-provider-configmap-name",
-		"aws-ebs-crs-cm",
+		"aws-ebs-csi-crs-cm",
 		"name of the ConfigMap used to deploy AWS EBS CSI driver",
 	)
 }
