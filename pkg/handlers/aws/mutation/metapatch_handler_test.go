@@ -12,9 +12,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	calicotests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
 	regiontests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	auditpolicytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/cni"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
@@ -23,6 +25,7 @@ import (
 	extraapiservercertsanstests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy"
 	httpproxytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries"
 	imageregistrycredentials "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials"
 	imageregistrycredentialstests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
@@ -50,9 +53,17 @@ func TestGeneratePatches(t *testing.T) {
 	regiontests.TestGeneratePatches(
 		t,
 		metaPatchGeneratorFunc(mgr),
-		"clusterConfig",
-		"aws",
+		clusterconfig.MetaVariableName,
+		awsclusterconfig.AWSVariableName,
 		region.VariableName,
+	)
+
+	calicotests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		"addons",
+		cni.VariableName,
 	)
 
 	auditpolicytests.TestGeneratePatches(
@@ -63,28 +74,28 @@ func TestGeneratePatches(t *testing.T) {
 	httpproxytests.TestGeneratePatches(
 		t,
 		metaPatchGeneratorFunc(mgr),
-		"clusterConfig",
+		clusterconfig.MetaVariableName,
 		httpproxy.VariableName,
 	)
 
 	etcdtests.TestGeneratePatches(
 		t,
 		metaPatchGeneratorFunc(mgr),
-		"clusterConfig",
+		clusterconfig.MetaVariableName,
 		etcd.VariableName,
 	)
 
 	extraapiservercertsanstests.TestGeneratePatches(
 		t,
 		metaPatchGeneratorFunc(mgr),
-		"clusterConfig",
+		clusterconfig.MetaVariableName,
 		extraapiservercertsans.VariableName,
 	)
 
 	kubernetesimagerepositorytests.TestGeneratePatches(
 		t,
 		metaPatchGeneratorFunc(mgr),
-		"clusterConfig",
+		clusterconfig.MetaVariableName,
 		kubernetesimagerepository.VariableName,
 	)
 
@@ -92,15 +103,8 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		metaPatchGeneratorFunc(mgr),
 		mgr.GetClient(),
-		"clusterConfig",
-		"imageRegistries",
+		clusterconfig.MetaVariableName,
+		imageregistries.VariableName,
 		imageregistrycredentials.VariableName,
-	)
-
-	calicotests.TestGeneratePatches(
-		t,
-		metaPatchGeneratorFunc(mgr),
-		"clusterConfig",
-		cni.VariableName,
 	)
 }

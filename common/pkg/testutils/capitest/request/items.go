@@ -113,14 +113,26 @@ func NewKubeadmControlPlaneTemplateRequestItem(
 
 func NewAWSClusterTemplateRequestItem(
 	uid types.UID,
+	existingSpec ...capav1.AWSClusterTemplateSpec,
 ) runtimehooksv1.GeneratePatchesRequestItem {
-	return NewRequestItem(
-		&capav1.AWSClusterTemplate{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: capav1.GroupVersion.String(),
-				Kind:       "AWSClusterTemplate",
-			},
+	awsClusterTemplate := &capav1.AWSClusterTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: capav1.GroupVersion.String(),
+			Kind:       "AWSClusterTemplate",
 		},
+	}
+
+	switch len(existingSpec) {
+	case 0:
+		// Do nothing.
+	case 1:
+		awsClusterTemplate.Spec = existingSpec[0]
+	default:
+		panic("can only take at most one existing spec")
+	}
+
+	return NewRequestItem(
+		awsClusterTemplate,
 		&runtimehooksv1.HolderReference{
 			Kind:      "Cluster",
 			FieldPath: "spec.infrastructureRef",

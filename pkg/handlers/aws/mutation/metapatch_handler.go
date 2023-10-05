@@ -9,6 +9,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
 	genericmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation"
 )
@@ -18,6 +19,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
 			region.NewMetaPatch(),
+			calico.NewMetaPatch(),
 		},
 		genericmutation.MetaMutators(mgr)...,
 	)
