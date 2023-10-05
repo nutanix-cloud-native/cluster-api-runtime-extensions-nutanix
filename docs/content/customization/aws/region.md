@@ -20,7 +20,7 @@ spec:
   topology:
     variables:
       - name: clusterConfig
-        values:
+        value:
           aws:
             region: us-west-2
 ```

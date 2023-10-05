@@ -28,8 +28,10 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
 	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	awsmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation"
+	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
 	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
 	dockermutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation"
+	dockerworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle"
 )
 
@@ -113,14 +115,18 @@ func main() {
 	// It allows to specify configuration under a single variable.
 	awsMetaHandlers := []handlers.Named{
 		awsclusterconfig.NewVariable(),
+		awsworkerconfig.NewVariable(),
 		awsmutation.MetaPatchHandler(mgr),
+		awsmutation.MetaWorkerPatchHandler(),
 	}
 
 	// dockerMetaHandlers combines all Docker patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
 	dockerMetaHandlers := []handlers.Named{
 		dockerclusterconfig.NewVariable(),
+		dockerworkerconfig.NewVariable(),
 		dockermutation.MetaPatchHandler(mgr),
+		dockermutation.MetaWorkerPatchHandler(),
 	}
 
 	var allHandlers []handlers.Named

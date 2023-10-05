@@ -15,6 +15,14 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 )
 
+type MutateFunc func(
+	ctx context.Context,
+	obj runtime.Object,
+	vars map[string]apiextensionsv1.JSON,
+	holderRef runtimehooksv1.HolderReference,
+	clusterKey client.ObjectKey,
+) error
+
 type MetaMutator interface {
 	Mutate(
 		ctx context.Context,

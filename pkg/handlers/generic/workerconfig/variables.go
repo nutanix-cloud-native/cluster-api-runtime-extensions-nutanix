@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package clusterconfig
+package workerconfig
 
 import (
 	"context"
@@ -15,35 +15,29 @@ import (
 )
 
 var (
-	_ commonhandlers.Named       = &clusterConfigVariableHandler{}
-	_ mutation.DiscoverVariables = &clusterConfigVariableHandler{}
+	_ commonhandlers.Named       = &workerConfigsVariableHandler{}
+	_ mutation.DiscoverVariables = &workerConfigsVariableHandler{}
 )
 
 const (
-	// MetaVariableName is the meta cluster config patch variable name.
-	MetaVariableName = "clusterConfig"
-
-	// MetaWorkerConfigName is the meta worker config patch variable name.
-	MetaWorkerConfigName = "workers"
-
-	// MetaControlPlaneConfigName is the meta control-plane config patch variable name.
-	MetaControlPlaneConfigName = "controlPlane"
+	// MetaVariableName is the meta worker config patch variable name.
+	MetaVariableName = "workerConfig"
 
 	// HandlerNameVariable is the name of the variable handler.
-	HandlerNameVariable = "ClusterConfigVars"
+	HandlerNameVariable = "WorkerConfigVars"
 )
 
-func NewVariable() *clusterConfigVariableHandler {
-	return &clusterConfigVariableHandler{}
+func NewVariable() *workerConfigsVariableHandler {
+	return &workerConfigsVariableHandler{}
 }
 
-type clusterConfigVariableHandler struct{}
+type workerConfigsVariableHandler struct{}
 
-func (h *clusterConfigVariableHandler) Name() string {
+func (h *workerConfigsVariableHandler) Name() string {
 	return HandlerNameVariable
 }
 
-func (h *clusterConfigVariableHandler) DiscoverVariables(
+func (h *workerConfigsVariableHandler) DiscoverVariables(
 	ctx context.Context,
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
@@ -51,7 +45,7 @@ func (h *clusterConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     MetaVariableName,
 		Required: false,
-		Schema:   v1alpha1.GenericClusterConfig{}.VariableSchema(),
+		Schema:   v1alpha1.GenericNodeConfig{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

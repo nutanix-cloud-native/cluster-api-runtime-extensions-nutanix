@@ -76,6 +76,13 @@ patches:
         external:
           generateExtension: "awsclusterconfigpatch.capi-runtime-extensions"
           discoverVariablesExtension: "awsclusterconfigvars.capi-runtime-extensions"
+    - op: "add"
+      path: "/spec/patches/1"
+      value:
+        name: "worker-config"
+        external:
+          generateExtension: "awsworkerconfigpatch.capi-runtime-extensions"
+          discoverVariablesExtension: "awsworkerconfigvars.capi-runtime-extensions"
     - op: "remove"
       path: "/spec/variables"
 - target:

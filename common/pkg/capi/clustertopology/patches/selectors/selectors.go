@@ -72,7 +72,7 @@ func InfrastructureWorkerMachineTemplates(
 
 // InfrastructureControlPlaneMachines selector matches against infrastructure control-plane machines.
 // Passing in the API version (not the API group) is required because different providers could support different API
-// versions. This also allows for a oatch to select multiple infrastructure versions for the same provider.
+// versions. This also allows for a patch to select multiple infrastructure versions for the same provider.
 func InfrastructureControlPlaneMachines(
 	capiInfrastructureAPIVersion, kind string,
 ) clusterv1.PatchSelector {

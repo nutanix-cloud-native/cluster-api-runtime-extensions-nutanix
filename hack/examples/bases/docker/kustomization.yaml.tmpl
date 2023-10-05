@@ -58,5 +58,9 @@ patches:
           external:
             generateExtension: "dockerclusterconfigpatch.capi-runtime-extensions"
             discoverVariablesExtension: "dockerclusterconfigvars.capi-runtime-extensions"
+        - name: "worker-config"
+          external:
+            generateExtension: "dockerworkerconfigpatch.capi-runtime-extensions"
+            discoverVariablesExtension: "dockerworkerconfigvars.capi-runtime-extensions"
     - op: "remove"
       path: "/spec/variables"

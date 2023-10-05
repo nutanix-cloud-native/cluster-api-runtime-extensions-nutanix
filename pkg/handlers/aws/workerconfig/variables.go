@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package clusterconfig
+package workerconfig
 
 import (
 	"context"
@@ -12,46 +12,41 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 )
 
 var (
-	_ commonhandlers.Named       = &clusterConfigVariableHandler{}
-	_ mutation.DiscoverVariables = &clusterConfigVariableHandler{}
+	_ commonhandlers.Named       = &awsWorkerConfigVariableHandler{}
+	_ mutation.DiscoverVariables = &awsWorkerConfigVariableHandler{}
 )
 
 const (
-	// MetaVariableName is the meta cluster config patch variable name.
-	MetaVariableName = "clusterConfig"
-
-	// MetaWorkerConfigName is the meta worker config patch variable name.
-	MetaWorkerConfigName = "workers"
-
-	// MetaControlPlaneConfigName is the meta control-plane config patch variable name.
-	MetaControlPlaneConfigName = "controlPlane"
-
 	// HandlerNameVariable is the name of the variable handler.
-	HandlerNameVariable = "ClusterConfigVars"
+	HandlerNameVariable = "AWSWorkerConfigVars"
+
+	// AWSVariableName is the AWS config patch variable name.
+	AWSVariableName = "aws"
 )
 
-func NewVariable() *clusterConfigVariableHandler {
-	return &clusterConfigVariableHandler{}
+func NewVariable() *awsWorkerConfigVariableHandler {
+	return &awsWorkerConfigVariableHandler{}
 }
 
-type clusterConfigVariableHandler struct{}
+type awsWorkerConfigVariableHandler struct{}
 
-func (h *clusterConfigVariableHandler) Name() string {
+func (h *awsWorkerConfigVariableHandler) Name() string {
 	return HandlerNameVariable
 }
 
-func (h *clusterConfigVariableHandler) DiscoverVariables(
+func (h *awsWorkerConfigVariableHandler) DiscoverVariables(
 	ctx context.Context,
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     MetaVariableName,
+		Name:     workerconfig.MetaVariableName,
 		Required: false,
-		Schema:   v1alpha1.GenericClusterConfig{}.VariableSchema(),
+		Schema:   v1alpha1.NodeConfigSpec{AWS: &v1alpha1.AWSNodeSpec{}}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

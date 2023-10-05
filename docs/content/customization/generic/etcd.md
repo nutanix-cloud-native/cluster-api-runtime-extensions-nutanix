@@ -21,7 +21,7 @@ spec:
   topology:
     variables:
       - name: clusterConfig
-        values:
+        value:
           etcd:
             image:
               repository: my-registry.io/my-org/my-repo
