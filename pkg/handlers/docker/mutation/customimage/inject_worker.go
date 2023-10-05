@@ -106,7 +106,7 @@ func (h *customImageWorkerPatchHandler) Mutate(
 		obj,
 		vars,
 		&holderRef,
-		selectors.InfrastructureWorkerMachineTemplates("v1beta1", "DockerMachineTemplate"),
+		selectors.InfrastructureWorkerMachineTemplates(capdv1.GroupVersion.Version, "DockerMachineTemplate"),
 		log,
 		func(obj *capdv1.DockerMachineTemplate) error {
 			fieldPath := []string{"builtin", "machineDeployment", "version"}

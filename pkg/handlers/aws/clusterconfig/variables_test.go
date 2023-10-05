@@ -52,5 +52,19 @@ func TestVariableValidation(t *testing.T) {
 				},
 			},
 		},
+		capitest.VariableTestDef{
+			Name: "AMI specification",
+			Vals: v1alpha1.ClusterConfigSpec{
+				AWS: &v1alpha1.AWSSpec{
+					Region: ptr.To(v1alpha1.Region("a-specified-region")),
+					AMISpec: &v1alpha1.AMISpec{
+						ID:     "ami-1234",
+						Format: "capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*",
+						BaseOS: "rhel-8.4",
+						Org:    "12345678",
+					},
+				},
+			},
+		},
 	)
 }

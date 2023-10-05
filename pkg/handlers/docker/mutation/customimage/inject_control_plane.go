@@ -109,7 +109,7 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 		obj,
 		vars,
 		&holderRef,
-		selectors.InfrastructureControlPlaneMachines("v1beta1", "DockerMachineTemplate"),
+		selectors.InfrastructureControlPlaneMachines(capdv1.GroupVersion.Version, "DockerMachineTemplate"),
 		log,
 		func(obj *capdv1.DockerMachineTemplate) error {
 			variablePath := []string{"builtin", "controlPlane", "version"}

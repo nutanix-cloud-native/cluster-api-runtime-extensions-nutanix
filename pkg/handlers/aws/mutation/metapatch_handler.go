@@ -8,6 +8,7 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype"
@@ -23,6 +24,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 			calico.NewMetaPatch(),
 			iaminstanceprofile.NewControlPlaneMetaPatch(),
 			instancetype.NewControlPlaneMetaPatch(),
+			ami.NewControlPlanePatch(),
 		},
 		genericmutation.MetaMutators(mgr)...,
 	)
@@ -33,7 +35,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	)
 }
 
-// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
+// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler() handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		iaminstanceprofile.NewWorkerMetaPatch(),
