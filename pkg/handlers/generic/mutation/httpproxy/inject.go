@@ -100,7 +100,7 @@ func (h *httpProxyPatchHandler) Mutate(
 		return err
 	}
 	if !found {
-		log.Info("http proxy variable not defined")
+		log.V(5).Info("http proxy variable not defined")
 		return nil
 	}
 
