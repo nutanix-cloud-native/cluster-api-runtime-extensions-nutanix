@@ -60,6 +60,7 @@ func (c *CalicoCNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 		prefix+".default-provider-installation-configmap-names",
 		map[string]string{
 			"DockerCluster": "calico-cni-installation-dockercluster",
+			"AWSCluster":    "calico-cni-installation-awscluster",
 		},
 		"map of provider cluster implementation type to default installation ConfigMap name",
 	)
