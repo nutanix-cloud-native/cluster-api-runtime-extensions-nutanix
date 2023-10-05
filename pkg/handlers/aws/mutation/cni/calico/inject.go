@@ -6,6 +6,7 @@ package calico
 import (
 	"context"
 	_ "embed"
+	"slices"
 
 	"github.com/go-logr/logr"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -149,8 +150,9 @@ func mutateAWSClusterTemplateFunc(log logr.Logger) func(obj *capav1.AWSClusterTe
 		if obj.Spec.Template.Spec.NetworkSpec.CNI == nil {
 			obj.Spec.Template.Spec.NetworkSpec.CNI = &capav1.CNISpec{}
 		}
-		obj.Spec.Template.Spec.NetworkSpec.CNI.CNIIngressRules = append(
+		obj.Spec.Template.Spec.NetworkSpec.CNI.CNIIngressRules = addOrUpdateCNIIngressRules(
 			obj.Spec.Template.Spec.NetworkSpec.CNI.CNIIngressRules,
+
 			capav1.CNIIngressRule{
 				Description: "typha (calico)",
 				Protocol:    capav1.SecurityGroupProtocolTCP,
@@ -185,4 +187,18 @@ func mutateAWSClusterTemplateFunc(log logr.Logger) func(obj *capav1.AWSClusterTe
 
 		return nil
 	}
+}
+
+func addOrUpdateCNIIngressRules(
+	rules []capav1.CNIIngressRule, newRules ...capav1.CNIIngressRule,
+) []capav1.CNIIngressRule {
+	clonedRules := slices.Clone(rules)
+
+	for _, newRule := range newRules {
+		if !slices.Contains(clonedRules, newRule) {
+			clonedRules = append(clonedRules, newRule)
+		}
+	}
+
+	return clonedRules
 }
