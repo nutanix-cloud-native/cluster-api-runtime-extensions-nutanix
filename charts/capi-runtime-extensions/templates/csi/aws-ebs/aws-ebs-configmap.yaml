@@ -482,7 +482,7 @@ data:
                   key: endpoint
                   name: aws-meta
                   optional: true
-            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.0
+            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.1
             imagePullPolicy: IfNotPresent
             livenessProbe:
               failureThreshold: 5
@@ -705,7 +705,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.0
+            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.1
             imagePullPolicy: IfNotPresent
             lifecycle:
               preStop:
