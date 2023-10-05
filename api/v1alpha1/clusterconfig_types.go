@@ -325,7 +325,7 @@ type Addons struct {
 	NFD *NFD `json:"nfd,omitempty"`
 
 	// +optional
-	CSIProviders CSIProviders `json:"csiProviders,omitempty"`
+	CSIProviders CSIProviders `json:"csi,omitempty"`
 }
 
 func (Addons) VariableSchema() clusterv1.VariableSchema {
@@ -334,9 +334,9 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 			Description: "Cluster configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"cni":           CNI{}.VariableSchema().OpenAPIV3Schema,
-				"nfd":           NFD{}.VariableSchema().OpenAPIV3Schema,
-				"csi-providers": CSIProviders{}.VariableSchema().OpenAPIV3Schema,
+				"cni": CNI{}.VariableSchema().OpenAPIV3Schema,
+				"nfd": NFD{}.VariableSchema().OpenAPIV3Schema,
+				"csi": CSIProviders{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}

@@ -23,7 +23,7 @@ spec:
           addons:
             cni:
               provider: calico
-            csi-providers:
+            csi:
               providers:
                 - name: aws-ebs-sc
             nfd: {}

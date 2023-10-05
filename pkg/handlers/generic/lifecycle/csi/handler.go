@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	variableRootName = "csiProviders"
+	variableRootName = "csi"
 )
 
 type CSIProvider interface {
