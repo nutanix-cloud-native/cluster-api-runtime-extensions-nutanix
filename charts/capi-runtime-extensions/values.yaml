@@ -12,6 +12,11 @@ hooks:
         configMap:
           name: calico-cni-installation-dockercluster
           content: ""
+      AWSCluster:
+        create: true
+        configMap:
+          name: calico-cni-installation-awscluster
+          content: ""
 
 deployDefaultClusterClasses: true
 

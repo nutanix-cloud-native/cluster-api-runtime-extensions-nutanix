@@ -31,6 +31,9 @@ A Helm chart for capi-runtime-extensions
 | deployDefaultClusterClasses | bool | `true` |  |
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
+| hooks.CalicoCNI.defaultInstallationConfigMaps.AWSCluster.configMap.content | string | `""` |  |
+| hooks.CalicoCNI.defaultInstallationConfigMaps.AWSCluster.configMap.name | string | `"calico-cni-installation-awscluster"` |  |
+| hooks.CalicoCNI.defaultInstallationConfigMaps.AWSCluster.create | bool | `true` |  |
 | hooks.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.content | string | `""` |  |
 | hooks.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.name | string | `"calico-cni-installation-dockercluster"` |  |
 | hooks.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.create | bool | `true` |  |
