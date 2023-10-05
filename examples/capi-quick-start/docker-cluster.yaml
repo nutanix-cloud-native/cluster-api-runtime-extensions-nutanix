@@ -24,6 +24,7 @@ spec:
           addons:
             cni:
               provider: calico
+              value: {}
             nfd: {}
           docker: {}
     version: v1.27.5

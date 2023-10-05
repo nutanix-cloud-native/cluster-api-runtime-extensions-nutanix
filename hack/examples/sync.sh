@@ -29,4 +29,5 @@ kustomize build ./hack/examples |
     >/dev/null
 
 # TODO Remove once CAPA templates default to using external cloud provider.
+>>>>>>> a489634 (fix: kustomization fixes)
 sed -i'' s/cloud-provider:\ aws/cloud-provider:\ external/g "${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml"
