@@ -25,7 +25,7 @@ spec:
               provider: calico
             csi:
               providers:
-                - name: aws-ebs-sc
+                - name: aws-ebs
             nfd: {}
           aws: {}
     version: v1.27.5

@@ -1,0 +1,39 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: aws-ebs-csi-kustomize
+
+resources:
+- github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=${AWS_EBS_CSI_VERSION}
+- storage-class.yaml
+- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
+- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+
+patches:
+- path: ./overlays/controller-nodeAffinity.yaml
+  target:
+    kind: Deployment
+    name: ebs-csi-controller
+    namespace: kube-system
+- path: ./overlays/controller-nodeAffinity.yaml
+  target:
+    kind: Deployment
+    name: snapshot-controller
+    namespace: kube-system
+- path: ./overlays/deployment-priorityClassName.yaml
+  target:
+    kind: Deployment
+    name: snapshot-controller
+    namespace: kube-system
+- path: ./overlays/ds-tolerations.yaml
+  target:
+    kind: DaemonSet
+    name: ebs-csi-node
+    namespace: kube-system

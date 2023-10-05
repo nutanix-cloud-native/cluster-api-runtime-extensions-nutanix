@@ -16,7 +16,7 @@ import (
 
 const (
 	CNIProviderCalico                 = "calico"
-	CSIProviderAWSEBS                 = "aws-ebs-sc"
+	CSIProviderAWSEBS                 = "aws-ebs"
 	CSIProviderLocalVolumeProvisioner = "localvolumeprovisioner"
 )
 
