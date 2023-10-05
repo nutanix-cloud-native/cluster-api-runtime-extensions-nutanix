@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	CNIProviderCalico                 = "calico"
-	CSIProviderAWSEBS                 = "aws-ebs"
-	CSIProviderLocalVolumeProvisioner = "localvolumeprovisioner"
+	CNIProviderCalico = "calico"
+	CSIProviderAWSEBS = "aws-ebs"
 )
 
 //+kubebuilder:object:root=true
@@ -388,7 +387,7 @@ type CSIProvider struct {
 }
 
 func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
-	supportedCSIProviders := []string{CSIProviderAWSEBS, CSIProviderLocalVolumeProvisioner}
+	supportedCSIProviders := []string{CSIProviderAWSEBS}
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
