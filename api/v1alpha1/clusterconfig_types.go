@@ -40,9 +40,6 @@ type ClusterConfigSpec struct {
 
 	//+optional
 	ControlPlane *NodeConfigSpec `json:"controlPlane,omitempty"`
-
-	//+optional
-	Workers *NodeConfigSpec `json:"workers,omitempty"`
 }
 
 func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
@@ -57,9 +54,6 @@ func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:
 				"controlPlane": NodeConfigSpec{
 					AWS: &AWSNodeSpec{},
 				}.VariableSchema().OpenAPIV3Schema,
-				"workers": NodeConfigSpec{
-					AWS: &AWSNodeSpec{},
-				}.VariableSchema().OpenAPIV3Schema,
 			},
 		)
 	case s.Docker != nil:
@@ -68,9 +62,6 @@ func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:
 			map[string]clusterv1.JSONSchemaProps{
 				"docker": DockerSpec{}.VariableSchema().OpenAPIV3Schema,
 				"controlPlane": NodeConfigSpec{
-					Docker: &DockerNodeSpec{},
-				}.VariableSchema().OpenAPIV3Schema,
-				"workers": NodeConfigSpec{
 					Docker: &DockerNodeSpec{},
 				}.VariableSchema().OpenAPIV3Schema,
 			},
@@ -116,8 +107,6 @@ func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema {
 				).VariableSchema().
 					OpenAPIV3Schema,
 				"imageRegistries": ImageRegistries{}.VariableSchema().OpenAPIV3Schema,
-				"controlPlane":    NodeConfigSpec{}.VariableSchema().OpenAPIV3Schema,
-				"workers":         NodeConfigSpec{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}

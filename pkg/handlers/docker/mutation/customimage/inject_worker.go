@@ -24,9 +24,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
-	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
 	dockerworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/workerconfig"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 )
 
@@ -48,15 +46,6 @@ var (
 
 func NewWorkerPatch() *customImageWorkerPatchHandler {
 	return newcustomImageWorkerPatchHandler(VariableName)
-}
-
-func NewWorkerInClusterConfigMetaPatch() *customImageControlPlanePatchHandler {
-	return newCustomImageControlPlanePatchHandler(
-		clusterconfig.MetaVariableName,
-		clusterconfig.MetaWorkerConfigName,
-		dockerclusterconfig.DockerVariableName,
-		VariableName,
-	)
 }
 
 func NewMetaWorkerPatch() *customImageWorkerPatchHandler {

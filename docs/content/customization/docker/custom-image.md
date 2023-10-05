@@ -24,9 +24,10 @@ spec:
           controlPlane:
             docker:
               customImage: ghcr.io/mesosphere/kind-node:v1.2.3-cp
-          workers:
-            docker:
-              customImage: ghcr.io/mesosphere/kind-node:v1.2.3-worker
+      - name: workerConfig
+        value:
+          docker:
+            customImage: ghcr.io/mesosphere/kind-node:v1.2.3-worker
 ```
 
 The configuration above will apply customImage to all workers.

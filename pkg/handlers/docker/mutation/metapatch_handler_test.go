@@ -66,15 +66,6 @@ func TestGeneratePatches(t *testing.T) {
 
 	customimagetests.TestWorkerGeneratePatches(
 		t,
-		metaPatchGeneratorFunc(mgr),
-		clusterconfig.MetaVariableName,
-		"workers",
-		dockerclusterconfig.DockerVariableName,
-		customimage.VariableName,
-	)
-
-	customimagetests.TestWorkerGeneratePatches(
-		t,
 		workerPatchGeneratorFunc(),
 		workerconfig.MetaVariableName,
 		dockerclusterconfig.DockerVariableName,
