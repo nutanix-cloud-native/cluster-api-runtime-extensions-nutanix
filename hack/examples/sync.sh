@@ -27,3 +27,6 @@ kustomize build ./hack/examples |
     >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and ( .kind != "Cluster" and .kind != "AWSClusterStaticIdentity"))' >"${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml") \
     >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and ( .kind == "Cluster" or .kind == "AWSClusterStaticIdentity"))' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster.yaml") \
     >/dev/null
+
+# TODO Remove once CAPA templates default to using external cloud provider.
+sed -i'' s/cloud-provider:\ aws/cloud-provider:\ external/g "${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml"
