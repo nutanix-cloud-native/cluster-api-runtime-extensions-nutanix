@@ -334,8 +334,9 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 			Description: "Cluster configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"cni": CNI{}.VariableSchema().OpenAPIV3Schema,
-				"nfd": NFD{}.VariableSchema().OpenAPIV3Schema,
+				"cni":           CNI{}.VariableSchema().OpenAPIV3Schema,
+				"nfd":           NFD{}.VariableSchema().OpenAPIV3Schema,
+				"csi-providers": CSIProviders{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}

@@ -24,6 +24,9 @@ spec:
             cni:
               provider: calico
             nfd: {}
+            csi-providers:
+              providers:
+                - name: aws-ebs-sc
           aws: {}
     version: v1.27.5
     workers:
