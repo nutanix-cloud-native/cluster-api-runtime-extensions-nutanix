@@ -48,7 +48,11 @@ func NewPatch() *calicoPatchHandler {
 }
 
 func NewMetaPatch() *calicoPatchHandler {
-	return newCalicoPatchHandler(clusterconfig.MetaVariableName, cni.VariableName)
+	return newCalicoPatchHandler(
+		clusterconfig.MetaVariableName,
+		"addons",
+		cni.VariableName,
+	)
 }
 
 func newCalicoPatchHandler(
