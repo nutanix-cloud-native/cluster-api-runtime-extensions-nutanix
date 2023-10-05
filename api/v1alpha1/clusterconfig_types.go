@@ -324,7 +324,7 @@ type Addons struct {
 	NFD *NFD `json:"nfd,omitempty"`
 
 	// +optional
-	CSIProviders CSIProviders `json:"csi,omitempty"`
+	CSIProviders *CSIProviders `json:"csi,omitempty"`
 }
 
 func (Addons) VariableSchema() clusterv1.VariableSchema {
@@ -377,7 +377,7 @@ func (NFD) VariableSchema() clusterv1.VariableSchema {
 
 type CSIProviders struct {
 	// +optional
-	Providers []*CSIProvider `json:"providers,omitempty"`
+	Providers []CSIProvider `json:"providers,omitempty"`
 	// +optional
 	DefaultClassName string `json:"defualtClassName,omitempty"`
 }
