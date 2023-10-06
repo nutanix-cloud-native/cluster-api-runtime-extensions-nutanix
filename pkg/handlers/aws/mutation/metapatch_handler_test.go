@@ -16,6 +16,8 @@ import (
 	calicotests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile"
 	iaminstanceprofiletests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype"
+	instancetypetests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
 	regiontests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region/tests"
 	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
@@ -83,6 +85,23 @@ func TestGeneratePatches(t *testing.T) {
 		workerconfig.MetaVariableName,
 		awsworkerconfig.AWSVariableName,
 		iaminstanceprofile.VariableName,
+	)
+
+	instancetypetests.TestControlPlaneGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		clusterconfig.MetaControlPlaneConfigName,
+		awsclusterconfig.AWSVariableName,
+		instancetype.VariableName,
+	)
+
+	instancetypetests.TestWorkerGeneratePatches(
+		t,
+		workerPatchGeneratorFunc(),
+		workerconfig.MetaVariableName,
+		awsworkerconfig.AWSVariableName,
+		instancetype.VariableName,
 	)
 
 	calicotests.TestGeneratePatches(
