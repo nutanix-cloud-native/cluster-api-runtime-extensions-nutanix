@@ -28,6 +28,9 @@ import (
 )
 
 const (
+	// VariableName is the external patch variable name.
+	VariableName = "instanceType"
+
 	// WorkerHandlerNamePatch is the name of the inject handler.
 	ControlPlaneHandlerNamePatch = "AWSInstanceTypeControlPlanePatch"
 )

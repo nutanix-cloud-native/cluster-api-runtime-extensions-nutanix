@@ -30,5 +30,11 @@ func TestVariableValidation(t *testing.T) {
 				},
 			},
 		},
+		capitest.VariableTestDef{
+			Name: "specified instance type",
+			Vals: v1alpha1.NodeConfigSpec{
+				AWS: &v1alpha1.AWSNodeSpec{InstanceType: ptr.To(v1alpha1.InstanceType("m5.small"))},
+			},
+		},
 	)
 }
