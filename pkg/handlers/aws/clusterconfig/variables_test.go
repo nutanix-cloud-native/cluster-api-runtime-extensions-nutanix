@@ -28,5 +28,19 @@ func TestVariableValidation(t *testing.T) {
 				},
 			},
 		},
+		capitest.VariableTestDef{
+			Name: "specified IAM instance profile",
+			Vals: v1alpha1.ClusterConfigSpec{
+				ControlPlane: &v1alpha1.NodeConfigSpec{
+					AWS: &v1alpha1.AWSNodeSpec{
+						IAMInstanceProfile: ptr.To(
+							v1alpha1.IAMInstanceProfile(
+								"control-plane.cluster-api-provider-aws.sigs.k8s.io",
+							),
+						),
+					},
+				},
+			},
+		},
 	)
 }

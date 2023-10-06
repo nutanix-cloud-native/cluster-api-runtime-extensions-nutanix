@@ -30,6 +30,9 @@ import (
 )
 
 const (
+	// VariableName is the external patch variable name.
+	VariableName = "iamInstanceProfile"
+
 	// WorkerHandlerNamePatch is the name of the inject handler.
 	WorkerHandlerNamePatch = "AWSIAMInstanceProfileWorkerPatch"
 )
