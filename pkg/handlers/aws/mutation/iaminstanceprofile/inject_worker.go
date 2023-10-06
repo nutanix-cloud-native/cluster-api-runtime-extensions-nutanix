@@ -45,10 +45,6 @@ var (
 	_ mutation.MetaMutator     = &awsIAMInstanceProfileWorkerPatchHandler{}
 )
 
-func NewWorkerPatch() *awsIAMInstanceProfileWorkerPatchHandler {
-	return newAWSIAMInstanceProfileWorkerPatchHandler(VariableName)
-}
-
 func NewWorkerMetaPatch() *awsIAMInstanceProfileWorkerPatchHandler {
 	return newAWSIAMInstanceProfileWorkerPatchHandler(
 		workerconfig.MetaVariableName,

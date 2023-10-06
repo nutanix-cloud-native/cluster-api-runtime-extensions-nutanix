@@ -42,10 +42,6 @@ var (
 	_ mutation.MetaMutator     = &awsIAMInstanceProfileControlPlanePatchHandler{}
 )
 
-func NewControlPlanePatch() *awsIAMInstanceProfileControlPlanePatchHandler {
-	return newAWSIAMInstanceProfileControlPlanePatchHandler(VariableName)
-}
-
 func NewControlPlaneMetaPatch() *awsIAMInstanceProfileControlPlanePatchHandler {
 	return newAWSIAMInstanceProfileControlPlanePatchHandler(
 		clusterconfig.MetaVariableName,
