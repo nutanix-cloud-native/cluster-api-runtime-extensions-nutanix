@@ -93,7 +93,7 @@ func generateAWSEBSCSIConfigMap(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      defaultAWSEBSCSIConfigMap.Name,
+			Name:      fmt.Sprintf("%s-%s", defaultAWSEBSCSIConfigMap.Name, cluster.Name),
 		},
 		Data:       defaultAWSEBSCSIConfigMap.Data,
 		BinaryData: defaultAWSEBSCSIConfigMap.BinaryData,

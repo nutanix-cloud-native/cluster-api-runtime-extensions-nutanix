@@ -379,7 +379,7 @@ type CSIProviders struct {
 	// +optional
 	Providers []CSIProvider `json:"providers,omitempty"`
 	// +optional
-	DefaultClassName string `json:"defualtClassName,omitempty"`
+	DefaultClassName string `json:"defaultClassName,omitempty"`
 }
 
 type CSIProvider struct {

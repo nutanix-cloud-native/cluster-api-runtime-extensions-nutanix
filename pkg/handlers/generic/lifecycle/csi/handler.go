@@ -6,7 +6,6 @@ package csi
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
@@ -80,7 +79,6 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		"cluster",
 		clusterKey,
 	)
-
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	csiProviders, found, err := variables.Get[v1alpha1.CSIProviders](
@@ -120,6 +118,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			)
 			continue
 		}
+		log.Info(fmt.Sprintf("Creating config map for csi provider %s", provider))
 		cm, err := handler.EnsureCSIConfigMapForCluster(ctx, &req.Cluster)
 		if err != nil {
 			log.Error(
@@ -133,12 +132,22 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		}
 		if cm != nil {
 			if provider.Name == csiProviders.DefaultClassName {
-				err = setDefaultStorageClass(ctx, cm)
+				log.Info("Setting default storage class ", provider, csiProviders.DefaultClassName)
+				err = setDefaultStorageClass(ctx, clusterKey, cm)
 				if err != nil {
 					log.Error(
 						err,
 						fmt.Sprintf(
 							"failed to set default storage class",
+						),
+					)
+					resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+				}
+				if err := c.client.Update(ctx, cm); err != nil {
+					log.Error(
+						err,
+						fmt.Sprintf(
+							"failed to apply default storage class annotation to configmap",
 						),
 					)
 					resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -197,26 +206,30 @@ func (c *CSIHandler) EnsureCSICRSForCluster(
 
 func setDefaultStorageClass(
 	ctx context.Context,
+	clusterKey ctrlclient.ObjectKey,
 	cm *corev1.ConfigMap,
 ) error {
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"cluster",
+		clusterKey,
+	)
 	for k, contents := range cm.Data {
-		if strings.Contains(k, ".yaml") {
-			objs, err := utilyaml.ToUnstructured([]byte(contents))
-			if err != nil {
-				return fmt.Errorf("failed to parse yaml %w", err)
-			}
-			for i := range objs {
-				obj := objs[i]
-				if obj.GetKind() == kindStorageClass {
-					obj.SetAnnotations(defaultStorageClassMap)
-				}
-			}
-			rawObjs, err := utilyaml.FromUnstructured(objs)
-			if err != nil {
-				return fmt.Errorf("failed to convert unstructured objects back to string %w", err)
-			}
-			cm.Data[k] = string(rawObjs)
+		objs, err := utilyaml.ToUnstructured([]byte(contents))
+		if err != nil {
+			log.Error(err, "failed to parse yaml")
+			continue
 		}
+		for i := range objs {
+			obj := objs[i]
+			if obj.GetKind() == kindStorageClass {
+				obj.SetAnnotations(defaultStorageClassMap)
+			}
+		}
+		rawObjs, err := utilyaml.FromUnstructured(objs)
+		if err != nil {
+			return fmt.Errorf("failed to convert unstructured objects back to string %w", err)
+		}
+		cm.Data[k] = string(rawObjs)
 	}
 	return nil
 }
