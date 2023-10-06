@@ -6,6 +6,7 @@ package csi
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
@@ -18,6 +19,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	utilyaml "sigs.k8s.io/cluster-api/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -25,6 +27,14 @@ import (
 
 const (
 	variableRootName = "csi"
+	kindStorageClass = "StorageClass"
+)
+
+var (
+	defualtStorageClassKey = "storageclass.kubernetes.io/is-default-class"
+	defaultStorageClassMap = map[string]string{
+		defualtStorageClassKey: "true",
+	}
 )
 
 type CSIProvider interface {
@@ -122,6 +132,18 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		}
 		if cm != nil {
+			if provider.Name == csiProviders.DefaultClassName {
+				err = setDefaultStorageClass(ctx, cm)
+				if err != nil {
+					log.Error(
+						err,
+						fmt.Sprintf(
+							"failed to set default storage class",
+						),
+					)
+					resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+				}
+			}
 			err = c.EnsureCSICRSForCluster(ctx, &req.Cluster, cm)
 			if err != nil {
 				log.Error(
@@ -169,6 +191,32 @@ func (c *CSIHandler) EnsureCSICRSForCluster(
 	err := client.ServerSideApply(ctx, c.client, crs)
 	if err != nil {
 		return fmt.Errorf("failed to server side apply %w", err)
+	}
+	return nil
+}
+
+func setDefaultStorageClass(
+	ctx context.Context,
+	cm *corev1.ConfigMap,
+) error {
+	for k, contents := range cm.Data {
+		if strings.Contains(k, ".yaml") {
+			objs, err := utilyaml.ToUnstructured([]byte(contents))
+			if err != nil {
+				return fmt.Errorf("failed to parse yaml %w", err)
+			}
+			for i := range objs {
+				obj := objs[i]
+				if obj.GetKind() == kindStorageClass {
+					obj.SetAnnotations(defaultStorageClassMap)
+				}
+			}
+			rawObjs, err := utilyaml.FromUnstructured(objs)
+			if err != nil {
+				return fmt.Errorf("failed to convert unstructured objects back to string %w", err)
+			}
+			cm.Data[k] = string(rawObjs)
+		}
 	}
 	return nil
 }
