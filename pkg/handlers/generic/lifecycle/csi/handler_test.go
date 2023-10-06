@@ -1,3 +1,6 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package csi
 
 import (
@@ -48,7 +51,11 @@ func Test_setDefaultStorageClass(t *testing.T) {
 				t.Fatal("failed to set default storage class", err)
 			}
 			if !strings.Contains(tt.startConfigMap.Data[tt.key], defualtStorageClassKey) {
-				t.Logf("expected %s to containe %s", tt.startConfigMap.Data[tt.key], defualtStorageClassKey)
+				t.Logf(
+					"expected %s to containe %s",
+					tt.startConfigMap.Data[tt.key],
+					defualtStorageClassKey,
+				)
 				t.Fail()
 			}
 		})
