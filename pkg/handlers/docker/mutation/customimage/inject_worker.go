@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	// ControlPlaneHandlerNamePatch is the name of the inject handler.
-	ControlPlaneHandlerNamePatch = "DockerControlPlaneCustomImagePatch"
+	// WorkerHandlerNamePatch is the name of the inject handler.
+	WorkerHandlerNamePatch = "DockerCustomImageWorkerPatch"
 )
 
 type customImageWorkerPatchHandler struct {
@@ -48,7 +48,7 @@ func NewWorkerPatch() *customImageWorkerPatchHandler {
 	return newcustomImageWorkerPatchHandler(VariableName)
 }
 
-func NewMetaWorkerPatch() *customImageWorkerPatchHandler {
+func NewWorkerMetaPatch() *customImageWorkerPatchHandler {
 	return newcustomImageWorkerPatchHandler(
 		workerconfig.MetaVariableName,
 		dockerworkerconfig.DockerVariableName,
@@ -67,7 +67,7 @@ func newcustomImageWorkerPatchHandler(
 }
 
 func (h *customImageWorkerPatchHandler) Name() string {
-	return ControlPlaneHandlerNamePatch
+	return WorkerHandlerNamePatch
 }
 
 func (h *customImageWorkerPatchHandler) Mutate(

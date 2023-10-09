@@ -15,6 +15,7 @@ import (
 	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation/customimage"
 	customimagetests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation/customimage/tests"
+	dockerworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	auditpolicytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
@@ -59,7 +60,7 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		metaPatchGeneratorFunc(mgr),
 		clusterconfig.MetaVariableName,
-		"controlPlane",
+		clusterconfig.MetaControlPlaneConfigName,
 		dockerclusterconfig.DockerVariableName,
 		customimage.VariableName,
 	)
@@ -68,7 +69,7 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		workerPatchGeneratorFunc(),
 		workerconfig.MetaVariableName,
-		dockerclusterconfig.DockerVariableName,
+		dockerworkerconfig.DockerVariableName,
 		customimage.VariableName,
 	)
 

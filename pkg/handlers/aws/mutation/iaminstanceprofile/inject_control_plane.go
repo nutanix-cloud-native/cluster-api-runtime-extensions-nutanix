@@ -1,13 +1,11 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package customimage
+package iaminstanceprofile
 
 import (
 	"context"
 	_ "embed"
-	"fmt"
-	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,58 +20,52 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
+	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
-	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
+	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
 const (
 	// ControlPlaneHandlerNamePatch is the name of the inject handler.
-	ControlPlaneHandlerNamePatch = "DockerCustomImageControlPlanePatch"
-
-	defaultKinDImageRepository = "ghcr.io/mesosphere/kind-node"
+	ControlPlaneHandlerNamePatch = "AWSIAMInstanceProfileControlPlanePatch"
 )
 
-type customImageControlPlanePatchHandler struct {
+type awsIAMInstanceProfileControlPlanePatchHandler struct {
 	variableName      string
 	variableFieldPath []string
 }
 
 var (
-	_ commonhandlers.Named     = &customImageControlPlanePatchHandler{}
-	_ mutation.GeneratePatches = &customImageControlPlanePatchHandler{}
-	_ mutation.MetaMutator     = &customImageControlPlanePatchHandler{}
+	_ commonhandlers.Named     = &awsIAMInstanceProfileControlPlanePatchHandler{}
+	_ mutation.GeneratePatches = &awsIAMInstanceProfileControlPlanePatchHandler{}
+	_ mutation.MetaMutator     = &awsIAMInstanceProfileControlPlanePatchHandler{}
 )
 
-func NewControlPlanePatch() *customImageControlPlanePatchHandler {
-	return newCustomImageControlPlanePatchHandler(VariableName)
-}
-
-func NewControlPlaneMetaPatch() *customImageControlPlanePatchHandler {
-	return newCustomImageControlPlanePatchHandler(
+func NewControlPlaneMetaPatch() *awsIAMInstanceProfileControlPlanePatchHandler {
+	return newAWSIAMInstanceProfileControlPlanePatchHandler(
 		clusterconfig.MetaVariableName,
 		clusterconfig.MetaControlPlaneConfigName,
-		dockerclusterconfig.DockerVariableName,
+		awsclusterconfig.AWSVariableName,
 		VariableName,
 	)
 }
 
-func newCustomImageControlPlanePatchHandler(
+func newAWSIAMInstanceProfileControlPlanePatchHandler(
 	variableName string,
 	variableFieldPath ...string,
-) *customImageControlPlanePatchHandler {
-	return &customImageControlPlanePatchHandler{
+) *awsIAMInstanceProfileControlPlanePatchHandler {
+	return &awsIAMInstanceProfileControlPlanePatchHandler{
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
 }
 
-func (h *customImageControlPlanePatchHandler) Name() string {
+func (h *awsIAMInstanceProfileControlPlanePatchHandler) Name() string {
 	return ControlPlaneHandlerNamePatch
 }
 
-func (h *customImageControlPlanePatchHandler) Mutate(
+func (h *awsIAMInstanceProfileControlPlanePatchHandler) Mutate(
 	ctx context.Context,
 	obj runtime.Object,
 	vars map[string]apiextensionsv1.JSON,
@@ -84,7 +76,7 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	customImageVar, found, err := variables.Get[v1alpha1.OCIImage](
+	iamInstanceProfileVar, found, err := variables.Get[v1alpha1.IAMInstanceProfile](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -93,8 +85,8 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 		return err
 	}
 	if !found {
-		log.V(5).
-			Info("Docker customImage variable not defined for control-plane, using default KinD node image")
+		log.V(5).Info("AWS IAM instance profile variable for control-plane not defined")
+		return nil
 	}
 
 	log = log.WithValues(
@@ -103,55 +95,35 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		customImageVar,
+		iamInstanceProfileVar,
 	)
 
 	return patches.Generate(
 		obj,
 		vars,
 		&holderRef,
-		selectors.InfrastructureControlPlaneMachines("v1beta1", "DockerMachineTemplate"),
+		selectors.InfrastructureControlPlaneMachines(
+			"v1beta2",
+			"AWSMachineTemplate",
+		),
 		log,
-		func(obj *capdv1.DockerMachineTemplate) error {
-			variablePath := []string{"builtin", "controlPlane", "version"}
-
-			if customImageVar == "" {
-				kubernetesVersion, found, err := variables.Get[string](
-					vars,
-					variablePath[0],
-					variablePath[1:]...)
-				if err != nil {
-					return err
-				}
-				if !found {
-					return fmt.Errorf(
-						"missing required variable: %s",
-						strings.Join(variablePath, "."),
-					)
-				}
-
-				customImageVar = v1alpha1.OCIImage(
-					defaultKinDImageRepository + ":" + kubernetesVersion,
-				)
-			}
-
+		func(obj *capav1.AWSMachineTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-				"customImage", customImageVar,
-			).Info("setting customImage in control plane DockerMachineTemplate spec")
+			).Info("setting IAM instance profile in control plane AWSMachineTemplate spec")
 
-			obj.Spec.Template.Spec.CustomImage = string(customImageVar)
+			obj.Spec.Template.Spec.IAMInstanceProfile = string(iamInstanceProfileVar)
 
 			return nil
 		},
 	)
 }
 
-func (h *customImageControlPlanePatchHandler) GeneratePatches(
+func (h *awsIAMInstanceProfileControlPlanePatchHandler) GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
 ) {
-	handlers.GeneratePatches(ctx, req, resp, apis.CAPDDecoder(), h.Mutate)
+	handlers.GeneratePatches(ctx, req, resp, apis.CAPADecoder(), h.Mutate)
 }
