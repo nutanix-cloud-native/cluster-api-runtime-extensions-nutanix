@@ -33,7 +33,7 @@ spec:
 
 Applying this configuration will result in the following value being set:
 
-- control-plane `AWSMachineTemplte`:
+- control-plane `AWSMachineTemplate`:
 
   - ```yaml
     spec:
@@ -42,7 +42,7 @@ Applying this configuration will result in the following value being set:
           iamInstanceProfile: custom-control-plane.cluster-api-provider-aws.sigs.k8s.io
     ```
 
-- worker `AWSMachineTemplte`:
+- worker `AWSMachineTemplate`:
 
   - ```yaml
     spec:
