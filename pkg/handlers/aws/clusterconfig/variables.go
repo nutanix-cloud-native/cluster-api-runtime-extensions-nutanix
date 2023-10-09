@@ -23,9 +23,6 @@ var (
 const (
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "AWSClusterConfigVars"
-
-	// AWSVariableName is the AWS config patch variable name.
-	AWSVariableName = "aws"
 )
 
 func NewVariable() *awsClusterConfigVariableHandler {

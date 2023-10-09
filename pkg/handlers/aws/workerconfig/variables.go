@@ -23,9 +23,6 @@ var (
 const (
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "AWSWorkerConfigVars"
-
-	// AWSVariableName is the AWS config patch variable name.
-	AWSVariableName = "aws"
 )
 
 func NewVariable() *awsWorkerConfigVariableHandler {

@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package instancetype
+package network
 
 import (
 	"context"
@@ -18,33 +18,38 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
-type awsInstanceTypeWorkerPatchHandler struct {
+const (
+	// VariableName is the external patch variable name.
+	VariableName = "network"
+)
+
+type awsNetworkPatchHandler struct {
 	variableName      string
 	variableFieldPath []string
 }
 
-func NewWorkerPatch() *awsInstanceTypeWorkerPatchHandler {
-	return newAWSInstanceTypeWorkerPatchHandler(
-		workerconfig.MetaVariableName,
+func NewPatch() *awsNetworkPatchHandler {
+	return newAWSPatchPatchHandler(
+		clusterconfig.MetaVariableName,
 		v1alpha1.AWSVariableName,
 		VariableName,
 	)
 }
 
-func newAWSInstanceTypeWorkerPatchHandler(
+func newAWSPatchPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
-) *awsInstanceTypeWorkerPatchHandler {
-	return &awsInstanceTypeWorkerPatchHandler{
+) *awsNetworkPatchHandler {
+	return &awsNetworkPatchHandler{
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
 }
 
-func (h *awsInstanceTypeWorkerPatchHandler) Mutate(
+func (h *awsNetworkPatchHandler) Mutate(
 	ctx context.Context,
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
@@ -55,7 +60,7 @@ func (h *awsInstanceTypeWorkerPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	instanceTypeVar, found, err := variables.Get[v1alpha1.InstanceType](
+	networkVar, found, err := variables.Get[v1alpha1.AWSNetwork](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -64,7 +69,7 @@ func (h *awsInstanceTypeWorkerPatchHandler) Mutate(
 		return err
 	}
 	if !found {
-		log.V(5).Info("AWS instance type variable for worker not defined")
+		log.V(5).Info("AWS Network variable not defined")
 		return nil
 	}
 
@@ -74,25 +79,41 @@ func (h *awsInstanceTypeWorkerPatchHandler) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		instanceTypeVar,
+		networkVar,
 	)
 
 	return patches.MutateIfApplicable(
 		obj,
 		vars,
 		&holderRef,
-		selectors.InfrastructureWorkerMachineTemplates(
-			"v1beta2",
-			"AWSMachineTemplate",
-		),
+		selectors.InfrastructureCluster(capav1.GroupVersion.Version, "AWSClusterTemplate"),
 		log,
-		func(obj *capav1.AWSMachineTemplate) error {
+		func(obj *capav1.AWSClusterTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting instance type in workers AWSMachineTemplate spec")
+			).Info("setting Network in AWSCluster spec")
 
-			obj.Spec.Template.Spec.InstanceType = string(instanceTypeVar)
+			if networkVar.VPC != nil &&
+				networkVar.VPC.ID != "" {
+				obj.Spec.Template.Spec.NetworkSpec.VPC = capav1.VPCSpec{
+					ID: networkVar.VPC.ID,
+				}
+			}
+
+			if networkVar.Subnets != nil &&
+				len(networkVar.Subnets) > 0 {
+				subnets := make([]capav1.SubnetSpec, 0)
+				for _, subnet := range networkVar.Subnets {
+					if subnet.ID == "" {
+						continue
+					}
+					subnets = append(subnets, capav1.SubnetSpec{
+						ID: subnet.ID,
+					})
+				}
+				obj.Spec.Template.Spec.NetworkSpec.Subnets = subnets
+			}
 
 			return nil
 		},

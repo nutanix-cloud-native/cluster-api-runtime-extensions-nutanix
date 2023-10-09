@@ -12,6 +12,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/network"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
 	genericmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation"
 )
@@ -20,8 +21,9 @@ import (
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
-			region.NewPatch(),
 			calico.NewPatch(),
+			region.NewPatch(),
+			network.NewPatch(),
 			iaminstanceprofile.NewControlPlanePatch(),
 			instancetype.NewControlPlanePatch(),
 			ami.NewControlPlanePatch(),
