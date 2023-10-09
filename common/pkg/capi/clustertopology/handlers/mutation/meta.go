@@ -60,6 +60,7 @@ func (mgp metaGeneratePatches) GeneratePatches(
 ) {
 	clusterKey := handlers.ClusterKeyFromReq(req)
 
+	patchOption := topologymutation.PatchFormat{Format: runtimehooksv1.JSONMergePatchType}
 	topologymutation.WalkTemplates(
 		ctx,
 		unstructured.UnstructuredJSONScheme,
@@ -79,5 +80,6 @@ func (mgp metaGeneratePatches) GeneratePatches(
 
 			return nil
 		},
+		patchOption,
 	)
 }
