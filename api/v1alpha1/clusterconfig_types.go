@@ -16,6 +16,7 @@ import (
 
 const (
 	CNIProviderCalico = "calico"
+	CSIProviderAWSEBS = "aws-ebs"
 )
 
 //+kubebuilder:object:root=true
@@ -320,6 +321,9 @@ type Addons struct {
 
 	// +optional
 	NFD *NFD `json:"nfd,omitempty"`
+
+	// +optional
+	CSIProviders *CSIProviders `json:"csi,omitempty"`
 }
 
 func (Addons) VariableSchema() clusterv1.VariableSchema {
@@ -330,6 +334,7 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"cni": CNI{}.VariableSchema().OpenAPIV3Schema,
 				"nfd": NFD{}.VariableSchema().OpenAPIV3Schema,
+				"csi": CSIProviders{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -365,6 +370,45 @@ func (NFD) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
+		},
+	}
+}
+
+type CSIProviders struct {
+	// +optional
+	Providers []CSIProvider `json:"providers,omitempty"`
+	// +optional
+	DefaultClassName string `json:"defaultClassName,omitempty"`
+}
+
+type CSIProvider struct {
+	Name string `json:"name,omitempty"`
+}
+
+func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
+	supportedCSIProviders := []string{CSIProviderAWSEBS}
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"providers": {
+					Type: "array",
+					Items: &clusterv1.JSONSchemaProps{
+						Type: "object",
+						Properties: map[string]clusterv1.JSONSchemaProps{
+							"name": {
+								Type: "string",
+								Enum: variables.MustMarshalValuesToEnumJSON(
+									supportedCSIProviders...),
+							},
+						},
+					},
+				},
+				"defaultClassName": {
+					Type: "string",
+					Enum: variables.MustMarshalValuesToEnumJSON(supportedCSIProviders...),
+				},
+			},
 		},
 	}
 }

@@ -14,7 +14,7 @@ import (
 	genericmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation"
 )
 
-// MetaPatchHandler returns a meta patch handler for mutating CAPD clusters.
+// MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{

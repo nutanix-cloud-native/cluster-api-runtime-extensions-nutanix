@@ -111,8 +111,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// awsMetaHandlers combines all AWS patch and variable handlers under a single handler.
+	// This genericMetaPatchHandlers combines all other patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
+	// awsMetaHandlers combines all AWS patch and variable handlers under a single handler.
 	awsMetaHandlers := []handlers.Named{
 		awsclusterconfig.NewVariable(),
 		awsworkerconfig.NewVariable(),

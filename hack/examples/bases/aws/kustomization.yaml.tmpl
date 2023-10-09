@@ -32,6 +32,15 @@ patches:
         - name: "clusterConfig"
           value:
             aws: {}
+    - op: "add"
+      path: "/spec/topology/variables/0/value/addons"
+      value:
+        cni:
+          provider: calico
+        nfd: {}
+        csi:
+          providers:
+            - name: aws-ebs
 - target:
     group: cluster.x-k8s.io
     kind: ClusterClass

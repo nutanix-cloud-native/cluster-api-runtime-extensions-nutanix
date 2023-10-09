@@ -23,6 +23,9 @@ spec:
           addons:
             cni:
               provider: calico
+            csi:
+              providers:
+                - name: aws-ebs
             nfd: {}
           aws: {}
     version: v1.27.5

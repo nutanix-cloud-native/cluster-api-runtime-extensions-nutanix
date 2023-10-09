@@ -32,6 +32,12 @@ patches:
         - name: "clusterConfig"
           value:
             docker: {}
+    - op: "add"
+      path: "/spec/topology/variables/0/value/addons"
+      value:
+        nfd: {}
+        cni:
+          provider: calico
 - target:
     group: cluster.x-k8s.io
     kind: ClusterClass
