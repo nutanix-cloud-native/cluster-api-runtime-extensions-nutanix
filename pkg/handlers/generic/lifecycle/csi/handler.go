@@ -13,6 +13,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -133,7 +134,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		if cm != nil {
 			if provider.Name == csiProviders.DefaultClassName {
 				log.Info("Setting default storage class ", provider, csiProviders.DefaultClassName)
-				err = setDefaultStorageClass(ctx, clusterKey, cm)
+				err = setDefaultStorageClass(ctx, log, cm)
 				if err != nil {
 					log.Error(
 						err,
@@ -206,13 +207,9 @@ func (c *CSIHandler) EnsureCSICRSForCluster(
 
 func setDefaultStorageClass(
 	ctx context.Context,
-	clusterKey ctrlclient.ObjectKey,
+	log logr.Logger,
 	cm *corev1.ConfigMap,
 ) error {
-	log := ctrl.LoggerFrom(ctx).WithValues(
-		"cluster",
-		clusterKey,
-	)
 	for k, contents := range cm.Data {
 		objs, err := utilyaml.ToUnstructured([]byte(contents))
 		if err != nil {
