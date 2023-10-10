@@ -8,6 +8,7 @@ import (
 	_ "embed"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
@@ -15,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
@@ -99,7 +99,7 @@ func (h *awsAMISpecPatchHandler) Mutate(
 	)
 
 	return patches.Generate(
-		obj,
+		obj.(*unstructured.Unstructured),
 		vars,
 		&holderRef,
 		selectors.InfrastructureControlPlaneMachines(capav1.GroupVersion.Version, "AWSMachineTemplate"),
@@ -127,7 +127,7 @@ func (h *awsAMISpecPatchHandler) GeneratePatches(
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		apis.CAPADecoder(),
+		unstructured.UnstructuredJSONScheme,
 		req,
 		resp,
 		func(
