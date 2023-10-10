@@ -27,7 +27,8 @@ spec:
               providers:
                 - name: aws-ebs
             nfd: {}
-          aws: {}
+          aws:
+            region: us-west-2
     version: v1.27.5
     workers:
       machineDeployments:

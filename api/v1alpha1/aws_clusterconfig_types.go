@@ -5,8 +5,6 @@ package v1alpha1
 
 import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 )
 
 type AWSSpec struct {
@@ -22,7 +20,6 @@ func (AWSSpec) VariableSchema() clusterv1.VariableSchema {
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"region": Region("").VariableSchema().OpenAPIV3Schema,
 			},
-			Required: []string{"region"},
 		},
 	}
 }
@@ -33,7 +30,6 @@ func (Region) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type:        "string",
-			Default:     variables.MustMarshal("us-west-2"),
 			Description: "AWS region to create cluster in",
 		},
 	}
