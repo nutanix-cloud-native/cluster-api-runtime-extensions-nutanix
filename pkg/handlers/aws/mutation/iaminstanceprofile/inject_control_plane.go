@@ -27,6 +27,9 @@ import (
 )
 
 const (
+	// VariableName is the external patch variable name.
+	VariableName = "iamInstanceProfile"
+
 	// ControlPlaneHandlerNamePatch is the name of the inject handler.
 	ControlPlaneHandlerNamePatch = "AWSIAMInstanceProfileControlPlanePatch"
 )

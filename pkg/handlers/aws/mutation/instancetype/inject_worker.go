@@ -1,11 +1,14 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package iaminstanceprofile
+package instancetype
 
 import (
 	"context"
 	_ "embed"
+
+	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 
@@ -17,57 +20,53 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
-
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
-	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 )
 
 const (
 	// WorkerHandlerNamePatch is the name of the inject handler.
-	WorkerHandlerNamePatch = "AWSIAMInstanceProfileWorkerPatch"
+	WorkerHandlerNamePatch = "AWSInstanceTypeWorkerPatch"
 )
 
-type awsIAMInstanceProfileWorkerPatchHandler struct {
+type awsInstanceTypeWorkerPatchHandler struct {
 	variableName      string
 	variableFieldPath []string
 }
 
 var (
-	_ commonhandlers.Named     = &awsIAMInstanceProfileWorkerPatchHandler{}
-	_ mutation.GeneratePatches = &awsIAMInstanceProfileWorkerPatchHandler{}
-	_ mutation.MetaMutator     = &awsIAMInstanceProfileWorkerPatchHandler{}
+	_ commonhandlers.Named     = &awsInstanceTypeWorkerPatchHandler{}
+	_ mutation.GeneratePatches = &awsInstanceTypeWorkerPatchHandler{}
+	_ mutation.MetaMutator     = &awsInstanceTypeWorkerPatchHandler{}
 )
 
-func NewWorkerMetaPatch() *awsIAMInstanceProfileWorkerPatchHandler {
-	return newAWSIAMInstanceProfileWorkerPatchHandler(
+func NewWorkerMetaPatch() *awsInstanceTypeWorkerPatchHandler {
+	return newAWSInstanceTypeWorkerPatchHandler(
 		workerconfig.MetaVariableName,
 		awsworkerconfig.AWSVariableName,
 		VariableName,
 	)
 }
 
-func newAWSIAMInstanceProfileWorkerPatchHandler(
+func newAWSInstanceTypeWorkerPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
-) *awsIAMInstanceProfileWorkerPatchHandler {
-	return &awsIAMInstanceProfileWorkerPatchHandler{
+) *awsInstanceTypeWorkerPatchHandler {
+	return &awsInstanceTypeWorkerPatchHandler{
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
 }
 
-func (h *awsIAMInstanceProfileWorkerPatchHandler) Name() string {
+func (h *awsInstanceTypeWorkerPatchHandler) Name() string {
 	return WorkerHandlerNamePatch
 }
 
-func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
+func (h *awsInstanceTypeWorkerPatchHandler) Mutate(
 	ctx context.Context,
 	obj runtime.Object,
 	vars map[string]apiextensionsv1.JSON,
@@ -78,7 +77,7 @@ func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	iamInstanceProfileVar, found, err := variables.Get[v1alpha1.IAMInstanceProfile](
+	instanceTypeVar, found, err := variables.Get[v1alpha1.InstanceType](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -87,7 +86,7 @@ func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
 		return err
 	}
 	if !found {
-		log.V(5).Info("AWS IAM instance profile variable for workers not defined")
+		log.V(5).Info("AWS instance type variable for worker not defined")
 		return nil
 	}
 
@@ -97,7 +96,7 @@ func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		iamInstanceProfileVar,
+		instanceTypeVar,
 	)
 
 	return patches.Generate(
@@ -113,16 +112,16 @@ func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting IAM instance profile in worker AWSMachineTemplate spec")
+			).Info("setting instance type in workers AWSMachineTemplate spec")
 
-			obj.Spec.Template.Spec.IAMInstanceProfile = string(iamInstanceProfileVar)
+			obj.Spec.Template.Spec.InstanceType = string(instanceTypeVar)
 
 			return nil
 		},
 	)
 }
 
-func (h *awsIAMInstanceProfileWorkerPatchHandler) GeneratePatches(
+func (h *awsInstanceTypeWorkerPatchHandler) GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
