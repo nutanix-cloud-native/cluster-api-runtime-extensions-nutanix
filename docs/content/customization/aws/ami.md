@@ -2,7 +2,8 @@
 title = "AWS AMI ID and Format spec"
 +++
 
-The AWS AMI customization allows the user to specify the AMI or AMI Lookup arguments for machine image of a control plane or nodepool machine.
+The AWS AMI customization allows the user to specify the AMI or AMI Lookup arguments for a AWS machine.
+The AMI customization can be applied to both control plane and nodepool machines.
 This customization will be available when the
 [provider-specific cluster configuration patch]({{< ref "..">}}) is included in the `ClusterClass`.
 
@@ -70,8 +71,8 @@ Applying this configuration will result in the following value being set:
           lookupFormat: "my-default-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
           lookupOrg: "123456789"
           lookupBaseOS: "ubuntu-20.04"
-
     ```
+
 - worker `AWSMachineTemplate`:
 
   - ```yaml

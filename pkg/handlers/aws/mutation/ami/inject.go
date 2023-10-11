@@ -1,14 +1,11 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package ami
 
 import (
 	"context"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,6 +14,13 @@ import (
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 )
 
 const (
@@ -72,7 +76,8 @@ func (h *awsAMISpecPatchHandler) Mutate(
 		return err
 	}
 	if !found {
-		log.V(5).Info("AWS amiSpec variable not defined. Default AMI provided by CAPA will be used.")
+		log.V(5).
+			Info("AWS amiSpec variable not defined. Default AMI provided by CAPA will be used.")
 		return nil
 	}
 

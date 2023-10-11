@@ -74,7 +74,7 @@ func MutateIfApplicable[T runtime.Object](
 		return fmt.Errorf("failed to serialize unmodified typed object: %w", err)
 	}
 	if err := serializer.Encode(typed, &modifiedTypedBuf); err != nil {
-		return fmt.Errorf("failed to serialize unmodified typed object: %w", err)
+		return fmt.Errorf("failed to serialize modified typed object: %w", err)
 	}
 
 	jsonOps, err := jsonpatch.CreatePatch(unmodifiedTypedBuf.Bytes(), modifiedTypedBuf.Bytes())

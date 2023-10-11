@@ -20,6 +20,9 @@ func NewControlPlanePatch() *awsAMISpecPatchHandler {
 			awsclusterconfig.AWSVariableName,
 			VariableName,
 		},
-		selectors.InfrastructureControlPlaneMachines(capav1.GroupVersion.Version, "AWSMachineTemplate"),
+		selectors.InfrastructureControlPlaneMachines(
+			capav1.GroupVersion.Version,
+			"AWSMachineTemplate",
+		),
 	)
 }

@@ -16,6 +16,9 @@ func NewWorkerPatch() *awsAMISpecPatchHandler {
 			awsclusterconfig.AWSVariableName,
 			VariableName,
 		},
-		selectors.InfrastructureWorkerMachineTemplates(capav1.GroupVersion.Version, "AWSMachineTemplate"),
+		selectors.InfrastructureWorkerMachineTemplates(
+			capav1.GroupVersion.Version,
+			"AWSMachineTemplate",
+		),
 	)
 }
