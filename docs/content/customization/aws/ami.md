@@ -22,7 +22,7 @@ spec:
         value:
           controlPlane:
             aws:
-              amiSpec:
+              ami:
                 id: "ami-controlplane"
                 lookupFormat: "my-cp-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
                 lookupOrg: "123456789"
@@ -30,7 +30,7 @@ spec:
       - name: workerConfig
         value:
           aws:
-            amiSpec:
+            ami:
                 id: "ami-allWorkers"
                 lookupFormat: "my-default-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
                 lookupOrg: "123456789"
@@ -51,7 +51,7 @@ spec:
             overrides:
               - name: workerConfig
                 value:
-                   amiSpec:
+                   ami:
                     id: "ami-customWorker"
                     lookupFormat: "gpu-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
                     lookupOrg: "123456789"
@@ -78,5 +78,8 @@ Applying this configuration will result in the following value being set:
     spec:
       template:
         spec:
-          iamInstanceProfile: custom-nodes.cluster-api-provider-aws.sigs.k8s.io
+          ami: ami-customWorker
+          lookupFormat: "gpu-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
+          lookupOrg: "123456789"
+          lookupBaseOS: "ubuntu-20.04"
     ```

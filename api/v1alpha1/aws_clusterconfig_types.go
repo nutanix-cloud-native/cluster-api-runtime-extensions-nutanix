@@ -12,11 +12,6 @@ type AWSSpec struct {
 	// AWS region to create cluster in.
 	// +optional
 	Region *Region `json:"region,omitempty"`
-
-	// AMI or AMI Lookup arguments for machine image of a AWS machine.
-	// If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
-	//+optional
-	AMISpec *AMISpec `json:"amiSpec,omitempty"`
 }
 
 func (AWSSpec) VariableSchema() clusterv1.VariableSchema {

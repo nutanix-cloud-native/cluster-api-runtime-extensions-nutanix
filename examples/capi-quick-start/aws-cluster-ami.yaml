@@ -27,7 +27,8 @@ spec:
               providers:
                 - name: aws-ebs
             nfd: {}
-          aws: {}
+          aws:
+            region: us-west-2
           controlPlane:
             aws:
               ami:

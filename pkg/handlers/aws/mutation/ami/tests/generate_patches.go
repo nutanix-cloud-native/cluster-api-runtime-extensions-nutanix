@@ -24,18 +24,12 @@ func TestControlPlaneGeneratePatches(
 		t,
 		generatorFunc,
 		capitest.PatchTestDef{
-			Name: "AMI set for control plane, empty AWSMachineTemplate input",
+			Name: "AMI set for control plane",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.AMISpec{ID: "ami-controlplane"},
 					variablePath...,
-				),
-				capitest.VariableWithValue(
-					"builtin",
-					apiextensionsv1.JSON{
-						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
-					},
 				),
 			},
 			RequestItem: request.NewCPAWSMachineTemplateRequestItem("1234"),
@@ -48,7 +42,53 @@ func TestControlPlaneGeneratePatches(
 			},
 		},
 		capitest.PatchTestDef{
-			Name: "AMI set for control plane, AMI field initialized with no ID",
+			Name: "AMI lookup format set for control plane",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					variableName,
+					v1alpha1.AMISpec{
+						Format: "test-{{.kubernetesVersion}}-format",
+						Org:    "12345",
+						BaseOS: "testOS",
+					},
+					variablePath...,
+				),
+			},
+			RequestItem: request.NewCPAWSMachineTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/imageLookupFormat",
+					ValueMatcher: gomega.Equal("test-{{.kubernetesVersion}}-format"),
+				},
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/imageLookupOrg",
+					ValueMatcher: gomega.Equal("12345"),
+				},
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/imageLookupBaseOS",
+					ValueMatcher: gomega.Equal("testOS"),
+				},
+			},
+		},
+	)
+}
+
+func TestWorkerGeneratePatches(
+	t *testing.T,
+	generatorFunc func() mutation.GeneratePatches,
+	variableName string,
+	variablePath ...string,
+) {
+	t.Helper()
+
+	capitest.ValidateGeneratePatches(
+		t,
+		generatorFunc,
+		capitest.PatchTestDef{
+			Name: "AMI set for workers",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
@@ -62,12 +102,51 @@ func TestControlPlaneGeneratePatches(
 					},
 				),
 			},
-			RequestItem: request.NewCPAWSMachineTemplateRequestItem("1234"),
+			RequestItem: request.NewWorkerAWSMachineTemplateRequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation:    "add",
 					Path:         "/spec/template/spec/ami/id",
 					ValueMatcher: gomega.Equal("ami-controlplane"),
+				},
+			},
+		},
+		capitest.PatchTestDef{
+			Name: "AMI lookup format set for worker",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					variableName,
+					v1alpha1.AMISpec{
+						Format: "test-{{.kubernetesVersion}}-format",
+						Org:    "12345",
+						BaseOS: "testOS",
+					},
+
+					variablePath...,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+					},
+				),
+			},
+			RequestItem: request.NewWorkerAWSMachineTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/imageLookupFormat",
+					ValueMatcher: gomega.Equal("test-{{.kubernetesVersion}}-format"),
+				},
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/imageLookupOrg",
+					ValueMatcher: gomega.Equal("12345"),
+				},
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/imageLookupBaseOS",
+					ValueMatcher: gomega.Equal("testOS"),
 				},
 			},
 		},

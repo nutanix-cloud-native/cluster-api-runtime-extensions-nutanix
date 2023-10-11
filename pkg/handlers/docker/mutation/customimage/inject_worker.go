@@ -5,7 +5,6 @@ package customimage
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"strings"
 

@@ -40,6 +40,7 @@ func MetaWorkerPatchHandler() handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		iaminstanceprofile.NewWorkerMetaPatch(),
 		instancetype.NewWorkerMetaPatch(),
+		ami.NewWorkerPatch(),
 	}
 
 	return mutation.NewMetaGeneratePatchesHandler(

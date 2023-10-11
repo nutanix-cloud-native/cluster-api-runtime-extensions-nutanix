@@ -14,6 +14,11 @@ type AWSNodeSpec struct {
 
 	// +optional
 	InstanceType *InstanceType `json:"instanceType,omitempty"`
+
+	// AMI or AMI Lookup arguments for machine image of a AWS machine.
+	// If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
+	//+optional
+	AMISpec *AMISpec `json:"ami,omitempty"`
 }
 
 func (AWSNodeSpec) VariableSchema() clusterv1.VariableSchema {
@@ -24,7 +29,7 @@ func (AWSNodeSpec) VariableSchema() clusterv1.VariableSchema {
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"iamInstanceProfile": IAMInstanceProfile("").VariableSchema().OpenAPIV3Schema,
 				"instanceType":       InstanceType("").VariableSchema().OpenAPIV3Schema,
-				"amiSpec":            AMISpec{}.VariableSchema().OpenAPIV3Schema,
+				"ami":                AMISpec{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
