@@ -43,7 +43,7 @@ func TestMutateIfApplicable(t *testing.T) {
 			if obj.Data == nil {
 				obj.Data = map[string]string{}
 			}
-			obj.Data["foo"] = "bar"
+			obj.Data["foo"] = "bar" //nolint:goconst // bar doesn't need to be a const.
 			return nil
 		},
 		expected: &unstructured.Unstructured{
@@ -89,6 +89,37 @@ func TestMutateIfApplicable(t *testing.T) {
 		expected: &unstructured.Unstructured{
 			Object: map[string]interface{}{
 				"unknownField": "foo",
+			},
+		},
+	}, {
+		name: "check deletion of elements in slice",
+		input: &unstructured.Unstructured{Object: map[string]interface{}{
+			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+			"kind":       "KubeadmControlPlaneTemplate",
+			"data": map[string]interface{}{
+				"existingFoo": "bar",
+			},
+		}},
+		holderRef: &runtimehooksv1.HolderReference{
+			Kind:      "Cluster",
+			FieldPath: "spec.controlPlaneRef",
+		},
+		patchSelector: selectors.ControlPlane(),
+		mutFn: func(obj *v1.ConfigMap) error {
+			if obj.Data == nil {
+				obj.Data = map[string]string{}
+			}
+			obj.Data["foo"] = "bar"
+			delete(obj.Data, "existingFoo")
+			return nil
+		},
+		expected: &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+				"kind":       "KubeadmControlPlaneTemplate",
+				"data": map[string]interface{}{
+					"foo": "bar",
+				},
 			},
 		},
 	}}

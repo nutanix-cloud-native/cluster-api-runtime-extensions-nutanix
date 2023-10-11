@@ -17,7 +17,6 @@
     "gojq@latest",
     "path:./hack/flakes/golangci-lint",
     "golines@latest",
-    "google-cloud-sdk@latest",
     "goreleaser@latest",
     "gotestsum@latest",
     "hadolint@latest",
