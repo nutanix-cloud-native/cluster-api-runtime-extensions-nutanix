@@ -7,11 +7,6 @@ import (
 	"context"
 	_ "embed"
 
-	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
-
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
-
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -26,6 +21,9 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
+	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 )
 
 const (

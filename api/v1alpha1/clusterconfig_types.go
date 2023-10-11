@@ -93,7 +93,7 @@ type GenericClusterConfig struct {
 	Addons *Addons `json:"addons,omitempty"`
 }
 
-func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema {
+func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Cluster configuration",
