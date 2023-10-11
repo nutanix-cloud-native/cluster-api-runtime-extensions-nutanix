@@ -14,20 +14,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
-)
-
-const (
-	// WorkerHandlerNamePatch is the name of the inject handler.
-	WorkerHandlerNamePatch = "AWSInstanceTypeWorkerPatch"
 )
 
 type awsInstanceTypeWorkerPatchHandler struct {
@@ -35,13 +27,7 @@ type awsInstanceTypeWorkerPatchHandler struct {
 	variableFieldPath []string
 }
 
-var (
-	_ commonhandlers.Named     = &awsInstanceTypeWorkerPatchHandler{}
-	_ mutation.GeneratePatches = &awsInstanceTypeWorkerPatchHandler{}
-	_ mutation.MetaMutator     = &awsInstanceTypeWorkerPatchHandler{}
-)
-
-func NewWorkerMetaPatch() *awsInstanceTypeWorkerPatchHandler {
+func NewWorkerPatch() *awsInstanceTypeWorkerPatchHandler {
 	return newAWSInstanceTypeWorkerPatchHandler(
 		workerconfig.MetaVariableName,
 		awsworkerconfig.AWSVariableName,
@@ -57,10 +43,6 @@ func newAWSInstanceTypeWorkerPatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
-}
-
-func (h *awsInstanceTypeWorkerPatchHandler) Name() string {
-	return WorkerHandlerNamePatch
 }
 
 func (h *awsInstanceTypeWorkerPatchHandler) Mutate(
@@ -116,12 +98,4 @@ func (h *awsInstanceTypeWorkerPatchHandler) Mutate(
 			return nil
 		},
 	)
-}
-
-func (h *awsInstanceTypeWorkerPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	handlers.GeneratePatches(ctx, req, resp, h.Mutate)
 }

@@ -20,5 +20,26 @@ func TestVariableValidation(t *testing.T) {
 		ptr.To(v1alpha1.ClusterConfigSpec{Docker: &v1alpha1.DockerSpec{}}.VariableSchema()),
 		true,
 		NewVariable,
+		capitest.VariableTestDef{
+			Name: "valid",
+			Vals: v1alpha1.ClusterConfigSpec{
+				ControlPlane: &v1alpha1.NodeConfigSpec{
+					Docker: &v1alpha1.DockerNodeSpec{
+						CustomImage: ptr.To(v1alpha1.OCIImage("docker.io/some/image:v2.3.4")),
+					},
+				},
+			},
+		},
+		capitest.VariableTestDef{
+			Name: "invalid",
+			Vals: v1alpha1.ClusterConfigSpec{
+				ControlPlane: &v1alpha1.NodeConfigSpec{
+					Docker: &v1alpha1.DockerNodeSpec{
+						CustomImage: ptr.To(v1alpha1.OCIImage("this.is.not.valid?")),
+					},
+				},
+			},
+			ExpectError: true,
+		},
 	)
 }

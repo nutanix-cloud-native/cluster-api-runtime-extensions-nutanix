@@ -14,20 +14,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
-)
-
-const (
-	// WorkerHandlerNamePatch is the name of the inject handler.
-	WorkerHandlerNamePatch = "AWSIAMInstanceProfileWorkerPatch"
 )
 
 type awsIAMInstanceProfileWorkerPatchHandler struct {
@@ -35,13 +27,7 @@ type awsIAMInstanceProfileWorkerPatchHandler struct {
 	variableFieldPath []string
 }
 
-var (
-	_ commonhandlers.Named     = &awsIAMInstanceProfileWorkerPatchHandler{}
-	_ mutation.GeneratePatches = &awsIAMInstanceProfileWorkerPatchHandler{}
-	_ mutation.MetaMutator     = &awsIAMInstanceProfileWorkerPatchHandler{}
-)
-
-func NewWorkerMetaPatch() *awsIAMInstanceProfileWorkerPatchHandler {
+func NewWorkerPatch() *awsIAMInstanceProfileWorkerPatchHandler {
 	return newAWSIAMInstanceProfileWorkerPatchHandler(
 		workerconfig.MetaVariableName,
 		awsworkerconfig.AWSVariableName,
@@ -57,10 +43,6 @@ func newAWSIAMInstanceProfileWorkerPatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
-}
-
-func (h *awsIAMInstanceProfileWorkerPatchHandler) Name() string {
-	return WorkerHandlerNamePatch
 }
 
 func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
@@ -116,12 +98,4 @@ func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
 			return nil
 		},
 	)
-}
-
-func (h *awsIAMInstanceProfileWorkerPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	handlers.GeneratePatches(ctx, req, resp, h.Mutate)
 }

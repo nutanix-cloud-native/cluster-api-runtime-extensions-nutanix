@@ -9,44 +9,25 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 )
 
-const (
-	// HandlerNamePatch is the name of the inject handler.
-	HandlerNamePatch = "AuditPolicyPatch"
-)
-
 type auditPolicyPatchHandler struct{}
 
-var (
-	_ handlers.Named           = &auditPolicyPatchHandler{}
-	_ mutation.GeneratePatches = &auditPolicyPatchHandler{}
-	_ mutation.MetaMutator     = &auditPolicyPatchHandler{}
-
-	//go:embed embedded/apiserver-audit-policy.yaml
-	auditPolicy string
-)
+//go:embed embedded/apiserver-audit-policy.yaml
+var auditPolicy string
 
 const auditPolicyPath = "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml"
 
 func NewPatch() *auditPolicyPatchHandler {
 	return &auditPolicyPatchHandler{}
-}
-
-func (h *auditPolicyPatchHandler) Name() string {
-	return HandlerNamePatch
 }
 
 func (h *auditPolicyPatchHandler) Mutate(
@@ -111,33 +92,6 @@ func (h *auditPolicyPatchHandler) Mutate(
 			)
 
 			return nil
-		},
-	)
-}
-
-func (h *auditPolicyPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	topologymutation.WalkTemplates(
-		ctx,
-		unstructured.UnstructuredJSONScheme,
-		req,
-		resp,
-		func(
-			ctx context.Context,
-			obj runtime.Object,
-			vars map[string]apiextensionsv1.JSON,
-			holderRef runtimehooksv1.HolderReference,
-		) error {
-			return h.Mutate(
-				ctx,
-				obj.(*unstructured.Unstructured),
-				vars,
-				holderRef,
-				client.ObjectKey{},
-			)
 		},
 	)
 }

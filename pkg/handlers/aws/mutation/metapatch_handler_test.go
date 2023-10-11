@@ -11,8 +11,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami"
+	amitests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami/tests"
 	calicotests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile"
 	iaminstanceprofiletests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile/tests"
@@ -23,7 +26,6 @@ import (
 	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	auditpolicytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy/tests"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/cni"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
 	etcdtests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/extraapiservercertsans"
@@ -109,7 +111,7 @@ func TestGeneratePatches(t *testing.T) {
 		metaPatchGeneratorFunc(mgr),
 		clusterconfig.MetaVariableName,
 		"addons",
-		cni.VariableName,
+		v1alpha1.CNIVariableName,
 	)
 
 	auditpolicytests.TestGeneratePatches(
@@ -152,5 +154,22 @@ func TestGeneratePatches(t *testing.T) {
 		clusterconfig.MetaVariableName,
 		imageregistries.VariableName,
 		imageregistrycredentials.VariableName,
+	)
+
+	amitests.TestControlPlaneGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		clusterconfig.MetaControlPlaneConfigName,
+		awsclusterconfig.AWSVariableName,
+		ami.VariableName,
+	)
+
+	amitests.TestWorkerGeneratePatches(
+		t,
+		workerPatchGeneratorFunc(),
+		workerconfig.MetaVariableName,
+		awsclusterconfig.AWSVariableName,
+		ami.VariableName,
 	)
 }

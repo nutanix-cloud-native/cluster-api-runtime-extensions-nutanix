@@ -9,15 +9,11 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
@@ -27,8 +23,8 @@ import (
 )
 
 const (
-	// HandlerNamePatch is the name of the inject handler.
-	HandlerNamePatch = "AWSRegionPatch"
+	// VariableName is the external patch variable name.
+	VariableName = "region"
 )
 
 type awsRegionPatchHandler struct {
@@ -36,17 +32,7 @@ type awsRegionPatchHandler struct {
 	variableFieldPath []string
 }
 
-var (
-	_ commonhandlers.Named     = &awsRegionPatchHandler{}
-	_ mutation.GeneratePatches = &awsRegionPatchHandler{}
-	_ mutation.MetaMutator     = &awsRegionPatchHandler{}
-)
-
 func NewPatch() *awsRegionPatchHandler {
-	return newAWSRegionPatchHandler(VariableName)
-}
-
-func NewMetaPatch() *awsRegionPatchHandler {
 	return newAWSRegionPatchHandler(
 		clusterconfig.MetaVariableName,
 		awsclusterconfig.AWSVariableName,
@@ -62,10 +48,6 @@ func newAWSRegionPatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
-}
-
-func (h *awsRegionPatchHandler) Name() string {
-	return HandlerNamePatch
 }
 
 func (h *awsRegionPatchHandler) Mutate(
@@ -116,33 +98,6 @@ func (h *awsRegionPatchHandler) Mutate(
 			obj.Spec.Template.Spec.Region = string(regionVar)
 
 			return nil
-		},
-	)
-}
-
-func (h *awsRegionPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	topologymutation.WalkTemplates(
-		ctx,
-		unstructured.UnstructuredJSONScheme,
-		req,
-		resp,
-		func(
-			ctx context.Context,
-			obj runtime.Object,
-			vars map[string]apiextensionsv1.JSON,
-			holderRef runtimehooksv1.HolderReference,
-		) error {
-			return h.Mutate(
-				ctx,
-				obj.(*unstructured.Unstructured),
-				vars,
-				holderRef,
-				client.ObjectKey{},
-			)
 		},
 	)
 }

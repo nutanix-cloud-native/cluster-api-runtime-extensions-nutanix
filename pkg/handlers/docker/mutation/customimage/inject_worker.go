@@ -15,20 +15,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 	dockerworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
-)
-
-const (
-	// WorkerHandlerNamePatch is the name of the inject handler.
-	WorkerHandlerNamePatch = "DockerCustomImageWorkerPatch"
 )
 
 type customImageWorkerPatchHandler struct {
@@ -36,17 +28,7 @@ type customImageWorkerPatchHandler struct {
 	variableFieldPath []string
 }
 
-var (
-	_ commonhandlers.Named     = &customImageWorkerPatchHandler{}
-	_ mutation.GeneratePatches = &customImageWorkerPatchHandler{}
-	_ mutation.MetaMutator     = &customImageWorkerPatchHandler{}
-)
-
 func NewWorkerPatch() *customImageWorkerPatchHandler {
-	return newcustomImageWorkerPatchHandler(VariableName)
-}
-
-func NewWorkerMetaPatch() *customImageWorkerPatchHandler {
 	return newcustomImageWorkerPatchHandler(
 		workerconfig.MetaVariableName,
 		dockerworkerconfig.DockerVariableName,
@@ -62,10 +44,6 @@ func newcustomImageWorkerPatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
-}
-
-func (h *customImageWorkerPatchHandler) Name() string {
-	return WorkerHandlerNamePatch
 }
 
 func (h *customImageWorkerPatchHandler) Mutate(
@@ -144,12 +122,4 @@ func (h *customImageWorkerPatchHandler) Mutate(
 			return nil
 		},
 	)
-}
-
-func (h *customImageWorkerPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	handlers.GeneratePatches(ctx, req, resp, h.Mutate)
 }

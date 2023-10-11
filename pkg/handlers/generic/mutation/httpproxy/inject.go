@@ -10,18 +10,14 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
@@ -29,8 +25,8 @@ import (
 )
 
 const (
-	// HandlerNamePatch is the name of the inject handler.
-	HandlerNamePatch = "HTTPProxyPatch"
+	// VariableName is the external patch variable name.
+	VariableName = "proxy"
 
 	// instanceMetadataIP is the IPv4 address used to retrieve
 	// instance metadata in AWS, Azure, OpenStack, etc.
@@ -44,18 +40,7 @@ type httpProxyPatchHandler struct {
 	variableFieldPath []string
 }
 
-var (
-	_ commonhandlers.Named     = &httpProxyPatchHandler{}
-	_ mutation.GeneratePatches = &httpProxyPatchHandler{}
-)
-
 func NewPatch(
-	cl ctrlclient.Reader,
-) *httpProxyPatchHandler {
-	return newHTTPProxyPatchHandler(cl, VariableName)
-}
-
-func NewMetaPatch(
 	cl ctrlclient.Reader,
 ) *httpProxyPatchHandler {
 	return newHTTPProxyPatchHandler(cl, clusterconfig.MetaVariableName, VariableName)
@@ -71,10 +56,6 @@ func newHTTPProxyPatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
-}
-
-func (h *httpProxyPatchHandler) Name() string {
-	return HandlerNamePatch
 }
 
 func (h *httpProxyPatchHandler) Mutate(
@@ -146,29 +127,6 @@ func (h *httpProxyPatchHandler) Mutate(
 	}
 
 	return nil
-}
-
-func (h *httpProxyPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	clusterKey := commonhandlers.ClusterKeyFromReq(req)
-
-	topologymutation.WalkTemplates(
-		ctx,
-		unstructured.UnstructuredJSONScheme,
-		req,
-		resp,
-		func(
-			ctx context.Context,
-			obj runtime.Object,
-			vars map[string]apiextensionsv1.JSON,
-			holderRef runtimehooksv1.HolderReference,
-		) error {
-			return h.Mutate(ctx, obj.(*unstructured.Unstructured), vars, holderRef, clusterKey)
-		},
-	)
 }
 
 func (h *httpProxyPatchHandler) detectNoProxy(
