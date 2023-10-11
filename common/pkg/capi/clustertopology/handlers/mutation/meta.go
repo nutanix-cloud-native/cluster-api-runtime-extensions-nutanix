@@ -7,6 +7,7 @@ import (
 	"context"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
@@ -17,7 +18,7 @@ import (
 
 type MutateFunc func(
 	ctx context.Context,
-	obj runtime.Object,
+	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	clusterKey client.ObjectKey,
@@ -26,7 +27,7 @@ type MutateFunc func(
 type MetaMutator interface {
 	Mutate(
 		ctx context.Context,
-		obj runtime.Object,
+		obj *unstructured.Unstructured,
 		vars map[string]apiextensionsv1.JSON,
 		holderRef runtimehooksv1.HolderReference,
 		clusterKey client.ObjectKey,
@@ -35,18 +36,15 @@ type MetaMutator interface {
 
 type metaGeneratePatches struct {
 	name     string
-	decoder  runtime.Decoder
 	mutators []MetaMutator
 }
 
 func NewMetaGeneratePatchesHandler(
 	name string,
-	decoder runtime.Decoder,
 	mutators ...MetaMutator,
 ) handlers.Named {
 	return metaGeneratePatches{
 		name:     name,
-		decoder:  decoder,
 		mutators: mutators,
 	}
 }
@@ -64,7 +62,7 @@ func (mgp metaGeneratePatches) GeneratePatches(
 
 	topologymutation.WalkTemplates(
 		ctx,
-		mgp.decoder,
+		unstructured.UnstructuredJSONScheme,
 		req,
 		resp,
 		func(
@@ -74,7 +72,7 @@ func (mgp metaGeneratePatches) GeneratePatches(
 			holderRef runtimehooksv1.HolderReference,
 		) error {
 			for _, h := range mgp.mutators {
-				if err := h.Mutate(ctx, obj, vars, holderRef, clusterKey); err != nil {
+				if err := h.Mutate(ctx, obj.(*unstructured.Unstructured), vars, holderRef, clusterKey); err != nil {
 					return err
 				}
 			}

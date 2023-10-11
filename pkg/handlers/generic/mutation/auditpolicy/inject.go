@@ -8,6 +8,7 @@ import (
 	_ "embed"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
@@ -16,7 +17,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
@@ -51,7 +51,7 @@ func (h *auditPolicyPatchHandler) Name() string {
 
 func (h *auditPolicyPatchHandler) Mutate(
 	ctx context.Context,
-	obj runtime.Object,
+	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ client.ObjectKey,
@@ -60,7 +60,7 @@ func (h *auditPolicyPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	return patches.Generate(
+	return patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
@@ -122,7 +122,7 @@ func (h *auditPolicyPatchHandler) GeneratePatches(
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		apis.CAPIDecoder(),
+		unstructured.UnstructuredJSONScheme,
 		req,
 		resp,
 		func(
@@ -131,7 +131,13 @@ func (h *auditPolicyPatchHandler) GeneratePatches(
 			vars map[string]apiextensionsv1.JSON,
 			holderRef runtimehooksv1.HolderReference,
 		) error {
-			return h.Mutate(ctx, obj, vars, holderRef, client.ObjectKey{})
+			return h.Mutate(
+				ctx,
+				obj.(*unstructured.Unstructured),
+				vars,
+				holderRef,
+				client.ObjectKey{},
+			)
 		},
 	)
 }

@@ -13,13 +13,12 @@ import (
 	"github.com/onsi/gomega"
 	"gomodules.xyz/jsonpatch/v2"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
@@ -34,7 +33,7 @@ var _ MetaMutator = &testHandler{}
 
 func (h *testHandler) Mutate(
 	_ context.Context,
-	obj runtime.Object,
+	obj *unstructured.Unstructured,
 	_ map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ client.ObjectKey,
@@ -44,7 +43,7 @@ func (h *testHandler) Mutate(
 	}
 
 	if h.mutateControlPlane {
-		return patches.Generate(
+		return patches.MutateIfApplicable(
 			obj, nil, &holderRef, selectors.ControlPlane(), logr.Discard(),
 			func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.PostKubeadmCommands = append(
@@ -59,7 +58,7 @@ func (h *testHandler) Mutate(
 		)
 	}
 
-	return patches.Generate(
+	return patches.MutateIfApplicable(
 		obj,
 		machineVars(),
 		&holderRef,
@@ -220,7 +219,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 
 			g := gomega.NewWithT(t)
 
-			h := NewMetaGeneratePatchesHandler("", apis.CAPIDecoder(), tt.mutaters...).(GeneratePatches)
+			h := NewMetaGeneratePatchesHandler("", tt.mutaters...).(GeneratePatches)
 
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
 			h.GeneratePatches(context.Background(), &runtimehooksv1.GeneratePatchesRequest{
