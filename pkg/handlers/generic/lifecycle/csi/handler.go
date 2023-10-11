@@ -7,12 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +17,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
 const (
@@ -134,23 +135,13 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		if cm != nil {
 			if provider.Name == csiProviders.DefaultClassName {
 				log.Info("Setting default storage class ", provider, csiProviders.DefaultClassName)
-				err = setDefaultStorageClass(ctx, log, cm)
+				err = setDefaultStorageClass(log, cm)
 				if err != nil {
-					log.Error(
-						err,
-						fmt.Sprintf(
-							"failed to set default storage class",
-						),
-					)
+					log.Error(err, "failed to set default storage class")
 					resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 				}
 				if err := c.client.Update(ctx, cm); err != nil {
-					log.Error(
-						err,
-						fmt.Sprintf(
-							"failed to apply default storage class annotation to configmap",
-						),
-					)
+					log.Error(err, "failed to apply default storage class annotation to configmap")
 					resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 				}
 			}
@@ -206,7 +197,6 @@ func (c *CSIHandler) EnsureCSICRSForCluster(
 }
 
 func setDefaultStorageClass(
-	ctx context.Context,
 	log logr.Logger,
 	cm *corev1.ConfigMap,
 ) error {

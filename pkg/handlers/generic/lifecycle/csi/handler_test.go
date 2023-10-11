@@ -4,13 +4,12 @@
 package csi
 
 import (
-	"context"
 	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var startAWSConfigMap = `
@@ -47,7 +46,10 @@ func Test_setDefaultStorageClass(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := setDefaultStorageClass(context.TODO(), ctrl.LoggerFrom(context.TODO()), tt.startConfigMap)
+			err := setDefaultStorageClass(
+				logr.Discard(),
+				tt.startConfigMap,
+			)
 			if err != nil {
 				t.Fatal("failed to set default storage class", err)
 			}
