@@ -19,7 +19,6 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
@@ -220,7 +219,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 
 			g := gomega.NewWithT(t)
 
-			h := NewMetaGeneratePatchesHandler("", apis.CAPIDecoder(), tt.mutaters...).(GeneratePatches)
+			h := NewMetaGeneratePatchesHandler("", tt.mutaters...).(GeneratePatches)
 
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
 			h.GeneratePatches(context.Background(), &runtimehooksv1.GeneratePatchesRequest{

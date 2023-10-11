@@ -6,7 +6,6 @@ package mutation
 import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico"
@@ -30,7 +29,6 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"awsClusterConfigPatch",
-		apis.CAPADecoder(),
 		patchHandlers...,
 	)
 }
@@ -44,7 +42,6 @@ func MetaWorkerPatchHandler() handlers.Named {
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"awsWorkerConfigPatch",
-		apis.CAPADecoder(),
 		patchHandlers...,
 	)
 }

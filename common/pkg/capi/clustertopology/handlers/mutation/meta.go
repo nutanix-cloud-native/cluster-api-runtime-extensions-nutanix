@@ -36,18 +36,15 @@ type MetaMutator interface {
 
 type metaGeneratePatches struct {
 	name     string
-	decoder  runtime.Decoder
 	mutators []MetaMutator
 }
 
 func NewMetaGeneratePatchesHandler(
 	name string,
-	decoder runtime.Decoder,
 	mutators ...MetaMutator,
 ) handlers.Named {
 	return metaGeneratePatches{
 		name:     name,
-		decoder:  decoder,
 		mutators: mutators,
 	}
 }
