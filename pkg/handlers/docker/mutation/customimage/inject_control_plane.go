@@ -4,21 +4,17 @@
 package customimage
 
 import (
-	"context"
 	_ "embed"
 	"fmt"
+	"github.com/go-logr/logr"
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
@@ -35,8 +31,7 @@ const (
 )
 
 type customImageControlPlanePatchHandler struct {
-	variableName      string
-	variableFieldPath []string
+	*handlers.GenericPatchHandler[*capdv1.DockerMachineTemplate]
 }
 
 var (
@@ -63,94 +58,59 @@ func newCustomImageControlPlanePatchHandler(
 	variableFieldPath ...string,
 ) *customImageControlPlanePatchHandler {
 	return &customImageControlPlanePatchHandler{
-		variableName:      variableName,
-		variableFieldPath: variableFieldPath,
+		handlers.NewGenericPatchHandler[*capdv1.DockerMachineTemplate](
+			WorkerHandlerNamePatch,
+			variableFunc,
+			selectors.InfrastructureControlPlaneMachines("v1beta1", "DockerMachineTemplate"),
+			controlPlaneMutateFunc,
+			variableName,
+			variableFieldPath...,
+		).AlwaysMutate(),
 	}
 }
 
-func (h *customImageControlPlanePatchHandler) Name() string {
-	return ControlPlaneHandlerNamePatch
+func variableFunc(vars map[string]apiextensionsv1.JSON, name string, fields ...string) (any, bool, error) {
+	return variables.Get[v1alpha1.OCIImage](vars, name, fields...)
 }
 
-func (h *customImageControlPlanePatchHandler) Mutate(
-	ctx context.Context,
-	obj *unstructured.Unstructured,
+func controlPlaneMutateFunc(
+	log logr.Logger,
 	vars map[string]apiextensionsv1.JSON,
-	holderRef runtimehooksv1.HolderReference,
-	_ client.ObjectKey,
-) error {
-	log := ctrl.LoggerFrom(ctx).WithValues(
-		"holderRef", holderRef,
-	)
+	patchVar any,
+) func(obj *capdv1.DockerMachineTemplate) error {
+	return func(obj *capdv1.DockerMachineTemplate) error {
+		customImageVar := patchVar.(v1alpha1.OCIImage)
 
-	customImageVar, found, err := variables.Get[v1alpha1.OCIImage](
-		vars,
-		h.variableName,
-		h.variableFieldPath...,
-	)
-	if err != nil {
-		return err
-	}
-	if !found {
-		log.V(5).
-			Info("Docker customImage variable not defined for control-plane, using default KinD node image")
-	}
+		variablePath := []string{"builtin", "controlPlane", "version"}
 
-	log = log.WithValues(
-		"variableName",
-		h.variableName,
-		"variableFieldPath",
-		h.variableFieldPath,
-		"variableValue",
-		customImageVar,
-	)
-
-	return patches.MutateIfApplicable(
-		obj,
-		vars,
-		&holderRef,
-		selectors.InfrastructureControlPlaneMachines("v1beta1", "DockerMachineTemplate"),
-		log,
-		func(obj *capdv1.DockerMachineTemplate) error {
-			variablePath := []string{"builtin", "controlPlane", "version"}
-
-			if customImageVar == "" {
-				kubernetesVersion, found, err := variables.Get[string](
-					vars,
-					variablePath[0],
-					variablePath[1:]...)
-				if err != nil {
-					return err
-				}
-				if !found {
-					return fmt.Errorf(
-						"missing required variable: %s",
-						strings.Join(variablePath, "."),
-					)
-				}
-
-				customImageVar = v1alpha1.OCIImage(
-					defaultKinDImageRepository + ":" + kubernetesVersion,
+		if customImageVar == "" {
+			kubernetesVersion, found, err := variables.Get[string](
+				vars,
+				variablePath[0],
+				variablePath[1:]...)
+			if err != nil {
+				return err
+			}
+			if !found {
+				return fmt.Errorf(
+					"missing required variable: %s",
+					strings.Join(variablePath, "."),
 				)
 			}
 
-			log.WithValues(
-				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", client.ObjectKeyFromObject(obj),
-				"customImage", customImageVar,
-			).Info("setting customImage in control plane DockerMachineTemplate spec")
+			customImageVar = v1alpha1.OCIImage(
+				defaultKinDImageRepository + ":" + kubernetesVersion,
+			)
+		}
 
-			obj.Spec.Template.Spec.CustomImage = string(customImageVar)
+		log.WithValues(
+			"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+			"patchedObjectName", client.ObjectKeyFromObject(obj),
+			"customImage", customImageVar,
+		).Info("setting customImage in control plane DockerMachineTemplate spec")
 
-			return nil
-		},
-	)
-}
+		obj.Spec.Template.Spec.CustomImage = string(customImageVar)
 
-func (h *customImageControlPlanePatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	handlers.GeneratePatches(ctx, req, resp, h.Mutate)
+		return nil
+	}
 }

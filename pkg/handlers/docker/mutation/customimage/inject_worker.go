@@ -4,21 +4,17 @@
 package customimage
 
 import (
-	"context"
 	_ "embed"
 	"fmt"
 	"strings"
 
+	"github.com/go-logr/logr"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
@@ -33,8 +29,7 @@ const (
 )
 
 type customImageWorkerPatchHandler struct {
-	variableName      string
-	variableFieldPath []string
+	*handlers.GenericPatchHandler[*capdv1.DockerMachineTemplate]
 }
 
 var (
@@ -60,94 +55,55 @@ func newcustomImageWorkerPatchHandler(
 	variableFieldPath ...string,
 ) *customImageWorkerPatchHandler {
 	return &customImageWorkerPatchHandler{
-		variableName:      variableName,
-		variableFieldPath: variableFieldPath,
+		handlers.NewGenericPatchHandler[*capdv1.DockerMachineTemplate](
+			WorkerHandlerNamePatch,
+			variableFunc,
+			selectors.InfrastructureWorkerMachineTemplates("v1beta1", "DockerMachineTemplate"),
+			workerMutateFunc,
+			variableName,
+			variableFieldPath...,
+		).AlwaysMutate(),
 	}
 }
 
-func (h *customImageWorkerPatchHandler) Name() string {
-	return WorkerHandlerNamePatch
-}
-
-func (h *customImageWorkerPatchHandler) Mutate(
-	ctx context.Context,
-	obj *unstructured.Unstructured,
+func workerMutateFunc(
+	log logr.Logger,
 	vars map[string]apiextensionsv1.JSON,
-	holderRef runtimehooksv1.HolderReference,
-	_ client.ObjectKey,
-) error {
-	log := ctrl.LoggerFrom(ctx).WithValues(
-		"holderRef", holderRef,
-	)
+	patchVar any,
+) func(obj *capdv1.DockerMachineTemplate) error {
+	return func(obj *capdv1.DockerMachineTemplate) error {
+		customImageVar := patchVar.(v1alpha1.OCIImage)
 
-	customImageVar, found, err := variables.Get[v1alpha1.OCIImage](
-		vars,
-		h.variableName,
-		h.variableFieldPath...,
-	)
-	if err != nil {
-		return err
-	}
-	if !found {
-		log.V(5).
-			Info("Docker customImage variable not defined for workers, using default KinD node image")
-	}
+		fieldPath := []string{"builtin", "machineDeployment", "version"}
 
-	log = log.WithValues(
-		"variableName",
-		h.variableName,
-		"variableFieldPath",
-		h.variableFieldPath,
-		"variableValue",
-		customImageVar,
-	)
-
-	return patches.MutateIfApplicable(
-		obj,
-		vars,
-		&holderRef,
-		selectors.InfrastructureWorkerMachineTemplates("v1beta1", "DockerMachineTemplate"),
-		log,
-		func(obj *capdv1.DockerMachineTemplate) error {
-			fieldPath := []string{"builtin", "machineDeployment", "version"}
-
-			if customImageVar == "" {
-				kubernetesVersion, found, err := variables.Get[string](
-					vars,
-					fieldPath[0],
-					fieldPath[1:]...)
-				if err != nil {
-					return err
-				}
-				if !found {
-					return fmt.Errorf(
-						"missing required variable: %s",
-						strings.Join(fieldPath, "."),
-					)
-				}
-
-				customImageVar = v1alpha1.OCIImage(
-					defaultKinDImageRepository + ":" + kubernetesVersion,
+		if customImageVar == "" {
+			kubernetesVersion, found, err := variables.Get[string](
+				vars,
+				fieldPath[0],
+				fieldPath[1:]...)
+			if err != nil {
+				return err
+			}
+			if !found {
+				return fmt.Errorf(
+					"missing required variable: %s",
+					strings.Join(fieldPath, "."),
 				)
 			}
 
-			log.WithValues(
-				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", client.ObjectKeyFromObject(obj),
-				"customImage", customImageVar,
-			).Info("setting customImage in workers DockerMachineTemplate spec")
+			customImageVar = v1alpha1.OCIImage(
+				defaultKinDImageRepository + ":" + kubernetesVersion,
+			)
+		}
 
-			obj.Spec.Template.Spec.CustomImage = string(customImageVar)
+		log.WithValues(
+			"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+			"patchedObjectName", client.ObjectKeyFromObject(obj),
+			"customImage", customImageVar,
+		).Info("setting customImage in workers DockerMachineTemplate spec")
 
-			return nil
-		},
-	)
-}
+		obj.Spec.Template.Spec.CustomImage = string(customImageVar)
 
-func (h *customImageWorkerPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	handlers.GeneratePatches(ctx, req, resp, h.Mutate)
+		return nil
+	}
 }
