@@ -29,7 +29,7 @@ import (
 const (
 	// HandlerNamePatch is the name of the inject handler.
 	HandlerNamePatch = "AWSAMISpecPatch"
-	VariableName     = "amiSpec"
+	VariableName     = "ami"
 )
 
 type awsAMISpecPatchHandler struct {
@@ -67,7 +67,7 @@ func (h *awsAMISpecPatchHandler) Name() string {
 
 func (h *awsAMISpecPatchHandler) Mutate(
 	ctx context.Context,
-	obj runtime.Object,
+	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ client.ObjectKey,
@@ -98,8 +98,8 @@ func (h *awsAMISpecPatchHandler) Mutate(
 		amiSpecVar,
 	)
 
-	return patches.Generate(
-		obj.(*unstructured.Unstructured),
+	return patches.MutateIfApplicable(
+		obj,
 		vars,
 		&holderRef,
 		selectors.InfrastructureControlPlaneMachines(capav1.GroupVersion.Version, "AWSMachineTemplate"),
@@ -136,7 +136,13 @@ func (h *awsAMISpecPatchHandler) GeneratePatches(
 			vars map[string]apiextensionsv1.JSON,
 			holderRef runtimehooksv1.HolderReference,
 		) error {
-			return h.Mutate(ctx, obj, vars, holderRef, client.ObjectKey{})
+			return h.Mutate(
+				ctx,
+				obj.(*unstructured.Unstructured),
+				vars,
+				holderRef,
+				client.ObjectKey{},
+			)
 		},
 	)
 }
