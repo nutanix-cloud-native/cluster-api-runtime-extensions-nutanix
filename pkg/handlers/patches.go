@@ -7,6 +7,7 @@ import (
 	"context"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
@@ -19,12 +20,11 @@ func GeneratePatches(
 	ctx context.Context,
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
-	decoder runtime.Decoder,
 	mutate mutation.MutateFunc,
 ) {
 	topologymutation.WalkTemplates(
 		ctx,
-		decoder,
+		unstructured.UnstructuredJSONScheme,
 		req,
 		resp,
 		func(
@@ -33,7 +33,13 @@ func GeneratePatches(
 			vars map[string]apiextensionsv1.JSON,
 			holderRef runtimehooksv1.HolderReference,
 		) error {
-			return mutate(ctx, obj, vars, holderRef, client.ObjectKey{})
+			return mutate(
+				ctx,
+				obj.(*unstructured.Unstructured),
+				vars,
+				holderRef,
+				client.ObjectKey{},
+			)
 		},
 	)
 }

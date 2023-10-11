@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
@@ -19,7 +20,6 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
@@ -79,7 +79,7 @@ func (h *httpProxyPatchHandler) Name() string {
 
 func (h *httpProxyPatchHandler) Mutate(
 	ctx context.Context,
-	obj runtime.Object,
+	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	clusterKey ctrlclient.ObjectKey,
@@ -113,7 +113,7 @@ func (h *httpProxyPatchHandler) Mutate(
 		httpProxyVariable,
 	)
 
-	if err := patches.Generate(
+	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
@@ -129,7 +129,7 @@ func (h *httpProxyPatchHandler) Mutate(
 		return err
 	}
 
-	if err := patches.Generate(
+	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
 		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 			log.WithValues(
@@ -157,7 +157,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 
 	topologymutation.WalkTemplates(
 		ctx,
-		apis.CAPIDecoder(),
+		unstructured.UnstructuredJSONScheme,
 		req,
 		resp,
 		func(
@@ -166,7 +166,7 @@ func (h *httpProxyPatchHandler) GeneratePatches(
 			vars map[string]apiextensionsv1.JSON,
 			holderRef runtimehooksv1.HolderReference,
 		) error {
-			return h.Mutate(ctx, obj, vars, holderRef, clusterKey)
+			return h.Mutate(ctx, obj.(*unstructured.Unstructured), vars, holderRef, clusterKey)
 		},
 	)
 }

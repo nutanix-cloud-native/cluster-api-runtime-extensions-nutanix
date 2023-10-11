@@ -63,7 +63,12 @@ func MutateIfApplicable[T runtime.Object](
 	}
 
 	// Create JSON patches of the modifications.
-	serializer := kjson.NewSerializerWithOptions(kjson.DefaultMetaFactory, nil, nil, kjson.SerializerOptions{})
+	serializer := kjson.NewSerializerWithOptions(
+		kjson.DefaultMetaFactory,
+		nil,
+		nil,
+		kjson.SerializerOptions{},
+	)
 	var unmodifiedTypedBuf, modifiedTypedBuf bytes.Buffer
 	if err := serializer.Encode(unmodifiedTyped, &unmodifiedTypedBuf); err != nil {
 		return fmt.Errorf("failed to serialize unmodified typed object: %w", err)

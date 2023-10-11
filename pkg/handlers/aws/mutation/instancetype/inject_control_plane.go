@@ -8,13 +8,12 @@ import (
 	_ "embed"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/apis"
 	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
@@ -70,7 +69,7 @@ func (h *awsInstanceTypeControlPlanePatchHandler) Name() string {
 
 func (h *awsInstanceTypeControlPlanePatchHandler) Mutate(
 	ctx context.Context,
-	obj runtime.Object,
+	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ client.ObjectKey,
@@ -101,7 +100,7 @@ func (h *awsInstanceTypeControlPlanePatchHandler) Mutate(
 		instanceTypeVar,
 	)
 
-	return patches.Generate(
+	return patches.MutateIfApplicable(
 		obj,
 		vars,
 		&holderRef,
@@ -128,5 +127,5 @@ func (h *awsInstanceTypeControlPlanePatchHandler) GeneratePatches(
 	req *runtimehooksv1.GeneratePatchesRequest,
 	resp *runtimehooksv1.GeneratePatchesResponse,
 ) {
-	handlers.GeneratePatches(ctx, req, resp, apis.CAPADecoder(), h.Mutate)
+	handlers.GeneratePatches(ctx, req, resp, h.Mutate)
 }
