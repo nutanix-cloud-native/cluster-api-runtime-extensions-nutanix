@@ -8,6 +8,7 @@ import (
 )
 
 type AWSSpec struct {
+	// AWS region to create cluster in.
 	// +optional
 	Region *Region `json:"region,omitempty"`
 }
