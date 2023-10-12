@@ -24,18 +24,22 @@ spec:
           controlPlane:
             aws:
               ami:
+                # Specify one of id or lookup.
                 id: "ami-controlplane"
-                lookupFormat: "my-cp-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
-                lookupOrg: "123456789"
-                lookupBaseOS: "ubuntu-20.04"
+                # lookup:
+                #   format: "my-cp-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
+                #   org: "123456789"
+                #   baseOS: "ubuntu-20.04"
       - name: workerConfig
         value:
           aws:
             ami:
-                id: "ami-allWorkers"
-                lookupFormat: "my-default-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
-                lookupOrg: "123456789"
-                lookupBaseOS: "ubuntu-20.04"
+              # Specify one of id or lookup.
+              id: "ami-allWorkers"
+              # lookup:
+              #   format: "my-default-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
+              #   org: "123456789"
+              #   baseOS: "ubuntu-20.04"
 ```
 
 We can further customize individual MachineDeployments by using the overrides field with the following configuration:
@@ -53,10 +57,12 @@ spec:
               - name: workerConfig
                 value:
                    ami:
+                    # Specify one of id or lookup.
                     id: "ami-customWorker"
-                    lookupFormat: "gpu-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
-                    lookupOrg: "123456789"
-                    lookupBaseOS: "ubuntu-20.04"
+                    # lookup:
+                    #   format: "gpu-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
+                    #   org: "123456789"
+                    #   baseOS: "ubuntu-20.04"
 ```
 
 Applying this configuration will result in the following value being set:
@@ -68,9 +74,9 @@ Applying this configuration will result in the following value being set:
       template:
         spec:
           ami: ami-controlplane
-          lookupFormat: "my-default-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
-          lookupOrg: "123456789"
-          lookupBaseOS: "ubuntu-20.04"
+          # lookupFormat: "my-default-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
+          # lookupOrg: "123456789"
+          # lookupBaseOS: "ubuntu-20.04"
     ```
 
 - worker `AWSMachineTemplate`:
@@ -80,7 +86,7 @@ Applying this configuration will result in the following value being set:
       template:
         spec:
           ami: ami-customWorker
-          lookupFormat: "gpu-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
-          lookupOrg: "123456789"
-          lookupBaseOS: "ubuntu-20.04"
+          # lookupFormat: "gpu-workers-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
+          # lookupOrg: "123456789"
+          # lookupBaseOS: "ubuntu-20.04"
     ```

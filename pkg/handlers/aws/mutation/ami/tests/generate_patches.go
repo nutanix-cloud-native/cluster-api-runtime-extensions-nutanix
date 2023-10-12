@@ -51,9 +51,11 @@ func TestControlPlaneGeneratePatches(
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.AMISpec{
-						Format: "test-{{.kubernetesVersion}}-format",
-						Org:    "12345",
-						BaseOS: "testOS",
+						Lookup: &v1alpha1.AMILookup{
+							Format: "test-{{.kubernetesVersion}}-format",
+							Org:    "12345",
+							BaseOS: "testOS",
+						},
 					},
 					variablePath...,
 				),
@@ -121,9 +123,11 @@ func TestWorkerGeneratePatches(
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.AMISpec{
-						Format: "test-{{.kubernetesVersion}}-format",
-						Org:    "12345",
-						BaseOS: "testOS",
+						Lookup: &v1alpha1.AMILookup{
+							Format: "test-{{.kubernetesVersion}}-format",
+							Org:    "12345",
+							BaseOS: "testOS",
+						},
 					},
 
 					variablePath...,

@@ -103,9 +103,11 @@ func (h *awsAMISpecPatchHandler) Mutate(
 			).Info("setting AMI in AWSMachineTemplate spec")
 
 			obj.Spec.Template.Spec.AMI = capav1.AMIReference{ID: &amiSpecVar.ID}
-			obj.Spec.Template.Spec.ImageLookupFormat = amiSpecVar.Format
-			obj.Spec.Template.Spec.ImageLookupOrg = amiSpecVar.Org
-			obj.Spec.Template.Spec.ImageLookupBaseOS = amiSpecVar.BaseOS
+			if amiSpecVar.Lookup != nil {
+				obj.Spec.Template.Spec.ImageLookupFormat = amiSpecVar.Lookup.Format
+				obj.Spec.Template.Spec.ImageLookupOrg = amiSpecVar.Lookup.Org
+				obj.Spec.Template.Spec.ImageLookupBaseOS = amiSpecVar.Lookup.BaseOS
+			}
 
 			return nil
 		},
