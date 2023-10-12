@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package clusterconfig
+package instancetype
 
 import (
 	"testing"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
+	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
@@ -17,29 +18,18 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.ClusterConfigSpec{Docker: &v1alpha1.DockerSpec{}}.VariableSchema()),
+		ptr.To(v1alpha1.ClusterConfigSpec{AWS: &v1alpha1.AWSSpec{}}.VariableSchema()),
 		true,
-		NewVariable,
+		awsclusterconfig.NewVariable,
 		capitest.VariableTestDef{
-			Name: "valid",
+			Name: "specified instance type",
 			Vals: v1alpha1.ClusterConfigSpec{
 				ControlPlane: &v1alpha1.NodeConfigSpec{
-					Docker: &v1alpha1.DockerNodeSpec{
-						CustomImage: ptr.To(v1alpha1.OCIImage("docker.io/some/image:v2.3.4")),
+					AWS: &v1alpha1.AWSNodeSpec{
+						InstanceType: ptr.To(v1alpha1.InstanceType("m5.small")),
 					},
 				},
 			},
-		},
-		capitest.VariableTestDef{
-			Name: "invalid",
-			Vals: v1alpha1.ClusterConfigSpec{
-				ControlPlane: &v1alpha1.NodeConfigSpec{
-					Docker: &v1alpha1.DockerNodeSpec{
-						CustomImage: ptr.To(v1alpha1.OCIImage("this.is.not.valid?")),
-					},
-				},
-			},
-			ExpectError: true,
 		},
 	)
 }
