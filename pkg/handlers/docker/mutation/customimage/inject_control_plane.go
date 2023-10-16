@@ -15,20 +15,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capdv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
 	dockerclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
 const (
-	// ControlPlaneHandlerNamePatch is the name of the inject handler.
-	ControlPlaneHandlerNamePatch = "DockerCustomImageControlPlanePatch"
+	// VariableName is the external patch variable name.
+	VariableName = "customImage"
 
 	defaultKinDImageRepository = "ghcr.io/mesosphere/kind-node"
 )
@@ -38,17 +35,7 @@ type customImageControlPlanePatchHandler struct {
 	variableFieldPath []string
 }
 
-var (
-	_ commonhandlers.Named     = &customImageControlPlanePatchHandler{}
-	_ mutation.GeneratePatches = &customImageControlPlanePatchHandler{}
-	_ mutation.MetaMutator     = &customImageControlPlanePatchHandler{}
-)
-
 func NewControlPlanePatch() *customImageControlPlanePatchHandler {
-	return newCustomImageControlPlanePatchHandler(VariableName)
-}
-
-func NewControlPlaneMetaPatch() *customImageControlPlanePatchHandler {
 	return newCustomImageControlPlanePatchHandler(
 		clusterconfig.MetaVariableName,
 		clusterconfig.MetaControlPlaneConfigName,
@@ -65,10 +52,6 @@ func newCustomImageControlPlanePatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
-}
-
-func (h *customImageControlPlanePatchHandler) Name() string {
-	return ControlPlaneHandlerNamePatch
 }
 
 func (h *customImageControlPlanePatchHandler) Mutate(
@@ -147,12 +130,4 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 			return nil
 		},
 	)
-}
-
-func (h *customImageControlPlanePatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	handlers.GeneratePatches(ctx, req, resp, h.Mutate)
 }

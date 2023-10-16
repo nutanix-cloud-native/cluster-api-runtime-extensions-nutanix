@@ -8,30 +8,20 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 )
 
 const (
-	// HandlerNamePatch is the name of the inject handler.
-	ControlPlaneHandlerNamePatch = "AWSAMISpecControlPlanePatch"
-	VariableName                 = "ami"
-)
-
-var (
-	_ commonhandlers.Named = &awsAMISpecPatchHandler{}
-	_ mutation.MetaMutator = &awsAMISpecPatchHandler{}
+	// VariableName is the external patch variable name.
+	VariableName = "ami"
 )
 
 type awsAMISpecPatchHandler struct {
@@ -50,10 +40,6 @@ func newAWSAMISpecPatchHandler(
 		variableFieldPath: variableFieldPath,
 		patchSelector:     patchSelector,
 	}
-}
-
-func (h *awsAMISpecPatchHandler) Name() string {
-	return ControlPlaneHandlerNamePatch
 }
 
 func (h *awsAMISpecPatchHandler) Mutate(
@@ -110,33 +96,6 @@ func (h *awsAMISpecPatchHandler) Mutate(
 			}
 
 			return nil
-		},
-	)
-}
-
-func (h *awsAMISpecPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	topologymutation.WalkTemplates(
-		ctx,
-		unstructured.UnstructuredJSONScheme,
-		req,
-		resp,
-		func(
-			ctx context.Context,
-			obj runtime.Object,
-			vars map[string]apiextensionsv1.JSON,
-			holderRef runtimehooksv1.HolderReference,
-		) error {
-			return h.Mutate(
-				ctx,
-				obj.(*unstructured.Unstructured),
-				vars,
-				holderRef,
-				client.ObjectKey{},
-			)
 		},
 	)
 }

@@ -16,7 +16,7 @@ import (
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
-			customimage.NewControlPlaneMetaPatch(),
+			customimage.NewControlPlanePatch(),
 		},
 		genericmutation.MetaMutators(mgr)...,
 	)
@@ -30,7 +30,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
 func MetaWorkerPatchHandler() handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
-		customimage.NewWorkerMetaPatch(),
+		customimage.NewWorkerPatch(),
 	}
 
 	return mutation.NewMetaGeneratePatchesHandler(

@@ -11,30 +11,39 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
 func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		VariableName,
-		ptr.To(v1alpha1.ImageRegistryCredentials{}.VariableSchema()),
+		clusterconfig.MetaVariableName,
+		ptr.To(v1alpha1.GenericClusterConfig{}.VariableSchema()),
 		false,
-		NewVariable,
+		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "without a Secret",
-			Vals: v1alpha1.ImageRegistryCredentials{
-				v1alpha1.ImageRegistryCredentialsResource{
-					URL: "http://a.b.c.example.com",
+			Vals: v1alpha1.GenericClusterConfig{
+				ImageRegistries: v1alpha1.ImageRegistries{
+					ImageRegistryCredentials: []v1alpha1.ImageRegistryCredentialsResource{
+						{
+							URL: "http://a.b.c.example.com",
+						},
+					},
 				},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "with a Secret",
-			Vals: v1alpha1.ImageRegistryCredentials{
-				v1alpha1.ImageRegistryCredentialsResource{
-					URL: "http://a.b.c.example.com",
-					Secret: &corev1.ObjectReference{
-						Name: "a.b.c.example.com-creds",
+			Vals: v1alpha1.GenericClusterConfig{
+				ImageRegistries: v1alpha1.ImageRegistries{
+					ImageRegistryCredentials: []v1alpha1.ImageRegistryCredentialsResource{
+						{
+							URL: "http://a.b.c.example.com",
+							Secret: &corev1.ObjectReference{
+								Name: "a.b.c.example.com-creds",
+							},
+						},
 					},
 				},
 			},

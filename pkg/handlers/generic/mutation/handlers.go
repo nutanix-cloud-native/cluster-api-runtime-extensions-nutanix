@@ -20,11 +20,11 @@ import (
 func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 	return []mutation.MetaMutator{
 		auditpolicy.NewPatch(),
-		etcd.NewMetaPatch(),
-		extraapiservercertsans.NewMetaPatch(),
-		httpproxy.NewMetaPatch(mgr.GetClient()),
-		kubernetesimagerepository.NewMetaPatch(),
-		credentials.NewMetaPatch(mgr.GetClient()),
-		calico.NewMetaPatch(),
+		etcd.NewPatch(),
+		extraapiservercertsans.NewPatch(),
+		httpproxy.NewPatch(mgr.GetClient()),
+		kubernetesimagerepository.NewPatch(),
+		credentials.NewPatch(mgr.GetClient()),
+		calico.NewPatch(),
 	}
 }

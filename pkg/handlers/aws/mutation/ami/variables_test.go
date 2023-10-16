@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package region
+package ami
 
 import (
 	"testing"
@@ -22,10 +22,19 @@ func TestVariableValidation(t *testing.T) {
 		true,
 		awsclusterconfig.NewVariable,
 		capitest.VariableTestDef{
-			Name: "specified region",
+			Name: "AMI specification",
 			Vals: v1alpha1.ClusterConfigSpec{
-				AWS: &v1alpha1.AWSSpec{
-					Region: ptr.To(v1alpha1.Region("a-specified-region")),
+				ControlPlane: &v1alpha1.NodeConfigSpec{
+					AWS: &v1alpha1.AWSNodeSpec{
+						AMISpec: &v1alpha1.AMISpec{
+							ID: "ami-1234",
+							Lookup: &v1alpha1.AMILookup{
+								Format: "capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*",
+								BaseOS: "rhel-8.4",
+								Org:    "12345678",
+							},
+						},
+					},
 				},
 			},
 		},

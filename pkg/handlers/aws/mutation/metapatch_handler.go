@@ -20,10 +20,10 @@ import (
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
-			region.NewMetaPatch(),
-			calico.NewMetaPatch(),
-			iaminstanceprofile.NewControlPlaneMetaPatch(),
-			instancetype.NewControlPlaneMetaPatch(),
+			region.NewPatch(),
+			calico.NewPatch(),
+			iaminstanceprofile.NewControlPlanePatch(),
+			instancetype.NewControlPlanePatch(),
 			ami.NewControlPlanePatch(),
 		},
 		genericmutation.MetaMutators(mgr)...,
@@ -38,8 +38,8 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler() handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
-		iaminstanceprofile.NewWorkerMetaPatch(),
-		instancetype.NewWorkerMetaPatch(),
+		iaminstanceprofile.NewWorkerPatch(),
+		instancetype.NewWorkerPatch(),
 		ami.NewWorkerPatch(),
 	}
 

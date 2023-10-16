@@ -10,27 +10,37 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
 func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		VariableName,
-		ptr.To(v1alpha1.ExtraAPIServerCertSANs{}.VariableSchema()),
+		clusterconfig.MetaVariableName,
+		ptr.To(v1alpha1.GenericClusterConfig{}.VariableSchema()),
 		false,
-		NewVariable,
+		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "single valid SAN",
-			Vals: []string{"a.b.c.example.com"},
+			Vals: v1alpha1.GenericClusterConfig{
+				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{"a.b.c.example.com"},
+			},
 		},
 		capitest.VariableTestDef{
-			Name:        "single invalid SAN",
-			Vals:        []string{"invalid:san"},
+			Name: "single invalid SAN",
+			Vals: v1alpha1.GenericClusterConfig{
+				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{"invalid:san"},
+			},
 			ExpectError: true,
 		},
 		capitest.VariableTestDef{
-			Name:        "duplicate valid SANs",
-			Vals:        []string{"a.b.c.example.com", "a.b.c.example.com"},
+			Name: "duplicate valid SANs",
+			Vals: v1alpha1.GenericClusterConfig{
+				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
+					"a.b.c.example.com",
+					"a.b.c.example.com",
+				},
+			},
 			ExpectError: true,
 		},
 	)

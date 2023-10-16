@@ -31,7 +31,6 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/parser"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/cni"
-	cnivar "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/cni"
 )
 
 type CalicoCNIConfig struct {
@@ -89,7 +88,7 @@ func New(
 		client:       c,
 		config:       cfg,
 		variableName: clusterconfig.MetaVariableName,
-		variablePath: []string{"addons", cnivar.VariableName},
+		variablePath: []string{"addons", v1alpha1.CNIVariableName},
 	}
 }
 

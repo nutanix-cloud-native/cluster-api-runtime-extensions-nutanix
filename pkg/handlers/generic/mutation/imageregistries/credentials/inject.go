@@ -15,13 +15,10 @@ import (
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
@@ -31,8 +28,8 @@ import (
 )
 
 const (
-	// HandlerNamePatch is the name of the inject handler.
-	HandlerNamePatch = "ImageRegistryCredentialsPatch"
+	// VariableName is the external patch variable name.
+	VariableName = "credentials"
 )
 
 type imageRegistriesPatchHandler struct {
@@ -42,19 +39,7 @@ type imageRegistriesPatchHandler struct {
 	variableFieldPath []string
 }
 
-var (
-	_ commonhandlers.Named     = &imageRegistriesPatchHandler{}
-	_ mutation.GeneratePatches = &imageRegistriesPatchHandler{}
-	_ mutation.MetaMutator     = &imageRegistriesPatchHandler{}
-)
-
 func NewPatch(
-	cl ctrlclient.Client,
-) *imageRegistriesPatchHandler {
-	return newImageRegistriesPatchHandler(cl, VariableName)
-}
-
-func NewMetaPatch(
 	cl ctrlclient.Client,
 ) *imageRegistriesPatchHandler {
 	return newImageRegistriesPatchHandler(
@@ -78,10 +63,6 @@ func newImageRegistriesPatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
-}
-
-func (h *imageRegistriesPatchHandler) Name() string {
-	return HandlerNamePatch
 }
 
 func (h *imageRegistriesPatchHandler) Mutate(
@@ -232,29 +213,6 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	}
 
 	return nil
-}
-
-func (h *imageRegistriesPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	clusterKey := commonhandlers.ClusterKeyFromReq(req)
-
-	topologymutation.WalkTemplates(
-		ctx,
-		unstructured.UnstructuredJSONScheme,
-		req,
-		resp,
-		func(
-			ctx context.Context,
-			obj runtime.Object,
-			vars map[string]apiextensionsv1.JSON,
-			holderRef runtimehooksv1.HolderReference,
-		) error {
-			return h.Mutate(ctx, obj.(*unstructured.Unstructured), vars, holderRef, clusterKey)
-		},
-	)
 }
 
 func registryWithOptionalCredentialsFromImageRegistryCredentials(

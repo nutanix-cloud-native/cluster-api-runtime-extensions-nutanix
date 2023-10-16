@@ -11,21 +11,16 @@ import (
 	"github.com/go-logr/logr"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/cni"
 )
 
 const (
@@ -38,21 +33,11 @@ type calicoPatchHandler struct {
 	variableFieldPath []string
 }
 
-var (
-	_ commonhandlers.Named     = &calicoPatchHandler{}
-	_ mutation.GeneratePatches = &calicoPatchHandler{}
-	_ mutation.MetaMutator     = &calicoPatchHandler{}
-)
-
 func NewPatch() *calicoPatchHandler {
-	return newCalicoPatchHandler(cni.VariableName)
-}
-
-func NewMetaPatch() *calicoPatchHandler {
 	return newCalicoPatchHandler(
 		clusterconfig.MetaVariableName,
 		"addons",
-		cni.VariableName,
+		v1alpha1.CNIVariableName,
 	)
 }
 
@@ -64,10 +49,6 @@ func newCalicoPatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
-}
-
-func (h *calicoPatchHandler) Name() string {
-	return HandlerNamePatch
 }
 
 func (h *calicoPatchHandler) Mutate(
@@ -116,33 +97,6 @@ func (h *calicoPatchHandler) Mutate(
 		selectors.InfrastructureCluster(capav1.GroupVersion.Version, "AWSClusterTemplate"),
 		log,
 		mutateAWSClusterTemplateFunc(log),
-	)
-}
-
-func (h *calicoPatchHandler) GeneratePatches(
-	ctx context.Context,
-	req *runtimehooksv1.GeneratePatchesRequest,
-	resp *runtimehooksv1.GeneratePatchesResponse,
-) {
-	topologymutation.WalkTemplates(
-		ctx,
-		unstructured.UnstructuredJSONScheme,
-		req,
-		resp,
-		func(
-			ctx context.Context,
-			obj runtime.Object,
-			vars map[string]apiextensionsv1.JSON,
-			holderRef runtimehooksv1.HolderReference,
-		) error {
-			return h.Mutate(
-				ctx,
-				obj.(*unstructured.Unstructured),
-				vars,
-				holderRef,
-				client.ObjectKey{},
-			)
-		},
 	)
 }
 

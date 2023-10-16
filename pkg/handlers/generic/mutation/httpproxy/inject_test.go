@@ -9,22 +9,7 @@ import (
 	"github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy/tests"
 )
-
-func TestGeneratePatches(t *testing.T) {
-	tests.TestGeneratePatches(
-		t,
-		func() mutation.GeneratePatches {
-			fakeClient := fake.NewClientBuilder().Build()
-			return NewPatch(fakeClient)
-		},
-		VariableName,
-	)
-}
 
 func TestGenerateNoProxy(t *testing.T) {
 	t.Parallel()
