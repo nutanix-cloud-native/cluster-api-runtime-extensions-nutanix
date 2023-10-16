@@ -16,6 +16,8 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami"
 	amitests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami/tests"
 	calicotests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/controlplaneloadbalancer"
+	controlplaneloadbalancertests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/controlplaneloadbalancer/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile"
 	iaminstanceprofiletests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype"
@@ -179,5 +181,13 @@ func TestGeneratePatches(t *testing.T) {
 		clusterconfig.MetaVariableName,
 		v1alpha1.AWSVariableName,
 		network.VariableName,
+	)
+
+	controlplaneloadbalancertests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		v1alpha1.AWSVariableName,
+		controlplaneloadbalancer.VariableName,
 	)
 }
