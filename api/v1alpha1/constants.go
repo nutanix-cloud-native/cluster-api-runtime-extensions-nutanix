@@ -6,4 +6,6 @@ package v1alpha1
 const (
 	// CNIVariableName is the external patch variable name.
 	CNIVariableName = "cni"
+	// AWSVariableName is the AWS config patch variable name.
+	AWSVariableName = "aws"
 )

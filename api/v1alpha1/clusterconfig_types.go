@@ -51,7 +51,7 @@ func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:
 		maps.Copy(
 			clusterConfigProps.OpenAPIV3Schema.Properties,
 			map[string]clusterv1.JSONSchemaProps{
-				"aws": AWSSpec{}.VariableSchema().OpenAPIV3Schema,
+				AWSVariableName: AWSSpec{}.VariableSchema().OpenAPIV3Schema,
 				"controlPlane": NodeConfigSpec{
 					AWS: &AWSNodeSpec{},
 				}.VariableSchema().OpenAPIV3Schema,

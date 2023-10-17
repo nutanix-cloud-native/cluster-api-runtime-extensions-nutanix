@@ -5,7 +5,6 @@ package iaminstanceprofile
 
 import (
 	"context"
-	_ "embed"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,7 +17,6 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
-	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 )
 
@@ -30,7 +28,7 @@ type awsIAMInstanceProfileWorkerPatchHandler struct {
 func NewWorkerPatch() *awsIAMInstanceProfileWorkerPatchHandler {
 	return newAWSIAMInstanceProfileWorkerPatchHandler(
 		workerconfig.MetaVariableName,
-		awsworkerconfig.AWSVariableName,
+		v1alpha1.AWSVariableName,
 		VariableName,
 	)
 }

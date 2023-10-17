@@ -39,7 +39,7 @@ func (s NodeConfigSpec) VariableSchema() clusterv1.VariableSchema {
 		maps.Copy(
 			nodeConfigProps.OpenAPIV3Schema.Properties,
 			map[string]clusterv1.JSONSchemaProps{
-				"aws": AWSNodeSpec{}.VariableSchema().OpenAPIV3Schema,
+				AWSVariableName: AWSNodeSpec{}.VariableSchema().OpenAPIV3Schema,
 			},
 		)
 	case s.Docker != nil:

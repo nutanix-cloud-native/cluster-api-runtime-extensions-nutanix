@@ -5,7 +5,6 @@ package calico
 
 import (
 	"context"
-	_ "embed"
 	"slices"
 
 	"github.com/go-logr/logr"

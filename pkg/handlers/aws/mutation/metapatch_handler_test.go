@@ -13,7 +13,6 @@ import (
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
-	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami"
 	amitests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami/tests"
 	calicotests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico/tests"
@@ -21,9 +20,10 @@ import (
 	iaminstanceprofiletests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype"
 	instancetypetests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/network"
+	networktests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/network/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
 	regiontests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region/tests"
-	awsworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	auditpolicytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/auditpolicy/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/etcd"
@@ -68,7 +68,7 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		metaPatchGeneratorFunc(mgr),
 		clusterconfig.MetaVariableName,
-		awsclusterconfig.AWSVariableName,
+		v1alpha1.AWSVariableName,
 		region.VariableName,
 	)
 
@@ -77,7 +77,7 @@ func TestGeneratePatches(t *testing.T) {
 		metaPatchGeneratorFunc(mgr),
 		clusterconfig.MetaVariableName,
 		clusterconfig.MetaControlPlaneConfigName,
-		awsclusterconfig.AWSVariableName,
+		v1alpha1.AWSVariableName,
 		iaminstanceprofile.VariableName,
 	)
 
@@ -85,7 +85,7 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		workerPatchGeneratorFunc(),
 		workerconfig.MetaVariableName,
-		awsworkerconfig.AWSVariableName,
+		v1alpha1.AWSVariableName,
 		iaminstanceprofile.VariableName,
 	)
 
@@ -94,7 +94,7 @@ func TestGeneratePatches(t *testing.T) {
 		metaPatchGeneratorFunc(mgr),
 		clusterconfig.MetaVariableName,
 		clusterconfig.MetaControlPlaneConfigName,
-		awsclusterconfig.AWSVariableName,
+		v1alpha1.AWSVariableName,
 		instancetype.VariableName,
 	)
 
@@ -102,7 +102,7 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		workerPatchGeneratorFunc(),
 		workerconfig.MetaVariableName,
-		awsworkerconfig.AWSVariableName,
+		v1alpha1.AWSVariableName,
 		instancetype.VariableName,
 	)
 
@@ -161,7 +161,7 @@ func TestGeneratePatches(t *testing.T) {
 		metaPatchGeneratorFunc(mgr),
 		clusterconfig.MetaVariableName,
 		clusterconfig.MetaControlPlaneConfigName,
-		awsclusterconfig.AWSVariableName,
+		v1alpha1.AWSVariableName,
 		ami.VariableName,
 	)
 
@@ -169,7 +169,15 @@ func TestGeneratePatches(t *testing.T) {
 		t,
 		workerPatchGeneratorFunc(),
 		workerconfig.MetaVariableName,
-		awsclusterconfig.AWSVariableName,
+		v1alpha1.AWSVariableName,
 		ami.VariableName,
+	)
+
+	networktests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		v1alpha1.AWSVariableName,
+		network.VariableName,
 	)
 }
