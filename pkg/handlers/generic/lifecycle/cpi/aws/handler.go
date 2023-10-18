@@ -64,7 +64,7 @@ func New(
 	}
 }
 
-func (a *AWSCPI) EnsureCSIConfigMapForCluster(
+func (a *AWSCPI) EnsureCPIConfigMapForCluster(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 ) (*corev1.ConfigMap, error) {
@@ -134,10 +134,14 @@ func generateCPIConfigMapForCluster(
 			obj := objs[i]
 			if obj.GetKind() == kindDaemonset {
 				cpiDaemonSet := &appsv1.DaemonSet{}
-				runtime.DefaultUnstructuredConverter.FromUnstructured(
+				err = runtime.DefaultUnstructuredConverter.FromUnstructured(
 					obj.UnstructuredContent(),
 					cpiDaemonSet,
 				)
+				if err != nil {
+					log.Error(err, "failed to convert unstructured to DaemonSet")
+					return nil, fmt.Errorf("failed to convert unstructured to DaemonSet %w", err)
+				}
 				cpiDaemonSet.Spec.Template.Spec.Containers[0].Args = append(
 					cpiDaemonSet.Spec.Template.Spec.Containers[0].Args,
 					fmt.Sprintf("--cluster-name=%s", cluster.Name),

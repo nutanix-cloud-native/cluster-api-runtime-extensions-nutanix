@@ -7,8 +7,12 @@ kind: Kustomization
 metadata:
   name: aws-cpi-kustomize
 
-resources:
-- ${AWS_CPI_FROM_HELM_FILE}
+helmCharts:
+- name: aws-cloud-controller-manager
+  includeCRDs: true
+  releaseName: aws-cloud-controller-manager
+  version: ${CHART_VERSION}
+  repo: https://kubernetes.github.io/cloud-provider-aws
 
 patches:
 - patch: |-

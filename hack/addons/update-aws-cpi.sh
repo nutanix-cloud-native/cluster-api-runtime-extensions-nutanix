@@ -18,15 +18,11 @@ fi
 ASSETS_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}")"
 readonly ASSETS_DIR
 trap_add "rm -rf ${ASSETS_DIR}" EXIT
-helm repo add aws-cloud-controller-manager https://kubernetes.github.io/cloud-provider-aws
 
-CHART_VERSION=""
+export CHART_VERSION=""
 if [ "${AWS_CPI_VERSION}" = "1.27.1" ]; then
   CHART_VERSION="0.0.8"
 fi
-
-export AWS_CPI_FROM_HELM_FILE="${ASSETS_DIR}/aws-cpi-from-helm-${AWS_CPI_VERSION}.yaml"
-helm template aws-cloud-controller-manager aws-cloud-controller-manager/aws-cloud-controller-manager --version="${CHART_VERSION}" >>"${AWS_CPI_FROM_HELM_FILE}"
 
 readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/aws-cpi/"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"

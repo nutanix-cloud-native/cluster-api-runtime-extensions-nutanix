@@ -118,12 +118,12 @@ func Test_generateCPIConfigMapForCluster(t *testing.T) {
 			}
 			clusterArg := fmt.Sprintf("--cluster-name=%s", test.cluster.Name)
 			if !strings.Contains(cm.Data[test.key], clusterArg) {
-				//t.Logf(
-				//	"expected %s to contain \n %s. \n Got %s",
-				//	test.startConfigMap.Data[test.key],
-				//	clusterArg,
-				//	cm.Data[test.key],
-				//)
+				t.Logf(
+					"expected %s to contain \n %s. \n Got %s",
+					test.startConfigMap.Data[test.key],
+					clusterArg,
+					cm.Data[test.key],
+				)
 				t.Fail()
 			}
 		})

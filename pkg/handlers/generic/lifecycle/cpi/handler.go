@@ -87,17 +87,13 @@ func (c *CPIHandler) AfterControlPlaneInitialized(
 		return
 	}
 	if !found {
-		log.V(4).Info(
-			fmt.Sprintf(
-				"Skipping CPI handler.",
-			),
-		)
+		log.V(4).Info("Skipping CPI handler.")
 		return
 	}
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
 	var handler CPIProvider
 	switch {
-	case strings.Contains(infraKind, v1alpha1.CPIProivderAWS):
+	case strings.Contains(infraKind, strings.ToLower(v1alpha1.CPIProivderAWS)):
 		handler = c.ProviderHandler[v1alpha1.CPIProivderAWS]
 	default:
 		log.Info(fmt.Sprintf("No CPI handler provided for infra kind %s", infraKind))
