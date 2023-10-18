@@ -8,6 +8,7 @@ go 1.21
 replace github.com/d2iq-labs/capi-runtime-extensions/common => ./common
 
 require (
+	github.com/blang/semver/v4 v4.0.0
 	github.com/d2iq-labs/capi-runtime-extensions/common v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.2.4
 	github.com/onsi/gomega v1.28.0
@@ -32,7 +33,6 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
-	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/coredns/caddy v1.1.0 // indirect
 	github.com/coredns/corefile-migration v1.0.21 // indirect

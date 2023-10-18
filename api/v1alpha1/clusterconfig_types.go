@@ -17,6 +17,7 @@ import (
 const (
 	CNIProviderCalico = "calico"
 	CSIProviderAWSEBS = "aws-ebs"
+	CPIProivderAWS    = "aws"
 )
 
 //+kubebuilder:object:root=true
@@ -418,7 +419,6 @@ func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
 }
 
 // CPI tells us to enable or disable the cloud provider interface.
-// by default
 type CPI struct{}
 
 func (CPI) VariableSchema() clusterv1.VariableSchema {
