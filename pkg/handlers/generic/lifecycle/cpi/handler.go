@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	lifecycleutils "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/utils"
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -20,6 +19,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	lifecycleutils "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/utils"
 )
 
 const (
@@ -91,9 +91,10 @@ func (c *CPIHandler) AfterControlPlaneInitialized(
 		return
 	}
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
+	log.Info(fmt.Sprintf("finding cpi handler for %s", infraKind))
 	var handler CPIProvider
 	switch {
-	case strings.Contains(infraKind, strings.ToLower(v1alpha1.CPIProivderAWS)):
+	case strings.Contains(strings.ToLower(infraKind), v1alpha1.CPIProivderAWS):
 		handler = c.ProviderHandler[v1alpha1.CPIProivderAWS]
 	default:
 		log.Info(fmt.Sprintf("No CPI handler provided for infra kind %s", infraKind))

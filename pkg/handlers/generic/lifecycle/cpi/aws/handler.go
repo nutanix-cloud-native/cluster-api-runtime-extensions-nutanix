@@ -104,7 +104,6 @@ func (a *AWSCPI) EnsureCPIConfigMapForCluster(
 			"failed to apply AWS CPI manifests ConfigMap: %w",
 			err,
 		)
-
 	}
 	if err := client.ServerSideApply(ctx, a.client, cpiConfigMap); err != nil {
 		log.Error(err, "failed to apply CPI configmap for cluster")
@@ -155,7 +154,6 @@ func generateCPIConfigMapForCluster(
 					)
 				}
 				objs[i] = unstructured.Unstructured{Object: u}
-
 			}
 		}
 		rawObjs, err := utilyaml.FromUnstructured(objs)

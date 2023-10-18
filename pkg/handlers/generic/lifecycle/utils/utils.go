@@ -7,13 +7,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 )
 
 func EnsureCSICRSForClusterFromConfigMap(
