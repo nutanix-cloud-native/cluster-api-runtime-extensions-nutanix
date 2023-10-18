@@ -9,13 +9,9 @@ import (
 
 	"github.com/blang/semver/v4"
 	"github.com/spf13/pflag"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	utilyaml "sigs.k8s.io/cluster-api/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -73,7 +69,7 @@ func (a *AWSCPI) EnsureCPIConfigMapForCluster(
 		cluster.Name,
 	)
 	log.Info("Creating AWS CPI ConfigMap for Cluster")
-	version, err := semver.New(cluster.Spec.Topology.Version)
+	version, err := semver.ParseTolerant(cluster.Spec.Topology.Version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version from cluster %w", err)
 	}
@@ -119,50 +115,6 @@ func generateCPIConfigMapForCluster(
 	ctx context.Context,
 	cpiConfigMapForVersion *corev1.ConfigMap, cluster *clusterv1.Cluster,
 ) (*corev1.ConfigMap, error) {
-	log := ctrl.LoggerFrom(ctx).WithValues(
-		"cluster",
-		cluster.Name,
-	)
-	for k, contents := range cpiConfigMapForVersion.Data {
-		objs, err := utilyaml.ToUnstructured([]byte(contents))
-		if err != nil {
-			log.Error(err, "failed to parse yaml")
-			continue
-		}
-		for i := range objs {
-			obj := objs[i]
-			if obj.GetKind() == kindDaemonset {
-				cpiDaemonSet := &appsv1.DaemonSet{}
-				err = runtime.DefaultUnstructuredConverter.FromUnstructured(
-					obj.UnstructuredContent(),
-					cpiDaemonSet,
-				)
-				if err != nil {
-					log.Error(err, "failed to convert unstructured to DaemonSet")
-					return nil, fmt.Errorf("failed to convert unstructured to DaemonSet %w", err)
-				}
-				cpiDaemonSet.Spec.Template.Spec.Containers[0].Args = append(
-					cpiDaemonSet.Spec.Template.Spec.Containers[0].Args,
-					fmt.Sprintf("--cluster-name=%s", cluster.Name),
-				)
-				u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cpiDaemonSet)
-				if err != nil {
-					log.Error(err, "failed to convert daemonset to unstructured")
-					return nil, fmt.Errorf(
-						"failed to convert DaemonSet back to unstructured %w",
-						err,
-					)
-				}
-				objs[i] = unstructured.Unstructured{Object: u}
-			}
-		}
-		rawObjs, err := utilyaml.FromUnstructured(objs)
-		if err != nil {
-			log.Error(err, "failed to convert unstructured back to string")
-			return nil, fmt.Errorf("failed to convert unstructured objects back to string %w", err)
-		}
-		cpiConfigMapForVersion.Data[k] = string(rawObjs)
-	}
 	cpiConfigMapForCluster := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),

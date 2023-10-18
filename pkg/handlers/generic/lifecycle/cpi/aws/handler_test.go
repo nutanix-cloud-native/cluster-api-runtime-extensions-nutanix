@@ -6,7 +6,6 @@ package aws
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -84,7 +83,6 @@ func Test_generateCPIConfigMapForCluster(t *testing.T) {
 		name           string
 		startConfigMap *corev1.ConfigMap
 		cluster        *clusterv1.Cluster
-		key            string
 	}{
 		{
 			name: "Can set cluster name in arguments",
@@ -103,7 +101,6 @@ func Test_generateCPIConfigMapForCluster(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			key: "aws-cpi-v1.27.1.yaml",
 		},
 	}
 	for _, test := range tests {
@@ -116,15 +113,12 @@ func Test_generateCPIConfigMapForCluster(t *testing.T) {
 			if err != nil {
 				t.Error("failed to generateCPIConfigMapForCluster", err)
 			}
-			clusterArg := fmt.Sprintf("--cluster-name=%s", test.cluster.Name)
-			if !strings.Contains(cm.Data[test.key], clusterArg) {
-				t.Logf(
-					"expected %s to contain \n %s. \n Got %s",
-					test.startConfigMap.Data[test.key],
-					clusterArg,
-					cm.Data[test.key],
-				)
-				t.Fail()
+			if cm == nil {
+				t.Error("expected configmap to not be nil")
+			}
+			cpiConfigMapExpectedName := fmt.Sprintf("%s-%s", test.startConfigMap.Name, test.cluster.Name)
+			if cm.Name != cpiConfigMapExpectedName {
+				t.Errorf("expected configmap name to be %s. got: %s", cpiConfigMapExpectedName, cm.Name)
 			}
 		})
 	}

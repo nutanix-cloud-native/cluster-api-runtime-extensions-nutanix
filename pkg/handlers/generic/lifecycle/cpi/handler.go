@@ -112,8 +112,9 @@ func (c *CPIHandler) AfterControlPlaneInitialized(
 				err,
 			),
 		)
+		return
 	}
-	err = lifecycleutils.EnsureCSICRSForClusterFromConfigMap(ctx, c.client, &req.Cluster, cm)
+	err = lifecycleutils.EnsureCRSForClusterFromConfigMap(ctx, c.client, &req.Cluster, cm)
 	if err != nil {
 		log.Error(
 			err,

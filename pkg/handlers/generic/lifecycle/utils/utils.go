@@ -17,7 +17,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 )
 
-func EnsureCSICRSForClusterFromConfigMap(
+func EnsureCRSForClusterFromConfigMap(
 	ctx context.Context,
 	c ctrlclient.Client,
 	cluster *clusterv1.Cluster,
