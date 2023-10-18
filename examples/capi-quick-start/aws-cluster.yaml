@@ -23,6 +23,7 @@ spec:
           addons:
             cni:
               provider: calico
+            cpi: {}
             csi:
               providers:
                 - name: aws-ebs
