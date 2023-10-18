@@ -6,7 +6,6 @@ export NODE_FEATURE_DISCOVERY_VERSION := 0.14.1
 export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.0
 export AWS_EBS_CSI_VERSION := release-1.23
 export AWS_CPI_VERSION_127 := v1.27.1
-export AWS_CPI_VERSION_126 := v1.26.1
 
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico nfd aws-ebs-csi)
