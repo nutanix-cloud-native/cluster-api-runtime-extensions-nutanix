@@ -18,10 +18,6 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 )
 
-const (
-	kindDaemonset = "DaemonSet"
-)
-
 type AWSCPIConfig struct {
 	defaultsNamespace string
 
@@ -94,13 +90,7 @@ func (a *AWSCPI) EnsureCPIConfigMapForCluster(
 		)
 	}
 
-	cpiConfigMap, err := generateCPIConfigMapForCluster(ctx, cpiConfigMapForMinorVersion, cluster)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to apply AWS CPI manifests ConfigMap: %w",
-			err,
-		)
-	}
+	cpiConfigMap := generateCPIConfigMapForCluster(cpiConfigMapForMinorVersion, cluster)
 	if err := client.ServerSideApply(ctx, a.client, cpiConfigMap); err != nil {
 		log.Error(err, "failed to apply CPI configmap for cluster")
 		return nil, fmt.Errorf(
@@ -112,9 +102,8 @@ func (a *AWSCPI) EnsureCPIConfigMapForCluster(
 }
 
 func generateCPIConfigMapForCluster(
-	ctx context.Context,
 	cpiConfigMapForVersion *corev1.ConfigMap, cluster *clusterv1.Cluster,
-) (*corev1.ConfigMap, error) {
+) *corev1.ConfigMap {
 	cpiConfigMapForCluster := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -126,5 +115,5 @@ func generateCPIConfigMapForCluster(
 		},
 		Data: cpiConfigMapForVersion.Data,
 	}
-	return cpiConfigMapForCluster, nil
+	return cpiConfigMapForCluster
 }

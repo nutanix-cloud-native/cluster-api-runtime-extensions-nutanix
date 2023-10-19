@@ -4,7 +4,6 @@
 package aws
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -105,17 +104,10 @@ func Test_generateCPIConfigMapForCluster(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cm, err := generateCPIConfigMapForCluster(
-				context.TODO(),
+			cm := generateCPIConfigMapForCluster(
 				test.startConfigMap,
 				test.cluster,
 			)
-			if err != nil {
-				t.Error("failed to generateCPIConfigMapForCluster", err)
-			}
-			if cm == nil {
-				t.Error("expected configmap to not be nil")
-			}
 			cpiConfigMapExpectedName := fmt.Sprintf("%s-%s", test.startConfigMap.Name, test.cluster.Name)
 			if cm.Name != cpiConfigMapExpectedName {
 				t.Errorf("expected configmap name to be %s. got: %s", cpiConfigMapExpectedName, cm.Name)
