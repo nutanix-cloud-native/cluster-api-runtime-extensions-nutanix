@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.2.0 (2023-10-19)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: AWS cluster config patch by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/172
+* feat: Combine generic variables with provider specific variables by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/173
+* feat: Use external patch for Docker provider custom image by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/188
+* feat: vendor infrastructure provider APIs by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/190
+* feat: Introduce scheme and decoder helpers by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/191
+* feat: add imageRegistryCredentials handler by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/174
+* feat: Deploy default clusterclasses via helm by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/198
+* feat: Add Calico CNI AWS ingress rules by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/206
+* feat: CAPA v2.2.4 by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/211
+* feat: Add worker configs var and handler by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/208
+* feat: adds aws ebs config by @faiq in https://github.com/d2iq-labs/capi-runtime-extensions/pull/192
+* feat: add AWS IAM instance profile patch by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/216
+* feat: Calico 3.26.3 by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/218
+* feat: add AWS instance type patch by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/217
+* feat: variables and patches for AWS AMI spec by @supershal in https://github.com/d2iq-labs/capi-runtime-extensions/pull/225
+* feat: add VPC ID and Subnet IDs patch by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/220
+* feat: deploy AWS CPI by @faiq in https://github.com/d2iq-labs/capi-runtime-extensions/pull/229
+### Fixes 🔧
+* fix: bring back missing docker handlers by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/187
+* fix: typo in docker cluster config api by @supershal in https://github.com/d2iq-labs/capi-runtime-extensions/pull/205
+* fix: move provider fields under aws and docker by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/204
+* fix: Correctly set external cloud provider for AWS by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/210
+* fix: Adds AWS Calico installation configmap by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/212
+* fix: Ensure CNI ingress rules are added to AWSCluster by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/213
+* fix: Reduce log verbosity for http proxy variable not found by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/214
+* fix: Don't set AWS region as required by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/219
+### Other Changes
+* build: Add example files to release artifacts by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/169
+* build: Add AWS clusterclass example by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/162
+* refactor: Move generic handlers into generic directory by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/171
+* ci: Simplify shell configuration by setting defaults by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/184
+* build: Disable fortify hardener to enable local debugging by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/186
+* docs: Add more details about single var by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/185
+* refactor: Move meta handlers to provider packages by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/193
+* refactor: Use consistent decoder in mutators by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/196
+* build: Suppress devbox envrc update notification by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/197
+* build: Consistent behaviour in addons update scripts by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/207
+* build: Allow past year in license header by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/209
+* build: Increase golangci-lint timeout for slower GHA runners by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/222
+* refactor: Always use unstructured in patch generators by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/221
+* build: Update tools by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/223
+* refactor: Remove usage of non-meta handlers by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/226
+
+## New Contributors
+* @supershal made their first contribution in https://github.com/d2iq-labs/capi-runtime-extensions/pull/205
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.1.2...v0.2.0
+
 ## 0.1.2 (2023-09-20)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
