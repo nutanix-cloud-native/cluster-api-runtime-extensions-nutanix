@@ -5,6 +5,7 @@ export CALICO_VERSION := v3.26.3
 export NODE_FEATURE_DISCOVERY_VERSION := 0.14.1
 export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.0
 export AWS_EBS_CSI_VERSION := release-1.23
+export AWS_CPI_VERSION_127 := v1.27.1
 
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico nfd aws-ebs-csi)
@@ -20,3 +21,7 @@ update-addon.nfd: ; $(info $(M) updating node feature discovery manifests)
 .PHONY: update-addon.aws-ebs-csi
 update-addon.aws-ebs-csi: ; $(info $(M) updating aws ebs csi manifests)
 	./hack/addons/update-aws-ebs-csi.sh
+
+.PHONY: update-addon.aws-cpi.127
+update-addon.aws-cpi.127: ; $(info $(M) updating aws cpi manifests)
+	./hack/addons/update-aws-cpi.sh $(AWS_CPI_VERSION_127)

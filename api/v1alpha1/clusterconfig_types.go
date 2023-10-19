@@ -17,6 +17,7 @@ import (
 const (
 	CNIProviderCalico = "calico"
 	CSIProviderAWSEBS = "aws-ebs"
+	CPIProivderAWS    = "aws"
 )
 
 //+kubebuilder:object:root=true
@@ -323,6 +324,9 @@ type Addons struct {
 	NFD *NFD `json:"nfd,omitempty"`
 
 	// +optional
+	CPI *CPI `json:"cpi,omitempty"`
+
+	// +optional
 	CSIProviders *CSIProviders `json:"csi,omitempty"`
 }
 
@@ -335,6 +339,7 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 				"cni": CNI{}.VariableSchema().OpenAPIV3Schema,
 				"nfd": NFD{}.VariableSchema().OpenAPIV3Schema,
 				"csi": CSIProviders{}.VariableSchema().OpenAPIV3Schema,
+				"cpi": CPI{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -409,6 +414,17 @@ func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
 					Enum: variables.MustMarshalValuesToEnumJSON(supportedCSIProviders...),
 				},
 			},
+		},
+	}
+}
+
+// CPI tells us to enable or disable the cloud provider interface.
+type CPI struct{}
+
+func (CPI) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
 		},
 	}
 }
