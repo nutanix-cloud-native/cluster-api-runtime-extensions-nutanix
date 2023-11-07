@@ -19,6 +19,34 @@ type AWSNodeSpec struct {
 	// If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
 	//+optional
 	AMISpec *AMISpec `json:"ami,omitempty"`
+
+	//+optional
+	AdditionalSecurityGroups AdditionalSecurityGroup `json:"additionalSecurityGroups,omitempty"`
+}
+
+type AdditionalSecurityGroup []SecurityGroup
+
+type SecurityGroup struct {
+	// ID is the id of the security group
+	// +optional
+	ID *string `json:"id,omitempty"`
+}
+
+func (AdditionalSecurityGroup) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "array",
+			Items: &clusterv1.JSONSchemaProps{
+				Type: "object",
+				Properties: map[string]clusterv1.JSONSchemaProps{
+					"id": {
+						Type:        "string",
+						Description: "Security group ID to add for the cluster Machines",
+					},
+				},
+			},
+		},
+	}
 }
 
 func (AWSNodeSpec) VariableSchema() clusterv1.VariableSchema {
@@ -27,9 +55,10 @@ func (AWSNodeSpec) VariableSchema() clusterv1.VariableSchema {
 			Description: "AWS Node configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"iamInstanceProfile": IAMInstanceProfile("").VariableSchema().OpenAPIV3Schema,
-				"instanceType":       InstanceType("").VariableSchema().OpenAPIV3Schema,
-				"ami":                AMISpec{}.VariableSchema().OpenAPIV3Schema,
+				"iamInstanceProfile":       IAMInstanceProfile("").VariableSchema().OpenAPIV3Schema,
+				"instanceType":             InstanceType("").VariableSchema().OpenAPIV3Schema,
+				"ami":                      AMISpec{}.VariableSchema().OpenAPIV3Schema,
+				"additionalSecurityGroups": AdditionalSecurityGroup{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}

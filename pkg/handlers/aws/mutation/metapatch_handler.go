@@ -14,6 +14,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/network"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/securitygroups"
 	genericmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation"
 )
 
@@ -27,6 +28,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 			iaminstanceprofile.NewControlPlanePatch(),
 			instancetype.NewControlPlanePatch(),
 			ami.NewControlPlanePatch(),
+			securitygroups.NewControlPlanePatch(),
 		},
 		genericmutation.MetaMutators(mgr)...,
 	)
@@ -43,6 +45,7 @@ func MetaWorkerPatchHandler() handlers.Named {
 		iaminstanceprofile.NewWorkerPatch(),
 		instancetype.NewWorkerPatch(),
 		ami.NewWorkerPatch(),
+		securitygroups.NewWorkerPatch(),
 	}
 
 	return mutation.NewMetaGeneratePatchesHandler(
