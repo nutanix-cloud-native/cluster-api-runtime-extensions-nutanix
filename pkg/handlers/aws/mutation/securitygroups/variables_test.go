@@ -6,7 +6,6 @@ package securitygroups
 import (
 	"testing"
 
-	"k8s.io/utils/pointer"
 	"k8s.io/utils/ptr"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
@@ -29,10 +28,10 @@ func TestVariableValidation(t *testing.T) {
 					AWS: &v1alpha1.AWSNodeSpec{
 						AdditionalSecurityGroups: v1alpha1.AdditionalSecurityGroup{
 							{
-								ID: pointer.String("sg-1234"),
+								ID: ptr.To("sg-1234"),
 							},
 							{
-								ID: pointer.String("sg-0420"),
+								ID: ptr.To("sg-0420"),
 							},
 						},
 					},
