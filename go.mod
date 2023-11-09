@@ -10,7 +10,7 @@ replace github.com/d2iq-labs/capi-runtime-extensions/common => ./common
 require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/d2iq-labs/capi-runtime-extensions/common v0.0.0-00010101000000-000000000000
-	github.com/go-logr/logr v1.2.4
+	github.com/go-logr/logr v1.3.0
 	github.com/onsi/gomega v1.28.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
@@ -20,7 +20,7 @@ require (
 	k8s.io/apiserver v0.28.3
 	k8s.io/client-go v0.28.3
 	k8s.io/component-base v0.28.3
-	k8s.io/klog/v2 v2.100.1
+	k8s.io/klog/v2 v2.110.1
 	k8s.io/kubelet v0.28.2
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/cluster-api v1.5.2
