@@ -10,6 +10,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/controlplaneloadbalancer"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/network"
@@ -25,6 +26,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 			calico.NewPatch(),
 			region.NewPatch(),
 			network.NewPatch(),
+			controlplaneloadbalancer.NewPatch(),
 			iaminstanceprofile.NewControlPlanePatch(),
 			instancetype.NewControlPlanePatch(),
 			ami.NewControlPlanePatch(),
