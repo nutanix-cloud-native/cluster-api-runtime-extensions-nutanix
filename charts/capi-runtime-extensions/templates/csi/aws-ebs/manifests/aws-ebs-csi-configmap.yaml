@@ -1630,7 +1630,7 @@ data:
                   key: endpoint
                   name: aws-meta
                   optional: true
-            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.1
+            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.2
             imagePullPolicy: IfNotPresent
             livenessProbe:
               failureThreshold: 5
@@ -1675,7 +1675,7 @@ data:
             env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner:v3.5.0-eks-1-28-4
+            image: public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner:v3.6.0-eks-1-28-7
             imagePullPolicy: IfNotPresent
             name: csi-provisioner
             resources:
@@ -1697,7 +1697,7 @@ data:
             env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/external-attacher:v4.3.0-eks-1-28-4
+            image: public.ecr.aws/eks-distro/kubernetes-csi/external-attacher:v4.4.0-eks-1-28-7
             imagePullPolicy: IfNotPresent
             name: csi-attacher
             resources:
@@ -1719,7 +1719,7 @@ data:
             env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter:v6.2.2-eks-1-28-4
+            image: public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter:v6.3.0-eks-1-28-7
             imagePullPolicy: IfNotPresent
             name: csi-snapshotter
             resources:
@@ -1742,7 +1742,7 @@ data:
             env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/external-resizer:v1.8.0-eks-1-28-4
+            image: public.ecr.aws/eks-distro/kubernetes-csi/external-resizer:v1.9.0-eks-1-28-7
             imagePullPolicy: IfNotPresent
             name: csi-resizer
             resources:
@@ -1759,7 +1759,7 @@ data:
               name: socket-dir
           - args:
             - --csi-address=/csi/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.10.0-eks-1-28-4
+            image: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.11.0-eks-1-28-7
             imagePullPolicy: IfNotPresent
             name: liveness-probe
             resources:
@@ -1891,6 +1891,14 @@ data:
                     operator: NotIn
                     values:
                     - fargate
+                  - key: node.kubernetes.io/instance-type
+                    operator: NotIn
+                    values:
+                    - a1.medium
+                    - a1.large
+                    - a1.xlarge
+                    - a1.2xlarge
+                    - a1.4xlarge
           containers:
           - args:
             - node
@@ -1904,7 +1912,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.1
+            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.2
             imagePullPolicy: IfNotPresent
             lifecycle:
               preStop:
@@ -1951,7 +1959,7 @@ data:
               value: /csi/csi.sock
             - name: DRIVER_REG_SOCK_PATH
               value: /var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar:v2.8.0-eks-1-28-4
+            image: public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar:v2.9.0-eks-1-28-7
             imagePullPolicy: IfNotPresent
             livenessProbe:
               exec:
@@ -1981,7 +1989,7 @@ data:
               name: probe-dir
           - args:
             - --csi-address=/csi/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.10.0-eks-1-28-4
+            image: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.11.0-eks-1-28-7
             imagePullPolicy: IfNotPresent
             name: liveness-probe
             resources:

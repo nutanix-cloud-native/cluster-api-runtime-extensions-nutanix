@@ -108,9 +108,17 @@ func Test_generateCPIConfigMapForCluster(t *testing.T) {
 				test.startConfigMap,
 				test.cluster,
 			)
-			cpiConfigMapExpectedName := fmt.Sprintf("%s-%s", test.startConfigMap.Name, test.cluster.Name)
+			cpiConfigMapExpectedName := fmt.Sprintf(
+				"%s-%s",
+				test.startConfigMap.Name,
+				test.cluster.Name,
+			)
 			if cm.Name != cpiConfigMapExpectedName {
-				t.Errorf("expected configmap name to be %s. got: %s", cpiConfigMapExpectedName, cm.Name)
+				t.Errorf(
+					"expected configmap name to be %s. got: %s",
+					cpiConfigMapExpectedName,
+					cm.Name,
+				)
 			}
 		})
 	}
