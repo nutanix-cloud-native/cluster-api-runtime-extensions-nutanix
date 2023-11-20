@@ -11,7 +11,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/d2iq-labs/capi-runtime-extensions/common v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.3.0
-	github.com/onsi/gomega v1.28.1
+	github.com/onsi/gomega v1.30.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.28.4
