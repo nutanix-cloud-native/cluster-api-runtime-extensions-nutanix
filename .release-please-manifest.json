@@ -1,10 +1,2 @@
 {
-  "packages": {
-    ".": {
-      "package-name": "capi-runtime-extensions",
-      "release-type": "go",
-      "pull-request-title-pattern": "build${scope}: release${component} ${version}",
-      "changelog-type": "github"
-    }
-  }
 }
