@@ -35,7 +35,6 @@ release-snapshot: dockerauth go-generate ; $(info $(M) building snapshot release
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		release \
 		--snapshot \
-		--skip-publish \
 		--clean \
 		--parallelism=$(GORELEASER_PARALLELISM) \
 		--timeout=60m

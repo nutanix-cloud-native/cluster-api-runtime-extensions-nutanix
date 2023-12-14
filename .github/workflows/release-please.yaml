@@ -21,9 +21,7 @@ jobs:
         id: release-please
         with:
           release-type: go
-          package-name: capi-runtime-extensions
-          pull-request-title-pattern: "build${scope}: release${component} ${version}"
-          changelog-notes-type: github
+          manifest-file: .release-please-manifest.json
 
       - uses: actions/checkout@v4
         if: ${{ steps.release-please.outputs.release_created }}
