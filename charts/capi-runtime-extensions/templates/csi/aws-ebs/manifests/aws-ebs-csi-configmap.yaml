@@ -1602,6 +1602,7 @@ data:
           containers:
           - args:
             - --endpoint=$(CSI_ENDPOINT)
+            - --batching=true
             - --logging-format=text
             - --user-agent-extra=kustomize
             - --v=2
@@ -1630,7 +1631,7 @@ data:
                   key: endpoint
                   name: aws-meta
                   optional: true
-            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.2
+            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.24.1
             imagePullPolicy: IfNotPresent
             livenessProbe:
               failureThreshold: 5
@@ -1666,16 +1667,20 @@ data:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
           - args:
+            - --timeout=60s
             - --csi-address=$(ADDRESS)
             - --v=2
             - --feature-gates=Topology=true
             - --extra-create-metadata
             - --leader-election=true
             - --default-fstype=ext4
+            - --kube-api-qps=20
+            - --kube-api-burst=100
+            - --worker-threads=100
             env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner:v3.6.0-eks-1-28-7
+            image: public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner:v3.6.2-eks-1-28-9
             imagePullPolicy: IfNotPresent
             name: csi-provisioner
             resources:
@@ -1691,13 +1696,17 @@ data:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
           - args:
+            - --timeout=60s
             - --csi-address=$(ADDRESS)
             - --v=2
             - --leader-election=true
+            - --kube-api-qps=20
+            - --kube-api-burst=100
+            - --worker-threads=100
             env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/external-attacher:v4.4.0-eks-1-28-7
+            image: public.ecr.aws/eks-distro/kubernetes-csi/external-attacher:v4.4.2-eks-1-28-9
             imagePullPolicy: IfNotPresent
             name: csi-attacher
             resources:
@@ -1716,10 +1725,13 @@ data:
             - --csi-address=$(ADDRESS)
             - --leader-election=true
             - --extra-create-metadata
+            - --kube-api-qps=20
+            - --kube-api-burst=100
+            - --worker-threads=100
             env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter:v6.3.0-eks-1-28-7
+            image: public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter:v6.3.2-eks-1-28-9
             imagePullPolicy: IfNotPresent
             name: csi-snapshotter
             resources:
@@ -1735,14 +1747,18 @@ data:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
           - args:
+            - --timeout=60s
             - --csi-address=$(ADDRESS)
             - --v=2
             - --handle-volume-inuse-error=false
             - --leader-election=true
+            - --kube-api-qps=20
+            - --kube-api-burst=100
+            - --workers=100
             env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/external-resizer:v1.9.0-eks-1-28-7
+            image: public.ecr.aws/eks-distro/kubernetes-csi/external-resizer:v1.9.2-eks-1-28-9
             imagePullPolicy: IfNotPresent
             name: csi-resizer
             resources:
@@ -1759,7 +1775,7 @@ data:
               name: socket-dir
           - args:
             - --csi-address=/csi/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.11.0-eks-1-28-7
+            image: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.11.0-eks-1-28-9
             imagePullPolicy: IfNotPresent
             name: liveness-probe
             resources:
@@ -1912,7 +1928,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.23.2
+            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.24.1
             imagePullPolicy: IfNotPresent
             lifecycle:
               preStop:
@@ -1959,7 +1975,7 @@ data:
               value: /csi/csi.sock
             - name: DRIVER_REG_SOCK_PATH
               value: /var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar:v2.9.0-eks-1-28-7
+            image: public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar:v2.9.1-eks-1-28-9
             imagePullPolicy: IfNotPresent
             livenessProbe:
               exec:
@@ -1989,7 +2005,7 @@ data:
               name: probe-dir
           - args:
             - --csi-address=/csi/csi.sock
-            image: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.11.0-eks-1-28-7
+            image: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.11.0-eks-1-28-9
             imagePullPolicy: IfNotPresent
             name: liveness-probe
             resources:
@@ -2004,6 +2020,7 @@ data:
             volumeMounts:
             - mountPath: /csi
               name: plugin-dir
+          hostNetwork: false
           nodeSelector:
             kubernetes.io/os: linux
           priorityClassName: system-node-critical
