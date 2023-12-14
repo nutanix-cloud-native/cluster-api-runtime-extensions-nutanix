@@ -1,0 +1,4 @@
+{
+  "pull-request-title-pattern": "build${scope}: release${component} ${version}",
+  "changelog-type": "github"
+}
