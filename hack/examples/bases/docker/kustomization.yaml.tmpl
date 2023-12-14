@@ -38,6 +38,8 @@ patches:
         nfd: {}
         cni:
           provider: calico
+    - op: "remove"
+      path: "/spec/topology/workers/machinePools"
 - target:
     group: cluster.x-k8s.io
     kind: ClusterClass
@@ -70,3 +72,5 @@ patches:
             discoverVariablesExtension: "dockerworkerconfigvars.capi-runtime-extensions"
     - op: "remove"
       path: "/spec/variables"
+    - op: "remove"
+      path: "/spec/workers/machinePools"

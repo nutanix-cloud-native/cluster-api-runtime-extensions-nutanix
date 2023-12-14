@@ -13,9 +13,7 @@
     "gnumake@latest",
     "gnused@latest",
     "go@latest",
-    "path:./hack/flakes/go-mod-upgrade",
     "gojq@latest",
-    "path:./hack/flakes/golangci-lint",
     "golines@latest",
     "goreleaser@latest",
     "gotestsum@latest",
@@ -30,11 +28,13 @@
     "kustomize@latest",
     "pre-commit@latest",
     "rsync@latest",
-    "path:./hack/flakes/setup-envtest",
     "shfmt@latest",
     "upx@latest",
     "yamale@latest",
-    "yamllint@latest"
+    "yamllint@latest",
+    "path:./hack/flakes#go-mod-upgrade",
+    "path:./hack/flakes#golangci-lint",
+    "path:./hack/flakes#setup-envtest"
   ],
   "shell": {
     "scripts": {
