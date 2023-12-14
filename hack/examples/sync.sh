@@ -22,7 +22,8 @@ mkdir -p "${EXAMPLE_CLUSTERS_DIR}"
 mkdir -p examples/capi-quick-start
 # Sync ClusterClasses (including Templates) and Clusters to separate files
 kustomize build ./hack/examples |
-  tee >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "docker" and .kind != "Cluster")' >"${EXAMPLE_CLUSTERCLASSES_DIR}/docker-cluster-class.yaml") \
+  tee \
+    >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "docker" and .kind != "Cluster" and .kind != "DockerMachinePoolTemplate")' >"${EXAMPLE_CLUSTERCLASSES_DIR}/docker-cluster-class.yaml") \
     >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "docker" and .kind == "Cluster")' >"${EXAMPLE_CLUSTERS_DIR}/docker-cluster.yaml") \
     >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and ( .kind != "Cluster" and .kind != "AWSClusterStaticIdentity"))' >"${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml") \
     >(gojq --yaml-input --yaml-output '. | select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws" and ( .kind == "Cluster" or .kind == "AWSClusterStaticIdentity"))' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster.yaml") \
