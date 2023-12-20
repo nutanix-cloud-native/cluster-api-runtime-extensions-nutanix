@@ -22,4 +22,4 @@ ignore=T1,body-min-length
 
 [contrib-title-conventional-commits]
 # Specify allowed commit types. For details see: https://www.conventionalcommits.org/
-types = fix,feat,docs,style,refactor,perf,test,revert,ci,build
+types = fix,feat,docs,style,refactor,perf,test,revert,ci,build,release
