@@ -5,7 +5,7 @@ module github.com/d2iq-labs/capi-runtime-extensions/external/capa
 
 go 1.21
 
-require sigs.k8s.io/cluster-api-provider-aws/v2 v2.3.0
+require sigs.k8s.io/cluster-api-provider-aws/v2 v2.3.1
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
