@@ -151,18 +151,6 @@ jobs:
           fail_on_error: true
           reporter: github-pr-review
 
-  lint-dockerfile:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: actionlint
-        uses: reviewdog/action-hadolint@v1
-        with:
-          fail_on_error: true
-          reporter: github-pr-review
-
   pre-commit:
     runs-on: ubuntu-22.04
     defaults:
@@ -254,7 +242,7 @@ jobs:
           devbox run -- \
             kind load docker-image \
               --name chart-testing \
-              "$(devbox run -- gojq -r '.[] | select(.type == "Docker Image" and .goos == "linux" and .goarch == "amd64").name' dist/artifacts.json)"
+              "ko.local/capi-runtime-extensions:$(devbox run -- gojq -r .version dist/metadata.json)"
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
@@ -270,7 +258,7 @@ jobs:
           devbox run -- \
             ct install \
               --config charts/ct-config.yaml \
-              --helm-extra-set-args "--set=image.tag=$(devbox run -- jq -r .version dist/metadata.json)"
+              --helm-extra-set-args "--set-string image.repository=ko.local/capi-runtime-extensions --set-string image.tag=$(devbox run -- gojq -r .version dist/metadata.json)"
         env:
           KUBECONFIG: ct-kind-kubeconfig
 

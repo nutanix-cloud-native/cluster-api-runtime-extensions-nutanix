@@ -73,10 +73,6 @@ repos:
   hooks:
   - id: actionlint-system
     stages: [commit]
-- repo: https://github.com/hadolint/hadolint
-  rev: v2.12.1-beta
-  hooks:
-  - id: hadolint
 - repo: https://github.com/jorisroovers/gitlint
   rev: v0.19.1
   hooks:
