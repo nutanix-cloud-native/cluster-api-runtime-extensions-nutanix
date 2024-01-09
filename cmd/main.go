@@ -25,6 +25,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	caaphv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/server"
 	awsclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/clusterconfig"
 	awsmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation"
@@ -53,6 +54,7 @@ func main() {
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
 	utilruntime.Must(crsv1.AddToScheme(clientScheme))
 	utilruntime.Must(capiv1.AddToScheme(clientScheme))
+	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
 
 	mgrOptions := &ctrl.Options{
 		Scheme: clientScheme,

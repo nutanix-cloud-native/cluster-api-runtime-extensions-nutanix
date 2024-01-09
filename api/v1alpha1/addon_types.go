@@ -41,7 +41,8 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 type AddonStrategy string
 
 const (
-	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
+	AddonStrategyClusterResourceSet          AddonStrategy = "ClusterResourceSet"
+	AddonStrategyClusterAPIAddonProviderHelm AddonStrategy = "CAAPH"
 )
 
 // CNI required for providing CNI configuration.

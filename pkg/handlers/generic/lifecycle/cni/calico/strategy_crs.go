@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructuredscheme"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
@@ -52,8 +53,8 @@ func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 		&c.defaultProviderInstallationConfigMapNames,
 		prefix+".default-provider-installation-configmap-names",
 		map[string]string{
-			"DockerCluster": "calico-cni-installation-dockercluster",
-			"AWSCluster":    "calico-cni-installation-awscluster",
+			"DockerCluster": "calico-cni-crs-installation-dockercluster",
+			"AWSCluster":    "calico-cni-crs-installation-awscluster",
 		},
 		"map of provider cluster implementation type to default installation ConfigMap name",
 	)
@@ -65,7 +66,7 @@ type crsStrategy struct {
 	client ctrlclient.Client
 }
 
-func (s crsStrategy) applyViaCRS(
+func (s crsStrategy) apply(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	log logr.Logger,
@@ -126,7 +127,7 @@ func (s crsStrategy) ensureCNICRSForCluster(
 	err := s.client.Get(ctx, defaultInstallationConfigMapObjName, defaultInstallationConfigMap)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to retrieve default default installation ConfigMap %q: %w",
+			"failed to retrieve default installation ConfigMap %q: %w",
 			defaultInstallationConfigMapObjName,
 			err,
 		)
@@ -252,6 +253,7 @@ func generateProviderCNICRS(
 	var b bytes.Buffer
 
 	for _, o := range parsed {
+		calicoInstallationGK := schema.GroupKind{Group: "operator.tigera.io", Kind: "Installation"}
 		if podSubnet != "" &&
 			o.GetObjectKind().GroupVersionKind().GroupKind() == calicoInstallationGK {
 			obj := o.(*unstructured.Unstructured).Object

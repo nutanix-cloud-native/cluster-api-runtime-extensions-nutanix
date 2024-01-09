@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,12 +20,18 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
+type addonStrategy interface {
+	apply(context.Context, *runtimehooksv1.AfterControlPlaneInitializedRequest, logr.Logger) error
+}
+
 type CalicoCNIConfig struct {
-	crsConfig crsConfig
+	crsConfig   crsConfig
+	caaphConfig caaphConfig
 }
 
 func (c *CalicoCNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	c.crsConfig.AddFlags(prefix+".crs", flags)
+	c.crsConfig.AddFlags(prefix+".caaph", flags)
 }
 
 type CalicoCNI struct {
@@ -39,8 +45,6 @@ type CalicoCNI struct {
 var (
 	_ commonhandlers.Named                   = &CalicoCNI{}
 	_ lifecycle.AfterControlPlaneInitialized = &CalicoCNI{}
-
-	calicoInstallationGK = schema.GroupKind{Group: "operator.tigera.io", Kind: "Installation"}
 )
 
 func New(
@@ -102,20 +106,25 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 		return
 	}
 
+	var strategy addonStrategy
 	switch cniVar.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		s := crsStrategy{
+		strategy = crsStrategy{
 			config: s.config.crsConfig,
 			client: s.client,
 		}
-		err = s.applyViaCRS(ctx, req, log)
+	case v1alpha1.AddonStrategyClusterAPIAddonProviderHelm:
+		strategy = caaphStrategy{
+			config: s.config.caaphConfig,
+			client: s.client,
+		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(fmt.Sprintf("unknown CNI addon deployment strategy %q", cniVar.Strategy))
 		return
 	}
 
-	if err != nil {
+	if err := strategy.apply(ctx, req, log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
