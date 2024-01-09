@@ -9,11 +9,15 @@ PROVIDER_MODULE_capd := sigs.k8s.io/cluster-api/test
 PROVIDER_API_PATH_capd := infrastructure/docker/api
 PROVIDER_API_VERSION_capd := v1beta1
 
+PROVIDER_MODULE_caaph := sigs.k8s.io/cluster-api-addon-provider-helm
+PROVIDER_API_PATH_caaph := api
+PROVIDER_API_VERSION_caaph := v1alpha1
+
 # It is not possible to resolved Kubernetes and controller-runtime modules for the different infrastructure providers.
 # Instead. sync their APIs into the third-party/apis directory.
 .PHONY: apis.sync
 apis.sync: ## Syncs infrastructure providers' APIs
-apis.sync: api.sync.capa api.sync.capd go-fix.common
+apis.sync: $(addprefix api.sync.,capa capd caaph) go-fix.common
 
 .PHONY: api.sync.%
 api.sync.%: ## Syncs an infrastructure provider's API
