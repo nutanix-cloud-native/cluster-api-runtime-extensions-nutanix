@@ -7,6 +7,6 @@
 // To enable Calico deployment, a cluster must be labelled with `capiext.labs.d2iq.io/cni=calico`.
 // This will ensure the Tigera Configmap and associated ClusterResourceSet.
 //
-// +kubebuilder:rbac:groups=addons.cluster.x-k8s.io,resources=helmchartproxies,verbs=watch;list;get;create;patch;update;delete
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=watch;list;get
-package calico
+// +kubebuilder:rbac:groups=addons.cluster.x-k8s.io,resources=clusterresourcesets,verbs=watch;list;get;create;patch;update;delete
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=watch;list;get;create;patch;update;delete
+package cpi

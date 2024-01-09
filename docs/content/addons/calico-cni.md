@@ -39,5 +39,5 @@ The Helm chart comes with default configurations for the Calico Installation CRS
 is possible. To do so, specify:
 
 ```shell
---set-file handlers.CalicoCNI.defaultInstallationConfigMaps.DockerCluster.configMap.content=<file>
+--set-file handlers.CalicoCNI.defaultValueTemplatesConfigMaps.DockerCluster.configMap.content=<file>
 ```
