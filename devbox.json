@@ -39,7 +39,7 @@
   "shell": {
     "scripts": {
       "preview-docs": [
-        "cd docs && hugo serve -F -D"
+        "cd docs && hugo server -F -D"
       ]
     }
   }

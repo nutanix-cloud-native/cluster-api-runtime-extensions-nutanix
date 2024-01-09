@@ -3,7 +3,9 @@
  SPDX-License-Identifier: Apache-2.0
  -->
 
-# CAPI Runtime Extensions Server
+# CAPI Runtime Extensions
+
+For user docs, please see [https://d2iq-labs.github.io/capi-runtime-extensions/].
 
 See [upstream documentation](https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/index.html).
 
