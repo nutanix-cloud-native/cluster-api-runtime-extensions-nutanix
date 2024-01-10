@@ -25,40 +25,40 @@ import (
 )
 
 const (
-	defaultCalicoHelmRepositoryURL   = "https://docs.tigera.io/calico/charts"
-	defaultCalicoVersion             = "v3.27.0"
-	defaultTigeraOperatorChartName   = "tigera-operator"
-	defaultTigeraOperatorReleaseName = "tigera-operator"
-	defaultTigerOperatorNamespace    = "tigera-operator"
+	defaultHelmRepositoryURL    = "https://docs.tigera.io/calico/charts"
+	defaultVersion              = "v3.27.0"
+	defaultChartName            = "tigera-operator"
+	defaultHelmReleaseName      = "tigera-operator"
+	defaultHelmReleaseNamespace = "tigera-operator"
 )
 
-type CalicoCNIConfig struct {
-	defaultsNamespace                                        string
-	defaultProviderInstallationValuesTemplatesConfigMapNames map[string]string
+type CNIConfig struct {
+	defaultsNamespace                    string
+	defaultValuesTemplatesConfigMapNames map[string]string
 }
 
-func (c *CalicoCNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		&c.defaultsNamespace,
 		prefix+".defaultsNamespace",
 		corev1.NamespaceDefault,
-		"namespace of the ConfigMap used to deploy Tigera Operator",
+		"namespace of the default values ConfigMaps",
 	)
 
 	flags.StringToStringVar(
-		&c.defaultProviderInstallationValuesTemplatesConfigMapNames,
-		prefix+".default-provider-installation-values-templates-configmap-names",
+		&c.defaultValuesTemplatesConfigMapNames,
+		prefix+".default-values-templates-configmap-names",
 		map[string]string{
-			"DockerCluster": "calico-cni-installation-template-dockercluster",
-			"AWSCluster":    "calico-cni-installation-template-awscluster",
+			"DockerCluster": "calico-cni-values-template-dockercluster",
+			"AWSCluster":    "calico-cni-values-template-awscluster",
 		},
-		"map of provider cluster implementation type to default installation values ConfigMap name",
+		"map of provider cluster implementation type to default values ConfigMap name",
 	)
 }
 
 type CalicoCNI struct {
 	client ctrlclient.Client
-	config *CalicoCNIConfig
+	config *CNIConfig
 
 	variableName string
 	variablePath []string
@@ -71,7 +71,7 @@ var (
 
 func New(
 	c ctrlclient.Client,
-	cfg *CalicoCNIConfig,
+	cfg *CNIConfig,
 ) *CalicoCNI {
 	return &CalicoCNI{
 		client:       c,
@@ -124,7 +124,7 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 	}
 
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
-	defaultInstallationConfigMapName, ok := s.config.defaultProviderInstallationValuesTemplatesConfigMapNames[infraKind]
+	defaultInstallationConfigMapName, ok := s.config.defaultValuesTemplatesConfigMapNames[infraKind]
 	if !ok {
 		log.V(4).Info(
 			fmt.Sprintf(
@@ -165,14 +165,14 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 			Name:      "calico-cni-installation-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   defaultCalicoHelmRepositoryURL,
-			ChartName: defaultTigeraOperatorChartName,
+			RepoURL:   defaultHelmRepositoryURL,
+			ChartName: defaultChartName,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{capiv1.ClusterNameLabel: req.Cluster.Name},
 			},
-			ReleaseNamespace: defaultTigerOperatorNamespace,
-			ReleaseName:      defaultTigeraOperatorReleaseName,
-			Version:          defaultCalicoVersion,
+			ReleaseNamespace: defaultHelmReleaseNamespace,
+			ReleaseName:      defaultHelmReleaseName,
+			Version:          defaultVersion,
 			ValuesTemplate:   valuesTemplateConfigMap.Data["values.yaml"],
 		},
 	}

@@ -6,10 +6,10 @@ hooks:
     defaultValueTemplatesConfigMaps:
       DockerCluster:
         create: true
-        name: calico-cni-installation-template-dockercluster
+        name: calico-cni-values-template-dockercluster
       AWSCluster:
         create: true
-        name: calico-cni-installation-template-awscluster
+        name: calico-cni-values-template-awscluster
 
 deployDefaultClusterClasses: true
 

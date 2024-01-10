@@ -32,9 +32,9 @@ A Helm chart for capi-runtime-extensions
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
 | hooks.CalicoCNI.defaultValueTemplatesConfigMaps.AWSCluster.create | bool | `true` |  |
-| hooks.CalicoCNI.defaultValueTemplatesConfigMaps.AWSCluster.name | string | `"calico-cni-installation-template-awscluster"` |  |
+| hooks.CalicoCNI.defaultValueTemplatesConfigMaps.AWSCluster.name | string | `"calico-cni-values-template-awscluster"` |  |
 | hooks.CalicoCNI.defaultValueTemplatesConfigMaps.DockerCluster.create | bool | `true` |  |
-| hooks.CalicoCNI.defaultValueTemplatesConfigMaps.DockerCluster.name | string | `"calico-cni-installation-template-dockercluster"` |  |
+| hooks.CalicoCNI.defaultValueTemplatesConfigMaps.DockerCluster.name | string | `"calico-cni-values-template-dockercluster"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/d2iq-labs/capi-runtime-extensions"` |  |
 | image.tag | string | `""` |  |
