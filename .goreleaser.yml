@@ -24,6 +24,24 @@ release:
     **Full Changelog**: https://github.com/d2iq-labs/{{.ProjectName}}/compare/{{ .PreviousTag }}...{{ .Tag }}
   extra_files:
     - glob: ./examples/capi-quick-start/*.yaml
+    - glob: metadata.yaml
+    - glob: runtime-extension-components.yaml
+
+before:
+  hooks:
+    - |
+      sh -ec 'if [ {{ .IsSnapshot }} != true ]; then
+        cat <<EOF > runtime-extension-components.yaml
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: capi-runtime-extensions-system
+      $(helm template capi-runtime-extensions ./charts/capi-runtime-extensions \
+        --namespace capi-runtime-extensions-system \
+        --set-string image.tag={{ .Version }} \
+      )
+      EOF
+      fi'
 
 builds:
   - id: capi-runtime-extensions
@@ -49,21 +67,24 @@ builds:
       - arm64
     mod_timestamp: '{{ .CommitTimestamp }}'
     hooks:
-      post: |
-        sh -ec 'if [ {{ .IsSnapshot }} == true ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
-          env GOOS=linux GOARCH={{ .Arch }} \
-              SOURCE_DATE_EPOCH=$(date +%s) \
-              KO_DOCKER_REPO=ko.local/capi-runtime-extensions \
-              ko build \
-                --bare \
-                -t {{ .Version }} \
-                ./cmd
-        fi'
+      post:
+        - |
+          sh -ec 'if [ {{ .IsSnapshot }} == true ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
+            env GOOS=linux GOARCH={{ .Arch }} \
+                SOURCE_DATE_EPOCH=$(date +%s) \
+                KO_DOCKER_REPO=ko.local/capi-runtime-extensions \
+                ko build \
+                  --bare \
+                  -t {{ .Version }} \
+                  ./cmd
+          fi'
+
 archives:
   - name_template: '{{ .ProjectName }}_v{{trimprefix .Version "v"}}_{{ .Os }}_{{ .Arch }}'
     rlcp: true
     builds:
       - capi-runtime-extensions
+
 kos:
   - id: capi-runtime-extensions
     build: capi-runtime-extensions
@@ -90,7 +111,9 @@ kos:
     bare: true
     tags:
       - v{{trimprefix .Version "v"}}
+
 checksum:
   name_template: 'checksums.txt'
+
 snapshot:
   name_template: "{{ incminor .Tag }}-dev"
