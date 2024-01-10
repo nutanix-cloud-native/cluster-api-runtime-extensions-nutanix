@@ -11,6 +11,11 @@ See [upstream documentation](https://cluster-api.sigs.k8s.io/tasks/experimental-
 
 ## Development
 
+Install tools
+- [Devbox](https://github.com/jetpack-io/devbox?tab=readme-ov-file#installing-devbox)
+- [Direnv](https://direnv.net/docs/installation.html)
+- Container Runtime for your Operating System
+
 To deploy a local build, either initial install to update an existing deployment, run:
 
 ```shell
