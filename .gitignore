@@ -38,3 +38,4 @@ node_modules/
 .hugo_build.lock
 
 /cluster.yaml
+/runtime-extension-components.yaml
