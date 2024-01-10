@@ -35,6 +35,8 @@ A Helm chart for capi-runtime-extensions
 | hooks.CalicoCNI.defaultValueTemplatesConfigMaps.AWSCluster.name | string | `"calico-cni-values-template-awscluster"` |  |
 | hooks.CalicoCNI.defaultValueTemplatesConfigMaps.DockerCluster.create | bool | `true` |  |
 | hooks.CalicoCNI.defaultValueTemplatesConfigMaps.DockerCluster.name | string | `"calico-cni-values-template-dockercluster"` |  |
+| hooks.CiliumCNI.defaultValueTemplatesConfigMaps.DockerCluster.create | bool | `true` |  |
+| hooks.CiliumCNI.defaultValueTemplatesConfigMaps.DockerCluster.name | string | `"cilium-cni-values-template-dockercluster"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/d2iq-labs/capi-runtime-extensions"` |  |
 | image.tag | string | `""` |  |

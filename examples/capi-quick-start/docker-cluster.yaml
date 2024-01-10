@@ -23,7 +23,7 @@ spec:
         value:
           addons:
             cni:
-              provider: calico
+              provider: cilium
             nfd: {}
           docker: {}
     version: v1.27.5

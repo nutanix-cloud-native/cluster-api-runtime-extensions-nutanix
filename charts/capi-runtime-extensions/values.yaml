@@ -10,6 +10,11 @@ hooks:
       AWSCluster:
         create: true
         name: calico-cni-values-template-awscluster
+  CiliumCNI:
+    defaultValueTemplatesConfigMaps:
+      DockerCluster:
+        create: true
+        name: cilium-cni-values-template-dockercluster
 
 deployDefaultClusterClasses: true
 

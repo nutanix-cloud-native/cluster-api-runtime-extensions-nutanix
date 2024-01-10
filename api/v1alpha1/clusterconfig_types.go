@@ -16,6 +16,8 @@ import (
 
 const (
 	CNIProviderCalico = "calico"
+	CNIProviderCilium = "cilium"
+
 	CSIProviderAWSEBS = "aws-ebs"
 	CPIProivderAWS    = "aws"
 )
@@ -351,7 +353,7 @@ type CNI struct {
 }
 
 func (CNI) VariableSchema() clusterv1.VariableSchema {
-	supportedCNIProviders := []string{CNIProviderCalico}
+	supportedCNIProviders := []string{CNIProviderCalico, CNIProviderCilium}
 
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
