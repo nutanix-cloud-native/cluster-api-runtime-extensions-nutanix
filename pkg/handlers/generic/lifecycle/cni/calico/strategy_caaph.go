@@ -80,7 +80,10 @@ func (s caaphStrategy) apply(
 		defaultInstallationConfigMapName,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to retrieve Calico installation values template ConfigMap for cluster: %w", err)
+		return fmt.Errorf(
+			"failed to retrieve Calico installation values template ConfigMap for cluster: %w",
+			err,
+		)
 	}
 
 	hcp := &caaphv1.HelmChartProxy{

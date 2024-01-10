@@ -24,22 +24,22 @@ type addonStrategy interface {
 	apply(context.Context, *runtimehooksv1.AfterControlPlaneInitializedRequest, logr.Logger) error
 }
 
-type CalicoCNIConfig struct {
+type CNIConfig struct {
 	crsConfig   crsConfig
 	caaphConfig caaphConfig
 }
 
-func (c *CalicoCNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	c.crsConfig.AddFlags(prefix+".crs", flags)
-	c.crsConfig.AddFlags(prefix+".caaph", flags)
-}
-
 type CalicoCNI struct {
 	client ctrlclient.Client
-	config *CalicoCNIConfig
+	config *CNIConfig
 
 	variableName string
 	variablePath []string
+}
+
+func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+	c.crsConfig.AddFlags(prefix+".crs", flags)
+	c.crsConfig.AddFlags(prefix+".caaph", flags)
 }
 
 var (
@@ -49,7 +49,7 @@ var (
 
 func New(
 	c ctrlclient.Client,
-	cfg *CalicoCNIConfig,
+	cfg *CNIConfig,
 ) *CalicoCNI {
 	return &CalicoCNI{
 		client:       c,

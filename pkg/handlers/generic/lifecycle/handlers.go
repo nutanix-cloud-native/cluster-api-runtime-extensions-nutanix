@@ -19,23 +19,18 @@ import (
 )
 
 type Handlers struct {
-	calicoCNIConfig *calico.CalicoCNIConfig
+	calicoCNIConfig *calico.CNIConfig
 	nfdConfig       *nfd.NFDConfig
 	ebsConfig       *awsebs.AWSEBSConfig
 	awsCPIConfig    *awscpi.AWSCPIConfig
 }
 
 func New() *Handlers {
-	calicoCNIConfig := &calico.CalicoCNIConfig{}
-	nfdConfig := &nfd.NFDConfig{}
-	ebsConfig := &awsebs.AWSEBSConfig{}
-	awsCPIConfig := &awscpi.AWSCPIConfig{}
-
 	return &Handlers{
-		calicoCNIConfig: calicoCNIConfig,
-		nfdConfig:       nfdConfig,
-		ebsConfig:       ebsConfig,
-		awsCPIConfig:    awsCPIConfig,
+		calicoCNIConfig: &calico.CNIConfig{},
+		nfdConfig:       &nfd.NFDConfig{},
+		ebsConfig:       &awsebs.AWSEBSConfig{},
+		awsCPIConfig:    &awscpi.AWSCPIConfig{},
 	}
 }
 

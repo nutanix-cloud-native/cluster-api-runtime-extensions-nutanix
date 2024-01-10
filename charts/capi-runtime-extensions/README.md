@@ -31,11 +31,15 @@ A Helm chart for capi-runtime-extensions
 | deployDefaultClusterClasses | bool | `true` |  |
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
+| hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.AWSCluster.create | bool | `true` |  |
+| hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.AWSCluster.name | string | `"calico-cni-caaph-values-template-awscluster"` |  |
+| hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.DockerCluster.create | bool | `true` |  |
+| hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.DockerCluster.name | string | `"calico-cni-caaph-values-template-dockercluster"` |  |
 | hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.content | string | `""` |  |
-| hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.name | string | `"calico-cni-installation-awscluster"` |  |
+| hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.name | string | `"calico-cni-crs-installation-awscluster"` |  |
 | hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.create | bool | `true` |  |
 | hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.content | string | `""` |  |
-| hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.name | string | `"calico-cni-installation-dockercluster"` |  |
+| hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.name | string | `"calico-cni-crs-installation-dockercluster"` |  |
 | hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.DockerCluster.create | bool | `true` |  |
 | hooks.CalicoCNI.crsStrategy.defaultTigeraOperatorConfigMap.name | string | `"tigera-operator"` |  |
 | hooks.CalicoCNI.defaultPodSubnet | string | `"192.168.0.0/16"` |  |
