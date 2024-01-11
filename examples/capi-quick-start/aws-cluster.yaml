@@ -23,6 +23,7 @@ spec:
           addons:
             cni:
               provider: calico
+              strategy: ClusterResourceSet
             cpi: {}
             csi:
               providers:

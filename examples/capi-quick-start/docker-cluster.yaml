@@ -24,6 +24,7 @@ spec:
           addons:
             cni:
               provider: calico
+              strategy: ClusterResourceSet
             nfd: {}
           docker: {}
     version: v1.27.5

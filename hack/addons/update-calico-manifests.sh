@@ -43,7 +43,7 @@ gojq --yaml-input \
   <"${ASSETS_DIR}/${FILE_NAME}" \
   >"${ASSETS_DIR}/tigera-operator.json"
 
-kubectl create configmap "{{ .Values.hooks.CalicoCNI.defaultTigeraOperatorConfigMap.name }}" --dry-run=client --output yaml \
+kubectl create configmap "{{ .Values.hooks.CalicoCNI.crsStrategy.defaultTigeraOperatorConfigMap.name }}" --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/tigera-operator.json" \
   >"${ASSETS_DIR}/tigera-operator-configmap.yaml"
 

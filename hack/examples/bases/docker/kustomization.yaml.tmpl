@@ -38,6 +38,7 @@ patches:
         nfd: {}
         cni:
           provider: calico
+          strategy: ClusterResourceSet
     - op: "remove"
       path: "/spec/topology/workers/machinePools"
 - target:

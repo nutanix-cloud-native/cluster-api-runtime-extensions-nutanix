@@ -29,7 +29,7 @@ spec:
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         args:
         - --webhook-cert-dir=/runtimehooks-certs/
-        - --calicocni.defaultsNamespace={{ .Release.Namespace }}
+        - --calicocni.crs.defaultsNamespace={{ .Release.Namespace }}
         - --nfd.defaultsNamespace={{ .Release.Namespace }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
