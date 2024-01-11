@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/storage/names"
@@ -35,22 +36,31 @@ func TestGeneratePatches(
 
 	// Server side apply does not work with the fake client, hack around it by pre-creating empty Secrets
 	// https://github.com/kubernetes-sigs/controller-runtime/issues/2341
-	fakeClient.Create(
-		context.Background(),
-		newTestSecret(validSecretName, request.Namespace),
-	)
-	fakeClient.Create(
-		context.Background(),
-		newEmptySecret(
-			request.KubeadmControlPlaneTemplateRequestObjectName+"-registry-config",
-			request.Namespace,
+	require.NoError(
+		t,
+		fakeClient.Create(
+			context.Background(),
+			newTestSecret(validSecretName, request.Namespace),
 		),
 	)
-	fakeClient.Create(
-		context.Background(),
-		newEmptySecret(
-			request.KubeadmConfigTemplateRequestObjectName+"-registry-config",
-			request.Namespace,
+	require.NoError(
+		t,
+		fakeClient.Create(
+			context.Background(),
+			newEmptySecret(
+				request.KubeadmControlPlaneTemplateRequestObjectName+"-registry-config",
+				request.Namespace,
+			),
+		),
+	)
+	require.NoError(
+		t,
+		fakeClient.Create(
+			context.Background(),
+			newEmptySecret(
+				request.KubeadmConfigTemplateRequestObjectName+"-registry-config",
+				request.Namespace,
+			),
 		),
 	)
 
