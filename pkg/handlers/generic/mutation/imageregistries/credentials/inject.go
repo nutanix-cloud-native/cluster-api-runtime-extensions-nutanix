@@ -107,8 +107,18 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			if generateErr != nil {
 				return generateErr
 			}
+			mirrorConfig, err := mirrorFromImageRegistry(
+				ctx,
+				h.client,
+				imageRegistry,
+				obj,
+			)
+			if err != nil {
+				return err
+			}
 			files, commands, generateErr := generateFilesAndCommands(
 				registryWithOptionalCredentials,
+				mirrorConfig,
 				imageRegistry,
 				obj.GetName())
 			if generateErr != nil {
@@ -171,8 +181,18 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			if generateErr != nil {
 				return generateErr
 			}
+			mirrorConfig, err := mirrorFromImageRegistry(
+				ctx,
+				h.client,
+				imageRegistry,
+				obj,
+			)
+			if err != nil {
+				return err
+			}
 			files, commands, generateErr := generateFilesAndCommands(
 				registryWithOptionalCredentials,
+				mirrorConfig,
 				imageRegistry,
 				obj.GetName())
 			if generateErr != nil {
@@ -233,7 +253,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 		return providerConfig{}, fmt.Errorf(
 			"error getting secret %s/%s from Image Registry variable: %w",
 			obj.GetNamespace(),
-			imageRegistry.CredentialsSecret,
+			imageRegistry.Credentials.SecretRef.Name,
 			err,
 		)
 	}
@@ -241,7 +261,6 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	if secret != nil {
 		registryWithOptionalCredentials.Username = string(secret.Data["username"])
 		registryWithOptionalCredentials.Password = string(secret.Data["password"])
-		registryWithOptionalCredentials.CACert = string(secret.Data[secretKeyForMirrorCACert])
 	}
 
 	return registryWithOptionalCredentials, nil
@@ -249,6 +268,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 
 func generateFilesAndCommands(
 	registryWithOptionalCredentials providerConfig,
+	mirrorConfig mirrorConfig,
 	imageRegistry v1alpha1.ImageRegistry,
 	objName string,
 ) ([]bootstrapv1.File, []string, error) {
@@ -274,7 +294,7 @@ func generateFilesAndCommands(
 		generateCredentialsSecretFile(registryWithOptionalCredentials, objName)...)
 
 	// Generate default registry mirror file
-	mirrorHostFiles, err := generateDefaultRegistryMirrorFile(registryWithOptionalCredentials)
+	mirrorHostFiles, err := generateDefaultRegistryMirrorFile(mirrorConfig)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -282,7 +302,7 @@ func generateFilesAndCommands(
 	// generate CA certificate file for registry mirror
 	files = append(
 		files,
-		generateMirrorCACertFile(registryWithOptionalCredentials, imageRegistry)...)
+		generateMirrorCACertFile(mirrorConfig, imageRegistry)...)
 
 	return files, commands, err
 }
@@ -323,17 +343,17 @@ func secretForImageRegistryCredentials(
 	registry v1alpha1.ImageRegistry,
 	objectNamespace string,
 ) (*corev1.Secret, error) {
-	if registry.CredentialsSecret == nil {
+	if registry.Credentials == nil || registry.Credentials.SecretRef == nil {
 		return nil, nil
 	}
 
 	namespace := objectNamespace
-	if registry.CredentialsSecret.Namespace != "" {
-		namespace = registry.CredentialsSecret.Namespace
+	if registry.Credentials.SecretRef.Namespace != "" {
+		namespace = registry.Credentials.SecretRef.Namespace
 	}
 
 	key := ctrlclient.ObjectKey{
-		Name:      registry.CredentialsSecret.Name,
+		Name:      registry.Credentials.SecretRef.Name,
 		Namespace: namespace,
 	}
 	secret := &corev1.Secret{}

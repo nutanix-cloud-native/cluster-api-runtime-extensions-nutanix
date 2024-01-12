@@ -17,13 +17,13 @@ func Test_generateDefaultRegistryMirrorFile(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
-		config  providerConfig
+		config  mirrorConfig
 		want    []cabpkv1.File
 		wantErr error
 	}{
 		{
 			name:   "ECR image registry and no CA certificate",
-			config: providerConfig{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+			config: mirrorConfig{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			want: []cabpkv1.File{
 				{
 					Path:        "/etc/containerd/certs.d/_default/hosts.toml",
@@ -40,7 +40,7 @@ func Test_generateDefaultRegistryMirrorFile(t *testing.T) {
 		},
 		{
 			name: "image registry with CA certificates",
-			config: providerConfig{
+			config: mirrorConfig{
 				URL:    "https://myregistry.com",
 				CACert: "mycacert",
 			},
@@ -75,13 +75,13 @@ func Test_generateMirrorCACertFile(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
-		config   providerConfig
+		config   mirrorConfig
 		registry v1alpha1.ImageRegistry
 		want     []cabpkv1.File
 	}{
 		{
 			name: "Mirror registry with no CA certificate",
-			config: providerConfig{
+			config: mirrorConfig{
 				URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 			},
 			registry: v1alpha1.ImageRegistry{
@@ -91,14 +91,16 @@ func Test_generateMirrorCACertFile(t *testing.T) {
 		},
 		{
 			name: "Mirror registry with CA certificate",
-			config: providerConfig{
+			config: mirrorConfig{
 				URL:    "https://myregistry.com",
 				CACert: "mycacert",
 			},
 			registry: v1alpha1.ImageRegistry{
 				URL: "https://myregistry.com",
-				CredentialsSecret: &v1.ObjectReference{
-					Name: "my-registry-credentials-secret",
+				Mirror: &v1alpha1.RegistryMirror{
+					SecretRef: &v1.ObjectReference{
+						Name: "my-registry-credentials-secret",
+					},
 				},
 			},
 			want: []cabpkv1.File{
