@@ -36,12 +36,9 @@ func TestGeneratePatches(
 
 	// Server side apply does not work with the fake client, hack around it by pre-creating empty Secrets
 	// https://github.com/kubernetes-sigs/controller-runtime/issues/2341
-	require.NoError(
-		t,
-		fakeClient.Create(
-			context.Background(),
-			newTestSecret(validSecretName, request.Namespace),
-		),
+	fakeClient.Create(
+		context.Background(),
+		newRegistryCredentialsSecret(validSecretName, request.Namespace),
 	)
 	require.NoError(
 		t,
@@ -97,6 +94,9 @@ func TestGeneratePatches(
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 					),
 				},
@@ -158,6 +158,12 @@ func TestGeneratePatches(
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/kubernetes/static-image-credentials.json",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/certs/mirror.pem",
 						),
 					),
 				},
@@ -222,6 +228,9 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
+						),
 					),
 				},
 				{
@@ -283,6 +292,12 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/kubernetes/static-image-credentials.json",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/certs/mirror.pem",
+						),
 					),
 				},
 				{
@@ -321,10 +336,11 @@ func TestGeneratePatches(
 	)
 }
 
-func newTestSecret(name, namespace string) *corev1.Secret {
+func newRegistryCredentialsSecret(name, namespace string) *corev1.Secret {
 	secretData := map[string][]byte{
 		"username": []byte("myuser"),
 		"password": []byte("mypassword"),
+		"ca.crt":   []byte("myCACert"),
 	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
