@@ -74,10 +74,6 @@ linters-settings:
 
 issues:
   exclude-rules:
-    # ignore errcheck for code under a /test folder
-    - path: "test/*"
-      linters:
-        - errcheck
     # ignore errcheck for flags.Parse (it is expected that we flag.ExitOnError)
     # ignore response.WriteError as it always returns the err it was passed
     - source: "flags.Parse|response.WriteError"
