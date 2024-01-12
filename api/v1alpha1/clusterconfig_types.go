@@ -237,52 +237,31 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
-type ImageRegistries struct {
-	// +optional
-	ImageRegistryCredentials ImageRegistryCredentials `json:"credentials,omitempty"`
-}
+type ImageRegistries []ImageRegistry
 
 func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
+	resourceSchema := ImageRegistry{}.VariableSchema().OpenAPIV3Schema
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Configuration for image registries.",
-			Type:        "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"credentials": ImageRegistryCredentials{}.VariableSchema().OpenAPIV3Schema,
-			},
+			Type:        "array",
+			Items:       &resourceSchema,
 		},
 	}
 }
 
-type ImageRegistryCredentials []ImageRegistryCredentialsResource
-
-func (ImageRegistryCredentials) VariableSchema() clusterv1.VariableSchema {
-	resourceSchema := ImageRegistryCredentialsResource{}.VariableSchema().OpenAPIV3Schema
-
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Image registry credentials to set up on all Nodes in the cluster. " +
-				"Enabling this will configure the Kubelets with " +
-				"https://kubernetes.io/docs/tasks/administer-cluster/kubelet-credential-provider/.",
-			Type:  "array",
-			Items: &resourceSchema,
-		},
-	}
-}
-
-// ImageRegistryCredentialsResource required for providing credentials for an image registry URL.
-type ImageRegistryCredentialsResource struct {
+type ImageRegistry struct {
 	// Registry URL.
 	URL string `json:"url"`
 
-	// The Secret containing the registry credentials.
-	// The Secret should have keys 'username' and 'password'.
+	// The Secret containing the registry credentials and CA certificate
+	// The Secret should have keys 'username', 'password' and 'caCert'
 	// This credentials Secret is not required for some registries, e.g. ECR.
 	// +optional
-	Secret *corev1.ObjectReference `json:"secretRef,omitempty"`
+	CredentialsSecret *corev1.ObjectReference `json:"secretRef,omitempty"`
 }
 
-func (ImageRegistryCredentialsResource) VariableSchema() clusterv1.VariableSchema {
+func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
@@ -292,8 +271,8 @@ func (ImageRegistryCredentialsResource) VariableSchema() clusterv1.VariableSchem
 					Type:        "string",
 				},
 				"secretRef": {
-					Description: "The Secret containing the registry credentials. " +
-						"The Secret should have keys 'username' and 'password'. " +
+					Description: "The Secret containing the registry credentials and CA certificates " +
+						"The Secret should have keys 'username', 'password' and 'ca.crt' " +
 						"This credentials Secret is not required for some registries, e.g. ECR.",
 					Type: "object",
 					Properties: map[string]clusterv1.JSONSchemaProps{

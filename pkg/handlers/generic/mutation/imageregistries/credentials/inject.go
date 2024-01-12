@@ -26,11 +26,6 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries"
 )
 
-const (
-	// VariableName is the external patch variable name.
-	VariableName = "credentials"
-)
-
 type imageRegistriesPatchHandler struct {
 	client ctrlclient.Client
 
@@ -45,7 +40,6 @@ func NewPatch(
 		cl,
 		clusterconfig.MetaVariableName,
 		imageregistries.VariableName,
-		VariableName,
 	)
 }
 
@@ -75,7 +69,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	imageRegistryCredentials, found, err := variables.Get[v1alpha1.ImageRegistryCredentials](
+	imageRegistries, found, err := variables.Get[v1alpha1.ImageRegistries](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -89,11 +83,11 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	}
 
 	// TODO: Add support for multiple registries.
-	if len(imageRegistryCredentials) > 1 {
-		return fmt.Errorf("multiple Image Registry Credentials are not supported at this time")
+	if len(imageRegistries) > 1 {
+		return fmt.Errorf("multiple Image Registry are not supported at this time")
 	}
 
-	credentials := imageRegistryCredentials[0]
+	imageRegistry := imageRegistries[0]
 
 	log = log.WithValues(
 		"variableName",
@@ -101,19 +95,19 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		credentials,
+		imageRegistry,
 	)
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 			registryWithOptionalCredentials, generateErr := registryWithOptionalCredentialsFromImageRegistryCredentials(
-				ctx, h.client, credentials, obj,
+				ctx, h.client, imageRegistry, obj,
 			)
 			if generateErr != nil {
 				return generateErr
 			}
-			files, commands, generateErr := generateFilesAndCommands(registryWithOptionalCredentials, obj.GetName())
+			files, commands, generateErr := generateFilesAndCommands(registryWithOptionalCredentials, imageRegistry, obj.GetName())
 			if generateErr != nil {
 				return generateErr
 			}
@@ -169,12 +163,12 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
 		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 			registryWithOptionalCredentials, generateErr := registryWithOptionalCredentialsFromImageRegistryCredentials(
-				ctx, h.client, credentials, obj,
+				ctx, h.client, imageRegistry, obj,
 			)
 			if generateErr != nil {
 				return generateErr
 			}
-			files, commands, generateErr := generateFilesAndCommands(registryWithOptionalCredentials, obj.GetName())
+			files, commands, generateErr := generateFilesAndCommands(registryWithOptionalCredentials, imageRegistry, obj.GetName())
 			if generateErr != nil {
 				return generateErr
 			}
@@ -217,23 +211,23 @@ func (h *imageRegistriesPatchHandler) Mutate(
 func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	ctx context.Context,
 	c ctrlclient.Client,
-	credentials v1alpha1.ImageRegistryCredentialsResource,
+	imageRegistry v1alpha1.ImageRegistry,
 	obj ctrlclient.Object,
 ) (providerConfig, error) {
 	registryWithOptionalCredentials := providerConfig{
-		URL: credentials.URL,
+		URL: imageRegistry.URL,
 	}
 	secret, err := secretForImageRegistryCredentials(
 		ctx,
 		c,
-		credentials,
+		imageRegistry,
 		obj.GetNamespace(),
 	)
 	if err != nil {
 		return providerConfig{}, fmt.Errorf(
-			"error getting secret %s/%s from Image Registry Credentials variable: %w",
+			"error getting secret %s/%s from Image Registry variable: %w",
 			obj.GetNamespace(),
-			credentials.Secret,
+			imageRegistry.CredentialsSecret,
 			err,
 		)
 	}
@@ -241,6 +235,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	if secret != nil {
 		registryWithOptionalCredentials.Username = string(secret.Data["username"])
 		registryWithOptionalCredentials.Password = string(secret.Data["password"])
+		registryWithOptionalCredentials.CACert = string(secret.Data[secretKeyForMirrorCACert])
 	}
 
 	return registryWithOptionalCredentials, nil
@@ -248,12 +243,13 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 
 func generateFilesAndCommands(
 	registryWithOptionalCredentials providerConfig,
+	imageRegistry v1alpha1.ImageRegistry,
 	objName string,
 ) ([]bootstrapv1.File, []string, error) {
 	files, commands, err := templateFilesAndCommandsForInstallKubeletCredentialProviders()
 	if err != nil {
 		return nil, nil, fmt.Errorf(
-			"error generating insall files and commands for Image Registry Credentials variable: %w",
+			"error generating install files and commands for Image Registry Credentials variable: %w",
 			err,
 		)
 	}
@@ -270,6 +266,18 @@ func generateFilesAndCommands(
 	files = append(
 		files,
 		generateCredentialsSecretFile(registryWithOptionalCredentials, objName)...)
+
+	// Generate default registry mirror file
+	mirrorHostFiles, err := generateDefaultRegistryMirrorFile(registryWithOptionalCredentials)
+	if err != nil {
+		return nil, nil, err
+	}
+	files = append(
+		files,
+		mirrorHostFiles...,
+	)
+	// generate CA certificate file for registry mirror
+	files = append(files, generateMirrorCACertFile(registryWithOptionalCredentials, imageRegistry)...)
 
 	return files, commands, err
 }
@@ -307,20 +315,20 @@ func createSecretIfNeeded(
 func secretForImageRegistryCredentials(
 	ctx context.Context,
 	c ctrlclient.Reader,
-	credentials v1alpha1.ImageRegistryCredentialsResource,
+	registry v1alpha1.ImageRegistry,
 	objectNamespace string,
 ) (*corev1.Secret, error) {
-	if credentials.Secret == nil {
+	if registry.CredentialsSecret == nil {
 		return nil, nil
 	}
 
 	namespace := objectNamespace
-	if credentials.Secret.Namespace != "" {
-		namespace = credentials.Secret.Namespace
+	if registry.CredentialsSecret.Namespace != "" {
+		namespace = registry.CredentialsSecret.Namespace
 	}
 
 	key := ctrlclient.ObjectKey{
-		Name:      credentials.Secret.Name,
+		Name:      registry.CredentialsSecret.Name,
 		Namespace: namespace,
 	}
 	secret := &corev1.Secret{}
