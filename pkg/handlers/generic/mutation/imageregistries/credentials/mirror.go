@@ -1,3 +1,6 @@
+// Copyright 2023 D2iQ, Inc. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package credentials
 
 import (
@@ -6,8 +9,9 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+
+	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 )
 
 const (
@@ -48,18 +52,22 @@ func generateDefaultRegistryMirrorFile(config providerConfig) ([]cabpkv1.File, e
 		{
 			Path:        defaultRegistryMirrorConfigPathOnRemote,
 			Content:     b.String(),
-			Permissions: "0700",
+			Permissions: "0600",
 		},
 	}, nil
 }
 
-func generateMirrorCACertFile(config providerConfig, registry v1alpha1.ImageRegistry) []cabpkv1.File {
+func generateMirrorCACertFile(
+	config providerConfig,
+	registry v1alpha1.ImageRegistry,
+) []cabpkv1.File {
 	if config.CACert == "" {
 		return nil
 	}
 	return []cabpkv1.File{
 		{
-			Path: mirrorCACertPathOnRemote,
+			Path:        mirrorCACertPathOnRemote,
+			Permissions: "0600",
 			ContentFrom: &cabpkv1.FileSource{
 				Secret: cabpkv1.SecretFileSource{
 					Name: registry.CredentialsSecret.Name,
