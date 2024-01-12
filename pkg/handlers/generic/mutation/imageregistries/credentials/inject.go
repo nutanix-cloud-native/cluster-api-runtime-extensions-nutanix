@@ -107,7 +107,10 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			if generateErr != nil {
 				return generateErr
 			}
-			files, commands, generateErr := generateFilesAndCommands(registryWithOptionalCredentials, imageRegistry, obj.GetName())
+			files, commands, generateErr := generateFilesAndCommands(
+				registryWithOptionalCredentials,
+				imageRegistry,
+				obj.GetName())
 			if generateErr != nil {
 				return generateErr
 			}
@@ -168,7 +171,10 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			if generateErr != nil {
 				return generateErr
 			}
-			files, commands, generateErr := generateFilesAndCommands(registryWithOptionalCredentials, imageRegistry, obj.GetName())
+			files, commands, generateErr := generateFilesAndCommands(
+				registryWithOptionalCredentials,
+				imageRegistry,
+				obj.GetName())
 			if generateErr != nil {
 				return generateErr
 			}
@@ -272,12 +278,11 @@ func generateFilesAndCommands(
 	if err != nil {
 		return nil, nil, err
 	}
+	files = append(files, mirrorHostFiles...)
+	// generate CA certificate file for registry mirror
 	files = append(
 		files,
-		mirrorHostFiles...,
-	)
-	// generate CA certificate file for registry mirror
-	files = append(files, generateMirrorCACertFile(registryWithOptionalCredentials, imageRegistry)...)
+		generateMirrorCACertFile(registryWithOptionalCredentials, imageRegistry)...)
 
 	return files, commands, err
 }
