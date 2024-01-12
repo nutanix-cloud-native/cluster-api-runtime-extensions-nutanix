@@ -24,11 +24,9 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "without a Secret",
 			Vals: v1alpha1.GenericClusterConfig{
-				ImageRegistries: v1alpha1.ImageRegistries{
-					ImageRegistryCredentials: []v1alpha1.ImageRegistryCredentialsResource{
-						{
-							URL: "http://a.b.c.example.com",
-						},
+				ImageRegistries: []v1alpha1.ImageRegistry{
+					{
+						URL: "http://a.b.c.example.com",
 					},
 				},
 			},
@@ -36,13 +34,11 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "with a Secret",
 			Vals: v1alpha1.GenericClusterConfig{
-				ImageRegistries: v1alpha1.ImageRegistries{
-					ImageRegistryCredentials: []v1alpha1.ImageRegistryCredentialsResource{
-						{
-							URL: "http://a.b.c.example.com",
-							Secret: &corev1.ObjectReference{
-								Name: "a.b.c.example.com-creds",
-							},
+				ImageRegistries: []v1alpha1.ImageRegistry{
+					{
+						URL: "http://a.b.c.example.com",
+						CredentialsSecret: &corev1.ObjectReference{
+							Name: "a.b.c.example.com-creds",
 						},
 					},
 				},

@@ -75,8 +75,8 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
 							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 						},
 					},
@@ -130,10 +130,10 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
 							URL: "https://my-registry.io",
-							Secret: &corev1.ObjectReference{
+							CredentialsSecret: &corev1.ObjectReference{
 								Name: validSecretName,
 							},
 						},
@@ -191,8 +191,8 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
 							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 						},
 					},
@@ -246,10 +246,10 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
 							URL: "https://my-registry.io",
-							Secret: &corev1.ObjectReference{
+							CredentialsSecret: &corev1.ObjectReference{
 								Name: validSecretName,
 							},
 						},
@@ -307,8 +307,8 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
 							URL: "https://my-registry.io",
 						},
 					},
