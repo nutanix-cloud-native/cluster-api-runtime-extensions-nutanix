@@ -238,42 +238,22 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
-type ImageRegistries []ImageRegistry
-
-func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
-	resourceSchema := ImageRegistry{}.VariableSchema().OpenAPIV3Schema
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Configuration for image registries.",
-			Type:        "array",
-			Items:       &resourceSchema,
-		},
-	}
-}
-
-type ImageRegistry struct {
-	// Registry URL.
-	URL string `json:"url"`
-
+type ImageCredentials struct {
 	// The Secret containing the registry credentials and CA certificate
 	// The Secret should have keys 'username', 'password' and 'caCert'
 	// This credentials Secret is not required for some registries, e.g. ECR.
 	// +optional
-	CredentialsSecret *corev1.ObjectReference `json:"secretRef,omitempty"`
+	SecretRef *corev1.ObjectReference `json:"secretRef,omitempty"`
 }
 
-func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
+func (ImageCredentials) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"url": {
-					Description: "Registry URL.",
-					Type:        "string",
-				},
 				"secretRef": {
-					Description: "The Secret containing the registry credentials and CA certificates " +
-						"The Secret should have keys 'username', 'password' and 'ca.crt' " +
+					Description: "The Secret containing the registry credentials. " +
+						"The Secret should have keys 'username', 'password'. " +
 						"This credentials Secret is not required for some registries, e.g. ECR.",
 					Type: "object",
 					Properties: map[string]clusterv1.JSONSchemaProps{
@@ -290,7 +270,84 @@ func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
 					},
 				},
 			},
+		},
+	}
+}
+
+type RegistryMirror struct {
+	// The secret containing CA certificate for the registry mirror.
+	// The secret should have 'ca.crt' key
+	// +optional
+	SecretRef *corev1.ObjectReference `json:"secretRef,omitempty"`
+}
+
+func (RegistryMirror) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"secretRef": {
+					Description: "The Secret containing the registry CA certificate. " +
+						"The Secret should have keys 'ca.crt'. " +
+						"This credentials Secret is not required for public registries.",
+					Type: "object",
+					Properties: map[string]clusterv1.JSONSchemaProps{
+						"name": {
+							Description: "The name of the Secret containing the registry CA certificate.",
+							Type:        "string",
+						},
+						"namespace": {
+							Description: "The namespace of the Secret containing the registry CA certificate. " +
+								"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate" +
+								" that reference this variable.",
+							Type: "string",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+type ImageRegistry struct {
+	// Registry URL.
+	URL string `json:"url"`
+
+	// Credentials for the image registry
+	// +optional
+	Credentials *ImageCredentials `json:"credentials,omitempty"`
+
+	// Use this registry as a mirror
+	// +optional
+	Mirror *RegistryMirror `json:"mirror,omitempty"`
+}
+
+func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"url": {
+					Description: "Registry URL.",
+					Type:        "string",
+				},
+				"credentials": ImageCredentials{}.VariableSchema().OpenAPIV3Schema,
+				"mirror":      RegistryMirror{}.VariableSchema().OpenAPIV3Schema,
+			},
 			Required: []string{"url"},
+		},
+	}
+}
+
+type ImageRegistries []ImageRegistry
+
+func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
+	resourceSchema := ImageRegistry{}.VariableSchema().OpenAPIV3Schema
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Configuration for image registries.",
+			Type:        "array",
+			Items:       &resourceSchema,
 		},
 	}
 }

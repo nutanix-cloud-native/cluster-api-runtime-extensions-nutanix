@@ -45,7 +45,6 @@ type providerConfig struct {
 	URL      string
 	Username string
 	Password string
-	CACert   string
 }
 
 func (c providerConfig) isCredentialsEmpty() bool {

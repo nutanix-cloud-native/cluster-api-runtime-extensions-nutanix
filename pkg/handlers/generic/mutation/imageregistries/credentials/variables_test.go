@@ -22,7 +22,7 @@ func TestVariableValidation(t *testing.T) {
 		false,
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
-			Name: "without a Secret",
+			Name: "without a credentials secret",
 			Vals: v1alpha1.GenericClusterConfig{
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
@@ -32,13 +32,30 @@ func TestVariableValidation(t *testing.T) {
 			},
 		},
 		capitest.VariableTestDef{
-			Name: "with a Secret",
+			Name: "with a credentials secret",
 			Vals: v1alpha1.GenericClusterConfig{
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
 						URL: "http://a.b.c.example.com",
-						CredentialsSecret: &corev1.ObjectReference{
-							Name: "a.b.c.example.com-creds",
+						Credentials: &v1alpha1.ImageCredentials{
+							SecretRef: &corev1.ObjectReference{
+								Name: "a.b.c.example.com-creds",
+							},
+						},
+					},
+				},
+			},
+		},
+		capitest.VariableTestDef{
+			Name: "with a mirror secret",
+			Vals: v1alpha1.GenericClusterConfig{
+				ImageRegistries: []v1alpha1.ImageRegistry{
+					{
+						URL: "http://a.b.c.example.com",
+						Mirror: &v1alpha1.RegistryMirror{
+							SecretRef: &corev1.ObjectReference{
+								Name: "a.b.c.example.com-creds",
+							},
 						},
 					},
 				},
