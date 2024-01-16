@@ -36,8 +36,16 @@ func mirrorFromImageRegistry(
 	c ctrlclient.Client,
 	imageRegistry v1alpha1.ImageRegistry,
 	obj ctrlclient.Object,
-) (mirrorConfig, error) {
-	mirrorWithOptionalCACert := mirrorConfig{
+) (*mirrorConfig, error) {
+	// using the registry as a mirror is supported by including empty mirror object or
+	// mirror with CA certificate to the registry variable.
+	// ex.
+	// - url: https://my-registry.com
+	//   mirror: {}
+	if imageRegistry.Mirror == nil {
+		return nil, nil
+	}
+	mirrorWithOptionalCACert := &mirrorConfig{
 		URL: imageRegistry.URL,
 	}
 	secret, err := secretForMirrorCACert(
@@ -47,7 +55,7 @@ func mirrorFromImageRegistry(
 		obj.GetNamespace(),
 	)
 	if err != nil {
-		return mirrorConfig{}, fmt.Errorf(
+		return &mirrorConfig{}, fmt.Errorf(
 			"error getting secret %s/%s from Image Registry variable: %w",
 			obj.GetNamespace(),
 			imageRegistry.Mirror.SecretRef.Name,
@@ -91,7 +99,10 @@ func secretForMirrorCACert(
 // Default Mirror for all registries. Use a mirror regardless of the intended registry.
 // The upstream registry will be automatically used after all defined mirrors have been tried.
 // reference: https://github.com/containerd/containerd/blob/main/docs/hosts.md#setup-default-mirror-for-all-registries
-func generateDefaultRegistryMirrorFile(mirror mirrorConfig) ([]cabpkv1.File, error) {
+func generateDefaultRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, error) {
+	if mirror == nil {
+		return nil, nil
+	}
 	t, err := template.New("").Parse(string(defaultRegistryMirrorPatch))
 	if err != nil {
 		return nil, fmt.Errorf("fail to parse go template for registry mirror: %w", err)
@@ -123,10 +134,10 @@ func generateDefaultRegistryMirrorFile(mirror mirrorConfig) ([]cabpkv1.File, err
 }
 
 func generateMirrorCACertFile(
-	config mirrorConfig,
+	config *mirrorConfig,
 	registry v1alpha1.ImageRegistry,
 ) []cabpkv1.File {
-	if config.CACert == "" {
+	if config == nil || config.CACert == "" {
 		return nil
 	}
 	return []cabpkv1.File{
