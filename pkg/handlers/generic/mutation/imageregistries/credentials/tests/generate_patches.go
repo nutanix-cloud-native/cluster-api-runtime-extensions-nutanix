@@ -492,7 +492,6 @@ func newRegistryCredentialsSecret(name, namespace string) *corev1.Secret {
 	secretData := map[string][]byte{
 		"username": []byte("myuser"),
 		"password": []byte("mypassword"),
-		"ca.crt":   []byte("myCACert"),
 	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -507,6 +506,7 @@ func newRegistryCredentialsSecret(name, namespace string) *corev1.Secret {
 		Type: corev1.SecretTypeOpaque,
 	}
 }
+
 func newMirrorSecret(name, namespace string) *corev1.Secret {
 	secretData := map[string][]byte{
 		"ca.crt": []byte("myCACert"),
