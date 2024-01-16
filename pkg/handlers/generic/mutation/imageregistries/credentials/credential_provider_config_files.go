@@ -52,7 +52,10 @@ func (c providerConfig) isCredentialsEmpty() bool {
 		c.Password == ""
 }
 
-func templateFilesForImageCredentialProviderConfigs(config providerConfig, mirror *mirrorConfig) ([]cabpkv1.File, error) {
+func templateFilesForImageCredentialProviderConfigs(
+	config providerConfig,
+	mirror *mirrorConfig,
+) ([]cabpkv1.File, error) {
 	var files []cabpkv1.File
 
 	kubeletCredentialProviderConfigFile, err := templateKubeletCredentialProviderConfig()
