@@ -268,7 +268,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 
 func generateFilesAndCommands(
 	registryWithOptionalCredentials providerConfig,
-	mirrorConfig mirrorConfig,
+	mirrorConfig *mirrorConfig,
 	imageRegistry v1alpha1.ImageRegistry,
 	objName string,
 ) ([]bootstrapv1.File, []string, error) {
@@ -281,6 +281,7 @@ func generateFilesAndCommands(
 	}
 	imageCredentialProviderConfigFiles, err := templateFilesForImageCredentialProviderConfigs(
 		registryWithOptionalCredentials,
+		mirrorConfig,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf(

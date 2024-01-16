@@ -37,21 +37,30 @@ func TestGeneratePatches(
 
 	// Server side apply does not work with the fake client, hack around it by pre-creating empty Secrets
 	// https://github.com/kubernetes-sigs/controller-runtime/issues/2341
-	fakeClient.Create(
-		context.Background(),
-		newRegistryCredentialsSecret(validSecretName, request.Namespace),
+	require.NoError(
+		t,
+		fakeClient.Create(
+			context.Background(),
+			newRegistryCredentialsSecret(validSecretName, request.Namespace),
+		),
 	)
 
-	fakeClient.Create(
-		context.Background(),
-		newMirrorSecret(validMirrorSecretName, request.Namespace),
+	require.NoError(
+		t,
+		fakeClient.Create(
+			context.Background(),
+			newMirrorSecret(validMirrorSecretName, request.Namespace),
+		),
 	)
 
-	fakeClient.Create(
-		context.Background(),
-		newEmptySecret(
-			request.KubeadmControlPlaneTemplateRequestObjectName+"-registry-config",
-			request.Namespace,
+	require.NoError(
+		t,
+		fakeClient.Create(
+			context.Background(),
+			newEmptySecret(
+				request.KubeadmControlPlaneTemplateRequestObjectName+"-registry-config",
+				request.Namespace,
+			),
 		),
 	)
 	require.NoError(
@@ -420,7 +429,7 @@ func TestGeneratePatches(
 					variableName,
 					v1alpha1.ImageRegistries{
 						v1alpha1.ImageRegistry{
-							URL: "https://my-registry.io",
+							URL: "https://mirror-registry.com",
 							Credentials: &v1alpha1.ImageCredentials{
 								SecretRef: &corev1.ObjectReference{
 									Name: validSecretName,
