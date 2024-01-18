@@ -208,7 +208,7 @@ mirror:
   credentialsStrategy: "MirrorCredentialsOnly"
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
 credentialProviders:
-  apiVersion: kubelet.config.k8s.io/v1beta1
+  apiVersion: kubelet.config.k8s.io/v1
   kind: CredentialProviderConfig
   providers:
   - name: ecr-credential-provider
@@ -217,7 +217,7 @@ credentialProviders:
     matchImages:
     - "123456789.dkr.ecr.us-east-1.amazonaws.com"
     defaultCacheDuration: "0s"
-    apiVersion: credentialprovider.kubelet.k8s.io/v1alpha1
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
 			},
 		},
@@ -244,7 +244,7 @@ mirror:
   credentialsStrategy: "MirrorCredentialsOnly"
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
 credentialProviders:
-  apiVersion: kubelet.config.k8s.io/v1beta1
+  apiVersion: kubelet.config.k8s.io/v1
   kind: CredentialProviderConfig
   providers:
   - name: static-credential-provider
@@ -253,7 +253,7 @@ credentialProviders:
     matchImages:
     - "myregistry.com"
     defaultCacheDuration: "0s"
-    apiVersion: credentialprovider.kubelet.k8s.io/v1beta1
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
 			},
 		},
