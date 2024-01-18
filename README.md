@@ -41,9 +41,9 @@ metadata:
   name: "aws-quick-start-creds"
   namespace: capa-system
 stringData:
- AccessKeyID: ${AWS_ACCESS_KEY_ID}
- SecretAccessKey: ${AWS_SECRET_ACCESS_KEY}
- SessionToken: ${AWS_SESSION_TOKEN}
+  AccessKeyID: ${AWS_ACCESS_KEY_ID}
+  SecretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+  SessionToken: ${AWS_SESSION_TOKEN}
 EOF
 ```
 
@@ -57,9 +57,9 @@ metadata:
   name: "aws-quick-start-creds"
   namespace: capa-system
 stringData:
- AccessKeyID: $(aws configure get aws_access_key_id)
- SecretAccessKey: $(aws configure get aws_secret_access_key)
- SessionToken: $(aws configure get aws_session_token)
+  AccessKeyID: $(aws configure get aws_access_key_id)
+  SecretAccessKey: $(aws configure get aws_secret_access_key)
+  SessionToken: $(aws configure get aws_session_token)
 EOF
 ```
 
