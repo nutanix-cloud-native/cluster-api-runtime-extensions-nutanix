@@ -28,7 +28,7 @@ func Test_templateKubeletCredentialProviderConfig(t *testing.T) {
 				Permissions: "0600",
 				Encoding:    "",
 				Append:      false,
-				Content: `apiVersion: kubelet.config.k8s.io/v1beta1
+				Content: `apiVersion: kubelet.config.k8s.io/v1
 kind: CredentialProviderConfig
 providers:
 - name: dynamic-credential-provider
@@ -44,7 +44,7 @@ providers:
   - "*.*.*.*.*"
   - "*.*.*.*.*.*"
   defaultCacheDuration: "0s"
-  apiVersion: credentialprovider.kubelet.k8s.io/v1beta1
+  apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
 			},
 		},
@@ -61,7 +61,7 @@ providers:
 				Permissions: "0600",
 				Encoding:    "",
 				Append:      false,
-				Content: `apiVersion: kubelet.config.k8s.io/v1beta1
+				Content: `apiVersion: kubelet.config.k8s.io/v1
 kind: CredentialProviderConfig
 providers:
 - name: dynamic-credential-provider
@@ -77,7 +77,7 @@ providers:
   - "*.*.*.*.*"
   - "*.*.*.*.*.*"
   defaultCacheDuration: "0s"
-  apiVersion: credentialprovider.kubelet.k8s.io/v1beta1
+  apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
 			},
 		},
@@ -115,7 +115,7 @@ func Test_templateDynamicCredentialProviderConfig(t *testing.T) {
 kind: DynamicCredentialProviderConfig
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
 credentialProviders:
-  apiVersion: kubelet.config.k8s.io/v1beta1
+  apiVersion: kubelet.config.k8s.io/v1
   kind: CredentialProviderConfig
   providers:
   - name: ecr-credential-provider
@@ -124,7 +124,7 @@ credentialProviders:
     matchImages:
     - "123456789.dkr.ecr.us-east-1.amazonaws.com"
     defaultCacheDuration: "0s"
-    apiVersion: credentialprovider.kubelet.k8s.io/v1alpha1
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
 			},
 		},
@@ -145,7 +145,7 @@ credentialProviders:
 kind: DynamicCredentialProviderConfig
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
 credentialProviders:
-  apiVersion: kubelet.config.k8s.io/v1beta1
+  apiVersion: kubelet.config.k8s.io/v1
   kind: CredentialProviderConfig
   providers:
   - name: static-credential-provider
@@ -154,7 +154,7 @@ credentialProviders:
     matchImages:
     - "myregistry.com"
     defaultCacheDuration: "0s"
-    apiVersion: credentialprovider.kubelet.k8s.io/v1beta1
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
 			},
 		},
@@ -175,7 +175,7 @@ credentialProviders:
 kind: DynamicCredentialProviderConfig
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
 credentialProviders:
-  apiVersion: kubelet.config.k8s.io/v1beta1
+  apiVersion: kubelet.config.k8s.io/v1
   kind: CredentialProviderConfig
   providers:
   - name: static-credential-provider
@@ -185,7 +185,7 @@ credentialProviders:
     - "registry-1.docker.io"
     - "docker.io"
     defaultCacheDuration: "0s"
-    apiVersion: credentialprovider.kubelet.k8s.io/v1beta1
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
 			},
 		},
