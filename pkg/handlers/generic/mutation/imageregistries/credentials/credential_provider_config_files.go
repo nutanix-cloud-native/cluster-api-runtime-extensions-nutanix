@@ -12,8 +12,7 @@ import (
 	"path"
 	"text/template"
 
-	credentialproviderv1alpha1 "k8s.io/kubelet/pkg/apis/credentialprovider/v1alpha1"
-	credentialproviderv1beta1 "k8s.io/kubelet/pkg/apis/credentialprovider/v1beta1"
+	credentialproviderv1 "k8s.io/kubelet/pkg/apis/credentialprovider/v1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials/credentialprovider"
@@ -151,7 +150,7 @@ func templateDynamicCredentialProviderConfig(
 func kubeletCredentialProvider() (providerBinary string, providerArgs []string, providerAPIVersion string) {
 	return "dynamic-credential-provider",
 		[]string{"get-credentials", "-c", kubeletDynamicCredentialProviderConfigOnRemote},
-		credentialproviderv1beta1.SchemeGroupVersion.String()
+		credentialproviderv1.SchemeGroupVersion.String()
 }
 
 func dynamicCredentialProvider(host string) (
@@ -159,24 +158,24 @@ func dynamicCredentialProvider(host string) (
 ) {
 	if matches, err := credentialprovider.URLMatchesECR(host); matches || err != nil {
 		return "ecr-credential-provider", []string{"get-credentials"},
-			credentialproviderv1alpha1.SchemeGroupVersion.String(), err
+			credentialproviderv1.SchemeGroupVersion.String(), err
 	}
 
 	if matches, err := credentialprovider.URLMatchesGCR(host); matches || err != nil {
 		return "gcr-credential-provider", []string{"get-credentials"},
-			credentialproviderv1alpha1.SchemeGroupVersion.String(), err
+			credentialproviderv1.SchemeGroupVersion.String(), err
 	}
 
 	if matches, err := credentialprovider.URLMatchesACR(host); matches || err != nil {
 		return "acr-credential-provider", []string{
 			azureCloudConfigFilePath,
-		}, credentialproviderv1alpha1.SchemeGroupVersion.String(), err
+		}, credentialproviderv1.SchemeGroupVersion.String(), err
 	}
 
 	// if no supported provider was found, assume we are using the static credential provider
 	return "static-credential-provider",
 		[]string{kubeletStaticCredentialProviderCredentialsOnRemote},
-		credentialproviderv1beta1.SchemeGroupVersion.String(),
+		credentialproviderv1.SchemeGroupVersion.String(),
 		nil
 }
 
