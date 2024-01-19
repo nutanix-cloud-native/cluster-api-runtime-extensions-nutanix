@@ -112,4 +112,12 @@ func TestGeneratePatches(t *testing.T) {
 		clusterconfig.MetaVariableName,
 		imageregistries.VariableName,
 	)
+
+	imageregistrycredentialstests.TestGenerateMirrorPatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		mgr.GetClient(),
+		clusterconfig.MetaVariableName,
+		imageregistries.VariableName,
+	)
 }

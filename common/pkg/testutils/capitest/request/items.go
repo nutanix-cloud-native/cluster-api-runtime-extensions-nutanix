@@ -21,8 +21,8 @@ import (
 
 const (
 	ClusterName                                  = "test-cluster"
-	KubeadmConfigTemplateRequestObjectName       = "test-kubeadmconfigtemplate"
-	KubeadmControlPlaneTemplateRequestObjectName = "test-kubeadmcontrolplanetemplate"
+	kubeadmConfigTemplateRequestObjectName       = "test-kubeadmconfigtemplate"
+	kubeadmControlPlaneTemplateRequestObjectName = "test-kubeadmcontrolplanetemplate"
 	Namespace                                    = corev1.NamespaceDefault
 )
 
@@ -45,7 +45,16 @@ func NewRequestItem(
 	}
 }
 
-func NewKubeadmConfigTemplateRequestItem(uid types.UID) runtimehooksv1.GeneratePatchesRequestItem {
+func NewKubeadmConfigTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewKubeadmConfigTemplateRequest(uid, kubeadmConfigTemplateRequestObjectName)
+}
+
+func NewKubeadmConfigTemplateRequest(
+	uid types.UID,
+	name string,
+) runtimehooksv1.GeneratePatchesRequestItem {
 	return NewRequestItem(
 		&bootstrapv1.KubeadmConfigTemplate{
 			TypeMeta: metav1.TypeMeta{
@@ -53,7 +62,7 @@ func NewKubeadmConfigTemplateRequestItem(uid types.UID) runtimehooksv1.GenerateP
 				Kind:       "KubeadmConfigTemplate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      KubeadmConfigTemplateRequestObjectName,
+				Name:      name,
 				Namespace: Namespace,
 			},
 			Spec: bootstrapv1.KubeadmConfigTemplateSpec{
@@ -75,8 +84,9 @@ func NewKubeadmConfigTemplateRequestItem(uid types.UID) runtimehooksv1.GenerateP
 	)
 }
 
-func NewKubeadmControlPlaneTemplateRequestItem(
+func NewKubeadmControlPlaneTemplateRequest(
 	uid types.UID,
+	name string,
 ) runtimehooksv1.GeneratePatchesRequestItem {
 	return NewRequestItem(
 		&controlplanev1.KubeadmControlPlaneTemplate{
@@ -85,7 +95,7 @@ func NewKubeadmControlPlaneTemplateRequestItem(
 				Kind:       "KubeadmControlPlaneTemplate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      KubeadmControlPlaneTemplateRequestObjectName,
+				Name:      name,
 				Namespace: Namespace,
 			},
 			Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
@@ -111,6 +121,12 @@ func NewKubeadmControlPlaneTemplateRequestItem(
 		},
 		uid,
 	)
+}
+
+func NewKubeadmControlPlaneTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewKubeadmControlPlaneTemplateRequest(uid, kubeadmControlPlaneTemplateRequestObjectName)
 }
 
 func NewAWSClusterTemplateRequestItem(
