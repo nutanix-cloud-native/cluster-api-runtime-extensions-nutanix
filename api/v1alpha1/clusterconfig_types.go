@@ -264,7 +264,7 @@ func (ImageCredentials) VariableSchema() clusterv1.VariableSchema {
 						"namespace": {
 							Description: "The namespace of the Secret containing the registry credentials. " +
 								"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate" +
-								" that reference this variable.",
+								"that reference this variable.",
 							Type: "string",
 						},
 					},
