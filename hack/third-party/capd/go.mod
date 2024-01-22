@@ -5,7 +5,7 @@ module github.com/d2iq-labs/capi-runtime-extensions/external/capd
 
 go 1.21
 
-require sigs.k8s.io/cluster-api/test v1.6.0
+require sigs.k8s.io/cluster-api/test v1.6.1
 
 replace sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.6.0
 
