@@ -1,15 +1,15 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-{{- if .Values.hooks.CalicoCNI.defaultInstallationConfigMaps.AWSCluster.create }}
+{{- if .Values.hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.create }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: '{{ .Values.hooks.CalicoCNI.defaultInstallationConfigMaps.AWSCluster.configMap.name }}'
+  name: '{{ .Values.hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.name }}'
 data:
   calico-installation: |
-{{- if .Values.hooks.CalicoCNI.defaultInstallationConfigMaps.AWSCluster.configMap.content -}}
-    {{ .Values.hooks.CalicoCNI.defaultInstallationConfigMaps.AWSCluster.configMap.content | nindent 4}}
+{{- if .Values.hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.content -}}
+    {{ .Values.hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.content | nindent 4 }}
 {{- else -}}
     # This section includes base Calico installation configuration.
     # For more information, see: https://docs.projectcalico.org/reference/installation/api

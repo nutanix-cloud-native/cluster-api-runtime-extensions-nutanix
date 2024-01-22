@@ -4,19 +4,20 @@
 hooks:
   CalicoCNI:
     defaultPodSubnet: 192.168.0.0/16
-    defaultTigeraOperatorConfigMap:
-      name: tigera-operator
-    defaultInstallationConfigMaps:
-      DockerCluster:
-        create: true
-        configMap:
-          name: calico-cni-installation-dockercluster
-          content: ""
-      AWSCluster:
-        create: true
-        configMap:
-          name: calico-cni-installation-awscluster
-          content: ""
+    crsStrategy:
+      defaultTigeraOperatorConfigMap:
+        name: tigera-operator
+      defaultInstallationConfigMaps:
+        DockerCluster:
+          create: true
+          configMap:
+            name: calico-cni-installation-dockercluster
+            content: ""
+        AWSCluster:
+          create: true
+          configMap:
+            name: calico-cni-installation-awscluster
+            content: ""
 
 deployDefaultClusterClasses: true
 

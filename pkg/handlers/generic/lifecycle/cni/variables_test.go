@@ -26,6 +26,7 @@ func TestVariableValidation(t *testing.T) {
 				Addons: &v1alpha1.Addons{
 					CNI: &v1alpha1.CNI{
 						Provider: v1alpha1.CNIProviderCalico,
+						Strategy: v1alpha1.AddonStrategyClusterResourceSet,
 					},
 				},
 			},
@@ -36,6 +37,19 @@ func TestVariableValidation(t *testing.T) {
 				Addons: &v1alpha1.Addons{
 					CNI: &v1alpha1.CNI{
 						Provider: "invalid-provider",
+						Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+					},
+				},
+			},
+			ExpectError: true,
+		},
+		capitest.VariableTestDef{
+			Name: "set with invalid strategy",
+			Vals: v1alpha1.GenericClusterConfig{
+				Addons: &v1alpha1.Addons{
+					CNI: &v1alpha1.CNI{
+						Provider: v1alpha1.CNIProviderCalico,
+						Strategy: "invalid-strategy",
 					},
 				},
 			},
