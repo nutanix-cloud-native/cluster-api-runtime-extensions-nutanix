@@ -35,7 +35,7 @@ jobs:
           enable-cache: true
 
       - name: Go cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -76,7 +76,7 @@ jobs:
 
       - if: steps.check_e2e_tests_exist.outputs.files_exists == 'true'
         name: Go cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -116,7 +116,7 @@ jobs:
           enable-cache: true
 
       - name: Go cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -168,7 +168,7 @@ jobs:
           enable-cache: true
 
       - name: Go cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -178,7 +178,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Set up pre-commit cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
