@@ -11,6 +11,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions:  write
 
 jobs:
   devbox-update:
@@ -19,6 +20,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      DESTINATION_BRANCH: scheduled-devbox-update-${{ github.ref_name }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -38,11 +41,12 @@ jobs:
 
       - name: Commit changes and create PR
         if: steps.devbox-versions-changed.outputs.number_changed > 0
+        id: commit-and-create-pr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FILE_TO_COMMIT: devbox.lock
-          DESTINATION_BRANCH: scheduled-devbox-update-${{ github.ref_name }}
         run: |
+          git push origin ":${DESTINATION_BRANCH}" || true
           git branch "${DESTINATION_BRANCH}"
           git push origin "${DESTINATION_BRANCH}"
 
@@ -56,7 +60,20 @@ jobs:
             --field branch="${DESTINATION_BRANCH}" \
             --field sha="${SHA}"
 
-          gh api --method POST "/repos/:owner/:repo/pulls" \
-            --field title="${MESSAGE}" \
-            --field head="${DESTINATION_BRANCH}" \
-            --field base="${{ github.ref_name }}"
+          gh pr create --base "${{ github.ref_name }}" --head "${DESTINATION_BRANCH}" \
+            --title "${MESSAGE}" \
+            --body "This PR was automatically created by the scheduled devbox update workflow."
+
+      - if: steps.devbox-versions-changed.outputs.number_changed > 0
+        name: Run release workflow
+        uses: benc-uk/workflow-dispatch@v121
+        with:
+          workflow: checks.yml
+          ref: ${{ env.DESTINATION_BRANCH }}
+
+      - if: steps.devbox-versions-changed.outputs.number_changed > 0
+        name: Run release workflow
+        uses: benc-uk/workflow-dispatch@v121
+        with:
+          workflow: stacked-prs.yml
+          ref: ${{ env.DESTINATION_BRANCH }}
