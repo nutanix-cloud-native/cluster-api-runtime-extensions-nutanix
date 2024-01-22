@@ -73,11 +73,11 @@ jobs:
         uses: benc-uk/workflow-dispatch@v121
         with:
           workflow: checks.yml
-          ref: "refs/pull/${{ steps.commit-and-create-pr.outputs.pr_number }}"
+          ref: "refs/pull/${{ steps.commit-and-create-pr.outputs.pr_number }}/head"
 
       - if: steps.devbox-versions-changed.outputs.number_changed > 0
         name: Run release workflow
         uses: benc-uk/workflow-dispatch@v121
         with:
           workflow: stacked-prs.yml
-          ref: "refs/pull/${{ steps.commit-and-create-pr.outputs.pr_number }}"
+          ref: "refs/pull/${{ steps.commit-and-create-pr.outputs.pr_number }}/head"
