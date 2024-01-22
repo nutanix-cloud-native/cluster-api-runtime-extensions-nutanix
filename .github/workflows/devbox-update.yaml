@@ -60,20 +60,24 @@ jobs:
             --field branch="${DESTINATION_BRANCH}" \
             --field sha="${SHA}"
 
-          gh pr create --base "${{ github.ref_name }}" --head "${DESTINATION_BRANCH}" \
+          pr_url="$(gh pr create --base "${{ github.ref_name }}" --head "${DESTINATION_BRANCH}" \
             --title "${MESSAGE}" \
-            --body "This PR was automatically created by the scheduled devbox update workflow."
+            --body "This PR was automatically created by the scheduled devbox update workflow.")"
+
+          gh pr merge --auto --squash "$pr_url"
+
+          echo "pr_number=$(gh pr view --json number --jq .number scheduled-devbox-update-main)" >>"${GITHUB_OUTPUT}"
 
       - if: steps.devbox-versions-changed.outputs.number_changed > 0
         name: Run release workflow
         uses: benc-uk/workflow-dispatch@v121
         with:
           workflow: checks.yml
-          ref: ${{ env.DESTINATION_BRANCH }}
+          ref: "refs/pull/${{ steps.commit-and-create-pr.outputs.pr_number }}"
 
       - if: steps.devbox-versions-changed.outputs.number_changed > 0
         name: Run release workflow
         uses: benc-uk/workflow-dispatch@v121
         with:
           workflow: stacked-prs.yml
-          ref: ${{ env.DESTINATION_BRANCH }}
+          ref: "refs/pull/${{ steps.commit-and-create-pr.outputs.pr_number }}"
