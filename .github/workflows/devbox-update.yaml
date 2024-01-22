@@ -6,7 +6,7 @@ name: devbox-update
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * 1"
 
 permissions:
   contents: write
@@ -56,4 +56,7 @@ jobs:
             --field branch="${DESTINATION_BRANCH}" \
             --field sha="${SHA}"
 
-          gh pr create --base "${{ github.ref_name }}" --head "${DESTINATION_BRANCH}" --fill
+          gh api --method POST "/repos/:owner/:repo/pulls" \
+            --field title="${MESSAGE}" \
+            --field head="${DESTINATION_BRANCH}" \
+            --field base="${{ github.ref_name }}"
