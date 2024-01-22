@@ -67,17 +67,3 @@ jobs:
           gh pr merge --auto --squash "$pr_url"
 
           echo "pr_number=$(gh pr view --json number --jq .number scheduled-devbox-update-main)" >>"${GITHUB_OUTPUT}"
-
-      - if: steps.devbox-versions-changed.outputs.number_changed > 0
-        name: Run release workflow
-        uses: benc-uk/workflow-dispatch@v121
-        with:
-          workflow: checks.yml
-          ref: "refs/pull/${{ steps.commit-and-create-pr.outputs.pr_number }}/head"
-
-      - if: steps.devbox-versions-changed.outputs.number_changed > 0
-        name: Run release workflow
-        uses: benc-uk/workflow-dispatch@v121
-        with:
-          workflow: stacked-prs.yml
-          ref: "refs/pull/${{ steps.commit-and-create-pr.outputs.pr_number }}/head"
