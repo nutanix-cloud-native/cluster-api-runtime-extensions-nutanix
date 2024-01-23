@@ -70,6 +70,7 @@ func (CNI) VariableSchema() clusterv1.VariableSchema {
 					Type:        "string",
 					Enum: variables.MustMarshalValuesToEnumJSON(
 						AddonStrategyClusterResourceSet,
+						AddonStrategyClusterAPIAddonProviderHelm,
 					),
 				},
 			},

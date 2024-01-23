@@ -5,13 +5,16 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/${CAPA_VERSION}/cluster-template-simple-clusterclass.yaml
+- ./caaph
+- ./crs
 - AWSClusterStaticIdentity.yaml
 
 namePrefix: aws-
 
-commonLabels:
-  cluster.x-k8s.io/provider: aws
+labels:
+- includeSelectors: false
+  pairs:
+    cluster.x-k8s.io/provider: aws
 
 patches:
 - target:
@@ -19,31 +22,25 @@ patches:
     kind: Cluster
   patch: |-
     - op: "add"
-      path: "/metadata/name"
-      value: "quick-start"
-    - op: "add"
       path: "/spec/topology/class"
       value: "aws-quick-start"
     - op: "remove"
       path: "/metadata/labels/cni"
     - op: "add"
-      path: "/spec/topology/variables"
+      path: "/spec/topology/variables/0/value/aws"
       value:
-        - name: "clusterConfig"
-          value:
-            aws:
-              region: us-west-2
+        region: us-west-2
     - op: "add"
-      path: "/spec/topology/variables/0/value/addons"
+      path: "/spec/topology/variables/0/value/addons/nfd"
+      value: {}
+    - op: "add"
+      path: "/spec/topology/variables/0/value/addons/cpi"
+      value: {}
+    - op: "add"
+      path: "/spec/topology/variables/0/value/addons/csi"
       value:
-        cni:
-          provider: calico
-          strategy: ClusterResourceSet
-        nfd: {}
-        cpi: {}
-        csi:
-          providers:
-            - name: aws-ebs
+        providers:
+          - name: aws-ebs
 - target:
     group: cluster.x-k8s.io
     kind: ClusterClass

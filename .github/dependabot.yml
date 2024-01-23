@@ -28,6 +28,11 @@ updates:
     schedule:
       interval: "weekly"
 
+  - package-ecosystem: "gomod"
+    directory: "/hack/third-party/caaph"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "npm"
     directory: "/docs"
     schedule:

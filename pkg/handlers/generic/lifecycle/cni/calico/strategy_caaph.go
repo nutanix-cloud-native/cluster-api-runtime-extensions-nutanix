@@ -65,7 +65,7 @@ func (s caaphStrategy) apply(
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
 	defaultInstallationConfigMapName, ok := s.config.defaultProviderInstallationValuesTemplatesConfigMapNames[infraKind]
 	if !ok {
-		log.V(4).Info(
+		log.Info(
 			fmt.Sprintf(
 				"Skipping Calico CNI handler, no default installation values ConfigMap configured for infrastructure provider %q",
 				req.Cluster.Spec.InfrastructureRef.Kind,

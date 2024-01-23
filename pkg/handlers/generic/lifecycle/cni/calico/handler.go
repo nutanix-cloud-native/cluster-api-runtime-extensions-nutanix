@@ -29,17 +29,17 @@ type CNIConfig struct {
 	caaphConfig caaphConfig
 }
 
+func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+	c.crsConfig.AddFlags(prefix+".crs", flags)
+	c.caaphConfig.AddFlags(prefix+".caaph", flags)
+}
+
 type CalicoCNI struct {
 	client ctrlclient.Client
 	config *CNIConfig
 
 	variableName string
 	variablePath []string
-}
-
-func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	c.crsConfig.AddFlags(prefix+".crs", flags)
-	c.crsConfig.AddFlags(prefix+".caaph", flags)
 }
 
 var (
@@ -92,12 +92,14 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 		return
 	}
 	if !found {
-		log.V(4).
-			Info("Skipping Calico CNI handler, cluster does not specify request CNI addon deployment")
+		log.
+			Info(
+				"Skipping Calico CNI handler, cluster does not specify request CNI addon deployment",
+			)
 		return
 	}
 	if cniVar.Provider != v1alpha1.CNIProviderCalico {
-		log.V(4).Info(
+		log.Info(
 			fmt.Sprintf(
 				"Skipping Calico CNI handler, cluster does not specify %q as value of CNI provider variable",
 				v1alpha1.CNIProviderCalico,
