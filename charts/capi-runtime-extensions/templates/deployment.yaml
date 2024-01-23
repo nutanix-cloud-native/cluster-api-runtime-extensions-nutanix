@@ -30,7 +30,7 @@ spec:
         args:
         - --webhook-cert-dir=/runtimehooks-certs/
         - --calicocni.crs.defaultsNamespace={{ .Release.Namespace }}
-        - --calicocni.caaph.defaultsNamespace={{ .Release.Namespace }}
+        - --calicocni.helm-addon.defaultsNamespace={{ .Release.Namespace }}
         - --nfd.defaultsNamespace={{ .Release.Namespace }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}

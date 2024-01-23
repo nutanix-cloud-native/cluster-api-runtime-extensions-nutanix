@@ -21,7 +21,7 @@ func TestVariableValidation(t *testing.T) {
 		false,
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
-			Name: "set with valid provider using CRS strategy",
+			Name: "set with valid provider using ClusterResourceSet strategy",
 			Vals: v1alpha1.GenericClusterConfig{
 				Addons: &v1alpha1.Addons{
 					CNI: &v1alpha1.CNI{
@@ -32,12 +32,12 @@ func TestVariableValidation(t *testing.T) {
 			},
 		},
 		capitest.VariableTestDef{
-			Name: "set with valid provider using CAAPH strategy",
+			Name: "set with valid provider using HelmAddon strategy",
 			Vals: v1alpha1.GenericClusterConfig{
 				Addons: &v1alpha1.Addons{
 					CNI: &v1alpha1.CNI{
 						Provider: v1alpha1.CNIProviderCalico,
-						Strategy: v1alpha1.AddonStrategyClusterAPIAddonProviderHelm,
+						Strategy: v1alpha1.AddonStrategyHelmAddon,
 					},
 				},
 			},

@@ -40,8 +40,8 @@ kustomize build ./hack/examples |
       gojq --yaml-input --yaml-output 'select(
                                         .metadata.labels["cluster.x-k8s.io/provider"] == "docker"
                                         and .kind == "Cluster"
-                                        and .spec.topology.variables[0].value.addons.cni.strategy == "CAAPH"
-                                      )' >"${EXAMPLE_CLUSTERS_DIR}/docker-cluster-calico-caaph.yaml"
+                                        and .spec.topology.variables[0].value.addons.cni.strategy == "HelmAddon"
+                                      )' >"${EXAMPLE_CLUSTERS_DIR}/docker-cluster-calico-helm-addon.yaml"
     ) \
     >(
       gojq --yaml-input --yaml-output 'select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
@@ -58,8 +58,8 @@ kustomize build ./hack/examples |
     >(
       gojq --yaml-input --yaml-output 'select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
                                         and .kind == "Cluster"
-                                        and .spec.topology.variables[0].value.addons.cni.strategy == "CAAPH"
-                                      )' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-calico-caaph.yaml"
+                                        and .spec.topology.variables[0].value.addons.cni.strategy == "HelmAddon"
+                                      )' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-calico-helm-addon.yaml"
     ) \
     >(
       gojq --yaml-input --yaml-output 'select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws"

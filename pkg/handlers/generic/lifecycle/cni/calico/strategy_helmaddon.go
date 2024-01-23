@@ -27,37 +27,37 @@ const (
 	defaultTigerOperatorNamespace    = "tigera-operator"
 )
 
-type caaphConfig struct {
+type helmAddonConfig struct {
 	defaultsNamespace                                        string
 	defaultProviderInstallationValuesTemplatesConfigMapNames map[string]string
 }
 
-func (c *caaphConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		&c.defaultsNamespace,
 		prefix+".defaultsNamespace",
 		corev1.NamespaceDefault,
-		"namespace of the ConfigMap used to deploy Tigera Operator",
+		"namespace of the default Helm values ConfigMaps",
 	)
 
 	flags.StringToStringVar(
 		&c.defaultProviderInstallationValuesTemplatesConfigMapNames,
 		prefix+".default-provider-installation-values-templates-configmap-names",
 		map[string]string{
-			"DockerCluster": "calico-cni-caaph-values-template-dockercluster",
-			"AWSCluster":    "calico-cni-caaph-values-template-awscluster",
+			"DockerCluster": "calico-cni-helm-values-template-dockercluster",
+			"AWSCluster":    "calico-cni-helm-values-template-awscluster",
 		},
 		"map of provider cluster implementation type to default installation values ConfigMap name",
 	)
 }
 
-type caaphStrategy struct {
-	config caaphConfig
+type helmAddonStrategy struct {
+	config helmAddonConfig
 
 	client ctrlclient.Client
 }
 
-func (s caaphStrategy) apply(
+func (s helmAddonStrategy) apply(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	log logr.Logger,
@@ -115,7 +115,7 @@ func (s caaphStrategy) apply(
 	return nil
 }
 
-func (s caaphStrategy) retrieveValuesTemplateConfigMap(
+func (s helmAddonStrategy) retrieveValuesTemplateConfigMap(
 	ctx context.Context,
 	configMapName string,
 ) (*corev1.ConfigMap, error) {

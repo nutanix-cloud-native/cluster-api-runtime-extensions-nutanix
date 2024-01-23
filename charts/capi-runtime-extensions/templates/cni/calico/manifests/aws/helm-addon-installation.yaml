@@ -1,11 +1,11 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-{{- if .Values.hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.AWSCluster.create }}
+{{- if .Values.hooks.CalicoCNI.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.create }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: '{{ .Values.hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.AWSCluster.name }}'
+  name: '{{ .Values.hooks.CalicoCNI.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.name }}'
 data:
   values.yaml: |-
     installation:

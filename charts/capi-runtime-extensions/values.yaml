@@ -18,14 +18,14 @@ hooks:
           configMap:
             name: calico-cni-crs-installation-awscluster
             content: ""
-    caaphStrategy:
+    helmAddonStrategy:
       defaultValueTemplatesConfigMaps:
         DockerCluster:
           create: true
-          name: calico-cni-caaph-values-template-dockercluster
+          name: calico-cni-helm-values-template-dockercluster
         AWSCluster:
           create: true
-          name: calico-cni-caaph-values-template-awscluster
+          name: calico-cni-helm-values-template-awscluster
 
 deployDefaultClusterClasses: true
 

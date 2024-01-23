@@ -25,13 +25,13 @@ type addonStrategy interface {
 }
 
 type CNIConfig struct {
-	crsConfig   crsConfig
-	caaphConfig caaphConfig
+	crsConfig       crsConfig
+	helmAddonConfig helmAddonConfig
 }
 
 func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	c.crsConfig.AddFlags(prefix+".crs", flags)
-	c.caaphConfig.AddFlags(prefix+".caaph", flags)
+	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
 type CalicoCNI struct {
@@ -115,9 +115,9 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 			config: s.config.crsConfig,
 			client: s.client,
 		}
-	case v1alpha1.AddonStrategyClusterAPIAddonProviderHelm:
-		strategy = caaphStrategy{
-			config: s.config.caaphConfig,
+	case v1alpha1.AddonStrategyHelmAddon:
+		strategy = helmAddonStrategy{
+			config: s.config.helmAddonConfig,
 			client: s.client,
 		}
 	default:

@@ -5,8 +5,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- ./caaph
 - ./crs
+- ./helm-addon
 - AWSClusterStaticIdentity.yaml
 
 namePrefix: aws-

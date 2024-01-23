@@ -31,10 +31,6 @@ A Helm chart for capi-runtime-extensions
 | deployDefaultClusterClasses | bool | `true` |  |
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
-| hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.AWSCluster.create | bool | `true` |  |
-| hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.AWSCluster.name | string | `"calico-cni-caaph-values-template-awscluster"` |  |
-| hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.DockerCluster.create | bool | `true` |  |
-| hooks.CalicoCNI.caaphStrategy.defaultValueTemplatesConfigMaps.DockerCluster.name | string | `"calico-cni-caaph-values-template-dockercluster"` |  |
 | hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.content | string | `""` |  |
 | hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.name | string | `"calico-cni-crs-installation-awscluster"` |  |
 | hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.AWSCluster.create | bool | `true` |  |
@@ -43,6 +39,10 @@ A Helm chart for capi-runtime-extensions
 | hooks.CalicoCNI.crsStrategy.defaultInstallationConfigMaps.DockerCluster.create | bool | `true` |  |
 | hooks.CalicoCNI.crsStrategy.defaultTigeraOperatorConfigMap.name | string | `"tigera-operator"` |  |
 | hooks.CalicoCNI.defaultPodSubnet | string | `"192.168.0.0/16"` |  |
+| hooks.CalicoCNI.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.create | bool | `true` |  |
+| hooks.CalicoCNI.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.name | string | `"calico-cni-helm-values-template-awscluster"` |  |
+| hooks.CalicoCNI.helmAddonStrategy.defaultValueTemplatesConfigMaps.DockerCluster.create | bool | `true` |  |
+| hooks.CalicoCNI.helmAddonStrategy.defaultValueTemplatesConfigMaps.DockerCluster.name | string | `"calico-cni-helm-values-template-dockercluster"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/d2iq-labs/capi-runtime-extensions"` |  |
 | image.tag | string | `""` |  |
