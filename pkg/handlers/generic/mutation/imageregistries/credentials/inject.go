@@ -107,19 +107,8 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			if generateErr != nil {
 				return generateErr
 			}
-			mirrorConfig, err := mirrorFromImageRegistry(
-				ctx,
-				h.client,
-				imageRegistry,
-				obj,
-			)
-			if err != nil {
-				return err
-			}
 			files, commands, generateErr := generateFilesAndCommands(
 				registryWithOptionalCredentials,
-				mirrorConfig,
-				imageRegistry,
 				obj.GetName())
 			if generateErr != nil {
 				return generateErr
@@ -181,19 +170,8 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			if generateErr != nil {
 				return generateErr
 			}
-			mirrorConfig, err := mirrorFromImageRegistry(
-				ctx,
-				h.client,
-				imageRegistry,
-				obj,
-			)
-			if err != nil {
-				return err
-			}
 			files, commands, generateErr := generateFilesAndCommands(
 				registryWithOptionalCredentials,
-				mirrorConfig,
-				imageRegistry,
 				obj.GetName())
 			if generateErr != nil {
 				return generateErr
@@ -268,8 +246,6 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 
 func generateFilesAndCommands(
 	registryWithOptionalCredentials providerConfig,
-	mirrorConfig *mirrorConfig,
-	imageRegistry v1alpha1.ImageRegistry,
 	objName string,
 ) ([]bootstrapv1.File, []string, error) {
 	files, commands, err := templateFilesAndCommandsForInstallKubeletCredentialProviders()
@@ -281,7 +257,6 @@ func generateFilesAndCommands(
 	}
 	imageCredentialProviderConfigFiles, err := templateFilesForImageCredentialProviderConfigs(
 		registryWithOptionalCredentials,
-		mirrorConfig,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf(
@@ -293,18 +268,6 @@ func generateFilesAndCommands(
 	files = append(
 		files,
 		generateCredentialsSecretFile(registryWithOptionalCredentials, objName)...)
-
-	// Generate default registry mirror file
-	mirrorHostFiles, err := generateDefaultRegistryMirrorFile(mirrorConfig)
-	if err != nil {
-		return nil, nil, err
-	}
-	files = append(files, mirrorHostFiles...)
-	// generate CA certificate file for registry mirror
-	files = append(
-		files,
-		generateMirrorCACertFile(mirrorConfig, imageRegistry)...)
-
 	return files, commands, err
 }
 

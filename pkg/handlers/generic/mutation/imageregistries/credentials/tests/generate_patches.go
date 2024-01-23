@@ -27,7 +27,8 @@ const (
 	//nolint:gosec // Does not contain hard coded credentials.
 	cpRegistryCreds = "kubeadmControlPlaneRegistryWithCredentials"
 	//nolint:gosec // Does not contain hard coded credentials.
-	workerRegistryCreds = "kubeadmConfigTemplateRegistryWithCreds"
+	workerRegistryCreds                   = "kubeadmConfigTemplateRegistryWithCreds"
+	registryStaticCredentialsSecretSuffix = "registry-config"
 )
 
 func TestGeneratePatches(
@@ -351,7 +352,6 @@ func newRegistryCredentialsSecret(name, namespace string) *corev1.Secret {
 	}
 }
 
-//nolint:unparam //namespace can change in future testcases
 func newEmptySecret(name, namespace string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

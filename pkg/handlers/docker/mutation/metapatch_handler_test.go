@@ -28,6 +28,8 @@ import (
 	imageregistrycredentialstests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
 	kubernetesimagerepositorytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/mirrors"
+	globalimageregistrymirrortests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/mirrors/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/workerconfig"
 )
 
@@ -113,11 +115,11 @@ func TestGeneratePatches(t *testing.T) {
 		imageregistries.VariableName,
 	)
 
-	imageregistrycredentialstests.TestGenerateMirrorPatches(
+	globalimageregistrymirrortests.TestGeneratePatches(
 		t,
 		metaPatchGeneratorFunc(mgr),
 		mgr.GetClient(),
 		clusterconfig.MetaVariableName,
-		imageregistries.VariableName,
+		mirrors.GlobalMirrorVariableName,
 	)
 }
