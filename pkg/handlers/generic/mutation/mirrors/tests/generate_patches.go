@@ -5,7 +5,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -23,16 +22,14 @@ import (
 )
 
 const (
-	validMirrorCredentialsSecretName = "my-mirror-registry-credentials"
-	validMirrorCASecretName          = "myregistry-mirror-cacert"
+	validMirrorCASecretName = "myregistry-mirror-cacert"
 	//nolint:gosec // Does not contain hard coded credentials.
 	cpRegistryAsMirrorCreds = "kubeadmControlPlaneRegistryAsMirrorCreds"
 	//nolint:gosec // Does not contain hard coded credentials.
-	workerRegistryAsMirrorCreds           = "kubeadmConfigTemplateRegistryAsMirrorCreds"
-	registryStaticCredentialsSecretSuffix = "registry-config"
+	workerRegistryAsMirrorCreds = "kubeadmConfigTemplateRegistryAsMirrorCreds"
 )
 
-func TestGenerateMirrorPatches(
+func TestGeneratePatches(
 	t *testing.T,
 	generatorFunc func() mutation.GeneratePatches,
 	fakeClient client.Client,
@@ -45,47 +42,7 @@ func TestGenerateMirrorPatches(
 		t,
 		fakeClient.Create(
 			context.Background(),
-			newRegistryCredentialsSecret(validMirrorCredentialsSecretName, request.Namespace),
-		),
-	)
-
-	require.NoError(
-		t,
-		fakeClient.Create(
-			context.Background(),
 			newMirrorSecret(validMirrorCASecretName, request.Namespace),
-		),
-	)
-
-	// Server side apply does not work with the fake client, hack around it by pre-creating empty Secrets
-	// https://github.com/kubernetes-sigs/controller-runtime/issues/2341
-	require.NoError(
-		t,
-		fakeClient.Create(
-			context.Background(),
-			newEmptySecret(
-				fmt.Sprintf(
-					"%s-%s",
-					cpRegistryAsMirrorCreds,
-					registryStaticCredentialsSecretSuffix,
-				),
-				request.Namespace,
-			),
-		),
-	)
-
-	require.NoError(
-		t,
-		fakeClient.Create(
-			context.Background(),
-			newEmptySecret(
-				fmt.Sprintf(
-					"%s-%s",
-					workerRegistryAsMirrorCreds,
-					registryStaticCredentialsSecretSuffix,
-				),
-				request.Namespace,
-			),
 		),
 	)
 
@@ -97,11 +54,8 @@ func TestGenerateMirrorPatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistries{
-						v1alpha1.ImageRegistry{
-							URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
-							Mirror: &v1alpha1.RegistryMirror{},
-						},
+					v1alpha1.GlobalImageRegistryMirror{
+						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 					},
 					variablePath...,
 				),
@@ -124,18 +78,11 @@ func TestGenerateMirrorPatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistries{
-						v1alpha1.ImageRegistry{
-							URL: "https://mirror-registry.com",
-							Credentials: &v1alpha1.ImageCredentials{
-								SecretRef: &corev1.ObjectReference{
-									Name: validSecretName,
-								},
-							},
-							Mirror: &v1alpha1.RegistryMirror{
-								SecretRef: &corev1.ObjectReference{
-									Name: validMirrorCASecretName,
-								},
+					v1alpha1.GlobalImageRegistryMirror{
+						URL: "https://mirror-registry.com",
+						Credentials: &v1alpha1.ImageCredentials{
+							SecretRef: &corev1.ObjectReference{
+								Name: validMirrorCASecretName,
 							},
 						},
 					},
@@ -163,11 +110,8 @@ func TestGenerateMirrorPatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistries{
-						v1alpha1.ImageRegistry{
-							URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
-							Mirror: &v1alpha1.RegistryMirror{},
-						},
+					v1alpha1.GlobalImageRegistryMirror{
+						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 					},
 					variablePath...,
 				),
@@ -198,18 +142,11 @@ func TestGenerateMirrorPatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistries{
-						v1alpha1.ImageRegistry{
-							URL: "https://mirror-registry.io",
-							Credentials: &v1alpha1.ImageCredentials{
-								SecretRef: &corev1.ObjectReference{
-									Name: validSecretName,
-								},
-							},
-							Mirror: &v1alpha1.RegistryMirror{
-								SecretRef: &corev1.ObjectReference{
-									Name: validMirrorCASecretName,
-								},
+					v1alpha1.GlobalImageRegistryMirror{
+						URL: "https://mirror-registry.io",
+						Credentials: &v1alpha1.ImageCredentials{
+							SecretRef: &corev1.ObjectReference{
+								Name: validMirrorCASecretName,
 							},
 						},
 					},

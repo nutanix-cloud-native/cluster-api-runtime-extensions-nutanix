@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package credentials
+package mirrors
 
 import (
 	"testing"
@@ -24,23 +24,19 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "without a credentials secret",
 			Vals: v1alpha1.GenericClusterConfig{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "http://a.b.c.example.com",
-					},
+				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+					URL: "http://a.b.c.example.com",
 				},
 			},
 		},
 		capitest.VariableTestDef{
-			Name: "with a credentials secret",
+			Name: "with a credentials CA secret",
 			Vals: v1alpha1.GenericClusterConfig{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "http://a.b.c.example.com",
-						Credentials: &v1alpha1.ImageCredentials{
-							SecretRef: &corev1.ObjectReference{
-								Name: "a.b.c.example.com-creds",
-							},
+				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+					URL: "http://a.b.c.example.com",
+					Credentials: &v1alpha1.ImageCredentials{
+						SecretRef: &corev1.ObjectReference{
+							Name: "a.b.c.example.com-ca-cert-creds",
 						},
 					},
 				},

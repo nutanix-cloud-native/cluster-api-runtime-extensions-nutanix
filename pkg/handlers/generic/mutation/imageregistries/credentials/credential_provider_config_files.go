@@ -52,10 +52,7 @@ func (c providerConfig) isCredentialsEmpty() bool {
 		c.Password == ""
 }
 
-func templateFilesForImageCredentialProviderConfigs(
-	config providerConfig,
-	mirror *mirrorConfig,
-) ([]cabpkv1.File, error) {
+func templateFilesForImageCredentialProviderConfigs(config providerConfig) ([]cabpkv1.File, error) {
 	var files []cabpkv1.File
 
 	kubeletCredentialProviderConfigFile, err := templateKubeletCredentialProviderConfig()
@@ -68,7 +65,6 @@ func templateFilesForImageCredentialProviderConfigs(
 
 	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(
 		config,
-		mirror,
 	)
 	if err != nil {
 		return nil, err
@@ -104,7 +100,6 @@ func templateKubeletCredentialProviderConfig() (*cabpkv1.File, error) {
 
 func templateDynamicCredentialProviderConfig(
 	config providerConfig,
-	mirror *mirrorConfig,
 ) (*cabpkv1.File, error) {
 	registryURL, err := url.ParseRequestURI(config.URL)
 	if err != nil {
@@ -142,13 +137,11 @@ func templateDynamicCredentialProviderConfig(
 		ProviderBinary     string
 		ProviderArgs       []string
 		ProviderAPIVersion string
-		Mirror             *mirrorConfig
 	}{
 		RegistryHost:       registryHostWithPath,
 		ProviderBinary:     providerBinary,
 		ProviderArgs:       providerArgs,
 		ProviderAPIVersion: providerAPIVersion,
-		Mirror:             mirror,
 	}
 
 	return fileFromTemplate(t, templateInput, kubeletDynamicCredentialProviderConfigOnRemote)

@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package credentials
+package mirrors
 
 import (
 	"testing"
@@ -64,7 +64,7 @@ func Test_generateDefaultRegistryMirrorFile(t *testing.T) {
 		tt := tests[idx]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			file, err := generateDefaultRegistryMirrorFile(tt.config)
+			file, err := generateGlobalRegistryMirrorFile(tt.config)
 			assert.ErrorIs(t, err, tt.wantErr)
 			assert.Equal(t, tt.want, file)
 		})
@@ -76,7 +76,7 @@ func Test_generateMirrorCACertFile(t *testing.T) {
 	tests := []struct {
 		name     string
 		config   *mirrorConfig
-		registry v1alpha1.ImageRegistry
+		registry v1alpha1.GlobalImageRegistryMirror
 		want     []cabpkv1.File
 	}{
 		{
@@ -84,7 +84,7 @@ func Test_generateMirrorCACertFile(t *testing.T) {
 			config: &mirrorConfig{
 				URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 			},
-			registry: v1alpha1.ImageRegistry{
+			registry: v1alpha1.GlobalImageRegistryMirror{
 				URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 			},
 			want: nil,
@@ -95,9 +95,10 @@ func Test_generateMirrorCACertFile(t *testing.T) {
 				URL:    "https://myregistry.com",
 				CACert: "mycacert",
 			},
-			registry: v1alpha1.ImageRegistry{
+			registry: v1alpha1.GlobalImageRegistryMirror{
 				URL: "https://myregistry.com",
-				Mirror: &v1alpha1.RegistryMirror{
+
+				Credentials: &v1alpha1.ImageCredentials{
 					SecretRef: &v1.ObjectReference{
 						Name: "my-registry-credentials-secret",
 					},

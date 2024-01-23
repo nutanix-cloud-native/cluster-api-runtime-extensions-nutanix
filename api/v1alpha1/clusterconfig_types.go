@@ -90,6 +90,9 @@ type GenericClusterConfig struct {
 	ImageRegistries ImageRegistries `json:"imageRegistries,omitempty"`
 
 	// +optional
+	GlobalImageRegistryMirror *GlobalImageRegistryMirror `json:"globalImageRegistryMirror,omitempty"`
+
+	// +optional
 	Addons *Addons `json:"addons,omitempty"`
 }
 
@@ -107,7 +110,8 @@ func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //noli
 					"",
 				).VariableSchema().
 					OpenAPIV3Schema,
-				"imageRegistries": ImageRegistries{}.VariableSchema().OpenAPIV3Schema,
+				"imageRegistries":           ImageRegistries{}.VariableSchema().OpenAPIV3Schema,
+				"globalImageRegistryMirror": GlobalImageRegistryMirror{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -239,7 +243,7 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 
 type ImageCredentials struct {
 	// The Secret containing the registry credentials and CA certificate
-	// The Secret should have keys 'username', 'password' and 'caCert'
+	// The Secret should have keys 'username', 'password' and 'ca.crt'
 	// This credentials Secret is not required for some registries, e.g. ECR.
 	// +optional
 	SecretRef *corev1.ObjectReference `json:"secretRef,omitempty"`
@@ -252,7 +256,7 @@ func (ImageCredentials) VariableSchema() clusterv1.VariableSchema {
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"secretRef": {
 					Description: "The Secret containing the registry credentials. " +
-						"The Secret should have keys 'username', 'password'. " +
+						"The Secret should have keys 'username', 'password' and 'ca.crt' " +
 						"This credentials Secret is not required for some registries, e.g. ECR.",
 					Type: "object",
 					Properties: map[string]clusterv1.JSONSchemaProps{
@@ -273,37 +277,28 @@ func (ImageCredentials) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
-type RegistryMirror struct {
-	// The secret containing CA certificate for the registry mirror.
-	// The secret should have 'ca.crt' key
+// GlobalImageRegistryMirror sets default mirror configuration for all the image registries.
+type GlobalImageRegistryMirror struct {
+	// Registry URL.
+	URL string `json:"url"`
+
+	// Credentials and CA certificate for the image registry mirror
 	// +optional
-	SecretRef *corev1.ObjectReference `json:"secretRef,omitempty"`
+	Credentials *ImageCredentials `json:"credentials,omitempty"`
 }
 
-func (RegistryMirror) VariableSchema() clusterv1.VariableSchema {
+func (GlobalImageRegistryMirror) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"secretRef": {
-					Description: "The Secret containing the registry CA certificate. " +
-						"The Secret should have keys 'ca.crt'. " +
-						"This credentials Secret is not required for public registries.",
-					Type: "object",
-					Properties: map[string]clusterv1.JSONSchemaProps{
-						"name": {
-							Description: "The name of the Secret containing the registry CA certificate.",
-							Type:        "string",
-						},
-						"namespace": {
-							Description: "The namespace of the Secret containing the registry CA certificate. " +
-								"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate" +
-								" that reference this variable.",
-							Type: "string",
-						},
-					},
+				"url": {
+					Description: "Registry mirror URL.",
+					Type:        "string",
 				},
+				"credentials": ImageCredentials{}.VariableSchema().OpenAPIV3Schema,
 			},
+			Required: []string{"url"},
 		},
 	}
 }
@@ -312,13 +307,9 @@ type ImageRegistry struct {
 	// Registry URL.
 	URL string `json:"url"`
 
-	// Credentials for the image registry
+	// Credentials and CA certificate for the image registry
 	// +optional
 	Credentials *ImageCredentials `json:"credentials,omitempty"`
-
-	// Use this registry as a mirror
-	// +optional
-	Mirror *RegistryMirror `json:"mirror,omitempty"`
 }
 
 func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
@@ -331,7 +322,6 @@ func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
 					Type:        "string",
 				},
 				"credentials": ImageCredentials{}.VariableSchema().OpenAPIV3Schema,
-				"mirror":      RegistryMirror{}.VariableSchema().OpenAPIV3Schema,
 			},
 			Required: []string{"url"},
 		},

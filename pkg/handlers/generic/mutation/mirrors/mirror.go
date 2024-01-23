@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package credentials
+package mirrors
 
 import (
 	"bytes"
@@ -31,34 +31,26 @@ type mirrorConfig struct {
 	CACert string
 }
 
-func mirrorFromImageRegistry(
+func mirrorConfigForGlobalMirror(
 	ctx context.Context,
 	c ctrlclient.Client,
-	imageRegistry v1alpha1.ImageRegistry,
+	globalMirror v1alpha1.GlobalImageRegistryMirror,
 	obj ctrlclient.Object,
 ) (*mirrorConfig, error) {
-	// using the registry as a mirror is supported by including empty mirror object or
-	// mirror with CA certificate to the registry variable.
-	// ex.
-	// - url: https://my-registry.com
-	//   mirror: {}
-	if imageRegistry.Mirror == nil {
-		return nil, nil
-	}
 	mirrorWithOptionalCACert := &mirrorConfig{
-		URL: imageRegistry.URL,
+		URL: globalMirror.URL,
 	}
 	secret, err := secretForMirrorCACert(
 		ctx,
 		c,
-		imageRegistry,
+		globalMirror,
 		obj.GetNamespace(),
 	)
 	if err != nil {
 		return &mirrorConfig{}, fmt.Errorf(
 			"error getting secret %s/%s from Image Registry variable: %w",
 			obj.GetNamespace(),
-			imageRegistry.Mirror.SecretRef.Name,
+			globalMirror.Credentials.SecretRef.Name,
 			err,
 		)
 	}
@@ -75,20 +67,20 @@ func mirrorFromImageRegistry(
 func secretForMirrorCACert(
 	ctx context.Context,
 	c ctrlclient.Reader,
-	registry v1alpha1.ImageRegistry,
+	globalMirror v1alpha1.GlobalImageRegistryMirror,
 	objectNamespace string,
 ) (*corev1.Secret, error) {
-	if registry.Mirror == nil || registry.Mirror.SecretRef == nil {
+	if globalMirror.Credentials == nil || globalMirror.Credentials.SecretRef == nil {
 		return nil, nil
 	}
 
 	namespace := objectNamespace
-	if registry.Mirror.SecretRef.Namespace != "" {
-		namespace = registry.Mirror.SecretRef.Namespace
+	if globalMirror.Credentials.SecretRef.Namespace != "" {
+		namespace = globalMirror.Credentials.SecretRef.Namespace
 	}
 
 	key := ctrlclient.ObjectKey{
-		Name:      registry.Mirror.SecretRef.Name,
+		Name:      globalMirror.Credentials.SecretRef.Name,
 		Namespace: namespace,
 	}
 	secret := &corev1.Secret{}
@@ -96,10 +88,11 @@ func secretForMirrorCACert(
 	return secret, err
 }
 
-// Default Mirror for all registries. Use a mirror regardless of the intended registry.
+// Default Mirror for all registries.
+// Containerd configuration for global mirror will be created at /etc/containerd/certs.d/_default/hosts.toml
 // The upstream registry will be automatically used after all defined mirrors have been tried.
 // reference: https://github.com/containerd/containerd/blob/main/docs/hosts.md#setup-default-mirror-for-all-registries
-func generateDefaultRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, error) {
+func generateGlobalRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, error) {
 	if mirror == nil {
 		return nil, nil
 	}
@@ -135,7 +128,7 @@ func generateDefaultRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, er
 
 func generateMirrorCACertFile(
 	config *mirrorConfig,
-	registry v1alpha1.ImageRegistry,
+	globalMirror v1alpha1.GlobalImageRegistryMirror,
 ) []cabpkv1.File {
 	if config == nil || config.CACert == "" {
 		return nil
@@ -146,7 +139,7 @@ func generateMirrorCACertFile(
 			Permissions: "0600",
 			ContentFrom: &cabpkv1.FileSource{
 				Secret: cabpkv1.SecretFileSource{
-					Name: registry.Mirror.SecretRef.Name,
+					Name: globalMirror.Credentials.SecretRef.Name,
 					Key:  secretKeyForMirrorCACert,
 				},
 			},

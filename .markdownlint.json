@@ -2,5 +2,6 @@
   "heading-style": { "style": "atx" },
   "ul-style": { "style": "dash" },
   "line-length": { "line_length": 120, "stern": true },
-  "hr-style": { "style": "---" }
+  "hr-style": { "style": "---" },
+  "MD013": false
 }
