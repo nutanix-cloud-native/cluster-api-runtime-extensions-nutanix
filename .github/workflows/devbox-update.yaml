@@ -33,13 +33,13 @@ jobs:
       - name: Run devbox update
         run: devbox update
 
-      # - name: Get number of versions changed
-      #   id: devbox-versions-changed
-      #   run: |
-      #     echo "number_changed=$(git diff --unified=0 devbox.lock | grep -c \"version\":)" >>"${GITHUB_OUTPUT}"
+      - name: Get number of versions changed
+        id: devbox-versions-changed
+        run: |
+          echo "number_changed=$(git diff --unified=0 devbox.lock | grep -c \"version\":)" >>"${GITHUB_OUTPUT}"
 
       - name: Commit changes
-        # if: steps.devbox-versions-changed.outputs.number_changed > 0
+        if: steps.devbox-versions-changed.outputs.number_changed > 0
         id: commit-changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -62,7 +62,7 @@ jobs:
           echo "message=${MESSAGE}" >>"${GITHUB_OUTPUT}"
 
       - name: Get app token to create PR with
-        # if: steps.devbox-versions-changed.outputs.number_changed > 0
+        if: steps.devbox-versions-changed.outputs.number_changed > 0
         uses: actions/create-github-app-token@v1
         id: app-token
         with:
@@ -71,7 +71,7 @@ jobs:
           owner: ${{ github.repository_owner }}
 
       - name: Create PR using app token
-        # if: steps.devbox-versions-changed.outputs.number_changed > 0
+        if: steps.devbox-versions-changed.outputs.number_changed > 0
         id: create-pr
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -83,7 +83,7 @@ jobs:
           echo "pr_url=${pr_url}" >>"${GITHUB_OUTPUT}"
 
       - name: Approve PR using workflow token
-        # if: steps.devbox-versions-changed.outputs.number_changed > 0
+        if: steps.devbox-versions-changed.outputs.number_changed > 0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
