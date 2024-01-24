@@ -21,12 +21,23 @@ func TestVariableValidation(t *testing.T) {
 		false,
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
-			Name: "set with valid provider",
+			Name: "set with valid provider using ClusterResourceSet strategy",
 			Vals: v1alpha1.GenericClusterConfig{
 				Addons: &v1alpha1.Addons{
 					CNI: &v1alpha1.CNI{
 						Provider: v1alpha1.CNIProviderCalico,
 						Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+					},
+				},
+			},
+		},
+		capitest.VariableTestDef{
+			Name: "set with valid provider using HelmAddon strategy",
+			Vals: v1alpha1.GenericClusterConfig{
+				Addons: &v1alpha1.Addons{
+					CNI: &v1alpha1.CNI{
+						Provider: v1alpha1.CNIProviderCalico,
+						Strategy: v1alpha1.AddonStrategyHelmAddon,
 					},
 				},
 			},

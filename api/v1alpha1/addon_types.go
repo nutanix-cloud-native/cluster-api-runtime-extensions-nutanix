@@ -42,6 +42,7 @@ type AddonStrategy string
 
 const (
 	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
+	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
 )
 
 // CNI required for providing CNI configuration.
@@ -69,6 +70,7 @@ func (CNI) VariableSchema() clusterv1.VariableSchema {
 					Type:        "string",
 					Enum: variables.MustMarshalValuesToEnumJSON(
 						AddonStrategyClusterResourceSet,
+						AddonStrategyHelmAddon,
 					),
 				},
 			},

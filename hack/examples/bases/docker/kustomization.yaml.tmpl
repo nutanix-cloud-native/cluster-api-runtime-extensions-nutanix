@@ -5,13 +5,16 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+- ./crs
+- ./helm-addon
 - https://github.com/kubernetes-sigs/cluster-api/releases/download/${CLUSTERCTL_VERSION}/clusterclass-quick-start.yaml
-- https://github.com/kubernetes-sigs/cluster-api/releases/download/${CLUSTERCTL_VERSION}/cluster-template-development.yaml
 
 namePrefix: docker-
 
-commonLabels:
-  cluster.x-k8s.io/provider: docker
+labels:
+- includeSelectors: false
+  pairs:
+    cluster.x-k8s.io/provider: docker
 
 patches:
 - target:
@@ -21,24 +24,14 @@ patches:
     - op: "remove"
       path: "/metadata/namespace"
     - op: "add"
-      path: "/metadata/name"
-      value: "quick-start"
-    - op: "add"
       path: "/spec/topology/class"
       value: "docker-quick-start"
     - op: "add"
-      path: "/spec/topology/variables"
-      value:
-        - name: "clusterConfig"
-          value:
-            docker: {}
+      path: "/spec/topology/variables/0/value/docker"
+      value: {}
     - op: "add"
-      path: "/spec/topology/variables/0/value/addons"
-      value:
-        nfd: {}
-        cni:
-          provider: calico
-          strategy: ClusterResourceSet
+      path: "/spec/topology/variables/0/value/addons/nfd"
+      value: {}
     - op: "remove"
       path: "/spec/topology/workers/machinePools"
 - target:

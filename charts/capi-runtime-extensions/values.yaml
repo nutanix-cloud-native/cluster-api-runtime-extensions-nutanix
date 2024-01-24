@@ -11,13 +11,21 @@ hooks:
         DockerCluster:
           create: true
           configMap:
-            name: calico-cni-installation-dockercluster
+            name: calico-cni-crs-installation-dockercluster
             content: ""
         AWSCluster:
           create: true
           configMap:
-            name: calico-cni-installation-awscluster
+            name: calico-cni-crs-installation-awscluster
             content: ""
+    helmAddonStrategy:
+      defaultValueTemplatesConfigMaps:
+        DockerCluster:
+          create: true
+          name: calico-cni-helm-values-template-dockercluster
+        AWSCluster:
+          create: true
+          name: calico-cni-helm-values-template-awscluster
 
 deployDefaultClusterClasses: true
 

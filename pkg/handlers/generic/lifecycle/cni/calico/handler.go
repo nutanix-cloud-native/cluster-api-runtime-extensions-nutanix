@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,17 +20,23 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
-type CalicoCNIConfig struct {
-	crsConfig crsConfig
+type addonStrategy interface {
+	apply(context.Context, *runtimehooksv1.AfterControlPlaneInitializedRequest, logr.Logger) error
 }
 
-func (c *CalicoCNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+type CNIConfig struct {
+	crsConfig       crsConfig
+	helmAddonConfig helmAddonConfig
+}
+
+func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	c.crsConfig.AddFlags(prefix+".crs", flags)
+	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
 type CalicoCNI struct {
 	client ctrlclient.Client
-	config *CalicoCNIConfig
+	config *CNIConfig
 
 	variableName string
 	variablePath []string
@@ -39,13 +45,11 @@ type CalicoCNI struct {
 var (
 	_ commonhandlers.Named                   = &CalicoCNI{}
 	_ lifecycle.AfterControlPlaneInitialized = &CalicoCNI{}
-
-	calicoInstallationGK = schema.GroupKind{Group: "operator.tigera.io", Kind: "Installation"}
 )
 
 func New(
 	c ctrlclient.Client,
-	cfg *CalicoCNIConfig,
+	cfg *CNIConfig,
 ) *CalicoCNI {
 	return &CalicoCNI{
 		client:       c,
@@ -88,12 +92,14 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 		return
 	}
 	if !found {
-		log.V(4).
-			Info("Skipping Calico CNI handler, cluster does not specify request CNI addon deployment")
+		log.
+			Info(
+				"Skipping Calico CNI handler, cluster does not specify request CNI addon deployment",
+			)
 		return
 	}
 	if cniVar.Provider != v1alpha1.CNIProviderCalico {
-		log.V(4).Info(
+		log.Info(
 			fmt.Sprintf(
 				"Skipping Calico CNI handler, cluster does not specify %q as value of CNI provider variable",
 				v1alpha1.CNIProviderCalico,
@@ -102,20 +108,25 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 		return
 	}
 
+	var strategy addonStrategy
 	switch cniVar.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		s := crsStrategy{
+		strategy = crsStrategy{
 			config: s.config.crsConfig,
 			client: s.client,
 		}
-		err = s.applyViaCRS(ctx, req, log)
+	case v1alpha1.AddonStrategyHelmAddon:
+		strategy = helmAddonStrategy{
+			config: s.config.helmAddonConfig,
+			client: s.client,
+		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(fmt.Sprintf("unknown CNI addon deployment strategy %q", cniVar.Strategy))
 		return
 	}
 
-	if err != nil {
+	if err := strategy.apply(ctx, req, log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return

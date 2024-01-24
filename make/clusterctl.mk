@@ -11,6 +11,7 @@ clusterctl.init:
 	    clusterctl init \
 	      --kubeconfig=$(KIND_KUBECONFIG) \
 	      --infrastructure docker,aws \
+	      --addon helm \
 	      --wait-providers
 
 .PHONY: clusterctl.delete
