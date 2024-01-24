@@ -10,8 +10,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
-  actions:  write
 
 jobs:
   devbox-update:
@@ -34,14 +32,14 @@ jobs:
       - name: Run devbox update
         run: devbox update
 
-      - name: Get number of versions changed
-        id: devbox-versions-changed
-        run: |
-          echo "number_changed=$(git diff --unified=0 devbox.lock | grep -c \"version\":)" >>"${GITHUB_OUTPUT}"
+      # - name: Get number of versions changed
+      #   id: devbox-versions-changed
+      #   run: |
+      #     echo "number_changed=$(git diff --unified=0 devbox.lock | grep -c \"version\":)" >>"${GITHUB_OUTPUT}"
 
-      - name: Commit changes and create PR
-        if: steps.devbox-versions-changed.outputs.number_changed > 0
-        id: commit-and-create-pr
+      - name: Commit changes
+        # if: steps.devbox-versions-changed.outputs.number_changed > 0
+        id: commit-changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FILE_TO_COMMIT: devbox.lock
@@ -60,10 +58,28 @@ jobs:
             --field branch="${DESTINATION_BRANCH}" \
             --field sha="${SHA}"
 
+          echo "message=${MESSAGE}" >>"${GITHUB_OUTPUT}"
+
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.GHA_PR_APP_ID }}
+          private-key: ${{ secrets.GHA_PR_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Create PR
+        # if: steps.devbox-versions-changed.outputs.number_changed > 0
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
           pr_url="$(gh pr create --base "${{ github.ref_name }}" --head "${DESTINATION_BRANCH}" \
-            --title "${MESSAGE}" \
+            --title "${{ steps.commit-changes.outputs.message }}" \
             --body "This PR was automatically created by the scheduled devbox update workflow.")"
 
           gh pr merge --auto --squash "$pr_url"
 
-          echo "pr_number=$(gh pr view --json number --jq .number scheduled-devbox-update-main)" >>"${GITHUB_OUTPUT}"
+          if [ "$(gh pr status --json reviewDecision -q .currentBranch.reviewDecision)" != "APPROVED" ]; then
+            gh pr review --approve "$pr_url"
+          else
+            echo "PR already approved, skipping additional approvals to minimize emails/notification noise."
+          fi
