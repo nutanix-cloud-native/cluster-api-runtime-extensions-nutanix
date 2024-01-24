@@ -14,6 +14,7 @@ import (
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	caaphv1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
@@ -106,6 +107,13 @@ func (s helmAddonStrategy) apply(
 			Version:          defaultCalicoHelmChartVersion,
 			ValuesTemplate:   valuesTemplateConfigMap.Data["values.yaml"],
 		},
+	}
+
+	if err := controllerutil.SetOwnerReference(&req.Cluster, hcp, s.client.Scheme()); err != nil {
+		return fmt.Errorf(
+			"failed to set owner reference on Calico CNI installation HelmChartProxy: %w",
+			err,
+		)
 	}
 
 	if err := client.ServerSideApply(ctx, s.client, hcp); err != nil {
