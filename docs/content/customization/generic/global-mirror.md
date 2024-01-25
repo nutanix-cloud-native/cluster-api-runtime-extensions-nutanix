@@ -4,7 +4,8 @@ title = "Global Image Registry Mirror"
 
 Add containerd image registry mirror configuration to all Nodes in the cluster.
 
-When the `globalImageRegistryMirror` variable is set, `files` with configurations for [Containerd default mirror](https://github.com/containerd/containerd/blob/main/docs/hosts.md#setup-default-mirror-for-all-registries) will be added.
+When the `globalImageRegistryMirror` variable is set, `files` with configurations for
+[Containerd default mirror](https://github.com/containerd/containerd/blob/main/docs/hosts.md).
 
 This customization will be available when the
 [provider-specific cluster configuration patch]({{< ref "..">}}) is included in the `ClusterClass`.
