@@ -29,7 +29,6 @@ concurrency:
 defaults:
   run:
     shell: bash
-    working-directory: docs
 
 jobs:
   # Build job
@@ -51,6 +50,7 @@ jobs:
         uses: actions/configure-pages@v4
       - name: Install Node.js dependencies
         run: if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then npm ci; fi
+        working-directory: docs
       - name: Build with Hugo
         env:
           # For maximum backward compatibility with Hugo modules
@@ -60,6 +60,7 @@ jobs:
           hugo \
             --minify \
             --baseURL "${{ steps.pages.outputs.base_url }}/"
+        working-directory: docs
       - name: Upload artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
