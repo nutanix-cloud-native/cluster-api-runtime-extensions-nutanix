@@ -163,7 +163,7 @@ func TestGeneratePatches(t *testing.T) {
 		metaPatchGeneratorFunc(mgr),
 		mgr.GetClient(),
 		clusterconfig.MetaVariableName,
-		mirrors.GlobalMirrorVariableName,
+		mirrors.VariableName,
 	)
 
 	amitests.TestControlPlaneGeneratePatches(
@@ -197,5 +197,11 @@ func TestGeneratePatches(t *testing.T) {
 		clusterconfig.MetaVariableName,
 		v1alpha1.AWSVariableName,
 		controlplaneloadbalancer.VariableName,
+	)
+
+	globalimageregistrymirrortests.TestValidatePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
 	)
 }

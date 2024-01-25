@@ -120,6 +120,12 @@ func TestGeneratePatches(t *testing.T) {
 		metaPatchGeneratorFunc(mgr),
 		mgr.GetClient(),
 		clusterconfig.MetaVariableName,
-		mirrors.GlobalMirrorVariableName,
+		mirrors.VariableName,
+	)
+
+	globalimageregistrymirrortests.TestValidatePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
 	)
 }

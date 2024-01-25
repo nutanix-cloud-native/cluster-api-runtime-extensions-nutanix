@@ -5,6 +5,7 @@ package mirrors
 
 import (
 	"context"
+	"errors"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -20,6 +21,11 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries"
+)
+
+var ErrRegistryAsMirror = errors.New(
+	"image registry URL and global image registry mirror URL are not same",
 )
 
 type globalMirrorPatchHandler struct {
@@ -35,7 +41,7 @@ func NewPatch(
 	return newGlobalMirrorPatchHandler(
 		cl,
 		clusterconfig.MetaVariableName,
-		GlobalMirrorVariableName,
+		VariableName,
 	)
 }
 
@@ -86,6 +92,29 @@ func (h *globalMirrorPatchHandler) Mutate(
 		"variableValue",
 		globalMirror,
 	)
+
+	registries, found, err := variables.Get[v1alpha1.ImageRegistries](
+		vars,
+		h.variableName,
+		imageregistries.VariableName,
+	)
+	if err != nil {
+		return err
+	}
+	// only one registry is supported at the moment.
+	// the validation of single registry is done when generating patches for imageRegistry in
+	// imageRegistriesPatchHandler.Mutate
+	if found && len(registries) == 1 {
+		registry := registries[0]
+		if globalMirror.URL != registry.URL {
+			log.Error(ErrRegistryAsMirror,
+				"only the same registry can be used as a mirror at this time",
+				"image registry URL", registry.URL,
+				"global image registry URL", globalMirror.URL)
+
+			return ErrRegistryAsMirror
+		}
+	}
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,

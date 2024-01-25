@@ -4,5 +4,5 @@
 package mirrors
 
 const (
-	GlobalMirrorVariableName = "globalImageRegistryMirror"
+	VariableName = "globalImageRegistryMirror"
 )
