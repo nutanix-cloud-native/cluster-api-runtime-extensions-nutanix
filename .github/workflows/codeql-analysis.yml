@@ -7,13 +7,14 @@ on:
   schedule:
     - cron: '32 21 * * 2'
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     permissions:
       actions: read
       contents: read

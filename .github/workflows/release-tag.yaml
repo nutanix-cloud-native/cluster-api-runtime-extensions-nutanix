@@ -13,12 +13,13 @@ permissions:
   contents: write
   packages: write
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   release-tag:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     steps:
       - uses: actions/checkout@v4
         with:

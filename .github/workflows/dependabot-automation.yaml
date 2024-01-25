@@ -12,13 +12,14 @@ permissions:
   pull-requests: write
   contents: write
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   auto-approve:
     if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Dependabot metadata
         id: dependabot-metadata
@@ -39,9 +40,6 @@ jobs:
   enable-automerge:
     if: ${{ github.event.pull_request.user.login == 'dependabot[bot]'}}
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Dependabot metadata
         id: dependabot-metadata

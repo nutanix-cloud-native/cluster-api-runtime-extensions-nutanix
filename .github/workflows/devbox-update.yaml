@@ -12,13 +12,14 @@ permissions:
   contents: write
   pull-requests: write
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   devbox-update:
     if: github.ref_type == 'branch'
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     env:
       DESTINATION_BRANCH: scheduled-devbox-update-${{ github.ref_name }}
     steps:

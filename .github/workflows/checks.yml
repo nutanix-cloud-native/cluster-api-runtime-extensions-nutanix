@@ -19,12 +19,13 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   unit-test:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -55,9 +56,6 @@ jobs:
 
   e2e-test:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -103,9 +101,6 @@ jobs:
 
   lint-go:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -153,9 +148,6 @@ jobs:
 
   pre-commit:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -190,9 +182,6 @@ jobs:
 
   lint-test-helm:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Checkout
         uses: actions/checkout@v4
