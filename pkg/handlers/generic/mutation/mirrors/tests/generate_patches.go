@@ -24,9 +24,9 @@ import (
 const (
 	validMirrorCASecretName = "myregistry-mirror-cacert"
 	//nolint:gosec // Does not contain hard coded credentials.
-	cpRegistryAsMirrorCreds = "kubeadmControlPlaneRegistryAsMirrorCreds"
+	cpRegistryAsMirrorCreds = "kubeadmControlPlaneRegistryWithCredentials"
 	//nolint:gosec // Does not contain hard coded credentials.
-	workerRegistryAsMirrorCreds = "kubeadmConfigTemplateRegistryAsMirrorCreds"
+	workerRegistryAsMirrorCreds = "kubeadmConfigTemplateRegistryWithCredentials"
 )
 
 func TestGeneratePatches(

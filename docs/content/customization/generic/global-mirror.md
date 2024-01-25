@@ -31,12 +31,21 @@ spec:
     variables:
       - name: clusterConfig
         value:
+          imageRegistries:
+          - url:  https://my-mirror.io
+            credentials:
+              secretRef:
+                name: my-mirror-username-password
           globalImageRegistryMirror:
             url: https://my-mirror.io
             credentials:
               secretRef:
                 name: my-mirror-ca-cert-secret
 ```
+
+> **NOTE**: We only support the same registry to be used as mirror for now.
+The URL for the image registry and mirror registry should be same.
+Future implementations will allow multiple registries and mirrors with their own credentials and CA certificates
 
 Applying this configuration will result in following new files on the
 `KubeadmControlPlaneTemplate` and `KubeadmConfigTemplate`
