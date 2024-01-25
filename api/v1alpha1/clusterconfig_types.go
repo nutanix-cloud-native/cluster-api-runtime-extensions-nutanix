@@ -266,7 +266,7 @@ func (ImageCredentials) VariableSchema() clusterv1.VariableSchema {
 						},
 						"namespace": {
 							Description: "The namespace of the Secret containing the registry credentials. " +
-								"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate" +
+								"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate " +
 								"that reference this variable.",
 							Type: "string",
 						},
@@ -295,6 +295,8 @@ func (GlobalImageRegistryMirror) VariableSchema() clusterv1.VariableSchema {
 				"url": {
 					Description: "Registry mirror URL.",
 					Type:        "string",
+					Format:      "uri",
+					Pattern:     "^https?://",
 				},
 				"credentials": ImageCredentials{}.VariableSchema().OpenAPIV3Schema,
 			},
@@ -320,6 +322,8 @@ func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
 				"url": {
 					Description: "Registry URL.",
 					Type:        "string",
+					Format:      "uri",
+					Pattern:     "^https?://",
 				},
 				"credentials": ImageCredentials{}.VariableSchema().OpenAPIV3Schema,
 			},

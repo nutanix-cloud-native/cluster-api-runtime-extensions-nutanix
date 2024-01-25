@@ -17,7 +17,7 @@ If your registry mirror requires a private or self-signed CA certificate,
 create a Kubernetes Secret with the `ca.crt` key populated with the CA certificate in PEM format:
 
 ```shell
-kubectl create secret generic my-mirror-ca-cert-secret \
+kubectl create secret generic my-mirror-ca-cert \
   --from-file=ca.crt=registry-ca.crt
 ```
 
@@ -35,7 +35,7 @@ spec:
             url: https://my-mirror.io
             credentials:
               secretRef:
-                name: my-mirror-ca-cert-secret
+                name: my-mirror-ca-cert
 ```
 
 Applying this configuration will result in following new files on the

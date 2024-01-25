@@ -36,7 +36,7 @@ func TestVariableValidation(t *testing.T) {
 			Vals: v1alpha1.GenericClusterConfig{
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
-						URL: "http://a.b.c.example.com",
+						URL: "https://a.b.c.example.com/a/b/c",
 						Credentials: &v1alpha1.ImageCredentials{
 							SecretRef: &corev1.ObjectReference{
 								Name: "a.b.c.example.com-creds",
@@ -45,6 +45,28 @@ func TestVariableValidation(t *testing.T) {
 					},
 				},
 			},
+		},
+		capitest.VariableTestDef{
+			Name: "invalid registry URL",
+			Vals: v1alpha1.GenericClusterConfig{
+				ImageRegistries: []v1alpha1.ImageRegistry{
+					{
+						URL: "unsupportedformat://a.b.c.example.com",
+					},
+				},
+			},
+			ExpectError: true,
+		},
+		capitest.VariableTestDef{
+			Name: "registry URL without format",
+			Vals: v1alpha1.GenericClusterConfig{
+				ImageRegistries: []v1alpha1.ImageRegistry{
+					{
+						URL: "a.b.c.example.com/a/b/c",
+					},
+				},
+			},
+			ExpectError: true,
 		},
 	)
 }

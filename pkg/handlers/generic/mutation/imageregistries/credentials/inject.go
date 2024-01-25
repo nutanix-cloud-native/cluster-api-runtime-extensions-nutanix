@@ -84,7 +84,8 @@ func (h *imageRegistriesPatchHandler) Mutate(
 
 	// TODO: Add support for multiple registries.
 	if len(imageRegistries) > 1 {
-		return fmt.Errorf("multiple Image Registry are not supported at this time")
+		return fmt.Errorf("multiple Image Registry are not supported at this time. "+
+			"Provide a single registry entry for %s variable", imageregistries.VariableName)
 	}
 
 	imageRegistry := imageRegistries[0]
