@@ -13,7 +13,8 @@ This customization will be available when the
 
 To provide image registry mirror with CA certificate, specify the following configuration:
 
-If your registry mirror requires self signed CA certifate, create a Kubernetes Secret with keys for `ca.crt`:
+If your registry mirror requires a private or self-signed CA certificate,
+create a Kubernetes Secret with the `ca.crt` key populated with the CA certificate in PEM format:
 
 ```shell
 kubectl create secret generic my-mirror-ca-cert-secret \

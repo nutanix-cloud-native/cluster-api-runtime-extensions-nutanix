@@ -242,8 +242,8 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 }
 
 type ImageCredentials struct {
-	// The Secret containing the registry credentials and CA certificate
-	// The Secret should have keys 'username', 'password' and 'ca.crt'
+	// The Secret containing the registry credentials and optional CA certificate
+	// using the keys `username`, `password` and `ca.crt`.
 	// This credentials Secret is not required for some registries, e.g. ECR.
 	// +optional
 	SecretRef *corev1.ObjectReference `json:"secretRef,omitempty"`
@@ -256,7 +256,7 @@ func (ImageCredentials) VariableSchema() clusterv1.VariableSchema {
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"secretRef": {
 					Description: "The Secret containing the registry credentials. " +
-						"The Secret should have keys 'username', 'password' and 'ca.crt' " +
+						"The Secret should have keys 'username', 'password' and optional 'ca.crt' " +
 						"This credentials Secret is not required for some registries, e.g. ECR.",
 					Type: "object",
 					Properties: map[string]clusterv1.JSONSchemaProps{
