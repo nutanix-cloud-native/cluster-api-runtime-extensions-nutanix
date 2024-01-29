@@ -62,7 +62,7 @@ jobs:
 
       - name: "Check e2e tests exist"
         id: check_e2e_tests_exist
-        uses: andstor/file-existence-action@v2
+        uses: andstor/file-existence-action@v3
         with:
           files: "test/e2e/**"
 
