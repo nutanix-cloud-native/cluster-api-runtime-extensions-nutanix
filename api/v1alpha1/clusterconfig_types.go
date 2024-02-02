@@ -332,6 +332,8 @@ func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
+var maxSupportedImageRegistries int64 = 1
+
 type ImageRegistries []ImageRegistry
 
 func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
@@ -341,6 +343,7 @@ func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
 			Description: "Configuration for image registries.",
 			Type:        "array",
 			Items:       &resourceSchema,
+			MaxItems:    &maxSupportedImageRegistries,
 		},
 	}
 }
