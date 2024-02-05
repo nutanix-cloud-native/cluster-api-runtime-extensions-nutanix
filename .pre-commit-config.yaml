@@ -26,7 +26,7 @@ repos:
     name: apis-sync
     entry: make apis.sync
     language: system
-    files: "^(hack/third-party/|common/pkg/external/|make/apis.mk$)"
+    files: "^(hack/third-party/|api/external/|make/apis.mk$)"
     pass_filenames: false
   - id: addons-sync
     name: addons-sync
@@ -106,7 +106,7 @@ repos:
     name: License headers - Go
     stages: [commit]
     files: "(.*\\.go|go.mod)$"
-    exclude: ^common/pkg/external/
+    exclude: ^api/external/
     args:
       - --license-filepath
       - hack/license-header.txt
