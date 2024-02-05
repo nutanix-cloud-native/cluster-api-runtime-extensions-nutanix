@@ -6,8 +6,8 @@ package v1alpha1
 import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	capav1 "github.com/d2iq-labs/capi-runtime-extensions/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	"github.com/d2iq-labs/capi-runtime-extensions/api/variables"
 )
 
 type AWSSpec struct {

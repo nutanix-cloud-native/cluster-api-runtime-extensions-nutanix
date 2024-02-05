@@ -5,7 +5,10 @@ module github.com/d2iq-labs/capi-runtime-extensions/common
 
 go 1.21
 
+replace github.com/d2iq-labs/capi-runtime-extensions/api => ../api
+
 require (
+	github.com/d2iq-labs/capi-runtime-extensions/api v0.0.0-00010101000000-000000000000
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/go-logr/logr v1.4.1
 	github.com/onsi/gomega v1.31.1

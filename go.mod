@@ -5,10 +5,14 @@ module github.com/d2iq-labs/capi-runtime-extensions
 
 go 1.21
 
-replace github.com/d2iq-labs/capi-runtime-extensions/common => ./common
+replace (
+	github.com/d2iq-labs/capi-runtime-extensions/api => ./api
+	github.com/d2iq-labs/capi-runtime-extensions/common => ./common
+)
 
 require (
 	github.com/blang/semver/v4 v4.0.0
+	github.com/d2iq-labs/capi-runtime-extensions/api v0.0.0-00010101000000-000000000000
 	github.com/d2iq-labs/capi-runtime-extensions/common v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.4.1
 	github.com/onsi/gomega v1.31.1

@@ -9,9 +9,9 @@ import (
 	"github.com/onsi/gomega"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	capav1 "github.com/d2iq-labs/capi-runtime-extensions/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
-	capav1 "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
 )
