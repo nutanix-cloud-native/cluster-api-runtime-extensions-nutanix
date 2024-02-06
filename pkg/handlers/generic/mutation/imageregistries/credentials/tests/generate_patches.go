@@ -140,8 +140,8 @@ func TestGeneratePatches(
 					variableName,
 					v1alpha1.ImageRegistries{
 						v1alpha1.ImageRegistry{
-							URL: "https://my-registry.io",
-							Credentials: &v1alpha1.ImageCredentials{
+							URL: "https://registry.example.com",
+							Credentials: &v1alpha1.RegistryCredentials{
 								SecretRef: &corev1.ObjectReference{
 									Name: validSecretName,
 								},
@@ -258,8 +258,8 @@ func TestGeneratePatches(
 					variableName,
 					v1alpha1.ImageRegistries{
 						v1alpha1.ImageRegistry{
-							URL: "https://my-registry.io",
-							Credentials: &v1alpha1.ImageCredentials{
+							URL: "https://registry.example.com",
+							Credentials: &v1alpha1.RegistryCredentials{
 								SecretRef: &corev1.ObjectReference{
 									Name: validSecretName,
 								},
@@ -321,7 +321,7 @@ func TestGeneratePatches(
 					variableName,
 					v1alpha1.ImageRegistries{
 						v1alpha1.ImageRegistry{
-							URL: "https://my-registry.io",
+							URL: "https://registry.example.com",
 						},
 					},
 					variablePath...,

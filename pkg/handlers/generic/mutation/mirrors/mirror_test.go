@@ -96,9 +96,9 @@ func Test_generateMirrorCACertFile(t *testing.T) {
 				CACert: "mycacert",
 			},
 			registry: v1alpha1.GlobalImageRegistryMirror{
-				URL: "https://myregistry.com",
+				URL: "https://registry.example.com",
 
-				Credentials: &v1alpha1.ImageCredentials{
+				Credentials: &v1alpha1.RegistryCredentials{
 					SecretRef: &v1.ObjectReference{
 						Name: "my-registry-credentials-secret",
 					},

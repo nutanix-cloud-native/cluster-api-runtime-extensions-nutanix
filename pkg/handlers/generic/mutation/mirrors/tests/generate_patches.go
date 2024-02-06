@@ -79,8 +79,8 @@ func TestGeneratePatches(
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.GlobalImageRegistryMirror{
-						URL: "https://mirror-registry.com",
-						Credentials: &v1alpha1.ImageCredentials{
+						URL: "https://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
 							SecretRef: &corev1.ObjectReference{
 								Name: validMirrorCASecretName,
 							},
@@ -143,8 +143,8 @@ func TestGeneratePatches(
 				capitest.VariableWithValue(
 					variableName,
 					v1alpha1.GlobalImageRegistryMirror{
-						URL: "https://mirror-registry.io",
-						Credentials: &v1alpha1.ImageCredentials{
+						URL: "https://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
 							SecretRef: &corev1.ObjectReference{
 								Name: validMirrorCASecretName,
 							},

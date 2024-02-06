@@ -8,6 +8,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/openapi/patterns"
@@ -241,7 +242,7 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
-type ImageCredentials struct {
+type RegistryCredentials struct {
 	// The Secret containing the registry credentials and optional CA certificate
 	// using the keys `username`, `password` and `ca.crt`.
 	// This credentials Secret is not required for some registries, e.g. ECR.
@@ -249,14 +250,14 @@ type ImageCredentials struct {
 	SecretRef *corev1.ObjectReference `json:"secretRef,omitempty"`
 }
 
-func (ImageCredentials) VariableSchema() clusterv1.VariableSchema {
+func (RegistryCredentials) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"secretRef": {
-					Description: "The Secret containing the registry credentials. " +
-						"The Secret should have keys 'username', 'password' and optional 'ca.crt' " +
+					Description: "A reference to the Secret containing the registry credentials. " +
+						"The Secret should have keys 'username', 'password' and optional 'ca.crt'. " +
 						"This credentials Secret is not required for some registries, e.g. ECR.",
 					Type: "object",
 					Properties: map[string]clusterv1.JSONSchemaProps{
@@ -266,11 +267,12 @@ func (ImageCredentials) VariableSchema() clusterv1.VariableSchema {
 						},
 						"namespace": {
 							Description: "The namespace of the Secret containing the registry credentials. " +
-								"Defaults to the namespace of the KubeadmControlPlaneTemplate and KubeadmConfigTemplate " +
+								"Defaults to the namespace of the Cluster. " +
 								"that reference this variable.",
 							Type: "string",
 						},
 					},
+					Required: []string{"name"},
 				},
 			},
 		},
@@ -284,7 +286,7 @@ type GlobalImageRegistryMirror struct {
 
 	// Credentials and CA certificate for the image registry mirror
 	// +optional
-	Credentials *ImageCredentials `json:"credentials,omitempty"`
+	Credentials *RegistryCredentials `json:"credentials,omitempty"`
 }
 
 func (GlobalImageRegistryMirror) VariableSchema() clusterv1.VariableSchema {
@@ -298,7 +300,7 @@ func (GlobalImageRegistryMirror) VariableSchema() clusterv1.VariableSchema {
 					Format:      "uri",
 					Pattern:     "^https?://",
 				},
-				"credentials": ImageCredentials{}.VariableSchema().OpenAPIV3Schema,
+				"credentials": RegistryCredentials{}.VariableSchema().OpenAPIV3Schema,
 			},
 			Required: []string{"url"},
 		},
@@ -311,7 +313,7 @@ type ImageRegistry struct {
 
 	// Credentials and CA certificate for the image registry
 	// +optional
-	Credentials *ImageCredentials `json:"credentials,omitempty"`
+	Credentials *RegistryCredentials `json:"credentials,omitempty"`
 }
 
 func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
@@ -325,25 +327,22 @@ func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
 					Format:      "uri",
 					Pattern:     "^https?://",
 				},
-				"credentials": ImageCredentials{}.VariableSchema().OpenAPIV3Schema,
+				"credentials": RegistryCredentials{}.VariableSchema().OpenAPIV3Schema,
 			},
 			Required: []string{"url"},
 		},
 	}
 }
 
-var maxSupportedImageRegistries int64 = 1
-
 type ImageRegistries []ImageRegistry
 
 func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
-	resourceSchema := ImageRegistry{}.VariableSchema().OpenAPIV3Schema
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Configuration for image registries.",
 			Type:        "array",
-			Items:       &resourceSchema,
-			MaxItems:    &maxSupportedImageRegistries,
+			Items:       ptr.To(ImageRegistry{}.VariableSchema().OpenAPIV3Schema),
+			MaxItems:    ptr.To[int64](1),
 		},
 	}
 }

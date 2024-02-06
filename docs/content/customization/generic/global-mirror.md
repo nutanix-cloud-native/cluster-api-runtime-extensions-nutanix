@@ -12,9 +12,9 @@ This customization will be available when the
 
 ## Example
 
-To provide image registry mirror with CA certificate, specify the following configuration:
+To provide an image registry mirror with a CA certificate, specify the following configuration:
 
-If your registry mirror requires a private or self-signed CA certificate,
+If the registry mirror requires a private or self-signed CA certificate,
 create a Kubernetes Secret with the `ca.crt` key populated with the CA certificate in PEM format:
 
 ```shell
@@ -33,19 +33,19 @@ spec:
       - name: clusterConfig
         value:
           globalImageRegistryMirror:
-            url: https://my-mirror.io
+            url: https://example.com
             credentials:
               secretRef:
                 name: my-mirror-ca-cert
 ```
 
 Applying this configuration will result in following new files on the
-`KubeadmControlPlaneTemplate` and `KubeadmConfigTemplate`
+`KubeadmControlPlaneTemplate` and `KubeadmConfigTemplate` resources:
 
 - `/etc/containerd/certs.d/_default/hosts.toml`
 - `/etc/certs/mirror.pem`
 
-To use a public hosted image registry (ex. ECR) as mirror, specify the following configuration:
+To use a public hosted image registry (e.g. ECR) as a registry mirror, specify the following configuration:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -62,6 +62,6 @@ spec:
 ```
 
 Applying this configuration will result in following new files on the
-`KubeadmControlPlaneTemplate` and `KubeadmConfigTemplate`
+`KubeadmControlPlaneTemplate` and `KubeadmConfigTemplate` resources:
 
 - `/etc/containerd/certs.d/_default/hosts.toml`

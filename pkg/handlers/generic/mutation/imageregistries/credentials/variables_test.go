@@ -37,7 +37,7 @@ func TestVariableValidation(t *testing.T) {
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
 						URL: "https://a.b.c.example.com/a/b/c",
-						Credentials: &v1alpha1.ImageCredentials{
+						Credentials: &v1alpha1.RegistryCredentials{
 							SecretRef: &corev1.ObjectReference{
 								Name: "a.b.c.example.com-creds",
 							},
