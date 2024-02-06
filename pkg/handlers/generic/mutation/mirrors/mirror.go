@@ -74,14 +74,9 @@ func secretForMirrorCACert(
 		return nil, nil
 	}
 
-	namespace := objectNamespace
-	if globalMirror.Credentials.SecretRef.Namespace != "" {
-		namespace = globalMirror.Credentials.SecretRef.Namespace
-	}
-
 	key := ctrlclient.ObjectKey{
 		Name:      globalMirror.Credentials.SecretRef.Name,
-		Namespace: namespace,
+		Namespace: objectNamespace,
 	}
 	secret := &corev1.Secret{}
 	err := c.Get(ctx, key, secret)

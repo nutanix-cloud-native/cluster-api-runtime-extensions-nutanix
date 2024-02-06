@@ -38,7 +38,7 @@ func TestVariableValidation(t *testing.T) {
 					{
 						URL: "https://a.b.c.example.com/a/b/c",
 						Credentials: &v1alpha1.RegistryCredentials{
-							SecretRef: &corev1.ObjectReference{
+							SecretRef: &corev1.LocalObjectReference{
 								Name: "a.b.c.example.com-creds",
 							},
 						},

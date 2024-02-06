@@ -99,7 +99,7 @@ func Test_generateMirrorCACertFile(t *testing.T) {
 				URL: "https://registry.example.com",
 
 				Credentials: &v1alpha1.RegistryCredentials{
-					SecretRef: &v1.ObjectReference{
+					SecretRef: &v1.LocalObjectReference{
 						Name: "my-registry-credentials-secret",
 					},
 				},

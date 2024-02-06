@@ -309,14 +309,9 @@ func secretForImageRegistryCredentials(
 		return nil, nil
 	}
 
-	namespace := objectNamespace
-	if registry.Credentials.SecretRef.Namespace != "" {
-		namespace = registry.Credentials.SecretRef.Namespace
-	}
-
 	key := ctrlclient.ObjectKey{
 		Name:      registry.Credentials.SecretRef.Name,
-		Namespace: namespace,
+		Namespace: objectNamespace,
 	}
 	secret := &corev1.Secret{}
 	err := c.Get(ctx, key, secret)

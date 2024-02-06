@@ -142,7 +142,7 @@ func TestGeneratePatches(
 						v1alpha1.ImageRegistry{
 							URL: "https://registry.example.com",
 							Credentials: &v1alpha1.RegistryCredentials{
-								SecretRef: &corev1.ObjectReference{
+								SecretRef: &corev1.LocalObjectReference{
 									Name: validSecretName,
 								},
 							},
@@ -260,7 +260,7 @@ func TestGeneratePatches(
 						v1alpha1.ImageRegistry{
 							URL: "https://registry.example.com",
 							Credentials: &v1alpha1.RegistryCredentials{
-								SecretRef: &corev1.ObjectReference{
+								SecretRef: &corev1.LocalObjectReference{
 									Name: validSecretName,
 								},
 							},
