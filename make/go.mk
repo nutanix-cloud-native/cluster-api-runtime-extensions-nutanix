@@ -179,7 +179,7 @@ go-generate: ; $(info $(M) running go generate)
 	go generate -x ./...
 	controller-gen paths="./..." rbac:headerFile="hack/license-header.yaml.txt",roleName=capi-runtime-extensions-manager-role output:rbac:artifacts:config=charts/capi-runtime-extensions/templates
 	sed --in-place 's/capi-runtime-extensions-manager-role/{{ include "chart.name" . }}-manager-role/' charts/capi-runtime-extensions/templates/role.yaml
-	controller-gen paths="./api/..." object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/dev/null
+	controller-gen paths="./api/v1alpha1/..." object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/dev/null
 	$(MAKE) go-fix
 
 .PHONY: go-mod-upgrade

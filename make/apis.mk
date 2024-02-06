@@ -17,7 +17,7 @@ PROVIDER_API_VERSION_caaph := v1alpha1
 # Instead. sync their APIs into the third-party/apis directory.
 .PHONY: apis.sync
 apis.sync: ## Syncs infrastructure providers' APIs
-apis.sync: $(addprefix api.sync.,capa capd caaph) go-fix.common
+apis.sync: $(addprefix api.sync.,capa capd caaph) go-fix.api
 
 .PHONY: api.sync.%
 api.sync.%: ## Syncs an infrastructure provider's API
