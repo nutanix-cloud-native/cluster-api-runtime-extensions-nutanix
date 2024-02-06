@@ -35,7 +35,7 @@ func TestVariableValidation(t *testing.T) {
 				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
 					URL: "http://a.b.c.example.com",
 					Credentials: &v1alpha1.RegistryCredentials{
-						SecretRef: &corev1.ObjectReference{
+						SecretRef: &corev1.LocalObjectReference{
 							Name: "a.b.c.example.com-ca-cert-creds",
 						},
 					},

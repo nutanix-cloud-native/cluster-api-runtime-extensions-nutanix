@@ -81,7 +81,7 @@ func TestGeneratePatches(
 					v1alpha1.GlobalImageRegistryMirror{
 						URL: "https://registry.example.com",
 						Credentials: &v1alpha1.RegistryCredentials{
-							SecretRef: &corev1.ObjectReference{
+							SecretRef: &corev1.LocalObjectReference{
 								Name: validMirrorCASecretName,
 							},
 						},
@@ -145,7 +145,7 @@ func TestGeneratePatches(
 					v1alpha1.GlobalImageRegistryMirror{
 						URL: "https://registry.example.com",
 						Credentials: &v1alpha1.RegistryCredentials{
-							SecretRef: &corev1.ObjectReference{
+							SecretRef: &corev1.LocalObjectReference{
 								Name: validMirrorCASecretName,
 							},
 						},

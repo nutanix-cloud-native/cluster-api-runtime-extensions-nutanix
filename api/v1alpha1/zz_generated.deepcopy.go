@@ -675,7 +675,7 @@ func (in *RegistryCredentials) DeepCopyInto(out *RegistryCredentials) {
 	*out = *in
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		*out = new(v1.ObjectReference)
+		*out = new(v1.LocalObjectReference)
 		**out = **in
 	}
 }

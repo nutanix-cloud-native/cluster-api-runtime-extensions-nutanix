@@ -243,11 +243,11 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 }
 
 type RegistryCredentials struct {
-	// The Secret containing the registry credentials and optional CA certificate
+	// A reference to the Secret containing the registry credentials and optional CA certificate
 	// using the keys `username`, `password` and `ca.crt`.
 	// This credentials Secret is not required for some registries, e.g. ECR.
 	// +optional
-	SecretRef *corev1.ObjectReference `json:"secretRef,omitempty"`
+	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
 }
 
 func (RegistryCredentials) VariableSchema() clusterv1.VariableSchema {
@@ -256,19 +256,14 @@ func (RegistryCredentials) VariableSchema() clusterv1.VariableSchema {
 			Type: "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"secretRef": {
-					Description: "A reference to the Secret containing the registry credentials. " +
+					Description: "A reference to the Secret containing the registry credentials and optional CA certificate. " +
 						"The Secret should have keys 'username', 'password' and optional 'ca.crt'. " +
 						"This credentials Secret is not required for some registries, e.g. ECR.",
 					Type: "object",
 					Properties: map[string]clusterv1.JSONSchemaProps{
 						"name": {
-							Description: "The name of the Secret containing the registry credentials.",
-							Type:        "string",
-						},
-						"namespace": {
-							Description: "The namespace of the Secret containing the registry credentials. " +
-								"Defaults to the namespace of the Cluster. " +
-								"that reference this variable.",
+							Description: "The name of the Secret containing the registry credentials. This Secret must exist in " +
+								"the same namespace as the Cluster.",
 							Type: "string",
 						},
 					},
