@@ -3,7 +3,7 @@ kind: Cluster
 metadata:
   labels:
     cluster.x-k8s.io/provider: docker
-  name: docker-quick-start-helm-addon-calico
+  name: docker-quick-start-crs-cilium
 spec:
   clusterNetwork:
     pods:
@@ -23,8 +23,8 @@ spec:
         value:
           addons:
             cni:
-              provider: calico
-              strategy: HelmAddon
+              provider: cilium
+              strategy: ClusterResourceSet
             nfd: {}
           docker: {}
     version: v1.27.5

@@ -38,7 +38,7 @@ type crsConfig struct {
 func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		&c.defaultsNamespace,
-		prefix+".defaultsNamespace",
+		prefix+".defaults-namespace",
 		corev1.NamespaceDefault,
 		"namespace of the ConfigMap used to deploy Tigera Operator",
 	)
@@ -223,18 +223,6 @@ func generateProviderCNICRS(
 		return nil, fmt.Errorf("failed to parse embedded manifests: %w", err)
 	}
 
-	cm := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Namespace,
-			Name:      "calico-cni-installation-" + cluster.Name,
-		},
-		Data: make(map[string]string, 1),
-	}
-
 	yamlSerializer := json.NewSerializerWithOptions(
 		json.DefaultMetaFactory,
 		unstructuredscheme.NewUnstructuredCreator(),
@@ -293,7 +281,19 @@ func generateProviderCNICRS(
 		_, _ = b.WriteString("\n---\n")
 	}
 
-	cm.Data["manifests"] = b.String()
+	cm := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cluster.Namespace,
+			Name:      "calico-cni-installation-" + cluster.Name,
+		},
+		Data: map[string]string{
+			"manifests": b.String(),
+		},
+	}
 
 	if err := controllerutil.SetOwnerReference(cluster, cm, scheme); err != nil {
 		return nil, fmt.Errorf("failed to set owner reference: %w", err)

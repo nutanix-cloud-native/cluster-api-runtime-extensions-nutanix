@@ -1,0 +1,21 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: cilium
+
+sortOptions:
+  order: fifo
+
+helmCharts:
+- name: cilium
+  includeCRDs: true
+  valuesFile: helm-values.yaml
+  releaseName: cilium
+  version: ${CILIUM_VERSION}
+  repo: https://helm.cilium.io/
+
+namespace: kube-system

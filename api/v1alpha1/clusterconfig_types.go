@@ -16,8 +16,11 @@ import (
 
 const (
 	CNIProviderCalico = "calico"
+	CNIProviderCilium = "cilium"
+
 	CSIProviderAWSEBS = "aws-ebs"
-	CPIProivderAWS    = "aws"
+
+	CPIProivderAWS = "aws"
 )
 
 //+kubebuilder:object:root=true

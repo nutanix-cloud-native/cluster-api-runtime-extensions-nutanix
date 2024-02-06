@@ -34,14 +34,14 @@ kustomize build ./hack/examples |
                                         .metadata.labels["cluster.x-k8s.io/provider"] == "docker"
                                         and .kind == "Cluster"
                                         and .spec.topology.variables[0].value.addons.cni.strategy == "ClusterResourceSet"
-                                      )' >"${EXAMPLE_CLUSTERS_DIR}/docker-cluster-calico-crs.yaml"
+                                      )' >"${EXAMPLE_CLUSTERS_DIR}/docker-cluster-cilium-crs.yaml"
     ) \
     >(
       gojq --yaml-input --yaml-output 'select(
                                         .metadata.labels["cluster.x-k8s.io/provider"] == "docker"
                                         and .kind == "Cluster"
                                         and .spec.topology.variables[0].value.addons.cni.strategy == "HelmAddon"
-                                      )' >"${EXAMPLE_CLUSTERS_DIR}/docker-cluster-calico-helm-addon.yaml"
+                                      )' >"${EXAMPLE_CLUSTERS_DIR}/docker-cluster-cilium-helm-addon.yaml"
     ) \
     >(
       gojq --yaml-input --yaml-output 'select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
