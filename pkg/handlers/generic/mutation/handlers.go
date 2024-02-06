@@ -14,6 +14,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/httpproxy"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries/credentials"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/mirrors"
 )
 
 // MetaMutators returns all generic patch handlers.
@@ -25,6 +26,7 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		httpproxy.NewPatch(mgr.GetClient()),
 		kubernetesimagerepository.NewPatch(),
 		credentials.NewPatch(mgr.GetClient()),
+		mirrors.NewPatch(mgr.GetClient()),
 		calico.NewPatch(),
 	}
 }

@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package credentials
+package mirrors
 
 import (
 	"testing"
@@ -24,60 +24,38 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "without a credentials secret",
 			Vals: v1alpha1.GenericClusterConfig{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "http://a.b.c.example.com",
-					},
+				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+					URL: "http://a.b.c.example.com",
 				},
 			},
 		},
 		capitest.VariableTestDef{
-			Name: "with a credentials secret",
+			Name: "with a credentials CA secret",
 			Vals: v1alpha1.GenericClusterConfig{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "https://a.b.c.example.com/a/b/c",
-						Credentials: &v1alpha1.RegistryCredentials{
-							SecretRef: &corev1.ObjectReference{
-								Name: "a.b.c.example.com-creds",
-							},
+				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+					URL: "http://a.b.c.example.com",
+					Credentials: &v1alpha1.RegistryCredentials{
+						SecretRef: &corev1.ObjectReference{
+							Name: "a.b.c.example.com-ca-cert-creds",
 						},
 					},
 				},
 			},
 		},
 		capitest.VariableTestDef{
-			Name: "support for only single image registry",
+			Name: "invalid mirror registry URL",
 			Vals: v1alpha1.GenericClusterConfig{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "http://first-image-registry.example.com",
-					},
-					{
-						URL: "http://second-image-registry.example.com",
-					},
+				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+					URL: "unsupportedformat://a.b.c.example.com",
 				},
 			},
 			ExpectError: true,
 		},
 		capitest.VariableTestDef{
-			Name: "invalid registry URL",
+			Name: "mirror URL without format",
 			Vals: v1alpha1.GenericClusterConfig{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "unsupportedformat://a.b.c.example.com",
-					},
-				},
-			},
-			ExpectError: true,
-		},
-		capitest.VariableTestDef{
-			Name: "registry URL without format",
-			Vals: v1alpha1.GenericClusterConfig{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "a.b.c.example.com/a/b/c",
-					},
+				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+					URL: "a.b.c.example.com/a/b/c",
 				},
 			},
 			ExpectError: true,

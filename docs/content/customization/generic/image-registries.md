@@ -33,8 +33,8 @@ spec:
       - name: clusterConfig
         value:
           imageRegistries:
-            credentials:
-              - url: https://my-registry.io
+            - url: https://my-registry.io
+              credentials:
                 secretRef:
                   name: my-registry-credentials
 ```

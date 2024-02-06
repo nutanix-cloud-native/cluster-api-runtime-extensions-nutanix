@@ -5,6 +5,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -23,6 +24,11 @@ import (
 
 const (
 	validSecretName = "myregistry-credentials"
+	//nolint:gosec // Does not contain hard coded credentials.
+	cpRegistryCreds = "kubeadmControlPlaneRegistryWithCredentials"
+	//nolint:gosec // Does not contain hard coded credentials.
+	workerRegistryCreds                   = "kubeadmConfigTemplateRegistryWithCreds"
+	registryStaticCredentialsSecretSuffix = "registry-config"
 )
 
 func TestGeneratePatches(
@@ -34,31 +40,33 @@ func TestGeneratePatches(
 ) {
 	t.Helper()
 
+	require.NoError(
+		t,
+		fakeClient.Create(
+			context.Background(),
+			newRegistryCredentialsSecret(validSecretName, request.Namespace),
+		),
+	)
+
 	// Server side apply does not work with the fake client, hack around it by pre-creating empty Secrets
 	// https://github.com/kubernetes-sigs/controller-runtime/issues/2341
 	require.NoError(
 		t,
 		fakeClient.Create(
 			context.Background(),
-			newTestSecret(validSecretName, request.Namespace),
-		),
-	)
-	require.NoError(
-		t,
-		fakeClient.Create(
-			context.Background(),
 			newEmptySecret(
-				request.KubeadmControlPlaneTemplateRequestObjectName+"-registry-config",
+				fmt.Sprintf("%s-%s", cpRegistryCreds, registryStaticCredentialsSecretSuffix),
 				request.Namespace,
 			),
 		),
 	)
+
 	require.NoError(
 		t,
 		fakeClient.Create(
 			context.Background(),
 			newEmptySecret(
-				request.KubeadmConfigTemplateRequestObjectName+"-registry-config",
+				fmt.Sprintf("%s-%s", workerRegistryCreds, registryStaticCredentialsSecretSuffix),
 				request.Namespace,
 			),
 		),
@@ -75,8 +83,8 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
 							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 						},
 					},
@@ -130,18 +138,20 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
-							URL: "https://my-registry.io",
-							Secret: &corev1.ObjectReference{
-								Name: validSecretName,
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
+							URL: "https://registry.example.com",
+							Credentials: &v1alpha1.RegistryCredentials{
+								SecretRef: &corev1.ObjectReference{
+									Name: validSecretName,
+								},
 							},
 						},
 					},
 					variablePath...,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequest("", cpRegistryCreds),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -191,8 +201,8 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
 							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 						},
 					},
@@ -246,11 +256,13 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
-							URL: "https://my-registry.io",
-							Secret: &corev1.ObjectReference{
-								Name: validSecretName,
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
+							URL: "https://registry.example.com",
+							Credentials: &v1alpha1.RegistryCredentials{
+								SecretRef: &corev1.ObjectReference{
+									Name: validSecretName,
+								},
 							},
 						},
 					},
@@ -265,7 +277,7 @@ func TestGeneratePatches(
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmConfigTemplateRequest("", workerRegistryCreds),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -307,9 +319,9 @@ func TestGeneratePatches(
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
-					v1alpha1.ImageRegistryCredentials{
-						v1alpha1.ImageRegistryCredentialsResource{
-							URL: "https://my-registry.io",
+					v1alpha1.ImageRegistries{
+						v1alpha1.ImageRegistry{
+							URL: "https://registry.example.com",
 						},
 					},
 					variablePath...,
@@ -321,7 +333,7 @@ func TestGeneratePatches(
 	)
 }
 
-func newTestSecret(name, namespace string) *corev1.Secret {
+func newRegistryCredentialsSecret(name, namespace string) *corev1.Secret {
 	secretData := map[string][]byte{
 		"username": []byte("myuser"),
 		"password": []byte("mypassword"),

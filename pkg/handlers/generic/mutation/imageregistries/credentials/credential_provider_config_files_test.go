@@ -192,7 +192,7 @@ credentialProviders:
 		{
 			name: "error for a registry with no credentials",
 			credentials: providerConfig{
-				URL: "https://myregistry.com",
+				URL: "https://registry.example.com",
 			},
 			wantErr: ErrCredentialsNotFound,
 		},

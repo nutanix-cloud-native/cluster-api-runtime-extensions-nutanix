@@ -26,11 +26,6 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries"
 )
 
-const (
-	// VariableName is the external patch variable name.
-	VariableName = "credentials"
-)
-
 type imageRegistriesPatchHandler struct {
 	client ctrlclient.Client
 
@@ -45,7 +40,6 @@ func NewPatch(
 		cl,
 		clusterconfig.MetaVariableName,
 		imageregistries.VariableName,
-		VariableName,
 	)
 }
 
@@ -75,7 +69,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	imageRegistryCredentials, found, err := variables.Get[v1alpha1.ImageRegistryCredentials](
+	imageRegistries, found, err := variables.Get[v1alpha1.ImageRegistries](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -88,127 +82,129 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		return nil
 	}
 
-	// TODO: Add support for multiple registries.
-	if len(imageRegistryCredentials) > 1 {
-		return fmt.Errorf("multiple Image Registry Credentials are not supported at this time")
-	}
+	// TODO: Support for multiple registries is constrained with variable schema of ImageRegistries.
+	// currently only one registry is supported. Implement support for multiple registries in
+	// DynamicCredentialProviderConfig
+	for _, imageRegistry := range imageRegistries {
+		log = log.WithValues(
+			"variableName",
+			h.variableName,
+			"variableFieldPath",
+			h.variableFieldPath,
+			"variableValue",
+			imageRegistry,
+		)
 
-	credentials := imageRegistryCredentials[0]
+		if err := patches.MutateIfApplicable(
+			obj, vars, &holderRef, selectors.ControlPlane(), log,
+			func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+				registryWithOptionalCredentials, generateErr := registryWithOptionalCredentialsFromImageRegistryCredentials(
+					ctx, h.client, imageRegistry, obj,
+				)
+				if generateErr != nil {
+					return generateErr
+				}
+				files, commands, generateErr := generateFilesAndCommands(
+					registryWithOptionalCredentials,
+					obj.GetName())
+				if generateErr != nil {
+					return generateErr
+				}
 
-	log = log.WithValues(
-		"variableName",
-		h.variableName,
-		"variableFieldPath",
-		h.variableFieldPath,
-		"variableValue",
-		credentials,
-	)
+				log.WithValues(
+					"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+					"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+				).Info("adding files to control plane kubeadm config spec")
+				obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
+					obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+					files...,
+				)
 
-	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-			registryWithOptionalCredentials, generateErr := registryWithOptionalCredentialsFromImageRegistryCredentials(
-				ctx, h.client, credentials, obj,
-			)
-			if generateErr != nil {
-				return generateErr
-			}
-			files, commands, generateErr := generateFilesAndCommands(registryWithOptionalCredentials, obj.GetName())
-			if generateErr != nil {
-				return generateErr
-			}
+				log.WithValues(
+					"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+					"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+				).Info("adding PreKubeadmCommands to control plane kubeadm config spec")
+				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
+					obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
+					commands...,
+				)
 
-			log.WithValues(
-				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding files to control plane kubeadm config spec")
-			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				files...,
-			)
+				generateErr = createSecretIfNeeded(ctx, h.client, registryWithOptionalCredentials, obj, clusterKey)
+				if generateErr != nil {
+					return generateErr
+				}
 
-			log.WithValues(
-				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding PreKubeadmCommands to control plane kubeadm config spec")
-			obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
-				commands...,
-			)
+				initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
+				if initConfiguration == nil {
+					initConfiguration = &bootstrapv1.InitConfiguration{}
+				}
+				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = initConfiguration
+				if initConfiguration.NodeRegistration.KubeletExtraArgs == nil {
+					initConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
+				}
+				addImageCredentialProviderArgs(initConfiguration.NodeRegistration.KubeletExtraArgs)
 
-			generateErr = createSecretIfNeeded(ctx, h.client, registryWithOptionalCredentials, obj, clusterKey)
-			if generateErr != nil {
-				return generateErr
-			}
+				joinConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration
+				if joinConfiguration == nil {
+					joinConfiguration = &bootstrapv1.JoinConfiguration{}
+				}
+				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = joinConfiguration
+				if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
+					joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
+				}
+				addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
+				return nil
+			}); err != nil {
+			return err
+		}
 
-			initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
-			if initConfiguration == nil {
-				initConfiguration = &bootstrapv1.InitConfiguration{}
-			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = initConfiguration
-			if initConfiguration.NodeRegistration.KubeletExtraArgs == nil {
-				initConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
-			}
-			addImageCredentialProviderArgs(initConfiguration.NodeRegistration.KubeletExtraArgs)
+		if err := patches.MutateIfApplicable(
+			obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
+			func(obj *bootstrapv1.KubeadmConfigTemplate) error {
+				registryWithOptionalCredentials, generateErr := registryWithOptionalCredentialsFromImageRegistryCredentials(
+					ctx, h.client, imageRegistry, obj,
+				)
+				if generateErr != nil {
+					return generateErr
+				}
+				files, commands, generateErr := generateFilesAndCommands(
+					registryWithOptionalCredentials,
+					obj.GetName())
+				if generateErr != nil {
+					return generateErr
+				}
 
-			joinConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration
-			if joinConfiguration == nil {
-				joinConfiguration = &bootstrapv1.JoinConfiguration{}
-			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = joinConfiguration
-			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
-				joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
-			}
-			addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
-			return nil
-		}); err != nil {
-		return err
-	}
+				log.WithValues(
+					"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+					"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+				).Info("adding files to worker node kubeadm config template")
+				obj.Spec.Template.Spec.Files = append(obj.Spec.Template.Spec.Files, files...)
 
-	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
-		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
-			registryWithOptionalCredentials, generateErr := registryWithOptionalCredentialsFromImageRegistryCredentials(
-				ctx, h.client, credentials, obj,
-			)
-			if generateErr != nil {
-				return generateErr
-			}
-			files, commands, generateErr := generateFilesAndCommands(registryWithOptionalCredentials, obj.GetName())
-			if generateErr != nil {
-				return generateErr
-			}
+				log.WithValues(
+					"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+					"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+				).Info("adding PreKubeadmCommands to worker node kubeadm config template")
+				obj.Spec.Template.Spec.PreKubeadmCommands = append(obj.Spec.Template.Spec.PreKubeadmCommands, commands...)
 
-			log.WithValues(
-				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding files to worker node kubeadm config template")
-			obj.Spec.Template.Spec.Files = append(obj.Spec.Template.Spec.Files, files...)
+				generateErr = createSecretIfNeeded(ctx, h.client, registryWithOptionalCredentials, obj, clusterKey)
+				if generateErr != nil {
+					return generateErr
+				}
 
-			log.WithValues(
-				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding PreKubeadmCommands to worker node kubeadm config template")
-			obj.Spec.Template.Spec.PreKubeadmCommands = append(obj.Spec.Template.Spec.PreKubeadmCommands, commands...)
+				joinConfiguration := obj.Spec.Template.Spec.JoinConfiguration
+				if joinConfiguration == nil {
+					joinConfiguration = &bootstrapv1.JoinConfiguration{}
+				}
+				obj.Spec.Template.Spec.JoinConfiguration = joinConfiguration
+				if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
+					joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
+				}
+				addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
 
-			generateErr = createSecretIfNeeded(ctx, h.client, registryWithOptionalCredentials, obj, clusterKey)
-			if generateErr != nil {
-				return generateErr
-			}
-
-			joinConfiguration := obj.Spec.Template.Spec.JoinConfiguration
-			if joinConfiguration == nil {
-				joinConfiguration = &bootstrapv1.JoinConfiguration{}
-			}
-			obj.Spec.Template.Spec.JoinConfiguration = joinConfiguration
-			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
-				joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
-			}
-			addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
-
-			return nil
-		}); err != nil {
-		return err
+				return nil
+			}); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -217,23 +213,23 @@ func (h *imageRegistriesPatchHandler) Mutate(
 func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	ctx context.Context,
 	c ctrlclient.Client,
-	credentials v1alpha1.ImageRegistryCredentialsResource,
+	imageRegistry v1alpha1.ImageRegistry,
 	obj ctrlclient.Object,
 ) (providerConfig, error) {
 	registryWithOptionalCredentials := providerConfig{
-		URL: credentials.URL,
+		URL: imageRegistry.URL,
 	}
 	secret, err := secretForImageRegistryCredentials(
 		ctx,
 		c,
-		credentials,
+		imageRegistry,
 		obj.GetNamespace(),
 	)
 	if err != nil {
 		return providerConfig{}, fmt.Errorf(
-			"error getting secret %s/%s from Image Registry Credentials variable: %w",
+			"error getting secret %s/%s from Image Registry variable: %w",
 			obj.GetNamespace(),
-			credentials.Secret,
+			imageRegistry.Credentials.SecretRef.Name,
 			err,
 		)
 	}
@@ -253,7 +249,7 @@ func generateFilesAndCommands(
 	files, commands, err := templateFilesAndCommandsForInstallKubeletCredentialProviders()
 	if err != nil {
 		return nil, nil, fmt.Errorf(
-			"error generating insall files and commands for Image Registry Credentials variable: %w",
+			"error generating install files and commands for Image Registry Credentials variable: %w",
 			err,
 		)
 	}
@@ -270,7 +266,6 @@ func generateFilesAndCommands(
 	files = append(
 		files,
 		generateCredentialsSecretFile(registryWithOptionalCredentials, objName)...)
-
 	return files, commands, err
 }
 
@@ -307,20 +302,20 @@ func createSecretIfNeeded(
 func secretForImageRegistryCredentials(
 	ctx context.Context,
 	c ctrlclient.Reader,
-	credentials v1alpha1.ImageRegistryCredentialsResource,
+	registry v1alpha1.ImageRegistry,
 	objectNamespace string,
 ) (*corev1.Secret, error) {
-	if credentials.Secret == nil {
+	if registry.Credentials == nil || registry.Credentials.SecretRef == nil {
 		return nil, nil
 	}
 
 	namespace := objectNamespace
-	if credentials.Secret.Namespace != "" {
-		namespace = credentials.Secret.Namespace
+	if registry.Credentials.SecretRef.Namespace != "" {
+		namespace = registry.Credentials.SecretRef.Namespace
 	}
 
 	key := ctrlclient.ObjectKey{
-		Name:      credentials.Secret.Name,
+		Name:      registry.Credentials.SecretRef.Name,
 		Namespace: namespace,
 	}
 	secret := &corev1.Secret{}
