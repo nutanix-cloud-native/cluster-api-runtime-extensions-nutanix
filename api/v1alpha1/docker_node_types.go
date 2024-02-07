@@ -6,11 +6,11 @@ package v1alpha1
 import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/openapi/patterns"
+	"github.com/d2iq-labs/capi-runtime-extensions/api/openapi/patterns"
 )
 
 type DockerNodeSpec struct {
-	//+optional
+	// +optional
 	CustomImage *OCIImage `json:"customImage,omitempty"`
 }
 

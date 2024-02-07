@@ -6,7 +6,7 @@ package v1alpha1
 import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/capi-runtime-extensions/api/variables"
 )
 
 type Addons struct {
