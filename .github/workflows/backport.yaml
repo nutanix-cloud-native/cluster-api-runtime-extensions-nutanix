@@ -7,6 +7,10 @@ on:
       - labeled
       - closed
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   backport:
     name: Backport PR
