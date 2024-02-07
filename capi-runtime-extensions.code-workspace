@@ -8,6 +8,9 @@
         },
         {
             "path": "./common"
+        },
+        {
+            "path": "./api"
         }
     ],
     "settings": {
