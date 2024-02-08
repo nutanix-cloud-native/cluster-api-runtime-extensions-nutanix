@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.3 (2024-02-08)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.3.2...v0.3.3
+
 ## 0.3.2 (2024-02-08)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
