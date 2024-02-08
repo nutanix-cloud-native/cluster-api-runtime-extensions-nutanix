@@ -25,8 +25,14 @@ const (
 	credentialProviderTargetDir = "/etc/kubernetes/image-credential-provider/"
 )
 
-//go:embed templates/install-kubelet-credential-providers.sh.gotmpl
-var installKubeletCredentialProvidersScript []byte
+var (
+	//go:embed templates/install-kubelet-credential-providers.sh.gotmpl
+	installKubeletCredentialProvidersScript []byte
+
+	installKubeletCredentialProvidersScriptTemplate = template.Must(
+		template.New("").Parse(string(installKubeletCredentialProvidersScript)),
+	)
+)
 
 func templateFilesAndCommandsForInstallKubeletCredentialProviders() ([]cabpkv1.File, []string, error) {
 	var files []cabpkv1.File
@@ -45,11 +51,6 @@ func templateFilesAndCommandsForInstallKubeletCredentialProviders() ([]cabpkv1.F
 }
 
 func templateInstallKubeletCredentialProviders() (*cabpkv1.File, string, error) {
-	t, err := template.New("").Parse(string(installKubeletCredentialProvidersScript))
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to parse go template: %w", err)
-	}
-
 	templateInput := struct {
 		DynamicCredentialProviderImage string
 		CredentialProviderTargetDir    string
@@ -59,7 +60,7 @@ func templateInstallKubeletCredentialProviders() (*cabpkv1.File, string, error) 
 	}
 
 	var b bytes.Buffer
-	err = t.Execute(&b, templateInput)
+	err := installKubeletCredentialProvidersScriptTemplate.Execute(&b, templateInput)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed executing template: %w", err)
 	}

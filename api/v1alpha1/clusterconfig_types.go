@@ -337,7 +337,6 @@ func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
 			Description: "Configuration for image registries.",
 			Type:        "array",
 			Items:       ptr.To(ImageRegistry{}.VariableSchema().OpenAPIV3Schema),
-			MaxItems:    ptr.To[int64](1),
 		},
 	}
 }

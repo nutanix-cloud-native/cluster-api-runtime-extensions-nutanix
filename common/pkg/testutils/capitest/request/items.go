@@ -114,10 +114,11 @@ func NewKubeadmControlPlaneTemplateRequest(
 			},
 		},
 		&runtimehooksv1.HolderReference{
-			Kind:      "Cluster",
-			FieldPath: "spec.controlPlaneRef",
-			Name:      ClusterName,
-			Namespace: Namespace,
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       "Cluster",
+			FieldPath:  "spec.controlPlaneRef",
+			Name:       ClusterName,
+			Namespace:  Namespace,
 		},
 		uid,
 	)
@@ -152,8 +153,11 @@ func NewAWSClusterTemplateRequestItem(
 	return NewRequestItem(
 		awsClusterTemplate,
 		&runtimehooksv1.HolderReference{
-			Kind:      "Cluster",
-			FieldPath: "spec.infrastructureRef",
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       "Cluster",
+			FieldPath:  "spec.infrastructureRef",
+			Name:       ClusterName,
+			Namespace:  Namespace,
 		},
 		uid,
 	)

@@ -19,7 +19,7 @@ var (
 	systemdProxyTemplateContents string
 
 	systemdProxyTemplate *template.Template = template.Must(
-		template.New("systemd.conf.tmpl").Parse(systemdProxyTemplateContents),
+		template.New("").Parse(systemdProxyTemplateContents),
 	)
 
 	systemdUnitPaths = []string{

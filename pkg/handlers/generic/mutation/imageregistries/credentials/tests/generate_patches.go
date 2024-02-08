@@ -5,7 +5,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -23,12 +22,8 @@ import (
 )
 
 const (
-	validSecretName = "myregistry-credentials"
-	//nolint:gosec // Does not contain hard coded credentials.
-	cpRegistryCreds = "kubeadmControlPlaneRegistryWithCredentials"
-	//nolint:gosec // Does not contain hard coded credentials.
-	workerRegistryCreds                   = "kubeadmConfigTemplateRegistryWithCreds"
-	registryStaticCredentialsSecretSuffix = "registry-config"
+	validSecretName                       = "myregistry-credentials"
+	registryStaticCredentialsSecretSuffix = "registry-creds"
 )
 
 func TestGeneratePatches(
@@ -45,30 +40,6 @@ func TestGeneratePatches(
 		fakeClient.Create(
 			context.Background(),
 			newRegistryCredentialsSecret(validSecretName, request.Namespace),
-		),
-	)
-
-	// Server side apply does not work with the fake client, hack around it by pre-creating empty Secrets
-	// https://github.com/kubernetes-sigs/controller-runtime/issues/2341
-	require.NoError(
-		t,
-		fakeClient.Create(
-			context.Background(),
-			newEmptySecret(
-				fmt.Sprintf("%s-%s", cpRegistryCreds, registryStaticCredentialsSecretSuffix),
-				request.Namespace,
-			),
-		),
-	)
-
-	require.NoError(
-		t,
-		fakeClient.Create(
-			context.Background(),
-			newEmptySecret(
-				fmt.Sprintf("%s-%s", workerRegistryCreds, registryStaticCredentialsSecretSuffix),
-				request.Namespace,
-			),
 		),
 	)
 
@@ -151,7 +122,10 @@ func TestGeneratePatches(
 					variablePath...,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequest("", cpRegistryCreds),
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequest(
+				"",
+				"test-kubeadmconfigtemplate",
+			),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -277,7 +251,7 @@ func TestGeneratePatches(
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequest("", workerRegistryCreds),
+			RequestItem: request.NewKubeadmConfigTemplateRequest("", "test-kubeadmconfigtemplate"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -348,16 +322,6 @@ func newRegistryCredentialsSecret(name, namespace string) *corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: secretData,
-		Type: corev1.SecretTypeOpaque,
-	}
-}
-
-func newEmptySecret(name, namespace string) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
 		Type: corev1.SecretTypeOpaque,
 	}
 }
