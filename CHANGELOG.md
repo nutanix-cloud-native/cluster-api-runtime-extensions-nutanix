@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.3.0 (2024-02-07)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: starts additional sec groups by @faiq in https://github.com/d2iq-labs/capi-runtime-extensions/pull/252
+* feat: add control-plane load balancer scheme patch by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/228
+* feat: Pull in CAAPH APIs by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/282
+* feat: Use latest dynamic credential provider and v1 kubelet API by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/293
+* feat: Add ClusterResourceSet strategy for CNI installation by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/288
+* feat: Use CAAPH to deploy Calico on workload clusters by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/283
+* feat: containerd configuration for mirror registry by @supershal in https://github.com/d2iq-labs/capi-runtime-extensions/pull/292
+* feat: introduce a Go module for /api by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/331
+### Fixes 🔧
+* fix: Stable EBS CSI manifests by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/270
+* fix: Ensure registry credentials are namespace local to Cluster by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/332
+### Other Changes
+* build: Upgrade devbox tools by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/271
+* ci: Update release please configuration for v4 action by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/274
+* build: Add release conventional commut type for release PRs by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/276
+* docs: Add intro page to user docs by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/280
+* build: Use ko for building OCI image by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/281
+* build: Add files for clusterctl compatibility by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/284
+* build: local development in macOS(and Linux) arm64/amd64 using local colima instance by @supershal in https://github.com/d2iq-labs/capi-runtime-extensions/pull/285
+* build: Lint for missed errors in tests too by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/287
+* build: Remove unused upx makefile stuff by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/291
+* docs: Fix indentation of AWS secret example by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/294
+* build: Add k8s 1.28 KinD for testing by default by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/295
+* build: Add devbox update scheduled job by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/310
+* build(main): Latest devbox update (2024-01-22) by @github-actions in https://github.com/d2iq-labs/capi-runtime-extensions/pull/315
+* ci: Group k8s mod updates for dependabot by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/316
+* build(main): Latest devbox update (2024-01-24) by @d2iq-labs-actions-pr-bot in https://github.com/d2iq-labs/capi-runtime-extensions/pull/320
+* build(main): Latest devbox update (2024-02-05) by @d2iq-labs-actions-pr-bot in https://github.com/d2iq-labs/capi-runtime-extensions/pull/326
+* docs: fix cluster name in README by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/330
+* ci: Consistent bash defaults in workflows by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/336
+* ci: Tag api module on release by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/335
+
+## New Contributors
+* @d2iq-labs-actions-pr-bot made their first contribution in https://github.com/d2iq-labs/capi-runtime-extensions/pull/320
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.2.0...v0.3.0
+
 ## 0.2.0 (2023-10-19)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
