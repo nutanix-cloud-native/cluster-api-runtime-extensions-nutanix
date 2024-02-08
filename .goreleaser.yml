@@ -107,7 +107,7 @@ kos:
     platforms:
       - linux/amd64
       - linux/arm64
-    repository: '{{ envOrDefault "KO_DOCKER_REPO" "ghcr.io/d2iq-labs/capi-runtime-extensions" }}'
+    repository: ghcr.io/d2iq-labs/capi-runtime-extensions
     bare: true
     tags:
       - v{{trimprefix .Version "v"}}
