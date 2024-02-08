@@ -117,7 +117,7 @@ repos:
     name: License headers - YAML and Makefiles
     stages: [commit]
     files: (^Makefile|\.(ya?ml|mk))$
-    exclude: ^(pkg/handlers/.+/embedded|examples|charts/capi-runtime-extensions/defaultclusterclasses)/.+\.ya?ml$
+    exclude: ^(pkg/handlers/.+/embedded|examples|charts/capi-runtime-extensions/defaultclusterclasses)/.+\.ya?ml|docs/static/helm/index\.yaml$
     args:
       - --license-filepath
       - hack/license-header.txt

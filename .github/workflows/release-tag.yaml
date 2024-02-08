@@ -12,6 +12,7 @@ on:
 permissions:
   contents: write
   packages: write
+  actions: write
 
 defaults:
   run:
@@ -53,10 +54,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish Helm chart
-        uses: stefanprodan/helm-gh-pages@v1.7.0
+      - name: Package Helm chart and attach to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          devbox run -- helm package ./charts/capi-runtime-extensions \
+                          --destination . \
+                          --version ${{ github.ref_name }} \
+                          --app-version ${{ github.ref_name }}
+          devbox run -- gh release upload ${{ github.ref_name }} capi-runtime-extensions-*.tgz
+
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN  }}
-          app_version: ${{ github.ref_name }}
-          chart_version: ${{ github.ref_name }}
-          target_dir: repo
+          ref: main
+          fetch-depth: 0
+
+      - name: Update and commit Helm index
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILE_TO_COMMIT: ./docs/static/helm/index.yaml
+        run: |
+          devbox run -- helm repo index . \
+            --url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}" \
+            --merge "${FILE_TO_COMMIT}"
+          mv index.yaml "${FILE_TO_COMMIT}"
+          MESSAGE="build(${{ github.ref_name }}): Update Helm index"
+          SHA=$( git rev-parse "main":"${FILE_TO_COMMIT}" )
+          gh api --method PUT "/repos/:owner/:repo/contents/${FILE_TO_COMMIT}" \
+            --field message="${MESSAGE}" \
+            --field content=@<( base64 -i "${FILE_TO_COMMIT}" ) \
+            --field encoding="base64" \
+            --field branch="main" \
+            --field sha="${SHA}"
+
+      - name: Build GitHub pages
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: github-pages.yml
