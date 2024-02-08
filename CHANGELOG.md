@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1 (2024-02-08)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* build: Fix release image repository by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/337
+
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.3.0...v0.3.1
+
 ## 0.3.0 (2024-02-07)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
