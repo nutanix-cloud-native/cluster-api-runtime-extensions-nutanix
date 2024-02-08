@@ -41,16 +41,37 @@ jobs:
         run: |
           wget -O "${{ runner.temp }}/hugo.deb" "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb" \
           && sudo dpkg -i ${{ runner.temp }}/hugo.deb
+
       - name: Install Dart Sass
         run: sudo snap install dart-sass
+
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
+
       - name: Install Node.js dependencies
         run: if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then npm ci; fi
         working-directory: docs
+
+      - name: Update Helm index
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mapfile -t releases < <( devbox run -- gh release list --json tagName | devbox run -- gojq -r .[].tagName )
+          for release in "${releases[@]}"; do
+            if devbox run -- gh release download "${release}" \
+                --pattern 'capi-runtime-extensions-*.tgz' \
+                --dir docs/static/helm; then
+              devbox run -- helm repo index docs/static/helm \
+                --url "https://github.com/${{ github.repository }}/releases/download/${release}" \
+                --merge docs/static/helm/index.yaml
+              rm -f docs/static/helm/*.tgz
+            fi
+          done
+
       - name: Build with Hugo
         env:
           # For maximum backward compatibility with Hugo modules
@@ -61,6 +82,7 @@ jobs:
             --minify \
             --baseURL "${{ steps.pages.outputs.base_url }}/"
         working-directory: docs
+
       - name: Upload artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
