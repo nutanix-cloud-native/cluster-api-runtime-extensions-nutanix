@@ -22,3 +22,9 @@ helmCharts:
   repo: https://docs.tigera.io/calico/charts
 
 namespace: tigera-operator
+
+patches:
+- path: ./overlays/clusterrole.yaml
+  target:
+    kind: ClusterRole
+    name: tigera-operator

@@ -22,6 +22,7 @@ readonly FILE_NAME="tigera-operator.yaml"
 readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/tigera-operator/"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
 cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
+cp -r "${KUSTOMIZE_BASE_DIR}"/overlays "${ASSETS_DIR}"
 
 # The operator manifest in YAML format is pretty big. It turns out that much of that is whitespace. Converting the
 # manifest to JSON without indentation allows us to remove most of the whitespace, reducing the size by more than half.
