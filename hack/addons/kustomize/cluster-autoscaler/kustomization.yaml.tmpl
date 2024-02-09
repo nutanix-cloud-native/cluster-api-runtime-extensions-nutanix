@@ -1,0 +1,21 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: cluster-autoscaler
+
+sortOptions:
+  order: fifo
+
+helmCharts:
+- name: cluster-autoscaler
+  includeCRDs: true
+  valuesFile: helm-values.yaml
+  releaseName: cluster-autoscaler-tmpl-clustername-tmpl
+  version: ${CLUSTER_AUTOSCALER_VERSION}
+  repo: https://kubernetes.github.io/autoscaler
+
+namespace: tmpl-clusternamespace-tmpl

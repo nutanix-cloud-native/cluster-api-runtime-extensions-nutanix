@@ -8,6 +8,8 @@ const (
 	CNIVariableName = "cni"
 	// NFDVariableName is the NFD external patch variable name.
 	NFDVariableName = "nfd"
+	// ClusterAutoscalerVariableName is the cluster-autoscaler external patch variable name.
+	ClusterAutoscalerVariableName = "clusterAutoscaler"
 	// AWSVariableName is the AWS config patch variable name.
 	AWSVariableName = "aws"
 )

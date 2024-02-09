@@ -17,6 +17,9 @@ type Addons struct {
 	NFD *NFD `json:"nfd,omitempty"`
 
 	// +optional
+	ClusterAutoscaler *ClusterAutoscaler `json:"clusterAutoscaler,omitempty"`
+
+	// +optional
 	CPI *CPI `json:"cpi,omitempty"`
 
 	// +optional
@@ -29,10 +32,11 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 			Description: "Cluster configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"cni": CNI{}.VariableSchema().OpenAPIV3Schema,
-				"nfd": NFD{}.VariableSchema().OpenAPIV3Schema,
-				"csi": CSIProviders{}.VariableSchema().OpenAPIV3Schema,
-				"cpi": CPI{}.VariableSchema().OpenAPIV3Schema,
+				"cni":               CNI{}.VariableSchema().OpenAPIV3Schema,
+				"nfd":               NFD{}.VariableSchema().OpenAPIV3Schema,
+				"clusterAutoscaler": ClusterAutoscaler{}.VariableSchema().OpenAPIV3Schema,
+				"csi":               CSIProviders{}.VariableSchema().OpenAPIV3Schema,
+				"cpi":               CPI{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -96,6 +100,31 @@ func (NFD) VariableSchema() clusterv1.VariableSchema {
 					Enum: variables.MustMarshalValuesToEnumJSON(
 						AddonStrategyClusterResourceSet,
 						AddonStrategyHelmAddon,
+					),
+				},
+			},
+			Required: []string{"strategy"},
+		},
+	}
+}
+
+// ClusterAutoscaler tells us to enable or disable the cluster-autoscaler addon.
+type ClusterAutoscaler struct {
+	// +optional
+	Strategy AddonStrategy `json:"strategy,omitempty"`
+}
+
+func (ClusterAutoscaler) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"strategy": {
+					Description: "Addon strategy used to deploy cluster-autoscaler to the management cluster," +
+						"targeting the workload cluster.",
+					Type: "string",
+					Enum: variables.MustMarshalValuesToEnumJSON(
+						AddonStrategyClusterResourceSet,
 					),
 				},
 			},

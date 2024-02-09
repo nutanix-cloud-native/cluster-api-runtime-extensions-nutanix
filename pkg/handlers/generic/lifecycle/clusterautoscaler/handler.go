@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package nfd
+package clusterautoscaler
 
 import (
 	"context"
@@ -18,31 +18,21 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/options"
 )
 
 type addonStrategy interface {
-	apply(
-		context.Context,
-		*runtimehooksv1.AfterControlPlaneInitializedRequest,
-		string,
-		logr.Logger,
-	) error
+	apply(context.Context, *runtimehooksv1.AfterControlPlaneInitializedRequest, logr.Logger) error
 }
 
 type Config struct {
-	*options.GlobalOptions
-
-	crsConfig       crsConfig
-	helmAddonConfig helmAddonConfig
+	crsConfig crsConfig
 }
 
 func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
 	c.crsConfig.AddFlags(prefix+".crs", flags)
-	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
-type DefaultNFD struct {
+type DefaultClusterAutoscaler struct {
 	client ctrlclient.Client
 	config *Config
 
@@ -51,27 +41,27 @@ type DefaultNFD struct {
 }
 
 var (
-	_ commonhandlers.Named                   = &DefaultNFD{}
-	_ lifecycle.AfterControlPlaneInitialized = &DefaultNFD{}
+	_ commonhandlers.Named                   = &DefaultClusterAutoscaler{}
+	_ lifecycle.AfterControlPlaneInitialized = &DefaultClusterAutoscaler{}
 )
 
 func New(
 	c ctrlclient.Client,
 	cfg *Config,
-) *DefaultNFD {
-	return &DefaultNFD{
+) *DefaultClusterAutoscaler {
+	return &DefaultClusterAutoscaler{
 		client:       c,
 		config:       cfg,
 		variableName: clusterconfig.MetaVariableName,
-		variablePath: []string{"addons", v1alpha1.NFDVariableName},
+		variablePath: []string{"addons", v1alpha1.ClusterAutoscalerVariableName},
 	}
 }
 
-func (n *DefaultNFD) Name() string {
-	return "NFDHandler"
+func (n *DefaultClusterAutoscaler) Name() string {
+	return "ClusterAutoscalerHandler"
 }
 
-func (n *DefaultNFD) AfterControlPlaneInitialized(
+func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
@@ -85,22 +75,27 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	cniVar, found, err := variables.Get[v1alpha1.NFD](varMap, n.variableName, n.variablePath...)
+	cniVar, found, err := variables.Get[v1alpha1.ClusterAutoscaler](
+		varMap,
+		n.variableName,
+		n.variablePath...)
 	if err != nil {
 		log.Error(
 			err,
-			"failed to read NFD variable from cluster definition",
+			"failed to read cluster-autoscaler variable from cluster definition",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to read NFD variable from cluster definition: %v",
+			fmt.Sprintf("failed to read cluster-autoscaler variable from cluster definition: %v",
 				err,
 			),
 		)
 		return
 	}
 	if !found {
-		log.Info("Skipping NFD handler, cluster does not specify request NFDaddon deployment")
+		log.Info(
+			"Skipping cluster-autoscaler handler, cluster does not specify request cluster-autoscaler addon deployment",
+		)
 		return
 	}
 
@@ -111,18 +106,15 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 			config: n.config.crsConfig,
 			client: n.client,
 		}
-	case v1alpha1.AddonStrategyHelmAddon:
-		strategy = helmAddonStrategy{
-			config: n.config.helmAddonConfig,
-			client: n.client,
-		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("unknown NFD addon deployment strategy %q", cniVar.Strategy))
+		resp.SetMessage(
+			fmt.Sprintf("unknown cluster-autoscaler addon deployment strategy %q", cniVar.Strategy),
+		)
 		return
 	}
 
-	if err := strategy.apply(ctx, req, n.config.DefaultsNamespace(), log); err != nil {
+	if err := strategy.apply(ctx, req, log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
