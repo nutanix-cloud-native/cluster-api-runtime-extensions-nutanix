@@ -78,6 +78,13 @@ func TestControlPlaneGeneratePatches(
 					ValueMatcher: gomega.Equal("testOS"),
 				},
 			},
+			UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/ami/id",
+					ValueMatcher: gomega.Equal(""),
+				},
+			},
 		},
 	)
 }
@@ -155,6 +162,13 @@ func TestWorkerGeneratePatches(
 					Operation:    "add",
 					Path:         "/spec/template/spec/imageLookupBaseOS",
 					ValueMatcher: gomega.Equal("testOS"),
+				},
+			},
+			UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/ami/id",
+					ValueMatcher: gomega.Equal(""),
 				},
 			},
 		},
