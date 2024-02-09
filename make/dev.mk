@@ -17,3 +17,13 @@ endif
 		--wait --wait-for-jobs
 	kubectl rollout restart deployment capi-runtime-extensions
 	kubectl rollout status deployment capi-runtime-extensions
+
+dev.update-webhook-image-on-kind:
+ifndef SKIP_BUILD
+	$(MAKE) release-snapshot
+endif
+	kind load docker-image --name $(KIND_CLUSTER_NAME) \
+		ko.local/capi-runtime-extensions:$$(gojq -r .version dist/metadata.json)
+	kubectl set image deployment capi-runtime-extensions webhook=ko.local/capi-runtime-extensions:$$(gojq -r .version dist/metadata.json)
+	kubectl rollout restart deployment capi-runtime-extensions
+	kubectl rollout status deployment capi-runtime-extensions
