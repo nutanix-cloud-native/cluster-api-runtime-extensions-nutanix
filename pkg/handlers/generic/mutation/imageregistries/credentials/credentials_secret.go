@@ -22,11 +22,17 @@ const (
 	secretKeyForStaticCredentialProviderConfig = "static-credential-provider" //nolint:gosec // Not a credential.
 )
 
-//go:embed templates/static-credential-provider.json.gotmpl
-var staticCredentialProviderConfigPatch []byte
+var (
+	//go:embed templates/static-credential-provider.json.gotmpl
+	staticCredentialProviderConfigPatch []byte
 
-func generateCredentialsSecretFile(config providerConfig, ownerName string) []cabpkv1.File {
-	if config.isCredentialsEmpty() {
+	staticCredentialProviderConfigPatchTemplate = template.Must(
+		template.New("").Parse(string(staticCredentialProviderConfigPatch)),
+	)
+)
+
+func generateCredentialsSecretFile(configs []providerConfig, clusterName string) []cabpkv1.File {
+	if len(configs) == 0 {
 		return nil
 	}
 	return []cabpkv1.File{
@@ -34,7 +40,7 @@ func generateCredentialsSecretFile(config providerConfig, ownerName string) []ca
 			Path: kubeletStaticCredentialProviderCredentialsOnRemote,
 			ContentFrom: &cabpkv1.FileSource{
 				Secret: cabpkv1.SecretFileSource{
-					Name: credentialSecretName(ownerName),
+					Name: credentialSecretName(clusterName),
 					Key:  secretKeyForStaticCredentialProviderConfig,
 				},
 			},
@@ -46,14 +52,14 @@ func generateCredentialsSecretFile(config providerConfig, ownerName string) []ca
 // generateCredentialsSecret generates a Secret containing the config for the image registry.
 // The function needs the cluster name to add the required move and cluster name labels.
 func generateCredentialsSecret(
-	config providerConfig, clusterName, ownerName, namespace string,
+	configs []providerConfig, clusterName, namespace string,
 ) (*corev1.Secret, error) {
-	if config.isCredentialsEmpty() {
+	if len(configs) == 0 {
 		return nil, nil
 	}
 
 	staticCredentialProviderSecretContents, err := kubeletStaticCredentialProviderSecretContents(
-		config,
+		configs,
 	)
 	if err != nil {
 		return nil, err
@@ -68,7 +74,7 @@ func generateCredentialsSecret(
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      credentialSecretName(ownerName),
+			Name:      credentialSecretName(clusterName),
 			Namespace: namespace,
 			Labels:    newLabels(withMove(), withClusterName(clusterName)),
 		},
@@ -77,37 +83,38 @@ func generateCredentialsSecret(
 	}, nil
 }
 
-func kubeletStaticCredentialProviderSecretContents(config providerConfig) (string, error) {
-	registryURL, err := url.ParseRequestURI(config.URL)
-	if err != nil {
-		return "", fmt.Errorf("failed parsing registry URL: %w", err)
-	}
-
-	templateInput := struct {
+func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (string, error) {
+	type templateInput struct {
 		RegistryHost string
 		Username     string
 		Password     string
-	}{
-		RegistryHost: registryURL.Host,
-		Username:     config.Username,
-		Password:     config.Password,
 	}
-	t, err := template.New("").Parse(string(staticCredentialProviderConfigPatch))
-	if err != nil {
-		return "", fmt.Errorf("failed to parse go template: %w", err)
+
+	inputs := make([]templateInput, 0, len(configs))
+	for _, config := range configs {
+		registryURL, err := url.ParseRequestURI(config.URL)
+		if err != nil {
+			return "", fmt.Errorf("failed parsing registry URL: %w", err)
+		}
+
+		inputs = append(inputs, templateInput{
+			RegistryHost: registryURL.Host,
+			Username:     config.Username,
+			Password:     config.Password,
+		})
 	}
 
 	var b bytes.Buffer
-	err = t.Execute(&b, templateInput)
-
+	err := staticCredentialProviderConfigPatchTemplate.Execute(&b, inputs)
 	if err != nil {
 		return "", fmt.Errorf("failed executing template: %w", err)
 	}
+
 	return strings.TrimSpace(b.String()), nil
 }
 
-func credentialSecretName(ownerName string) string {
-	return fmt.Sprintf("%s-registry-config", ownerName)
+func credentialSecretName(clusterName string) string {
+	return fmt.Sprintf("%s-registry-creds", clusterName)
 }
 
 type labelFn func(labels map[string]string)

@@ -7,12 +7,11 @@ import (
 	"testing"
 
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client/fakessa"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami"
 	amitests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami/tests"
 	calicotests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico/tests"
@@ -61,9 +60,7 @@ func TestGeneratePatches(t *testing.T) {
 	mgr, _ := manager.New(
 		&rest.Config{},
 		manager.Options{
-			NewClient: func(_ *rest.Config, _ client.Options) (client.Client, error) {
-				return fake.NewClientBuilder().Build(), nil
-			},
+			NewClient: fakessa.NewClient,
 		},
 	)
 

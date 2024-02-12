@@ -14,9 +14,11 @@ import (
 	gomegatypes "github.com/onsi/gomega/types"
 	"gomodules.xyz/jsonpatch/v2"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/serializer"
 )
 
@@ -51,7 +53,17 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 			h := handlerCreator()
 			req := &runtimehooksv1.GeneratePatchesRequest{
 				Variables: tt.Vars,
-				Items:     []runtimehooksv1.GeneratePatchesRequestItem{tt.RequestItem},
+				Items: []runtimehooksv1.GeneratePatchesRequestItem{
+					tt.RequestItem,
+					{
+						HolderReference: runtimehooksv1.HolderReference{
+							APIVersion: capiv1.GroupVersion.String(),
+							Kind:       "Cluster",
+							Namespace:  request.Namespace,
+							Name:       request.ClusterName,
+						},
+					},
+				},
 			}
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
 			h.GeneratePatches(context.Background(), req, resp)

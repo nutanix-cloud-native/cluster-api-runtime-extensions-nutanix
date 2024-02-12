@@ -23,8 +23,14 @@ const (
 	secretKeyForMirrorCACert                = "ca.crt"
 )
 
-//go:embed templates/hosts.toml.gotmpl
-var defaultRegistryMirrorPatch []byte
+var (
+	//go:embed templates/hosts.toml.gotmpl
+	defaultRegistryMirrorPatch []byte
+
+	defaultRegistryMirrorPatchTemplate = template.Must(
+		template.New("").Parse(string(defaultRegistryMirrorPatch)),
+	)
+)
 
 type mirrorConfig struct {
 	URL    string
@@ -91,10 +97,6 @@ func generateGlobalRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, err
 	if mirror == nil {
 		return nil, nil
 	}
-	t, err := template.New("").Parse(string(defaultRegistryMirrorPatch))
-	if err != nil {
-		return nil, fmt.Errorf("fail to parse go template for registry mirror: %w", err)
-	}
 	templateInput := struct {
 		URL        string
 		CACertPath string
@@ -108,7 +110,7 @@ func generateGlobalRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, err
 	}
 
 	var b bytes.Buffer
-	err = t.Execute(&b, templateInput)
+	err := defaultRegistryMirrorPatchTemplate.Execute(&b, templateInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed executing template for registry mirror: %w", err)
 	}

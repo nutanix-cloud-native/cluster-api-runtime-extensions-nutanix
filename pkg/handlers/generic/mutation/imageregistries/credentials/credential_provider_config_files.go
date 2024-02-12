@@ -35,8 +35,16 @@ var (
 	//go:embed templates/dynamic-credential-provider-config.yaml.gotmpl
 	dynamicCredentialProviderConfigPatch []byte
 
+	dynamicCredentialProviderConfigPatchTemplate = template.Must(
+		template.New("").Parse(string(dynamicCredentialProviderConfigPatch)),
+	)
+
 	//go:embed templates/kubelet-image-credential-provider-config.yaml.gotmpl
 	kubeletImageCredentialProviderConfigPatch []byte
+
+	kubeletImageCredentialProviderConfigPatchTemplate = template.Must(
+		template.New("").Parse(string(kubeletImageCredentialProviderConfigPatch)),
+	)
 )
 
 var ErrCredentialsNotFound = errors.New("registry credentials not found")
@@ -52,7 +60,9 @@ func (c providerConfig) isCredentialsEmpty() bool {
 		c.Password == ""
 }
 
-func templateFilesForImageCredentialProviderConfigs(config providerConfig) ([]cabpkv1.File, error) {
+func templateFilesForImageCredentialProviderConfigs(
+	configs []providerConfig,
+) ([]cabpkv1.File, error) {
 	var files []cabpkv1.File
 
 	kubeletCredentialProviderConfigFile, err := templateKubeletCredentialProviderConfig()
@@ -64,7 +74,7 @@ func templateFilesForImageCredentialProviderConfigs(config providerConfig) ([]ca
 	}
 
 	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(
-		config,
+		configs,
 	)
 	if err != nil {
 		return nil, err
@@ -77,12 +87,6 @@ func templateFilesForImageCredentialProviderConfigs(config providerConfig) ([]ca
 }
 
 func templateKubeletCredentialProviderConfig() (*cabpkv1.File, error) {
-	t := template.New("")
-	t, err := t.Parse(string(kubeletImageCredentialProviderConfigPatch))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse go template: %w", err)
-	}
-
 	providerBinary, providerArgs, providerAPIVersion := kubeletCredentialProvider()
 
 	templateInput := struct {
@@ -95,56 +99,69 @@ func templateKubeletCredentialProviderConfig() (*cabpkv1.File, error) {
 		ProviderAPIVersion: providerAPIVersion,
 	}
 
-	return fileFromTemplate(t, templateInput, kubeletImageCredentialProviderConfigOnRemote)
+	return fileFromTemplate(
+		kubeletImageCredentialProviderConfigPatchTemplate,
+		templateInput,
+		kubeletImageCredentialProviderConfigOnRemote,
+	)
 }
 
 func templateDynamicCredentialProviderConfig(
-	config providerConfig,
+	configs []providerConfig,
 ) (*cabpkv1.File, error) {
-	registryURL, err := url.ParseRequestURI(config.URL)
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing registry URL: %w", err)
-	}
-
-	t := template.New("")
-	t, err = t.Parse(string(dynamicCredentialProviderConfigPatch))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse go template: %w", err)
-	}
-
-	registryHostWithPath := registryURL.Host
-	if registryURL.Path != "" {
-		registryHostWithPath = path.Join(registryURL.Host, registryURL.Path)
-	}
-
-	supportedProvider, err := credentialprovider.URLMatchesSupportedProvider(registryHostWithPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check if registry matches a supporterd provider: %w", err)
-	}
-	if config.isCredentialsEmpty() && !supportedProvider {
-		return nil, ErrCredentialsNotFound
-	}
-
-	providerBinary, providerArgs, providerAPIVersion, err := dynamicCredentialProvider(
-		registryHostWithPath,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	templateInput := struct {
+	type templateInput struct {
 		RegistryHost       string
 		ProviderBinary     string
 		ProviderArgs       []string
 		ProviderAPIVersion string
-	}{
-		RegistryHost:       registryHostWithPath,
-		ProviderBinary:     providerBinary,
-		ProviderArgs:       providerArgs,
-		ProviderAPIVersion: providerAPIVersion,
 	}
 
-	return fileFromTemplate(t, templateInput, kubeletDynamicCredentialProviderConfigOnRemote)
+	inputs := make([]templateInput, 0, len(configs))
+
+	for _, config := range configs {
+		registryURL, err := url.ParseRequestURI(config.URL)
+		if err != nil {
+			return nil, fmt.Errorf("failed parsing registry URL: %w", err)
+		}
+
+		registryHostWithPath := registryURL.Host
+		if registryURL.Path != "" {
+			registryHostWithPath = path.Join(registryURL.Host, registryURL.Path)
+		}
+
+		supportedProvider, err := credentialprovider.URLMatchesSupportedProvider(
+			registryHostWithPath,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"failed to check if registry matches a supported provider: %w",
+				err,
+			)
+		}
+		if config.isCredentialsEmpty() && !supportedProvider {
+			return nil, ErrCredentialsNotFound
+		}
+
+		providerBinary, providerArgs, providerAPIVersion, err := dynamicCredentialProvider(
+			registryHostWithPath,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		inputs = append(inputs, templateInput{
+			RegistryHost:       registryHostWithPath,
+			ProviderBinary:     providerBinary,
+			ProviderArgs:       providerArgs,
+			ProviderAPIVersion: providerAPIVersion,
+		})
+	}
+
+	return fileFromTemplate(
+		dynamicCredentialProviderConfigPatchTemplate,
+		inputs,
+		kubeletDynamicCredentialProviderConfigOnRemote,
+	)
 }
 
 func kubeletCredentialProvider() (providerBinary string, providerArgs []string, providerAPIVersion string) {

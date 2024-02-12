@@ -47,7 +47,7 @@ func TestVariableValidation(t *testing.T) {
 			},
 		},
 		capitest.VariableTestDef{
-			Name: "support for only single image registry",
+			Name: "support for multiple image registries",
 			Vals: v1alpha1.GenericClusterConfig{
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
@@ -58,7 +58,6 @@ func TestVariableValidation(t *testing.T) {
 					},
 				},
 			},
-			ExpectError: true,
 		},
 		capitest.VariableTestDef{
 			Name: "invalid registry URL",
