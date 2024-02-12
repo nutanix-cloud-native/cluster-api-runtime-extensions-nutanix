@@ -1631,7 +1631,7 @@ data:
                   key: endpoint
                   name: aws-meta
                   optional: true
-            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.24.1
+            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.25.0
             imagePullPolicy: IfNotPresent
             livenessProbe:
               failureThreshold: 5
@@ -1847,7 +1847,7 @@ data:
           - args:
             - --v=5
             - --leader-election=true
-            image: registry.k8s.io/sig-storage/snapshot-controller:v6.2.1
+            image: registry.k8s.io/sig-storage/snapshot-controller:v6.3.0
             imagePullPolicy: IfNotPresent
             name: snapshot-controller
           nodeSelector: {}
@@ -1928,7 +1928,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.24.1
+            image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.25.0
             imagePullPolicy: IfNotPresent
             lifecycle:
               preStop:
