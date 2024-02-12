@@ -80,14 +80,12 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 				g.Expect(resp.Items).To(gomega.BeEmpty())
 				return
 			}
-			expectedPatchMatchers := getPatchMatchers(tt.ExpectedPatchMatchers)
-			g.Expect(resp.Items).To(containElementMatcher(tt.RequestItem, expectedPatchMatchers))
+			g.Expect(resp.Items).To(containPatches(&tt.RequestItem, tt.ExpectedPatchMatchers...))
 
-			if len(tt.UnexpectedPatchMatchers) == 0 {
-				return
+			if len(tt.UnexpectedPatchMatchers) > 0 {
+				g.Expect(resp.Items).
+					ToNot(containPatches(&tt.RequestItem, tt.UnexpectedPatchMatchers...))
 			}
-			unexpectedPatchMatchers := getPatchMatchers(tt.UnexpectedPatchMatchers)
-			g.Expect(resp.Items).ToNot(containElementMatcher(tt.RequestItem, unexpectedPatchMatchers))
 		})
 	}
 }
@@ -117,10 +115,13 @@ func VariableWithValue(
 	}
 }
 
-func getPatchMatchers(jsonMatcher []JSONPatchMatcher) []interface{} {
-	patchMatchers := make([]interface{}, 0, len(jsonMatcher))
-	for patchIdx := range jsonMatcher {
-		unexpectedPatch := jsonMatcher[patchIdx]
+func containPatches(
+	requestItem *runtimehooksv1.GeneratePatchesRequestItem,
+	jsonMatchers ...JSONPatchMatcher,
+) gomega.OmegaMatcher {
+	patchMatchers := make([]interface{}, 0, len(jsonMatchers))
+	for patchIdx := range jsonMatchers {
+		unexpectedPatch := jsonMatchers[patchIdx]
 		patchMatchers = append(patchMatchers, gstruct.MatchAllFields(gstruct.Fields{
 			"Operation": gomega.Equal(unexpectedPatch.Operation),
 			"Path":      gomega.Equal(unexpectedPatch.Path),
@@ -128,10 +129,6 @@ func getPatchMatchers(jsonMatcher []JSONPatchMatcher) []interface{} {
 		}))
 	}
 
-	return patchMatchers
-}
-
-func containElementMatcher(requestItem runtimehooksv1.GeneratePatchesRequestItem, patchMatchers []interface{}) gomega.OmegaMatcher {
 	return gomega.ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 		"UID":       gomega.Equal(requestItem.UID),
 		"PatchType": gomega.Equal(runtimehooksv1.JSONPatchType),
