@@ -89,7 +89,7 @@ issues:
     - path: "v1alpha1"
       linters:
         - gochecknoinits
-    # Idiomatic to use init functions to register APIs with scheme
+    # Idiomatic to use pass holderRef by value
     - text: "hugeParam: holderRef is heavy"
       linters:
         - gocritic

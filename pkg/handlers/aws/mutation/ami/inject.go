@@ -88,7 +88,9 @@ func (h *awsAMISpecPatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting AMI in AWSMachineTemplate spec")
 
-			obj.Spec.Template.Spec.AMI = capav1.AMIReference{ID: &amiSpecVar.ID}
+			if amiSpecVar.ID != "" {
+				obj.Spec.Template.Spec.AMI = capav1.AMIReference{ID: &amiSpecVar.ID}
+			}
 			if amiSpecVar.Lookup != nil {
 				obj.Spec.Template.Spec.ImageLookupFormat = amiSpecVar.Lookup.Format
 				obj.Spec.Template.Spec.ImageLookupOrg = amiSpecVar.Lookup.Org

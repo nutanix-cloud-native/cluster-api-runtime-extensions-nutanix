@@ -27,7 +27,9 @@ type PatchTestDef struct {
 	Vars                  []runtimehooksv1.Variable
 	RequestItem           runtimehooksv1.GeneratePatchesRequestItem
 	ExpectedPatchMatchers []JSONPatchMatcher
-	ExpectedFailure       bool
+	// UnexpectedPatchMatchers used to test patches that should not be present
+	UnexpectedPatchMatchers []JSONPatchMatcher
+	ExpectedFailure         bool
 }
 
 type JSONPatchMatcher struct {
@@ -78,32 +80,12 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 				g.Expect(resp.Items).To(gomega.BeEmpty())
 				return
 			}
+			g.Expect(resp.Items).To(containPatches(&tt.RequestItem, tt.ExpectedPatchMatchers...))
 
-			patchMatchers := make([]interface{}, 0, len(tt.ExpectedPatchMatchers))
-			for patchIdx := range tt.ExpectedPatchMatchers {
-				expectedPatch := tt.ExpectedPatchMatchers[patchIdx]
-				patchMatchers = append(patchMatchers, gstruct.MatchAllFields(gstruct.Fields{
-					"Operation": gomega.Equal(expectedPatch.Operation),
-					"Path":      gomega.Equal(expectedPatch.Path),
-					"Value":     expectedPatch.ValueMatcher,
-				}))
+			if len(tt.UnexpectedPatchMatchers) > 0 {
+				g.Expect(resp.Items).
+					ToNot(containPatches(&tt.RequestItem, tt.UnexpectedPatchMatchers...))
 			}
-
-			g.Expect(resp.Items).
-				To(gomega.ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-					"UID":       gomega.Equal(tt.RequestItem.UID),
-					"PatchType": gomega.Equal(runtimehooksv1.JSONPatchType),
-					"Patch": gomega.WithTransform(
-						func(data []byte) ([]jsonpatch.Operation, error) {
-							operations := []jsonpatch.Operation{}
-							if err := json.Unmarshal(data, &operations); err != nil {
-								return nil, err
-							}
-							return operations, nil
-						},
-						gomega.ContainElements(patchMatchers...),
-					),
-				})))
 		})
 	}
 }
@@ -131,4 +113,34 @@ func VariableWithValue(
 		Name:  variableName,
 		Value: apiextensionsv1.JSON{Raw: serializer.ToJSON(value)},
 	}
+}
+
+func containPatches(
+	requestItem *runtimehooksv1.GeneratePatchesRequestItem,
+	jsonMatchers ...JSONPatchMatcher,
+) gomega.OmegaMatcher {
+	patchMatchers := make([]interface{}, 0, len(jsonMatchers))
+	for patchIdx := range jsonMatchers {
+		unexpectedPatch := jsonMatchers[patchIdx]
+		patchMatchers = append(patchMatchers, gstruct.MatchAllFields(gstruct.Fields{
+			"Operation": gomega.Equal(unexpectedPatch.Operation),
+			"Path":      gomega.Equal(unexpectedPatch.Path),
+			"Value":     unexpectedPatch.ValueMatcher,
+		}))
+	}
+
+	return gomega.ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+		"UID":       gomega.Equal(requestItem.UID),
+		"PatchType": gomega.Equal(runtimehooksv1.JSONPatchType),
+		"Patch": gomega.WithTransform(
+			func(data []byte) ([]jsonpatch.Operation, error) {
+				operations := []jsonpatch.Operation{}
+				if err := json.Unmarshal(data, &operations); err != nil {
+					return nil, err
+				}
+				return operations, nil
+			},
+			gomega.ContainElements(patchMatchers...),
+		),
+	}))
 }
