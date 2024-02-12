@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.0 (2024-02-12)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Support multiple registry credentials if specified by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/343
+* feat: Add Cilium CNI addon support by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/333
+### Fixes 🔧
+* fix: downgrade Calico to v3.26.4 by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/348
+* fix: AMI ID patch by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/345
+* fix: use correct AWS EBS CSI images by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/344
+### Other Changes
+* build(main): Latest devbox update (2024-02-12) by @d2iq-labs-actions-pr-bot in https://github.com/d2iq-labs/capi-runtime-extensions/pull/349
+* build: Fix up lint config for moved external APIs by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/355
+* test: add a Makefile target to update image by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/346
+
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.3.5...v0.4.0
+
 ## 0.3.5 (2024-02-08)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
