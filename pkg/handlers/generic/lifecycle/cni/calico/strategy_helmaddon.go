@@ -22,7 +22,7 @@ import (
 
 const (
 	defaultCalicoHelmRepositoryURL   = "https://docs.tigera.io/calico/charts"
-	defaultCalicoHelmChartVersion    = "v3.27.0"
+	defaultCalicoHelmChartVersion    = "v3.26.4"
 	defaultTigeraOperatorChartName   = "tigera-operator"
 	defaultTigeraOperatorReleaseName = "tigera-operator"
 	defaultTigerOperatorNamespace    = "tigera-operator"
