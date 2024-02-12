@@ -31,6 +31,12 @@ example), run:
 make SKIP_BUILD=true dev.run-on-kind
 ```
 
+You can just update the image in the webhook Deployment on an existing KIND cluster:
+
+```shell
+make KIND_CLUSTER_NAME=<> dev.update-webhook-image-on-kind
+```
+
 If creating an AWS cluster using the example files, you will also need to create a secret with your AWS credentials:
 
 ```shell
