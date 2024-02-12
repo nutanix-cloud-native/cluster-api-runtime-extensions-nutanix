@@ -41,6 +41,21 @@
             vendorHash = "sha256-ISVGxhFQh4e0eag9Sw0Zj4u1cG0tudZLhJcGdH5tDo4=";
             ldflags = [ "-s" "-w" ];
           };
+
+          goprintconst = buildGo121Module rec {
+            name = "goprintconst";
+            version = "0.0.1-dev";
+            src = fetchFromGitHub {
+              owner = "jimmidyson";
+              repo = "goprintconst";
+              rev = "088aabfbe96447a809a6a742b6ea0a68f601aa43";
+              hash = "sha256-s5CM7BRA231Nzjv3F7qJA6ZM1JC6FnGeFiDiiJTPr3E=";
+            };
+            doCheck = false;
+            subPackages = [ "." ];
+            vendorHash = null;
+            ldflags = [ "-s" "-w" ];
+          };
         };
 
         formatter = alejandra;

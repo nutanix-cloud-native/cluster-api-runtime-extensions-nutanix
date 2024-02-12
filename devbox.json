@@ -31,6 +31,7 @@
     "shfmt@latest",
     "yamale@latest",
     "yamllint@latest",
+    "path:./hack/flakes#goprintconst",
     "path:./hack/flakes#go-mod-upgrade",
     "path:./hack/flakes#golangci-lint",
     "path:./hack/flakes#setup-envtest"
