@@ -69,7 +69,11 @@ type HelmReleaseProxySpec struct {
 	// Options represents the helm setting options which can be used to control behaviour of helm operations(Install, Upgrade, Delete, etc)
 	// via options like wait, skipCrds, timeout, waitForJobs, etc.
 	// +optional
-	Options *HelmOptions `json:"options,omitempty"`
+	Options HelmOptions `json:"options,omitempty"`
+
+	// Credentials is a reference to an object containing the OCI credentials. If it is not specified, no credentials will be used.
+	// +optional
+	Credentials *Credentials `json:"credentials,omitempty"`
 }
 
 // HelmReleaseProxyStatus defines the observed state of HelmReleaseProxy.
@@ -85,6 +89,10 @@ type HelmReleaseProxyStatus struct {
 	// Revision is the current revision of the Helm release.
 	// +optional
 	Revision int `json:"revision,omitempty"`
+
+	// ObservedGeneration is the latest generation observed by the controller.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // +kubebuilder:object:root=true
