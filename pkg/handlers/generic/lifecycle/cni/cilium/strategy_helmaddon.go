@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package calico
+package cilium
 
 import (
 	"context"
@@ -21,16 +21,16 @@ import (
 )
 
 const (
-	defaultCalicoHelmRepositoryURL   = "https://docs.tigera.io/calico/charts"
-	defaultCalicoHelmChartVersion    = "v3.26.4"
-	defaultTigeraOperatorChartName   = "tigera-operator"
-	defaultTigeraOperatorReleaseName = "tigera-operator"
-	defaultTigerOperatorNamespace    = "tigera-operator"
+	defaultCiliumHelmRepositoryURL = "https://helm.cilium.io/"
+	defaultCiliumHelmChartVersion  = "1.15.0"
+	defaultCiliumChartName         = "cilium"
+	defaultCiliumReleaseName       = "cilium"
+	defaultCiliumNamespace         = "kube-system"
 )
 
 type helmAddonConfig struct {
-	defaultsNamespace                                        string
-	defaultProviderInstallationValuesTemplatesConfigMapNames map[string]string
+	defaultsNamespace                  string
+	defaultValuesTemplateConfigMapName string
 }
 
 func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
@@ -38,17 +38,14 @@ func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 		&c.defaultsNamespace,
 		prefix+".defaults-namespace",
 		corev1.NamespaceDefault,
-		"namespace of the default Helm values ConfigMaps",
+		"namespace of the default Helm values ConfigMap",
 	)
 
-	flags.StringToStringVar(
-		&c.defaultProviderInstallationValuesTemplatesConfigMapNames,
-		prefix+".default-provider-installation-values-templates-configmap-names",
-		map[string]string{
-			"DockerCluster": "calico-cni-helm-values-template-dockercluster",
-			"AWSCluster":    "calico-cni-helm-values-template-awscluster",
-		},
-		"map of provider cluster implementation type to default installation values ConfigMap name",
+	flags.StringVar(
+		&c.defaultValuesTemplateConfigMapName,
+		prefix+".default-values-template-configmap-name",
+		"default-cilium-cni-helm-values-template",
+		"default values ConfigMap name",
 	)
 }
 
@@ -63,26 +60,11 @@ func (s helmAddonStrategy) apply(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	log logr.Logger,
 ) error {
-	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
-	defaultInstallationConfigMapName, ok := s.config.defaultProviderInstallationValuesTemplatesConfigMapNames[infraKind]
-	if !ok {
-		log.Info(
-			fmt.Sprintf(
-				"Skipping Calico CNI handler, no default installation values ConfigMap configured for infrastructure provider %q",
-				req.Cluster.Spec.InfrastructureRef.Kind,
-			),
-		)
-		return nil
-	}
-
-	log.Info("Retrieving Calico installation values template for cluster")
-	valuesTemplateConfigMap, err := s.retrieveValuesTemplateConfigMap(
-		ctx,
-		defaultInstallationConfigMapName,
-	)
+	log.Info("Retrieving Cilium installation values template for cluster")
+	valuesTemplateConfigMap, err := s.retrieveValuesTemplateConfigMap(ctx)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to retrieve Calico installation values template ConfigMap for cluster: %w",
+			"failed to retrieve Cilium installation values template ConfigMap for cluster: %w",
 			err,
 		)
 	}
@@ -94,30 +76,30 @@ func (s helmAddonStrategy) apply(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: req.Cluster.Namespace,
-			Name:      "calico-cni-installation-" + req.Cluster.Name,
+			Name:      "cilium-cni-installation-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   defaultCalicoHelmRepositoryURL,
-			ChartName: defaultTigeraOperatorChartName,
+			RepoURL:   defaultCiliumHelmRepositoryURL,
+			ChartName: defaultCiliumChartName,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{capiv1.ClusterNameLabel: req.Cluster.Name},
 			},
-			ReleaseNamespace: defaultTigerOperatorNamespace,
-			ReleaseName:      defaultTigeraOperatorReleaseName,
-			Version:          defaultCalicoHelmChartVersion,
+			ReleaseNamespace: defaultCiliumNamespace,
+			ReleaseName:      defaultCiliumReleaseName,
+			Version:          defaultCiliumHelmChartVersion,
 			ValuesTemplate:   valuesTemplateConfigMap.Data["values.yaml"],
 		},
 	}
 
 	if err := controllerutil.SetOwnerReference(&req.Cluster, hcp, s.client.Scheme()); err != nil {
 		return fmt.Errorf(
-			"failed to set owner reference on Calico CNI installation HelmChartProxy: %w",
+			"failed to set owner reference on Cilium CNI installation HelmChartProxy: %w",
 			err,
 		)
 	}
 
 	if err := client.ServerSideApply(ctx, s.client, hcp); err != nil {
-		return fmt.Errorf("failed to apply Calico CNI installation HelmChartProxy: %w", err)
+		return fmt.Errorf("failed to apply Cilium CNI installation HelmChartProxy: %w", err)
 	}
 
 	return nil
@@ -125,12 +107,11 @@ func (s helmAddonStrategy) apply(
 
 func (s helmAddonStrategy) retrieveValuesTemplateConfigMap(
 	ctx context.Context,
-	configMapName string,
 ) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: s.config.defaultsNamespace,
-			Name:      configMapName,
+			Name:      s.config.defaultValuesTemplateConfigMapName,
 		},
 	}
 	configMapObjName := ctrlclient.ObjectKeyFromObject(

@@ -29,9 +29,12 @@ spec:
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         args:
         - --webhook-cert-dir=/runtimehooks-certs/
-        - --calicocni.crs.defaultsNamespace={{ .Release.Namespace }}
-        - --calicocni.helm-addon.defaultsNamespace={{ .Release.Namespace }}
-        - --nfd.defaultsNamespace={{ .Release.Namespace }}
+        - --cni.calico.crs.defaults-namespace={{ .Release.Namespace }}
+        - --cni.calico.helm-addon.defaults-namespace={{ .Release.Namespace }}
+        - --cni.cilium.crs.defaults-namespace={{ .Release.Namespace }}
+        - --cni.cilium.helm-addon.defaults-namespace={{ .Release.Namespace }}
+        - --cni.cilium.helm-addon.default-values-template-configmap-name={{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
+        - --nfd.defaults-namespace={{ .Release.Namespace }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}

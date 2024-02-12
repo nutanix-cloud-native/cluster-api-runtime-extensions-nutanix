@@ -14,7 +14,7 @@ patches:
   patch: |-
     - op: "add"
       path: "/metadata/name"
-      value: "quick-start-helm-addon-calico"
+      value: "quick-start-helm-addon-cilium"
     - op: "add"
       path: "/spec/topology/variables"
       value:
@@ -22,5 +22,5 @@ patches:
           value:
             addons:
               cni:
-                provider: calico
+                provider: cilium
                 strategy: HelmAddon

@@ -12,5 +12,5 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: '{{ .Values.hooks.CalicoCNI.crsStrategy.defaultTigeraOperatorConfigMap.name
+  name: '{{ .Values.hooks.cni.calico.crsStrategy.defaultTigeraOperatorConfigMap.name
     }}'

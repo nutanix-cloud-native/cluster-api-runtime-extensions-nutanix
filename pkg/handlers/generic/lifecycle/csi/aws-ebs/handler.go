@@ -24,7 +24,7 @@ type AWSEBSConfig struct {
 func (a *AWSEBSConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		&a.defaultsNamespace,
-		prefix+".defaultsNamespace",
+		prefix+".defaults-namespace",
 		corev1.NamespaceDefault,
 		"namespace of the ConfigMap used to deploy AWS EBS CSI driver",
 	)

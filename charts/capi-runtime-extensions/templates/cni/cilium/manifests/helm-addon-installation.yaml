@@ -1,0 +1,18 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
+data:
+  values.yaml: |-
+    hubble:
+      tls:
+        auto:
+          enabled: true               # enable automatic TLS certificate generation
+          method: cronJob             # auto generate certificates using cronJob method
+          certValidityDuration: 60    # certificates validity duration in days (default 2 months)
+          schedule: "0 0 1 * *"       # schedule on the 1st day regeneration of each month
+{{- end -}}

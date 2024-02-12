@@ -72,27 +72,27 @@ EOF
 To create a cluster, update `clusterConfig` variable and run:
 
 ```shell
-kubectl apply --server-side -f examples/capi-quick-start/docker-cluster-calico-helm-addon.yaml
+kubectl apply --server-side -f examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml
 ```
 
 Wait until control plane is ready:
 
 ```shell
-kubectl wait clusters/docker-quick-start-helm-addon-calico --for=condition=ControlPlaneInitialized --timeout=5m
+kubectl wait clusters/docker-quick-start-helm-addon-cilium --for=condition=ControlPlaneInitialized --timeout=5m
 ```
 
 To get the kubeconfig for the new cluster, run:
 
 ```shell
-clusterctl get kubeconfig docker-quick-start-helm-addon-calico > docker-kubeconfig
+clusterctl get kubeconfig docker-quick-start-helm-addon-cilium > docker-kubeconfig
 ```
 
 If you are not on Linux, you will also need to fix the generated kubeconfig's `server`, run:
 
 ```shell
-kubectl config set-cluster docker-quick-start-helm-addon-calico \
+kubectl config set-cluster docker-quick-start-helm-addon-cilium \
   --kubeconfig docker-kubeconfig \
-  --server=https://$(docker port docker-quick-start-helm-addon-calico-lb 6443/tcp)
+  --server=https://$(docker port docker-quick-start-helm-addon-cilium-lb 6443/tcp)
 ```
 
 Wait until all nodes are ready (this indicates that CNI has been deployed successfully):
@@ -101,10 +101,10 @@ Wait until all nodes are ready (this indicates that CNI has been deployed succes
 kubectl --kubeconfig docker-kubeconfig wait nodes --all --for=condition=Ready --timeout=5m
 ```
 
-Show that Calico is running successfully on the workload cluster:
+Show that Cilium is running successfully on the workload cluster:
 
 ```shell
-kubectl --kubeconfig docker-kubeconfig get daemonsets -n calico-system
+kubectl --kubeconfig docker-kubeconfig get daemonsets -n kube-system cilium
 ```
 
 Deploy kube-vip to provide service load-balancer:
@@ -157,7 +157,7 @@ watch -n 0.5 kubectl --kubeconfig docker-kubeconfig get service/traefik
 To delete the workload cluster, run:
 
 ```shell
-kubectl delete cluster docker-quick-start-helm-addon-calico
+kubectl delete cluster docker-quick-start-helm-addon-cilium
 ```
 
 Notice that the traefik service is deleted before the cluster is actually finally deleted.

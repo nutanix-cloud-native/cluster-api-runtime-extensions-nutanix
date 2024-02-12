@@ -39,7 +39,7 @@ type DefaultNFD struct {
 func (n *NFDConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		&n.defaultsNamespace,
-		prefix+".defaultsNamespace",
+		prefix+".defaults-namespace",
 		corev1.NamespaceDefault,
 		"namespace location of ConfigMap used to deploy Node Feature Discovery (NFD).",
 	)

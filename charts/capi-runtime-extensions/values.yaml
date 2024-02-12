@@ -2,30 +2,39 @@
 # SPDX-License-Identifier: Apache-2.0
 
 hooks:
-  CalicoCNI:
-    defaultPodSubnet: 192.168.0.0/16
-    crsStrategy:
-      defaultTigeraOperatorConfigMap:
-        name: tigera-operator
-      defaultInstallationConfigMaps:
-        DockerCluster:
+  cni:
+    calico:
+      defaultPodSubnet: 192.168.0.0/16
+      crsStrategy:
+        defaultTigeraOperatorConfigMap:
+          name: tigera-operator
+        defaultInstallationConfigMaps:
+          DockerCluster:
+            create: true
+            configMap:
+              name: calico-cni-crs-installation-dockercluster
+              content: ""
+          AWSCluster:
+            create: true
+            configMap:
+              name: calico-cni-crs-installation-awscluster
+              content: ""
+      helmAddonStrategy:
+        defaultValueTemplatesConfigMaps:
+          DockerCluster:
+            create: true
+            name: calico-cni-helm-values-template-dockercluster
+          AWSCluster:
+            create: true
+            name: calico-cni-helm-values-template-awscluster
+    cilium:
+      crsStrategy:
+        defaultCiliumConfigMap:
+          name: cilium
+      helmAddonStrategy:
+        defaultValueTemplateConfigMap:
           create: true
-          configMap:
-            name: calico-cni-crs-installation-dockercluster
-            content: ""
-        AWSCluster:
-          create: true
-          configMap:
-            name: calico-cni-crs-installation-awscluster
-            content: ""
-    helmAddonStrategy:
-      defaultValueTemplatesConfigMaps:
-        DockerCluster:
-          create: true
-          name: calico-cni-helm-values-template-dockercluster
-        AWSCluster:
-          create: true
-          name: calico-cni-helm-values-template-awscluster
+          name: default-cilium-cni-helm-values-template
 
 deployDefaultClusterClasses: true
 
