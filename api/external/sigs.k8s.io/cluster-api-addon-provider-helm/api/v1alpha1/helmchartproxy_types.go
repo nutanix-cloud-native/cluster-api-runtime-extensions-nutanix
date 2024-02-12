@@ -26,6 +26,9 @@ const (
 	// HelmChartProxyFinalizer is the finalizer used by the HelmChartProxy controller to cleanup add-on resources when
 	// a HelmChartProxy is being deleted.
 	HelmChartProxyFinalizer = "helmchartproxy.addons.cluster.x-k8s.io"
+
+	// DefaultOCIKey is the default file name of the OCI secret key.
+	DefaultOCIKey = "config.json"
 )
 
 // HelmChartProxySpec defines the desired state of HelmChartProxy.
@@ -64,7 +67,11 @@ type HelmChartProxySpec struct {
 	// Options represents CLI flags passed to Helm operations (i.e. install, upgrade, delete) and
 	// include options such as wait, skipCRDs, timeout, waitForJobs, etc.
 	// +optional
-	Options *HelmOptions `json:"options,omitempty"`
+	Options HelmOptions `json:"options,omitempty"`
+
+	// Credentials is a reference to an object containing the OCI credentials. If it is not specified, no credentials will be used.
+	// +optional
+	Credentials *Credentials `json:"credentials,omitempty"`
 }
 
 type HelmOptions struct {
@@ -112,17 +119,22 @@ type HelmOptions struct {
 	// Install represents CLI flags passed to Helm install operation which can be used to control
 	// behaviour of helm Install operations via options like wait, skipCrds, timeout, waitForJobs, etc.
 	// +optional
-	Install *HelmInstallOptions `json:"install,omitempty"`
+	Install HelmInstallOptions `json:"install,omitempty"`
 
 	// Upgrade represents CLI flags passed to Helm upgrade operation which can be used to control
 	// behaviour of helm Upgrade operations via options like wait, skipCrds, timeout, waitForJobs, etc.
 	// +optional
-	Upgrade *HelmUpgradeOptions `json:"upgrade,omitempty"`
+	Upgrade HelmUpgradeOptions `json:"upgrade,omitempty"`
 
 	// Uninstall represents CLI flags passed to Helm uninstall operation which can be used to control
 	// behaviour of helm Uninstall operation via options like wait, timeout, etc.
 	// +optional
 	Uninstall *HelmUninstallOptions `json:"uninstall,omitempty"`
+
+	// EnableClientCache is a flag to enable Helm client cache. If it is not specified, it will be set to true.
+	// +kubebuilder:default=false
+	// +optional
+	EnableClientCache bool `json:"enableClientCache,omitempty"`
 }
 
 type HelmInstallOptions struct {
@@ -130,8 +142,9 @@ type HelmInstallOptions struct {
 	// HelmChartProxySpec.ReleaseNamespace if it does not exist yet.
 	// On uninstall, the namespace will not be garbage collected.
 	// If it is not specified by user, will be set to default 'true'.
+	// +kubebuilder:default=true
 	// +optional
-	CreateNamespace *bool `json:"createNamespace,omitempty"`
+	CreateNamespace bool `json:"createNamespace,omitempty"`
 
 	// IncludeCRDs determines whether CRDs stored as a part of helm templates directory should be installed.
 	// +optional
@@ -156,7 +169,8 @@ type HelmUpgradeOptions struct {
 	// +optional
 	Recreate bool `json:"recreate,omitempty"`
 
-	// MaxHistory limits the maximum number of revisions saved per release
+	// MaxHistory limits the maximum number of revisions saved per release (default is 10).
+	// +kubebuilder:default=10
 	// +optional
 	MaxHistory int `json:"maxHistory,omitempty"`
 
@@ -177,6 +191,14 @@ type HelmUninstallOptions struct {
 	Description string `json:"description,omitempty"`
 }
 
+type Credentials struct {
+	// Secret is a reference to a Secret containing the OCI credentials.
+	Secret corev1.SecretReference `json:"secret"`
+
+	// Key is the key in the Secret containing the OCI credentials.
+	Key string `json:"key"`
+}
+
 // HelmChartProxyStatus defines the observed state of HelmChartProxy.
 type HelmChartProxyStatus struct {
 	// Conditions defines current state of the HelmChartProxy.
@@ -186,6 +208,10 @@ type HelmChartProxyStatus struct {
 	// MatchingClusters is the list of references to Clusters selected by the ClusterSelector.
 	// +optional
 	MatchingClusters []corev1.ObjectReference `json:"matchingClusters"`
+
+	// ObservedGeneration is the latest generation observed by the controller.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // +kubebuilder:object:root=true
