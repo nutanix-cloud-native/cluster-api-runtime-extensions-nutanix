@@ -4,7 +4,9 @@
 run:
   timeout: 10m
   skip-dirs:
-    - pkg/external
+    # Although this is actually in api/external, api is a go module
+    # and so need to specify the dir relative to the module root.
+    - external
 
 linters:
   disable-all: true
@@ -83,7 +85,8 @@ issues:
       linters:
         - lll
     # Idiomatic to use init functions to register APIs with scheme
-    - path: "api/*"
+    # Path is relative to api module root.
+    - path: "v1alpha1"
       linters:
         - gochecknoinits
     # Idiomatic to use init functions to register APIs with scheme

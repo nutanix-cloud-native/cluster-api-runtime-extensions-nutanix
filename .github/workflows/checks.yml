@@ -101,6 +101,9 @@ jobs:
 
   lint-go:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        module: [api, common, .]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -109,16 +112,6 @@ jobs:
         uses: jetpack-io/devbox-install-action@v0.8.0
         with:
           enable-cache: true
-
-      - name: Go cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
 
       - name: Export golang and golangci-lint versions
         id: versions
@@ -133,6 +126,8 @@ jobs:
           reporter: github-pr-review
           golangci_lint_version: v${{ steps.versions.outputs.golangci-lint }}
           go_version: v${{ steps.versions.outputs.golang }}
+          workdir: ${{ matrix.module }}
+          golangci_lint_flags: "--config=${{ github.workspace }}/.golangci.yml"
 
   lint-gha:
     runs-on: ubuntu-22.04
