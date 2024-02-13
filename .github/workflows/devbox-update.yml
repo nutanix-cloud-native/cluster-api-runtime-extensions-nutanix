@@ -79,7 +79,8 @@ jobs:
         run: |
           pr_url="$(gh pr create --base "${{ github.ref_name }}" --head "${DESTINATION_BRANCH}" \
             --title "${{ steps.commit-changes.outputs.message }}" \
-            --body "This PR was automatically created by the scheduled devbox update workflow.")"
+            --body "This PR was automatically created by the scheduled devbox update workflow." \
+            --label ignore-for-release)"
           gh pr merge --auto --squash "${pr_url}"
           echo "pr_url=${pr_url}" >>"${GITHUB_OUTPUT}"
 
