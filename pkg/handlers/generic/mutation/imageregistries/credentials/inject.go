@@ -24,6 +24,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/imageregistries"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/mirrors"
 )
 
 type imageRegistriesPatchHandler struct {
@@ -97,6 +98,30 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		registriesWithOptionalCredentials = append(
 			registriesWithOptionalCredentials,
 			registryWithOptionalCredentials,
+		)
+	}
+	// add credentials for global image registry mirror
+	globalMirror, found, err := variables.Get[v1alpha1.GlobalImageRegistryMirror](
+		vars,
+		h.variableName,
+		mirrors.GlobalMirrorVariableName,
+	)
+	if err != nil {
+		return err
+	}
+	if found {
+		mirrorCredentials, generateErr := mirrorConfigFromGlobalImageRegistryMirror(
+			ctx,
+			h.client,
+			globalMirror,
+			obj,
+		)
+		if generateErr != nil {
+			return err
+		}
+		registriesWithOptionalCredentials = append(
+			registriesWithOptionalCredentials,
+			mirrorCredentials,
 		)
 	}
 
@@ -208,7 +233,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	secret, err := secretForImageRegistryCredentials(
 		ctx,
 		c,
-		imageRegistry,
+		imageRegistry.Credentials,
 		obj.GetNamespace(),
 	)
 	if err != nil {
@@ -226,6 +251,39 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	}
 
 	return registryWithOptionalCredentials, nil
+}
+
+func mirrorConfigFromGlobalImageRegistryMirror(
+	ctx context.Context,
+	c ctrlclient.Client,
+	mirror v1alpha1.GlobalImageRegistryMirror,
+	obj ctrlclient.Object,
+) (providerConfig, error) {
+	mirrorCredentials := providerConfig{
+		URL:    mirror.URL,
+		Mirror: true,
+	}
+	secret, err := secretForImageRegistryCredentials(
+		ctx,
+		c,
+		mirror.Credentials,
+		obj.GetNamespace(),
+	)
+	if err != nil {
+		return providerConfig{}, fmt.Errorf(
+			"error getting secret %s/%s from Global Image Registry Mirror variable: %w",
+			obj.GetNamespace(),
+			mirror.Credentials.SecretRef.Name,
+			err,
+		)
+	}
+
+	if secret != nil {
+		mirrorCredentials.Username = string(secret.Data["username"])
+		mirrorCredentials.Password = string(secret.Data["password"])
+	}
+
+	return mirrorCredentials, nil
 }
 
 func generateFilesAndCommands(
@@ -286,15 +344,15 @@ func createSecretIfNeeded(
 func secretForImageRegistryCredentials(
 	ctx context.Context,
 	c ctrlclient.Reader,
-	registry v1alpha1.ImageRegistry,
+	credentials *v1alpha1.RegistryCredentials,
 	objectNamespace string,
 ) (*corev1.Secret, error) {
-	if registry.Credentials == nil || registry.Credentials.SecretRef == nil {
+	if credentials == nil || credentials.SecretRef == nil {
 		return nil, nil
 	}
 
 	key := ctrlclient.ObjectKey{
-		Name:      registry.Credentials.SecretRef.Name,
+		Name:      credentials.SecretRef.Name,
 		Namespace: objectNamespace,
 	}
 	secret := &corev1.Secret{}
