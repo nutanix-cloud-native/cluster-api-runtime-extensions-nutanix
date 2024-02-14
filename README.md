@@ -69,10 +69,14 @@ stringData:
 EOF
 ```
 
-To create a cluster, update `clusterConfig` variable and run:
+To create an example cluster:
 
 ```shell
-kubectl apply --server-side -f examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml
+clusterctl generate cluster docker-quick-start-helm-addon-cilium \
+  --from examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml \
+  --kubernetes-version v1.29.1 \
+  --worker-machine-count 1 | \
+  kubectl apply --server-side -f -
 ```
 
 Wait until control plane is ready:
@@ -92,7 +96,7 @@ If you are not on Linux, you will also need to fix the generated kubeconfig's `s
 ```shell
 kubectl config set-cluster docker-quick-start-helm-addon-cilium \
   --kubeconfig docker-kubeconfig \
-  --server=https://$(docker port docker-quick-start-helm-addon-cilium-lb 6443/tcp)
+  --server=https://$(docker container port docker-quick-start-helm-addon-cilium-lb 6443/tcp)
 ```
 
 Wait until all nodes are ready (this indicates that CNI has been deployed successfully):

@@ -68,5 +68,7 @@ kustomize build ./hack/examples |
     ) \
     >/dev/null
 
+sed -i'' "s/^  name: .\+$/  name: \${CLUSTER_NAME}/" "${EXAMPLE_CLUSTERS_DIR}"/*.yaml
+
 # TODO Remove once CAPA templates default to using external cloud provider.
-sed -i'' s/cloud-provider:\ aws/cloud-provider:\ external/g "${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml"
+sed -i'' 's/cloud-provider:\ aws/cloud-provider:\ external/g' "${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml"
