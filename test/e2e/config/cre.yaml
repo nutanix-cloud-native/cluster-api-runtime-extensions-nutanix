@@ -1,0 +1,151 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+managementClusterName: cre-e2e
+
+images:
+  - name: ko.local/capi-runtime-extensions:${E2E_IMAGE_TAG}
+    loadBehavior: mustLoad
+
+providers:
+- name: cluster-api
+  type: CoreProvider
+  versions:
+  - name: v1.6.1
+    value: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.6.1/core-components.yaml
+    type: url
+    contract: v1beta1
+    files:
+    - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+    replacements:
+    - old: "imagePullPolicy: Always"
+      new: "imagePullPolicy: IfNotPresent"
+
+- name: kubeadm
+  type: BootstrapProvider
+  versions:
+  - name: v1.6.1
+    value: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.6.1/bootstrap-components.yaml
+    type: url
+    contract: v1beta1
+    files:
+    - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+    replacements:
+    - old: "imagePullPolicy: Always"
+      new: "imagePullPolicy: IfNotPresent"
+
+- name: kubeadm
+  type: ControlPlaneProvider
+  versions:
+  - name: v1.6.1
+    value: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.6.1/control-plane-components.yaml
+    type: url
+    contract: v1beta1
+    files:
+    - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+    replacements:
+    - old: "imagePullPolicy: Always"
+      new: "imagePullPolicy: IfNotPresent"
+
+- name: docker
+  type: InfrastructureProvider
+  versions:
+  - name: v1.6.1
+    value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.6.1/infrastructure-components-development.yaml"
+    type: "url"
+    contract: v1beta1
+    replacements:
+    - old: --metrics-addr=127.0.0.1:8080
+      new: --metrics-addr=:8080
+    files:
+    - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+
+- name: helm
+  type: AddonProvider
+  versions:
+  - name: v0.1.1-alpha.1
+    value: "https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm/releases/download/v0.1.1-alpha.1/addon-components.yaml"
+    type: "url"
+    contract: v1beta1
+    replacements:
+    - old: --metrics-addr=127.0.0.1:8080
+      new: --metrics-addr=:8080
+    files:
+    - sourcePath: "../data/shared/v1beta1-helm/metadata.yaml"
+
+- name: cre
+  type: RuntimeExtensionProvider
+  versions:
+  - name: v0.5.99 # "vNext"; use manifests from local source files
+    value: "file://../../../runtime-extension-components.yaml"
+    type: "url"
+    contract: v1beta1
+    files:
+    - sourcePath: "../data/shared/v1beta1-cre/metadata.yaml"
+    replacements:
+    - old: "--v=0"
+      new: "--v=8"
+
+variables:
+  # Default variables for the e2e test; those values could be overridden via env variables, thus
+  # allowing the same e2e config file to be re-used in different Prow jobs e.g. each one with a K8s version permutation.
+  # The following Kubernetes versions should be the latest versions with already published kindest/node images.
+  # This avoids building node images in the default case which improves the test duration significantly.
+  KUBERNETES_VERSION_MANAGEMENT: "v1.29.0"
+  KUBERNETES_VERSION: "v1.29.0"
+  KUBERNETES_VERSION_UPGRADE_FROM: "v1.28.0"
+  KUBERNETES_VERSION_UPGRADE_TO: "v1.29.0"
+  KUBERNETES_VERSION_API_UPGRADE_FROM: "v1.27.3"
+  ETCD_VERSION_UPGRADE_TO: "3.5.10-0"
+  COREDNS_VERSION_UPGRADE_TO: "v1.11.1"
+  DOCKER_SERVICE_DOMAIN: "cluster.local"
+  IP_FAMILY: "dual"
+  DOCKER_SERVICE_CIDRS: "10.128.0.0/12"
+  DOCKER_POD_CIDRS: "192.168.0.0/16"
+  DOCKER_SERVICE_IPV6_CIDRS: "fd00:100:64::/108"
+  DOCKER_POD_IPV6_CIDRS: "fd00:100:96::/48"
+  CNI: "./data/cni/kindnet/kindnet.yaml"
+  KUBETEST_CONFIGURATION: "./data/kubetest/conformance.yaml"
+  AUTOSCALER_WORKLOAD: "./data/autoscaler/autoscaler-to-workload-workload.yaml"
+  NODE_DRAIN_TIMEOUT: "60s"
+  # Enabling the feature flags by setting the env variables.
+  EXP_CLUSTER_RESOURCE_SET: "true"
+  EXP_KUBEADM_BOOTSTRAP_FORMAT_IGNITION: "true"
+  EXP_MACHINE_POOL: "true"
+  CLUSTER_TOPOLOGY: "true"
+  EXP_RUNTIME_SDK: "true"
+  EXP_MACHINE_SET_PREFLIGHT_CHECKS: "true"
+  CAPI_DIAGNOSTICS_ADDRESS: ":8080"
+  CAPI_INSECURE_DIAGNOSTICS: "true"
+  OLD_CAPI_UPGRADE_VERSION: "v1.5.0"
+  OLD_PROVIDER_UPGRADE_VERSION: "v0.4.1"
+
+intervals:
+  default/wait-controllers: ["3m", "10s"]
+  default/wait-cluster: ["5m", "10s"]
+  default/wait-control-plane: ["10m", "10s"]
+  default/wait-worker-nodes: ["5m", "10s"]
+  default/wait-machine-pool-nodes: ["5m", "10s"]
+  default/wait-delete-cluster: ["3m", "10s"]
+  default/wait-machine-upgrade: ["20m", "10s"]
+  default/wait-machine-pool-upgrade: ["5m", "10s"]
+  default/wait-nodes-ready: ["10m", "10s"]
+  default/wait-machine-remediation: ["5m", "10s"]
+  default/wait-autoscaler: ["5m", "10s"]
+  default/wait-deployment: ["15m", "10s"]
+  default/wait-nsg-update: [ "20m", "10s" ]
+  default/wait-daemonset: [ "15m", "10s" ]
+  default/wait-deployment-available: [ "15m", "10s" ]
+  default/wait-job: [ "5m", "10s" ]
+  default/wait-service: [ "15m", "10s" ]
+  default/wait-private-cluster: ["30m", "10s"]
+  node-drain/wait-deployment-available: ["3m", "10s"]
+  node-drain/wait-control-plane: ["15m", "10s"]
+  node-drain/wait-machine-deleted: ["2m", "10s"]
+  kcp-remediation/wait-machines: ["5m", "10s"]
+  kcp-remediation/check-machines-stable: ["30s", "5s"]
+  kcp-remediation/wait-machine-provisioned: ["5m", "10s"]
+  #  Giving a bit more time during scale tests, we analyze independently if everything works quickly enough.
+  scale/wait-cluster: ["10m", "10s"]
+  scale/wait-control-plane: ["20m", "10s"]
+  scale/wait-worker-nodes: ["20m", "10s"]

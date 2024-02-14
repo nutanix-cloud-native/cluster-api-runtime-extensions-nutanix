@@ -7,6 +7,8 @@ run:
     # Although this is actually in api/external, api is a go module
     # and so need to specify the dir relative to the module root.
     - external
+  build-tags:
+    - e2e
 
 linters:
   disable-all: true
@@ -73,6 +75,11 @@ linters-settings:
     extra-rules: true
   lll:
     line-length: 120
+  stylecheck:
+    # https://staticcheck.io/docs/configuration/options/#dot_import_whitelist
+    dot-import-whitelist:
+      - github.com/onsi/ginkgo/v2
+      - github.com/onsi/gomega
 
 issues:
   exclude-rules:

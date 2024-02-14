@@ -75,38 +75,46 @@ bench.%: ; $(info $(M) running benchmarks$(if $(GOTEST_RUN), matching "$(GOTEST_
 
 E2E_PARALLEL_NODES ?= $(shell nproc --ignore=1)
 E2E_FLAKE_ATTEMPTS ?= 1
+E2E_CONF_FILE ?= $(REPO_ROOT)/test/e2e/config/cre.yaml
+E2E_CONF_FILE_ENVSUBST ?= $(REPO_ROOT)/test/e2e/config/cre-envsubst.yaml
+ARTIFACTS ?= ${REPO_ROOT}/_artifacts
 
 .PHONY: e2e-test
 e2e-test: ## Runs e2e tests
 ifneq ($(wildcard test/e2e/*),)
 e2e-test:
-	$(info $(M) running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
 ifneq ($(SKIP_BUILD),true)
-	$(MAKE) GORELEASER_FLAGS=$$'--config=<(env GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) gojq --yaml-input --yaml-output \'del(.builds[0].goarch) | del(.builds[0].goos) | .builds[0].targets|=(["linux_amd64","linux_arm64",env.GOOS+"_"+env.GOARCH] | unique | map(. | sub("_amd64";"_amd64_v1")))\' .goreleaser.yml) --clean --skip-validate --skip-publish' release
+	$(MAKE) GORELEASER_FLAGS=$$'--config=<(env GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) gojq --yaml-input --yaml-output \'del(.builds[0].goarch) | del(.builds[0].goos) | .builds[0].targets|=(["linux_amd64","linux_arm64",env.GOOS+"_"+env.GOARCH] | unique | map(. | sub("_amd64";"_amd64_v1")))\' .goreleaser.yml)' release-snapshot
 endif
+	$(info $(M) running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
+	env E2E_IMAGE_TAG="$$(gojq --raw-output '.version' $(REPO_ROOT)/dist/metadata.json)" \
+	  envsubst -no-unset -no-empty -i '$(E2E_CONF_FILE)' -o '$(E2E_CONF_FILE_ENVSUBST)'
 	ginkgo run \
-		--r \
-		--race \
-		--show-node-events \
-		--trace \
-		--randomize-all \
-		--randomize-suites \
-		--fail-on-pending \
-		--keep-going \
-		$(if $(filter $(CI),true),--always-emit-ginkgo-writer) \
-		--covermode=atomic \
-		--coverprofile coverage-e2e.out \
-		--procs=$(E2E_PARALLEL_NODES) \
-		--compilers=$(E2E_PARALLEL_NODES) \
-		--flake-attempts=$(E2E_FLAKE_ATTEMPTS) \
-		$(if $(E2E_FOCUS),--focus="$(E2E_FOCUS)") \
-		$(if $(E2E_SKIP),--skip="$(E2E_SKIP)") \
-		$(if $(E2E_LABEL),--label-filter="$(E2E_LABEL)") \
-		$(E2E_GINKGO_FLAGS) \
-		--junit-report=junit-e2e.xml \
-		--json-report=report-e2e.json \
-		--tags e2e \
-		test/e2e/... && \
+	  --r \
+	  --race \
+	  --show-node-events \
+	  --trace \
+	  --randomize-all \
+	  --randomize-suites \
+	  --fail-on-pending \
+	  --keep-going \
+	  $(if $(filter $(CI),true),--vv) \
+	  --covermode=atomic \
+	  --coverprofile coverage-e2e.out \
+	  --procs=$(E2E_PARALLEL_NODES) \
+	  --compilers=$(E2E_PARALLEL_NODES) \
+	  --flake-attempts=$(E2E_FLAKE_ATTEMPTS) \
+	  $(if $(E2E_FOCUS),--focus="$(E2E_FOCUS)") \
+	  $(if $(E2E_SKIP),--skip="$(E2E_SKIP)") \
+	  $(if $(E2E_LABEL),--label-filter="$(E2E_LABEL)") \
+	  $(E2E_GINKGO_FLAGS) \
+	  --junit-report=junit-e2e.xml \
+	  --json-report=report-e2e.json \
+	  --tags e2e \
+	  test/e2e/... -- \
+	    -e2e.artifacts-folder="$(ARTIFACTS)" \
+	    -e2e.config="$(E2E_CONF_FILE_ENVSUBST)" \
+	&& \
 	go tool cover \
 		-html=coverage-e2e.out \
 		-o coverage-e2e.html
@@ -126,9 +134,9 @@ endif
 .PHONY: lint.%
 lint.%: ## Runs golangci-lint for a specific module
 lint.%: ; $(info $(M) linting $* module)
-	$(if $(filter-out root,$*),cd $* && )golines -w $$(go list ./... | grep -v external | sed "s|^$$(go list -m)|.|")
+	$(if $(filter-out root,$*),cd $* && )golines -w $$(go list -tags e2e ./... | grep -v external | sed "s|^$$(go list -m)|.|")
 	$(if $(filter-out root,$*),cd $* && )golangci-lint run --fix --config=$(GOLANGCI_CONFIG_FILE)
-	$(if $(filter-out root,$*),cd $* && )golines -w $$(go list ./... | grep -v external | sed "s|^$$(go list -m)|.|")
+	$(if $(filter-out root,$*),cd $* && )golines -w $$(go list -tags e2e ./... | grep -v external | sed "s|^$$(go list -m)|.|")
 
 .PHONY: mod-tidy
 mod-tidy: ## Run go mod tidy for all modules
