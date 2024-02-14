@@ -53,6 +53,7 @@ type providerConfig struct {
 	URL      string
 	Username string
 	Password string
+	Mirror   bool
 }
 
 func (c providerConfig) isCredentialsEmpty() bool {
@@ -114,6 +115,7 @@ func templateDynamicCredentialProviderConfig(
 		ProviderBinary     string
 		ProviderArgs       []string
 		ProviderAPIVersion string
+		Mirror             bool
 	}
 
 	inputs := make([]templateInput, 0, len(configs))
@@ -154,6 +156,7 @@ func templateDynamicCredentialProviderConfig(
 			ProviderBinary:     providerBinary,
 			ProviderArgs:       providerArgs,
 			ProviderAPIVersion: providerAPIVersion,
+			Mirror:             config.Mirror,
 		})
 	}
 

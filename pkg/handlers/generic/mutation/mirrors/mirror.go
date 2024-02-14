@@ -54,7 +54,7 @@ func mirrorConfigForGlobalMirror(
 	)
 	if err != nil {
 		return &mirrorConfig{}, fmt.Errorf(
-			"error getting secret %s/%s from Image Registry variable: %w",
+			"error getting secret %s/%s from Global Image Registry Mirror variable: %w",
 			obj.GetNamespace(),
 			globalMirror.Credentials.SecretRef.Name,
 			err,
