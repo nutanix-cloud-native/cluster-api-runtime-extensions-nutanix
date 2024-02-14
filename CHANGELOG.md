@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.1 (2024-02-14)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: mirror credentials support in DynamicCredentialProviderConfig by @supershal in https://github.com/d2iq-labs/capi-runtime-extensions/pull/359
+### Other Changes
+* ci: Ignore devbox update PRs in release notes by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/356
+* build: Add v0.4 series to provider metadata by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/358
+
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.4.0...v0.4.1
+
 ## 0.4.0 (2024-02-12)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
