@@ -10,9 +10,9 @@
     flake-utils.lib.eachDefaultSystem (system:
       with nixpkgs.legacyPackages.${system}; rec {
         packages = rec {
-          golangci-lint = pkgs.golangci-lint.override { buildGoModule = buildGo121Module; };
+          golangci-lint = pkgs.golangci-lint.override { buildGoModule = buildGo122Module; };
 
-          go-mod-upgrade = buildGo121Module rec {
+          go-mod-upgrade = buildGo122Module rec {
             name = "go-mod-upgrade";
             version = "0.9.1";
             src = fetchFromGitHub {
@@ -27,9 +27,9 @@
             ldflags = [ "-s" "-w" "-X" "main.version=v${version}" ];
           };
 
-          setup-envtest = buildGo121Module rec {
+          setup-envtest = buildGo122Module rec {
             name = "setup-envtest";
-            version = "0.16.3";
+            version = "0.17.1";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "controller-runtime";
@@ -42,7 +42,7 @@
             ldflags = [ "-s" "-w" ];
           };
 
-          goprintconst = buildGo121Module rec {
+          goprintconst = buildGo122Module rec {
             name = "goprintconst";
             version = "0.0.1-dev";
             src = fetchFromGitHub {
