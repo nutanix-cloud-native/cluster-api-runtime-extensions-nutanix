@@ -6,7 +6,6 @@ package credentials
 import (
 	"bytes"
 	_ "embed"
-	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -47,8 +46,6 @@ var (
 	)
 )
 
-var ErrCredentialsNotFound = errors.New("registry credentials not found")
-
 type providerConfig struct {
 	URL      string
 	Username string
@@ -59,6 +56,42 @@ type providerConfig struct {
 func (c providerConfig) isCredentialsEmpty() bool {
 	return c.Username == "" &&
 		c.Password == ""
+}
+
+func (c providerConfig) isSupportedProvider() (bool, error) {
+	registryHostWithPath, err := c.registryHostWithPath()
+	if err != nil {
+		return false, fmt.Errorf(
+			"failed to get registry host with path: %w",
+			err,
+		)
+	}
+
+	supportedProvider, err := credentialprovider.URLMatchesSupportedProvider(
+		registryHostWithPath,
+	)
+	if err != nil {
+		return false, fmt.Errorf(
+			"failed to check if registry matches a supported provider: %w",
+			err,
+		)
+	}
+
+	return supportedProvider, nil
+}
+
+func (c providerConfig) registryHostWithPath() (string, error) {
+	registryURL, err := url.ParseRequestURI(c.URL)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing registry URL: %w", err)
+	}
+
+	registryHostWithPath := registryURL.Host
+	if registryURL.Path != "" {
+		registryHostWithPath = path.Join(registryURL.Host, registryURL.Path)
+	}
+
+	return registryHostWithPath, nil
 }
 
 func templateFilesForImageCredentialProviderConfigs(
@@ -121,27 +154,9 @@ func templateDynamicCredentialProviderConfig(
 	inputs := make([]templateInput, 0, len(configs))
 
 	for _, config := range configs {
-		registryURL, err := url.ParseRequestURI(config.URL)
+		registryHostWithPath, err := config.registryHostWithPath()
 		if err != nil {
-			return nil, fmt.Errorf("failed parsing registry URL: %w", err)
-		}
-
-		registryHostWithPath := registryURL.Host
-		if registryURL.Path != "" {
-			registryHostWithPath = path.Join(registryURL.Host, registryURL.Path)
-		}
-
-		supportedProvider, err := credentialprovider.URLMatchesSupportedProvider(
-			registryHostWithPath,
-		)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed to check if registry matches a supported provider: %w",
-				err,
-			)
-		}
-		if config.isCredentialsEmpty() && !supportedProvider {
-			return nil, ErrCredentialsNotFound
+			return nil, err
 		}
 
 		providerBinary, providerArgs, providerAPIVersion, err := dynamicCredentialProvider(

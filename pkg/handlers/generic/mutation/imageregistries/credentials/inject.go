@@ -5,6 +5,7 @@ package credentials
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +34,8 @@ type imageRegistriesPatchHandler struct {
 	variableName      string
 	variableFieldPath []string
 }
+
+var ErrCredentialsNotFound = errors.New("registry credentials not found")
 
 func NewPatch(
 	cl ctrlclient.Client,
@@ -126,6 +129,15 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			registriesWithOptionalCredentials,
 			mirrorCredentials,
 		)
+	}
+
+	needCredentials, err := needImageRegistryCredentials(registriesWithOptionalCredentials)
+	if err != nil {
+		return err
+	}
+	if !needCredentials {
+		log.V(5).Info("Only Global Registry Mirror is defined but credentials are not needed")
+		return nil
 	}
 
 	files, commands, generateErr := generateFilesAndCommands(
@@ -361,4 +373,28 @@ func secretForImageRegistryCredentials(
 	secret := &corev1.Secret{}
 	err := c.Get(ctx, key, secret)
 	return secret, err
+}
+
+// needImageRegistryCredentials will return true if all the providerConfigs have valid credentials
+// will return false if there is only a single providerConfig for a mirror with no credentials
+// otherwise will return an error.
+func needImageRegistryCredentials(configs []providerConfig) (bool, error) {
+	for _, config := range configs {
+		supportedProvider, err := config.isSupportedProvider()
+		if err != nil {
+			return false,
+				fmt.Errorf("error determining if Image Registry is a supported provider: %w", err)
+		}
+		if config.isCredentialsEmpty() && !supportedProvider {
+			if config.Mirror {
+				if len(configs) == 1 {
+					return false, nil
+				}
+			} else {
+				return false, fmt.Errorf("invalid image registry: %s: %w", config.URL, ErrCredentialsNotFound)
+			}
+		}
+	}
+
+	return true, nil
 }

@@ -185,13 +185,6 @@ credentialProviders:
 			},
 		},
 		{
-			name: "error for a registry with no credentials",
-			credentials: []providerConfig{{
-				URL: "https://registry.example.com",
-			}},
-			wantErr: ErrCredentialsNotFound,
-		},
-		{
 			name: "multiple registries",
 			credentials: []providerConfig{{
 				URL:      "https://registry-1.docker.io",
