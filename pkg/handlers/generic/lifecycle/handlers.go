@@ -42,7 +42,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		v1alpha1.CSIProviderAWSEBS: awsebs.New(mgr.GetClient(), h.ebsConfig),
 	}
 	cpiHandlers := map[string]cpi.CPIProvider{
-		v1alpha1.CPIProivderAWS: awscpi.New(mgr.GetClient(), h.awsCPIConfig),
+		v1alpha1.CPIProviderAWS: awscpi.New(mgr.GetClient(), h.awsCPIConfig),
 	}
 
 	return []handlers.Named{

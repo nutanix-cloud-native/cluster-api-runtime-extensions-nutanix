@@ -94,8 +94,8 @@ func (c *CPIHandler) AfterControlPlaneInitialized(
 	log.Info(fmt.Sprintf("finding cpi handler for %s", infraKind))
 	var handler CPIProvider
 	switch {
-	case strings.Contains(strings.ToLower(infraKind), v1alpha1.CPIProivderAWS):
-		handler = c.ProviderHandler[v1alpha1.CPIProivderAWS]
+	case strings.Contains(strings.ToLower(infraKind), v1alpha1.CPIProviderAWS):
+		handler = c.ProviderHandler[v1alpha1.CPIProviderAWS]
 	default:
 		log.Info(fmt.Sprintf("No CPI handler provided for infra kind %s", infraKind))
 		return
