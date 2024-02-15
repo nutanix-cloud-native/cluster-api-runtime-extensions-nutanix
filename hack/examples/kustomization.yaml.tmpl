@@ -18,23 +18,17 @@ patches:
   patch: |-
     - op: "add"
       path: "/spec/topology/version"
-      value: "${KUBERNETES_VERSION}"
+      value: "$${KUBERNETES_VERSION}"
     - op: "add"
       path: "/spec/clusterNetwork/pods"
       value:
         cidrBlocks:
-        - "192.168.0.0/16"
+        - "$${POD_CIDR:-192.168.0.0/16}"
     - op: "add"
       path: "/spec/clusterNetwork/services"
       value:
         cidrBlocks:
-        - "10.128.0.0/12"
+        - "$${SERVICE_CIDR:-10.128.0.0/12}"
     - op: "add"
       path: "/spec/clusterNetwork/serviceDomain"
       value: "cluster.local"
-    - op: "add"
-      path: "/spec/topology/controlPlane/replicas"
-      value: 1
-    - op: "add"
-      path: "/spec/topology/workers/machineDeployments/0/replicas"
-      value: 1

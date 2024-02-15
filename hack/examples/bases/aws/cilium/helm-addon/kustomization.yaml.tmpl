@@ -1,0 +1,85 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/${CAPA_VERSION}/cluster-template-simple-clusterclass.yaml
+
+patches:
+- target:
+    group: cluster.x-k8s.io
+    kind: Cluster
+  patch: |-
+    - op: "add"
+      path: "/metadata/name"
+      value: "quick-start-helm-addon-cilium"
+    - op: "add"
+      path: "/spec/topology/variables"
+      value:
+        - name: "clusterConfig"
+          value:
+            addons:
+              cni:
+                provider: Cilium
+                strategy: HelmAddon
+
+# Delete all ClusterClass related resources to prevent duplicate resources because we use the same resources definition
+# above- we only actually want the Cluster resource to mutate here.
+- target:
+    kind: ClusterClass
+  patch: |
+    $$patch: delete
+    apiVersion: cluster.x-k8s.io/v1beta1
+    kind: ClusterClass
+    metadata:
+      name: quick-start
+- target:
+    kind: AWSClusterTemplate
+  patch: |
+    $$patch: delete
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSClusterTemplate
+    metadata:
+      name: quick-start
+- target:
+    kind: KubeadmControlPlaneTemplate
+  patch: |
+    $$patch: delete
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlaneTemplate
+    metadata:
+      name: quick-start-control-plane
+- target:
+    kind: AWSMachineTemplate
+  patch: |
+    $$patch: delete
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSMachineTemplate
+    metadata:
+      name: quick-start-control-plane
+- target:
+    kind: KubeadmConfigTemplate
+  patch: |
+    $$patch: delete
+    apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+    kind: KubeadmConfigTemplate
+    metadata:
+      name: quick-start-worker-bootstraptemplate
+- target:
+    kind: ConfigMap
+  patch: |
+    $$patch: delete
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: cni-$${CLUSTER_NAME}-crs-0
+- target:
+    kind: ClusterResourceSet
+  patch: |
+    $$patch: delete
+    apiVersion: addons.cluster.x-k8s.io/v1beta1
+    kind: ConfigMap
+    metadata:
+      name: $${CLUSTER_NAME}-crs-0

@@ -14,7 +14,7 @@ patches:
   patch: |-
     - op: "add"
       path: "/metadata/name"
-      value: "quick-start-crs-cilium"
+      value: "quick-start-helm-addon-calico"
     - op: "add"
       path: "/spec/topology/variables"
       value:
@@ -22,5 +22,5 @@ patches:
           value:
             addons:
               cni:
-                provider: cilium
-                strategy: ClusterResourceSet
+                provider: Calico
+                strategy: HelmAddon
