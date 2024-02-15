@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.2 (2024-02-15)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: remove word konvoy/ and use cre/ by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/365
+* fix: v2/ in Containerd mirror path by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/363
+* fix: set config_path in Containerd config by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/364
+* fix: generate config with only globalImageRegistryMirror set by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/362
+### Other Changes
+* refactor: Fix formatting issue by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/368
+* build: Include CAPX APis by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/367
+* build: Upgrade golangci-lint to 1.56.1 by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/369
+* docs: Update examples to be clusterctl templates by @jimmidyson in https://github.com/d2iq-labs/capi-runtime-extensions/pull/361
+
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.4.1...v0.4.2
+
 ## 0.4.1 (2024-02-14)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
