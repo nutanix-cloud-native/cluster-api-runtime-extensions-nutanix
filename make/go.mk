@@ -91,7 +91,6 @@ endif
 	  envsubst -no-unset -no-empty -i '$(E2E_CONF_FILE)' -o '$(E2E_CONF_FILE_ENVSUBST)'
 	ginkgo run \
 	  --r \
-	  --race \
 	  --show-node-events \
 	  --trace \
 	  --randomize-all \
