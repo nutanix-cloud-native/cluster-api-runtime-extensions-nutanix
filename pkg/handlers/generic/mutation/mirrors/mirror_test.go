@@ -42,8 +42,10 @@ func Test_generateDefaultRegistryMirrorFile(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:   "ECR image registry with a path and no CA certificate",
-			config: &mirrorConfig{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com/myproject"},
+			name: "ECR image registry with a path and no CA certificate",
+			config: &mirrorConfig{
+				URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com/myproject",
+			},
 			want: []cabpkv1.File{
 				{
 					Path:        "/etc/containerd/certs.d/_default/hosts.toml",
