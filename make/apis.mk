@@ -13,11 +13,16 @@ PROVIDER_MODULE_caaph := sigs.k8s.io/cluster-api-addon-provider-helm
 PROVIDER_API_PATH_caaph := api
 PROVIDER_API_VERSION_caaph := v1alpha1
 
-# It is not possible to resolved Kubernetes and controller-runtime modules for the different infrastructure providers.
-# Instead. sync their APIs into the third-party/apis directory.
+PROVIDER_MODULE_capx := github.com/nutanix-cloud-native/cluster-api-provider-nutanix
+PROVIDER_API_PATH_capx := api
+PROVIDER_API_VERSION_capx := v1beta1
+
+# It is not possible to resolve Kubernetes and controller-runtime modules for the different infrastructure providers
+# without hitting dependency conflicts.
+# Instead. sync their APIs into the api/external directory.
 .PHONY: apis.sync
 apis.sync: ## Syncs infrastructure providers' APIs
-apis.sync: $(addprefix api.sync.,capa capd caaph) go-fix.api
+apis.sync: $(addprefix api.sync.,capa capd caaph capx) go-fix.api
 
 .PHONY: api.sync.%
 api.sync.%: ## Syncs an infrastructure provider's API
@@ -27,11 +32,11 @@ api.sync.%: ; $(info $(M) syncing external API: $(PROVIDER_MODULE_$*)/$(PROVIDER
 	cd $(PROVIDER_MODULE_DIR) && go mod tidy
 	mkdir -p $(PROVIDER_API_DIR)
 	rsync \
-		 --recursive --delete --times --links --verbose --prune-empty-dirs \
-		--exclude='*webhook*.go' \
-		--exclude='*test.go'     \
-		--exclude='s3bucket.go'  \
-		$$(cd $(PROVIDER_MODULE_DIR) && go list -m -f '{{ .Dir }}' $(PROVIDER_MODULE_$*))/$(PROVIDER_API_PATH_$*)/$(PROVIDER_API_VERSION_$*)/*.go \
-		$(PROVIDER_API_DIR)
+	  --recursive --delete --times --links --verbose --prune-empty-dirs \
+	  --exclude='*webhook*.go' \
+	  --exclude='*test.go'     \
+	  --exclude='s3bucket.go'  \
+	  $$(cd $(PROVIDER_MODULE_DIR) && go list -m -f '{{ .Dir }}' $(PROVIDER_MODULE_$*))/$(PROVIDER_API_PATH_$*)/$(PROVIDER_API_VERSION_$*)/*.go \
+	  $(PROVIDER_API_DIR)
 	find $(PROVIDER_API_DIR) -type d -exec chmod 0755 {} \;
 	find $(PROVIDER_API_DIR) -type f -exec chmod 0644 {} \;

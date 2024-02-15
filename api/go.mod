@@ -6,6 +6,7 @@ module github.com/d2iq-labs/capi-runtime-extensions/api
 go 1.21
 
 require (
+	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/gomega v1.31.1
 	k8s.io/api v0.29.1
 	k8s.io/apiextensions-apiserver v0.29.1
