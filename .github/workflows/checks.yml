@@ -58,6 +58,10 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       checks: write
+    strategy:
+      matrix:
+        PROVIDER:
+          - Docker
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -80,7 +84,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Run e2e tests
-        run: devbox run -- make e2e-test
+        run: devbox run -- make e2e-test E2E_FOCUS='\[${{ matrix.PROVIDER }}\]'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
