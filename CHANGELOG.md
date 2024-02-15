@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.3 (2024-02-15)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: revert back generated file changes by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/372
+
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.4.2...v0.4.3
+
 ## 0.4.2 (2024-02-15)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
