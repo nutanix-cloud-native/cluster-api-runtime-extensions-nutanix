@@ -12,14 +12,11 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/utils"
 )
 
 type crsConfig struct {
@@ -76,52 +73,9 @@ func (s crsStrategy) apply(
 	}
 
 	log.Info("Ensuring Cilium installation CRS and ConfigMap exist for cluster")
-	if err := s.ensureCNICRSForCluster(ctx, &req.Cluster, defaultCiliumConfigMap); err != nil {
-		log.Error(
-			err,
-			"failed to ensure Cilium installation manifests ConfigMap and ClusterResourceSet exist in cluster namespace",
-		)
-		return fmt.Errorf(
-			"failed to ensure Cilium installation manifests ConfigMap and ClusterResourceSet exist in cluster namespace: %w",
-			err,
-		)
-	}
 
-	return nil
-}
+	cluster := &req.Cluster
 
-func (s crsStrategy) ensureCNICRSForCluster(
-	ctx context.Context,
-	cluster *capiv1.Cluster,
-	defaultCiliumConfigMap *corev1.ConfigMap,
-) error {
-	cniObjs, err := generateCNICRS(
-		defaultCiliumConfigMap,
-		cluster,
-		s.client.Scheme(),
-	)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to generate Cilium provider CNI CRS: %w",
-			err,
-		)
-	}
-
-	if err := client.ServerSideApply(ctx, s.client, cniObjs...); err != nil {
-		return fmt.Errorf(
-			"failed to apply Cilium CNI installation CRS: %w",
-			err,
-		)
-	}
-
-	return nil
-}
-
-func generateCNICRS(
-	ciliumConfigMap *corev1.ConfigMap,
-	cluster *capiv1.Cluster,
-	scheme *runtime.Scheme,
-) ([]ctrlclient.Object, error) {
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -132,36 +86,21 @@ func generateCNICRS(
 			Name:      "cilium-cni-installation-" + cluster.Name,
 		},
 	}
-	cm.Data = maps.Clone(ciliumConfigMap.Data)
+	cm.Data = maps.Clone(defaultCiliumConfigMap.Data)
 
-	if err := controllerutil.SetOwnerReference(cluster, cm, scheme); err != nil {
-		return nil, fmt.Errorf("failed to set owner reference: %w", err)
+	if err := client.ServerSideApply(ctx, s.client, cm); err != nil {
+		return fmt.Errorf(
+			"failed to apply Cilium CNI installation ConfigMap: %w",
+			err,
+		)
 	}
 
-	crs := &crsv1.ClusterResourceSet{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: crsv1.GroupVersion.String(),
-			Kind:       "ClusterResourceSet",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Namespace,
-			Name:      cm.Name,
-		},
-		Spec: crsv1.ClusterResourceSetSpec{
-			Resources: []crsv1.ResourceRef{{
-				Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
-				Name: cm.Name,
-			}},
-			Strategy: string(crsv1.ClusterResourceSetStrategyReconcile),
-			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{capiv1.ClusterNameLabel: cluster.Name},
-			},
-		},
+	if err := utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, &req.Cluster, cm); err != nil {
+		return fmt.Errorf(
+			"failed to apply Cilium CNI installation ClusterResourceSet: %w",
+			err,
+		)
 	}
 
-	if err := controllerutil.SetOwnerReference(cluster, crs, scheme); err != nil {
-		return nil, fmt.Errorf("failed to set owner reference: %w", err)
-	}
-
-	return []ctrlclient.Object{cm, crs}, nil
+	return nil
 }

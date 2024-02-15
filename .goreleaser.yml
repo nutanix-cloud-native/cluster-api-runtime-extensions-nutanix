@@ -76,7 +76,6 @@ builds:
                 ko build \
                   --bare \
                   -t {{ .Version }} \
-                  -t e2e \
                   ./cmd
           fi'
 

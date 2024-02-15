@@ -17,12 +17,21 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 )
 
-func EnsureCRSForClusterFromConfigMap(
+func EnsureCRSForClusterFromConfigMaps(
 	ctx context.Context,
+	crsName string,
 	c ctrlclient.Client,
 	cluster *clusterv1.Cluster,
-	cm *corev1.ConfigMap,
+	configMaps ...*corev1.ConfigMap,
 ) error {
+	resources := make([]crsv1.ResourceRef, 0, len(configMaps))
+	for _, cm := range configMaps {
+		resources = append(resources, crsv1.ResourceRef{
+			Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
+			Name: cm.Name,
+		})
+	}
+
 	crs := &crsv1.ClusterResourceSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: crsv1.GroupVersion.String(),
@@ -30,14 +39,11 @@ func EnsureCRSForClusterFromConfigMap(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      cm.Name + "-" + cluster.Name,
+			Name:      crsName,
 		},
 		Spec: crsv1.ClusterResourceSetSpec{
-			Resources: []crsv1.ResourceRef{{
-				Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
-				Name: cm.Name,
-			}},
-			Strategy: string(crsv1.ClusterResourceSetStrategyReconcile),
+			Resources: resources,
+			Strategy:  string(crsv1.ClusterResourceSetStrategyReconcile),
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},
@@ -47,9 +53,11 @@ func EnsureCRSForClusterFromConfigMap(
 	if err := controllerutil.SetOwnerReference(cluster, crs, c.Scheme()); err != nil {
 		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
+
 	err := client.ServerSideApply(ctx, c, crs)
 	if err != nil {
 		return fmt.Errorf("failed to server side apply %w", err)
 	}
+
 	return nil
 }

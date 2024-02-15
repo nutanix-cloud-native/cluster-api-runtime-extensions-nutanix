@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/bootstrap"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // Test suite constants for e2e config variables.
@@ -39,6 +40,8 @@ var (
 
 // Test suite global vars.
 var (
+	ctx = ctrl.SetupSignalHandler()
+
 	// e2eConfig to be used for this test, read from configPath.
 	e2eConfig *clusterctl.E2EConfig
 

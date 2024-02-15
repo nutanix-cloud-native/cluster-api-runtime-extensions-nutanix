@@ -142,8 +142,9 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 					resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 				}
 			}
-			err = lifecycleutils.EnsureCRSForClusterFromConfigMap(
+			err = lifecycleutils.EnsureCRSForClusterFromConfigMaps(
 				ctx,
+				cm.Name,
 				c.client,
 				&req.Cluster,
 				cm,

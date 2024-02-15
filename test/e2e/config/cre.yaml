@@ -59,6 +59,16 @@ providers:
       new: --metrics-addr=:8080
     files:
     - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+    - sourcePath: "../../../charts/capi-runtime-extensions/defaultclusterclasses/docker-cluster-class.yaml"
+      targetName: clusterclass-docker-quick-start.yaml
+    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml"
+      targetName: cluster-template-topology-cilium-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-crs.yaml"
+      targetName: cluster-template-topology-cilium-crs.yaml
+    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-calico-helm-addon.yaml"
+      targetName: cluster-template-topology-calico-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-calico-crs.yaml"
+      targetName: cluster-template-topology-calico-crs.yaml
 
 - name: helm
   type: AddonProvider
@@ -98,15 +108,8 @@ variables:
   KUBERNETES_VERSION_API_UPGRADE_FROM: "v1.27.3"
   ETCD_VERSION_UPGRADE_TO: "3.5.10-0"
   COREDNS_VERSION_UPGRADE_TO: "v1.11.1"
-  DOCKER_SERVICE_DOMAIN: "cluster.local"
-  IP_FAMILY: "dual"
-  DOCKER_SERVICE_CIDRS: "10.128.0.0/12"
-  DOCKER_POD_CIDRS: "192.168.0.0/16"
-  DOCKER_SERVICE_IPV6_CIDRS: "fd00:100:64::/108"
-  DOCKER_POD_IPV6_CIDRS: "fd00:100:96::/48"
-  CNI: "./data/cni/kindnet/kindnet.yaml"
-  KUBETEST_CONFIGURATION: "./data/kubetest/conformance.yaml"
-  AUTOSCALER_WORKLOAD: "./data/autoscaler/autoscaler-to-workload-workload.yaml"
+  SERVICE_CIDR: "10.128.0.0/12"
+  POD_CIDR: "192.168.0.0/16"
   NODE_DRAIN_TIMEOUT: "60s"
   # Enabling the feature flags by setting the env variables.
   EXP_CLUSTER_RESOURCE_SET: "true"

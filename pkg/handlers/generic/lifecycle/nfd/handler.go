@@ -11,16 +11,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/utils"
 )
 
 type NFDConfig struct {
@@ -98,13 +97,13 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 		return
 	}
 
-	cm, err := n.ensureNFDConfigmapForCluster(ctx, &req.Cluster)
+	cm, err := n.ensureNFDConfigMapForCluster(ctx, &req.Cluster)
 	if err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		log.Error(err, "failed to apply NFD ConfigMap for cluster")
 		return
 	}
-	err = n.ensureNFDCRSForCluster(ctx, &req.Cluster, cm)
+	err = utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, n.client, &req.Cluster, cm)
 	if err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		log.Error(err, "failed to apply NFD ClusterResourceSet for cluster")
@@ -114,8 +113,8 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
 
-// ensureNFDConfigmapForCluster is a private function that creates a configMap for the cluster.
-func (n *DefaultNFD) ensureNFDConfigmapForCluster(
+// ensureNFDConfigMapForCluster is a private function that creates a configMap for the cluster.
+func (n *DefaultNFD) ensureNFDConfigMapForCluster(
 	ctx context.Context,
 	cluster *capiv1.Cluster,
 ) (*corev1.ConfigMap, error) {
@@ -149,41 +148,4 @@ func (n *DefaultNFD) ensureNFDConfigmapForCluster(
 		return nil, fmt.Errorf("failed to apply NFD ConfigMap for cluster: %w", err)
 	}
 	return cmForCluster, nil
-}
-
-func (n *DefaultNFD) ensureNFDCRSForCluster(
-	ctx context.Context,
-	cluster *capiv1.Cluster,
-	cm *corev1.ConfigMap,
-) error {
-	crs := &crsv1.ClusterResourceSet{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: crsv1.GroupVersion.String(),
-			Kind:       "ClusterResourceSet",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Namespace,
-			Name:      cm.Name + "-" + cluster.Name,
-		},
-		Spec: crsv1.ClusterResourceSetSpec{
-			Resources: []crsv1.ResourceRef{{
-				Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
-				Name: cm.Name,
-			}},
-			Strategy: string(crsv1.ClusterResourceSetStrategyReconcile),
-			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{capiv1.ClusterNameLabel: cluster.Name},
-			},
-		},
-	}
-
-	if err := controllerutil.SetOwnerReference(cluster, crs, n.client.Scheme()); err != nil {
-		return fmt.Errorf("failed to set owner reference: %w", err)
-	}
-
-	err := client.ServerSideApply(ctx, n.client, crs)
-	if err != nil {
-		return fmt.Errorf("failed to server side apply %w", err)
-	}
-	return nil
 }

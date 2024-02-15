@@ -98,7 +98,7 @@ endif
 	  --randomize-suites \
 	  --fail-on-pending \
 	  --keep-going \
-	  $(if $(filter $(CI),true),--vv) \
+	  $(if $(filter $(CI),true),-v) \
 	  --covermode=atomic \
 	  --coverprofile coverage-e2e.out \
 	  --procs=$(E2E_PARALLEL_NODES) \

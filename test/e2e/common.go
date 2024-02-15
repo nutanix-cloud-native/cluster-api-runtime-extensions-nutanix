@@ -10,6 +10,10 @@ import (
 	"github.com/onsi/ginkgo/v2/types"
 )
 
+const (
+	KubernetesVersion = "KUBERNETES_VERSION"
+)
+
 // CheckTestBeforeCleanup checks to see if the current running Ginkgo test failed, and prints
 // a status message regarding cleanup.
 func CheckTestBeforeCleanup() {
