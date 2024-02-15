@@ -23,8 +23,8 @@ spec:
         value:
           addons:
             cni:
-              provider: Cilium
-              strategy: HelmAddon
+              provider: Calico
+              strategy: ClusterResourceSet
             nfd: {}
           docker: {}
     version: ${KUBERNETES_VERSION}

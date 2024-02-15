@@ -22,7 +22,7 @@ spec:
         value:
           addons:
             cni:
-              provider: calico
+              provider: Calico
               strategy: ClusterResourceSet
             cpi: {}
             csi:
