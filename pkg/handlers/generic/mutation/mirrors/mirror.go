@@ -8,6 +8,8 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"net/url"
+	"path"
 	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
@@ -97,11 +99,15 @@ func generateGlobalRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, err
 	if mirror == nil {
 		return nil, nil
 	}
+	formattedURL, err := formatURLForContainerd(mirror.URL)
+	if err != nil {
+		return nil, fmt.Errorf("failed formatting registry mirror URL for Containerd: %w", err)
+	}
 	templateInput := struct {
 		URL        string
 		CACertPath string
 	}{
-		URL: mirror.URL,
+		URL: formattedURL,
 	}
 	// CA cert is optional for mirror registry.
 	// i.e. registry is using signed certificates. Insecure registry will not be allowed.
@@ -110,7 +116,7 @@ func generateGlobalRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, err
 	}
 
 	var b bytes.Buffer
-	err := defaultRegistryMirrorPatchTemplate.Execute(&b, templateInput)
+	err = defaultRegistryMirrorPatchTemplate.Execute(&b, templateInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed executing template for registry mirror: %w", err)
 	}
@@ -142,4 +148,21 @@ func generateMirrorCACertFile(
 			},
 		},
 	}
+}
+
+func formatURLForContainerd(uri string) (string, error) {
+	mirrorURL, err := url.ParseRequestURI(uri)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing mirror: %w", err)
+	}
+
+	mirror := fmt.Sprintf("%s://%s", mirrorURL.Scheme, mirrorURL.Host)
+	// assume Containerd expects the following pattern:
+	//   scheme://host/v2/path
+	mirrorPath := "v2"
+	if mirrorURL.Path != "" {
+		mirrorPath = path.Join(mirrorPath, mirrorURL.Path)
+	}
+	// using path.Join on all elements incorrectly drops a "/" from "https://"
+	return fmt.Sprintf("%s/%s", mirror, mirrorPath), nil
 }

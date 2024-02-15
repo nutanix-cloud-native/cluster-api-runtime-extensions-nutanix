@@ -31,8 +31,31 @@ func Test_generateDefaultRegistryMirrorFile(t *testing.T) {
 					Permissions: "0600",
 					Encoding:    "",
 					Append:      false,
-					Content: `[host."https://123456789.dkr.ecr.us-east-1.amazonaws.com"]
+					Content: `[host."https://123456789.dkr.ecr.us-east-1.amazonaws.com/v2"]
   capabilities = ["pull", "resolve"]
+  # don't rely on Containerd to add the v2/ suffix
+  # there is a bug where it is added incorrectly for mirrors with a path
+  override_path = true
+`,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:   "ECR image registry with a path and no CA certificate",
+			config: &mirrorConfig{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com/myproject"},
+			want: []cabpkv1.File{
+				{
+					Path:        "/etc/containerd/certs.d/_default/hosts.toml",
+					Owner:       "",
+					Permissions: "0600",
+					Encoding:    "",
+					Append:      false,
+					Content: `[host."https://123456789.dkr.ecr.us-east-1.amazonaws.com/v2/myproject"]
+  capabilities = ["pull", "resolve"]
+  # don't rely on Containerd to add the v2/ suffix
+  # there is a bug where it is added incorrectly for mirrors with a path
+  override_path = true
 `,
 				},
 			},
@@ -51,9 +74,12 @@ func Test_generateDefaultRegistryMirrorFile(t *testing.T) {
 					Permissions: "0600",
 					Encoding:    "",
 					Append:      false,
-					Content: `[host."https://myregistry.com"]
+					Content: `[host."https://myregistry.com/v2"]
   capabilities = ["pull", "resolve"]
   ca = "/etc/certs/mirror.pem"
+  # don't rely on Containerd to add the v2/ suffix
+  # there is a bug where it is added incorrectly for mirrors with a path
+  override_path = true
 `,
 				},
 			},
