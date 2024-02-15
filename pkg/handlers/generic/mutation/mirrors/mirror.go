@@ -23,6 +23,11 @@ const (
 	mirrorCACertPathOnRemote                = "/etc/certs/mirror.pem"
 	defaultRegistryMirrorConfigPathOnRemote = "/etc/containerd/certs.d/_default/hosts.toml"
 	secretKeyForMirrorCACert                = "ca.crt"
+
+	tomlMergeImage                              = "ghcr.io/mesosphere/toml-merge:v0.2.0"
+	containerdPatchesDirOnRemote                = "/etc/containerd/cre.d"
+	containerdApplyPatchesScriptOnRemote        = "/etc/containerd/apply-patches.sh"
+	containerdApplyPatchesScriptOnRemoteCommand = "/bin/bash " + containerdApplyPatchesScriptOnRemote
 )
 
 var (
@@ -32,6 +37,16 @@ var (
 	defaultRegistryMirrorPatchTemplate = template.Must(
 		template.New("").Parse(string(defaultRegistryMirrorPatch)),
 	)
+
+	//go:embed templates/containerd-registry-config-drop-in.toml
+	containerdRegistryConfigDropIn             []byte
+	containerdRegistryConfigDropInFileOnRemote = path.Join(
+		containerdPatchesDirOnRemote,
+		"registry-config.toml",
+	)
+
+	//go:embed templates/containerd-apply-patches.sh.gotmpl
+	containerdApplyConfigPatchesScript []byte
 )
 
 type mirrorConfig struct {
@@ -130,10 +145,10 @@ func generateGlobalRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, err
 }
 
 func generateMirrorCACertFile(
-	config *mirrorConfig,
+	mirror *mirrorConfig,
 	globalMirror v1alpha1.GlobalImageRegistryMirror,
 ) []cabpkv1.File {
-	if config == nil || config.CACert == "" {
+	if mirror == nil || mirror.CACert == "" {
 		return nil
 	}
 	return []cabpkv1.File{
@@ -165,4 +180,43 @@ func formatURLForContainerd(uri string) (string, error) {
 	}
 	// using path.Join on all elements incorrectly drops a "/" from "https://"
 	return fmt.Sprintf("%s/%s", mirror, mirrorPath), nil
+}
+
+func generateContainerdRegistryConfigDropInFile() []cabpkv1.File {
+	return []cabpkv1.File{
+		{
+			Path:        containerdRegistryConfigDropInFileOnRemote,
+			Content:     string(containerdRegistryConfigDropIn),
+			Permissions: "0600",
+		},
+	}
+}
+
+func generateContainerdApplyPatchesScript() ([]cabpkv1.File, string, error) {
+	t, err := template.New("").Parse(string(containerdApplyConfigPatchesScript))
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to parse go template: %w", err)
+	}
+
+	templateInput := struct {
+		TOMLMergeImage string
+		PatchDir       string
+	}{
+		TOMLMergeImage: tomlMergeImage,
+		PatchDir:       containerdPatchesDirOnRemote,
+	}
+
+	var b bytes.Buffer
+	err = t.Execute(&b, templateInput)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed executing template: %w", err)
+	}
+
+	return []cabpkv1.File{
+		{
+			Path:        containerdApplyPatchesScriptOnRemote,
+			Content:     b.String(),
+			Permissions: "0700",
+		},
+	}, containerdApplyPatchesScriptOnRemoteCommand, nil
 }
