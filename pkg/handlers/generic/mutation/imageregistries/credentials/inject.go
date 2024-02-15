@@ -5,6 +5,7 @@ package credentials
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +34,8 @@ type imageRegistriesPatchHandler struct {
 	variableName      string
 	variableFieldPath []string
 }
+
+var ErrCredentialsNotFound = errors.New("registry credentials not found")
 
 func NewPatch(
 	cl ctrlclient.Client,
@@ -70,7 +73,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	imageRegistries, found, err := variables.Get[v1alpha1.ImageRegistries](
+	imageRegistries, imageRegistriesFound, err := variables.Get[v1alpha1.ImageRegistries](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -78,7 +81,18 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	if err != nil {
 		return err
 	}
-	if !found {
+
+	// add credentials for global image registry mirror
+	globalMirror, globalMirrorFound, err := variables.Get[v1alpha1.GlobalImageRegistryMirror](
+		vars,
+		h.variableName,
+		mirrors.GlobalMirrorVariableName,
+	)
+	if err != nil {
+		return err
+	}
+
+	if !imageRegistriesFound && !globalMirrorFound {
 		log.V(5).Info("Image Registry Credentials variable not defined")
 		return nil
 	}
@@ -100,16 +114,8 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			registryWithOptionalCredentials,
 		)
 	}
-	// add credentials for global image registry mirror
-	globalMirror, found, err := variables.Get[v1alpha1.GlobalImageRegistryMirror](
-		vars,
-		h.variableName,
-		mirrors.GlobalMirrorVariableName,
-	)
-	if err != nil {
-		return err
-	}
-	if found {
+
+	if globalMirrorFound {
 		mirrorCredentials, generateErr := mirrorConfigFromGlobalImageRegistryMirror(
 			ctx,
 			h.client,
@@ -123,6 +129,15 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			registriesWithOptionalCredentials,
 			mirrorCredentials,
 		)
+	}
+
+	needCredentials, err := needImageRegistryCredentialsConfiguration(registriesWithOptionalCredentials)
+	if err != nil {
+		return err
+	}
+	if !needCredentials {
+		log.V(5).Info("Only Global Registry Mirror is defined but credentials are not needed")
+		return nil
 	}
 
 	files, commands, generateErr := generateFilesAndCommands(
@@ -358,4 +373,36 @@ func secretForImageRegistryCredentials(
 	secret := &corev1.Secret{}
 	err := c.Get(ctx, key, secret)
 	return secret, err
+}
+
+// This handler reads input from two user provided variables: globalImageRegistryMirror and imageRegistries.
+// We expect if imageRegistries is set it will either have static credentials
+// or be for a registry where the credential plugin returns the credentials, ie ECR, GCR, ACR, etc,
+// and if that is not the case we assume the users missed setting static credentials and return an error.
+// However, in addition to passing credentials with the globalImageRegistryMirror variable,
+// it can also be used to only set Containerd mirror configuration,
+// in that case it valid for static credentials to not be set and will return false, no error
+// and this handler will skip generating any credential plugin related configuration.
+func needImageRegistryCredentialsConfiguration(configs []providerConfig) (bool, error) {
+	for _, config := range configs {
+		requiresStaticCredentials, err := config.requiresStaticCredentials()
+		if err != nil {
+			return false,
+				fmt.Errorf("error determining if Image Registry is a supported provider: %w", err)
+		}
+		// verify the credentials are actually set if the plugin requires static credentials
+		if config.isCredentialsEmpty() && requiresStaticCredentials {
+			// not setting credentials for a mirror is valid
+			// but if it's the only configuration then return false here and exit the handler early
+			if config.Mirror {
+				if len(configs) == 1 {
+					return false, nil
+				}
+			} else {
+				return false, fmt.Errorf("invalid image registry: %s: %w", config.URL, ErrCredentialsNotFound)
+			}
+		}
+	}
+
+	return true, nil
 }
