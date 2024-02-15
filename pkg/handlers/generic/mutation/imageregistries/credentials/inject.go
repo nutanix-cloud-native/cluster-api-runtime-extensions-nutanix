@@ -131,7 +131,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		)
 	}
 
-	needCredentials, err := needImageRegistryCredentials(registriesWithOptionalCredentials)
+	needCredentials, err := needImageRegistryCredentialsConfiguration(registriesWithOptionalCredentials)
 	if err != nil {
 		return err
 	}
@@ -375,17 +375,25 @@ func secretForImageRegistryCredentials(
 	return secret, err
 }
 
-// needImageRegistryCredentials will return true if all the providerConfigs have valid credentials
-// will return false if there is only a single providerConfig for a mirror with no credentials
-// otherwise will return an error.
-func needImageRegistryCredentials(configs []providerConfig) (bool, error) {
+// This handler reads input from two user provided variables: globalImageRegistryMirror and imageRegistries.
+// We expect if imageRegistries is set it will either have static credentials
+// or be for a registry where the credential plugin returns the credentials, ie ECR, GCR, ACR, etc,
+// and if that is not the case we assume the users missed setting static credentials and return an error.
+// However, in addition to passing credentials with the globalImageRegistryMirror variable,
+// it can also be used to only set Containerd mirror configuration,
+// in that case it valid for static credentials to not be set and will return false, no error
+// and this handler will skip generating any credential plugin related configuration.
+func needImageRegistryCredentialsConfiguration(configs []providerConfig) (bool, error) {
 	for _, config := range configs {
-		supportedProvider, err := config.isSupportedProvider()
+		requiresStaticCredentials, err := config.requiresStaticCredentials()
 		if err != nil {
 			return false,
 				fmt.Errorf("error determining if Image Registry is a supported provider: %w", err)
 		}
-		if config.isCredentialsEmpty() && !supportedProvider {
+		// verify the credentials are actually set if the plugin requires static credentials
+		if config.isCredentialsEmpty() && requiresStaticCredentials {
+			// not setting credentials for a mirror is valid
+			// but if it's the only configuration then return false here and exit the handler early
 			if config.Mirror {
 				if len(configs) == 1 {
 					return false, nil

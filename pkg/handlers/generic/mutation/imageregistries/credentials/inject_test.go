@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_needImageRegistryCredentials(t *testing.T) {
+func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -94,7 +94,7 @@ func Test_needImageRegistryCredentials(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			need, err := needImageRegistryCredentials(tt.configs)
+			need, err := needImageRegistryCredentialsConfiguration(tt.configs)
 			assert.ErrorIs(t, err, tt.wantErr)
 			assert.Equal(t, tt.need, need)
 		})

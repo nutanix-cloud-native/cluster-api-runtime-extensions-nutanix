@@ -58,7 +58,7 @@ func (c providerConfig) isCredentialsEmpty() bool {
 		c.Password == ""
 }
 
-func (c providerConfig) isSupportedProvider() (bool, error) {
+func (c providerConfig) requiresStaticCredentials() (bool, error) {
 	registryHostWithPath, err := c.registryHostWithPath()
 	if err != nil {
 		return false, fmt.Errorf(
@@ -67,17 +67,18 @@ func (c providerConfig) isSupportedProvider() (bool, error) {
 		)
 	}
 
-	supportedProvider, err := credentialprovider.URLMatchesSupportedProvider(
+	knowRegistryProvider, err := credentialprovider.URLMatchesKnownRegistryProvider(
 		registryHostWithPath,
 	)
 	if err != nil {
 		return false, fmt.Errorf(
-			"failed to check if registry matches a supported provider: %w",
+			"failed to check if registry matches a known registry provider: %w",
 			err,
 		)
 	}
 
-	return supportedProvider, nil
+	// require static credentials if the registry provider is not known
+	return !knowRegistryProvider, nil
 }
 
 func (c providerConfig) registryHostWithPath() (string, error) {

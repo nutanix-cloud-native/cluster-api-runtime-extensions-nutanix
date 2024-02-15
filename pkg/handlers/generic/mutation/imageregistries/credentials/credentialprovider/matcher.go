@@ -33,7 +33,7 @@ var (
 	}
 )
 
-func URLMatchesSupportedProvider(target string) (bool, error) {
+func URLMatchesKnownRegistryProvider(target string) (bool, error) {
 	urlGlobs := make([]string, 0, len(ecrURLGlobs)+len(gcrURLGlobs)+len(acrURLGlobs))
 	urlGlobs = append(urlGlobs, ecrURLGlobs...)
 	urlGlobs = append(urlGlobs, gcrURLGlobs...)
