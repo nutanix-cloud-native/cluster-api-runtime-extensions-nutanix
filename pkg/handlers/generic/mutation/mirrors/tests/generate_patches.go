@@ -69,6 +69,19 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/cre.d/registry-config.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/apply-patches.sh",
+						),
+					),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+					ValueMatcher: gomega.ContainElement(
+						"/bin/bash /etc/containerd/apply-patches.sh",
 					),
 				},
 			},
@@ -101,6 +114,19 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/certs/mirror.pem",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/cre.d/registry-config.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/apply-patches.sh",
+						),
+					),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+					ValueMatcher: gomega.ContainElement(
+						"/bin/bash /etc/containerd/apply-patches.sh",
 					),
 				},
 			},
@@ -133,6 +159,19 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/cre.d/registry-config.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/apply-patches.sh",
+						),
+					),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/preKubeadmCommands",
+					ValueMatcher: gomega.ContainElement(
+						"/bin/bash /etc/containerd/apply-patches.sh",
 					),
 				},
 			},
@@ -173,6 +212,19 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/certs/mirror.pem",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/cre.d/registry-config.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/apply-patches.sh",
+						),
+					),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/preKubeadmCommands",
+					ValueMatcher: gomega.ContainElement(
+						"/bin/bash /etc/containerd/apply-patches.sh",
 					),
 				},
 			},

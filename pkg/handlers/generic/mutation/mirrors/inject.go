@@ -99,7 +99,7 @@ func (h *globalMirrorPatchHandler) Mutate(
 			if err != nil {
 				return err
 			}
-			files, generateErr := generateFiles(
+			files, commands, generateErr := generateFilesAndCommands(
 				mirrorConfig,
 				globalMirror)
 			if generateErr != nil {
@@ -113,6 +113,15 @@ func (h *globalMirrorPatchHandler) Mutate(
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
 				files...,
+			)
+
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("adding PreKubeadmCommands to control plane kubeadm config spec")
+			obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
+				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
+				commands...,
 			)
 
 			return nil
@@ -132,7 +141,7 @@ func (h *globalMirrorPatchHandler) Mutate(
 			if err != nil {
 				return err
 			}
-			files, generateErr := generateFiles(
+			files, commands, generateErr := generateFilesAndCommands(
 				mirrorConfig,
 				globalMirror)
 			if generateErr != nil {
@@ -144,6 +153,13 @@ func (h *globalMirrorPatchHandler) Mutate(
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding global registry mirror files to worker node kubeadm config template")
 			obj.Spec.Template.Spec.Files = append(obj.Spec.Template.Spec.Files, files...)
+
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("adding PreKubeadmCommands to worker node kubeadm config template")
+			obj.Spec.Template.Spec.PreKubeadmCommands = append(obj.Spec.Template.Spec.PreKubeadmCommands, commands...)
+
 			return nil
 		}); err != nil {
 		return err
@@ -152,18 +168,29 @@ func (h *globalMirrorPatchHandler) Mutate(
 	return nil
 }
 
-func generateFiles(
+func generateFilesAndCommands(
 	mirrorConfig *mirrorConfig,
 	globalMirror v1alpha1.GlobalImageRegistryMirror,
-) ([]bootstrapv1.File, error) {
-	// Generate default registry mirror file
+) ([]bootstrapv1.File, []string, error) {
+	// generate default registry mirror file
 	files, err := generateGlobalRegistryMirrorFile(mirrorConfig)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// generate CA certificate file for registry mirror
 	mirrorCAFile := generateMirrorCACertFile(mirrorConfig, globalMirror)
 	files = append(files, mirrorCAFile...)
+	// generate Containerd registry config drop-in file
+	registryConfigDropIn := generateContainerdRegistryConfigDropInFile()
+	files = append(files, registryConfigDropIn...)
+	// generate Containerd apply patches script and command
+	var commands []string
+	applyPatchesFile, applyPatchesCommand, err := generateContainerdApplyPatchesScript()
+	if err != nil {
+		return nil, nil, err
+	}
+	files = append(files, applyPatchesFile...)
+	commands = append(commands, applyPatchesCommand)
 
-	return files, err
+	return files, commands, err
 }

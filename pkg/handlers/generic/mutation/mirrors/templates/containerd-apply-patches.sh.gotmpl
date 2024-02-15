@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+declare -r TOML_MERGE_IMAGE="{{ .TOMLMergeImage }}"
+
+if ! ctr --namespace k8s.io images check "name==${TOML_MERGE_IMAGE}" | grep "${TOML_MERGE_IMAGE}" >/dev/null; then
+  ctr --namespace k8s.io images pull "${TOML_MERGE_IMAGE}"
+fi
+
+cleanup() {
+  ctr images unmount "${tmp_ctr_mount_dir}" || true
+}
+
+trap 'cleanup' EXIT
+
+readonly tmp_ctr_mount_dir="$(mktemp -d)"
+
+ctr --namespace k8s.io images mount "${TOML_MERGE_IMAGE}" "${tmp_ctr_mount_dir}"
+"${tmp_ctr_mount_dir}/usr/local/bin/toml-merge" -i --patch-file "{{ .PatchDir }}/*.toml" /etc/containerd/config.toml
