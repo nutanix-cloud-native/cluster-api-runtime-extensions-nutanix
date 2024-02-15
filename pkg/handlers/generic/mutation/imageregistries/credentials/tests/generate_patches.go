@@ -69,7 +69,7 @@ func TestGeneratePatches(
 					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
 					ValueMatcher: gomega.ContainElements(
 						gomega.HaveKeyWithValue(
-							"path", "/etc/konvoy/install-kubelet-credential-providers.sh",
+							"path", "/etc/cre/install-kubelet-credential-providers.sh",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/kubernetes/image-credential-provider-config.yaml",
@@ -83,7 +83,7 @@ func TestGeneratePatches(
 					Operation: "add",
 					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 					ValueMatcher: gomega.ContainElement(
-						"/bin/bash /etc/konvoy/install-kubelet-credential-providers.sh",
+						"/bin/bash /etc/cre/install-kubelet-credential-providers.sh",
 					),
 				},
 				{
@@ -132,7 +132,7 @@ func TestGeneratePatches(
 					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
 					ValueMatcher: gomega.ContainElements(
 						gomega.HaveKeyWithValue(
-							"path", "/etc/konvoy/install-kubelet-credential-providers.sh",
+							"path", "/etc/cre/install-kubelet-credential-providers.sh",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/kubernetes/image-credential-provider-config.yaml",
@@ -149,7 +149,7 @@ func TestGeneratePatches(
 					Operation: "add",
 					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 					ValueMatcher: gomega.ContainElement(
-						"/bin/bash /etc/konvoy/install-kubelet-credential-providers.sh",
+						"/bin/bash /etc/cre/install-kubelet-credential-providers.sh",
 					),
 				},
 				{
@@ -198,7 +198,7 @@ func TestGeneratePatches(
 					Path:      "/spec/template/spec/files",
 					ValueMatcher: gomega.ContainElements(
 						gomega.HaveKeyWithValue(
-							"path", "/etc/konvoy/install-kubelet-credential-providers.sh",
+							"path", "/etc/cre/install-kubelet-credential-providers.sh",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/kubernetes/image-credential-provider-config.yaml",
@@ -212,7 +212,7 @@ func TestGeneratePatches(
 					Operation: "add",
 					Path:      "/spec/template/spec/preKubeadmCommands",
 					ValueMatcher: gomega.ContainElement(
-						"/bin/bash /etc/konvoy/install-kubelet-credential-providers.sh",
+						"/bin/bash /etc/cre/install-kubelet-credential-providers.sh",
 					),
 				},
 				{
@@ -258,7 +258,7 @@ func TestGeneratePatches(
 					Path:      "/spec/template/spec/files",
 					ValueMatcher: gomega.ContainElements(
 						gomega.HaveKeyWithValue(
-							"path", "/etc/konvoy/install-kubelet-credential-providers.sh",
+							"path", "/etc/cre/install-kubelet-credential-providers.sh",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/kubernetes/image-credential-provider-config.yaml",
@@ -275,7 +275,7 @@ func TestGeneratePatches(
 					Operation: "add",
 					Path:      "/spec/template/spec/preKubeadmCommands",
 					ValueMatcher: gomega.ContainElement(
-						"/bin/bash /etc/konvoy/install-kubelet-credential-providers.sh",
+						"/bin/bash /etc/cre/install-kubelet-credential-providers.sh",
 					),
 				},
 				{
