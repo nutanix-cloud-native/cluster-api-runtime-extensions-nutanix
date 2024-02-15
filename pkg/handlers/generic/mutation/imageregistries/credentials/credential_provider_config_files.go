@@ -67,7 +67,7 @@ func (c providerConfig) requiresStaticCredentials() (bool, error) {
 		)
 	}
 
-	knowRegistryProvider, err := credentialprovider.URLMatchesKnownRegistryProvider(
+	knownRegistryProvider, err := credentialprovider.URLMatchesKnownRegistryProvider(
 		registryHostWithPath,
 	)
 	if err != nil {
@@ -78,7 +78,7 @@ func (c providerConfig) requiresStaticCredentials() (bool, error) {
 	}
 
 	// require static credentials if the registry provider is not known
-	return !knowRegistryProvider, nil
+	return !knownRegistryProvider, nil
 }
 
 func (c providerConfig) registryHostWithPath() (string, error) {
