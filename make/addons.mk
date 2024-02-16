@@ -6,7 +6,11 @@ export CILIUM_VERSION := $(shell goprintconst -file pkg/handlers/generic/lifecyc
 export NODE_FEATURE_DISCOVERY_VERSION := 0.14.1
 export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.0
 export AWS_EBS_CSI_VERSION := v1.25.0
+# a map of AWS CPI versions
 export AWS_CPI_VERSION_127 := v1.27.1
+export AWS_CPI_CHART_VERSION_127 := 0.0.8
+export AWS_CPI_VERSION_128 := v1.28.1
+export AWS_CPI_CHART_VERSION_128 := 0.0.8
 
 addons.sync: $(addprefix update-addon.,calico cilium nfd aws-ebs-csi)
 
@@ -26,6 +30,6 @@ update-addon.nfd: ; $(info $(M) updating node feature discovery manifests)
 update-addon.aws-ebs-csi: ; $(info $(M) updating aws ebs csi manifests)
 	./hack/addons/update-aws-ebs-csi.sh
 
-.PHONY: update-addon.aws-cpi.127
-update-addon.aws-cpi.127: ; $(info $(M) updating aws cpi manifests)
-	./hack/addons/update-aws-cpi.sh $(AWS_CPI_VERSION_127)
+.PHONY: update-addon.aws-cpi.%
+update-addon.aws-cpi.%: ; $(info $(M) updating aws cpi manifests)
+	./hack/addons/update-aws-cpi.sh $(AWS_CPI_VERSION_$*) $(AWS_CPI_CHART_VERSION_$*)

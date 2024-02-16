@@ -36,6 +36,7 @@ func (a *AWSCPIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 		prefix+".default-aws-cpi-configmap-names",
 		map[string]string{
 			"1.27": "aws-cpi-v1.27.1",
+			"1.28": "aws-cpi-v1.28.1",
 		},
 		"map of provider cluster implementation type to default installation ConfigMap name",
 	)
