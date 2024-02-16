@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.4 (2024-02-16)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: restart Containerd when setting mirror config by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/374
+
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.4.3...v0.4.4
+
 ## 0.4.3 (2024-02-15)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
