@@ -28,6 +28,9 @@ const (
 	containerdPatchesDirOnRemote                = "/etc/containerd/cre.d"
 	containerdApplyPatchesScriptOnRemote        = "/etc/containerd/apply-patches.sh"
 	containerdApplyPatchesScriptOnRemoteCommand = "/bin/bash " + containerdApplyPatchesScriptOnRemote
+
+	containerdRestartScriptOnRemote        = "/etc/containerd/restart.sh"
+	containerdRestartScriptOnRemoteCommand = "/bin/bash " + containerdRestartScriptOnRemote
 )
 
 var (
@@ -47,6 +50,9 @@ var (
 
 	//go:embed templates/containerd-apply-patches.sh.gotmpl
 	containerdApplyConfigPatchesScript []byte
+
+	//go:embed templates/containerd-restart.sh
+	containerdRestartScript []byte
 )
 
 type mirrorConfig struct {
@@ -219,4 +225,15 @@ func generateContainerdApplyPatchesScript() ([]cabpkv1.File, string, error) {
 			Permissions: "0700",
 		},
 	}, containerdApplyPatchesScriptOnRemoteCommand, nil
+}
+
+//nolint:gocritic // no need for named return values
+func generateContainerdRestartScript() ([]cabpkv1.File, string) {
+	return []cabpkv1.File{
+		{
+			Path:        containerdRestartScriptOnRemote,
+			Content:     string(containerdRestartScript),
+			Permissions: "0700",
+		},
+	}, containerdRestartScriptOnRemoteCommand
 }
