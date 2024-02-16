@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 (2024-02-16)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: add AWS CPI ConfigMap for v1.28 by @dkoshkin in https://github.com/d2iq-labs/capi-runtime-extensions/pull/376
+
+
+**Full Changelog**: https://github.com/d2iq-labs/capi-runtime-extensions/compare/v0.4.4...v0.5.0
+
 ## 0.4.4 (2024-02-16)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
