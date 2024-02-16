@@ -9,6 +9,9 @@ readonly SCRIPT_DIR
 source "${SCRIPT_DIR}/../common.sh"
 
 AWS_CPI_VERSION=$1
+export AWS_CPI_VERSION
+AWS_CPI_CHART_VERSION=$2
+export AWS_CPI_CHART_VERSION
 
 if [ -z "${AWS_CPI_VERSION:-}" ]; then
   echo "Missing argument: AWS_CPI_VERSION"
@@ -18,11 +21,6 @@ fi
 ASSETS_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}")"
 readonly ASSETS_DIR
 trap_add "rm -rf ${ASSETS_DIR}" EXIT
-
-export CHART_VERSION=""
-if [ "${AWS_CPI_VERSION}" = "1.27.1" ]; then
-  CHART_VERSION="0.0.8"
-fi
 
 readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/aws-cpi/"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"

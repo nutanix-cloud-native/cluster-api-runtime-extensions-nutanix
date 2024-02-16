@@ -11,7 +11,7 @@ helmCharts:
 - name: aws-cloud-controller-manager
   includeCRDs: true
   releaseName: aws-cloud-controller-manager
-  version: ${CHART_VERSION}
+  version: ${AWS_CPI_CHART_VERSION}
   repo: https://kubernetes.github.io/cloud-provider-aws
 
 patches:
@@ -21,3 +21,7 @@ patches:
       value: --configure-cloud-routes=false
   target:
     kind: DaemonSet
+
+images:
+- name: registry.k8s.io/provider-aws/cloud-controller-manager
+  newTag: ${AWS_CPI_VERSION}
