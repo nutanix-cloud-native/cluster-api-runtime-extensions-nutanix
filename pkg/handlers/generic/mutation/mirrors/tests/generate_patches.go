@@ -75,13 +75,17 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/apply-patches.sh",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/restart.sh",
+						),
 					),
 				},
 				{
 					Operation: "add",
 					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElement(
+					ValueMatcher: gomega.ContainElements(
 						"/bin/bash /etc/containerd/apply-patches.sh",
+						"/bin/bash /etc/containerd/restart.sh",
 					),
 				},
 			},
@@ -120,13 +124,17 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/apply-patches.sh",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/restart.sh",
+						),
 					),
 				},
 				{
 					Operation: "add",
 					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElement(
+					ValueMatcher: gomega.ContainElements(
 						"/bin/bash /etc/containerd/apply-patches.sh",
+						"/bin/bash /etc/containerd/restart.sh",
 					),
 				},
 			},
@@ -165,13 +173,17 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/apply-patches.sh",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/restart.sh",
+						),
 					),
 				},
 				{
 					Operation: "add",
 					Path:      "/spec/template/spec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElement(
+					ValueMatcher: gomega.ContainElements(
 						"/bin/bash /etc/containerd/apply-patches.sh",
+						"/bin/bash /etc/containerd/restart.sh",
 					),
 				},
 			},
@@ -218,13 +230,17 @@ func TestGeneratePatches(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/apply-patches.sh",
 						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/restart.sh",
+						),
 					),
 				},
 				{
 					Operation: "add",
 					Path:      "/spec/template/spec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElement(
+					ValueMatcher: gomega.ContainElements(
 						"/bin/bash /etc/containerd/apply-patches.sh",
+						"/bin/bash /etc/containerd/restart.sh",
 					),
 				},
 			},
