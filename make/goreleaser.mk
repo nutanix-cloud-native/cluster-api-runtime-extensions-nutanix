@@ -10,7 +10,7 @@ endif
 
 .PHONY: build-snapshot
 build-snapshot: ## Builds a snapshot with goreleaser
-build-snapshot: dockerauth go-generate ; $(info $(M) building snapshot $*)
+build-snapshot: go-generate ; $(info $(M) building snapshot $*)
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		build \
 		--snapshot \
@@ -20,7 +20,7 @@ build-snapshot: dockerauth go-generate ; $(info $(M) building snapshot $*)
 
 .PHONY: release
 release: ## Builds a release with goreleaser
-release: dockerauth go-generate ; $(info $(M) building release $*)
+release: go-generate ; $(info $(M) building release $*)
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		release \
 		--clean \
@@ -30,7 +30,7 @@ release: dockerauth go-generate ; $(info $(M) building release $*)
 
 .PHONY: release-snapshot
 release-snapshot: ## Builds a snapshot release with goreleaser
-release-snapshot: dockerauth go-generate ; $(info $(M) building snapshot release $*)
+release-snapshot: go-generate ; $(info $(M) building snapshot release $*)
 	goreleaser --debug=$(GORELEASER_DEBUG) \
 		release \
 		--snapshot \
