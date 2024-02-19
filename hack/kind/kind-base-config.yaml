@@ -6,8 +6,8 @@ apiVersion: kind.x-k8s.io/v1alpha4
 containerdConfigPatches:
   - |-
     [plugins."io.containerd.grpc.v1.cri".registry.configs."registry-1.docker.io".auth]
-      username = "${DOCKER_HUB_USERNAME}"
-      password = "${DOCKER_HUB_PASSWORD}"
+      username = "${DOCKER_HUB_USERNAME:-}"
+      password = "${DOCKER_HUB_PASSWORD:-}"
   - |-
     [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
       endpoint = ["${DOCKER_HUB_MIRROR:-https://registry-1.docker.io}"]
