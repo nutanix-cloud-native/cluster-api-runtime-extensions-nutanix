@@ -1,0 +1,51 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # - ./cilium/crs
+  # - ./cilium/helm-addon
+  # - ./calico/crs
+  # - ./calico/helm-addon
+  - https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/v1.4.0-alpha.1/cluster-template-clusterclass.yaml
+
+namePrefix:
+
+labels:
+  - includeSelectors: false
+    pairs:
+      cluster.x-k8s.io/provider: infrastructure-nutanix
+
+patches:
+  - target:
+      group: cluster.x-k8s.io
+      kind: Cluster
+    patch: |-
+      - op: "remove"
+        path: "/metadata/namespace"
+      - op: "add"
+        path: "/spec/topology/class"
+        value: "${CLUSTER_CLASS_NAME}"
+  - target:
+      group: cluster.x-k8s.io
+      kind: ClusterClass
+    patch: |-
+      - op: "add"
+        path: "/spec/controlPlane/machineInfrastructure/ref/name"
+        value: "${CLUSTER_CLASS_NAME}-cp-nmt"
+      - op: "add"
+        path: "/spec/controlPlane/ref/name"
+        value: "${CLUSTER_CLASS_NAME}-kcpt"
+      - op: "add"
+        path: "/spec/infrastructure/ref/name"
+        value: "${CLUSTER_CLASS_NAME}-nct"
+      - op: "add"
+        path: "/spec/workers/machineDeployments/0/template/bootstrap/ref/name"
+        value: "${CLUSTER_CLASS_NAME}-kcfg-0"
+      - op: "add"
+        path: "/spec/workers/machineDeployments/0/template/infrastructure/ref/name"
+        value: "${CLUSTER_CLASS_NAME}-md-nmt"
+      - op: "remove"
+        path: "/spec/variables"
