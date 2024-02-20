@@ -22,11 +22,10 @@ func WaitForDeploymentsAvailable(
 	ctx context.Context, input framework.WaitForDeploymentsAvailableInput, intervals ...interface{},
 ) {
 	start := time.Now()
-	namespace, name := input.Deployment.GetNamespace(), input.Deployment.GetName()
-	Byf("waiting for deployment %s/%s to be available", namespace, name)
+	key := client.ObjectKeyFromObject(input.Deployment)
+	Byf("waiting for deployment %s to be available", key)
 	Log("starting to wait for deployment to become available")
 	Eventually(func() bool {
-		key := client.ObjectKey{Namespace: namespace, Name: name}
 		if err := input.Getter.Get(ctx, key, input.Deployment); err == nil {
 			if input.Deployment.Status.ObservedGeneration != input.Deployment.Generation {
 				return false
@@ -41,5 +40,5 @@ func WaitForDeploymentsAvailable(
 	}, intervals...).Should(BeTrue(), func() string {
 		return framework.DescribeFailedDeployment(input, input.Deployment)
 	})
-	Logf("Deployment %s/%s is now available, took %v", namespace, name, time.Since(start))
+	Logf("Deployment %s is now available, took %v", key, time.Since(start))
 }
