@@ -6,6 +6,8 @@
 package e2e
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/types"
 )
@@ -21,4 +23,8 @@ func CheckTestBeforeCleanup() {
 		Logf("FAILED!")
 	}
 	Logf("Cleaning up after \"%s\" spec", CurrentSpecReport().FullText())
+}
+
+func Byf(format string, a ...interface{}) {
+	By(fmt.Sprintf(format, a...))
 }
