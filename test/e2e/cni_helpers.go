@@ -25,6 +25,7 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 	clusterProxy framework.ClusterProxy,
 	deploymentIntervals []interface{},
 	daemonSetIntervals []interface{},
+	helmReleaseIntervals []interface{},
 ) {
 	WaitForCNIToBeReadyInWorkloadCluster(
 		ctx,
@@ -33,6 +34,7 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 		clusterProxy,
 		deploymentIntervals,
 		daemonSetIntervals,
+		helmReleaseIntervals,
 	)
 }
 
@@ -43,6 +45,7 @@ func WaitForCNIToBeReadyInWorkloadCluster(
 	clusterProxy framework.ClusterProxy,
 	deploymentIntervals []interface{},
 	daemonSetIntervals []interface{},
+	helmReleaseIntervals []interface{},
 ) {
 	if cni == nil {
 		return
@@ -57,6 +60,7 @@ func WaitForCNIToBeReadyInWorkloadCluster(
 			clusterProxy,
 			deploymentIntervals,
 			daemonSetIntervals,
+			helmReleaseIntervals,
 		)
 	case v1alpha1.CNIProviderCilium:
 		waitForCiliumToBeReadyInWorkloadCluster(
@@ -66,6 +70,7 @@ func WaitForCNIToBeReadyInWorkloadCluster(
 			clusterProxy,
 			deploymentIntervals,
 			daemonSetIntervals,
+			helmReleaseIntervals,
 		)
 	default:
 		Fail(fmt.Sprintf("Do not know how to wait for CNI provider %s to be ready", cni.Provider))
@@ -79,6 +84,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 	clusterProxy framework.ClusterProxy,
 	deploymentIntervals []interface{},
 	daemonSetIntervals []interface{},
+	helmReleaseIntervals []interface{},
 ) {
 	switch strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
@@ -90,66 +96,16 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 			workloadCluster,
 			deploymentIntervals...,
 		)
-
-		workloadClusterClient := clusterProxy.GetWorkloadCluster(
-			ctx, workloadCluster.Namespace, workloadCluster.Name,
-		).GetClient()
-
-		WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-			Getter: workloadClusterClient,
-			Deployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "tigera-operator",
-					Namespace: "tigera-operator",
-				},
-			},
-		}, deploymentIntervals...)
-		WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-			Getter: workloadClusterClient,
-			Deployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "calico-typha",
-					Namespace: "calico-system",
-				},
-			},
-		}, deploymentIntervals...)
-		WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-			Getter: workloadClusterClient,
-			Deployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "calico-kube-controllers",
-					Namespace: "calico-system",
-				},
-			},
-		}, deploymentIntervals...)
-		WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
-			Getter: workloadClusterClient,
-			DaemonSet: &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "calico-node",
-					Namespace: "calico-system",
-				},
-			},
-		}, daemonSetIntervals...)
-		WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
-			Getter: workloadClusterClient,
-			DaemonSet: &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "csi-node-driver",
-					Namespace: "calico-system",
-				},
-			},
-		}, daemonSetIntervals...)
-		WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-			Getter: workloadClusterClient,
-			Deployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "calico-apiserver",
-					Namespace: "calico-apiserver",
-				},
-			},
-		}, deploymentIntervals...)
 	case v1alpha1.AddonStrategyHelmAddon:
+		WaitForHelmReleaseProxyReadyForCluster(
+			ctx,
+			WaitForHelmReleaseProxyReadyForClusterInput{
+				GetLister:          clusterProxy.GetClient(),
+				Cluster:            workloadCluster,
+				HelmChartProxyName: "calico-cni-installation-" + workloadCluster.Name,
+			},
+			helmReleaseIntervals...,
+		)
 	default:
 		Fail(
 			fmt.Sprintf(
@@ -158,6 +114,65 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 			),
 		)
 	}
+
+	workloadClusterClient := clusterProxy.GetWorkloadCluster(
+		ctx, workloadCluster.Namespace, workloadCluster.Name,
+	).GetClient()
+
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "tigera-operator",
+				Namespace: "tigera-operator",
+			},
+		},
+	}, deploymentIntervals...)
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "calico-typha",
+				Namespace: "calico-system",
+			},
+		},
+	}, deploymentIntervals...)
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "calico-kube-controllers",
+				Namespace: "calico-system",
+			},
+		},
+	}, deploymentIntervals...)
+	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
+		Getter: workloadClusterClient,
+		DaemonSet: &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "calico-node",
+				Namespace: "calico-system",
+			},
+		},
+	}, daemonSetIntervals...)
+	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
+		Getter: workloadClusterClient,
+		DaemonSet: &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "csi-node-driver",
+				Namespace: "calico-system",
+			},
+		},
+	}, daemonSetIntervals...)
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "calico-apiserver",
+				Namespace: "calico-apiserver",
+			},
+		},
+	}, deploymentIntervals...)
 }
 
 func waitForCiliumToBeReadyInWorkloadCluster(
@@ -167,6 +182,7 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 	clusterProxy framework.ClusterProxy,
 	deploymentIntervals []interface{},
 	daemonSetIntervals []interface{},
+	helmReleaseIntervals []interface{},
 ) {
 	switch strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
@@ -178,31 +194,16 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 			workloadCluster,
 			deploymentIntervals...,
 		)
-
-		workloadClusterClient := clusterProxy.GetWorkloadCluster(
-			ctx, workloadCluster.Namespace, workloadCluster.Name,
-		).GetClient()
-
-		WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-			Getter: workloadClusterClient,
-			Deployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "cilium-operator",
-					Namespace: "kube-system",
-				},
-			},
-		}, deploymentIntervals...)
-
-		WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
-			Getter: workloadClusterClient,
-			DaemonSet: &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "cilium",
-					Namespace: "kube-system",
-				},
-			},
-		}, daemonSetIntervals...)
 	case v1alpha1.AddonStrategyHelmAddon:
+		WaitForHelmReleaseProxyReadyForCluster(
+			ctx,
+			WaitForHelmReleaseProxyReadyForClusterInput{
+				GetLister:          clusterProxy.GetClient(),
+				Cluster:            workloadCluster,
+				HelmChartProxyName: "cilium-cni-installation-" + workloadCluster.Name,
+			},
+			helmReleaseIntervals...,
+		)
 	default:
 		Fail(
 			fmt.Sprintf(
@@ -211,4 +212,28 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 			),
 		)
 	}
+
+	workloadClusterClient := clusterProxy.GetWorkloadCluster(
+		ctx, workloadCluster.Namespace, workloadCluster.Name,
+	).GetClient()
+
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "cilium-operator",
+				Namespace: "kube-system",
+			},
+		},
+	}, deploymentIntervals...)
+
+	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
+		Getter: workloadClusterClient,
+		DaemonSet: &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "cilium",
+				Namespace: "kube-system",
+			},
+		},
+	}, daemonSetIntervals...)
 }

@@ -163,6 +163,7 @@ var _ = Describe("Quick start", Serial, func() {
 										proxy,
 										e2eConfig.GetIntervals(flavour, "wait-deployment"),
 										e2eConfig.GetIntervals(flavour, "wait-daemonset"),
+										e2eConfig.GetIntervals(flavour, "wait-helmrelease"),
 									)
 								},
 							}
