@@ -32,6 +32,7 @@ require (
 	sigs.k8s.io/cluster-api-addon-provider-helm v0.1.1-alpha.1
 	sigs.k8s.io/cluster-api/test v1.6.1
 	sigs.k8s.io/controller-runtime v0.17.1
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -141,5 +142,4 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kind v0.20.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
 )

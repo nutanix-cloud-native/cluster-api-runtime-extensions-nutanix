@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/bootstrap"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	clusterctltemp "github.com/d2iq-labs/capi-runtime-extensions/test/framework/clusterctl"
 )
 
 func init() { //nolint:gochecknoinits // Idiomatically used to set up flags.
@@ -154,7 +156,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func loadE2EConfig(configPath string) *clusterctl.E2EConfig {
-	config := clusterctl.LoadE2EConfig(
+	config := clusterctltemp.LoadE2EConfig(
 		context.TODO(),
 		clusterctl.LoadE2EConfigInput{ConfigPath: configPath},
 	)
