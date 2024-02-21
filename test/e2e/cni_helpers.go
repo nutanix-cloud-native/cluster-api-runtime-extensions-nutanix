@@ -18,34 +18,6 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 )
 
-type WaitForAddonsToBeReadyInWorkloadClusterInput struct {
-	AddonsConfig                v1alpha1.Addons
-	WorkloadCluster             *capiv1.Cluster
-	ClusterProxy                framework.ClusterProxy
-	DeploymentIntervals         []interface{}
-	DaemonSetIntervals          []interface{}
-	HelmReleaseIntervals        []interface{}
-	ClusterResourceSetIntervals []interface{}
-}
-
-func WaitForAddonsToBeReadyInWorkloadCluster(
-	ctx context.Context,
-	input WaitForAddonsToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
-) {
-	WaitForCNIToBeReadyInWorkloadCluster(
-		ctx,
-		WaitForCNIToBeReadyInWorkloadClusterInput{
-			CNI:                         input.AddonsConfig.CNI,
-			WorkloadCluster:             input.WorkloadCluster,
-			ClusterProxy:                input.ClusterProxy,
-			DeploymentIntervals:         input.DeploymentIntervals,
-			DaemonSetIntervals:          input.DaemonSetIntervals,
-			HelmReleaseIntervals:        input.HelmReleaseIntervals,
-			ClusterResourceSetIntervals: input.ClusterResourceSetIntervals,
-		},
-	)
-}
-
 type WaitForCNIToBeReadyInWorkloadClusterInput struct {
 	CNI                         *v1alpha1.CNI
 	WorkloadCluster             *capiv1.Cluster
