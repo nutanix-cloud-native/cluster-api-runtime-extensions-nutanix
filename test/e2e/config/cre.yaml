@@ -66,9 +66,9 @@ providers:
       targetName: cluster-template-topology-calico-helm-addon.yaml
     - sourcePath: "../../../examples/capi-quick-start/docker-cluster-calico-crs.yaml"
       targetName: cluster-template-topology-calico-crs.yaml
-      replacements:
-      - old: --metrics-addr=127.0.0.1:8080
-        new: --metrics-addr=:8080
+    replacements:
+    - old: --metrics-addr=127.0.0.1:8080
+      new: --metrics-addr=:8080
 
 - name: helm
   type: AddonProvider
@@ -108,12 +108,8 @@ providers:
       new: "--v=8"
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
-    # Ensure no images are pulled but are instead must have been loaded into the bootstrap cluster (see `images`
-    # value above for the images to load).
-    - old: "imagePullPolicy: IfNotPresent"
-      new: "imagePullPolicy: Never"
     - old: "imagePullPolicy: Always"
-      new: "imagePullPolicy: Never"
+      new: "imagePullPolicy: IfNotPresent"
 
 variables:
   # Default variables for the e2e test; those values could be overridden via env variables, thus
@@ -146,10 +142,9 @@ intervals:
   default/wait-machine-pool-upgrade: ["5m", "10s"]
   default/wait-nodes-ready: ["10m", "10s"]
   default/wait-machine-remediation: ["5m", "10s"]
-  default/wait-autoscaler: ["5m", "10s"]
   default/wait-deployment: ["15m", "10s"]
-  default/wait-nsg-update: [ "20m", "10s" ]
   default/wait-daemonset: [ "15m", "10s" ]
-  default/wait-deployment-available: [ "15m", "10s" ]
+  default/wait-clusterresourceset: [ "15m", "10s" ]
+  default/wait-helmrelease: [ "15m", "10s" ]
   default/wait-job: [ "5m", "10s" ]
   default/wait-service: [ "15m", "10s" ]

@@ -84,7 +84,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Run e2e tests
-        run: devbox run -- make e2e-test E2E_FOCUS='\[${{ matrix.PROVIDER }}\]'
+        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ matrix.PROVIDER }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
