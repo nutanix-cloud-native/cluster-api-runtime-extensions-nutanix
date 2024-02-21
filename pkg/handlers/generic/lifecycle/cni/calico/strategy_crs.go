@@ -14,18 +14,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructuredscheme"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/parser"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/cni"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/utils"
 )
 
 type crsConfig struct {
@@ -84,7 +82,8 @@ func (s crsStrategy) apply(
 	}
 
 	log.Info("Ensuring Tigera manifests ConfigMap exist in cluster namespace")
-	if err := s.ensureTigeraOperatorConfigMap(ctx, &req.Cluster); err != nil {
+	tigeraCM, err := s.ensureTigeraOperatorConfigMap(ctx, &req.Cluster)
+	if err != nil {
 		log.Error(
 			err,
 			"failed to ensure Tigera Operator manifests ConfigMap exists in cluster namespace",
@@ -96,7 +95,12 @@ func (s crsStrategy) apply(
 	}
 
 	log.Info("Ensuring Calico installation CRS and ConfigMap exist for cluster")
-	if err := s.ensureCNICRSForCluster(ctx, &req.Cluster, defaultInstallationConfigMapName); err != nil {
+	if err := s.ensureCNICRSForCluster(
+		ctx,
+		&req.Cluster,
+		defaultInstallationConfigMapName,
+		tigeraCM,
+	); err != nil {
 		log.Error(
 			err,
 			"failed to ensure Calico installation manifests ConfigMap and ClusterResourceSet exist in cluster namespace",
@@ -114,6 +118,7 @@ func (s crsStrategy) ensureCNICRSForCluster(
 	ctx context.Context,
 	cluster *capiv1.Cluster,
 	defaultInstallationConfigMapName string,
+	tigeraConfigMap *corev1.ConfigMap,
 ) error {
 	defaultInstallationConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -133,22 +138,27 @@ func (s crsStrategy) ensureCNICRSForCluster(
 		)
 	}
 
-	calicoCNIObjs, err := generateProviderCNICRS(
+	cm, err := generateProviderCNIManifestsConfigMap(
 		defaultInstallationConfigMap,
-		s.config.defaultTigeraOperatorConfigMapName,
 		cluster,
-		s.client.Scheme(),
 	)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to generate Calico provider CNI CRS: %w",
+			"failed to generate Calico provider CNI manifests ConfigMap: %w",
 			err,
 		)
 	}
 
-	if err := client.ServerSideApply(ctx, s.client, calicoCNIObjs...); err != nil {
+	if err := client.ServerSideApply(ctx, s.client, cm); err != nil {
 		return fmt.Errorf(
-			"failed to apply Calico CNI installation CRS: %w",
+			"failed to apply Calico CNI installation manifests ConfigMap: %w",
+			err,
+		)
+	}
+
+	if err := utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, cluster, tigeraConfigMap, cm); err != nil {
+		return fmt.Errorf(
+			"failed to apply Calico CNI installation ClusterResourceSet: %w",
 			err,
 		)
 	}
@@ -159,7 +169,7 @@ func (s crsStrategy) ensureCNICRSForCluster(
 func (s crsStrategy) ensureTigeraOperatorConfigMap(
 	ctx context.Context,
 	cluster *capiv1.Cluster,
-) error {
+) (*corev1.ConfigMap, error) {
 	defaultTigeraOperatorConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: s.config.defaultsNamespace,
@@ -171,7 +181,7 @@ func (s crsStrategy) ensureTigeraOperatorConfigMap(
 	)
 	err := s.client.Get(ctx, defaultTigeraOperatorConfigMapObjName, defaultTigeraOperatorConfigMap)
 	if err != nil {
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"failed to retrieve default Tigera Operator manifests ConfigMap %q: %w",
 			defaultTigeraOperatorConfigMapObjName,
 			err,
@@ -180,18 +190,18 @@ func (s crsStrategy) ensureTigeraOperatorConfigMap(
 
 	tigeraConfigMap := generateTigeraOperatorConfigMap(defaultTigeraOperatorConfigMap, cluster)
 	if err := client.ServerSideApply(ctx, s.client, tigeraConfigMap); err != nil {
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"failed to apply Tigera Operator manifests ConfigMap: %w",
 			err,
 		)
 	}
 
-	return nil
+	return tigeraConfigMap, nil
 }
 
 func generateTigeraOperatorConfigMap(
 	defaultTigeraOperatorConfigMap *corev1.ConfigMap, cluster *capiv1.Cluster,
-) ctrlclient.Object {
+) *corev1.ConfigMap {
 	namespacedTigeraConfigMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -208,12 +218,10 @@ func generateTigeraOperatorConfigMap(
 	return namespacedTigeraConfigMap
 }
 
-func generateProviderCNICRS(
+func generateProviderCNIManifestsConfigMap(
 	installationConfigMap *corev1.ConfigMap,
-	tigeraOperatorConfigMapName string,
 	cluster *capiv1.Cluster,
-	scheme *runtime.Scheme,
-) ([]ctrlclient.Object, error) {
+) (*corev1.ConfigMap, error) {
 	defaultManifestStrings := make([]string, 0, len(installationConfigMap.Data))
 	for _, v := range installationConfigMap.Data {
 		defaultManifestStrings = append(defaultManifestStrings, v)
@@ -295,37 +303,5 @@ func generateProviderCNICRS(
 		},
 	}
 
-	if err := controllerutil.SetOwnerReference(cluster, cm, scheme); err != nil {
-		return nil, fmt.Errorf("failed to set owner reference: %w", err)
-	}
-
-	crs := &crsv1.ClusterResourceSet{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: crsv1.GroupVersion.String(),
-			Kind:       "ClusterResourceSet",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Namespace,
-			Name:      cm.Name,
-		},
-		Spec: crsv1.ClusterResourceSetSpec{
-			Resources: []crsv1.ResourceRef{{
-				Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
-				Name: tigeraOperatorConfigMapName,
-			}, {
-				Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
-				Name: cm.Name,
-			}},
-			Strategy: string(crsv1.ClusterResourceSetStrategyReconcile),
-			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{capiv1.ClusterNameLabel: cluster.Name},
-			},
-		},
-	}
-
-	if err := controllerutil.SetOwnerReference(cluster, crs, scheme); err != nil {
-		return nil, fmt.Errorf("failed to set owner reference: %w", err)
-	}
-
-	return []ctrlclient.Object{cm, crs}, nil
+	return cm, nil
 }

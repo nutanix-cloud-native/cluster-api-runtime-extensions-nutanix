@@ -39,3 +39,5 @@ node_modules/
 
 /cluster.yaml
 /runtime-extension-components.yaml
+/_artifacts/
+test/e2e/config/cre-envsubst.yaml

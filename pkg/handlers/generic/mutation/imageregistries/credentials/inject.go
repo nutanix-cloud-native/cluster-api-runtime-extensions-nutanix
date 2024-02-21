@@ -131,7 +131,9 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		)
 	}
 
-	needCredentials, err := needImageRegistryCredentialsConfiguration(registriesWithOptionalCredentials)
+	needCredentials, err := needImageRegistryCredentialsConfiguration(
+		registriesWithOptionalCredentials,
+	)
 	if err != nil {
 		return err
 	}

@@ -30,18 +30,18 @@ release:
 before:
   hooks:
     - |
-      sh -ec 'if [ {{ .IsSnapshot }} != true ]; then
-        cat <<EOF > runtime-extension-components.yaml
+      sh -ec 'cat <<EOF > runtime-extension-components.yaml
       apiVersion: v1
       kind: Namespace
       metadata:
-        name: capi-runtime-extensions-system
-      $(helm template capi-runtime-extensions ./charts/capi-runtime-extensions \
-        --namespace capi-runtime-extensions-system \
+        name: {{.ProjectName}}-system
+      $(helm template {{.ProjectName}} ./charts/{{.ProjectName}} \
+        --namespace {{.ProjectName}}-system \
         --set-string image.tag={{ .Version }} \
+        {{ if .IsSnapshot }}--set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
-      EOF
-      fi'
+      EOF'
+    - sed -i 's/\${/$${/g' runtime-extension-components.yaml
 
 builds:
   - id: capi-runtime-extensions
@@ -72,7 +72,7 @@ builds:
           sh -ec 'if [ {{ .IsSnapshot }} == true ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
             env GOOS=linux GOARCH={{ .Arch }} \
                 SOURCE_DATE_EPOCH=$(date +%s) \
-                KO_DOCKER_REPO=ko.local/capi-runtime-extensions \
+                KO_DOCKER_REPO=ko.local/{{ .ProjectName }} \
                 ko build \
                   --bare \
                   -t {{ .Version }} \
@@ -100,7 +100,7 @@ kos:
       - -X 'k8s.io/component-base/version/verflag.programName={{ .ProjectName }}'
     labels:
       org.opencontainers.image.created: "{{ .CommitDate }}"
-      org.opencontainers.image.title: capi-runtime-extensions
+      org.opencontainers.image.title: "{{ .ProjectName }}"
       org.opencontainers.image.revision: "{{ .FullCommit }}"
       org.opencontainers.image.version: v{{trimprefix .Version "v"}}
       org.opencontainers.image.source: "{{ .GitURL }}"
