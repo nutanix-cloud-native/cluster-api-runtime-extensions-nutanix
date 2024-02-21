@@ -65,8 +65,6 @@ func TestE2E(t *testing.T) {
 // Using a SynchronizedBeforeSuite for controlling how to create resources shared across ParallelNodes (~ginkgo
 // threads). The local clusterctl repository & the bootstrap cluster are created once and shared across all the tests.
 var _ = SynchronizedBeforeSuite(func() []byte {
-	// Before all ParallelNodes.
-
 	Expect(
 		configPath,
 	).To(BeAnExistingFile(), "Invalid test suite argument. e2e.config should be an existing file.")
