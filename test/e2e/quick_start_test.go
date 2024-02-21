@@ -158,12 +158,27 @@ var _ = Describe("Quick start", Serial, func() {
 									Expect(found).To(BeTrue())
 									WaitForAddonsToBeReadyInWorkloadCluster(
 										ctx,
-										addonsConfig,
-										workloadCluster,
-										proxy,
-										e2eConfig.GetIntervals(flavour, "wait-deployment"),
-										e2eConfig.GetIntervals(flavour, "wait-daemonset"),
-										e2eConfig.GetIntervals(flavour, "wait-helmrelease"),
+										WaitForAddonsToBeReadyInWorkloadClusterInput{
+											AddonsConfig:    addonsConfig,
+											ClusterProxy:    proxy,
+											WorkloadCluster: workloadCluster,
+											DeploymentIntervals: e2eConfig.GetIntervals(
+												flavour,
+												"wait-deployment",
+											),
+											DaemonSetIntervals: e2eConfig.GetIntervals(
+												flavour,
+												"wait-daemonset",
+											),
+											HelmReleaseIntervals: e2eConfig.GetIntervals(
+												flavour,
+												"wait-helmrelease",
+											),
+											ClusterResourceSetIntervals: e2eConfig.GetIntervals(
+												flavour,
+												"wait-clusterresourceset",
+											),
+										},
 									)
 								},
 							}

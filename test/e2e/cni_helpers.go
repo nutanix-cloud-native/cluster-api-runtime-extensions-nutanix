@@ -18,105 +18,135 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 )
 
+type WaitForAddonsToBeReadyInWorkloadClusterInput struct {
+	AddonsConfig                v1alpha1.Addons
+	WorkloadCluster             *capiv1.Cluster
+	ClusterProxy                framework.ClusterProxy
+	DeploymentIntervals         []interface{}
+	DaemonSetIntervals          []interface{}
+	HelmReleaseIntervals        []interface{}
+	ClusterResourceSetIntervals []interface{}
+}
+
 func WaitForAddonsToBeReadyInWorkloadCluster(
 	ctx context.Context,
-	addonsConfig v1alpha1.Addons,
-	workloadCluster *capiv1.Cluster,
-	clusterProxy framework.ClusterProxy,
-	deploymentIntervals []interface{},
-	daemonSetIntervals []interface{},
-	helmReleaseIntervals []interface{},
+	input WaitForAddonsToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
 ) {
 	WaitForCNIToBeReadyInWorkloadCluster(
 		ctx,
-		addonsConfig.CNI,
-		workloadCluster,
-		clusterProxy,
-		deploymentIntervals,
-		daemonSetIntervals,
-		helmReleaseIntervals,
+		WaitForCNIToBeReadyInWorkloadClusterInput{
+			CNI:                         input.AddonsConfig.CNI,
+			WorkloadCluster:             input.WorkloadCluster,
+			ClusterProxy:                input.ClusterProxy,
+			DeploymentIntervals:         input.DeploymentIntervals,
+			DaemonSetIntervals:          input.DaemonSetIntervals,
+			HelmReleaseIntervals:        input.HelmReleaseIntervals,
+			ClusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+		},
 	)
+}
+
+type WaitForCNIToBeReadyInWorkloadClusterInput struct {
+	CNI                         *v1alpha1.CNI
+	WorkloadCluster             *capiv1.Cluster
+	ClusterProxy                framework.ClusterProxy
+	DeploymentIntervals         []interface{}
+	DaemonSetIntervals          []interface{}
+	HelmReleaseIntervals        []interface{}
+	ClusterResourceSetIntervals []interface{}
 }
 
 func WaitForCNIToBeReadyInWorkloadCluster(
 	ctx context.Context,
-	cni *v1alpha1.CNI,
-	workloadCluster *capiv1.Cluster,
-	clusterProxy framework.ClusterProxy,
-	deploymentIntervals []interface{},
-	daemonSetIntervals []interface{},
-	helmReleaseIntervals []interface{},
+	input WaitForCNIToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
 ) {
-	if cni == nil {
+	if input.CNI == nil {
 		return
 	}
 
-	switch cni.Provider {
+	switch input.CNI.Provider {
 	case v1alpha1.CNIProviderCalico:
 		waitForCalicoToBeReadyInWorkloadCluster(
 			ctx,
-			cni.Strategy,
-			workloadCluster,
-			clusterProxy,
-			deploymentIntervals,
-			daemonSetIntervals,
-			helmReleaseIntervals,
+			waitForCalicoToBeReadyInWorkloadClusterInput{
+				strategy:                    input.CNI.Strategy,
+				workloadCluster:             input.WorkloadCluster,
+				clusterProxy:                input.ClusterProxy,
+				deploymentIntervals:         input.DeploymentIntervals,
+				daemonSetIntervals:          input.DaemonSetIntervals,
+				helmReleaseIntervals:        input.HelmReleaseIntervals,
+				clusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+			},
 		)
 	case v1alpha1.CNIProviderCilium:
 		waitForCiliumToBeReadyInWorkloadCluster(
 			ctx,
-			cni.Strategy,
-			workloadCluster,
-			clusterProxy,
-			deploymentIntervals,
-			daemonSetIntervals,
-			helmReleaseIntervals,
+			waitForCiliumToBeReadyInWorkloadClusterInput{
+				strategy:                    input.CNI.Strategy,
+				workloadCluster:             input.WorkloadCluster,
+				clusterProxy:                input.ClusterProxy,
+				deploymentIntervals:         input.DeploymentIntervals,
+				daemonSetIntervals:          input.DaemonSetIntervals,
+				helmReleaseIntervals:        input.HelmReleaseIntervals,
+				clusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+			},
 		)
 	default:
-		Fail(fmt.Sprintf("Do not know how to wait for CNI provider %s to be ready", cni.Provider))
+		Fail(
+			fmt.Sprintf(
+				"Do not know how to wait for CNI provider %s to be ready",
+				input.CNI.Provider,
+			),
+		)
 	}
+}
+
+type waitForCalicoToBeReadyInWorkloadClusterInput struct {
+	strategy                    v1alpha1.AddonStrategy
+	workloadCluster             *capiv1.Cluster
+	clusterProxy                framework.ClusterProxy
+	deploymentIntervals         []interface{}
+	daemonSetIntervals          []interface{}
+	helmReleaseIntervals        []interface{}
+	clusterResourceSetIntervals []interface{}
 }
 
 func waitForCalicoToBeReadyInWorkloadCluster(
 	ctx context.Context,
-	strategy v1alpha1.AddonStrategy,
-	workloadCluster *capiv1.Cluster,
-	clusterProxy framework.ClusterProxy,
-	deploymentIntervals []interface{},
-	daemonSetIntervals []interface{},
-	helmReleaseIntervals []interface{},
+	input waitForCalicoToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
 ) {
-	switch strategy {
+	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		waitForClusterResourceSetToApplyResourcesInCluster(
 			ctx,
-			workloadCluster.Namespace,
-			"calico-cni-installation-"+workloadCluster.Name,
-			clusterProxy,
-			workloadCluster,
-			deploymentIntervals...,
+			waitForClusterResourceSetToApplyResourcesInClusterInput{
+				name:         "calico-cni-installation-" + input.workloadCluster.Name,
+				clusterProxy: input.clusterProxy,
+				cluster:      input.workloadCluster,
+				intervals:    input.clusterResourceSetIntervals,
+			},
 		)
 	case v1alpha1.AddonStrategyHelmAddon:
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          clusterProxy.GetClient(),
-				Cluster:            workloadCluster,
-				HelmChartProxyName: "calico-cni-installation-" + workloadCluster.Name,
+				GetLister:          input.clusterProxy.GetClient(),
+				Cluster:            input.workloadCluster,
+				HelmChartProxyName: "calico-cni-installation-" + input.workloadCluster.Name,
 			},
-			helmReleaseIntervals...,
+			input.helmReleaseIntervals...,
 		)
 	default:
 		Fail(
 			fmt.Sprintf(
 				"Do not know how to wait for Calico using strategy %s to be ready",
-				strategy,
+				input.strategy,
 			),
 		)
 	}
 
-	workloadClusterClient := clusterProxy.GetWorkloadCluster(
-		ctx, workloadCluster.Namespace, workloadCluster.Name,
+	workloadClusterClient := input.clusterProxy.GetWorkloadCluster(
+		ctx, input.workloadCluster.Namespace, input.workloadCluster.Name,
 	).GetClient()
 
 	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
@@ -127,7 +157,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 				Namespace: "tigera-operator",
 			},
 		},
-	}, deploymentIntervals...)
+	}, input.deploymentIntervals...)
 	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
 		Getter: workloadClusterClient,
 		Deployment: &appsv1.Deployment{
@@ -136,7 +166,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 				Namespace: "calico-system",
 			},
 		},
-	}, deploymentIntervals...)
+	}, input.deploymentIntervals...)
 	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
 		Getter: workloadClusterClient,
 		Deployment: &appsv1.Deployment{
@@ -145,7 +175,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 				Namespace: "calico-system",
 			},
 		},
-	}, deploymentIntervals...)
+	}, input.deploymentIntervals...)
 	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
 		Getter: workloadClusterClient,
 		DaemonSet: &appsv1.DaemonSet{
@@ -154,7 +184,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 				Namespace: "calico-system",
 			},
 		},
-	}, daemonSetIntervals...)
+	}, input.daemonSetIntervals...)
 	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
 		Getter: workloadClusterClient,
 		DaemonSet: &appsv1.DaemonSet{
@@ -163,7 +193,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 				Namespace: "calico-system",
 			},
 		},
-	}, daemonSetIntervals...)
+	}, input.daemonSetIntervals...)
 	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
 		Getter: workloadClusterClient,
 		Deployment: &appsv1.Deployment{
@@ -172,49 +202,55 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 				Namespace: "calico-apiserver",
 			},
 		},
-	}, deploymentIntervals...)
+	}, input.deploymentIntervals...)
+}
+
+type waitForCiliumToBeReadyInWorkloadClusterInput struct {
+	strategy                    v1alpha1.AddonStrategy
+	workloadCluster             *capiv1.Cluster
+	clusterProxy                framework.ClusterProxy
+	deploymentIntervals         []interface{}
+	daemonSetIntervals          []interface{}
+	helmReleaseIntervals        []interface{}
+	clusterResourceSetIntervals []interface{}
 }
 
 func waitForCiliumToBeReadyInWorkloadCluster(
 	ctx context.Context,
-	strategy v1alpha1.AddonStrategy,
-	workloadCluster *capiv1.Cluster,
-	clusterProxy framework.ClusterProxy,
-	deploymentIntervals []interface{},
-	daemonSetIntervals []interface{},
-	helmReleaseIntervals []interface{},
+	input waitForCiliumToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
 ) {
-	switch strategy {
+	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		waitForClusterResourceSetToApplyResourcesInCluster(
 			ctx,
-			workloadCluster.Namespace,
-			"cilium-cni-installation-"+workloadCluster.Name,
-			clusterProxy,
-			workloadCluster,
-			deploymentIntervals...,
+			waitForClusterResourceSetToApplyResourcesInClusterInput{
+				name:         "cilium-cni-installation-" + input.workloadCluster.Name,
+				clusterProxy: input.clusterProxy,
+				cluster:      input.workloadCluster,
+				intervals:    input.clusterResourceSetIntervals,
+			},
 		)
 	case v1alpha1.AddonStrategyHelmAddon:
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          clusterProxy.GetClient(),
-				Cluster:            workloadCluster,
-				HelmChartProxyName: "cilium-cni-installation-" + workloadCluster.Name,
+				GetLister:          input.clusterProxy.GetClient(),
+				Cluster:            input.workloadCluster,
+				HelmChartProxyName: "cilium-cni-installation-" + input.workloadCluster.Name,
 			},
-			helmReleaseIntervals...,
+			input.helmReleaseIntervals...,
 		)
 	default:
 		Fail(
 			fmt.Sprintf(
 				"Do not know how to wait for Cilium using strategy %s to be ready",
-				strategy,
+				input.strategy,
 			),
 		)
 	}
 
-	workloadClusterClient := clusterProxy.GetWorkloadCluster(
-		ctx, workloadCluster.Namespace, workloadCluster.Name,
+	workloadClusterClient := input.clusterProxy.GetWorkloadCluster(
+		ctx, input.workloadCluster.Namespace, input.workloadCluster.Name,
 	).GetClient()
 
 	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
@@ -225,7 +261,7 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 				Namespace: "kube-system",
 			},
 		},
-	}, deploymentIntervals...)
+	}, input.deploymentIntervals...)
 
 	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
 		Getter: workloadClusterClient,
@@ -235,5 +271,5 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 				Namespace: "kube-system",
 			},
 		},
-	}, daemonSetIntervals...)
+	}, input.daemonSetIntervals...)
 }
