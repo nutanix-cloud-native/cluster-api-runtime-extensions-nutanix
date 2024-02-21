@@ -103,7 +103,13 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 		log.Error(err, "failed to apply NFD ConfigMap for cluster")
 		return
 	}
-	err = utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, n.client, &req.Cluster, cm)
+	err = utils.EnsureCRSForClusterFromConfigMaps(
+		ctx,
+		cm.Name+"-"+req.Cluster.Name,
+		n.client,
+		&req.Cluster,
+		cm,
+	)
 	if err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		log.Error(err, "failed to apply NFD ClusterResourceSet for cluster")
