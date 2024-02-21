@@ -25,7 +25,8 @@ spec:
             cni:
               provider: Cilium
               strategy: ClusterResourceSet
-            nfd: {}
+            nfd:
+              strategy: ClusterResourceSet
           docker: {}
     version: ${KUBERNETES_VERSION}
     workers:

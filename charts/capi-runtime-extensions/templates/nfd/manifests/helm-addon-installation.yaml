@@ -1,0 +1,30 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
+data:
+  values.yaml: |-
+    master:
+      extraLabelNs:
+        - nvidia.com
+        - beta.amd.com
+        - amd.com
+
+    worker: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
+      config:
+        sources:
+          pci:
+            deviceLabelFields:
+              - "class"
+              - "vendor"
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+    ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
+{{- end -}}

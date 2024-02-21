@@ -7,62 +7,55 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
+	commonhandlers "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
+	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/utils"
 )
 
-type NFDConfig struct {
-	defaultsNamespace   string
-	defaultNFDConfigMap string
+type addonStrategy interface {
+	apply(context.Context, *runtimehooksv1.AfterControlPlaneInitializedRequest, logr.Logger) error
+}
+
+type Config struct {
+	crsConfig       crsConfig
+	helmAddonConfig helmAddonConfig
+}
+
+func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
+	c.crsConfig.AddFlags(prefix+".crs", flags)
+	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
 type DefaultNFD struct {
 	client ctrlclient.Client
-	config *NFDConfig
+	config *Config
 
 	variableName string   // points to the global config variable
 	variablePath []string // path of this variable on the global config variable
 }
 
-func (n *NFDConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&n.defaultsNamespace,
-		prefix+".defaults-namespace",
-		corev1.NamespaceDefault,
-		"namespace location of ConfigMap used to deploy Node Feature Discovery (NFD).",
-	)
-	flags.StringVar(
-		&n.defaultNFDConfigMap,
-		prefix+".default-nfd-configmap-name",
-		"node-feature-discovery",
-		"name of the ConfigMap used to deploy Node Feature Discovery (NFD)",
-	)
-}
-
-const (
-	variableName = "nfd"
+var (
+	_ commonhandlers.Named                   = &DefaultNFD{}
+	_ lifecycle.AfterControlPlaneInitialized = &DefaultNFD{}
 )
 
 func New(
 	c ctrlclient.Client,
-	cfg *NFDConfig,
+	cfg *Config,
 ) *DefaultNFD {
 	return &DefaultNFD{
 		client:       c,
 		config:       cfg,
 		variableName: clusterconfig.MetaVariableName,
-		variablePath: []string{"addons", variableName},
+		variablePath: []string{"addons", v1alpha1.NFDVariableName},
 	}
 }
 
@@ -81,77 +74,51 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 		"cluster",
 		clusterKey,
 	)
+
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	_, found, err := variables.Get[v1alpha1.NFD](varMap, n.variableName, n.variablePath...)
+	cniVar, found, err := variables.Get[v1alpha1.NFD](varMap, n.variableName, n.variablePath...)
 	if err != nil {
+		log.Error(
+			err,
+			"failed to read NFD variable from cluster definition",
+		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		log.Error(err, "failed to get NFD variable")
-		return
-	}
-	// If the variable isn't there or disabled we can ignore it.
-	if !found {
-		log.V(4).Info(
-			"Skipping NFD handler. Not specified in cluster config.",
+		resp.SetMessage(
+			fmt.Sprintf("failed to read NFD variable from cluster definition: %v",
+				err,
+			),
 		)
 		return
 	}
-
-	cm, err := n.ensureNFDConfigMapForCluster(ctx, &req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		log.Error(err, "failed to apply NFD ConfigMap for cluster")
+	if !found {
+		log.Info("Skipping NFD handler, cluster does not specify request NFDaddon deployment")
 		return
 	}
-	err = utils.EnsureCRSForClusterFromConfigMaps(
-		ctx,
-		cm.Name+"-"+req.Cluster.Name,
-		n.client,
-		&req.Cluster,
-		cm,
-	)
-	if err != nil {
+
+	var strategy addonStrategy
+	switch cniVar.Strategy {
+	case v1alpha1.AddonStrategyClusterResourceSet:
+		strategy = crsStrategy{
+			config: n.config.crsConfig,
+			client: n.client,
+		}
+	case v1alpha1.AddonStrategyHelmAddon:
+		strategy = helmAddonStrategy{
+			config: n.config.helmAddonConfig,
+			client: n.client,
+		}
+	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		log.Error(err, "failed to apply NFD ClusterResourceSet for cluster")
+		resp.SetMessage(fmt.Sprintf("unknown NFD addon deployment strategy %q", cniVar.Strategy))
+		return
+	}
+
+	if err := strategy.apply(ctx, req, log); err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
 		return
 	}
 
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-}
-
-// ensureNFDConfigMapForCluster is a private function that creates a configMap for the cluster.
-func (n *DefaultNFD) ensureNFDConfigMapForCluster(
-	ctx context.Context,
-	cluster *capiv1.Cluster,
-) (*corev1.ConfigMap, error) {
-	key := ctrlclient.ObjectKey{
-		Namespace: n.config.defaultsNamespace,
-		Name:      n.config.defaultNFDConfigMap,
-	}
-	cm := &corev1.ConfigMap{}
-	err := n.client.Get(ctx, key, cm)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to fetch the configmap specified by %v: %w",
-			n.config,
-			err,
-		)
-	}
-	// Base configmap is there now we create one in the cluster namespace if needed.
-	cmForCluster := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Namespace,
-			Name:      n.config.defaultNFDConfigMap,
-		},
-		Data: cm.Data,
-	}
-	err = client.ServerSideApply(ctx, n.client, cmForCluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to apply NFD ConfigMap for cluster: %w", err)
-	}
-	return cmForCluster, nil
 }

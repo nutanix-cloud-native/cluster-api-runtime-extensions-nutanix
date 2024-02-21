@@ -80,12 +80,26 @@ func (CNI) VariableSchema() clusterv1.VariableSchema {
 }
 
 // NFD tells us to enable or disable the node feature discovery addon.
-type NFD struct{}
+type NFD struct {
+	// +optional
+	Strategy AddonStrategy `json:"strategy,omitempty"`
+}
 
 func (NFD) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"strategy": {
+					Description: "Addon strategy used to deploy Node Feature Discovery (NFD) to the workload cluster",
+					Type:        "string",
+					Enum: variables.MustMarshalValuesToEnumJSON(
+						AddonStrategyClusterResourceSet,
+						AddonStrategyHelmAddon,
+					),
+				},
+			},
+			Required: []string{"strategy"},
 		},
 	}
 }

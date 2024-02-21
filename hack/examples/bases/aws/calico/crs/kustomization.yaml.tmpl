@@ -24,6 +24,10 @@ patches:
               cni:
                 provider: Calico
                 strategy: ClusterResourceSet
+    - op: "add"
+      path: "/spec/topology/variables/0/value/addons/nfd"
+      value:
+        strategy: ClusterResourceSet
 
 # Delete all ClusterClass related resources to prevent duplicate resources because we use the same resources definition
 # above- we only actually want the Cluster resource to mutate here.

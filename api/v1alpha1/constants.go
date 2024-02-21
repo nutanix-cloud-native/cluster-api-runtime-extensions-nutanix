@@ -4,8 +4,10 @@
 package v1alpha1
 
 const (
-	// CNIVariableName is the external patch variable name.
+	// CNIVariableName is the CNI external patch variable name.
 	CNIVariableName = "cni"
+	// NFDVariableName is the NFD external patch variable name.
+	NFDVariableName = "nfd"
 	// AWSVariableName is the AWS config patch variable name.
 	AWSVariableName = "aws"
 )

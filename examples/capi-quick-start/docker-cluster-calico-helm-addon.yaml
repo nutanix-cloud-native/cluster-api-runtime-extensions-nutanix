@@ -25,7 +25,8 @@ spec:
             cni:
               provider: Calico
               strategy: HelmAddon
-            nfd: {}
+            nfd:
+              strategy: HelmAddon
           docker: {}
     version: ${KUBERNETES_VERSION}
     workers:
