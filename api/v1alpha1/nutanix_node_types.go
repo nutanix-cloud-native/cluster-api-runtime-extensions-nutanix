@@ -8,8 +8,6 @@ import (
 )
 
 type NutanixNodeSpec struct {
-	// +optional
-	CustomImage *OCIImage `json:"customImage,omitempty"`
 }
 
 func (NutanixNodeSpec) VariableSchema() clusterv1.VariableSchema {
@@ -17,9 +15,7 @@ func (NutanixNodeSpec) VariableSchema() clusterv1.VariableSchema {
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Nutanix Node configuration",
 			Type:        "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"customImage": OCIImage("").VariableSchema().OpenAPIV3Schema,
-			},
+			Properties:  map[string]clusterv1.JSONSchemaProps{},
 		},
 	}
 }
