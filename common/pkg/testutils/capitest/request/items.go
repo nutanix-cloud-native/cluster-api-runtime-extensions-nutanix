@@ -262,7 +262,7 @@ func NewCPNutanixMachineTemplateRequestItem(
 	return NewRequestItem(
 		&capxv1.NutanixMachineTemplate{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: capdv1.GroupVersion.String(),
+				APIVersion: capxv1.GroupVersion.String(),
 				Kind:       "NutanixMachineTemplate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -285,7 +285,7 @@ func NewWorkerNutanixMachineTemplateRequestItem(
 	return NewRequestItem(
 		&capxv1.NutanixMachineTemplate{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: capdv1.GroupVersion.String(),
+				APIVersion: capxv1.GroupVersion.String(),
 				Kind:       "NutanixMachineTemplate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
