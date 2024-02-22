@@ -27,6 +27,7 @@ spec:
             cni:
               provider: Cilium
               strategy: ClusterResourceSet
+          nutanix: {}
     version: ${KUBERNETES_VERSION}
     workers:
       machineDeployments:

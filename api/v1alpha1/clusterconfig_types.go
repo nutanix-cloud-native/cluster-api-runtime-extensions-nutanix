@@ -40,6 +40,8 @@ type ClusterConfigSpec struct {
 	AWS *AWSSpec `json:"aws,omitempty"`
 	// +optional
 	Docker *DockerSpec `json:"docker,omitempty"`
+	// +optional
+	Nutanix *NutanixSpec `json:"nutanix,omitempty"`
 
 	GenericClusterConfig `json:",inline"`
 
@@ -68,6 +70,16 @@ func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:
 				"docker": DockerSpec{}.VariableSchema().OpenAPIV3Schema,
 				"controlPlane": NodeConfigSpec{
 					Docker: &DockerNodeSpec{},
+				}.VariableSchema().OpenAPIV3Schema,
+			},
+		)
+	case s.Nutanix != nil:
+		maps.Copy(
+			clusterConfigProps.OpenAPIV3Schema.Properties,
+			map[string]clusterv1.JSONSchemaProps{
+				"nutanix": NutanixSpec{}.VariableSchema().OpenAPIV3Schema,
+				"controlPlane": NodeConfigSpec{
+					Nutanix: &NutanixNodeSpec{},
 				}.VariableSchema().OpenAPIV3Schema,
 			},
 		)

@@ -29,6 +29,8 @@ type NodeConfigSpec struct {
 	AWS *AWSNodeSpec `json:"aws,omitempty"`
 	// +optional
 	Docker *DockerNodeSpec `json:"docker,omitempty"`
+	// +optional
+	Nutanix *NutanixNodeSpec `json:"nutanix,omitempty"`
 }
 
 func (s NodeConfigSpec) VariableSchema() clusterv1.VariableSchema {

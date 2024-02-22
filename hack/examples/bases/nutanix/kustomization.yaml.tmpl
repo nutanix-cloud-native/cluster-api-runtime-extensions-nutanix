@@ -28,6 +28,10 @@ patches:
       - op: "add"
         path: "/spec/topology/class"
         value: "${CLUSTER_CLASS_NAME}"
+      - op: "add"
+        path: "/spec/topology/variables/0/value/nutanix"
+        value: {}
+
   - target:
       group: cluster.x-k8s.io
       kind: ClusterClass

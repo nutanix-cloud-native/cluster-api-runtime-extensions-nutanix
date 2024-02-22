@@ -27,6 +27,7 @@ spec:
             cni:
               provider: Calico
               strategy: ClusterResourceSet
+          nutanix: {}
     version: ${KUBERNETES_VERSION}
     workers:
       machineDeployments:

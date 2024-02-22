@@ -15,6 +15,7 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	capdv1 "sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 
+	capxv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	capav1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/serializer"
 )
@@ -244,6 +245,52 @@ func NewWorkerAWSMachineTemplateRequestItem(
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "aws-machine-template",
 				Namespace: "aws-cluster",
+			},
+		},
+		&runtimehooksv1.HolderReference{
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       "MachineDeployment",
+			FieldPath:  "spec.template.spec.infrastructureRef",
+		},
+		uid,
+	)
+}
+
+func NewCPNutanixMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		&capxv1.NutanixMachineTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: capdv1.GroupVersion.String(),
+				Kind:       "NutanixMachineTemplate",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nutanix-machine-template",
+				Namespace: "nutanix-cluster",
+			},
+		},
+		&runtimehooksv1.HolderReference{
+			APIVersion: controlplanev1.GroupVersion.String(),
+			Kind:       "KubeadmControlPlane",
+			FieldPath:  "spec.machineTemplate.infrastructureRef",
+		},
+		uid,
+	)
+}
+
+func NewWorkerNutanixMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		&capxv1.NutanixMachineTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: capdv1.GroupVersion.String(),
+				Kind:       "NutanixMachineTemplate",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nutanix-machine-template",
+				Namespace: "nutanix-cluster",
 			},
 		},
 		&runtimehooksv1.HolderReference{
