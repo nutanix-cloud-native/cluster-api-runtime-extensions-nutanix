@@ -77,7 +77,7 @@ func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:
 		maps.Copy(
 			clusterConfigProps.OpenAPIV3Schema.Properties,
 			map[string]clusterv1.JSONSchemaProps{
-				"nutanix": NutanixSpec{}.VariableSchema().OpenAPIV3Schema,
+				NutanixVariableName: NutanixSpec{}.VariableSchema().OpenAPIV3Schema,
 				"controlPlane": NodeConfigSpec{
 					Nutanix: &NutanixNodeSpec{},
 				}.VariableSchema().OpenAPIV3Schema,

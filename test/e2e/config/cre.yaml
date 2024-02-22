@@ -106,6 +106,26 @@ providers:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
 
+- name: nutanix
+  type: InfrastructureProvider
+  versions:
+    - name: v1.4.0-alpha1
+      type: url
+      value: https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/v1.4.0-alpha.1/infrastructure-components.yaml
+      contract: v1beta1
+      files:
+      - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+      - sourcePath: "../../../charts/capi-runtime-extensions/defaultclusterclasses/nutanix-cluster-class.yaml"
+        targetName: clusterclass-nutanix-quick-start.yaml
+      - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-helm-addon.yaml"
+        targetName: cluster-template-topology-cilium-helm-addon.yaml
+      - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-crs.yaml"
+        targetName: cluster-template-topology-cilium-crs.yaml
+      - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-helm-addon.yaml"
+        targetName: cluster-template-topology-calico-helm-addon.yaml
+      - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-crs.yaml"
+        targetName: cluster-template-topology-calico-crs.yaml
+
 - name: cre
   type: RuntimeExtensionProvider
   versions:
