@@ -164,6 +164,39 @@ func NewAWSClusterTemplateRequestItem(
 	)
 }
 
+func NewNutanixClusterTemplateRequestItem(
+	uid types.UID,
+	existingSpec ...capxv1.NutanixClusterTemplateSpec,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	nutanixClusterTemplate := &capxv1.NutanixClusterTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: capxv1.GroupVersion.String(),
+			Kind:       "NutanixClusterTemplate",
+		},
+	}
+
+	switch len(existingSpec) {
+	case 0:
+		// Do nothing.
+	case 1:
+		nutanixClusterTemplate.Spec = existingSpec[0]
+	default:
+		panic("can only take at most one existing spec")
+	}
+
+	return NewRequestItem(
+		nutanixClusterTemplate,
+		&runtimehooksv1.HolderReference{
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       "Cluster",
+			FieldPath:  "spec.infrastructureRef",
+			Name:       ClusterName,
+			Namespace:  Namespace,
+		},
+		uid,
+	)
+}
+
 func NewCPDockerMachineTemplateRequestItem(
 	uid types.UID,
 ) runtimehooksv1.GeneratePatchesRequestItem {

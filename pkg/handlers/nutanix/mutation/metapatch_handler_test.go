@@ -25,6 +25,9 @@ import (
 	kubernetesimagerepositorytests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/kubernetesimagerepository/tests"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/mirrors"
 	globalimageregistrymirrortests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation/mirrors/tests"
+	nutanixclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/controlplaneendpoint"
+	controlplaneendpointtests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/controlplaneendpoint/tests"
 )
 
 func metaPatchGeneratorFunc(mgr manager.Manager) func() mutation.GeneratePatches {
@@ -47,6 +50,14 @@ func TestGeneratePatches(t *testing.T) {
 		manager.Options{
 			NewClient: fakessa.NewClient,
 		},
+	)
+
+	controlplaneendpointtests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		nutanixclusterconfig.NutanixVariableName,
+		controlplaneendpoint.VariableName,
 	)
 
 	auditpolicytests.TestGeneratePatches(
