@@ -10,11 +10,8 @@ metadata:
 resources:
 - github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=${AWS_EBS_CSI_VERSION}
 - storage-class.yaml
-- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
-- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
-- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
-- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
-- https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+- github.com/kubernetes-csi/external-snapshotter/client/config/crd/?ref=${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}
+- github.com/kubernetes-csi/external-snapshotter/deploy/kubernetes/snapshot-controller/?ref=${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}
 
 patches:
 - path: ./overlays/controller-nodeAffinity.yaml
