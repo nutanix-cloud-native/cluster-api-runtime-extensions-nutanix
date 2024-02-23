@@ -12,10 +12,11 @@ sortOptions:
 
 helmCharts:
 - name: cilium
-  includeCRDs: true
-  valuesFile: helm-values.yaml
+  repo: https://helm.cilium.io/
   releaseName: cilium
   version: ${CILIUM_VERSION}
-  repo: https://helm.cilium.io/
+  valuesFile: helm-values.yaml
+  includeCRDs: true
+  skipTests: true
 
 namespace: kube-system

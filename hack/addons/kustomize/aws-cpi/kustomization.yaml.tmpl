@@ -9,10 +9,11 @@ metadata:
 
 helmCharts:
 - name: aws-cloud-controller-manager
-  includeCRDs: true
+  repo: https://kubernetes.github.io/cloud-provider-aws
   releaseName: aws-cloud-controller-manager
   version: ${AWS_CPI_CHART_VERSION}
-  repo: https://kubernetes.github.io/cloud-provider-aws
+  includeCRDs: true
+  skipTests: true
 
 patches:
 - patch: |-

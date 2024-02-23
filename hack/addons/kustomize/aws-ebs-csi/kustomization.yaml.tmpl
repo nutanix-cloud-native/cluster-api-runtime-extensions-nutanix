@@ -7,37 +7,16 @@ kind: Kustomization
 metadata:
   name: aws-ebs-csi-kustomize
 
+namespace: kube-system
+
+helmCharts:
+- name: aws-ebs-csi-driver
+  repo: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+  releaseName: aws-ebs-csi-driver
+  version: ${AWS_EBS_CSI_CHART_VERSION}
+  valuesFile: helm-values.yaml
+  includeCRDs: true
+  skipTests: true
+
 resources:
-- github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=${AWS_EBS_CSI_VERSION}
-- storage-class.yaml
-- github.com/kubernetes-csi/external-snapshotter/client/config/crd/?ref=${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}
-- github.com/kubernetes-csi/external-snapshotter/deploy/kubernetes/snapshot-controller/?ref=${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}
-
-patches:
-- path: ./overlays/controller-nodeAffinity.yaml
-  target:
-    kind: Deployment
-    name: ebs-csi-controller
-    namespace: kube-system
-- path: ./overlays/controller-nodeAffinity.yaml
-  target:
-    kind: Deployment
-    name: snapshot-controller
-    namespace: kube-system
-- path: ./overlays/deployment-priorityClassName.yaml
-  target:
-    kind: Deployment
-    name: snapshot-controller
-    namespace: kube-system
-- path: ./overlays/ds-tolerations.yaml
-  target:
-    kind: DaemonSet
-    name: ebs-csi-node
-    namespace: kube-system
-
-# always override the images to match the version from the set envs
-images:
-- name: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver
-  newTag: ${AWS_EBS_CSI_VERSION}
-- name: registry.k8s.io/sig-storage/snapshot-controller
-  newTag: ${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION}
+- ../external-snapshotter
