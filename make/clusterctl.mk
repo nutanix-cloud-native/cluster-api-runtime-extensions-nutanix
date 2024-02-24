@@ -3,7 +3,8 @@
 
 .PHONY: clusterctl.init
 clusterctl.init:
-	env CLUSTER_TOPOLOGY=true \
+	env GOPROXY=off \
+	    CLUSTER_TOPOLOGY=true \
 	    EXP_RUNTIME_SDK=true \
 	    EXP_CLUSTER_RESOURCE_SET=true \
 	    EXP_MACHINE_POOL=true \
