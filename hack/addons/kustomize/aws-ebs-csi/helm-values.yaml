@@ -1,0 +1,36 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+---
+controller:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+    - effect: NoExecute
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+node:
+  priorityClassName: system-node-critical
+sidecars:
+  snapshotter:
+    forceEnable: true
+storageClasses:
+- metadata:
+  name: ebs-sc
+  volumeBindingMode: WaitForFirstConsumer
+  parameters:
+    csi.storage.k8s.io/fstype: ext4
+    type: gp3

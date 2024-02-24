@@ -15,10 +15,11 @@ resources:
 
 helmCharts:
 - name: tigera-operator
-  includeCRDs: true
-  valuesFile: helm-values.yaml
+  repo: https://docs.tigera.io/calico/charts
   releaseName: tigera-operator
   version: ${CALICO_VERSION}
-  repo: https://docs.tigera.io/calico/charts
+  valuesFile: helm-values.yaml
+  includeCRDs: true
+  skipTests: true
 
 namespace: tigera-operator

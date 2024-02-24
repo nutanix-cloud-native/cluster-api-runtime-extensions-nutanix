@@ -15,9 +15,6 @@ spec:
               - matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
                     operator: Exists
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: null
-        node-role.kubernetes.io/master: null
       tolerations:
         - key: CriticalAddonsOnly
           operator: Exists
