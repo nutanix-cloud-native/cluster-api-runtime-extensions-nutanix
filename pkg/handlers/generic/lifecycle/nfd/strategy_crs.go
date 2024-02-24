@@ -6,7 +6,6 @@ package nfd
 import (
 	"context"
 	"fmt"
-	"maps"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
@@ -83,10 +82,11 @@ func (s crsStrategy) apply(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      defaultCM.Name,
+			Name:      defaultCM.Name + "-" + cluster.Name,
 		},
+		Data:       defaultCM.Data,
+		BinaryData: defaultCM.BinaryData,
 	}
-	cm.Data = maps.Clone(defaultCM.Data)
 
 	if err := client.ServerSideApply(ctx, s.client, cm); err != nil {
 		return fmt.Errorf(
@@ -95,13 +95,7 @@ func (s crsStrategy) apply(
 		)
 	}
 
-	if err := utils.EnsureCRSForClusterFromConfigMaps(
-		ctx,
-		cm.Name+"-"+req.Cluster.Name,
-		s.client,
-		&req.Cluster,
-		cm,
-	); err != nil {
+	if err := utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, cluster, cm); err != nil {
 		return fmt.Errorf(
 			"failed to apply NFD installation ClusterResourceSet: %w",
 			err,

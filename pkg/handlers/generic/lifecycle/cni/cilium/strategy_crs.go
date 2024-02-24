@@ -6,7 +6,6 @@ package cilium
 import (
 	"context"
 	"fmt"
-	"maps"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
@@ -85,8 +84,9 @@ func (s crsStrategy) apply(
 			Namespace: cluster.Namespace,
 			Name:      "cilium-cni-installation-" + cluster.Name,
 		},
+		Data:       defaultCiliumConfigMap.Data,
+		BinaryData: defaultCiliumConfigMap.BinaryData,
 	}
-	cm.Data = maps.Clone(defaultCiliumConfigMap.Data)
 
 	if err := client.ServerSideApply(ctx, s.client, cm); err != nil {
 		return fmt.Errorf(
@@ -95,7 +95,7 @@ func (s crsStrategy) apply(
 		)
 	}
 
-	if err := utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, &req.Cluster, cm); err != nil {
+	if err := utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, cluster, cm); err != nil {
 		return fmt.Errorf(
 			"failed to apply Cilium CNI installation ClusterResourceSet: %w",
 			err,
