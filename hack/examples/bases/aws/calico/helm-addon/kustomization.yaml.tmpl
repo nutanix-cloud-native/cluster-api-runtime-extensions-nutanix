@@ -24,3 +24,7 @@ patches:
               cni:
                 provider: Calico
                 strategy: HelmAddon
+    - op: "add"
+      path: "/spec/topology/variables/0/value/addons/nfd"
+      value:
+        strategy: HelmAddon

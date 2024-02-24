@@ -924,4 +924,4 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: node-feature-discovery
+  name: '{{ .Values.hooks.nfd.crsStrategy.defaultInstallationConfigMap.name }}'

@@ -34,7 +34,9 @@ spec:
         - --cni.cilium.crs.defaults-namespace={{ .Release.Namespace }}
         - --cni.cilium.helm-addon.defaults-namespace={{ .Release.Namespace }}
         - --cni.cilium.helm-addon.default-values-template-configmap-name={{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
-        - --nfd.defaults-namespace={{ .Release.Namespace }}
+        - --nfd.crs.defaults-namespace={{ .Release.Namespace }}
+        - --nfd.helm-addon.defaults-namespace={{ .Release.Namespace }}
+        - --nfd.helm-addon.default-values-template-configmap-name={{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}

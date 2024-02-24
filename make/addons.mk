@@ -3,7 +3,7 @@
 
 export CALICO_VERSION := $(shell goprintconst -file pkg/handlers/generic/lifecycle/cni/calico/strategy_helmaddon.go -name defaultCalicoHelmChartVersion)
 export CILIUM_VERSION := $(shell goprintconst -file pkg/handlers/generic/lifecycle/cni/cilium/strategy_helmaddon.go -name defaultCiliumHelmChartVersion)
-export NODE_FEATURE_DISCOVERY_VERSION := 0.14.1
+export NODE_FEATURE_DISCOVERY_VERSION := $(shell goprintconst -file pkg/handlers/generic/lifecycle/nfd/strategy_helmaddon.go -name defaultHelmChartVersion)
 export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.0
 export AWS_EBS_CSI_VERSION := v1.25.0
 # a map of AWS CPI versions

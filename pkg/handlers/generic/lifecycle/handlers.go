@@ -22,7 +22,7 @@ import (
 type Handlers struct {
 	calicoCNIConfig *calico.CNIConfig
 	ciliumCNIConfig *cilium.CNIConfig
-	nfdConfig       *nfd.NFDConfig
+	nfdConfig       *nfd.Config
 	ebsConfig       *awsebs.AWSEBSConfig
 	awsCPIConfig    *awscpi.AWSCPIConfig
 }
@@ -31,7 +31,7 @@ func New() *Handlers {
 	return &Handlers{
 		calicoCNIConfig: &calico.CNIConfig{},
 		ciliumCNIConfig: &cilium.CNIConfig{},
-		nfdConfig:       &nfd.NFDConfig{},
+		nfdConfig:       &nfd.Config{},
 		ebsConfig:       &awsebs.AWSEBSConfig{},
 		awsCPIConfig:    &awscpi.AWSCPIConfig{},
 	}

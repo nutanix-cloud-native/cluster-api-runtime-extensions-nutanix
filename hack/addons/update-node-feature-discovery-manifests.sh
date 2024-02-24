@@ -24,7 +24,7 @@ envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_D
 cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
 
-kubectl create configmap node-feature-discovery --dry-run=client --output yaml \
+kubectl create configmap "{{ .Values.hooks.nfd.crsStrategy.defaultInstallationConfigMap.name }}" --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/${FILE_NAME}" \
   >"${ASSETS_DIR}/node-feature-discovery-configmap.yaml"
 

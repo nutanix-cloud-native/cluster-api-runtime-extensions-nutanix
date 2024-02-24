@@ -28,7 +28,8 @@ spec:
             csi:
               providers:
                 - name: aws-ebs
-            nfd: {}
+            nfd:
+              strategy: ClusterResourceSet
           aws:
             region: us-west-2
     version: ${KUBERNETES_VERSION}

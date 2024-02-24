@@ -1,7 +1,7 @@
 // Copyright 2024 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package cilium
+package nfd
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 type crsConfig struct {
 	defaultsNamespace string
 
-	defaultCiliumConfigMapName string
+	defaultNFDConfigMap string
 }
 
 func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
@@ -33,10 +33,10 @@ func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	)
 
 	flags.StringVar(
-		&c.defaultCiliumConfigMapName,
-		prefix+".default-cilium-configmap-name",
-		"cilium",
-		"name of the ConfigMap used to deploy Cilium",
+		&c.defaultNFDConfigMap,
+		prefix+".default-nfd-configmap-name",
+		"node-feature-discovery",
+		"name of the ConfigMap used to deploy Node Feature Discovery (NFD)",
 	)
 }
 
@@ -51,27 +51,27 @@ func (s crsStrategy) apply(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	log logr.Logger,
 ) error {
-	defaultCiliumConfigMap := &corev1.ConfigMap{
+	defaultCM := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: s.config.defaultsNamespace,
-			Name:      s.config.defaultCiliumConfigMapName,
+			Name:      s.config.defaultNFDConfigMap,
 		},
 	}
 
 	err := s.client.Get(
 		ctx,
-		ctrlclient.ObjectKeyFromObject(defaultCiliumConfigMap),
-		defaultCiliumConfigMap,
+		ctrlclient.ObjectKeyFromObject(defaultCM),
+		defaultCM,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to get default Cilium ConfigMap: %w", err)
+		return fmt.Errorf("failed to get default NFD ConfigMap: %w", err)
 	}
 
-	log.Info("Ensuring Cilium installation CRS and ConfigMap exist for cluster")
+	log.Info("Ensuring NFD ConfigMap exists for cluster")
 
 	cluster := &req.Cluster
 
@@ -82,22 +82,22 @@ func (s crsStrategy) apply(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      "cilium-cni-installation-" + cluster.Name,
+			Name:      defaultCM.Name + "-" + cluster.Name,
 		},
-		Data:       defaultCiliumConfigMap.Data,
-		BinaryData: defaultCiliumConfigMap.BinaryData,
+		Data:       defaultCM.Data,
+		BinaryData: defaultCM.BinaryData,
 	}
 
 	if err := client.ServerSideApply(ctx, s.client, cm); err != nil {
 		return fmt.Errorf(
-			"failed to apply Cilium CNI installation ConfigMap: %w",
+			"failed to apply NFD installation ConfigMap: %w",
 			err,
 		)
 	}
 
 	if err := utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, cluster, cm); err != nil {
 		return fmt.Errorf(
-			"failed to apply Cilium CNI installation ClusterResourceSet: %w",
+			"failed to apply NFD installation ClusterResourceSet: %w",
 			err,
 		)
 	}

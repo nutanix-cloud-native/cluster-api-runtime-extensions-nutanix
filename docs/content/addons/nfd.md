@@ -25,5 +25,6 @@ spec:
       - name: clusterConfig
         value:
           addons:
-            nfd: {}
+            nfd:
+              strategy: HelmAddon
 ```

@@ -7,7 +7,9 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 
+	. "github.com/onsi/ginkgo/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -34,15 +36,35 @@ func WaitForNFDToBeReadyInWorkloadCluster(
 		return
 	}
 
-	waitForClusterResourceSetToApplyResourcesInCluster(
-		ctx,
-		waitForClusterResourceSetToApplyResourcesInClusterInput{
-			name:         "node-feature-discovery-" + input.WorkloadCluster.Name,
-			clusterProxy: input.ClusterProxy,
-			cluster:      input.WorkloadCluster,
-			intervals:    input.ClusterResourceSetIntervals,
-		},
-	)
+	switch input.NFD.Strategy {
+	case v1alpha1.AddonStrategyClusterResourceSet:
+		waitForClusterResourceSetToApplyResourcesInCluster(
+			ctx,
+			waitForClusterResourceSetToApplyResourcesInClusterInput{
+				name:         "node-feature-discovery-" + input.WorkloadCluster.Name,
+				clusterProxy: input.ClusterProxy,
+				cluster:      input.WorkloadCluster,
+				intervals:    input.ClusterResourceSetIntervals,
+			},
+		)
+	case v1alpha1.AddonStrategyHelmAddon:
+		WaitForHelmReleaseProxyReadyForCluster(
+			ctx,
+			WaitForHelmReleaseProxyReadyForClusterInput{
+				GetLister:          input.ClusterProxy.GetClient(),
+				Cluster:            input.WorkloadCluster,
+				HelmChartProxyName: "node-feature-discovery-" + input.WorkloadCluster.Name,
+			},
+			input.HelmReleaseIntervals...,
+		)
+	default:
+		Fail(
+			fmt.Sprintf(
+				"Do not know how to wait for Calico using strategy %s to be ready",
+				input.NFD.Strategy,
+			),
+		)
+	}
 
 	workloadClusterClient := input.ClusterProxy.GetWorkloadCluster(
 		ctx, input.WorkloadCluster.Namespace, input.WorkloadCluster.Name,
