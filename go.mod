@@ -28,10 +28,10 @@ require (
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kubelet v0.29.2
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
-	sigs.k8s.io/cluster-api v1.6.1
+	sigs.k8s.io/cluster-api v1.6.2
 	sigs.k8s.io/cluster-api-addon-provider-helm v0.1.1-alpha.1
-	sigs.k8s.io/cluster-api/test v1.6.1
-	sigs.k8s.io/controller-runtime v0.17.1
+	sigs.k8s.io/cluster-api/test v1.6.2
+	sigs.k8s.io/controller-runtime v0.17.2
 	sigs.k8s.io/yaml v1.4.0
 )
 
