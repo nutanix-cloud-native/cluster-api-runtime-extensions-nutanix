@@ -110,18 +110,28 @@ func waitForClusterResourceSetToApplyResources(
 				continue
 			}
 
-			// Fix a bug from upstream to check all bindings.
-			resourceApplied := false
-			for _, binding := range binding.Spec.Bindings {
-				if binding.IsApplied(resource) {
-					resourceApplied = true
-					break
-				}
-			}
-			if !resourceApplied {
+			// Check relevant ResourceSetBinding to see if the resource is applied. If no ResourceSetBinding is found for
+			// the specified ClusterResourceSet, the resource has not applied.
+			resourceSetBinding, found := getResourceSetBindingForClusterResourceSet(
+				binding,
+				input.ClusterResourceSet,
+			)
+			if !found || !resourceSetBinding.IsApplied(resource) {
 				return false
 			}
 		}
 		return true
 	}, intervals...).Should(BeTrue())
+}
+
+func getResourceSetBindingForClusterResourceSet(
+	clusterResourceSetBinding *addonsv1.ClusterResourceSetBinding,
+	clusterResourceSet *addonsv1.ClusterResourceSet,
+) (*addonsv1.ResourceSetBinding, bool) {
+	for _, binding := range clusterResourceSetBinding.Spec.Bindings {
+		if binding.ClusterResourceSetName == clusterResourceSet.Name {
+			return binding, true
+		}
+	}
+	return nil, false
 }
