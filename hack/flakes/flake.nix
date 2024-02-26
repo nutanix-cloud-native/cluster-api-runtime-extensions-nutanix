@@ -29,16 +29,16 @@
 
           setup-envtest = buildGo122Module rec {
             name = "setup-envtest";
-            version = "0.17.1";
+            version = "0.17.2";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "controller-runtime";
               rev = "v${version}";
-              hash = "sha256-X4YM4A63UxD650S3lxbxRtZaHOyF7LY6d5eVJe91+5c=";
+              hash = "sha256-1u4aFmiDLgvx3CRWv+uZdnP4XuVWpQMmZq27CAF12a4=";
             } + "/tools/setup-envtest";
             doCheck = false;
             subPackages = [ "." ];
-            vendorHash = "sha256-ISVGxhFQh4e0eag9Sw0Zj4u1cG0tudZLhJcGdH5tDo4=";
+            vendorHash = "sha256-Xr5b/CRz/DMmoc4bvrEyAZcNufLIZOY5OGQ6yw4/W9k=";
             ldflags = [ "-s" "-w" ];
           };
 
