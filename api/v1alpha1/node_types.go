@@ -51,6 +51,13 @@ func (s NodeConfigSpec) VariableSchema() clusterv1.VariableSchema {
 				"docker": DockerNodeSpec{}.VariableSchema().OpenAPIV3Schema,
 			},
 		)
+	case s.Nutanix != nil:
+		maps.Copy(
+			nodeConfigProps.OpenAPIV3Schema.Properties,
+			map[string]clusterv1.JSONSchemaProps{
+				"nutanix": NutanixNodeSpec{}.VariableSchema().OpenAPIV3Schema,
+			},
+		)
 	}
 
 	return nodeConfigProps

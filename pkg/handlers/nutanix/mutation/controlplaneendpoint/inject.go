@@ -33,7 +33,7 @@ type nutanixControlPlaneEndpoint struct {
 func NewPatch() *nutanixControlPlaneEndpoint {
 	return newNutanixControlPlaneEndpoint(
 		clusterconfig.MetaVariableName,
-		v1alpha1.AWSVariableName,
+		v1alpha1.NutanixVariableName,
 		VariableName,
 	)
 }

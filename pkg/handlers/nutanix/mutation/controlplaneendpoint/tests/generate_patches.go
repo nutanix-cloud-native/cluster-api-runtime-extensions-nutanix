@@ -30,7 +30,7 @@ func TestGeneratePatches(
 			Name: "unset variable",
 		},
 		capitest.PatchTestDef{
-			Name: "ControlPlaneEndpoint set to valid host and port",
+			Name: "ControlPlaneEndpoint set to valid host",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					variableName,
@@ -44,9 +44,30 @@ func TestGeneratePatches(
 			RequestItem: request.NewNutanixClusterTemplateRequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
-				Path:      "/spec/template/spec/controlPlaneEndpoint",
+				Path:      "/spec/template/spec/controlPlaneEndpoint/host",
 				ValueMatcher: gomega.HaveKeyWithValue(
 					"host", "10.20.100.10",
+				),
+			}},
+		},
+		capitest.PatchTestDef{
+			Name: "ControlPlaneEndpoint set to valid port",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					variableName,
+					v1alpha1.NutanixControlPlaneEndpointSpec{
+						Host: "10.20.100.10",
+						Port: 6443,
+					},
+					variablePath...,
+				),
+			},
+			RequestItem: request.NewNutanixClusterTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/controlPlaneEndpoint/port",
+				ValueMatcher: gomega.HaveKeyWithValue(
+					"port", 6443,
 				),
 			}},
 		},

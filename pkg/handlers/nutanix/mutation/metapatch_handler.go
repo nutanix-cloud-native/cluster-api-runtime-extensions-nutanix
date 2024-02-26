@@ -9,12 +9,15 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	genericmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/controlplaneendpoint"
 )
 
-// MetaPatchHandler returns a meta patch handler for mutating CAPD clusters.
+// MetaPatchHandler returns a meta patch handler for mutating CAPX clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
-		[]mutation.MetaMutator{},
+		[]mutation.MetaMutator{
+			controlplaneendpoint.NewPatch(),
+		},
 		genericmutation.MetaMutators(mgr)...,
 	)
 
@@ -24,7 +27,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	)
 }
 
-// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
+// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler() handlers.Named {
 	patchHandlers := []mutation.MetaMutator{}
 

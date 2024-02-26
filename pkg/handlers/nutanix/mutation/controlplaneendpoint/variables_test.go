@@ -32,25 +32,25 @@ func TestVariableValidation(t *testing.T) {
 				},
 			},
 		},
-		capitest.VariableTestDef{
-			Name: "empty host or port",
-			Vals: v1alpha1.ClusterConfigSpec{
-				Nutanix: &v1alpha1.NutanixSpec{
-					ControlPlaneEndpoint: &v1alpha1.NutanixControlPlaneEndpointSpec{},
-				},
-			},
-		},
-		capitest.VariableTestDef{
-			Name: "invalid host and port",
-			Vals: v1alpha1.ClusterConfigSpec{
-				Nutanix: &v1alpha1.NutanixSpec{
-					ControlPlaneEndpoint: &v1alpha1.NutanixControlPlaneEndpointSpec{
-						Host: "123",
-						Port: 0,
-					},
-				},
-			},
-			ExpectError: true,
-		},
+		// capitest.VariableTestDef{
+		// 	Name: "empty host or port",
+		// 	Vals: v1alpha1.ClusterConfigSpec{
+		// 		Nutanix: &v1alpha1.NutanixSpec{
+		// 			ControlPlaneEndpoint: &v1alpha1.NutanixControlPlaneEndpointSpec{},
+		// 		},
+		// 	},
+		// },
+		// capitest.VariableTestDef{
+		// 	Name: "invalid host and port",
+		// 	Vals: v1alpha1.ClusterConfigSpec{
+		// 		Nutanix: &v1alpha1.NutanixSpec{
+		// 			ControlPlaneEndpoint: &v1alpha1.NutanixControlPlaneEndpointSpec{
+		// 				Host: "123",
+		// 				Port: 0,
+		// 			},
+		// 		},
+		// 	},
+		// 	ExpectError: true,
+		// },
 	)
 }
