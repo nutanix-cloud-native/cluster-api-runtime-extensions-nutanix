@@ -17,6 +17,9 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
+    # Remove this ignore once #402 is resolved.
+    ignore:
+      - dependency-name: "sigs.k8s.io/controller-runtime"
 
   - package-ecosystem: "gomod"
     directory: "/common"
@@ -27,6 +30,9 @@ updates:
         patterns:
           - "k8s.io*"
           - "sigs.k8s.io*"
+    # Remove this ignore once #402 is resolved.
+    ignore:
+      - dependency-name: "sigs.k8s.io/controller-runtime"
 
   - package-ecosystem: "gomod"
     directory: "/hack/third-party/capa"
