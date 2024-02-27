@@ -102,7 +102,12 @@ kustomize build ./hack/examples |
     ) \
     >/dev/null
 
-sed -i'' "s/^  name: .\+$/  name: \${CLUSTER_NAME}/" "${EXAMPLE_CLUSTERS_DIR}"/*.yaml
+#shellcheck disable=SC2016
+sed -i'' 's/^  name: .\+$/  name: ${CLUSTER_NAME}/' "${EXAMPLE_CLUSTERS_DIR}"/*.yaml
+
+# TODO Remove once kustomize supports retaining quotes in what will be numeric values.
+#shellcheck disable=SC2016
+sed -i'' 's/${AMI_LOOKUP_ORG}/"${AMI_LOOKUP_ORG}"/' "${EXAMPLE_CLUSTERS_DIR}"/*.yaml
 
 # TODO Remove once CAPA templates default to using external cloud provider.
 sed -i'' 's/cloud-provider:\ aws/cloud-provider:\ external/g' "${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml"

@@ -38,9 +38,9 @@ patches:
         aws:
           ami:
             lookup:
-              format: "capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
-              org: "258751437250"
-              baseOS: centos-7
+              format: "$${AMI_LOOKUP_FORMAT}"
+              org: "$${AMI_LOOKUP_ORG}"
+              baseOS: "$${AMI_LOOKUP_BASEOS}"
     - op: "add"
       path: "/spec/topology/variables/-"
       value:
@@ -49,9 +49,9 @@ patches:
           aws:
             ami:
               lookup:
-                format: "capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*"
-                org: "258751437250"
-                baseOS: centos-7
+                format: "$${AMI_LOOKUP_FORMAT}"
+                org: "$${AMI_LOOKUP_ORG}"
+                baseOS: "$${AMI_LOOKUP_BASEOS}"
     - op: "add"
       path: "/spec/topology/variables/0/value/addons/cpi"
       value: {}

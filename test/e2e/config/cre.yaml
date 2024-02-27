@@ -140,7 +140,7 @@ variables:
   # The following Kubernetes versions should be the latest versions with already published kindest/node images.
   # This avoids building node images in the default case which improves the test duration significantly.
   KUBERNETES_VERSION_MANAGEMENT: "v1.29.2"
-  KUBERNETES_VERSION: "v1.28.3"
+  KUBERNETES_VERSION: "v1.28.7"
   SERVICE_CIDR: "10.128.0.0/12"
   POD_CIDR: "192.168.0.0/16"
   NODE_DRAIN_TIMEOUT: "60s"
@@ -153,6 +153,9 @@ variables:
   EXP_MACHINE_SET_PREFLIGHT_CHECKS: "true"
   CAPI_DIAGNOSTICS_ADDRESS: ":8080"
   CAPI_INSECURE_DIAGNOSTICS: "true"
+  AMI_LOOKUP_FORMAT: "konvoy-ami-{{.BaseOS}}-release-?{{.K8sVersion}}-*"
+  AMI_LOOKUP_BASEOS: "rocky-9.1"
+  AMI_LOOKUP_ORG: "999867407951"
 
 intervals:
   default/wait-controllers: ["3m", "10s"]

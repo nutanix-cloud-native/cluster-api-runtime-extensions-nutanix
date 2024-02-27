@@ -49,7 +49,7 @@ var _ = Describe("Quick start", Serial, func() {
 					func() {
 						e2e.QuickStartSpec(ctx, func() e2e.QuickStartSpecInput {
 							prov := strings.ToLower(provider)
-							if slices.Contains(e2eConfig.InfrastructureProviders(), prov) {
+							if !slices.Contains(e2eConfig.InfrastructureProviders(), prov) {
 								Skip(fmt.Sprintf("provider %s is not enabled", prov))
 							}
 
