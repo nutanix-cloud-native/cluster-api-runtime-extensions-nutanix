@@ -89,7 +89,7 @@ endif
 	$(info $(M) running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
 	env E2E_IMAGE_TAG="$$(gojq --raw-output '.version' $(REPO_ROOT)/dist/metadata.json)" \
 	  envsubst -no-unset -no-empty -i '$(E2E_CONF_FILE)' -o '$(E2E_CONF_FILE_ENVSUBST)'
-	env AWS_B64ENCODED_CREDENTIALS="$$(clusterawsadm bootstrap credentials encode-as-profile)" \
+	env AWS_B64ENCODED_CREDENTIALS="$$(clusterawsadm bootstrap credentials encode-as-profile 2>/dev/null)" \
 	  ginkgo run \
 	    --r \
 	    --show-node-events \

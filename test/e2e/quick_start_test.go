@@ -7,6 +7,7 @@ package e2e
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -47,6 +48,11 @@ var _ = Describe("Quick start", Serial, func() {
 					Label("addonStrategy:"+addonStrategy),
 					func() {
 						e2e.QuickStartSpec(ctx, func() e2e.QuickStartSpecInput {
+							prov := strings.ToLower(provider)
+							if slices.Contains(e2eConfig.InfrastructureProviders(), prov) {
+								Skip(fmt.Sprintf("provider %s is not enabled", prov))
+							}
+
 							return e2e.QuickStartSpecInput{
 								E2EConfig:              e2eConfig,
 								ClusterctlConfigPath:   clusterctlConfigPath,
@@ -54,7 +60,7 @@ var _ = Describe("Quick start", Serial, func() {
 								ArtifactFolder:         artifactFolder,
 								SkipCleanup:            skipCleanup,
 								Flavor:                 ptr.To(flavour),
-								InfrastructureProvider: ptr.To(strings.ToLower(provider)),
+								InfrastructureProvider: ptr.To(prov),
 								PostMachinesProvisioned: func(proxy framework.ClusterProxy, namespace, clusterName string) {
 									framework.AssertOwnerReferences(
 										namespace,

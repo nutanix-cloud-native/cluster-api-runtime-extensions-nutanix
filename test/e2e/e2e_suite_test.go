@@ -13,6 +13,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -174,6 +175,16 @@ func loadE2EConfig(configPath string) *clusterctl.E2EConfig {
 		clusterctl.LoadE2EConfigInput{ConfigPath: configPath},
 	)
 	Expect(config).NotTo(BeNil(), "Failed to load E2E config from %s", configPath)
+
+	config.Providers = slices.DeleteFunc(config.Providers, func(p clusterctl.ProviderConfig) bool {
+		switch p.Name {
+		case "aws":
+			_, found := os.LookupEnv("AWS_B64ENCODED_CREDENTIALS")
+			return !found
+		default:
+			return false
+		}
+	})
 
 	return config
 }

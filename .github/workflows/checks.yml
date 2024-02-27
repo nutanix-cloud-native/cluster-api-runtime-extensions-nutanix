@@ -62,6 +62,7 @@ jobs:
       matrix:
         PROVIDER:
           - Docker
+          - AWS
     steps:
       - name: Check out code
         uses: actions/checkout@v4
