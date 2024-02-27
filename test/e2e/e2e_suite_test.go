@@ -23,10 +23,11 @@ import (
 	addonsv1 "sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
-	"sigs.k8s.io/cluster-api/test/framework/bootstrap"
+	capibootstrap "sigs.k8s.io/cluster-api/test/framework/bootstrap"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/d2iq-labs/capi-runtime-extensions/test/framework/bootstrap"
 	clusterctltemp "github.com/d2iq-labs/capi-runtime-extensions/test/framework/clusterctl"
 )
 
@@ -55,6 +56,18 @@ func init() { //nolint:gochecknoinits // Idiomatically used to set up flags.
 		"e2e.use-existing-cluster",
 		false,
 		"if true, the test uses the current cluster instead of creating a new one (default discovery rules apply)",
+	)
+	flag.StringVar(
+		&bootstrapNodeImageRepository,
+		"e2e.bootstrap-kind-image",
+		"ghcr.io/mesosphere/kind-node",
+		"the image to use for the bootstrap cluster",
+	)
+	flag.StringVar(
+		&bootstrapKubernetesVersion,
+		"e2e.bootstrap-kind-version",
+		"v1.29.2",
+		"the version of the image used in bootstrap cluster",
 	)
 }
 
@@ -189,16 +202,20 @@ func setupBootstrapCluster(
 	config *clusterctl.E2EConfig,
 	scheme *runtime.Scheme,
 	useExistingCluster bool,
-) (bootstrap.ClusterProvider, framework.ClusterProxy) {
-	var clusterProvider bootstrap.ClusterProvider
+) (capibootstrap.ClusterProvider, framework.ClusterProxy) {
+	var clusterProvider capibootstrap.ClusterProvider
 	kubeconfigPath := ""
 	if !useExistingCluster {
 		clusterProvider = bootstrap.CreateKindBootstrapClusterAndLoadImages(
 			context.TODO(),
 			bootstrap.CreateKindBootstrapClusterAndLoadImagesInput{
-				Name:               config.ManagementClusterName,
-				RequiresDockerSock: config.HasDockerProvider(),
-				Images:             config.Images,
+				NodeImageRepository: bootstrapNodeImageRepository,
+				CreateKindBootstrapClusterAndLoadImagesInput: capibootstrap.CreateKindBootstrapClusterAndLoadImagesInput{
+					Name:               config.ManagementClusterName,
+					RequiresDockerSock: config.HasDockerProvider(),
+					Images:             config.Images,
+					KubernetesVersion:  bootstrapKubernetesVersion,
+				},
 			},
 		)
 		Expect(clusterProvider).NotTo(BeNil(), "Failed to create a bootstrap cluster")
@@ -209,11 +226,11 @@ func setupBootstrapCluster(
 		).To(BeAnExistingFile(), "Failed to get the kubeconfig file for the bootstrap cluster")
 	} else {
 		// Loading image for already created cluster
-		imagesInput := bootstrap.LoadImagesToKindClusterInput{
+		imagesInput := capibootstrap.LoadImagesToKindClusterInput{
 			Name:   "cre-e2e",
 			Images: config.Images,
 		}
-		err := bootstrap.LoadImagesToKindCluster(context.TODO(), imagesInput)
+		err := capibootstrap.LoadImagesToKindCluster(context.TODO(), imagesInput)
 		Expect(err).To(BeNil(), "Failed to load images to the bootstrap cluster: %s", err)
 	}
 
@@ -245,7 +262,7 @@ func initBootstrapCluster(
 }
 
 func tearDown(
-	bootstrapClusterProvider bootstrap.ClusterProvider,
+	bootstrapClusterProvider capibootstrap.ClusterProvider,
 	bootstrapClusterProxy framework.ClusterProxy,
 ) {
 	if bootstrapClusterProxy != nil {

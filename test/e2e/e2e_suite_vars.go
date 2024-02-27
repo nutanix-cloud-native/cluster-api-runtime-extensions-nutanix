@@ -36,6 +36,12 @@ var (
 
 	// skipLogCollection prevents the log collection process from running.
 	skipLogCollection bool
+
+	// bootstrapNodeImageRepository is the image to use for the bootstrap cluster.
+	bootstrapNodeImageRepository string
+
+	// bootstrapKubernetesVersion is the version of the image used in bootstrap cluster.
+	bootstrapKubernetesVersion string
 )
 
 // Test suite global vars.
