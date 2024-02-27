@@ -47,19 +47,20 @@ spec:
                 secretRef:
                   name: my-registry-credentials
           kubernetesImageRepository: "my-registry.io/my-org/my-repo"
-          prismCentralEndpoint:
-            address: "PC-ip-fqdn"
-            port: 9440
-            insecure: false
-            additionalTrustBundle: "trust-bundle-root-ca"
+          users:
+            - name: capxuser
+              sshKey: ssh-key-expample-1
+          nutanix:
+            prismCentralEndpoint:
+              address: "PC-ip-fqdn"
+              port: 9440
+              insecure: false
+              additionalTrustBundle: "trust-bundle-root-ca"
+            controlPlaneEndpoint:
+              host: "api-server-ip-fqdn"
+              port: 6443
           controlPlane:
             nutanix:
-              endpoint:
-                host: "api-server-ip-fqdn"
-                port: 6443
-              users:
-                - name: capxuser
-                  sshKey: ssh-key-expample-1
               bootType: legacy
               cluster:
                 name: PE1
