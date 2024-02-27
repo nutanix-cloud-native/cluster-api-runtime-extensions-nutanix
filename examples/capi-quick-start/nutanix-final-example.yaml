@@ -52,13 +52,22 @@ spec:
               sshKey: ssh-key-expample-1
           nutanix:
             prismCentralEndpoint:
-              address: "PC-ip-fqdn"
+              host: "PC-ip-fqdn"
               port: 9440
               insecure: false
               additionalTrustBundle: "trust-bundle-root-ca"
             controlPlaneEndpoint:
               host: "api-server-ip-fqdn"
               port: 6443
+            faultDomains:
+              - name: fd1
+                cluster:
+                  name: PE1
+                  type: name
+                subnet:
+                  - name: subnet1
+                    type: name
+                isControlPlane: false
           controlPlane:
             nutanix:
               bootType: legacy
@@ -73,8 +82,8 @@ spec:
               vcpuSockets: 2
               vcpusPerSocket: 1
               subnet:
-                name: subnet1
-                type: name
+                - name: subnet1
+                  type: name
               project: prj1
               additionalCategories:
                 - key1: value1
@@ -105,8 +114,8 @@ spec:
             vcpuSockets: 2
             vcpusPerSocket: 1
             subnet:
-              name: subnet1
-              type: name
+              - name: subnet1
+                type: name
             project: prj1
             additionalCategories:
               - key1: value1
