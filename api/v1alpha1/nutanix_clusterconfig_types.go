@@ -35,11 +35,11 @@ func (NutanixControlPlaneEndpointSpec) VariableSchema() clusterv1.VariableSchema
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"host": {
-					Description: "host ip/fqdn for control plane api server",
+					Description: "host ip/fqdn for control plane API Server",
 					Type:        "string",
 				},
 				"port": {
-					Description: "port for control plane api server",
+					Description: "port for control plane API Server",
 					Type:        "integer",
 				},
 			},

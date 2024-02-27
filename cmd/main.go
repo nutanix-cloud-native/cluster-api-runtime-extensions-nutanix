@@ -132,7 +132,7 @@ func main() {
 		dockermutation.MetaWorkerPatchHandler(),
 	}
 
-	// dnutanixMetaHandlers combines all Nutanix patch and variable handlers under a single handler.
+	// nutanixMetaHandlers combines all Nutanix patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
 	nutanixMetaHandlers := []handlers.Named{
 		nutanixclusterconfig.NewVariable(),
