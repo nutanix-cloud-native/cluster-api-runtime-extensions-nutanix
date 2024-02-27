@@ -57,7 +57,7 @@
             ldflags = [ "-s" "-w" ];
           };
 
-          clusterawsadm = buildGo122Module rec {
+          clusterawsadm = buildGo120Module rec {
             name = "clusterawsadm";
             version = "2.3.1";
             src = fetchFromGitHub {
