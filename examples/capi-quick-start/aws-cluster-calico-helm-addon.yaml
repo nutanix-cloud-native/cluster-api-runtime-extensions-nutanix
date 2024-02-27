@@ -32,6 +32,21 @@ spec:
               strategy: HelmAddon
           aws:
             region: us-west-2
+          controlPlane:
+            aws:
+              ami:
+                lookup:
+                  baseOS: centos-7
+                  format: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
+                  org: "258751437250"
+      - name: workerConfig
+        value:
+          aws:
+            ami:
+              lookup:
+                baseOS: centos-7
+                format: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
+                org: "258751437250"
     version: ${KUBERNETES_VERSION}
     workers:
       machineDeployments:

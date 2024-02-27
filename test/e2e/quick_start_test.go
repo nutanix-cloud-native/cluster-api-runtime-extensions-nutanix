@@ -11,37 +11,17 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 
-	caaphv1 "github.com/d2iq-labs/capi-runtime-extensions/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
-var (
-	clusterKind            = "Cluster"
-	clusterResourceSetKind = "ClusterResourceSet"
-	helmChartProxyKind     = "HelmChartProxy"
-	helmReleaseProxyKind   = "HelmReleaseProxy"
-
-	clusterOwner = metav1.OwnerReference{
-		Kind:       clusterKind,
-		APIVersion: clusterv1.GroupVersion.String(),
-	}
-	helmChartProxyOwner = metav1.OwnerReference{
-		Kind:       helmChartProxyKind,
-		APIVersion: caaphv1.GroupVersion.String(),
-		Controller: ptr.To(true),
-	}
-)
-
 var _ = Describe("Quick start", Serial, func() {
-	for _, provider := range []string{"Docker"} {
+	for _, provider := range []string{"Docker", "AWS"} {
 		for _, cniProvider := range []string{"Cilium", "Calico"} {
 			for _, addonStrategy := range []string{"HelmAddon", "ClusterResourceSet"} {
 				strategy := ""
@@ -85,31 +65,7 @@ var _ = Describe("Quick start", Serial, func() {
 										framework.KubeadmBootstrapOwnerReferenceAssertions,
 										framework.KubeadmControlPlaneOwnerReferenceAssertions,
 										framework.KubernetesReferenceAssertions,
-										map[string]func(reference []metav1.OwnerReference) error{
-											clusterResourceSetKind: func(owners []metav1.OwnerReference) error {
-												// The ClusterResourcesSets that we create are cluster specific and so should be owned by the cluster.
-												return framework.HasExactOwners(
-													owners,
-													clusterOwner,
-												)
-											},
-
-											helmChartProxyKind: func(owners []metav1.OwnerReference) error {
-												// The HelmChartProxies that we create are cluster specific and so should be owned by the cluster.
-												return framework.HasExactOwners(
-													owners,
-													clusterOwner,
-												)
-											},
-
-											helmReleaseProxyKind: func(owners []metav1.OwnerReference) error {
-												// HelmReleaseProxies should be owned by the relevant HelmChartProxy.
-												return framework.HasExactOwners(
-													owners,
-													helmChartProxyOwner,
-												)
-											},
-										},
+										AddonReferenceAssertions,
 									)
 
 									By("Waiting until nodes are ready")

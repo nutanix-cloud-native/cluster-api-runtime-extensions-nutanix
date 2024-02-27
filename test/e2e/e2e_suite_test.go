@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	addonsv1 "sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
-	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
+	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	capibootstrap "sigs.k8s.io/cluster-api/test/framework/bootstrap"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
@@ -141,9 +141,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	// we unset Kubernetes version variables to make sure we use the ones resolved from the first Ginkgo ParallelNode in
 	// the e2e config.
-	os.Unsetenv(capi_e2e.KubernetesVersion)
-	os.Unsetenv(capi_e2e.KubernetesVersionUpgradeFrom)
-	os.Unsetenv(capi_e2e.KubernetesVersionUpgradeTo)
+	os.Unsetenv(capie2e.KubernetesVersion)
+	os.Unsetenv(capie2e.KubernetesVersionUpgradeFrom)
+	os.Unsetenv(capie2e.KubernetesVersionUpgradeTo)
 
 	kubeconfigPath := parts[3]
 	bootstrapClusterProxy = framework.NewClusterProxy(
