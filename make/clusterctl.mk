@@ -10,7 +10,7 @@ clusterctl.init:
 	    AWS_B64ENCODED_CREDENTIALS=$$(clusterawsadm bootstrap credentials encode-as-profile) \
 	    clusterctl init \
 	      --kubeconfig=$(KIND_KUBECONFIG) \
-	      --infrastructure docker,aws \
+	      --infrastructure docker,aws,nutanix \
 	      --addon helm \
 	      --wait-providers
 
