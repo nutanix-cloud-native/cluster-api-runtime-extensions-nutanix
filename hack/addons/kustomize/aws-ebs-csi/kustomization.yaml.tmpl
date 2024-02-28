@@ -17,6 +17,7 @@ helmCharts:
   valuesFile: helm-values.yaml
   includeCRDs: true
   skipTests: true
+  namespace: kube-system
 
 resources:
 - ../external-snapshotter
