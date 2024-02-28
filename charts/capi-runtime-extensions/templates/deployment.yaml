@@ -37,6 +37,8 @@ spec:
         - --nfd.crs.defaults-namespace={{ .Release.Namespace }}
         - --nfd.helm-addon.defaults-namespace={{ .Release.Namespace }}
         - --nfd.helm-addon.default-values-template-configmap-name={{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
+        - --awscpi.defaults-namespace={{ .Release.Namespace }}
+        - --awsebs.defaults-namespace={{ .Release.Namespace }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}
