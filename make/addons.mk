@@ -12,7 +12,8 @@ export AWS_CPI_CHART_VERSION_127 := 0.0.8
 export AWS_CPI_VERSION_128 := v1.28.1
 export AWS_CPI_CHART_VERSION_128 := 0.0.8
 
-addons.sync: $(addprefix update-addon.,calico cilium nfd aws-ebs-csi)
+.PHONY: addons.sync
+addons.sync: $(addprefix update-addon.,calico cilium nfd aws-ebs-csi aws-cpi.127 aws-cpi.128)
 
 .PHONY: update-addon.calico
 update-addon.calico: ; $(info $(M) updating calico manifests)
@@ -31,5 +32,5 @@ update-addon.aws-ebs-csi: ; $(info $(M) updating aws ebs csi manifests)
 	./hack/addons/update-aws-ebs-csi.sh
 
 .PHONY: update-addon.aws-cpi.%
-update-addon.aws-cpi.%: ; $(info $(M) updating aws cpi manifests)
+update-addon.aws-cpi.%: ; $(info $(M) updating aws cpi $* manifests)
 	./hack/addons/update-aws-cpi.sh $(AWS_CPI_VERSION_$*) $(AWS_CPI_CHART_VERSION_$*)
