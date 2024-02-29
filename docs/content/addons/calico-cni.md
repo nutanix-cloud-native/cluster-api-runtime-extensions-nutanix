@@ -1,5 +1,6 @@
 +++
 title = "Calico CNI"
+icon = "fa-solid fa-network-wired"
 +++
 
 When deploying a cluster with CAPI, deployment and configuration of CNI is up to the user. By leveraging CAPI cluster

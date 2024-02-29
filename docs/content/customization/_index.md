@@ -1,6 +1,7 @@
 +++
 title = "Cluster customizations"
 weight = 1
+icon = "fa-solid fa-screwdriver-wrench"
 +++
 
 The cluster configuration handlers wrap all the other mutation handlers in a convenient single patch for inclusion in

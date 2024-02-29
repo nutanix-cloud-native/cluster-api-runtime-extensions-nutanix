@@ -1,5 +1,6 @@
 +++
 title = "Docker"
+icon = "fa-brands fa-docker"
 +++
 
 The customizations in this section are applicable only to AWS clusters. They will only be applied to clusters that

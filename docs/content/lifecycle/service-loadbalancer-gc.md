@@ -1,5 +1,6 @@
 +++
 title = "LoadBalancer Services Garbage Collection"
+icon = "fa-solid fa-recycle"
 +++
 
 When using Kubernetes `LoadBalancer` services, the relevant cloud provider interface creates and configures external

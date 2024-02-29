@@ -1,5 +1,6 @@
 +++
 title = "Node Feature Discovery"
+icon = "fa-solid fa-eye"
 +++
 
 By leveraging CAPI cluster lifecycle hooks, this handler deploys [Node Feature
