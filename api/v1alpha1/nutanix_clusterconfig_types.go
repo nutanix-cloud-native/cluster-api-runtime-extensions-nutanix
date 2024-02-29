@@ -21,7 +21,7 @@ func (NutanixSpec) VariableSchema() clusterv1.VariableSchema {
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"prismCentralEndpoint": NutanixPrismCentralEndpointSpec{}.VariableSchema().OpenAPIV3Schema,
 				"controlPlaneEndpoint": NutanixControlPlaneEndpointSpec{}.VariableSchema().OpenAPIV3Schema,
-				// TODO "failureDomains": []NutanixFailureDomain{}.VariableSchema().OpenAPIV3Schema,
+				"failureDomains":       NutanixFailureDomains{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -85,6 +85,20 @@ func (NutanixControlPlaneEndpointSpec) VariableSchema() clusterv1.VariableSchema
 	}
 }
 
+type NutanixFailureDomains []NutanixFailureDomain
+
+func (NutanixFailureDomains) VariableSchema() clusterv1.VariableSchema {
+	resourceSchema := NutanixFailureDomain{}.VariableSchema().OpenAPIV3Schema
+
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Nutanix failure domains",
+			Type:        "array",
+			Items:       &resourceSchema,
+		},
+	}
+}
+
 type NutanixFailureDomain struct {
 	// name defines the unique name of a failure domain.
 	// Name is required and must be at most 64 characters in length.
@@ -112,16 +126,32 @@ func (NutanixFailureDomain) VariableSchema() clusterv1.VariableSchema {
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Nutanix Failure Domain",
 			Type:        "object",
-			Properties:  map[string]clusterv1.JSONSchemaProps{
+			Properties: map[string]clusterv1.JSONSchemaProps{
 				"name": {
 					Description: "name of failure domain",
 					Type:        "string",
 				},
-				"cluster": {
-					Description: "",
-					Type:        "integer",
+				"cluster": NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
+				"subnets": NutanixResourceIdentifiers{}.VariableSchema().OpenAPIV3Schema,
+				"controlPlane": {
+					Description: "indicates if a failure domain is suited for control plane nodes",
+					Type:        "boolean",
 				},
-},
+			},
+		},
+	}
+}
+
+type NutanixResourceIdentifiers []NutanixResourceIdentifier
+
+func (NutanixResourceIdentifiers) VariableSchema() clusterv1.VariableSchema {
+	resourceSchema := NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema
+
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Nutanix resource identifier",
+			Type:        "array",
+			Items:       &resourceSchema,
 		},
 	}
 }
