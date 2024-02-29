@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,7 +24,7 @@ func WaitForDeploymentsAvailable(
 ) {
 	start := time.Now()
 	key := client.ObjectKeyFromObject(input.Deployment)
-	Byf("waiting for deployment %s to be available", key)
+	capie2e.Byf("waiting for deployment %s to be available", key)
 	Log("starting to wait for deployment to become available")
 	Eventually(func() bool {
 		if err := input.Getter.Get(ctx, key, input.Deployment); err == nil {

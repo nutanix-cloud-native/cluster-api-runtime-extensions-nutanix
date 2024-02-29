@@ -114,6 +114,7 @@ endif
 	    test/e2e/... -- \
 	      -e2e.artifacts-folder="$(ARTIFACTS)" \
 	      -e2e.config="$(E2E_CONF_FILE_ENVSUBST)" \
+	      $(if $(filter $(E2E_SKIP_CLEANUP),true),-e2e.skip-resource-cleanup)
 	go tool cover \
 	  -html=coverage-e2e.out \
 	  -o coverage-e2e.html

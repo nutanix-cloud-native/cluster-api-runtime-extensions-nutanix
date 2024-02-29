@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	addonsv1 "sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,7 +44,7 @@ func WaitForHelmReleaseProxyReadyForCluster(
 	Expect(err).ToNot(HaveOccurred())
 	hrpKey := ctrlclient.ObjectKeyFromObject(hrp)
 
-	Byf("waiting for HelmReleaseProxy for %s to be ready", hrpKey)
+	capie2e.Byf("waiting for HelmReleaseProxy for %s to be ready", hrpKey)
 	Log("starting to wait for HelmReleaseProxy to become available")
 	Eventually(func() bool {
 		err := input.GetLister.Get(ctx, hrpKey, hrp)

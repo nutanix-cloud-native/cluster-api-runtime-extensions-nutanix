@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/cluster-api/test/e2e"
+	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
@@ -23,6 +23,7 @@ import (
 
 var _ = Describe("Quick start", Serial, func() {
 	for _, provider := range []string{"Docker", "AWS"} {
+		lowercaseProvider := strings.ToLower(provider)
 		for _, cniProvider := range []string{"Cilium", "Calico"} {
 			for _, addonStrategy := range []string{"HelmAddon", "ClusterResourceSet"} {
 				strategy := ""
@@ -47,20 +48,25 @@ var _ = Describe("Quick start", Serial, func() {
 					Label("cni:"+cniProvider),
 					Label("addonStrategy:"+addonStrategy),
 					func() {
-						e2e.QuickStartSpec(ctx, func() e2e.QuickStartSpecInput {
-							prov := strings.ToLower(provider)
-							if !slices.Contains(e2eConfig.InfrastructureProviders(), prov) {
-								Skip(fmt.Sprintf("provider %s is not enabled", prov))
+						capie2e.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
+							if !slices.Contains(
+								e2eConfig.InfrastructureProviders(),
+								lowercaseProvider,
+							) {
+								Fail(fmt.Sprintf(
+									"provider %s is not enabled - check environment setup for provider specific requirements",
+									lowercaseProvider,
+								))
 							}
 
-							return e2e.QuickStartSpecInput{
+							return capie2e.QuickStartSpecInput{
 								E2EConfig:              e2eConfig,
 								ClusterctlConfigPath:   clusterctlConfigPath,
 								BootstrapClusterProxy:  bootstrapClusterProxy,
 								ArtifactFolder:         artifactFolder,
 								SkipCleanup:            skipCleanup,
 								Flavor:                 ptr.To(flavour),
-								InfrastructureProvider: ptr.To(prov),
+								InfrastructureProvider: ptr.To(lowercaseProvider),
 								PostMachinesProvisioned: func(proxy framework.ClusterProxy, namespace, clusterName string) {
 									framework.AssertOwnerReferences(
 										namespace,
@@ -71,6 +77,7 @@ var _ = Describe("Quick start", Serial, func() {
 										framework.KubeadmBootstrapOwnerReferenceAssertions,
 										framework.KubeadmControlPlaneOwnerReferenceAssertions,
 										framework.KubernetesReferenceAssertions,
+										AWSInfraOwnerReferenceAssertions,
 										AddonReferenceAssertions,
 									)
 
@@ -86,7 +93,7 @@ var _ = Describe("Quick start", Serial, func() {
 										framework.WaitForNodesReadyInput{
 											Lister: workloadClient,
 											KubernetesVersion: e2eConfig.GetVariable(
-												KubernetesVersion,
+												capie2e.KubernetesVersion,
 											),
 											Count: 2,
 											WaitForNodesReady: e2eConfig.GetIntervals(
