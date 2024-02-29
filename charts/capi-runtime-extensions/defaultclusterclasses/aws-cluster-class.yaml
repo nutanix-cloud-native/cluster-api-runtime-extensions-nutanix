@@ -21,6 +21,14 @@ spec:
       kind: AWSClusterTemplate
       name: aws-quick-start
   patches:
+    - external:
+        discoverVariablesExtension: awsclusterconfigvars.capi-runtime-extensions
+        generateExtension: awsclusterconfigpatch.capi-runtime-extensions
+      name: cluster-config
+    - external:
+        discoverVariablesExtension: awsworkerconfigvars.capi-runtime-extensions
+        generateExtension: awsworkerconfigpatch.capi-runtime-extensions
+      name: worker-config
     - definitions:
         - jsonPatches:
             - op: add
@@ -35,14 +43,6 @@ spec:
               infrastructureCluster: true
       description: AWSClusterStaticIdentity identityRef to use when creating the cluster
       name: identityRef
-    - external:
-        discoverVariablesExtension: awsclusterconfigvars.capi-runtime-extensions
-        generateExtension: awsclusterconfigpatch.capi-runtime-extensions
-      name: cluster-config
-    - external:
-        discoverVariablesExtension: awsworkerconfigvars.capi-runtime-extensions
-        generateExtension: awsworkerconfigpatch.capi-runtime-extensions
-      name: worker-config
   workers:
     machineDeployments:
       - class: default-worker
