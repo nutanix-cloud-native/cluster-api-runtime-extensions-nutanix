@@ -10,7 +10,7 @@ import (
 type NutanixSpec struct {
 	PrismCentralEndpoint *NutanixPrismCentralEndpointSpec `json:"prismCentralEndpoint,omitempty"`
 	ControlPlaneEndpoint *NutanixControlPlaneEndpointSpec `json:"controlPlaneEndpoint,omitempty"`
-	FailureDomains       []NutanixFailureDomain           `json:"faultDomains,omitempty"`
+	FailureDomains       []NutanixFailureDomain           `json:"failureDomains,omitempty"`
 }
 
 func (NutanixSpec) VariableSchema() clusterv1.VariableSchema {

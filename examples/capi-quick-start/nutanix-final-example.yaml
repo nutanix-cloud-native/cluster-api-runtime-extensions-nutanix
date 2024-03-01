@@ -59,7 +59,7 @@ spec:
             controlPlaneEndpoint:
               host: "api-server-ip-fqdn"
               port: 6443
-            faultDomains:
+            failureDomains:
               - name: fd1
                 cluster:
                   name: PE1

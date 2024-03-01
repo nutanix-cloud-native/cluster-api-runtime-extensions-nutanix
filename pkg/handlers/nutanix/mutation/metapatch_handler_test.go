@@ -28,6 +28,8 @@ import (
 	nutanixclusterconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/clusterconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/controlplaneendpoint"
 	controlplaneendpointtests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/controlplaneendpoint/tests"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/prismcentralendpoint"
+	prismcentralendpointtests "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/prismcentralendpoint/tests"
 )
 
 func metaPatchGeneratorFunc(mgr manager.Manager) func() mutation.GeneratePatches {
@@ -58,6 +60,14 @@ func TestGeneratePatches(t *testing.T) {
 		clusterconfig.MetaVariableName,
 		nutanixclusterconfig.NutanixVariableName,
 		controlplaneendpoint.VariableName,
+	)
+
+	prismcentralendpointtests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		nutanixclusterconfig.NutanixVariableName,
+		prismcentralendpoint.VariableName,
 	)
 
 	auditpolicytests.TestGeneratePatches(

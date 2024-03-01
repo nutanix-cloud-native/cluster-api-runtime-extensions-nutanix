@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package controlplaneendpoint
+package prismcentralendpoint
 
 import (
 	"context"
@@ -22,33 +22,33 @@ import (
 
 const (
 	// VariableName is the external patch variable name.
-	VariableName = "controlPlaneEndpoint"
+	VariableName = "prismCentralEndpoint"
 )
 
-type nutanixControlPlaneEndpoint struct {
+type nutanixPrismCentralEndpoint struct {
 	variableName      string
 	variableFieldPath []string
 }
 
-func NewPatch() *nutanixControlPlaneEndpoint {
-	return newNutanixControlPlaneEndpoint(
+func NewPatch() *nutanixPrismCentralEndpoint {
+	return newNutanixPrismCentralEndpoint(
 		clusterconfig.MetaVariableName,
 		v1alpha1.NutanixVariableName,
 		VariableName,
 	)
 }
 
-func newNutanixControlPlaneEndpoint(
+func newNutanixPrismCentralEndpoint(
 	variableName string,
 	variableFieldPath ...string,
-) *nutanixControlPlaneEndpoint {
-	return &nutanixControlPlaneEndpoint{
+) *nutanixPrismCentralEndpoint {
+	return &nutanixPrismCentralEndpoint{
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
 }
 
-func (h *nutanixControlPlaneEndpoint) Mutate(
+func (h *nutanixPrismCentralEndpoint) Mutate(
 	ctx context.Context,
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
@@ -59,7 +59,7 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 		"holderRef", holderRef,
 	)
 
-	controlPlaneEndpointVar, found, err := variables.Get[v1alpha1.NutanixControlPlaneEndpointSpec](
+	prismCentralEndpointVar, found, err := variables.Get[v1alpha1.NutanixPrismCentralEndpointSpec](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -68,7 +68,7 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 		return err
 	}
 	if !found {
-		log.V(5).Info("Nutanix ControlPlaneEndpoint variable not defined")
+		log.V(5).Info("Nutanix PrismCentralEndpoint variable not defined")
 		return nil
 	}
 
@@ -78,7 +78,7 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		controlPlaneEndpointVar,
+		prismCentralEndpointVar,
 	)
 
 	return patches.MutateIfApplicable(
@@ -91,10 +91,12 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting controlPlaneEndpoint in NutanixClusterTemplate spec")
+			).Info("setting prismCentralEndpoint in NutanixClusterTemplate spec")
 
-			obj.Spec.Template.Spec.ControlPlaneEndpoint.Host = controlPlaneEndpointVar.Host
-			obj.Spec.Template.Spec.ControlPlaneEndpoint.Port = controlPlaneEndpointVar.Port
+			obj.Spec.Template.Spec.PrismCentral.Address = prismCentralEndpointVar.Host
+			obj.Spec.Template.Spec.PrismCentral.Port = prismCentralEndpointVar.Port
+			obj.Spec.Template.Spec.PrismCentral.Insecure = prismCentralEndpointVar.Insecure
+			// TODO obj.Spec.Template.Spec.PrismCentral.AdditionalTrustBundle = prismCentralEndpointVar.AdditionalTrustBundle
 
 			return nil
 		},
