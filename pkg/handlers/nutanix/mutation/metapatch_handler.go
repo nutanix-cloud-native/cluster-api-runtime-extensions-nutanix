@@ -10,13 +10,14 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	genericmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/controlplaneendpoint"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/prismcentralendpoint"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPX clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
-			controlplaneendpoint.NewPatch(),
+			prismcentralendpoint.NewPatch(),
 		},
 		genericmutation.MetaMutators(mgr)...,
 	)
