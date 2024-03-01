@@ -4,7 +4,8 @@
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/api/resource"
+	capxv1 "github.com/d2iq-labs/capi-runtime-extensions/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
+	"github.com/d2iq-labs/capi-runtime-extensions/api/variables"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -25,7 +26,7 @@ type NutanixNodeSpec struct {
 	VCPUSockets int32 `json:"vcpuSockets"`
 
 	// memorySize is the memory size (in Quantity format) of the VM
-	MemorySize resource.Quantity `json:"memorySize"`
+	MemorySize string `json:"memorySize"`
 
 	// image is to identify the rhcos image uploaded to the Prism Central (PC)
 	// The image identifier (uuid or name) can be obtained from the Prism Central console
@@ -41,7 +42,7 @@ type NutanixNodeSpec struct {
 	// subnet is to identify the cluster's network subnet to use for the Machine's VM
 	// The cluster identifier (uuid or name) can be obtained from the Prism Central console
 	// or using the prism_central API.
-	Subnets []NutanixResourceIdentifier `json:"subnet"`
+	Subnets NutanixResourceIdentifiers `json:"subnet"`
 
 	// List of categories that need to be added to the machines. Categories must already exist in Prism Central
 	AdditionalCategories []NutanixCategoryIdentifier `json:"additionalCategories,omitempty"`
@@ -50,11 +51,11 @@ type NutanixNodeSpec struct {
 	Project *NutanixResourceIdentifier `json:"project,omitempty"`
 
 	// Defines the boot type of the virtual machine. Only supports UEFI and Legacy
-	BootType string `json:"bootType,omitempty"` //TODO use enum NutanixBootType
+	BootType string `json:"bootType,omitempty"` //TODO use NutanixBootType enum somehow
 
 	// systemDiskSize is size (in Quantity format) of the system disk of the VM
 	// The minimum systemDiskSize is 20Gi bytes
-	SystemDiskSize resource.Quantity `json:"systemDiskSize"`
+	SystemDiskSize string `json:"systemDiskSize"`
 
 	// List of GPU devices that need to be added to the machines.
 	GPUs []NutanixGPU `json:"gpus,omitempty"`
@@ -65,7 +66,55 @@ func (NutanixNodeSpec) VariableSchema() clusterv1.VariableSchema {
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Nutanix Node configuration",
 			Type:        "object",
-			Properties:  map[string]clusterv1.JSONSchemaProps{},
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"vcpusPerSocket": {
+					Description: "vcpusPerSocket is the number of vCPUs per socket of the VM",
+					Type:        "integer",
+				},
+				"vcpuSockets": {
+					Description: "vcpuSockets is the number of vCPU sockets of the VM",
+					Type:        "integer",
+				},
+				"memorySize": {
+					Description: "memorySize is the memory size (in Quantity format) of the VM eg. 4Gi",
+					Type:        "string",
+				},
+				"image":   NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
+				"cluster": NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
+				"subnet":  NutanixResourceIdentifiers{}.VariableSchema().OpenAPIV3Schema,
+				"bootType": {
+					Description: "Defines the boot type of the virtual machine. Only supports UEFI and Legacy",
+					Type:        "string",
+				},
+				"systemDiskSize": {
+					Description: "systemDiskSize is size (in Quantity format) of the system disk of the VM eg. 20Gi",
+					Type:        "string",
+				},
+				// "project": {},
+				// "additionalCategories": {},
+				// "gpus": {},
+			},
+		},
+	}
+}
+
+func (NutanixBootType) VariableSchema() clusterv1.VariableSchema {
+	supportedBootType := []capxv1.NutanixBootType{
+		capxv1.NutanixBootTypeLegacy,
+		capxv1.NutanixBootTypeUEFI,
+	}
+
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Nutanix Boot type enum",
+			Type:        "string",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"bootType": {
+					Description: "Defines the boot type of the virtual machine. Only supports UEFI and Legacy",
+					Type:        "string",
+					Enum:        variables.MustMarshalValuesToEnumJSON(supportedBootType...),
+				},
+			},
 		},
 	}
 }
