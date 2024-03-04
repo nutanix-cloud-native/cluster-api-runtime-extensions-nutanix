@@ -69,11 +69,18 @@ stringData:
 EOF
 ```
 
-To create an example cluster:
+Generate a cluster definition from the file specified in the `--from` flag
+and apply the generated resource to actually create the cluster in the API.
+For example, the following command will create a Docker cluster with Cilium CNI applied via the Helm addon provider:
 
 ```shell
-clusterctl generate cluster docker-quick-start-helm-addon-cilium \
-  --from examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml \
+export CLUSTER_NAME=docker-cluster-cilium-helm-addon
+export CLUSTER_FILE=examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml
+```
+
+```shell
+clusterctl generate cluster ${CLUSTER_NAME} \
+  --from ${CLUSTER_FILE} \
   --kubernetes-version v1.29.1 \
   --worker-machine-count 1 | \
   kubectl apply --server-side -f -
@@ -82,36 +89,36 @@ clusterctl generate cluster docker-quick-start-helm-addon-cilium \
 Wait until control plane is ready:
 
 ```shell
-kubectl wait clusters/docker-quick-start-helm-addon-cilium --for=condition=ControlPlaneInitialized --timeout=5m
+kubectl wait clusters/${CLUSTER_NAME} --for=condition=ControlPlaneInitialized --timeout=5m
 ```
 
 To get the kubeconfig for the new cluster, run:
 
 ```shell
-clusterctl get kubeconfig docker-quick-start-helm-addon-cilium > docker-kubeconfig
+clusterctl get kubeconfig ${CLUSTER_NAME} > ${CLUSTER_NAME}.conf
 ```
 
 If you are not on Linux, you will also need to fix the generated kubeconfig's `server`, run:
 
 ```shell
-kubectl config set-cluster docker-quick-start-helm-addon-cilium \
-  --kubeconfig docker-kubeconfig \
-  --server=https://$(docker container port docker-quick-start-helm-addon-cilium-lb 6443/tcp)
+kubectl config set-cluster ${CLUSTER_NAME} \
+  --kubeconfig ${CLUSTER_NAME}.conf \
+  --server=https://$(docker container port ${CLUSTER_NAME}-lb 6443/tcp)
 ```
 
 Wait until all nodes are ready (this indicates that CNI has been deployed successfully):
 
 ```shell
-kubectl --kubeconfig docker-kubeconfig wait nodes --all --for=condition=Ready --timeout=5m
+kubectl --kubeconfig ${CLUSTER_NAME}.conf wait nodes --all --for=condition=Ready --timeout=5m
 ```
 
 Show that Cilium is running successfully on the workload cluster:
 
 ```shell
-kubectl --kubeconfig docker-kubeconfig get daemonsets -n kube-system cilium
+kubectl --kubeconfig ${CLUSTER_NAME}.conf get daemonsets -n kube-system cilium
 ```
 
-Deploy kube-vip to provide service load-balancer:
+Deploy kube-vip to provide service load-balancer functionality for Docker clusters:
 
 ```shell
 helm repo add --force-update kube-vip https://kube-vip.github.io/helm-charts
@@ -122,29 +129,29 @@ kubectl create configmap \
   --namespace kube-system kubevip \
   --from-literal "range-global=${kind_subnet_prefix}100.0-${kind_subnet_prefix}100.20" \
   --dry-run=client -oyaml |
-  kubectl --kubeconfig docker-kubeconfig apply --server-side -n kube-system -f -
+  kubectl --kubeconfig ${CLUSTER_NAME}.conf apply --server-side -n kube-system -f -
 
 helm upgrade kube-vip-cloud-provider kube-vip/kube-vip-cloud-provider --version 0.2.2 \
   --install \
   --wait --wait-for-jobs \
   --namespace kube-system \
-  --kubeconfig docker-kubeconfig \
+  --kubeconfig ${CLUSTER_NAME}.conf \
   --set-string=image.tag=v0.0.6
 
 helm upgrade kube-vip kube-vip/kube-vip --version 0.4.2 \
   --install \
   --wait --wait-for-jobs \
   --namespace kube-system \
-  --kubeconfig docker-kubeconfig \
+  --kubeconfig ${CLUSTER_NAME}.conf \
   --set-string=image.tag=v0.6.0
 ```
 
 Deploy traefik as a LB service:
 
 ```shell
-helm --kubeconfig docker-kubeconfig repo add traefik https://helm.traefik.io/traefik
+helm --kubeconfig ${CLUSTER_NAME}.conf repo add traefik https://helm.traefik.io/traefik
 helm repo update &>/dev/null
-helm --kubeconfig docker-kubeconfig upgrade --install traefik traefik/traefik \
+helm --kubeconfig ${CLUSTER_NAME}.conf upgrade --install traefik traefik/traefik \
   --version v10.9.1 \
   --wait --wait-for-jobs \
   --set ports.web.hostPort=80 \
@@ -155,13 +162,13 @@ helm --kubeconfig docker-kubeconfig upgrade --install traefik traefik/traefik \
 Watch for traefik LB service to get an external address:
 
 ```shell
-watch -n 0.5 kubectl --kubeconfig docker-kubeconfig get service/traefik
+watch -n 0.5 kubectl --kubeconfig ${CLUSTER_NAME}.conf get service/traefik
 ```
 
 To delete the workload cluster, run:
 
 ```shell
-kubectl delete cluster docker-quick-start-helm-addon-cilium
+kubectl delete cluster ${CLUSTER_NAME}
 ```
 
 Notice that the traefik service is deleted before the cluster is actually finally deleted.
