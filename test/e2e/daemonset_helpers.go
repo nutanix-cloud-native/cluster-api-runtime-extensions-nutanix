@@ -11,6 +11,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -28,7 +29,7 @@ func WaitForDaemonSetsAvailable(
 ) {
 	start := time.Now()
 	namespace, name := input.DaemonSet.GetNamespace(), input.DaemonSet.GetName()
-	Byf("waiting for deployment %s/%s to be available", namespace, name)
+	capie2e.Byf("waiting for deployment %s/%s to be available", namespace, name)
 	Log("starting to wait for deployment to become available")
 	Eventually(func() bool {
 		key := client.ObjectKey{Namespace: namespace, Name: name}

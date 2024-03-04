@@ -89,34 +89,35 @@ endif
 	$(info $(M) running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
 	env E2E_IMAGE_TAG="$$(gojq --raw-output '.version' $(REPO_ROOT)/dist/metadata.json)" \
 	  envsubst -no-unset -no-empty -i '$(E2E_CONF_FILE)' -o '$(E2E_CONF_FILE_ENVSUBST)'
-	ginkgo run \
-	  --r \
-	  --show-node-events \
-	  --trace \
-	  --randomize-all \
-	  --randomize-suites \
-	  --fail-on-pending \
-	  --keep-going \
-	  $(if $(filter $(CI),true),-v) \
-	  --covermode=atomic \
-	  --coverprofile coverage-e2e.out \
-	  --procs=$(E2E_PARALLEL_NODES) \
-	  --compilers=$(E2E_PARALLEL_NODES) \
-	  --flake-attempts=$(E2E_FLAKE_ATTEMPTS) \
-	  $(if $(E2E_FOCUS),--focus="$(E2E_FOCUS)") \
-	  $(if $(E2E_SKIP),--skip="$(E2E_SKIP)") \
-	  $(if $(E2E_LABEL),--label-filter="$(E2E_LABEL)") \
-	  $(E2E_GINKGO_FLAGS) \
-	  --junit-report=junit-e2e.xml \
-	  --json-report=report-e2e.json \
-	  --tags e2e \
-	  test/e2e/... -- \
-	    -e2e.artifacts-folder="$(ARTIFACTS)" \
-	    -e2e.config="$(E2E_CONF_FILE_ENVSUBST)" \
-	&& \
+	env AWS_B64ENCODED_CREDENTIALS="$$(clusterawsadm bootstrap credentials encode-as-profile 2>/dev/null)" \
+	  ginkgo run \
+	    --r \
+	    --show-node-events \
+	    --trace \
+	    --randomize-all \
+	    --randomize-suites \
+	    --fail-on-pending \
+	    --keep-going \
+	    $(if $(filter $(CI),true),-v) \
+	    --covermode=atomic \
+	    --coverprofile coverage-e2e.out \
+	    --procs=$(E2E_PARALLEL_NODES) \
+	    --compilers=$(E2E_PARALLEL_NODES) \
+	    --flake-attempts=$(E2E_FLAKE_ATTEMPTS) \
+	    $(if $(E2E_FOCUS),--focus="$(E2E_FOCUS)") \
+	    $(if $(E2E_SKIP),--skip="$(E2E_SKIP)") \
+	    $(if $(E2E_LABEL),--label-filter="$(E2E_LABEL)") \
+	    $(E2E_GINKGO_FLAGS) \
+	    --junit-report=junit-e2e.xml \
+	    --json-report=report-e2e.json \
+	    --tags e2e \
+	    test/e2e/... -- \
+	      -e2e.artifacts-folder="$(ARTIFACTS)" \
+	      -e2e.config="$(E2E_CONF_FILE_ENVSUBST)" \
+	      $(if $(filter $(E2E_SKIP_CLEANUP),true),-e2e.skip-resource-cleanup)
 	go tool cover \
-		-html=coverage-e2e.out \
-		-o coverage-e2e.html
+	  -html=coverage-e2e.out \
+	  -o coverage-e2e.html
 endif
 
 GOLANGCI_CONFIG_FILE ?= $(wildcard $(REPO_ROOT)/.golangci.y*ml)

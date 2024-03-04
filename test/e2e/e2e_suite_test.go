@@ -13,6 +13,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -21,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	addonsv1 "sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
-	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
+	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	capibootstrap "sigs.k8s.io/cluster-api/test/framework/bootstrap"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
@@ -90,10 +91,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	By("Initializing a runtime.Scheme with all the GVK relevant for this test")
 	scheme := initScheme()
 
-	Byf("Loading the e2e test configuration from %q", configPath)
+	capie2e.Byf("Loading the e2e test configuration from %q", configPath)
 	e2eConfig = loadE2EConfig(configPath)
 
-	Byf("Creating a clusterctl local repository into %q", artifactFolder)
+	capie2e.Byf("Creating a clusterctl local repository into %q", artifactFolder)
 	clusterctlConfigPath = createClusterctlLocalRepository(
 		e2eConfig,
 		filepath.Join(artifactFolder, "repository"),
@@ -141,9 +142,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	// we unset Kubernetes version variables to make sure we use the ones resolved from the first Ginkgo ParallelNode in
 	// the e2e config.
-	os.Unsetenv(capi_e2e.KubernetesVersion)
-	os.Unsetenv(capi_e2e.KubernetesVersionUpgradeFrom)
-	os.Unsetenv(capi_e2e.KubernetesVersionUpgradeTo)
+	os.Unsetenv(capie2e.KubernetesVersion)
+	os.Unsetenv(capie2e.KubernetesVersionUpgradeFrom)
+	os.Unsetenv(capie2e.KubernetesVersionUpgradeTo)
 
 	kubeconfigPath := parts[3]
 	bootstrapClusterProxy = framework.NewClusterProxy(
@@ -174,6 +175,16 @@ func loadE2EConfig(configPath string) *clusterctl.E2EConfig {
 		clusterctl.LoadE2EConfigInput{ConfigPath: configPath},
 	)
 	Expect(config).NotTo(BeNil(), "Failed to load E2E config from %s", configPath)
+
+	config.Providers = slices.DeleteFunc(config.Providers, func(p clusterctl.ProviderConfig) bool {
+		switch p.Name {
+		case "aws":
+			_, found := os.LookupEnv("AWS_B64ENCODED_CREDENTIALS")
+			return !found
+		default:
+			return false
+		}
+	})
 
 	return config
 }

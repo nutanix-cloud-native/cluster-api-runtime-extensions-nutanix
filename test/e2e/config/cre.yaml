@@ -47,6 +47,29 @@ providers:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
 
+- name: aws
+  type: InfrastructureProvider
+  versions:
+  - name: "{go://sigs.k8s.io/cluster-api-provider-aws/v2@v2.3}"
+    value: "https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/{go://sigs.k8s.io/cluster-api-provider-aws/v2@v2.3}/infrastructure-components.yaml"
+    type: "url"
+    contract: v1beta1
+    files:
+    - sourcePath: "../data/shared/v1beta1-capa/metadata.yaml"
+    - sourcePath: "../../../charts/capi-runtime-extensions/defaultclusterclasses/aws-cluster-class.yaml"
+      targetName: clusterclass-aws-quick-start.yaml
+    - sourcePath: "../../../examples/capi-quick-start/aws-cluster-cilium-helm-addon.yaml"
+      targetName: cluster-template-topology-cilium-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/aws-cluster-cilium-crs.yaml"
+      targetName: cluster-template-topology-cilium-crs.yaml
+    - sourcePath: "../../../examples/capi-quick-start/aws-cluster-calico-helm-addon.yaml"
+      targetName: cluster-template-topology-calico-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/aws-cluster-calico-crs.yaml"
+      targetName: cluster-template-topology-calico-crs.yaml
+    replacements:
+    - old: --metrics-addr=127.0.0.1:8080
+      new: --metrics-addr=:8080
+
 - name: docker
   type: InfrastructureProvider
   versions:
@@ -116,8 +139,8 @@ variables:
   # allowing the same e2e config file to be re-used in different Prow jobs e.g. each one with a K8s version permutation.
   # The following Kubernetes versions should be the latest versions with already published kindest/node images.
   # This avoids building node images in the default case which improves the test duration significantly.
-  KUBERNETES_VERSION_MANAGEMENT: "v1.29.0"
-  KUBERNETES_VERSION: "v1.29.0"
+  KUBERNETES_VERSION_MANAGEMENT: "v1.29.2"
+  KUBERNETES_VERSION: "v1.28.7"
   SERVICE_CIDR: "10.128.0.0/12"
   POD_CIDR: "192.168.0.0/16"
   NODE_DRAIN_TIMEOUT: "60s"
@@ -130,21 +153,18 @@ variables:
   EXP_MACHINE_SET_PREFLIGHT_CHECKS: "true"
   CAPI_DIAGNOSTICS_ADDRESS: ":8080"
   CAPI_INSECURE_DIAGNOSTICS: "true"
+  AMI_LOOKUP_FORMAT: "konvoy-ami-{{.BaseOS}}-release-?{{.K8sVersion}}-*"
+  AMI_LOOKUP_BASEOS: "rocky-9.1"
+  AMI_LOOKUP_ORG: "999867407951"
 
 intervals:
   default/wait-controllers: ["3m", "10s"]
-  default/wait-cluster: ["5m", "10s"]
+  default/wait-cluster: ["10m", "10s"]
   default/wait-control-plane: ["10m", "10s"]
-  default/wait-worker-nodes: ["5m", "10s"]
-  default/wait-machine-pool-nodes: ["5m", "10s"]
-  default/wait-delete-cluster: ["3m", "10s"]
-  default/wait-machine-upgrade: ["20m", "10s"]
-  default/wait-machine-pool-upgrade: ["5m", "10s"]
+  default/wait-worker-nodes: ["10m", "10s"]
+  default/wait-delete-cluster: ["30m", "10s"]
   default/wait-nodes-ready: ["10m", "10s"]
-  default/wait-machine-remediation: ["5m", "10s"]
-  default/wait-deployment: ["15m", "10s"]
-  default/wait-daemonset: [ "15m", "10s" ]
-  default/wait-clusterresourceset: [ "15m", "10s" ]
-  default/wait-helmrelease: [ "15m", "10s" ]
-  default/wait-job: [ "5m", "10s" ]
-  default/wait-service: [ "15m", "10s" ]
+  default/wait-deployment: ["10m", "10s"]
+  default/wait-daemonset: [ "5m", "10s" ]
+  default/wait-clusterresourceset: [ "5m", "10s" ]
+  default/wait-helmrelease: [ "5m", "10s" ]

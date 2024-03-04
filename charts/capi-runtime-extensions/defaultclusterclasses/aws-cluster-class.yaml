@@ -33,10 +33,9 @@ spec:
         - jsonPatches:
             - op: add
               path: /spec/template/spec/identityRef
-              valueFrom:
-                template: |
-                  kind: AWSClusterStaticIdentity
-                  name: {{ .builtin.cluster.name }}
+              value:
+                kind: AWSClusterControllerIdentity
+                name: default
           selector:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: AWSClusterTemplate

@@ -33,6 +33,26 @@ patches:
       value:
         region: us-west-2
     - op: "add"
+      path: "/spec/topology/variables/0/value/controlPlane"
+      value:
+        aws:
+          ami:
+            lookup:
+              format: "$${AMI_LOOKUP_FORMAT}"
+              org: "$${AMI_LOOKUP_ORG}"
+              baseOS: "$${AMI_LOOKUP_BASEOS}"
+    - op: "add"
+      path: "/spec/topology/variables/-"
+      value:
+        name: "workerConfig"
+        value:
+          aws:
+            ami:
+              lookup:
+                format: "$${AMI_LOOKUP_FORMAT}"
+                org: "$${AMI_LOOKUP_ORG}"
+                baseOS: "$${AMI_LOOKUP_BASEOS}"
+    - op: "add"
       path: "/spec/topology/variables/0/value/addons/cpi"
       value: {}
     - op: "add"
@@ -62,35 +82,28 @@ patches:
     - op: "add"
       path: "/spec/patches"
       value:
+        - name: "cluster-config"
+          external:
+            generateExtension: "awsclusterconfigpatch.capi-runtime-extensions"
+            discoverVariablesExtension: "awsclusterconfigvars.capi-runtime-extensions"
+        - name: "worker-config"
+          external:
+            generateExtension: "awsworkerconfigpatch.capi-runtime-extensions"
+            discoverVariablesExtension: "awsworkerconfigvars.capi-runtime-extensions"
         - name: identityRef
           definitions:
             - jsonPatches:
                 - op: add
                   path: /spec/template/spec/identityRef
-                  valueFrom:
-                    template: |
-                      kind: AWSClusterStaticIdentity
-                      name: {{ .builtin.cluster.name }}
+                  value:
+                    kind: AWSClusterControllerIdentity
+                    name: default
               selector:
                 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
                 kind: AWSClusterTemplate
                 matchResources:
                   infrastructureCluster: true
           description: AWSClusterStaticIdentity identityRef to use when creating the cluster
-    - op: "add"
-      path: "/spec/patches/0"
-      value:
-        name: "cluster-config"
-        external:
-          generateExtension: "awsclusterconfigpatch.capi-runtime-extensions"
-          discoverVariablesExtension: "awsclusterconfigvars.capi-runtime-extensions"
-    - op: "add"
-      path: "/spec/patches/1"
-      value:
-        name: "worker-config"
-        external:
-          generateExtension: "awsworkerconfigpatch.capi-runtime-extensions"
-          discoverVariablesExtension: "awsworkerconfigvars.capi-runtime-extensions"
     - op: "remove"
       path: "/spec/variables"
 - target:

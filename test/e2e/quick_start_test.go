@@ -7,41 +7,23 @@ package e2e
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/test/e2e"
+	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 
-	caaphv1 "github.com/d2iq-labs/capi-runtime-extensions/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
 )
 
-var (
-	clusterKind            = "Cluster"
-	clusterResourceSetKind = "ClusterResourceSet"
-	helmChartProxyKind     = "HelmChartProxy"
-	helmReleaseProxyKind   = "HelmReleaseProxy"
-
-	clusterOwner = metav1.OwnerReference{
-		Kind:       clusterKind,
-		APIVersion: clusterv1.GroupVersion.String(),
-	}
-	helmChartProxyOwner = metav1.OwnerReference{
-		Kind:       helmChartProxyKind,
-		APIVersion: caaphv1.GroupVersion.String(),
-		Controller: ptr.To(true),
-	}
-)
-
 var _ = Describe("Quick start", Serial, func() {
-	for _, provider := range []string{"Docker"} {
+	for _, provider := range []string{"Docker", "AWS"} {
+		lowercaseProvider := strings.ToLower(provider)
 		for _, cniProvider := range []string{"Cilium", "Calico"} {
 			for _, addonStrategy := range []string{"HelmAddon", "ClusterResourceSet"} {
 				strategy := ""
@@ -66,15 +48,25 @@ var _ = Describe("Quick start", Serial, func() {
 					Label("cni:"+cniProvider),
 					Label("addonStrategy:"+addonStrategy),
 					func() {
-						e2e.QuickStartSpec(ctx, func() e2e.QuickStartSpecInput {
-							return e2e.QuickStartSpecInput{
+						capie2e.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
+							if !slices.Contains(
+								e2eConfig.InfrastructureProviders(),
+								lowercaseProvider,
+							) {
+								Fail(fmt.Sprintf(
+									"provider %s is not enabled - check environment setup for provider specific requirements",
+									lowercaseProvider,
+								))
+							}
+
+							return capie2e.QuickStartSpecInput{
 								E2EConfig:              e2eConfig,
 								ClusterctlConfigPath:   clusterctlConfigPath,
 								BootstrapClusterProxy:  bootstrapClusterProxy,
 								ArtifactFolder:         artifactFolder,
 								SkipCleanup:            skipCleanup,
 								Flavor:                 ptr.To(flavour),
-								InfrastructureProvider: ptr.To(strings.ToLower(provider)),
+								InfrastructureProvider: ptr.To(lowercaseProvider),
 								PostMachinesProvisioned: func(proxy framework.ClusterProxy, namespace, clusterName string) {
 									framework.AssertOwnerReferences(
 										namespace,
@@ -85,31 +77,8 @@ var _ = Describe("Quick start", Serial, func() {
 										framework.KubeadmBootstrapOwnerReferenceAssertions,
 										framework.KubeadmControlPlaneOwnerReferenceAssertions,
 										framework.KubernetesReferenceAssertions,
-										map[string]func(reference []metav1.OwnerReference) error{
-											clusterResourceSetKind: func(owners []metav1.OwnerReference) error {
-												// The ClusterResourcesSets that we create are cluster specific and so should be owned by the cluster.
-												return framework.HasExactOwners(
-													owners,
-													clusterOwner,
-												)
-											},
-
-											helmChartProxyKind: func(owners []metav1.OwnerReference) error {
-												// The HelmChartProxies that we create are cluster specific and so should be owned by the cluster.
-												return framework.HasExactOwners(
-													owners,
-													clusterOwner,
-												)
-											},
-
-											helmReleaseProxyKind: func(owners []metav1.OwnerReference) error {
-												// HelmReleaseProxies should be owned by the relevant HelmChartProxy.
-												return framework.HasExactOwners(
-													owners,
-													helmChartProxyOwner,
-												)
-											},
-										},
+										AWSInfraOwnerReferenceAssertions,
+										AddonReferenceAssertions,
 									)
 
 									By("Waiting until nodes are ready")
@@ -124,7 +93,7 @@ var _ = Describe("Quick start", Serial, func() {
 										framework.WaitForNodesReadyInput{
 											Lister: workloadClient,
 											KubernetesVersion: e2eConfig.GetVariable(
-												KubernetesVersion,
+												capie2e.KubernetesVersion,
 											),
 											Count: 2,
 											WaitForNodesReady: e2eConfig.GetIntervals(

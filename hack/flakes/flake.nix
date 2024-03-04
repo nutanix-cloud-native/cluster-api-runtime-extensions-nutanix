@@ -56,6 +56,21 @@
             vendorHash = null;
             ldflags = [ "-s" "-w" ];
           };
+
+          clusterawsadm = buildGo120Module rec {
+            name = "clusterawsadm";
+            version = "2.3.1";
+            src = fetchFromGitHub {
+              owner = "kubernetes-sigs";
+              repo = "cluster-api-provider-aws";
+              rev = "v${version}";
+              hash = "sha256-5SWi23h7Wvkbha2RTE8gMec7sKnHVTrbtTwF646Mml0=";
+            };
+            doCheck = false;
+            subPackages = [ "cmd/clusterawsadm" ];
+            vendorHash = "sha256-1osn61l9f6lGiDSnvFZJbFXD4dxWKB6qH2ETop9hQRU=";
+            ldflags = [ "-s" "-w" ];
+          };
         };
 
         formatter = alejandra;

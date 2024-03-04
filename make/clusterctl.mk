@@ -7,7 +7,7 @@ clusterctl.init:
 	    EXP_RUNTIME_SDK=true \
 	    EXP_CLUSTER_RESOURCE_SET=true \
 	    EXP_MACHINE_POOL=true \
-	    AWS_B64ENCODED_CREDENTIALS= \
+	    AWS_B64ENCODED_CREDENTIALS=$$(clusterawsadm bootstrap credentials encode-as-profile) \
 	    clusterctl init \
 	      --kubeconfig=$(KIND_KUBECONFIG) \
 	      --infrastructure docker,aws \
