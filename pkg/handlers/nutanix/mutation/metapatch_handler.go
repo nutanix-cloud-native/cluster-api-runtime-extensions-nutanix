@@ -10,6 +10,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
 	genericmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/controlplaneendpoint"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/machinedetails"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/nutanix/mutation/prismcentralendpoint"
 )
 
@@ -17,7 +18,10 @@ import (
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
+			controlplaneendpoint.NewPatch(),
 			prismcentralendpoint.NewPatch(),
+			// failuredomains.NewPatch(),
+			machinedetails.NewControlPlanePatch(),
 		},
 		genericmutation.MetaMutators(mgr)...,
 	)
@@ -30,7 +34,9 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler() handlers.Named {
-	patchHandlers := []mutation.MetaMutator{}
+	patchHandlers := []mutation.MetaMutator{
+		machinedetails.NewWorkerPatch(),
+	}
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"nutanixWorkerConfigPatch",

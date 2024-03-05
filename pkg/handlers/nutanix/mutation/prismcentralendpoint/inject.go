@@ -91,7 +91,7 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting prismCentralEndpoint in NutanixClusterTemplate spec")
+			).Info("setting prismCentralEndpoint in NutanixCluster spec")
 
 			obj.Spec.Template.Spec.PrismCentral.Address = prismCentralEndpointVar.Host
 			obj.Spec.Template.Spec.PrismCentral.Port = prismCentralEndpointVar.Port

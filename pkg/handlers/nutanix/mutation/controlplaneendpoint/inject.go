@@ -91,7 +91,7 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting controlPlaneEndpoint in NutanixClusterTemplate spec")
+			).Info("setting controlPlaneEndpoint in NutanixCluster spec")
 
 			obj.Spec.Template.Spec.ControlPlaneEndpoint.Host = controlPlaneEndpointVar.Host
 			obj.Spec.Template.Spec.ControlPlaneEndpoint.Port = controlPlaneEndpointVar.Port

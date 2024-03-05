@@ -4,21 +4,60 @@
 package v1alpha1
 
 import (
-	capxv1 "github.com/d2iq-labs/capi-runtime-extensions/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
-	"github.com/d2iq-labs/capi-runtime-extensions/api/variables"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+)
+
+const (
+	// NutanixIdentifierUUID is a resource identifier identifying the object by UUID.
+	NutanixIdentifierUUID NutanixIdentifierType = "uuid"
+
+	// NutanixIdentifierName is a resource identifier identifying the object by Name.
+	NutanixIdentifierName NutanixIdentifierType = "name"
+
+	// NutanixBootTypeLegacy is a resource identifier identifying the legacy boot type for virtual machines.
+	NutanixBootTypeLegacy NutanixBootType = "legacy"
+
+	// NutanixBootTypeUEFI is a resource identifier identifying the UEFI boot type for virtual machines.
+	NutanixBootTypeUEFI NutanixBootType = "uefi"
 )
 
 // NutanixIdentifierType is an enumeration of different resource identifier types.
 type NutanixIdentifierType string
 
+func (NutanixIdentifierType) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type:        "string",
+			Description: "NutanixIdentifierType is an enumeration of different resource identifier types",
+		},
+	}
+}
+
 // NutanixBootType is an enumeration of different boot types.
 type NutanixBootType string
+
+func (NutanixBootType) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type:        "string",
+			Description: "NutanixBootType is an enumeration of different boot types.",
+		},
+	}
+}
 
 // NutanixGPUIdentifierType is an enumeration of different resource identifier types for GPU entities.
 type NutanixGPUIdentifierType string
 
-type NutanixNodeSpec struct {
+func (NutanixGPUIdentifierType) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type:        "string",
+			Description: "NutanixGPUIdentifierType is an enumeration of different resource identifier types for GPU entities.",
+		},
+	}
+}
+
+type NutanixMachineDetails struct {
 	// vcpusPerSocket is the number of vCPUs per socket of the VM
 	VCPUsPerSocket int32 `json:"vcpusPerSocket"`
 
@@ -48,10 +87,10 @@ type NutanixNodeSpec struct {
 	AdditionalCategories []NutanixCategoryIdentifier `json:"additionalCategories,omitempty"`
 
 	// Add the machine resources to a Prism Central project
-	Project *NutanixResourceIdentifier `json:"project,omitempty"`
+	Project NutanixResourceIdentifier `json:"project,omitempty"`
 
 	// Defines the boot type of the virtual machine. Only supports UEFI and Legacy
-	BootType string `json:"bootType,omitempty"` //TODO use NutanixBootType enum somehow
+	BootType NutanixBootType `json:"bootType,omitempty"`
 
 	// systemDiskSize is size (in Quantity format) of the system disk of the VM
 	// The minimum systemDiskSize is 20Gi bytes
@@ -61,10 +100,10 @@ type NutanixNodeSpec struct {
 	GPUs []NutanixGPU `json:"gpus,omitempty"`
 }
 
-func (NutanixNodeSpec) VariableSchema() clusterv1.VariableSchema {
+func (NutanixMachineDetails) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Nutanix Node configuration",
+			Description: "Nutanix Machine configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"vcpusPerSocket": {
@@ -79,18 +118,15 @@ func (NutanixNodeSpec) VariableSchema() clusterv1.VariableSchema {
 					Description: "memorySize is the memory size (in Quantity format) of the VM eg. 4Gi",
 					Type:        "string",
 				},
-				"image":   NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
-				"cluster": NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
-				"subnet":  NutanixResourceIdentifiers{}.VariableSchema().OpenAPIV3Schema,
-				"bootType": {
-					Description: "Defines the boot type of the virtual machine. Only supports UEFI and Legacy",
-					Type:        "string",
-				},
+				"image":    NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
+				"cluster":  NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
+				"subnet":   NutanixResourceIdentifiers{}.VariableSchema().OpenAPIV3Schema,
+				"bootType": NutanixBootType("legacy").VariableSchema().OpenAPIV3Schema,
 				"systemDiskSize": {
 					Description: "systemDiskSize is size (in Quantity format) of the system disk of the VM eg. 20Gi",
 					Type:        "string",
 				},
-				// "project": {},
+				"project": NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
 				// "additionalCategories": {},
 				// "gpus": {},
 			},
@@ -98,22 +134,17 @@ func (NutanixNodeSpec) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
-func (NutanixBootType) VariableSchema() clusterv1.VariableSchema {
-	supportedBootType := []capxv1.NutanixBootType{
-		capxv1.NutanixBootTypeLegacy,
-		capxv1.NutanixBootTypeUEFI,
-	}
+type NutanixNodeSpec struct {
+	MachineDetails *NutanixMachineDetails `json:"machineDetails"`
+}
 
+func (NutanixNodeSpec) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Nutanix Boot type enum",
-			Type:        "string",
+			Description: "Nutanix Node configuration",
+			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"bootType": {
-					Description: "Defines the boot type of the virtual machine. Only supports UEFI and Legacy",
-					Type:        "string",
-					Enum:        variables.MustMarshalValuesToEnumJSON(supportedBootType...),
-				},
+				"machineDetails": NutanixMachineDetails{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -127,7 +158,7 @@ type NutanixResourceIdentifier struct {
 	// +optional
 	UUID *string `json:"uuid,omitempty"`
 
-	// name is the resource name in the PC
+	// name is the resource name in the PC.
 	// +optional
 	Name *string `json:"name,omitempty"`
 }
@@ -137,7 +168,17 @@ func (NutanixResourceIdentifier) VariableSchema() clusterv1.VariableSchema {
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Nutanix Resource Identifier",
 			Type:        "object",
-			Properties:  map[string]clusterv1.JSONSchemaProps{},
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"type": NutanixIdentifierType("name").VariableSchema().OpenAPIV3Schema,
+				"uuid": {
+					Type:        "string",
+					Description: "uuid is the UUID of the resource in the PC.",
+				},
+				"name": {
+					Type:        "string",
+					Description: "name is the resource name in the PC.",
+				},
+			},
 		},
 	}
 }
@@ -147,7 +188,7 @@ type NutanixCategoryIdentifier struct {
 	// +optional
 	Key string `json:"key,omitempty"`
 
-	// value is the category value linked to the category key in PC
+	// value is the category value linked to the category key in PC.
 	// +optional
 	Value string `json:"value,omitempty"`
 }
@@ -157,7 +198,16 @@ func (NutanixCategoryIdentifier) VariableSchema() clusterv1.VariableSchema {
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Nutanix Category Identifier",
 			Type:        "object",
-			Properties:  map[string]clusterv1.JSONSchemaProps{},
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"key": {
+					Type:        "string",
+					Description: "key is the Key of category in PC.",
+				},
+				"value": {
+					Type:        "string",
+					Description: "value is the category value linked to the category key in PC",
+				},
+			},
 		},
 	}
 }
@@ -170,7 +220,7 @@ type NutanixGPU struct {
 	// +optional
 	DeviceID *int64 `json:"deviceID,omitempty"`
 
-	// name is the GPU name
+	// name is the GPU name.
 	// +optional
 	Name *string `json:"name,omitempty"`
 }
@@ -180,7 +230,17 @@ func (NutanixGPU) VariableSchema() clusterv1.VariableSchema {
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Nutanix GPU type",
 			Type:        "object",
-			Properties:  map[string]clusterv1.JSONSchemaProps{},
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"type": NutanixGPUIdentifierType("name").VariableSchema().OpenAPIV3Schema,
+				"deviceID": {
+					Type:        "int64",
+					Description: "deviceID is the id of the GPU entity.",
+				},
+				"name": {
+					Type:        "string",
+					Description: "name is the GPU name.",
+				},
+			},
 		},
 	}
 }
