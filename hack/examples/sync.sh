@@ -105,3 +105,7 @@ sed -i'' 's/${AMI_LOOKUP_ORG}/"${AMI_LOOKUP_ORG}"/' "${EXAMPLE_CLUSTERS_DIR}"/*.
 
 # TODO Remove once CAPA templates default to using external cloud provider.
 sed -i'' 's/cloud-provider:\ aws/cloud-provider:\ external/g' "${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml"
+
+# TODO Remove once kustomize supports retaining quotes in what will be numeric values.
+#shellcheck disable=SC2016
+sed -i'' 's/size\: ${WORKER_MACHINE_COUNT}/size\: "${WORKER_MACHINE_COUNT}"/' "${EXAMPLE_CLUSTERS_DIR}"/*.yaml

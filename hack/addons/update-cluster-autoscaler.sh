@@ -15,8 +15,7 @@ fi
 
 ASSETS_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}")"
 readonly ASSETS_DIR
-#trap_add "rm -rf ${ASSETS_DIR}" EXIT
-echo ${ASSETS_DIR}
+trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
 readonly FILE_NAME="cluster-autoscaler.yaml"
 
