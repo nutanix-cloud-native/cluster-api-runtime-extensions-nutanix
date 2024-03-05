@@ -328,18 +328,18 @@ spec:
       ref:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: NutanixMachineTemplate
-        name: test-cre-cp-nmt
+        name: ${CLUSTER_CLASS_NAME}-cp-nmt
         namespace: ${NAMESPACE}
     ref:
       apiVersion: controlplane.cluster.x-k8s.io/v1beta1
       kind: KubeadmControlPlaneTemplate
-      name: test-cre-kcpt
+      name: ${CLUSTER_CLASS_NAME}-kcpt
       namespace: ${NAMESPACE}
   infrastructure:
     ref:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       kind: NutanixClusterTemplate
-      name: test-cre-nct
+      name: ${CLUSTER_CLASS_NAME}-nct
       namespace: ${NAMESPACE}
   patches:
     - definitions:
@@ -519,13 +519,13 @@ spec:
             ref:
               apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
               kind: KubeadmConfigTemplate
-              name: test-cre-kcfg-0
+              name: ${CLUSTER_CLASS_NAME}-kcfg-0
               namespace: ${NAMESPACE}
           infrastructure:
             ref:
               apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
               kind: NutanixMachineTemplate
-              name: test-cre-md-nmt
+              name: ${CLUSTER_CLASS_NAME}-md-nmt
               namespace: ${NAMESPACE}
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
