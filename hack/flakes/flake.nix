@@ -57,19 +57,29 @@
             ldflags = [ "-s" "-w" ];
           };
 
-          clusterawsadm = buildGo120Module rec {
+          clusterawsadm = buildGo122Module rec {
             name = "clusterawsadm";
-            version = "2.3.1";
+            version = "2.4.0";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-5SWi23h7Wvkbha2RTE8gMec7sKnHVTrbtTwF646Mml0=";
+              hash = "sha256-va11PBwLh0IcMV4kvXqxAOr9owezYdqvoenIaJPWsDo=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
-            vendorHash = "sha256-1osn61l9f6lGiDSnvFZJbFXD4dxWKB6qH2ETop9hQRU=";
-            ldflags = [ "-s" "-w" ];
+            vendorHash = "sha256-YoIeRVYnQHG9dYGlSmLsDY1ACbAlXB1t063UFhaJG1w=";
+            ldflags = [
+              "-s"
+              "-w"
+              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitVersion=v${version}"
+              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitCommit=v${version}"
+              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitReleaseCommit=v${version}"
+              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitMajor=${lib.versions.major version}"
+              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitMinor=${lib.versions.minor version}"
+              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.buildDate=19700101-00:00:00"
+              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitTreeState=clean"
+            ];
           };
         };
 
