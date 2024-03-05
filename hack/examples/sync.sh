@@ -67,32 +67,32 @@ kustomize build ./hack/examples |
                                       )' >"${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml"
     ) \
     >(
-      gojq --yaml-input --yaml-output 'select((.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
+      gojq --yaml-input --yaml-output 'select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
                                         and .kind == "Cluster"
                                         and .spec.topology.variables[0].value.addons.cni.provider == "Calico"
                                         and .spec.topology.variables[0].value.addons.cni.strategy == "ClusterResourceSet"
-                                        ) or .kind == "AWSClusterStaticIdentity")' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-calico-crs.yaml"
+                                      )' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-calico-crs.yaml"
     ) \
     >(
-      gojq --yaml-input --yaml-output 'select((.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
+      gojq --yaml-input --yaml-output 'select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
                                         and .kind == "Cluster"
                                         and .spec.topology.variables[0].value.addons.cni.provider == "Calico"
                                         and .spec.topology.variables[0].value.addons.cni.strategy == "HelmAddon"
-                                      ) or .kind == "AWSClusterStaticIdentity")' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-calico-helm-addon.yaml"
+                                      )' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-calico-helm-addon.yaml"
     ) \
     >(
-      gojq --yaml-input --yaml-output 'select((.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
+      gojq --yaml-input --yaml-output 'select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
                                         and .kind == "Cluster"
                                         and .spec.topology.variables[0].value.addons.cni.provider == "Cilium"
                                         and .spec.topology.variables[0].value.addons.cni.strategy == "ClusterResourceSet"
-                                      ) or .kind == "AWSClusterStaticIdentity")' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-cilium-crs.yaml"
+                                      )' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-cilium-crs.yaml"
     ) \
     >(
-      gojq --yaml-input --yaml-output 'select((.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
+      gojq --yaml-input --yaml-output 'select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
                                         and .kind == "Cluster"
                                         and .spec.topology.variables[0].value.addons.cni.provider == "Cilium"
                                         and .spec.topology.variables[0].value.addons.cni.strategy == "HelmAddon"
-                                      ) or .kind == "AWSClusterStaticIdentity")' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-cilium-helm-addon.yaml"
+                                      )' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-cilium-helm-addon.yaml"
     ) \
     >/dev/null
 

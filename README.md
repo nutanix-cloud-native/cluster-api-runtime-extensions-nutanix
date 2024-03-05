@@ -37,38 +37,6 @@ You can just update the image in the webhook Deployment on an existing KIND clus
 make KIND_CLUSTER_NAME=<> dev.update-webhook-image-on-kind
 ```
 
-If creating an AWS cluster using the example files, you will also need to create a secret with your AWS credentials:
-
-```shell
-kubectl apply --server-side -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: "aws-quick-start-creds"
-  namespace: capa-system
-stringData:
-  AccessKeyID: ${AWS_ACCESS_KEY_ID}
-  SecretAccessKey: ${AWS_SECRET_ACCESS_KEY}
-  SessionToken: ${AWS_SESSION_TOKEN}
-EOF
-```
-
-If you are using an `AWS_PROFILE` to log in use the following:
-
-```shell
-kubectl apply --server-side -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: "aws-quick-start-creds"
-  namespace: capa-system
-stringData:
-  AccessKeyID: $(aws configure get aws_access_key_id)
-  SecretAccessKey: $(aws configure get aws_secret_access_key)
-  SessionToken: $(aws configure get aws_session_token)
-EOF
-```
-
 Generate a cluster definition from the file specified in the `--from` flag
 and apply the generated resource to actually create the cluster in the API.
 For example, the following command will create a Docker cluster with Cilium CNI applied via the Helm addon provider:
