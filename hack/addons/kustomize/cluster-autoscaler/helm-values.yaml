@@ -9,6 +9,10 @@ fullnameOverride: cluster-autoscaler-tmpl-clustername-tmpl
 
 cloudProvider: clusterapi
 
+# Always trigger a scale-out if replicas are less than the min.
+extraArgs:
+  enforce-node-group-min-size: true
+
 # Enable it to run in a 1 Node cluster.
 tolerations:
   - effect: NoSchedule

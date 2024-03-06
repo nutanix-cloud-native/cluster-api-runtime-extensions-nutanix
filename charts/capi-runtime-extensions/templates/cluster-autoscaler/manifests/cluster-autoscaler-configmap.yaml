@@ -178,6 +178,7 @@ data:
             - --node-group-auto-discovery=clusterapi:clusterName=tmpl-clustername-tmpl,namespace=tmpl-clusternamespace-tmpl
             - --kubeconfig=/cluster/kubeconfig
             - --clusterapi-cloud-config-authoritative
+            - --enforce-node-group-min-size=true
             - --logtostderr=true
             - --stderrthreshold=info
             - --v=4
