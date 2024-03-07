@@ -19,7 +19,6 @@ mkdir -p "${EXAMPLE_CLUSTERCLASSES_DIR}"
 readonly EXAMPLE_CLUSTERS_DIR=examples/capi-quick-start
 mkdir -p "${EXAMPLE_CLUSTERS_DIR}"
 
-mkdir -p examples/capi-quick-start
 # Sync ClusterClasses (including Templates) and Clusters to separate files.
 kustomize build ./hack/examples |
   tee \
@@ -94,11 +93,6 @@ kustomize build ./hack/examples |
                                         and .spec.topology.variables[0].value.addons.cni.provider == "Cilium"
                                         and .spec.topology.variables[0].value.addons.cni.strategy == "HelmAddon"
                                       )' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-cilium-helm-addon.yaml"
-    ) \
-    >(
-      gojq --yaml-input --yaml-output 'select(.metadata.labels["cluster.x-k8s.io/provider"] == "aws"
-                                        and .kind == "AWSClusterStaticIdentity"
-                                      )' >"${EXAMPLE_CLUSTERS_DIR}/aws-cluster-identity.yaml"
     ) \
     >/dev/null
 
