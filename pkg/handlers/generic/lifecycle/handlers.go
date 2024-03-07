@@ -62,7 +62,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 
 func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.nfdConfig.AddFlags("nfd", flagSet)
-	h.clusterAutoscalerConfig.AddFlags("clusterAutoscaler", flagSet)
+	h.clusterAutoscalerConfig.AddFlags("cluster-autoscaler", flagSet)
 	h.calicoCNIConfig.AddFlags("cni.calico", flagSet)
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
 	h.ebsConfig.AddFlags("awsebs", pflag.CommandLine)

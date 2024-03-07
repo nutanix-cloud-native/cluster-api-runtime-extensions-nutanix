@@ -108,4 +108,4 @@ sed -i'' 's/cloud-provider:\ aws/cloud-provider:\ external/g' "${EXAMPLE_CLUSTER
 
 # TODO Remove once kustomize supports retaining quotes in what will be numeric values.
 #shellcheck disable=SC2016
-sed -i'' 's/size\: ${WORKER_MACHINE_COUNT}/size\: "${WORKER_MACHINE_COUNT}"/' "${EXAMPLE_CLUSTERS_DIR}"/*.yaml
+sed -i'' 's/\( cluster.x-k8s.io\/cluster-api-autoscaler-node-group-\(min\|max\)-size\): \(${WORKER_MACHINE_COUNT}\)/\1: "\3"/' "${EXAMPLE_CLUSTERS_DIR}"/*.yaml
