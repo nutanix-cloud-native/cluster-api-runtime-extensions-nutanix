@@ -122,6 +122,22 @@ patches:
       path: "/spec/template/spec/instanceType"
       value: "m5.xlarge"
 - target:
+    group: infrastructure.cluster.x-k8s.io
+    kind: AWSMachineTemplate
+    name: quick-start-worker-machinetemplate
+  patch: |-
+    - op: "add"
+      path: "/spec/template/spec/sshKeyName"
+      value: ""
+- target:
+    group: infrastructure.cluster.x-k8s.io
+    kind: AWSMachineTemplate
+    name: quick-start-control-plane
+  patch: |-
+    - op: "add"
+      path: "/spec/template/spec/sshKeyName"
+      value: ""
+- target:
     kind: ConfigMap
   patch: |
     $$patch: delete
