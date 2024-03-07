@@ -18,13 +18,21 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/options"
 )
 
 type addonStrategy interface {
-	apply(context.Context, *runtimehooksv1.AfterControlPlaneInitializedRequest, logr.Logger) error
+	apply(
+		context.Context,
+		*runtimehooksv1.AfterControlPlaneInitializedRequest,
+		string,
+		logr.Logger,
+	) error
 }
 
 type CNIConfig struct {
+	*options.GlobalOptions
+
 	crsConfig       crsConfig
 	helmAddonConfig helmAddonConfig
 }
@@ -126,7 +134,7 @@ func (s *CiliumCNI) AfterControlPlaneInitialized(
 		return
 	}
 
-	if err := strategy.apply(ctx, req, log); err != nil {
+	if err := strategy.apply(ctx, req, s.config.DefaultsNamespace(), log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return

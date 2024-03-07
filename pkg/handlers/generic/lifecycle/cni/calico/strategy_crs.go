@@ -27,20 +27,11 @@ import (
 )
 
 type crsConfig struct {
-	defaultsNamespace string
-
 	defaultTigeraOperatorConfigMapName        string
 	defaultProviderInstallationConfigMapNames map[string]string
 }
 
 func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&c.defaultsNamespace,
-		prefix+".defaults-namespace",
-		corev1.NamespaceDefault,
-		"namespace of the ConfigMap used to deploy Tigera Operator",
-	)
-
 	flags.StringVar(
 		&c.defaultTigeraOperatorConfigMapName,
 		prefix+".default-tigera-operator-configmap-name",
@@ -67,6 +58,7 @@ type crsStrategy struct {
 func (s crsStrategy) apply(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	defaultsNamespace string,
 	log logr.Logger,
 ) error {
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
@@ -82,7 +74,7 @@ func (s crsStrategy) apply(
 	}
 
 	log.Info("Ensuring Tigera manifests ConfigMap exist in cluster namespace")
-	tigeraCM, err := s.ensureTigeraOperatorConfigMap(ctx, &req.Cluster)
+	tigeraCM, err := s.ensureTigeraOperatorConfigMap(ctx, &req.Cluster, defaultsNamespace)
 	if err != nil {
 		log.Error(
 			err,
@@ -98,6 +90,7 @@ func (s crsStrategy) apply(
 	if err := s.ensureCNICRSForCluster(
 		ctx,
 		&req.Cluster,
+		defaultsNamespace,
 		defaultInstallationConfigMapName,
 		tigeraCM,
 	); err != nil {
@@ -117,12 +110,13 @@ func (s crsStrategy) apply(
 func (s crsStrategy) ensureCNICRSForCluster(
 	ctx context.Context,
 	cluster *capiv1.Cluster,
+	defaultsNamespace string,
 	defaultInstallationConfigMapName string,
 	tigeraConfigMap *corev1.ConfigMap,
 ) error {
 	defaultInstallationConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.config.defaultsNamespace,
+			Namespace: defaultsNamespace,
 			Name:      defaultInstallationConfigMapName,
 		},
 	}
@@ -169,10 +163,11 @@ func (s crsStrategy) ensureCNICRSForCluster(
 func (s crsStrategy) ensureTigeraOperatorConfigMap(
 	ctx context.Context,
 	cluster *capiv1.Cluster,
+	defaultsNamespace string,
 ) (*corev1.ConfigMap, error) {
 	defaultTigeraOperatorConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.config.defaultsNamespace,
+			Namespace: defaultsNamespace,
 			Name:      s.config.defaultTigeraOperatorConfigMapName,
 		},
 	}

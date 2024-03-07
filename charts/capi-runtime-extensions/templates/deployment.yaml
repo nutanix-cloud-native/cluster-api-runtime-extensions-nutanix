@@ -29,16 +29,9 @@ spec:
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         args:
         - --webhook-cert-dir=/runtimehooks-certs/
-        - --cni.calico.crs.defaults-namespace={{ .Release.Namespace }}
-        - --cni.calico.helm-addon.defaults-namespace={{ .Release.Namespace }}
-        - --cni.cilium.crs.defaults-namespace={{ .Release.Namespace }}
-        - --cni.cilium.helm-addon.defaults-namespace={{ .Release.Namespace }}
+        - --defaults-namespace=$(POD_NAMESPACE)
         - --cni.cilium.helm-addon.default-values-template-configmap-name={{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
-        - --nfd.crs.defaults-namespace={{ .Release.Namespace }}
-        - --nfd.helm-addon.defaults-namespace={{ .Release.Namespace }}
         - --nfd.helm-addon.default-values-template-configmap-name={{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
-        - --awscpi.defaults-namespace={{ .Release.Namespace }}
-        - --awsebs.defaults-namespace={{ .Release.Namespace }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}
@@ -58,6 +51,11 @@ spec:
         - containerPort: 8081
           name: probes
           protocol: TCP
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         resources:
           {{ with .Values.resources }}
           {{- toYaml . | nindent 10 }}

@@ -19,19 +19,10 @@ import (
 )
 
 type crsConfig struct {
-	defaultsNamespace string
-
 	defaultCiliumConfigMapName string
 }
 
 func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&c.defaultsNamespace,
-		prefix+".defaults-namespace",
-		corev1.NamespaceDefault,
-		"namespace of the ConfigMap used to deploy Cilium",
-	)
-
 	flags.StringVar(
 		&c.defaultCiliumConfigMapName,
 		prefix+".default-cilium-configmap-name",
@@ -49,6 +40,7 @@ type crsStrategy struct {
 func (s crsStrategy) apply(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	defaultsNamespace string,
 	log logr.Logger,
 ) error {
 	defaultCiliumConfigMap := &corev1.ConfigMap{
@@ -57,7 +49,7 @@ func (s crsStrategy) apply(
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.config.defaultsNamespace,
+			Namespace: defaultsNamespace,
 			Name:      s.config.defaultCiliumConfigMapName,
 		},
 	}

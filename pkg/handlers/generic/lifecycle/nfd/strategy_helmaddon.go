@@ -29,18 +29,10 @@ const (
 )
 
 type helmAddonConfig struct {
-	defaultsNamespace                  string
 	defaultValuesTemplateConfigMapName string
 }
 
 func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&c.defaultsNamespace,
-		prefix+".defaults-namespace",
-		corev1.NamespaceDefault,
-		"namespace of the default Helm values ConfigMap",
-	)
-
 	flags.StringVar(
 		&c.defaultValuesTemplateConfigMapName,
 		prefix+".default-values-template-configmap-name",
@@ -58,10 +50,11 @@ type helmAddonStrategy struct {
 func (s helmAddonStrategy) apply(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	defaultsNamespace string,
 	log logr.Logger,
 ) error {
 	log.Info("Retrieving NFD installation values template for cluster")
-	valuesTemplateConfigMap, err := s.retrieveValuesTemplateConfigMap(ctx)
+	valuesTemplateConfigMap, err := s.retrieveValuesTemplateConfigMap(ctx, defaultsNamespace)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to retrieve NFD installation values template ConfigMap for cluster: %w",
@@ -113,10 +106,11 @@ image:
 
 func (s helmAddonStrategy) retrieveValuesTemplateConfigMap(
 	ctx context.Context,
+	defaultsNamespace string,
 ) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.config.defaultsNamespace,
+			Namespace: defaultsNamespace,
 			Name:      s.config.defaultValuesTemplateConfigMapName,
 		},
 	}

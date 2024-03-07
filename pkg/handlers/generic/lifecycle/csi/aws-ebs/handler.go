@@ -14,20 +14,15 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/options"
 )
 
 type AWSEBSConfig struct {
-	defaultsNamespace          string
+	*options.GlobalOptions
 	defaultAWSEBSConfigMapName string
 }
 
 func (a *AWSEBSConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&a.defaultsNamespace,
-		prefix+".defaults-namespace",
-		corev1.NamespaceDefault,
-		"namespace of the ConfigMap used to deploy AWS EBS CSI driver",
-	)
 	flags.StringVar(
 		&a.defaultAWSEBSConfigMapName,
 		prefix+".aws-ebs-provider-configmap-name",
@@ -57,7 +52,7 @@ func (a *AWSEBS) EnsureCSIConfigMapForCluster(
 ) (*corev1.ConfigMap, error) {
 	awsEBSCSIConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: a.config.defaultsNamespace,
+			Namespace: a.config.DefaultsNamespace(),
 			Name:      a.config.defaultAWSEBSConfigMapName,
 		},
 	}

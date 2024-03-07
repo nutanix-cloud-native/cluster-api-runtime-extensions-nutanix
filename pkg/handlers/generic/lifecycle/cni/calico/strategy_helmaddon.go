@@ -29,18 +29,10 @@ const (
 )
 
 type helmAddonConfig struct {
-	defaultsNamespace                                        string
 	defaultProviderInstallationValuesTemplatesConfigMapNames map[string]string
 }
 
 func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&c.defaultsNamespace,
-		prefix+".defaults-namespace",
-		corev1.NamespaceDefault,
-		"namespace of the default Helm values ConfigMaps",
-	)
-
 	flags.StringToStringVar(
 		&c.defaultProviderInstallationValuesTemplatesConfigMapNames,
 		prefix+".default-provider-installation-values-templates-configmap-names",
@@ -61,6 +53,7 @@ type helmAddonStrategy struct {
 func (s helmAddonStrategy) apply(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	defaultsNamespace string,
 	log logr.Logger,
 ) error {
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
@@ -78,6 +71,7 @@ func (s helmAddonStrategy) apply(
 	log.Info("Retrieving Calico installation values template for cluster")
 	valuesTemplateConfigMap, err := s.retrieveValuesTemplateConfigMap(
 		ctx,
+		defaultsNamespace,
 		defaultInstallationConfigMapName,
 	)
 	if err != nil {
@@ -125,11 +119,12 @@ func (s helmAddonStrategy) apply(
 
 func (s helmAddonStrategy) retrieveValuesTemplateConfigMap(
 	ctx context.Context,
+	defaultsNamespace string,
 	configMapName string,
 ) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.config.defaultsNamespace,
+			Namespace: defaultsNamespace,
 			Name:      configMapName,
 		},
 	}

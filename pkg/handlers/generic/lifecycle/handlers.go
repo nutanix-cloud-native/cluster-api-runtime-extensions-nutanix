@@ -17,6 +17,7 @@ import (
 	awsebs "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/csi/aws-ebs"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/servicelbgc"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/options"
 )
 
 type Handlers struct {
@@ -27,13 +28,13 @@ type Handlers struct {
 	awsCPIConfig    *awscpi.AWSCPIConfig
 }
 
-func New() *Handlers {
+func New(globalOptions *options.GlobalOptions) *Handlers {
 	return &Handlers{
-		calicoCNIConfig: &calico.CNIConfig{},
-		ciliumCNIConfig: &cilium.CNIConfig{},
-		nfdConfig:       &nfd.Config{},
-		ebsConfig:       &awsebs.AWSEBSConfig{},
-		awsCPIConfig:    &awscpi.AWSCPIConfig{},
+		calicoCNIConfig: &calico.CNIConfig{GlobalOptions: globalOptions},
+		ciliumCNIConfig: &cilium.CNIConfig{GlobalOptions: globalOptions},
+		nfdConfig:       &nfd.Config{GlobalOptions: globalOptions},
+		ebsConfig:       &awsebs.AWSEBSConfig{GlobalOptions: globalOptions},
+		awsCPIConfig:    &awscpi.AWSCPIConfig{GlobalOptions: globalOptions},
 	}
 }
 
