@@ -34,17 +34,8 @@ import (
 	dockermutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/mutation"
 	dockerworkerconfig "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/docker/workerconfig"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/options"
 )
-
-// Flags.
-var logOptions = logs.NewOptions()
-
-// initFlags initializes the flags.
-func initFlags(fs *pflag.FlagSet) {
-	// Initialize logs flags using Kubernetes component-base machinery.
-	logs.AddFlags(fs, logs.SkipLoggingConfigurationFlags())
-	logsv1.AddFlags(logOptions, fs)
-}
 
 func main() {
 	// Creates a logger to be used during the main func.
@@ -82,12 +73,18 @@ func main() {
 	pflag.CommandLine.StringVar(&mgrOptions.PprofBindAddress, "profiler-address", "",
 		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
 
+	logOptions := logs.NewOptions()
+
 	runtimeWebhookServerOpts := server.NewServerOptions()
 
-	genericLifecycleHandlers := lifecycle.New()
+	globalOptions := options.NewGlobalOptions()
+
+	genericLifecycleHandlers := lifecycle.New(globalOptions)
 
 	// Initialize and parse command line flags.
-	initFlags(pflag.CommandLine)
+	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())
+	logsv1.AddFlags(logOptions, pflag.CommandLine)
+	globalOptions.AddFlags(pflag.CommandLine)
 	runtimeWebhookServerOpts.AddFlags(pflag.CommandLine)
 	genericLifecycleHandlers.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)

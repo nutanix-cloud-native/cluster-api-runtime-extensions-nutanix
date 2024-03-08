@@ -16,21 +16,16 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/options"
 )
 
 type AWSCPIConfig struct {
-	defaultsNamespace string
+	*options.GlobalOptions
 
 	kubernetesMinorVersionToCPIConfigMapNames map[string]string
 }
 
 func (a *AWSCPIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&a.defaultsNamespace,
-		prefix+".defaults-namespace",
-		corev1.NamespaceDefault,
-		"namespace of the ConfigMap used to deploy AWS CPI",
-	)
 	flags.StringToStringVar(
 		&a.kubernetesMinorVersionToCPIConfigMapNames,
 		prefix+".default-aws-cpi-configmap-names",
@@ -74,7 +69,7 @@ func (a *AWSCPI) EnsureCPIConfigMapForCluster(
 	configMapForMinorVersion := a.config.kubernetesMinorVersionToCPIConfigMapNames[minorVersion]
 	cpiConfigMapForMinorVersion := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: a.config.defaultsNamespace,
+			Namespace: a.config.DefaultsNamespace(),
 			Name:      configMapForMinorVersion,
 		},
 	}
