@@ -9,7 +9,7 @@ resources:
   - ./cilium/helm-addon
   - ./calico/crs
   - ./calico/helm-addon
-  - https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/${CAPX_VERSION}/cluster-template-clusterclass.yaml
+  - https://raw.githubusercontent.com/deepakm-ntnx/cluster-api-provider-nutanix/remove-env-nmt/templates/cluster-template-clusterclass.yaml
 
 namePrefix:
 
@@ -27,7 +27,7 @@ patches:
         path: "/metadata/namespace"
       - op: "add"
         path: "/spec/topology/class"
-        value: "$${CLUSTER_CLASS_NAME}"
+        value: "nutanix-quick-start"
       - op: "add"
         path: "/spec/topology/variables/0/value/nutanix"
         value: {}
@@ -38,18 +38,18 @@ patches:
     patch: |-
       - op: "add"
         path: "/spec/controlPlane/machineInfrastructure/ref/name"
-        value: "$${CLUSTER_CLASS_NAME}-cp-nmt"
+        value: "nutanix-quick-start-cp-nmt"
       - op: "add"
         path: "/spec/controlPlane/ref/name"
-        value: "$${CLUSTER_CLASS_NAME}-kcpt"
+        value: "nutanix-quick-start-kcpt"
       - op: "add"
         path: "/spec/infrastructure/ref/name"
-        value: "$${CLUSTER_CLASS_NAME}-nct"
+        value: "nutanix-quick-start-nct"
       - op: "add"
         path: "/spec/workers/machineDeployments/0/template/bootstrap/ref/name"
-        value: "$${CLUSTER_CLASS_NAME}-kcfg-0"
+        value: "nutanix-quick-start-kcfg-0"
       - op: "add"
         path: "/spec/workers/machineDeployments/0/template/infrastructure/ref/name"
-        value: "$${CLUSTER_CLASS_NAME}-md-nmt"
+        value: "nutanix-quick-start-md-nmt"
       - op: "remove"
         path: "/spec/variables"

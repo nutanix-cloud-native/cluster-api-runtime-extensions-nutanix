@@ -16,7 +16,7 @@ spec:
       cidrBlocks:
         - ${SERVICE_CIDR:-10.128.0.0/12}
   topology:
-    class: ${CLUSTER_CLASS_NAME}
+    class: nutanix-quick-start
     controlPlane:
       metadata: {}
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}
