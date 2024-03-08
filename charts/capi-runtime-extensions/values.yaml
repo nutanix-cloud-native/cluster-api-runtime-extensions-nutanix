@@ -43,6 +43,10 @@ hooks:
       defaultValueTemplateConfigMap:
         create: true
         name: default-nfd-helm-values-template
+  clusterAutoscaler:
+    crsStrategy:
+      defaultInstallationConfigMap:
+        name: cluster-autoscaler
 
 deployDefaultClusterClasses: true
 

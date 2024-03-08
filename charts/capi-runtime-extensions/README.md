@@ -31,6 +31,7 @@ A Helm chart for capi-runtime-extensions
 | deployDefaultClusterClasses | bool | `true` |  |
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
+| hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name | string | `"cluster-autoscaler"` |  |
 | hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.content | string | `""` |  |
 | hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.AWSCluster.configMap.name | string | `"calico-cni-crs-installation-awscluster"` |  |
 | hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.AWSCluster.create | bool | `true` |  |
