@@ -21,6 +21,8 @@ spec:
       - name: clusterConfig
         value:
           addons:
+            clusterAutoscaler:
+              strategy: HelmAddon
             cni:
               provider: Calico
               strategy: HelmAddon
@@ -51,5 +53,8 @@ spec:
     workers:
       machineDeployments:
         - class: default-worker
+          metadata:
+            annotations:
+              cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"
+              cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
           name: md-0
-          replicas: ${WORKER_MACHINE_COUNT}

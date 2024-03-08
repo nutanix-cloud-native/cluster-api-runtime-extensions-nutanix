@@ -221,4 +221,5 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: cluster-autoscaler
+  name: '{{ .Values.hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name
+    }}'

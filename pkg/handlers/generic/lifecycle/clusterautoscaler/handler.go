@@ -18,18 +18,28 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/options"
 )
 
 type addonStrategy interface {
-	apply(context.Context, *runtimehooksv1.AfterControlPlaneInitializedRequest, logr.Logger) error
+	apply(
+		context.Context,
+		*runtimehooksv1.AfterControlPlaneInitializedRequest,
+		string,
+		logr.Logger,
+	) error
 }
 
 type Config struct {
-	crsConfig crsConfig
+	*options.GlobalOptions
+
+	crsConfig       crsConfig
+	helmAddonConfig helmAddonConfig
 }
 
 func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
 	c.crsConfig.AddFlags(prefix+".crs", flags)
+	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
 type DefaultClusterAutoscaler struct {
@@ -106,6 +116,11 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 			config: n.config.crsConfig,
 			client: n.client,
 		}
+	case v1alpha1.AddonStrategyHelmAddon:
+		strategy = helmAddonStrategy{
+			config: n.config.helmAddonConfig,
+			client: n.client,
+		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
@@ -114,7 +129,7 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 		return
 	}
 
-	if err := strategy.apply(ctx, req, log); err != nil {
+	if err = strategy.apply(ctx, req, n.config.DefaultsNamespace(), log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return

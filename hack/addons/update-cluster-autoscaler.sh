@@ -25,7 +25,7 @@ cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 
 kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
 
-kubectl create configmap cluster-autoscaler --dry-run=client --output yaml \
+kubectl create configmap "{{ .Values.hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name }}" --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/${FILE_NAME}" \
   >"${ASSETS_DIR}/cluster-autoscaler-configmap.yaml"
 

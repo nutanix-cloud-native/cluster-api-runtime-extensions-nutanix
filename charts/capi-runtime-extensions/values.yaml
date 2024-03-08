@@ -47,6 +47,10 @@ hooks:
     crsStrategy:
       defaultInstallationConfigMap:
         name: cluster-autoscaler
+    helmAddonStrategy:
+      defaultValueTemplateConfigMap:
+        create: true
+        name: default-cluster-autoscaler-helm-values-template
 
 deployDefaultClusterClasses: true
 
