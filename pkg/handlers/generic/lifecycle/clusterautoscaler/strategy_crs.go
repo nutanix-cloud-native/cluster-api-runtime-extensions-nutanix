@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -114,7 +115,23 @@ func (s crsStrategy) apply(
 		targetCluster = cluster
 	}
 
-	if err := utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, targetCluster, cm); err != nil {
+	// In the case when existingManagementCluster is nil, i.e. when s.client points to a bootstrap cluster,
+	// it is possible that the namespace where the cluster will be moved to, and where the cluster-autoscaler resources
+	// will be created, does not exist yet.
+	// In that case, we need to create the namespace in the target cluster.
+	clusterKey := ctrlclient.ObjectKeyFromObject(targetCluster)
+	remoteClient, err := remote.NewClusterClient(ctx, "", s.client, clusterKey)
+	if err != nil {
+		return fmt.Errorf("error creating remote cluster client: %w", err)
+	}
+	if err = utils.EnsureNamespace(ctx, remoteClient, cluster.Namespace); err != nil {
+		return fmt.Errorf(
+			"failed to create Namespace in remote cluster: %w",
+			err,
+		)
+	}
+
+	if err = utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, targetCluster, cm); err != nil {
 		return fmt.Errorf(
 			"failed to apply cluster-autoscaler installation ClusterResourceSet: %w",
 			err,
