@@ -57,7 +57,7 @@ A Helm chart for capi-runtime-extensions
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` | Optional secrets used for pulling the container image |
 | nodeSelector | object | `{}` |  |
-| priorityClassName | string | `""` | Optional priority class to be used for the pod. |
+| priorityClassName | string | `"system-cluster-critical"` | Priority class to be used for the pod. |
 | resources.limits.cpu | string | `"100m"` |  |
 | resources.limits.memory | string | `"256Mi"` |  |
 | resources.requests.cpu | string | `"100m"` |  |
