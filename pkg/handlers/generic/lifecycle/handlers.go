@@ -35,7 +35,7 @@ func New(globalOptions *options.GlobalOptions) *Handlers {
 		calicoCNIConfig:         &calico.CNIConfig{GlobalOptions: globalOptions},
 		ciliumCNIConfig:         &cilium.CNIConfig{GlobalOptions: globalOptions},
 		nfdConfig:               &nfd.Config{GlobalOptions: globalOptions},
-		clusterAutoscalerConfig: &clusterautoscaler.Config{},
+		clusterAutoscalerConfig: &clusterautoscaler.Config{GlobalOptions: globalOptions},
 		ebsConfig:               &awsebs.AWSEBSConfig{GlobalOptions: globalOptions},
 		awsCPIConfig:            &awscpi.AWSCPIConfig{GlobalOptions: globalOptions},
 	}

@@ -125,6 +125,7 @@ func (ClusterAutoscaler) VariableSchema() clusterv1.VariableSchema {
 					Type: "string",
 					Enum: variables.MustMarshalValuesToEnumJSON(
 						AddonStrategyClusterResourceSet,
+						AddonStrategyHelmAddon,
 					),
 				},
 			},

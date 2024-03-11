@@ -31,7 +31,7 @@ func TestVariableValidation(t *testing.T) {
 			},
 		},
 		capitest.VariableTestDef{
-			Name: "HelmAddon strategy, not yet supported",
+			Name: "HelmAddon strategy",
 			Vals: v1alpha1.GenericClusterConfig{
 				Addons: &v1alpha1.Addons{
 					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
@@ -39,7 +39,6 @@ func TestVariableValidation(t *testing.T) {
 					},
 				},
 			},
-			ExpectError: true,
 		},
 		capitest.VariableTestDef{
 			Name: "invalid strategy",

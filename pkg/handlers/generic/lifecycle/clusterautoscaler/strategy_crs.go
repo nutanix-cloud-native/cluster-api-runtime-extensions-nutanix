@@ -15,7 +15,6 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	capiutils "github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/utils"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/utils"
 )
@@ -51,6 +50,7 @@ type crsStrategy struct {
 func (s crsStrategy) apply(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	defaultsNamespace string,
 	log logr.Logger,
 ) error {
 	defaultCM := &corev1.ConfigMap{
@@ -59,7 +59,7 @@ func (s crsStrategy) apply(
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.config.defaultsNamespace,
+			Namespace: defaultsNamespace,
 			Name:      s.config.defaultClusterAutoscalerConfigMap,
 		},
 	}
@@ -97,22 +97,12 @@ func (s crsStrategy) apply(
 		)
 	}
 
-	existingManagementCluster, err := capiutils.ManagementCluster(ctx, s.client)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to get management Cluster: %w",
-			err,
-		)
-	}
 	// The cluster-autoscaler is different from other addons.
 	// It requires all resources to be created in the management cluster,
 	// which means creating the ClusterResourceSet always targeting the management cluster.
-	// In most cases, target the management cluster.
-	// But if existingManagementCluster is nil, i.e. when s.client points to a bootstrap cluster,
-	// target the cluster and assume that will become the management cluster.
-	targetCluster := existingManagementCluster
-	if targetCluster == nil {
-		targetCluster = cluster
+	targetCluster, err := findTargetCluster(ctx, s.client, cluster)
+	if err != nil {
+		return err
 	}
 
 	// In the case when existingManagementCluster is nil, i.e. when s.client points to a bootstrap cluster,
