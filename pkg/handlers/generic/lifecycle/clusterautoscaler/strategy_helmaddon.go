@@ -63,8 +63,7 @@ func (s helmAddonStrategy) apply(
 
 	cluster := &req.Cluster
 
-	data := templateData(valuesTemplateConfigMap.Data, cluster.Name, cluster.Namespace)
-	values := data["values.yaml"]
+	values := valuesTemplateConfigMap.Data["values.yaml"]
 
 	// The cluster-autoscaler is different from other addons.
 	// It requires all resources to be created in the management cluster,
@@ -81,7 +80,7 @@ func (s helmAddonStrategy) apply(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: targetCluster.Namespace,
-			Name:      "cluster-name-" + req.Cluster.Name,
+			Name:      "cluster-autoscaler-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   defaultHelmRepositoryURL,
