@@ -93,8 +93,14 @@ nodeSelector: {}
   # Allow scheduling of Deployment on linux nodes only
   # kubernetes.io/os: linux
 
-tolerations: []
-  # -- Kubernetes pod tolerations
+# -- Kubernetes pod tolerations
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Equal
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Equal
+    effect: NoSchedule
   # Allow scheduling of Deployment on all nodes
   # - operator: "Exists"
 

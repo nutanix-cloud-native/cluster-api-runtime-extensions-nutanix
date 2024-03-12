@@ -66,4 +66,4 @@ A Helm chart for capi-runtime-extensions
 | service.annotations | object | `{}` |  |
 | service.port | int | `443` |  |
 | service.type | string | `"ClusterIP"` |  |
-| tolerations | list | `[]` |  |
+| tolerations | list | `[{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","operator":"Equal"},{"effect":"NoSchedule","key":"node-role.kubernetes.io/control-plane","operator":"Equal"}]` | Kubernetes pod tolerations |
