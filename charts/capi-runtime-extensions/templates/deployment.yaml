@@ -74,6 +74,7 @@ spec:
             port: probes
             scheme: HTTP
             path: /readyz
+      priorityClassName: {{ .Values.priorityClassName }}
       securityContext:
         {{ with .Values.securityContext }}
         {{- toYaml . | nindent 8}}

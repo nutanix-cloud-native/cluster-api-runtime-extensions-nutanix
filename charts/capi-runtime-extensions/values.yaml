@@ -98,5 +98,5 @@ tolerations: []
   # Allow scheduling of Deployment on all nodes
   # - operator: "Exists"
 
-# -- Optional priority class to be used for the pod.
-priorityClassName: ""
+# -- Priority class to be used for the pod.
+priorityClassName: system-cluster-critical
