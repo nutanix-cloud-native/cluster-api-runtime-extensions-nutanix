@@ -23,15 +23,85 @@ patches:
       group: cluster.x-k8s.io
       kind: Cluster
     patch: |-
-      - op: "remove"
-        path: "/metadata/namespace"
       - op: "add"
         path: "/spec/topology/class"
         value: "nutanix-quick-start"
       - op: "add"
         path: "/spec/topology/variables/0/value/nutanix"
-        value: {}
-
+        value:
+          prismCentralEndpoint:
+            host: "PC-ip-fqdn"
+            port: 9440
+            insecure: false
+            additionalTrustBundle: "trust-bundle-root-ca"
+          controlPlaneEndpoint:
+            host: "api-server-ip-fqdn"
+            port: 6443
+          failureDomains:
+            - name: fd1
+              cluster:
+                name: PE1
+                type: name
+              subnet:
+                - name: subnet1
+                  type: name
+              isControlPlane: false
+      - op: "add"
+        path: "/spec/topology/variables/0/value/controlPlane"
+        value:
+          nutanix:
+            machineDetails:
+              bootType: legacy
+              cluster:
+                name: PE1
+                type: name
+              image:
+                name: image1
+                type: name
+              memorySize: 4Gi
+              systemDiskSize: 40Gi
+              vcpuSockets: 2
+              vcpusPerSocket: 1
+              subnet:
+                - name: subnet1
+                  type: name
+              project: prj1
+              additionalCategories:
+                - key1: value1
+                - key2: value2
+              gpus:
+                - type: name
+                  name: gpu1
+                - type: name
+                  name: gpu2
+      - op: "add"
+        path: "/spec/topology/variables/1/value"
+        value:
+          nutanix:
+            machineDetails:
+              bootType: legacy
+              cluster:
+                name: PE1
+                type: name
+              image:
+                name: image1
+                type: name
+              memorySize: 4Gi
+              systemDiskSize: 40Gi
+              vcpuSockets: 2
+              vcpusPerSocket: 1
+              subnet:
+                - name: subnet1
+                  type: name
+              project: prj1
+              additionalCategories:
+                - key1: value1
+                - key2: value2
+              gpus:
+                - type: name
+                  name: gpu1
+                - type: name
+                  name: gpu2
   - target:
       group: cluster.x-k8s.io
       kind: ClusterClass
@@ -51,5 +121,3 @@ patches:
       - op: "add"
         path: "/spec/workers/machineDeployments/0/template/infrastructure/ref/name"
         value: "nutanix-quick-start-md-nmt"
-      - op: "remove"
-        path: "/spec/variables"

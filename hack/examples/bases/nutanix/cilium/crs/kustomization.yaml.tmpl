@@ -5,7 +5,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/${CAPX_VERSION}/cluster-template-topology.yaml
+- https://raw.githubusercontent.com/deepakm-ntnx/cluster-api-provider-nutanix/remove-env-nmt/templates/cluster-template-topology.yaml
 
 patches:
 - target:
@@ -24,3 +24,5 @@ patches:
               cni:
                 provider: Cilium
                 strategy: ClusterResourceSet
+        - name: "workerConfig"
+
