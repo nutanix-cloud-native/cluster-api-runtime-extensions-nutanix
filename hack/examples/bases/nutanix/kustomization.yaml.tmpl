@@ -65,7 +65,9 @@ patches:
               subnet:
                 - name: subnet1
                   type: name
-              project: prj1
+              project:
+                name: prj1
+                type: name
               additionalCategories:
                 - key1: value1
                 - key2: value2
@@ -93,7 +95,9 @@ patches:
               subnet:
                 - name: subnet1
                   type: name
-              project: prj1
+              project:
+                name: prj1
+                type: name
               additionalCategories:
                 - key1: value1
                 - key2: value2
@@ -102,22 +106,3 @@ patches:
                   name: gpu1
                 - type: name
                   name: gpu2
-  - target:
-      group: cluster.x-k8s.io
-      kind: ClusterClass
-    patch: |-
-      - op: "add"
-        path: "/spec/controlPlane/machineInfrastructure/ref/name"
-        value: "nutanix-quick-start-cp-nmt"
-      - op: "add"
-        path: "/spec/controlPlane/ref/name"
-        value: "nutanix-quick-start-kcpt"
-      - op: "add"
-        path: "/spec/infrastructure/ref/name"
-        value: "nutanix-quick-start-nct"
-      - op: "add"
-        path: "/spec/workers/machineDeployments/0/template/bootstrap/ref/name"
-        value: "nutanix-quick-start-kcfg-0"
-      - op: "add"
-        path: "/spec/workers/machineDeployments/0/template/infrastructure/ref/name"
-        value: "nutanix-quick-start-md-nmt"

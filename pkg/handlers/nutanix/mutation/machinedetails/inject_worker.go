@@ -92,7 +92,9 @@ func (h *nutanixMachineDetailsWorkerPatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting Nutanix machine details in worker NutanixMachineTemplate spec")
 
-			obj.Spec.Template.Spec.BootType = capxv1.NutanixBootType(nutanixMachineDetailsVar.BootType)
+			obj.Spec.Template.Spec.BootType = capxv1.NutanixBootType(
+				nutanixMachineDetailsVar.BootType,
+			)
 			obj.Spec.Template.Spec.Cluster = capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierType(nutanixMachineDetailsVar.Cluster.Type),
 			}
@@ -113,8 +115,12 @@ func (h *nutanixMachineDetailsWorkerPatchHandler) Mutate(
 
 			obj.Spec.Template.Spec.VCPUSockets = nutanixMachineDetailsVar.VCPUSockets
 			obj.Spec.Template.Spec.VCPUsPerSocket = nutanixMachineDetailsVar.VCPUsPerSocket
-			obj.Spec.Template.Spec.MemorySize = resource.MustParse(nutanixMachineDetailsVar.MemorySize)
-			obj.Spec.Template.Spec.SystemDiskSize = resource.MustParse(nutanixMachineDetailsVar.SystemDiskSize)
+			obj.Spec.Template.Spec.MemorySize = resource.MustParse(
+				nutanixMachineDetailsVar.MemorySize,
+			)
+			obj.Spec.Template.Spec.SystemDiskSize = resource.MustParse(
+				nutanixMachineDetailsVar.SystemDiskSize,
+			)
 			// TODO
 			// obj.Spec.Template.Spec.Subnets = nutanixMachineDetailsVar.Subnets
 			// obj.Spec.Template.Spec.Project = nutanixMachineDetailsVar.Project
