@@ -42,10 +42,10 @@ patches:
               cluster:
                 name: PE1
                 type: name
-              subnet:
+              subnets:
                 - name: subnet1
                   type: name
-              isControlPlane: false
+              controlPlane: false
       - op: "add"
         path: "/spec/topology/variables/0/value/controlPlane"
         value:
@@ -69,8 +69,10 @@ patches:
                 name: prj1
                 type: name
               additionalCategories:
-                - key1: value1
-                - key2: value2
+                - key: key1
+                  value: value1
+                - key: key2
+                  value: value2
               gpus:
                 - type: name
                   name: gpu1
@@ -99,10 +101,29 @@ patches:
                 name: prj1
                 type: name
               additionalCategories:
-                - key1: value1
-                - key2: value2
+                - key: key1
+                  value: value1
+                - key: key2
+                  value: value2
               gpus:
                 - type: name
                   name: gpu1
                 - type: name
                   name: gpu2
+  - target:
+      group: cluster.x-k8s.io
+      kind: ClusterClass
+    patch: |-
+      - op: "add"
+        path: "/spec/patches"
+        value:
+          - name: "cluster-config"
+            external:
+              generateExtension: "nutanixclusterconfigpatch.capi-runtime-extensions"
+              discoverVariablesExtension: "nutanixclusterconfigvars.capi-runtime-extensions"
+          - name: "worker-config"
+            external:
+              generateExtension: "nutanixworkerconfigpatch.capi-runtime-extensions"
+              discoverVariablesExtension: "nutanixworkerconfigvars.capi-runtime-extensions"
+      - op: "remove"
+        path: "/spec/variables"

@@ -126,9 +126,9 @@ func (NutanixMachineDetails) VariableSchema() clusterv1.VariableSchema {
 					Description: "systemDiskSize is size (in Quantity format) of the system disk of the VM eg. 20Gi",
 					Type:        "string",
 				},
-				"project": NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
-				// "additionalCategories": {},
-				// "gpus": {},
+				"project":              NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
+				"additionalCategories": NutanixCategoryIdentifiers{}.VariableSchema().OpenAPIV3Schema,
+				"gpus":                 NutanixGPUs{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -212,6 +212,20 @@ func (NutanixCategoryIdentifier) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
+type NutanixCategoryIdentifiers []NutanixCategoryIdentifier
+
+func (NutanixCategoryIdentifiers) VariableSchema() clusterv1.VariableSchema {
+	resourceSchema := NutanixCategoryIdentifier{}.VariableSchema().OpenAPIV3Schema
+
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Nutanix category identifier",
+			Type:        "array",
+			Items:       &resourceSchema,
+		},
+	}
+}
+
 type NutanixGPU struct {
 	// Type is the identifier type to use for this resource.
 	Type NutanixGPUIdentifierType `json:"type"`
@@ -241,6 +255,20 @@ func (NutanixGPU) VariableSchema() clusterv1.VariableSchema {
 					Description: "name is the GPU name.",
 				},
 			},
+		},
+	}
+}
+
+type NutanixGPUs []NutanixGPU
+
+func (NutanixGPUs) VariableSchema() clusterv1.VariableSchema {
+	resourceSchema := NutanixGPU{}.VariableSchema().OpenAPIV3Schema
+
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Nutanix GPU identifier",
+			Type:        "array",
+			Items:       &resourceSchema,
 		},
 	}
 }

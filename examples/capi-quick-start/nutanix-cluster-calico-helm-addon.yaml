@@ -31,8 +31,10 @@ spec:
             nutanix:
               machineDetails:
                 additionalCategories:
-                  - key1: value1
-                  - key2: value2
+                  - key: key1
+                    value: value1
+                  - key: key2
+                    value: value2
                 bootType: legacy
                 cluster:
                   name: PE1
@@ -46,7 +48,9 @@ spec:
                   name: image1
                   type: name
                 memorySize: 4Gi
-                project: prj1
+                project:
+                  name: prj1
+                  type: name
                 subnet:
                   - name: subnet1
                     type: name
@@ -61,9 +65,9 @@ spec:
               - cluster:
                   name: PE1
                   type: name
-                isControlPlane: false
+                controlPlane: false
                 name: fd1
-                subnet:
+                subnets:
                   - name: subnet1
                     type: name
             prismCentralEndpoint:
@@ -76,8 +80,10 @@ spec:
           nutanix:
             machineDetails:
               additionalCategories:
-                - key1: value1
-                - key2: value2
+                - key: key1
+                  value: value1
+                - key: key2
+                  value: value2
               bootType: legacy
               cluster:
                 name: PE1
@@ -91,7 +97,9 @@ spec:
                 name: image1
                 type: name
               memorySize: 4Gi
-              project: prj1
+              project:
+                name: prj1
+                type: name
               subnet:
                 - name: subnet1
                   type: name
