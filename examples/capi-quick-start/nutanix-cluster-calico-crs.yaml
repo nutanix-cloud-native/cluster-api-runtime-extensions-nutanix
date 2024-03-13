@@ -37,7 +37,7 @@ spec:
                     value: value2
                 bootType: legacy
                 cluster:
-                  name: PE1
+                  name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
                   type: name
                 gpus:
                   - name: gpu1
@@ -45,22 +45,22 @@ spec:
                   - name: gpu2
                     type: name
                 image:
-                  name: image1
+                  name: ${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
                   type: name
                 memorySize: 4Gi
                 project:
                   name: prj1
                   type: name
                 subnet:
-                  - name: subnet1
+                  - name: ${NUTANIX_SUBNET_NAME}
                     type: name
                 systemDiskSize: 40Gi
                 vcpuSockets: 2
                 vcpusPerSocket: 1
           nutanix:
             controlPlaneEndpoint:
-              host: api-server-ip-fqdn
-              port: 6443
+              host: ${CONTROL_PLANE_ENDPOINT_IP}
+              port: ${CONTROL_PLANE_ENDPOINT_PORT}
             failureDomains:
               - cluster:
                   name: PE1
@@ -72,8 +72,8 @@ spec:
                     type: name
             prismCentralEndpoint:
               additionalTrustBundle: trust-bundle-root-ca
-              host: PC-ip-fqdn
-              insecure: false
+              host: ${NUTANIX_ENDPOINT}
+              insecure: ${NUTANIX_INSECURE}
               port: 9440
       - name: workerConfig
         value:
@@ -86,7 +86,7 @@ spec:
                   value: value2
               bootType: legacy
               cluster:
-                name: PE1
+                name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
                 type: name
               gpus:
                 - name: gpu1
@@ -94,14 +94,14 @@ spec:
                 - name: gpu2
                   type: name
               image:
-                name: image1
+                name: ${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
                 type: name
               memorySize: 4Gi
               project:
                 name: prj1
                 type: name
               subnet:
-                - name: subnet1
+                - name: ${NUTANIX_SUBNET_NAME}
                   type: name
               systemDiskSize: 40Gi
               vcpuSockets: 2

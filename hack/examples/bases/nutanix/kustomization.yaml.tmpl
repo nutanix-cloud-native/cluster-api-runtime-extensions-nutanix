@@ -29,14 +29,14 @@ patches:
       - op: "add"
         path: "/spec/topology/variables/0/value/nutanix"
         value:
-          prismCentralEndpoint:
-            host: "PC-ip-fqdn"
-            port: 9440
-            insecure: false
-            additionalTrustBundle: "trust-bundle-root-ca"
           controlPlaneEndpoint:
-            host: "api-server-ip-fqdn"
-            port: 6443
+            host: $${CONTROL_PLANE_ENDPOINT_IP}
+            port: $${CONTROL_PLANE_ENDPOINT_PORT}
+          prismCentralEndpoint:
+            additionalTrustBundle: trust-bundle-root-ca
+            host: $${NUTANIX_ENDPOINT}
+            insecure: $${NUTANIX_INSECURE}
+            port: 9440
           failureDomains:
             - name: fd1
               cluster:
@@ -53,18 +53,18 @@ patches:
             machineDetails:
               bootType: legacy
               cluster:
-                name: PE1
+                name: $${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
                 type: name
               image:
-                name: image1
+                name: $${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
                 type: name
               memorySize: 4Gi
+              subnet:
+                - name: $${NUTANIX_SUBNET_NAME}
+                  type: name
               systemDiskSize: 40Gi
               vcpuSockets: 2
               vcpusPerSocket: 1
-              subnet:
-                - name: subnet1
-                  type: name
               project:
                 name: prj1
                 type: name
@@ -85,18 +85,18 @@ patches:
             machineDetails:
               bootType: legacy
               cluster:
-                name: PE1
+                name: $${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
                 type: name
               image:
-                name: image1
+                name: $${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
                 type: name
               memorySize: 4Gi
+              subnet:
+                - name: $${NUTANIX_SUBNET_NAME}
+                  type: name
               systemDiskSize: 40Gi
               vcpuSockets: 2
               vcpusPerSocket: 1
-              subnet:
-                - name: subnet1
-                  type: name
               project:
                 name: prj1
                 type: name
