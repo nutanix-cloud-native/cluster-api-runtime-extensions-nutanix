@@ -8,6 +8,12 @@ on:
         description: Infrastructure provider to run e2e tests with
         type: string
         required: true
+      skip:
+        description: e2e tests to skip
+        type: string
+      focus:
+        description: e2e tests to focus
+        type: string
 
 jobs:
   e2e-test:
@@ -37,7 +43,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Run e2e tests
-        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }}'
+        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }}' E2E_SKIP='${{ inputs.skip }}' E2E_FOCUS='${{ inputs.focus }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
