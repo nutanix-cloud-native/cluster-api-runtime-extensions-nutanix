@@ -60,7 +60,7 @@ func WaitForNFDToBeReadyInWorkloadCluster(
 	default:
 		Fail(
 			fmt.Sprintf(
-				"Do not know how to wait for Calico using strategy %s to be ready",
+				"Do not know how to wait for NFD using strategy %s to be ready",
 				input.NFD.Strategy,
 			),
 		)
