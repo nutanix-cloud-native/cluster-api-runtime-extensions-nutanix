@@ -4,6 +4,6 @@
 REPO_ROOT := $(CURDIR)
 
 # Versions for tools that are not managed by devbox.
-ENVTEST_VERSION=1.27.x
+ENVTEST_VERSION=1.29.x
 
 include make/all.mk
