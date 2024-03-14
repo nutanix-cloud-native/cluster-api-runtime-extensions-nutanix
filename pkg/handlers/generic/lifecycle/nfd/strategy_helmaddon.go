@@ -22,7 +22,7 @@ import (
 
 const (
 	defaultHelmRepositoryURL    = "https://kubernetes-sigs.github.io/node-feature-discovery/charts"
-	defaultHelmChartVersion     = "0.14.1"
+	defaultHelmChartVersion     = "0.15.2"
 	defaultHelmChartName        = "node-feature-discovery"
 	defaultHelmReleaseName      = "node-feature-discovery"
 	defaultHelmReleaseNamespace = "node-feature-discovery"

@@ -170,6 +170,11 @@ data:
                       description: Rule defines a rule for node customization such as
                         labeling.
                       properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations to create if the rule matches.
+                          type: object
                         extendedResources:
                           additionalProperties:
                             type: string
@@ -202,19 +207,16 @@ data:
                                     in the feature set.
                                   properties:
                                     feature:
+                                      description: Feature is the name of the feature
+                                        set to match against.
                                       type: string
                                     matchExpressions:
                                       additionalProperties:
-                                        description: "MatchExpression specifies an expression
+                                        description: MatchExpression specifies an expression
                                           to evaluate against a set of input values. It
                                           contains an operator that is applied when matching
                                           the input and an array of values that the operator
-                                          evaluates the input against. \n NB: CreateMatchExpression
-                                          or MustCreateMatchExpression() should be used
-                                          for creating new instances. \n NB: Validate()
-                                          must be called if Op or Value fields are modified
-                                          or if a new instance is created from scratch
-                                          without using the helper functions."
+                                          evaluates the input against.
                                         properties:
                                           op:
                                             description: Op is the operator to be applied.
@@ -246,13 +248,46 @@ data:
                                         required:
                                         - op
                                         type: object
-                                      description: MatchExpressionSet contains a set of
-                                        MatchExpressions, each of which is evaluated against
-                                        a set of input values.
+                                      description: MatchExpressions is the set of per-element
+                                        expressions evaluated. These match against the
+                                        value of the specified elements.
+                                      type: object
+                                    matchName:
+                                      description: MatchName in an expression that is
+                                        matched against the name of each element in the
+                                        feature set.
+                                      properties:
+                                        op:
+                                          description: Op is the operator to be applied.
+                                          enum:
+                                          - In
+                                          - NotIn
+                                          - InRegexp
+                                          - Exists
+                                          - DoesNotExist
+                                          - Gt
+                                          - Lt
+                                          - GtLt
+                                          - IsTrue
+                                          - IsFalse
+                                          type: string
+                                        value:
+                                          description: Value is the list of values that
+                                            the operand evaluates the input against. Value
+                                            should be empty if the operator is Exists,
+                                            DoesNotExist, IsTrue or IsFalse. Value should
+                                            contain exactly one element if the operator
+                                            is Gt or Lt and exactly two elements if the
+                                            operator is GtLt. In other cases Value should
+                                            contain at least one element.
+                                          items:
+                                            type: string
+                                          type: array
+                                      required:
+                                      - op
                                       type: object
                                   required:
                                   - feature
-                                  - matchExpressions
                                   type: object
                                 type: array
                             required:
@@ -268,18 +303,16 @@ data:
                               are evaluated against each element in the feature set.
                             properties:
                               feature:
+                                description: Feature is the name of the feature set to
+                                  match against.
                                 type: string
                               matchExpressions:
                                 additionalProperties:
-                                  description: "MatchExpression specifies an expression
+                                  description: MatchExpression specifies an expression
                                     to evaluate against a set of input values. It contains
                                     an operator that is applied when matching the input
                                     and an array of values that the operator evaluates
-                                    the input against. \n NB: CreateMatchExpression or
-                                    MustCreateMatchExpression() should be used for creating
-                                    new instances. \n NB: Validate() must be called if
-                                    Op or Value fields are modified or if a new instance
-                                    is created from scratch without using the helper functions."
+                                    the input against.
                                   properties:
                                     op:
                                       description: Op is the operator to be applied.
@@ -309,12 +342,44 @@ data:
                                   required:
                                   - op
                                   type: object
-                                description: MatchExpressionSet contains a set of MatchExpressions,
-                                  each of which is evaluated against a set of input values.
+                                description: MatchExpressions is the set of per-element
+                                  expressions evaluated. These match against the value
+                                  of the specified elements.
+                                type: object
+                              matchName:
+                                description: MatchName in an expression that is matched
+                                  against the name of each element in the feature set.
+                                properties:
+                                  op:
+                                    description: Op is the operator to be applied.
+                                    enum:
+                                    - In
+                                    - NotIn
+                                    - InRegexp
+                                    - Exists
+                                    - DoesNotExist
+                                    - Gt
+                                    - Lt
+                                    - GtLt
+                                    - IsTrue
+                                    - IsFalse
+                                    type: string
+                                  value:
+                                    description: Value is the list of values that the
+                                      operand evaluates the input against. Value should
+                                      be empty if the operator is Exists, DoesNotExist,
+                                      IsTrue or IsFalse. Value should contain exactly
+                                      one element if the operator is Gt or Lt and exactly
+                                      two elements if the operator is GtLt. In other cases
+                                      Value should contain at least one element.
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - op
                                 type: object
                             required:
                             - feature
-                            - matchExpressions
                             type: object
                           type: array
                         name:
@@ -384,8 +449,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery
       namespace: node-feature-discovery
     ---
@@ -396,9 +461,9 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
-      name: nfd-gc
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
+      name: node-feature-discovery-gc
       namespace: node-feature-discovery
     ---
     apiVersion: v1
@@ -408,8 +473,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery-worker
       namespace: node-feature-discovery
     ---
@@ -422,8 +487,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery-master-conf
       namespace: node-feature-discovery
     ---
@@ -436,8 +501,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery-topology-updater-conf
       namespace: node-feature-discovery
     ---
@@ -455,8 +520,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery-worker-conf
       namespace: node-feature-discovery
     ---
@@ -467,8 +532,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery
     rules:
     - apiGroups:
@@ -513,8 +578,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery-gc
     rules:
     - apiGroups:
@@ -552,8 +617,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery
     roleRef:
       apiGroup: rbac.authorization.k8s.io
@@ -571,8 +636,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery-gc
     roleRef:
       apiGroup: rbac.authorization.k8s.io
@@ -580,7 +645,7 @@ data:
       name: node-feature-discovery-gc
     subjects:
     - kind: ServiceAccount
-      name: nfd-gc
+      name: node-feature-discovery-gc
       namespace: node-feature-discovery
     ---
     apiVersion: rbac.authorization.k8s.io/v1
@@ -590,8 +655,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery-worker
       namespace: node-feature-discovery
     rules:
@@ -611,8 +676,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
       name: node-feature-discovery-worker
       namespace: node-feature-discovery
     roleRef:
@@ -624,30 +689,6 @@ data:
       name: node-feature-discovery-worker
       namespace: node-feature-discovery
     ---
-    apiVersion: v1
-    kind: Service
-    metadata:
-      labels:
-        app.kubernetes.io/instance: node-feature-discovery
-        app.kubernetes.io/managed-by: Helm
-        app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
-        role: master
-      name: node-feature-discovery-master
-      namespace: node-feature-discovery
-    spec:
-      ports:
-      - name: grpc
-        port: 8080
-        protocol: TCP
-        targetPort: grpc
-      selector:
-        app.kubernetes.io/instance: node-feature-discovery
-        app.kubernetes.io/name: node-feature-discovery
-        role: master
-      type: ClusterIP
-    ---
     apiVersion: apps/v1
     kind: DaemonSet
     metadata:
@@ -655,8 +696,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
         role: worker
       name: node-feature-discovery-worker
       namespace: node-feature-discovery
@@ -675,7 +716,6 @@ data:
         spec:
           containers:
           - args:
-            - -server=node-feature-discovery-master:8080
             - -metrics=8081
             command:
             - nfd-worker
@@ -684,7 +724,15 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: registry.k8s.io/nfd/node-feature-discovery:v0.14.1-minimal
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            image: registry.k8s.io/nfd/node-feature-discovery:v0.15.2-minimal
             imagePullPolicy: IfNotPresent
             name: worker
             ports:
@@ -767,8 +815,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
         role: master
       name: node-feature-discovery-master
       namespace: node-feature-discovery
@@ -805,7 +853,6 @@ data:
                 weight: 1
           containers:
           - args:
-            - -port=8080
             - -extra-label-ns=nvidia.com,beta.amd.com,amd.com
             - -crd-controller=true
             - -metrics=8081
@@ -816,13 +863,11 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: registry.k8s.io/nfd/node-feature-discovery:v0.14.1-minimal
+            image: registry.k8s.io/nfd/node-feature-discovery:v0.15.2-minimal
             imagePullPolicy: IfNotPresent
             livenessProbe:
-              exec:
-                command:
-                - /usr/bin/grpc_health_probe
-                - -addr=:8080
+              grpc:
+                port: 8080
               initialDelaySeconds: 10
               periodSeconds: 10
             name: master
@@ -832,11 +877,9 @@ data:
             - containerPort: 8081
               name: metrics
             readinessProbe:
-              exec:
-                command:
-                - /usr/bin/grpc_health_probe
-                - -addr=:8080
               failureThreshold: 10
+              grpc:
+                port: 8080
               initialDelaySeconds: 5
               periodSeconds: 10
             resources: {}
@@ -878,8 +921,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.14.1
-        helm.sh/chart: node-feature-discovery-0.14.1
+        app.kubernetes.io/version: v0.15.2
+        helm.sh/chart: node-feature-discovery-0.15.2
         role: gc
       name: node-feature-discovery-gc
       namespace: node-feature-discovery
@@ -907,9 +950,12 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: registry.k8s.io/nfd/node-feature-discovery:v0.14.1-minimal
+            image: registry.k8s.io/nfd/node-feature-discovery:v0.15.2-minimal
             imagePullPolicy: IfNotPresent
             name: gc
+            ports:
+            - containerPort: 8081
+              name: metrics
             resources: {}
             securityContext:
               allowPrivilegeEscalation: false
@@ -920,7 +966,7 @@ data:
               runAsNonRoot: true
           dnsPolicy: ClusterFirstWithHostNet
           securityContext: {}
-          serviceAccountName: nfd-gc
+          serviceAccountName: node-feature-discovery-gc
 kind: ConfigMap
 metadata:
   creationTimestamp: null
