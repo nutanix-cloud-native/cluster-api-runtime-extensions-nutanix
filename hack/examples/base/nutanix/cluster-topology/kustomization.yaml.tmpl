@@ -63,6 +63,7 @@ patches:
                   host: $${NUTANIX_ENDPOINT}
                   insecure: $${NUTANIX_INSECURE}
                   port: 9440
+                  credentialSecret: $${CLUSTER_NAME}-pc-creds
               controlPlane:
                   nutanix:
                     machineDetails:
