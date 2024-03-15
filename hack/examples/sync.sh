@@ -19,9 +19,6 @@ mkdir -p "${EXAMPLE_CLUSTERCLASSES_DIR}"
 readonly EXAMPLE_CLUSTERS_DIR=examples/capi-quick-start
 mkdir -p "${EXAMPLE_CLUSTERS_DIR}"
 
-kustomize build ./hack/examples/overlays/clusterclasses/aws >"${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml"
-kustomize build ./hack/examples/overlays/clusterclasses/docker >"${EXAMPLE_CLUSTERCLASSES_DIR}/docker-cluster-class.yaml"
-
 for provider in "aws" "docker"; do
   kustomize build --load-restrictor LoadRestrictionsNone \
     ./hack/examples/overlays/clusterclasses/"${provider}" >"${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml

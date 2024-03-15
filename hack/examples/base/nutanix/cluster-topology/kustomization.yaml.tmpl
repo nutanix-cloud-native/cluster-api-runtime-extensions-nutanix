@@ -1,0 +1,100 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+sortOptions:
+  order: fifo
+
+resources:
+- https://raw.githubusercontent.com/nutanix-cloud-native/cluster-api-provider-nutanix/jira/krbn-8065/templates/cluster-template-topology.yaml
+
+patches:
+- target:
+    group: cluster.x-k8s.io
+    kind: Cluster
+  patch: |-
+    - op: "add"
+      path: "/spec/topology/version"
+      value: "$${KUBERNETES_VERSION}"
+    - op: "add"
+      path: "/spec/clusterNetwork/pods"
+      value:
+        cidrBlocks:
+        - "$${POD_CIDR:-192.168.0.0/16}"
+    - op: "add"
+      path: "/spec/clusterNetwork/services"
+      value:
+        cidrBlocks:
+        - "$${SERVICE_CIDR:-10.128.0.0/12}"
+    - op: "add"
+      path: "/spec/clusterNetwork/serviceDomain"
+      value: "cluster.local"
+    - op: "remove"
+      path: "/spec/topology/workers/machineDeployments/0/replicas"
+    - op: "add"
+      path: "/spec/topology/workers/machineDeployments/0/metadata"
+      value:
+        annotations:
+          cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "$${WORKER_MACHINE_COUNT}"
+          cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "$${WORKER_MACHINE_COUNT}"
+
+patches:
+  - target:
+      group: cluster.x-k8s.io
+      kind: Cluster
+    patch: |-
+      - op: "add"
+        path: "/spec/topology/class"
+        value: "nutanix-quick-start"
+      - op: "add"
+        path: "/spec/topology/variables"
+        value:
+          - name: "clusterConfig"
+            value:
+              addons:
+              nutanix:
+                controlPlaneEndpoint:
+                  host: $${CONTROL_PLANE_ENDPOINT_IP}
+                  port: $${CONTROL_PLANE_ENDPOINT_PORT}
+                prismCentralEndpoint:
+                  additionalTrustBundle: trust-bundle-root-ca
+                  host: $${NUTANIX_ENDPOINT}
+                  insecure: $${NUTANIX_INSECURE}
+                  port: 9440
+              controlPlane:
+                  nutanix:
+                    machineDetails:
+                      bootType: legacy
+                      cluster:
+                        name: $${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+                        type: name
+                      image:
+                        name: $${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
+                        type: name
+                      subnet:
+                      - name: $${NUTANIX_SUBNET_NAME}
+                        type: name
+                      memorySize: 4Gi
+                      systemDiskSize: 40Gi
+                      vcpuSockets: 2
+                      vcpusPerSocket: 1
+          - name: "workerConfig"
+            value:
+              nutanix:
+                machineDetails:
+                  bootType: legacy
+                  cluster:
+                    name: $${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+                    type: name
+                  image:
+                    name: $${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
+                    type: name
+                  memorySize: 4Gi
+                  subnet:
+                  - name: $${NUTANIX_SUBNET_NAME}
+                    type: name
+                  systemDiskSize: 40Gi
+                  vcpuSockets: 2
+                  vcpusPerSocket: 1
