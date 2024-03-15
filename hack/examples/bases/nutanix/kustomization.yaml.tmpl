@@ -5,9 +5,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ./cilium/crs
-  - ./cilium/helm-addon
-  - ./calico/crs
+# TODO: current kustomize structure is incorrect and need base + overlay structure as to avoid
+# following error: recursed merging from path '/go/src/github.com/deepakm-ntnx/capi-runtime-extensions/hack/examples/bases/nutanix/calico/helm-addon': \
+# may not add resource with an already registered id: ConfigMap.v1.[noGrp]/$${CLUSTER_NAME}-pc-trusted-ca-bundle.[noNs]
+#  - ./cilium/crs
+#  - ./cilium/helm-addon
+#  - ./calico/crs
   - ./calico/helm-addon
   - https://raw.githubusercontent.com/nutanix-cloud-native/cluster-api-provider-nutanix/jira/krbn-8065/templates/cluster-template-clusterclass.yaml
 
