@@ -17,13 +17,13 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.GenericClusterConfig{}.VariableSchema()),
+		ptr.To(v1alpha1.AllProvidersSpec{}.VariableSchema()),
 		false,
 		clusterconfig.NewVariable,
 		// KubernetesImageRepository
 		capitest.VariableTestDef{
 			Name: "set",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.AllProvidersSpec{
 				KubernetesImageRepository: ptr.To(
 					v1alpha1.KubernetesImageRepository("my-registry.io/my-org/my-repo"),
 				),

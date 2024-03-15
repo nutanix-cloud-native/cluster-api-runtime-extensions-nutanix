@@ -17,25 +17,25 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.GenericClusterConfig{}.VariableSchema()),
+		ptr.To(v1alpha1.AllProvidersSpec{}.VariableSchema()),
 		false,
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "single valid SAN",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.AllProvidersSpec{
 				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{"a.b.c.example.com"},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "single invalid SAN",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.AllProvidersSpec{
 				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{"invalid:san"},
 			},
 			ExpectError: true,
 		},
 		capitest.VariableTestDef{
 			Name: "duplicate valid SANs",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.AllProvidersSpec{
 				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
 					"a.b.c.example.com",
 					"a.b.c.example.com",

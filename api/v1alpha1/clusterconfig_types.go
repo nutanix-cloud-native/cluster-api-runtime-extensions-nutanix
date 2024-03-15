@@ -41,14 +41,14 @@ type ClusterConfigSpec struct {
 	// +optional
 	Docker *DockerSpec `json:"docker,omitempty"`
 
-	GenericClusterConfig `json:",inline"`
+	AllProvidersSpec `json:",inline"`
 
 	//+optional
 	ControlPlane *NodeConfigSpec `json:"controlPlane,omitempty"`
 }
 
 func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
-	clusterConfigProps := GenericClusterConfig{}.VariableSchema()
+	clusterConfigProps := AllProvidersSpec{}.VariableSchema()
 
 	switch {
 	case s.AWS != nil:
@@ -76,8 +76,8 @@ func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:
 	return clusterConfigProps
 }
 
-// GenericClusterConfig defines the generic cluster configdesired.
-type GenericClusterConfig struct {
+// AllProvidersSpec defines the generic cluster configdesired.
+type AllProvidersSpec struct {
 	// +optional
 	KubernetesImageRepository *KubernetesImageRepository `json:"kubernetesImageRepository,omitempty"`
 
@@ -100,7 +100,7 @@ type GenericClusterConfig struct {
 	Addons *Addons `json:"addons,omitempty"`
 }
 
-func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s AllProvidersSpec) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Cluster configuration",

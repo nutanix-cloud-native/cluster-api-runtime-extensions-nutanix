@@ -16,12 +16,12 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		MetaVariableName,
-		ptr.To(v1alpha1.GenericClusterConfig{}.VariableSchema()),
+		ptr.To(v1alpha1.AllProvidersSpec{}.VariableSchema()),
 		false,
 		NewVariable,
 		capitest.VariableTestDef{
 			Name: "valid config",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.AllProvidersSpec{
 				Proxy: &v1alpha1.HTTPProxy{
 					HTTP:         "http://a.b.c.example.com",
 					HTTPS:        "https://a.b.c.example.com",

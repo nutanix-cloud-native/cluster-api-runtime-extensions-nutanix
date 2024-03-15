@@ -48,7 +48,7 @@ func (h *clusterConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     MetaVariableName,
 		Required: false,
-		Schema:   v1alpha1.GenericClusterConfig{}.VariableSchema(),
+		Schema:   v1alpha1.AllProvidersSpec{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

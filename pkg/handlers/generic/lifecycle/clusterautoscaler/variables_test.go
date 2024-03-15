@@ -17,12 +17,12 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.GenericClusterConfig{}.VariableSchema()),
+		ptr.To(v1alpha1.AllProvidersSpec{}.VariableSchema()),
 		false,
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "ClusterResourceSet strategy",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.AllProvidersSpec{
 				Addons: &v1alpha1.Addons{
 					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
 						Strategy: v1alpha1.AddonStrategyClusterResourceSet,
@@ -32,7 +32,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "HelmAddon strategy",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.AllProvidersSpec{
 				Addons: &v1alpha1.Addons{
 					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
 						Strategy: v1alpha1.AddonStrategyHelmAddon,
@@ -42,7 +42,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "invalid strategy",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.AllProvidersSpec{
 				Addons: &v1alpha1.Addons{
 					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
 						Strategy: "invalid-strategy",
