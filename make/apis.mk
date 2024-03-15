@@ -22,7 +22,7 @@ PROVIDER_API_VERSION_capx := v1beta1
 # Instead. sync their APIs into the api/external directory.
 .PHONY: apis.sync
 apis.sync: ## Syncs infrastructure providers' APIs
-apis.sync: $(addprefix api.sync.,capa capd caaph capx) go-fix.api
+apis.sync: $(addprefix api.sync.,capa capd caaph capx) go-fix.api mod-tidy.api
 
 .PHONY: api.sync.%
 api.sync.%: ## Syncs an infrastructure provider's API
