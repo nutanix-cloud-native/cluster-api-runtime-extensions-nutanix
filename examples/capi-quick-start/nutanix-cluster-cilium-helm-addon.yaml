@@ -335,7 +335,7 @@ spec:
             host: ${CONTROL_PLANE_ENDPOINT_IP}
             port: ${CONTROL_PLANE_ENDPOINT_PORT}
           prismCentralEndpoint:
-            additionalTrustBundle: trust-bundle-root-ca
+            additionalTrustBundle: ${CLUSTER_NAME}-pc-trusted-ca-bundle
             credentialSecret: ${CLUSTER_NAME}-pc-creds
             host: ${NUTANIX_ENDPOINT}
             insecure: ${NUTANIX_INSECURE}

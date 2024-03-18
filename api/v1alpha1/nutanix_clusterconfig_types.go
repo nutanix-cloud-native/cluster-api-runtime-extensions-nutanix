@@ -28,10 +28,11 @@ func (NutanixSpec) VariableSchema() clusterv1.VariableSchema {
 }
 
 type NutanixPrismCentralEndpointSpec struct {
-	Host                  string `json:"host,omitempty"`
-	Port                  int32  `json:"port,omitempty"`
-	Insecure              bool   `json:"insecure,omitempty"`
+	Host                  string `json:"host"`
+	Port                  int32  `json:"port"`
+	Insecure              bool   `json:"insecure"`
 	AdditionalTrustBundle string `json:"additionalTrustBundle,omitempty"`
+	CredentialSecret      string `json:"credentialSecret"`
 }
 
 func (NutanixPrismCentralEndpointSpec) VariableSchema() clusterv1.VariableSchema {
@@ -53,7 +54,11 @@ func (NutanixPrismCentralEndpointSpec) VariableSchema() clusterv1.VariableSchema
 					Type:        "boolean",
 				},
 				"additionalTrustBundle": {
-					Description: "Certificate trust bundle used for Prism Central connection",
+					Description: "Name of configMap with certificate trust bundle used for Prism Central connection",
+					Type:        "string",
+				},
+				"credentialSecret": {
+					Description: "Name of a Credential information secret for the target Prism instance",
 					Type:        "string",
 				},
 			},

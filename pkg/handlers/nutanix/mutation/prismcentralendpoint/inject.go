@@ -18,6 +18,7 @@ import (
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
 )
 
 const (
@@ -96,7 +97,14 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 			obj.Spec.Template.Spec.PrismCentral.Address = prismCentralEndpointVar.Host
 			obj.Spec.Template.Spec.PrismCentral.Port = prismCentralEndpointVar.Port
 			obj.Spec.Template.Spec.PrismCentral.Insecure = prismCentralEndpointVar.Insecure
-			// TODO obj.Spec.Template.Spec.PrismCentral.AdditionalTrustBundle = prismCentralEndpointVar.AdditionalTrustBundle
+			obj.Spec.Template.Spec.PrismCentral.AdditionalTrustBundle = &credentials.NutanixTrustBundleReference{
+				Kind: credentials.NutanixTrustBundleKindConfigMap,
+				Name: prismCentralEndpointVar.AdditionalTrustBundle,
+			}
+			obj.Spec.Template.Spec.PrismCentral.CredentialRef = &credentials.NutanixCredentialReference{
+				Kind: credentials.SecretKind,
+				Name: prismCentralEndpointVar.CredentialSecret,
+			}
 
 			return nil
 		},

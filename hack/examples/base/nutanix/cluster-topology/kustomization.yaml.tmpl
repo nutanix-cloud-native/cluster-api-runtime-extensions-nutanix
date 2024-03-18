@@ -59,7 +59,7 @@ patches:
                   host: $${CONTROL_PLANE_ENDPOINT_IP}
                   port: $${CONTROL_PLANE_ENDPOINT_PORT}
                 prismCentralEndpoint:
-                  additionalTrustBundle: trust-bundle-root-ca
+                  additionalTrustBundle: $${CLUSTER_NAME}-pc-trusted-ca-bundle
                   host: $${NUTANIX_ENDPOINT}
                   insecure: $${NUTANIX_INSECURE}
                   port: 9440

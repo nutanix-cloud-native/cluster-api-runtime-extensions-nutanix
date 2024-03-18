@@ -121,8 +121,20 @@ func (h *nutanixMachineDetailsWorkerPatchHandler) Mutate(
 			obj.Spec.Template.Spec.SystemDiskSize = resource.MustParse(
 				nutanixMachineDetailsVar.SystemDiskSize,
 			)
+
+			subnets := make([]capxv1.NutanixResourceIdentifier, len(nutanixMachineDetailsVar.Subnets))
+			for _, subnetCRE := range nutanixMachineDetailsVar.Subnets {
+				subnet := capxv1.NutanixResourceIdentifier{Type: capxv1.NutanixIdentifierType(subnetCRE.Type)}
+				if subnetCRE.Type == v1alpha1.NutanixIdentifierName {
+					subnet.Name = subnetCRE.Name
+				} else {
+					subnet.UUID = subnetCRE.UUID
+				}
+				subnets = append(subnets, subnet)
+			}
+
+			obj.Spec.Template.Spec.Subnets = subnets
 			// TODO
-			// obj.Spec.Template.Spec.Subnets = nutanixMachineDetailsVar.Subnets
 			// obj.Spec.Template.Spec.Project = nutanixMachineDetailsVar.Project
 			// obj.Spec.Template.Spec.AdditionalCategories = nutanixMachineDetailsVar.AdditionalCategories
 			// obj.Spec.Template.Spec.GPUs = nutanixMachineDetailsVar.GPUs
