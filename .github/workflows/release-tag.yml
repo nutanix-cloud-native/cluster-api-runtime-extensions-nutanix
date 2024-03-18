@@ -65,7 +65,7 @@ jobs:
           devbox run -- gh release upload ${{ github.ref_name }} capi-runtime-extensions-*.tgz
 
       - name: Build GitHub pages
-        uses: benc-uk/workflow-dispatch@v121
+        uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: github-pages.yml
           ref: main

@@ -38,7 +38,7 @@ jobs:
 
       - if: ${{ steps.release-please.outputs.release_created }}
         name: Run release workflow
-        uses: benc-uk/workflow-dispatch@v121
+        uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: release-tag.yml
           ref: ${{ steps.release-please.outputs.tag_name }}
