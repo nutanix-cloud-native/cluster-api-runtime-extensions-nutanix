@@ -137,16 +137,45 @@ func (ClusterAutoscaler) VariableSchema() clusterv1.VariableSchema {
 type CSIProviders struct {
 	// +optional
 	Providers []CSIProvider `json:"providers,omitempty"`
-	// +optional
-	DefaultClassName string `json:"defaultClassName,omitempty"`
 }
 
 type CSIProvider struct {
+	// +optional
 	Name string `json:"name,omitempty"`
+
+	// +optional
+	StorageClassConfig *StorageClassConfig `json:"storageClassConfig,omitempty"`
+}
+
+type StorageClassConfig struct {
+	// +optional
+	DefaultClassName string `json:"defaultClassName,omitempty"`
+
+	// +optional
+	Parameters map[string]string `json:"parameters,omitempty"`
+}
+
+func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
+	supportedCSIProviders := []string{CSIProviderAWSEBS, CSIProviderNutanix}
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"defaultClassName": {
+					Type: "string",
+					Enum: variables.MustMarshalValuesToEnumJSON(supportedCSIProviders...),
+				},
+				"parameters": {
+					Type:                   "object",
+					XPreserveUnknownFields: true,
+				},
+			},
+		},
+	}
 }
 
 func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
-	supportedCSIProviders := []string{CSIProviderAWSEBS}
+	supportedCSIProviders := []string{CSIProviderAWSEBS, CSIProviderNutanix}
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
@@ -163,10 +192,6 @@ func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
 							},
 						},
 					},
-				},
-				"defaultClassName": {
-					Type: "string",
-					Enum: variables.MustMarshalValuesToEnumJSON(supportedCSIProviders...),
 				},
 			},
 		},
