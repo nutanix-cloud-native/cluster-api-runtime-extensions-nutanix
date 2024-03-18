@@ -15,6 +15,7 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries/credentials"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubernetesimagerepository"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/mirrors"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/users"
 )
 
 // MetaMutators returns all generic patch handlers.
@@ -28,5 +29,6 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		credentials.NewPatch(mgr.GetClient()),
 		mirrors.NewPatch(mgr.GetClient()),
 		calico.NewPatch(),
+		users.NewPatch(),
 	}
 }
