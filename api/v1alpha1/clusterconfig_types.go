@@ -98,6 +98,9 @@ type GenericClusterConfig struct {
 
 	// +optional
 	Addons *Addons `json:"addons,omitempty"`
+
+	// +optional
+	Users Users `json:"users,omitempty"`
 }
 
 func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
@@ -116,6 +119,7 @@ func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //noli
 					OpenAPIV3Schema,
 				"imageRegistries":           ImageRegistries{}.VariableSchema().OpenAPIV3Schema,
 				"globalImageRegistryMirror": GlobalImageRegistryMirror{}.VariableSchema().OpenAPIV3Schema,
+				"users":                     Users{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -340,6 +344,66 @@ func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
 			Description: "Configuration for image registries.",
 			Type:        "array",
 			Items:       ptr.To(ImageRegistry{}.VariableSchema().OpenAPIV3Schema),
+		},
+	}
+}
+
+type Users []User
+
+func (Users) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Users to add to the machine",
+			Type:        "array",
+			Items:       ptr.To(User{}.VariableSchema().OpenAPIV3Schema),
+		},
+	}
+}
+
+// User defines the input for a generated user in cloud-init.
+type User struct {
+	// Name specifies the user name
+	Name string `json:"name"`
+
+	// Passwd specifies a hashed password for the user
+	// +optional
+	Passwd *string `json:"passwd,omitempty"`
+
+	// SSHAuthorizedKeys specifies a list of ssh authorized keys for the user
+	// +optional
+	SSHAuthorizedKeys []string `json:"sshAuthorizedKeys,omitempty"`
+
+	// Sudo specifies a sudo role for the user
+	// +optional
+	Sudo *string `json:"sudo,omitempty"`
+}
+
+func (User) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"name": {
+					Description: "The username",
+					Type:        "string",
+				},
+				"passwd": {
+					Description: "The hashed password for the user",
+					Type:        "string",
+				},
+				"sshAuthorizedKeys": {
+					Description: "A list of SSH authorized keys for this user",
+					Type:        "array",
+					Items: &clusterv1.JSONSchemaProps{
+						// No description, because the one for the parent array is enough.
+						Type: "string",
+					},
+				},
+				"sudo": {
+					Description: "The sudo rule that applies to this user",
+					Type:        "string",
+				},
+			},
 		},
 	}
 }
