@@ -17,12 +17,16 @@ PROVIDER_MODULE_capx := github.com/nutanix-cloud-native/cluster-api-provider-nut
 PROVIDER_API_PATH_capx := api
 PROVIDER_API_VERSION_capx := v1beta1
 
+PROVIDER_MODULE_cabpk := sigs.k8s.io/cluster-api
+PROVIDER_API_PATH_cabpk := bootstrap/kubeadm/api
+PROVIDER_API_VERSION_cabpk := v1beta1
+
 # It is not possible to resolve Kubernetes and controller-runtime modules for the different infrastructure providers
 # without hitting dependency conflicts.
 # Instead. sync their APIs into the api/external directory.
 .PHONY: apis.sync
 apis.sync: ## Syncs infrastructure providers' APIs
-apis.sync: $(addprefix api.sync.,capa capd caaph capx) go-fix.api
+apis.sync: $(addprefix api.sync.,capa capd caaph capx cabpk) go-fix.api mod-tidy.api
 
 .PHONY: api.sync.%
 api.sync.%: ## Syncs an infrastructure provider's API
