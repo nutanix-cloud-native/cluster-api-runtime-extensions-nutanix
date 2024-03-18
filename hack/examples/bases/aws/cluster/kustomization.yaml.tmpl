@@ -1,0 +1,99 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/${CAPA_VERSION}/cluster-template-simple-clusterclass.yaml
+
+sortOptions:
+  order: fifo
+
+labels:
+- includeSelectors: false
+  pairs:
+    cluster.x-k8s.io/provider: aws
+
+patches:
+- target:
+    kind: Cluster
+  patch: |-
+    - op: "add"
+      path: "/spec/topology/class"
+      value: "aws-quick-start"
+    - op: "remove"
+      path: "/metadata/labels"
+- target:
+    kind: Cluster
+  path: ../../../patches/initialize-variables.yaml
+- target:
+    kind: Cluster
+  path: ../../../patches/cluster-network.yaml
+- target:
+    kind: Cluster
+  path: ../../../patches/cluster-autoscaler.yaml
+- target:
+    kind: Cluster
+  path: ../../../patches/cpi.yaml
+- target:
+    kind: Cluster
+  path: ../../../patches/aws/csi.yaml
+- target:
+    kind: Cluster
+  path: ../../../patches/aws/ami-lookup.yaml
+- target:
+    kind: Cluster
+  path: ../../../patches/aws/config-var.yaml
+
+# Delete the clusterclass-specific resources.
+- target:
+    kind: ClusterClass
+  patch: |
+    $$patch: delete
+    kind: ClusterClass
+    metadata:
+      name: unused
+- target:
+    kind: AWSClusterTemplate
+  patch: |
+    $$patch: delete
+    kind: AWSClusterTemplate
+    metadata:
+      name: unused
+- target:
+    kind: KubeadmControlPlaneTemplate
+  patch: |
+    $$patch: delete
+    kind: KubeadmControlPlaneTemplate
+    metadata:
+      name: unused
+- target:
+    kind: AWSMachineTemplate
+  patch: |
+    $$patch: delete
+    kind: AWSMachineTemplate
+    metadata:
+      name: unused
+- target:
+    kind: KubeadmConfigTemplate
+  patch: |
+    $$patch: delete
+    kind: KubeadmConfigTemplate
+    metadata:
+      name: unused
+# Delete the cluster-specific resources that will be created by CAPI runtime extensions.
+- target:
+    kind: ClusterResourceSet
+  patch: |
+    $$patch: delete
+    kind: ClusterResourceSet
+    metadata:
+      name: unused
+- target:
+    kind: ConfigMap
+  patch: |
+    $$patch: delete
+    kind: ConfigMap
+    metadata:
+      name: unused

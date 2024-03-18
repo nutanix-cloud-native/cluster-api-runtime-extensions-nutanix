@@ -21,28 +21,28 @@ spec:
       kind: DockerClusterTemplate
       name: docker-quick-start-cluster
   patches:
-    - external:
-        discoverVariablesExtension: dockerclusterconfigvars.cluster-api-runtime-extensions-nutanix
-        generateExtension: dockerclusterconfigpatch.cluster-api-runtime-extensions-nutanix
-      name: cluster-config
-    - external:
-        discoverVariablesExtension: dockerworkerconfigvars.cluster-api-runtime-extensions-nutanix
-        generateExtension: dockerworkerconfigpatch.cluster-api-runtime-extensions-nutanix
-      name: worker-config
+  - external:
+      discoverVariablesExtension: dockerclusterconfigvars.cluster-api-runtime-extensions-nutanix
+      generateExtension: dockerclusterconfigpatch.cluster-api-runtime-extensions-nutanix
+    name: cluster-config
+  - external:
+      discoverVariablesExtension: dockerworkerconfigvars.cluster-api-runtime-extensions-nutanix
+      generateExtension: dockerworkerconfigpatch.cluster-api-runtime-extensions-nutanix
+    name: worker-config
   workers:
     machineDeployments:
-      - class: default-worker
-        template:
-          bootstrap:
-            ref:
-              apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-              kind: KubeadmConfigTemplate
-              name: docker-quick-start-default-worker-bootstraptemplate
-          infrastructure:
-            ref:
-              apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-              kind: DockerMachineTemplate
-              name: docker-quick-start-default-worker-machinetemplate
+    - class: default-worker
+      template:
+        bootstrap:
+          ref:
+            apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+            kind: KubeadmConfigTemplate
+            name: docker-quick-start-default-worker-bootstraptemplate
+        infrastructure:
+          ref:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            kind: DockerMachineTemplate
+            name: docker-quick-start-default-worker-machinetemplate
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerClusterTemplate
@@ -67,10 +67,10 @@ spec:
         clusterConfiguration:
           apiServer:
             certSANs:
-              - localhost
-              - 127.0.0.1
-              - 0.0.0.0
-              - host.docker.internal
+            - localhost
+            - 127.0.0.1
+            - 0.0.0.0
+            - host.docker.internal
           controllerManager:
             extraArgs:
               enable-hostpath-provisioner: "true"
@@ -89,8 +89,8 @@ spec:
   template:
     spec:
       extraMounts:
-        - containerPath: /var/run/docker.sock
-          hostPath: /var/run/docker.sock
+      - containerPath: /var/run/docker.sock
+        hostPath: /var/run/docker.sock
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerMachineTemplate
@@ -102,8 +102,8 @@ spec:
   template:
     spec:
       extraMounts:
-        - containerPath: /var/run/docker.sock
-          hostPath: /var/run/docker.sock
+      - containerPath: /var/run/docker.sock
+        hostPath: /var/run/docker.sock
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
