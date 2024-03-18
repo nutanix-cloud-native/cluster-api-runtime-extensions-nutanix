@@ -18,7 +18,8 @@ const (
 	CNIProviderCalico = "Calico"
 	CNIProviderCilium = "Cilium"
 
-	CSIProviderAWSEBS = "aws-ebs"
+	CSIProviderAWSEBS  = "aws-ebs"
+	CSIProviderNutanix = "nutanix"
 
 	CCMProviderAWS = "aws"
 )
