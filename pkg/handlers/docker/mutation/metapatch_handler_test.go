@@ -27,6 +27,8 @@ import (
 	kubernetesimagerepositorytests "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubernetesimagerepository/tests"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/mirrors"
 	globalimageregistrymirrortests "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/mirrors/tests"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/users"
+	userstests "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/users/tests"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 )
 
@@ -111,5 +113,12 @@ func TestGeneratePatches(t *testing.T) {
 		mgr.GetClient(),
 		clusterconfig.MetaVariableName,
 		mirrors.GlobalMirrorVariableName,
+	)
+
+	userstests.TestGeneratePatches(
+		t,
+		metaPatchGeneratorFunc(mgr),
+		clusterconfig.MetaVariableName,
+		users.VariableName,
 	)
 }
