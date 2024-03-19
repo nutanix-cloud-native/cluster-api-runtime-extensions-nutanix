@@ -57,12 +57,12 @@ patches:
       value:
         - name: "cluster-config"
           external:
-            generateExtension: "dockerclusterconfigpatch.capi-runtime-extensions"
-            discoverVariablesExtension: "dockerclusterconfigvars.capi-runtime-extensions"
+            generateExtension: "dockerclusterconfigpatch.cluster-api-runtime-extensions-nutanix"
+            discoverVariablesExtension: "dockerclusterconfigvars.cluster-api-runtime-extensions-nutanix"
         - name: "worker-config"
           external:
-            generateExtension: "dockerworkerconfigpatch.capi-runtime-extensions"
-            discoverVariablesExtension: "dockerworkerconfigvars.capi-runtime-extensions"
+            generateExtension: "dockerworkerconfigpatch.cluster-api-runtime-extensions-nutanix"
+            discoverVariablesExtension: "dockerworkerconfigvars.cluster-api-runtime-extensions-nutanix"
     - op: "remove"
       path: "/spec/variables"
     - op: "remove"

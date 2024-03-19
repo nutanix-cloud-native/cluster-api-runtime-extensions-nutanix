@@ -32,7 +32,7 @@ repos:
     name: addons-sync
     entry: make addons.sync
     language: system
-    files: "^(hack/addons/|charts/capi-runtime-extensions/templates/.+/manifests/|make/addons.mk$)"
+    files: "^(hack/addons/|charts/cluster-api-runtime-extensions-nutanix/templates/.+/manifests/|make/addons.mk$)"
     pass_filenames: false
 - repo: https://github.com/tekwizely/pre-commit-golang
   rev: v1.0.0-rc.1
@@ -67,7 +67,7 @@ repos:
     stages: [commit]
   - id: end-of-file-fixer
     stages: [commit]
-    exclude: ^charts/capi-runtime-extensions/README.md$
+    exclude: ^charts/cluster-api-runtime-extensions-nutanix/README.md$
 - repo: https://github.com/rhysd/actionlint
   rev: v1.6.25
   hooks:
@@ -117,7 +117,7 @@ repos:
     name: License headers - YAML and Makefiles
     stages: [commit]
     files: (^Makefile|\.(ya?ml|mk))$
-    exclude: ^(pkg/handlers/.+/embedded|examples|charts/capi-runtime-extensions/defaultclusterclasses)/.+\.ya?ml|docs/static/helm/index\.yaml$
+    exclude: ^(pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses)/.+\.ya?ml|docs/static/helm/index\.yaml$
     args:
       - --license-filepath
       - hack/license-header.txt

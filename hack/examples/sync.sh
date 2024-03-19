@@ -14,7 +14,7 @@ trap 'find "${SCRIPT_DIR}" -name kustomization.yaml -delete' EXIT
 find "${SCRIPT_DIR}" -name kustomization.yaml.tmpl \
   -exec bash -ec 'mkdir -p $(dirname {}) && envsubst -no-unset <"{}" >"$(dirname {})/$(basename -s .tmpl {})"' \;
 
-readonly EXAMPLE_CLUSTERCLASSES_DIR=charts/capi-runtime-extensions/defaultclusterclasses
+readonly EXAMPLE_CLUSTERCLASSES_DIR=charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses
 mkdir -p "${EXAMPLE_CLUSTERCLASSES_DIR}"
 readonly EXAMPLE_CLUSTERS_DIR=examples/capi-quick-start
 mkdir -p "${EXAMPLE_CLUSTERS_DIR}"

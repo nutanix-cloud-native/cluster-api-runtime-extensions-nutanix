@@ -62,8 +62,8 @@ spec:
   patches:
     - name: cluster-config
       external:
-        generateExtension: "awsclusterconfigpatch.capi-runtime-extensions"
-        discoverVariablesExtension: "awsclusterconfigvars.capi-runtime-extensions"
+        generateExtension: "awsclusterconfigpatch.cluster-api-runtime-extensions-nutanix"
+        discoverVariablesExtension: "awsclusterconfigvars.cluster-api-runtime-extensions-nutanix"
 ```
 
 ## Docker
@@ -79,6 +79,6 @@ spec:
   patches:
     - name: cluster-config
       external:
-        generateExtension: "dockerclusterconfigpatch.capi-runtime-extensions"
-        discoverVariablesExtension: "dockerclusterconfigvars.capi-runtime-extensions"
+        generateExtension: "dockerclusterconfigpatch.cluster-api-runtime-extensions-nutanix"
+        discoverVariablesExtension: "dockerclusterconfigvars.cluster-api-runtime-extensions-nutanix"
 ```

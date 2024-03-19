@@ -63,7 +63,7 @@ linters-settings:
       - Standard
       - Default
       - Prefix(github.com/d2iq-labs)
-      - Prefix(github.com/d2iq-labs/capi-runtime-extensions)
+      - Prefix(github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix)
   gocritic:
     enabled-tags:
       - diagnostic

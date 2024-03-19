@@ -10,20 +10,20 @@ ifndef SKIP_BUILD
 	$(MAKE) release-snapshot
 endif
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
-		ko.local/capi-runtime-extensions:$$(gojq -r .version dist/metadata.json)
-	helm upgrade --install capi-runtime-extensions ./charts/capi-runtime-extensions \
-		--set-string image.repository=ko.local/capi-runtime-extensions \
+		ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
+	helm upgrade --install cluster-api-runtime-extensions-nutanix ./charts/cluster-api-runtime-extensions-nutanix \
+		--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
 		--set-string image.tag=$$(gojq -r .version dist/metadata.json) \
 		--wait --wait-for-jobs
-	kubectl rollout restart deployment capi-runtime-extensions
-	kubectl rollout status deployment capi-runtime-extensions
+	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
+	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix
 
 dev.update-webhook-image-on-kind:
 ifndef SKIP_BUILD
 	$(MAKE) release-snapshot
 endif
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
-		ko.local/capi-runtime-extensions:$$(gojq -r .version dist/metadata.json)
-	kubectl set image deployment capi-runtime-extensions webhook=ko.local/capi-runtime-extensions:$$(gojq -r .version dist/metadata.json)
-	kubectl rollout restart deployment capi-runtime-extensions
-	kubectl rollout status deployment capi-runtime-extensions
+		ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
+	kubectl set image deployment cluster-api-runtime-extensions-nutanix webhook=ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
+	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
+	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix

@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/yaml"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/test/framework/goproxy"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/test/framework/goproxy"
 )
 
 // LoadE2EConfig loads the configuration for the e2e test environment.

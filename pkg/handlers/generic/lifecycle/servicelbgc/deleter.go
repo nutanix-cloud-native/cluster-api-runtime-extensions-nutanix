@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers"
 )
 
 const (

@@ -48,8 +48,8 @@ kubectl create configmap "{{ .Values.hooks.cni.calico.crsStrategy.defaultTigeraO
   >"${ASSETS_DIR}/tigera-operator-configmap.yaml"
 
 # add warning not to edit file directly
-mkdir -p "${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/cni/calico/manifests"
-cat <<EOF >"${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/cni/calico/manifests/tigera-operator-configmap.yaml"
+mkdir -p "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cni/calico/manifests"
+cat <<EOF >"${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cni/calico/manifests/tigera-operator-configmap.yaml"
 $(cat "${GIT_REPO_ROOT}/hack/license-header.yaml.txt")
 
 #=================================================================

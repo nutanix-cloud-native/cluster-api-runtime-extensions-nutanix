@@ -194,7 +194,7 @@ jobs:
           devbox run -- \
             kind load docker-image \
               --name chart-testing \
-              "ko.local/capi-runtime-extensions:$(devbox run -- gojq -r .version dist/metadata.json)"
+              "ko.local/cluster-api-runtime-extensions-nutanix:$(devbox run -- gojq -r .version dist/metadata.json)"
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
@@ -210,7 +210,7 @@ jobs:
           devbox run -- \
             ct install \
               --config charts/ct-config.yaml \
-              --helm-extra-set-args "--set-string image.repository=ko.local/capi-runtime-extensions --set-string image.tag=$(devbox run -- gojq -r .version dist/metadata.json)"
+              --helm-extra-set-args "--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix --set-string image.tag=$(devbox run -- gojq -r .version dist/metadata.json)"
         env:
           KUBECONFIG: ct-kind-kubeconfig
 

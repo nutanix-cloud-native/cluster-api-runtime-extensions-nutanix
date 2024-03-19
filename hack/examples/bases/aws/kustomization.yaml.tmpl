@@ -83,12 +83,12 @@ patches:
       value:
         - name: "cluster-config"
           external:
-            generateExtension: "awsclusterconfigpatch.capi-runtime-extensions"
-            discoverVariablesExtension: "awsclusterconfigvars.capi-runtime-extensions"
+            generateExtension: "awsclusterconfigpatch.cluster-api-runtime-extensions-nutanix"
+            discoverVariablesExtension: "awsclusterconfigvars.cluster-api-runtime-extensions-nutanix"
         - name: "worker-config"
           external:
-            generateExtension: "awsworkerconfigpatch.capi-runtime-extensions"
-            discoverVariablesExtension: "awsworkerconfigvars.capi-runtime-extensions"
+            generateExtension: "awsworkerconfigpatch.cluster-api-runtime-extensions-nutanix"
+            discoverVariablesExtension: "awsworkerconfigvars.cluster-api-runtime-extensions-nutanix"
         - name: identityRef
           definitions:
             - jsonPatches:

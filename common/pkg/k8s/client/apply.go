@@ -23,7 +23,7 @@ func ServerSideApply(
 			objs[i],
 			ctrlclient.Apply,
 			ctrlclient.ForceOwnership,
-			ctrlclient.FieldOwner("d2iq-capi-runtime-extensions"),
+			ctrlclient.FieldOwner("d2iq-cluster-api-runtime-extensions-nutanix"),
 		)
 		if err != nil {
 			return fmt.Errorf("server-side apply failed: %w", err)

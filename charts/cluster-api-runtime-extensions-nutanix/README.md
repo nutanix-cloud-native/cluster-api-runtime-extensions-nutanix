@@ -3,13 +3,13 @@
  SPDX-License-Identifier: Apache-2.0
  -->
 
-# capi-runtime-extensions
+# cluster-api-runtime-extensions-nutanix
 
 ![Version: v0.0.0-dev](https://img.shields.io/badge/Version-v0.0.0--dev-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.0.0-dev](https://img.shields.io/badge/AppVersion-v0.0.0--dev-informational?style=flat-square)
 
-A Helm chart for capi-runtime-extensions
+A Helm chart for cluster-api-runtime-extensions-nutanix
 
-**Homepage:** <https://github.com/d2iq-labs/capi-runtime-extensions>
+**Homepage:** <https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix>
 
 ## Maintainers
 
@@ -19,7 +19,7 @@ A Helm chart for capi-runtime-extensions
 
 ## Source Code
 
-* <https://github.com/d2iq-labs/capi-runtime-extensions>
+* <https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix>
 
 ## Values
 
@@ -53,7 +53,7 @@ A Helm chart for capi-runtime-extensions
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nfd-helm-values-template"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
-| image.repository | string | `"ghcr.io/d2iq-labs/capi-runtime-extensions"` |  |
+| image.repository | string | `"ghcr.io/d2iq-labs/cluster-api-runtime-extensions-nutanix"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` | Optional secrets used for pulling the container image |
 | nodeSelector | object | `{}` |  |
