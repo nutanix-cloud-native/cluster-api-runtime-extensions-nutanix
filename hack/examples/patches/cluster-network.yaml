@@ -1,0 +1,13 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/clusterNetwork"
+  value:
+    pods:
+      cidrBlocks:
+        - "${POD_CIDR:-192.168.0.0/16}"
+    services:
+      cidrBlocks:
+        - "${SERVICE_CIDR:-10.128.0.0/12}"
+    serviceDomain: ${SERVICE_DOMAIN:="cluster.local"}

@@ -1,0 +1,12 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables/0/value/addons/clusterAutoscaler/strategy"
+  value: ClusterResourceSet
+- op: "add"
+  path: "/spec/topology/variables/0/value/addons/cni/strategy"
+  value: ClusterResourceSet
+- op: "add"
+  path: "/spec/topology/variables/0/value/addons/nfd/strategy"
+  value: ClusterResourceSet

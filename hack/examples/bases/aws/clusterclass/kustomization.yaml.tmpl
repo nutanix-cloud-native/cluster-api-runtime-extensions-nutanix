@@ -1,0 +1,77 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/${CAPA_VERSION}/cluster-template-simple-clusterclass.yaml
+
+configurations:
+  - kustomizeconfig.yaml
+
+sortOptions:
+  order: fifo
+
+namePrefix: aws-
+
+labels:
+- includeSelectors: false
+  pairs:
+    cluster.x-k8s.io/provider: aws
+
+patches:
+# Delete the patch and variable definitions.
+- target:
+    kind: ClusterClass
+  patch: |-
+    - op: "remove"
+      path: "/spec/patches"
+    - op: "remove"
+      path: "/spec/variables"
+
+# Enable external cloud provider.
+- target:
+    kind: KubeadmControlPlaneTemplate
+  patch: |-
+    - op: "replace"
+      path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/cloud-provider"
+      value: "external"
+    - op: "replace"
+      path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/controllerManager/extraArgs/cloud-provider"
+      value: "external"
+    - op: "replace"
+      path: "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs/cloud-provider"
+      value: "external"
+    - op: "replace"
+      path: "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs/cloud-provider"
+      value: "external"
+- target:
+    kind: KubeadmConfigTemplate
+  patch: |-
+    - op: "replace"
+      path: "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs/cloud-provider"
+      value: "external"
+
+# Delete the cluster-specific resources.
+- target:
+    kind: Cluster
+  patch: |
+    $$patch: delete
+    kind: Cluster
+    metadata:
+      name: unused
+- target:
+    kind: ClusterResourceSet
+  patch: |
+    $$patch: delete
+    kind: ClusterResourceSet
+    metadata:
+      name: unused
+- target:
+    kind: ConfigMap
+  patch: |
+    $$patch: delete
+    kind: ConfigMap
+    metadata:
+      name: unused
