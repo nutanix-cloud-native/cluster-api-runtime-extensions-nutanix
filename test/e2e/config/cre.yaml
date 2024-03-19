@@ -109,8 +109,8 @@ providers:
 - name: cre
   type: RuntimeExtensionProvider
   versions:
-  - name: "{go://github.com/d2iq-labs/capi-runtime-extensions@v0.5}"
-    value: "https://github.com/d2iq-labs/capi-runtime-extensions/releases/download/{go://github.com/d2iq-labs/capi-runtime-extensions@v0.5}/runtime-extension-components.yaml"
+  - name: "{go://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix@v0.5}"
+    value: "https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix@v0.5}/runtime-extension-components.yaml"
     type: "url"
     contract: v1beta1
     files:
