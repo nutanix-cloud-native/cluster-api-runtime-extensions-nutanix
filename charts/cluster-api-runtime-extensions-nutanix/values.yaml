@@ -35,6 +35,12 @@ hooks:
         defaultValueTemplateConfigMap:
           create: true
           name: default-cilium-cni-helm-values-template
+  csi:
+    nutanix:
+      helmAddonStrategy:
+        defaultValueTemplateConfigMap:
+          create: true
+          name: default-nutanix-csi-helm-values-template
   nfd:
     crsStrategy:
       defaultInstallationConfigMap:

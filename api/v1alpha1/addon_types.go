@@ -4,6 +4,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -137,6 +138,9 @@ func (ClusterAutoscaler) VariableSchema() clusterv1.VariableSchema {
 type CSIProviders struct {
 	// +optional
 	Providers []CSIProvider `json:"providers,omitempty"`
+
+	// +optional
+	DefaultStorageClassName string `json:"defaultStorageClassName,omitempty"`
 }
 
 type CSIProvider struct {
@@ -144,12 +148,18 @@ type CSIProvider struct {
 	Name string `json:"name,omitempty"`
 
 	// +optional
-	StorageClassConfig *StorageClassConfig `json:"storageClassConfig,omitempty"`
+	StorageClassConfig []StorageClassConfig `json:"storageClassConfig,omitempty"`
+
+	// +optional
+	Strategy AddonStrategy `json:"strategy,omitempty"`
+
+	// +optional
+	Credentials *corev1.SecretReference `json:"credentials,omitempty"`
 }
 
 type StorageClassConfig struct {
 	// +optional
-	DefaultClassName string `json:"defaultClassName,omitempty"`
+	Name string `json:"name,omitempty"`
 
 	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`
@@ -161,7 +171,7 @@ func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"defaultClassName": {
+				"name": {
 					Type: "string",
 					Enum: variables.MustMarshalValuesToEnumJSON(supportedCSIProviders...),
 				},
@@ -169,6 +179,44 @@ func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
 					Type:                   "object",
 					XPreserveUnknownFields: true,
 				},
+			},
+		},
+	}
+}
+
+func (CSIProvider) VariableSchema() clusterv1.VariableSchema {
+	supportedCSIProviders := []string{CSIProviderAWSEBS, CSIProviderNutanix}
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"name": {
+					Description: "Name of the CSI Provider",
+					Type:        "string",
+					Enum: variables.MustMarshalValuesToEnumJSON(
+						supportedCSIProviders...),
+				},
+				"strategy": {
+					Description: "Addon strategy used to deploy the CSI provider to the workload cluster",
+					Type:        "string",
+					Enum: variables.MustMarshalValuesToEnumJSON(
+						AddonStrategyClusterResourceSet,
+						AddonStrategyHelmAddon,
+					),
+				},
+				"credentials": {
+					Type:        "object",
+					Description: "The reference to any secret used by the CSI Provider.",
+					Properties: map[string]clusterv1.JSONSchemaProps{
+						"name": {
+							Type: "string",
+						},
+						"namespace": {
+							Type: "string",
+						},
+					},
+				},
+				"storageClassConfig": StorageClassConfig{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -183,15 +231,15 @@ func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
 				"providers": {
 					Type: "array",
 					Items: &clusterv1.JSONSchemaProps{
-						Type: "object",
-						Properties: map[string]clusterv1.JSONSchemaProps{
-							"name": {
-								Type: "string",
-								Enum: variables.MustMarshalValuesToEnumJSON(
-									supportedCSIProviders...),
-							},
-						},
+						Type:       "object",
+						Properties: CSIProvider{}.VariableSchema().OpenAPIV3Schema.Properties,
 					},
+				},
+				"defaultStorageClassName": {
+					Type:        "string",
+					Description: "Storage Class that will be made default for the cluster.",
+					Enum: variables.MustMarshalValuesToEnumJSON(
+						supportedCSIProviders...),
 				},
 			},
 		},
