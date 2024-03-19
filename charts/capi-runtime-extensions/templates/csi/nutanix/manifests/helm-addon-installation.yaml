@@ -1,0 +1,9 @@
+{{- if .Values.hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
+data:
+  values.yaml: |-
+    createSecret: false
+{{- end -}}

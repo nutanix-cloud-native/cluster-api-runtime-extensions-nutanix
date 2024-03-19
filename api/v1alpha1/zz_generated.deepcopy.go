@@ -256,8 +256,15 @@ func (in *CSIProvider) DeepCopyInto(out *CSIProvider) {
 	*out = *in
 	if in.StorageClassConfig != nil {
 		in, out := &in.StorageClassConfig, &out.StorageClassConfig
-		*out = new(StorageClassConfig)
-		(*in).DeepCopyInto(*out)
+		*out = make([]StorageClassConfig, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.Credentials != nil {
+		in, out := &in.Credentials, &out.Credentials
+		*out = new(v1.SecretReference)
+		**out = **in
 	}
 }
 
