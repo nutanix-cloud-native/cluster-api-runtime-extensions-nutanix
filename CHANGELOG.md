@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.6.0 (2024-03-19)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Support HelmAddon strategy to deploy NFD by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/390
+* feat: Upgrade AWS ESB CSI and switch to using Helm chart by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/393
+* feat: CAPA 2.4.0 APIs and e2e by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/415
+* feat: Single defaults namespace flag by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/426
+* feat: add cluster-autoscaler CRS addon by @dkoshkin in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/423
+* feat: add Cluster Autoscaler Addon with HelmAddon by @dkoshkin in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/427
+* feat: NFD v0.15.2 by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/442
+* feat: Include CABPK APIs by @dlipovetsky in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/445
+### Fixes 🔧
+* fix: Ensure addons defaults namespaces are correctly wired up by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/409
+* fix: Disable hubble in Cilium deployment via CRS by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/411
+* fix: Fix Cilium helm values to use kubernetes IPAM by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/413
+* fix: don't use an SSH key in AWS clusters by @dkoshkin in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/425
+* fix: set default priorityClassName on Deployment by @dkoshkin in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/431
+* fix: set default tolerations on Deployment by @dkoshkin in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/430
+* fix: Remove vendored types for core CAPI providers (CAPD, CABPK, KCP) by @dlipovetsky in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/452
+### Other Changes
+* test: Add initial e2e tests by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/360
+* test(e2e): Add CNI e2e tests by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/383
+* test(e2e): Resolve latest upstream provider releases in e2e config by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/388
+* test(e2e): Add test for NFD addon by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/389
+* build: Ignore controller-runtime upgrades by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/403
+* test(e2e): Use ghcr.io/mesosphere/kind-node for bootstrap by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/406
+* build: Update AWS CPI manifest filenames by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/410
+* revert: Temporarily disable GOPROXY to workaround dodgy CAPA release (#395) by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/407
+* build: Ensure release namespace is use in kustomize helm inflator by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/412
+* docs: Update menu ordering and add some icons by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/414
+* test(e2e): Add AWS e2e tests by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/408
+* build: clusterawsadm v2.4.0 by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/424
+* docs: simplify running examples in README by @dkoshkin in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/422
+* ci: Add dependabot for api module by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/432
+* build: Fix up third-party CAPD go.mod CAPI dependency by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/441
+* build: controller-runtime v0.17.2 by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/440
+* ci: Fix up release workflow by specifying workflow-dispatch version by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/451
+* docs: Update docsy module by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/455
+* build: Rename module to d2iq-labs/cluster-api-runtime-extensions-nutanix by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/454
+* test(e2e): Update test config with new repo name by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/457
+* build: Reorg example kustomizations by @jimmidyson in https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pull/453
+
+
+**Full Changelog**: https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/compare/v0.5.0...v0.6.0
+
 ## 0.5.0 (2024-02-16)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
