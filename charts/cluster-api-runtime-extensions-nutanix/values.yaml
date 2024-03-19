@@ -58,7 +58,7 @@ deployment:
   replicas: 1
 
 image:
-  repository: ghcr.io/d2iq-labs/capi-runtime-extensions
+  repository: ghcr.io/d2iq-labs/cluster-api-runtime-extensions-nutanix
   tag: ""
   pullPolicy: IfNotPresent
 

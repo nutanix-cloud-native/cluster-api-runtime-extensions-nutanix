@@ -1,7 +1,7 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-project_name: capi-runtime-extensions
+project_name: cluster-api-runtime-extensions-nutanix
 
 changelog:
   use: github
@@ -44,7 +44,7 @@ before:
     - sed -i 's/\${/$${/g' runtime-extension-components.yaml
 
 builds:
-  - id: capi-runtime-extensions
+  - id: cluster-api-runtime-extensions-nutanix
     dir: ./cmd
     env:
       - CGO_ENABLED=0
@@ -83,11 +83,11 @@ archives:
   - name_template: '{{ .ProjectName }}_v{{trimprefix .Version "v"}}_{{ .Os }}_{{ .Arch }}'
     rlcp: true
     builds:
-      - capi-runtime-extensions
+      - cluster-api-runtime-extensions-nutanix
 
 kos:
-  - id: capi-runtime-extensions
-    build: capi-runtime-extensions
+  - id: cluster-api-runtime-extensions-nutanix
+    build: cluster-api-runtime-extensions-nutanix
     ldflags:
       - -s
       - -w
@@ -107,7 +107,7 @@ kos:
     platforms:
       - linux/amd64
       - linux/arm64
-    repository: ghcr.io/d2iq-labs/capi-runtime-extensions
+    repository: ghcr.io/d2iq-labs/cluster-api-runtime-extensions-nutanix
     bare: true
     tags:
       - v{{trimprefix .Version "v"}}

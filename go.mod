@@ -1,19 +1,19 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-module github.com/d2iq-labs/capi-runtime-extensions
+module github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix
 
 go 1.21
 
 replace (
-	github.com/d2iq-labs/capi-runtime-extensions/api => ./api
-	github.com/d2iq-labs/capi-runtime-extensions/common => ./common
+	github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api => ./api
+	github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common => ./common
 )
 
 require (
 	github.com/blang/semver/v4 v4.0.0
-	github.com/d2iq-labs/capi-runtime-extensions/api v0.0.0-00010101000000-000000000000
-	github.com/d2iq-labs/capi-runtime-extensions/common v0.0.0-00010101000000-000000000000
+	github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api v0.0.0-00010101000000-000000000000
+	github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v1.4.1
 	github.com/onsi/ginkgo/v2 v2.16.0
 	github.com/onsi/gomega v1.31.1

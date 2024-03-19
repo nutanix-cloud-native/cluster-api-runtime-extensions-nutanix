@@ -14,7 +14,7 @@ import (
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 
-	caaphv1 "github.com/d2iq-labs/capi-runtime-extensions/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	caaphv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 )
 
 const (

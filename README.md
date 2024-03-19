@@ -5,7 +5,7 @@
 
 # CAPI Runtime Extensions
 
-For user docs, please see [https://d2iq-labs.github.io/capi-runtime-extensions/].
+For user docs, please see [https://d2iq-labs.github.io/cluster-api-runtime-extensions-nutanix/].
 
 See [upstream documentation](https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/index.html).
 
@@ -144,7 +144,7 @@ Notice that the traefik service is deleted before the cluster is actually finall
 Check the pod logs:
 
 ```shell
-kubectl logs deployment/capi-runtime-extensions -f
+kubectl logs deployment/cluster-api-runtime-extensions-nutanix -f
 ```
 
 To delete the dev KinD cluster, run:

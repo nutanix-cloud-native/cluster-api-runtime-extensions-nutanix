@@ -9,7 +9,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/test/helpers"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
 var (

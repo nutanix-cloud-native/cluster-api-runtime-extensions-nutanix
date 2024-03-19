@@ -48,8 +48,8 @@ kubectl create configmap "{{ .Values.hooks.cni.cilium.crsStrategy.defaultCiliumC
   >"${ASSETS_DIR}/cilium-configmap.yaml"
 
 # add warning not to edit file directly
-mkdir -p "${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/cni/cilium/manifests"
-cat <<EOF >"${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/cni/cilium/manifests/cilium-configmap.yaml"
+mkdir -p "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cni/cilium/manifests"
+cat <<EOF >"${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cni/cilium/manifests/cilium-configmap.yaml"
 $(cat "${GIT_REPO_ROOT}/hack/license-header.yaml.txt")
 
 #=================================================================

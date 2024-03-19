@@ -3,17 +3,17 @@
 
 apiVersion: v2
 
-name: capi-runtime-extensions
+name: cluster-api-runtime-extensions-nutanix
 type: application
-description: A Helm chart for capi-runtime-extensions
+description: A Helm chart for cluster-api-runtime-extensions-nutanix
 
-home: https://github.com/d2iq-labs/capi-runtime-extensions
+home: https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix
 maintainers:
 - name: jimmidyson
   email: jimmidyson@gmail.com
   url: https://eng.d2iq.com
 sources:
-- https://github.com/d2iq-labs/capi-runtime-extensions
+- https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix
 
 appVersion: v0.0.0-dev
 version: v0.0.0-dev

@@ -58,7 +58,7 @@ jobs:
           mapfile -t releases < <( devbox run -- gh release list --json tagName | devbox run -- gojq -r .[].tagName )
           for release in "${releases[@]}"; do
             if devbox run -- gh release download "${release}" \
-                --pattern 'capi-runtime-extensions-*.tgz' \
+                --pattern 'cluster-api-runtime-extensions-nutanix-*.tgz' \
                 --dir docs/static/helm 2>/dev/null; then
               devbox run -- helm repo index docs/static/helm \
                 --url "https://github.com/${{ github.repository }}/releases/download/${release}" \

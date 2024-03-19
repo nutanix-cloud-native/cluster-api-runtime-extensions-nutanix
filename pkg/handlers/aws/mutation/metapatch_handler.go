@@ -6,17 +6,17 @@ package mutation
 import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/ami"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/cni/calico"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/controlplaneloadbalancer"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/iaminstanceprofile"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/instancetype"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/network"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/region"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/aws/mutation/securitygroups"
-	genericmutation "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/mutation"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/ami"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/cni/calico"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/controlplaneloadbalancer"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/iaminstanceprofile"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/instancetype"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/network"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/region"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/securitygroups"
+	genericmutation "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.

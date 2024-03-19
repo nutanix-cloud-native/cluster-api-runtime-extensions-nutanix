@@ -16,9 +16,9 @@ import (
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 var _ = Describe("Quick start", Serial, func() {

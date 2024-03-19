@@ -10,11 +10,11 @@ import (
 	"github.com/onsi/gomega/format"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
-	capav1 "github.com/d2iq-labs/capi-runtime-extensions/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/testutils/capitest/request"
+	capav1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 )
 
 func TestGeneratePatches(

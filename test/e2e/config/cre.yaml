@@ -4,7 +4,7 @@
 managementClusterName: cre-e2e
 
 images:
-  - name: ko.local/capi-runtime-extensions:${E2E_IMAGE_TAG}
+  - name: ko.local/cluster-api-runtime-extensions-nutanix:${E2E_IMAGE_TAG}
     loadBehavior: mustLoad
 
 providers:
@@ -56,7 +56,7 @@ providers:
     contract: v1beta1
     files:
     - sourcePath: "../data/shared/v1beta1-capa/metadata.yaml"
-    - sourcePath: "../../../charts/capi-runtime-extensions/defaultclusterclasses/aws-cluster-class.yaml"
+    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/aws-cluster-class.yaml"
       targetName: clusterclass-aws-quick-start.yaml
     - sourcePath: "../../../examples/capi-quick-start/aws-cluster-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-cilium-helm-addon.yaml
@@ -79,7 +79,7 @@ providers:
     contract: v1beta1
     files:
     - sourcePath: "../data/shared/v1beta1/metadata.yaml"
-    - sourcePath: "../../../charts/capi-runtime-extensions/defaultclusterclasses/docker-cluster-class.yaml"
+    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/docker-cluster-class.yaml"
       targetName: clusterclass-docker-quick-start.yaml
     - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-cilium-helm-addon.yaml

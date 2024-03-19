@@ -15,11 +15,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/patches/selectors"
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/capi/clustertopology/variables"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 type globalMirrorPatchHandler struct {

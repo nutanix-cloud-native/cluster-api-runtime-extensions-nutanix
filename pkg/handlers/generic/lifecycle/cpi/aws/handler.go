@@ -15,8 +15,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/common/pkg/k8s/client"
-	"github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/options"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
 type AWSCPIConfig struct {

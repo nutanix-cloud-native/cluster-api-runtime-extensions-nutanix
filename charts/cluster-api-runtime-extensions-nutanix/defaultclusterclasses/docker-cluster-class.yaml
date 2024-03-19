@@ -22,12 +22,12 @@ spec:
       name: docker-quick-start-cluster
   patches:
     - external:
-        discoverVariablesExtension: dockerclusterconfigvars.capi-runtime-extensions
-        generateExtension: dockerclusterconfigpatch.capi-runtime-extensions
+        discoverVariablesExtension: dockerclusterconfigvars.cluster-api-runtime-extensions-nutanix
+        generateExtension: dockerclusterconfigpatch.cluster-api-runtime-extensions-nutanix
       name: cluster-config
     - external:
-        discoverVariablesExtension: dockerworkerconfigvars.capi-runtime-extensions
-        generateExtension: dockerworkerconfigpatch.capi-runtime-extensions
+        discoverVariablesExtension: dockerworkerconfigvars.cluster-api-runtime-extensions-nutanix
+        generateExtension: dockerworkerconfigpatch.cluster-api-runtime-extensions-nutanix
       name: worker-config
   workers:
     machineDeployments:

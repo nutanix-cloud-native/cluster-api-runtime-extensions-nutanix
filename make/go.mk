@@ -184,8 +184,8 @@ go-fix.%: ; $(info $(M) go fixing $* module)
 go-generate: ## Runs go generate
 go-generate: ; $(info $(M) running go generate)
 	go generate -x ./...
-	controller-gen paths="./..." rbac:headerFile="hack/license-header.yaml.txt",roleName=capi-runtime-extensions-manager-role output:rbac:artifacts:config=charts/capi-runtime-extensions/templates
-	sed --in-place 's/capi-runtime-extensions-manager-role/{{ include "chart.name" . }}-manager-role/' charts/capi-runtime-extensions/templates/role.yaml
+	controller-gen paths="./..." rbac:headerFile="hack/license-header.yaml.txt",roleName=cluster-api-runtime-extensions-nutanix-manager-role output:rbac:artifacts:config=charts/cluster-api-runtime-extensions-nutanix/templates
+	sed --in-place 's/cluster-api-runtime-extensions-nutanix-manager-role/{{ include "chart.name" . }}-manager-role/' charts/cluster-api-runtime-extensions-nutanix/templates/role.yaml
 	controller-gen paths="./api/v1alpha1/..." object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/dev/null
 	$(MAKE) go-fix
 
