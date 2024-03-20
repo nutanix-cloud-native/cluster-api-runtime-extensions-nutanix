@@ -1,0 +1,6 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+node-feature-discovery:
+  version: 0.15.2
+  images:
+  - registry.k8s.io/nfd/node-feature-discovery:v0.15.2-minimal

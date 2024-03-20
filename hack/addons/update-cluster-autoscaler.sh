@@ -7,6 +7,8 @@ readonly SCRIPT_DIR
 
 # shellcheck source=hack/common.sh
 source "${SCRIPT_DIR}/../common.sh"
+# shellcheck source=hack/addons/common.sh
+source "${SCRIPT_DIR}/common.sh"
 
 if [ -z "${CLUSTER_AUTOSCALER_VERSION:-}" ]; then
   echo "Missing argument: CLUSTER_AUTOSCALER_VERSION"
@@ -28,6 +30,15 @@ kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
 kubectl create configmap "{{ .Values.hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name }}" --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/${FILE_NAME}" \
   >"${ASSETS_DIR}/cluster-autoscaler-configmap.yaml"
+
+# generate the list of images
+readonly IMAGES_FILE="${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cluster-autoscaler/images.yaml"
+images_file_from_configmap_yaml_manifest \
+  "${ASSETS_DIR}/cluster-autoscaler-configmap.yaml" \
+  "cluster-autoscaler" \
+  "${CLUSTER_AUTOSCALER_VERSION}" \
+  "${IMAGES_FILE}"
+merge_images_file "${IMAGES_FILE}" "${GIT_REPO_ROOT}/addon-images.yaml"
 
 # add warning not to edit file directly
 cat <<EOF >"${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cluster-autoscaler/manifests/cluster-autoscaler-configmap.yaml"

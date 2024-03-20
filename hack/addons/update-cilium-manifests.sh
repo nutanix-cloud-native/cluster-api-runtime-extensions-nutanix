@@ -7,6 +7,8 @@ readonly SCRIPT_DIR
 
 # shellcheck source=hack/common.sh
 source "${SCRIPT_DIR}/../common.sh"
+# shellcheck source=hack/addons/common.sh
+source "${SCRIPT_DIR}/common.sh"
 
 if [ -z "${CILIUM_VERSION:-}" ]; then
   echo "Missing environment variable: CILIUM_VERSION"
@@ -46,6 +48,15 @@ gojq --yaml-input \
 kubectl create configmap "{{ .Values.hooks.cni.cilium.crsStrategy.defaultCiliumConfigMap.name }}" --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/cilium.json" \
   >"${ASSETS_DIR}/cilium-configmap.yaml"
+
+# generate the list of images
+readonly IMAGES_FILE="${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cni/cilium/images.yaml"
+images_file_from_configmap_json_manifest \
+  "${ASSETS_DIR}/cilium-configmap.yaml" \
+  "cilium" \
+  "${CILIUM_VERSION}" \
+  "${IMAGES_FILE}"
+merge_images_file "${IMAGES_FILE}" "${GIT_REPO_ROOT}/addon-images.yaml"
 
 # add warning not to edit file directly
 mkdir -p "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cni/cilium/manifests"

@@ -7,6 +7,8 @@ readonly SCRIPT_DIR
 
 # shellcheck source=hack/common.sh
 source "${SCRIPT_DIR}/../common.sh"
+# shellcheck source=hack/addons/common.sh
+source "${SCRIPT_DIR}/common.sh"
 
 if [ -z "${CALICO_VERSION:-}" ]; then
   echo "Missing environment variable: CALICO_VERSION"
@@ -46,6 +48,15 @@ gojq --yaml-input \
 kubectl create configmap "{{ .Values.hooks.cni.calico.crsStrategy.defaultTigeraOperatorConfigMap.name }}" --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/tigera-operator.json" \
   >"${ASSETS_DIR}/tigera-operator-configmap.yaml"
+
+# generate the list of images
+readonly IMAGES_FILE="${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cni/calico/images.yaml"
+images_file_for_calico_cni \
+  "${ASSETS_DIR}/tigera-operator-configmap.yaml" \
+  "calico" \
+  "${CALICO_VERSION}" \
+  "${IMAGES_FILE}"
+merge_images_file "${IMAGES_FILE}" "${GIT_REPO_ROOT}/addon-images.yaml"
 
 # add warning not to edit file directly
 mkdir -p "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cni/calico/manifests"

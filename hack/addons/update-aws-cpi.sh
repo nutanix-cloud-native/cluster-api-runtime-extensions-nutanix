@@ -7,11 +7,14 @@ readonly SCRIPT_DIR
 
 # shellcheck source=hack/common.sh
 source "${SCRIPT_DIR}/../common.sh"
+# shellcheck source=hack/addons/common.sh
+source "${SCRIPT_DIR}/common.sh"
 
 AWS_CPI_VERSION=$1
 export AWS_CPI_VERSION
 AWS_CPI_CHART_VERSION=$2
 export AWS_CPI_CHART_VERSION
+AWS_CPI_MINOR_VERSION=${AWS_CPI_VERSION%.*}
 
 if [ -z "${AWS_CPI_VERSION:-}" ]; then
   echo "Missing argument: AWS_CPI_VERSION"
@@ -31,6 +34,15 @@ kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
 kubectl create configmap aws-cpi-"${AWS_CPI_VERSION}" --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/${FILE_NAME}" \
   >"${ASSETS_DIR}/aws-cpi-${AWS_CPI_VERSION}-configmap.yaml"
+
+# generate the list of images
+readonly IMAGES_FILE="${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cpi/aws/aws-cpi-${AWS_CPI_MINOR_VERSION}-images.yaml"
+images_file_from_configmap_yaml_manifest \
+  "${ASSETS_DIR}/aws-cpi-${AWS_CPI_VERSION}-configmap.yaml" \
+  "aws-cpi-${AWS_CPI_MINOR_VERSION}" \
+  "${AWS_CPI_VERSION}" \
+  "${IMAGES_FILE}"
+merge_images_file "${IMAGES_FILE}" "${GIT_REPO_ROOT}/addon-images.yaml"
 
 # add warning not to edit file directly
 cat <<EOF >"${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/cpi/aws/manifests/aws-cpi-${AWS_CPI_VERSION}-configmap.yaml"

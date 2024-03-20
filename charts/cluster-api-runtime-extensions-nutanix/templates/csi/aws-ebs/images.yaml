@@ -1,0 +1,13 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+aws-ebs-csi:
+  version: v2.28.1
+  images:
+  - public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.28.0
+  - public.ecr.aws/eks-distro/kubernetes-csi/external-attacher:v4.5.0-eks-1-29-5
+  - public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner:v4.0.0-eks-1-29-5
+  - public.ecr.aws/eks-distro/kubernetes-csi/external-resizer:v1.10.0-eks-1-29-5
+  - public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter:v7.0.0-eks-1-29-5
+  - public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.12.0-eks-1-29-5
+  - public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar:v2.10.0-eks-1-29-5
+  - registry.k8s.io/sig-storage/snapshot-controller:v6.3.3

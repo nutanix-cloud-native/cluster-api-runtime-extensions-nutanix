@@ -7,6 +7,8 @@ readonly SCRIPT_DIR
 
 # shellcheck source=hack/common.sh
 source "${SCRIPT_DIR}/../common.sh"
+# shellcheck source=hack/addons/common.sh
+source "${SCRIPT_DIR}/common.sh"
 
 if [ -z "${AWS_EBS_CSI_CHART_VERSION:-}" ]; then
   echo "Missing environment variable: AWS_EBS_CSI_CHART_VERSION"
@@ -38,6 +40,15 @@ kustomize build --enable-helm "${ASSETS_DIR}/aws-ebs-csi/" >"${ASSETS_DIR}/${FIL
 kubectl create configmap aws-ebs-csi --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/${FILE_NAME}" \
   >"${ASSETS_DIR}/aws-ebs-csi-configmap.yaml"
+
+# generate the list of images
+readonly IMAGES_FILE="${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/csi/aws-ebs/images.yaml"
+images_file_from_configmap_yaml_manifest \
+  "${ASSETS_DIR}/aws-ebs-csi-configmap.yaml" \
+  "aws-ebs-csi" \
+  "${AWS_EBS_CSI_CHART_VERSION}" \
+  "${IMAGES_FILE}"
+merge_images_file "${IMAGES_FILE}" "${GIT_REPO_ROOT}/addon-images.yaml"
 
 # add warning not to edit file directly
 cat <<EOF >"${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/csi/aws-ebs/manifests/aws-ebs-csi-configmap.yaml"

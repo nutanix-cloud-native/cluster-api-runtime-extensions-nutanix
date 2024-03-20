@@ -1,0 +1,47 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+aws-cpi-v1.27:
+  version: v1.27.1
+  images:
+    - registry.k8s.io/provider-aws/cloud-controller-manager:v1.27.1
+aws-cpi-v1.28:
+  version: v1.28.1
+  images:
+    - registry.k8s.io/provider-aws/cloud-controller-manager:v1.28.1
+aws-ebs-csi:
+  version: v2.28.1
+  images:
+    - public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.28.0
+    - public.ecr.aws/eks-distro/kubernetes-csi/external-attacher:v4.5.0-eks-1-29-5
+    - public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner:v4.0.0-eks-1-29-5
+    - public.ecr.aws/eks-distro/kubernetes-csi/external-resizer:v1.10.0-eks-1-29-5
+    - public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter:v7.0.0-eks-1-29-5
+    - public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.12.0-eks-1-29-5
+    - public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar:v2.10.0-eks-1-29-5
+    - registry.k8s.io/sig-storage/snapshot-controller:v6.3.3
+calico:
+  version: v3.26.4
+  images:
+    - calico/apiserver:v3.26.4
+    - calico/cni:v3.26.4
+    - calico/csi:v3.26.4
+    - calico/ctl:v3.26.4
+    - calico/kube-controllers:v3.26.4
+    - calico/node-driver-registrar:v3.26.4
+    - calico/node:v3.26.4
+    - calico/pod2daemon-flexvol:v3.26.4
+    - calico/typha:v3.26.4
+    - quay.io/tigera/operator:v1.30.9
+cilium:
+  version: 1.15.0
+  images:
+    - quay.io/cilium/cilium:v1.15.0@sha256:9cfd6a0a3a964780e73a11159f93cc363e616f7d9783608f62af6cfdf3759619
+    - quay.io/cilium/operator-generic:v1.15.0@sha256:e26ecd316e742e4c8aa1e302ba8b577c2d37d114583d6c4cdd2b638493546a79
+cluster-autoscaler:
+  version: 9.35.0
+  images:
+    - registry.k8s.io/autoscaling/cluster-autoscaler:v1.29.0
+node-feature-discovery:
+  version: 0.15.2
+  images:
+    - registry.k8s.io/nfd/node-feature-discovery:v0.15.2-minimal

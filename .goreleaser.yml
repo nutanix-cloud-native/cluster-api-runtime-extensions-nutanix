@@ -26,6 +26,7 @@ release:
     - glob: ./examples/capi-quick-start/*.yaml
     - glob: metadata.yaml
     - glob: runtime-extension-components.yaml
+    - glob: addon-images.yaml
 
 before:
   hooks:

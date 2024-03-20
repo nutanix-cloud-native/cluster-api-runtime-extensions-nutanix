@@ -31,6 +31,7 @@
     "shfmt@latest",
     "yamale@latest",
     "yamllint@latest",
+    "yq-go@latest",
     "path:./hack/flakes#clusterawsadm",
     "path:./hack/flakes#go-mod-upgrade",
     "path:./hack/flakes#golangci-lint",

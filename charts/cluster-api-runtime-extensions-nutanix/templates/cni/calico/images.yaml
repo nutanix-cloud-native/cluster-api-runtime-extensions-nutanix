@@ -1,0 +1,15 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+calico:
+  version: v3.26.4
+  images:
+  - calico/apiserver:v3.26.4
+  - calico/cni:v3.26.4
+  - calico/csi:v3.26.4
+  - calico/ctl:v3.26.4
+  - calico/kube-controllers:v3.26.4
+  - calico/node-driver-registrar:v3.26.4
+  - calico/node:v3.26.4
+  - calico/pod2daemon-flexvol:v3.26.4
+  - calico/typha:v3.26.4
+  - quay.io/tigera/operator:v1.30.9
