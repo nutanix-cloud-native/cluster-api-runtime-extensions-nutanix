@@ -193,3 +193,17 @@ go-generate: ; $(info $(M) running go generate)
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades
 go-mod-upgrade: ; $(info $(M) checking for direct module dependency upgrades)
 	go-mod-upgrade
+
+.PHONY: govulncheck
+govulncheck: ## Runs go fix for all modules in repository
+ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
+govulncheck: govulncheck.root
+endif
+ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
+govulncheck: $(addprefix govulncheck.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
+endif
+
+.PHONY: ggovulncheck.%
+govulncheck.%: ## Runs golangci-lint for a specific module
+govulncheck.%: ; $(info $(M) running govulncheck on $* module)
+	$(if $(filter-out root,$*),cd $* && )govulncheck ./...

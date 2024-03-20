@@ -909,6 +909,54 @@
         }
       }
     },
+    "govulncheck@latest": {
+      "last_modified": "2024-03-08T13:51:52Z",
+      "resolved": "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b#govulncheck",
+      "source": "devbox-search",
+      "version": "1.0.4",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kcqx91mgrw03wgqzzx96xprfjzkkss96-govulncheck-1.0.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kcqx91mgrw03wgqzzx96xprfjzkkss96-govulncheck-1.0.4"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4m6afbm7qm1rq5ql9a0x4xcyzlj5i627-govulncheck-1.0.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4m6afbm7qm1rq5ql9a0x4xcyzlj5i627-govulncheck-1.0.4"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/nx4dsdypvbvizasrgjhpv82kw0fjlgm4-govulncheck-1.0.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/nx4dsdypvbvizasrgjhpv82kw0fjlgm4-govulncheck-1.0.4"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kp3rjfdaxjx0m021nxp0kng5xx26p2j5-govulncheck-1.0.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kp3rjfdaxjx0m021nxp0kng5xx26p2j5-govulncheck-1.0.4"
+        }
+      }
+    },
     "helm-docs@latest": {
       "last_modified": "2024-03-08T13:51:52Z",
       "resolved": "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b#helm-docs",
