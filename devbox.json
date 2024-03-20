@@ -16,6 +16,7 @@
     "golines@latest",
     "goreleaser@latest",
     "gotestsum@latest",
+    "govulncheck@latest",
     "helm-docs@latest",
     "hugo@latest",
     "kind@latest",
