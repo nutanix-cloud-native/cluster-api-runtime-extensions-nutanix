@@ -11,16 +11,15 @@ readonly SCRIPT_DIR
 
 trap 'find "${SCRIPT_DIR}" -name kustomization.yaml -delete' EXIT
 
+# For details why the exec command is structured like this , see
+# https://www.shellcheck.net/wiki/SC2156.
 find "${SCRIPT_DIR}" -name kustomization.yaml.tmpl \
-  -exec bash -ec 'mkdir -p $(dirname {}) && envsubst -no-unset <"{}" >"$(dirname {})/$(basename -s .tmpl {})"' \;
+  -exec sh -c 'k="${1}"; envsubst -no-unset -i "${k}" -o "${k%.tmpl}"' shell {} \;
 
 readonly EXAMPLE_CLUSTERCLASSES_DIR=charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses
 mkdir -p "${EXAMPLE_CLUSTERCLASSES_DIR}"
 readonly EXAMPLE_CLUSTERS_DIR=examples/capi-quick-start
 mkdir -p "${EXAMPLE_CLUSTERS_DIR}"
-
-kustomize build ./hack/examples/overlays/clusterclasses/aws >"${EXAMPLE_CLUSTERCLASSES_DIR}/aws-cluster-class.yaml"
-kustomize build ./hack/examples/overlays/clusterclasses/docker >"${EXAMPLE_CLUSTERCLASSES_DIR}/docker-cluster-class.yaml"
 
 for provider in "aws" "docker"; do
   kustomize build --load-restrictor LoadRestrictionsNone \
