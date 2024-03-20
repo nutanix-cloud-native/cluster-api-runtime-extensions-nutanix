@@ -4,7 +4,6 @@
     "chart-testing@latest",
     "clusterctl@latest",
     "coreutils@latest",
-    "crane@latest",
     "envsubst@latest",
     "findutils@latest",
     "gh@latest",
@@ -32,9 +31,9 @@
     "yamale@latest",
     "yamllint@latest",
     "path:./hack/flakes#clusterawsadm",
-    "path:./hack/flakes#goprintconst",
     "path:./hack/flakes#go-mod-upgrade",
     "path:./hack/flakes#golangci-lint",
+    "path:./hack/flakes#goprintconst",
     "path:./hack/flakes#setup-envtest"
   ],
   "shell": {
