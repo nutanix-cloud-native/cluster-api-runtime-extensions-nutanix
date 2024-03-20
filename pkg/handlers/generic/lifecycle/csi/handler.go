@@ -7,11 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	utilyaml "sigs.k8s.io/cluster-api/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -20,23 +16,14 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
-	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 )
 
 const (
 	variableRootName = "csi"
-	kindStorageClass = "StorageClass"
-)
-
-var (
-	defualtStorageClassKey = "storageclass.kubernetes.io/is-default-class"
-	defaultStorageClassMap = map[string]string{
-		defualtStorageClassKey: "true",
-	}
 )
 
 type CSIProvider interface {
-	EnsureCSIConfigMapForCluster(context.Context, *clusterv1.Cluster) (*corev1.ConfigMap, error)
+	Apply(context.Context, v1alpha1.CSIProvider, *v1alpha1.DefaultStorage, *runtimehooksv1.AfterControlPlaneInitializedRequest) error
 }
 
 type CSIHandler struct {
@@ -117,73 +104,17 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			)
 			continue
 		}
-		log.Info(fmt.Sprintf("Creating config map for csi provider %s", provider))
-		cm, err := handler.EnsureCSIConfigMapForCluster(ctx, &req.Cluster)
+		log.Info(fmt.Sprintf("Creating csi provider %s", provider))
+		err = handler.Apply(ctx, provider, csiProviders.DefaultStorage, req)
 		if err != nil {
 			log.Error(
 				err,
 				fmt.Sprintf(
-					"failed to ensure %s csi driver installation manifests ConfigMap",
+					"failed to create %s csi driver object.",
 					provider.Name,
 				),
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		}
-		if cm != nil {
-			if provider.Name == csiProviders.DefaultClassName {
-				log.Info("Setting default storage class ", provider, csiProviders.DefaultClassName)
-				err = setDefaultStorageClass(log, cm)
-				if err != nil {
-					log.Error(err, "failed to set default storage class")
-					resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-				}
-				if err := c.client.Update(ctx, cm); err != nil {
-					log.Error(err, "failed to apply default storage class annotation to configmap")
-					resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-				}
-			}
-			err = lifecycleutils.EnsureCRSForClusterFromConfigMaps(
-				ctx,
-				cm.Name,
-				c.client,
-				&req.Cluster,
-				cm,
-			)
-			if err != nil {
-				log.Error(
-					err,
-					fmt.Sprintf(
-						"failed to ensure %s csi driver installation manifests ConfigMap",
-						provider.Name,
-					),
-				)
-				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			}
-		}
 	}
-}
-
-func setDefaultStorageClass(
-	log logr.Logger,
-	cm *corev1.ConfigMap,
-) error {
-	for k, contents := range cm.Data {
-		objs, err := utilyaml.ToUnstructured([]byte(contents))
-		if err != nil {
-			log.Error(err, "failed to parse yaml")
-			continue
-		}
-		for i := range objs {
-			obj := objs[i]
-			if obj.GetKind() == kindStorageClass {
-				obj.SetAnnotations(defaultStorageClassMap)
-			}
-		}
-		rawObjs, err := utilyaml.FromUnstructured(objs)
-		if err != nil {
-			return fmt.Errorf("failed to convert unstructured objects back to string %w", err)
-		}
-		cm.Data[k] = string(rawObjs)
-	}
-	return nil
 }

@@ -10,6 +10,18 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
+const (
+	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
+	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
+
+	VolumeBindingImmediate            string = "Immmediate"
+	VolumeBindingWaitForFirstConsumer string = "WaitForFirstConsumer"
+
+	VolumeReclaimRecycle string = "Recycle"
+	VolumeReclaimDelete  string = "Delete"
+	VolumeReclaimRetain  string = "Retain"
+)
+
 type Addons struct {
 	// +optional
 	CNI *CNI `json:"cni,omitempty"`
@@ -44,11 +56,6 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 }
 
 type AddonStrategy string
-
-const (
-	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
-	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
-)
 
 // CNI required for providing CNI configuration.
 type CNI struct {
@@ -135,49 +142,75 @@ func (ClusterAutoscaler) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
+type DefaultStorage struct {
+	ProviderName           string `json:"providerName"`
+	StorageClassConfigName string `json:"storageClassConfigName"`
+}
+
 type CSIProviders struct {
 	// +optional
 	Providers []CSIProvider `json:"providers,omitempty"`
-
 	// +optional
-	DefaultStorageClassName string `json:"defaultStorageClassName,omitempty"`
+	DefaultStorage *DefaultStorage `json:"defaultStorage,omitempty"`
 }
 
 type CSIProvider struct {
-	// +optional
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// +optional
 	StorageClassConfig []StorageClassConfig `json:"storageClassConfig,omitempty"`
 
-	// +optional
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy"`
 
 	// +optional
 	Credentials *corev1.SecretReference `json:"credentials,omitempty"`
 }
 
 type StorageClassConfig struct {
-	// +optional
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`
+
+	// +optional
+	ReclaimPolicy string `json:"reclaimPolicy,omitempty"`
+
+	// +optional
+	VolumeBindingMode string `json:"volumeBindingMode,omitempty"`
 }
 
 func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
 	supportedCSIProviders := []string{CSIProviderAWSEBS, CSIProviderNutanix}
+	supportedReclaimPolicies := []string{
+		VolumeReclaimRecycle,
+		VolumeReclaimDelete,
+		VolumeReclaimRetain,
+	}
+	supportedBindingModes := []string{
+		VolumeBindingImmediate,
+		VolumeBindingWaitForFirstConsumer,
+	}
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"name": {
-					Type: "string",
-					Enum: variables.MustMarshalValuesToEnumJSON(supportedCSIProviders...),
+					Type:        "string",
+					Description: "Name of storage class config.",
+					Enum:        variables.MustMarshalValuesToEnumJSON(supportedCSIProviders...),
 				},
 				"parameters": {
 					Type:                   "object",
+					Description:            "Parameters passed into the storage class object.",
 					XPreserveUnknownFields: true,
+				},
+				"reclaimPolicy": {
+					Type: "string",
+					Enum: variables.MustMarshalValuesToEnumJSON(supportedReclaimPolicies...),
+				},
+				"volumeBindingMode": {
+					Type: "string",
+					Enum: variables.MustMarshalValuesToEnumJSON(supportedBindingModes...),
 				},
 			},
 		},
@@ -216,14 +249,41 @@ func (CSIProvider) VariableSchema() clusterv1.VariableSchema {
 						},
 					},
 				},
-				"storageClassConfig": StorageClassConfig{}.VariableSchema().OpenAPIV3Schema,
+				"storageClassConfig": {
+					Type: "array",
+					Items: &clusterv1.JSONSchemaProps{
+						Type:       "object",
+						Properties: StorageClassConfig{}.VariableSchema().OpenAPIV3Schema.Properties,
+					},
+				},
+			},
+		},
+	}
+}
+
+func (DefaultStorage) VariableSchema() clusterv1.VariableSchema {
+	supportedCSIProviders := []string{CSIProviderAWSEBS, CSIProviderNutanix}
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Type:        "object",
+			Description: "A tuple of provider name and storage class ",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"providerName": {
+					Type:        "string",
+					Description: "Name of the CSI Provider for the default storage class",
+					Enum: variables.MustMarshalValuesToEnumJSON(
+						supportedCSIProviders...),
+				},
+				"storageClassConfigName": {
+					Type:        "string",
+					Description: "Name of storage class config in any of the provider objects",
+				},
 			},
 		},
 	}
 }
 
 func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
-	supportedCSIProviders := []string{CSIProviderAWSEBS, CSIProviderNutanix}
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
@@ -235,12 +295,7 @@ func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
 						Properties: CSIProvider{}.VariableSchema().OpenAPIV3Schema.Properties,
 					},
 				},
-				"defaultStorageClassName": {
-					Type:        "string",
-					Description: "Storage Class that will be made default for the cluster.",
-					Enum: variables.MustMarshalValuesToEnumJSON(
-						supportedCSIProviders...),
-				},
+				"defaultStorage": DefaultStorage{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}

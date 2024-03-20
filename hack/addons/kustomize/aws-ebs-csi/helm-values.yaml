@@ -27,10 +27,3 @@ node:
 sidecars:
   snapshotter:
     forceEnable: true
-storageClasses:
-- metadata:
-  name: ebs-sc
-  volumeBindingMode: WaitForFirstConsumer
-  parameters:
-    csi.storage.k8s.io/fstype: ext4
-    type: gp3
