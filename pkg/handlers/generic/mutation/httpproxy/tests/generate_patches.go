@@ -31,34 +31,6 @@ func TestGeneratePatches(
 			Name: "unset variable",
 		},
 		capitest.PatchTestDef{
-			Name: "http proxy set for KubeadmConfigTemplate default-worker",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					variableName,
-					v1alpha1.HTTPProxy{
-						HTTP:         "http://example.com",
-						HTTPS:        "https://example.com",
-						AdditionalNo: []string{"no-proxy.example.com"},
-					},
-					variablePath...,
-				),
-				capitest.VariableWithValue(
-					"builtin",
-					map[string]any{
-						"machineDeployment": map[string]any{
-							"class": "default-worker",
-						},
-					},
-				),
-			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/files",
-				ValueMatcher: gomega.HaveLen(2),
-			}},
-		},
-		capitest.PatchTestDef{
 			Name: "http proxy set for KubeadmConfigTemplate generic worker",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
