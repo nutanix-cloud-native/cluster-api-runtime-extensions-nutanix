@@ -4,5 +4,11 @@
 - op: "add"
   path: "/spec/topology/variables/0/value/addons/csi"
   value:
+    defaultStorageConfig:
+      providerName: aws-ebs
+      storageClassConfigName: aws-ebs-sc
     providers:
       - name: aws-ebs
+        storageClassConfig:
+        - name: aws-ebs-sc
+        strategy: ClusterResourceSet
