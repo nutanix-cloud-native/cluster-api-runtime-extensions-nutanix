@@ -4,7 +4,7 @@
 - op: "add"
   path: "/spec/topology/variables/0/value/addons/csi"
   value:
-    defaultStorageConfig:
+    defaultStorage:
       providerName: aws-ebs
       storageClassConfigName: aws-ebs-sc
     providers:
