@@ -1,0 +1,27 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../../bases/nutanix/clusterclass
+
+sortOptions:
+  order: fifo
+
+patches:
+  - target:
+      kind: ClusterClass
+    patch: |-
+      - op: "add"
+        path: "/spec/patches"
+        value:
+          - name: "cluster-config"
+            external:
+              generateExtension: "nutanixclusterconfigpatch.cluster-api-runtime-extensions-nutanix"
+              discoverVariablesExtension: "nutanixclusterconfigvars.cluster-api-runtime-extensions-nutanix"
+          - name: "worker-config"
+            external:
+              generateExtension: "nutanixworkerconfigpatch.cluster-api-runtime-extensions-nutanix"
+              discoverVariablesExtension: "nutanixworkerconfigvars.cluster-api-runtime-extensions-nutanix"

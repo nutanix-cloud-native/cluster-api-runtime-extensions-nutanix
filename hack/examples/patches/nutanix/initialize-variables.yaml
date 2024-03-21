@@ -1,0 +1,62 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/class"
+  value: "nutanix-quick-start"
+- op: "add"
+  path: "/spec/topology/variables"
+  value:
+    - name: "clusterConfig"
+      value:
+        addons:
+          cni:
+          clusterAutoscaler:
+            strategy:
+          nfd:
+            strategy:
+        nutanix:
+          controlPlaneEndpoint:
+            host: $${CONTROL_PLANE_ENDPOINT_IP}
+            port: $${CONTROL_PLANE_ENDPOINT_PORT}
+          prismCentralEndpoint:
+            additionalTrustBundle: $${CLUSTER_NAME}-pc-trusted-ca-bundle
+            host: $${NUTANIX_ENDPOINT}
+            insecure: $${NUTANIX_INSECURE}
+            port: 9440
+            credentialSecret: $${CLUSTER_NAME}-pc-creds
+        controlPlane:
+          nutanix:
+            machineDetails:
+              bootType: legacy
+              cluster:
+                name: $${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+                type: name
+              image:
+                name: $${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
+                type: name
+              subnet:
+                - name: $${NUTANIX_SUBNET_NAME}
+                  type: name
+              memorySize: 4Gi
+              systemDiskSize: 40Gi
+              vcpuSockets: 2
+              vcpusPerSocket: 1
+    - name: "workerConfig"
+      value:
+        nutanix:
+          machineDetails:
+            bootType: legacy
+            cluster:
+              name: $${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+              type: name
+            image:
+              name: $${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
+              type: name
+            memorySize: 4Gi
+            subnet:
+              - name: $${NUTANIX_SUBNET_NAME}
+                type: name
+            systemDiskSize: 40Gi
+            vcpuSockets: 2
+            vcpusPerSocket: 1
