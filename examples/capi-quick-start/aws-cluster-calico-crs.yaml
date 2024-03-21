@@ -28,8 +28,14 @@ spec:
             provider: Calico
             strategy: ClusterResourceSet
           csi:
+            defaultStorageConfig:
+              providerName: aws-ebs
+              storageClassConfigName: aws-ebs-sc
             providers:
             - name: aws-ebs
+              storageClassConfig:
+              - name: aws-ebs-sc
+              strategy: ClusterResourceSet
           nfd:
             strategy: ClusterResourceSet
         aws:
