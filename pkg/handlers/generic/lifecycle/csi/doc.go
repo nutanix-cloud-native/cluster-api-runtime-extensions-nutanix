@@ -9,4 +9,5 @@
 //
 // +kubebuilder:rbac:groups=addons.cluster.x-k8s.io,resources=clusterresourcesets,verbs=watch;list;get;create;patch;update;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=watch;list;get;create;patch;update;delete
+// +kubebuilder:rbac:groups="storage.k8s.io",resources=storageclass,verbs=list;get;create;patch;update
 package csi

@@ -86,3 +86,29 @@ func EnsureNamespace(ctx context.Context, c ctrlclient.Client, name string) erro
 
 	return nil
 }
+
+func RetrieveValuesTemplateConfigMap(
+	ctx context.Context,
+	c ctrlclient.Client,
+	configMapName,
+	defaultsNamespace string,
+) (*corev1.ConfigMap, error) {
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: defaultsNamespace,
+			Name:      configMapName,
+		},
+	}
+	configMapObjName := ctrlclient.ObjectKeyFromObject(
+		configMap,
+	)
+	err := c.Get(ctx, configMapObjName, configMap)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to retrieve installation values template ConfigMap %q: %w",
+			configMapObjName,
+			err,
+		)
+	}
+	return configMap, nil
+}
