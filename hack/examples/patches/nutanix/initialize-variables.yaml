@@ -17,26 +17,26 @@
             strategy:
         nutanix:
           controlPlaneEndpoint:
-            host: $${CONTROL_PLANE_ENDPOINT_IP}
-            port: $${CONTROL_PLANE_ENDPOINT_PORT}
+            host: ${CONTROL_PLANE_ENDPOINT_IP}
+            port: ${CONTROL_PLANE_ENDPOINT_PORT}
           prismCentralEndpoint:
-            additionalTrustBundle: $${CLUSTER_NAME}-pc-trusted-ca-bundle
-            host: $${NUTANIX_ENDPOINT}
-            insecure: $${NUTANIX_INSECURE}
+            additionalTrustBundle: ${CLUSTER_NAME}-pc-trusted-ca-bundle
+            host: ${NUTANIX_ENDPOINT}
+            insecure: ${NUTANIX_INSECURE}
             port: 9440
-            credentialSecret: $${CLUSTER_NAME}-pc-creds
+            credentialSecret: ${CLUSTER_NAME}-pc-creds
         controlPlane:
           nutanix:
             machineDetails:
               bootType: legacy
               cluster:
-                name: $${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+                name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
                 type: name
               image:
-                name: $${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
+                name: ${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
                 type: name
               subnet:
-                - name: $${NUTANIX_SUBNET_NAME}
+                - name: ${NUTANIX_SUBNET_NAME}
                   type: name
               memorySize: 4Gi
               systemDiskSize: 40Gi
@@ -48,14 +48,14 @@
           machineDetails:
             bootType: legacy
             cluster:
-              name: $${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+              name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
               type: name
             image:
-              name: $${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
+              name: ${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
               type: name
             memorySize: 4Gi
             subnet:
-              - name: $${NUTANIX_SUBNET_NAME}
+              - name: ${NUTANIX_SUBNET_NAME}
                 type: name
             systemDiskSize: 40Gi
             vcpuSockets: 2
