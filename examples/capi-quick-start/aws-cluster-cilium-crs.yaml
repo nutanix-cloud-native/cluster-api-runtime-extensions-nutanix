@@ -28,7 +28,7 @@ spec:
             provider: Cilium
             strategy: ClusterResourceSet
           csi:
-            defaultStorageConfig:
+            defaultStorage:
               providerName: aws-ebs
               storageClassConfigName: aws-ebs-sc
             providers:

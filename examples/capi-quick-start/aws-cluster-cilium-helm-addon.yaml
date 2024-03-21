@@ -28,7 +28,7 @@ spec:
             provider: Cilium
             strategy: HelmAddon
           csi:
-            defaultStorageConfig:
+            defaultStorage:
               providerName: aws-ebs
               storageClassConfigName: aws-ebs-sc
             providers:

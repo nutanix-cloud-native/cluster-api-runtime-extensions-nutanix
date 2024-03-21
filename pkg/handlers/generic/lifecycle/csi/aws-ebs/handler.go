@@ -7,15 +7,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/d2iq-labs/capi-runtime-extensions/api/v1alpha1"
-	lifecycleutils "github.com/d2iq-labs/capi-runtime-extensions/pkg/handlers/generic/lifecycle/utils"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	capiutil "sigs.k8s.io/cluster-api/util"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -86,11 +88,12 @@ func (a *AWSEBS) Apply(
 	default:
 		return fmt.Errorf("Stategy %s not implemented", strategy)
 	}
-	return a.createStorageClasses(ctx, provider.StorageClassConfig, defaultStorageConfig)
+	return a.createStorageClasses(ctx, provider.StorageClassConfig, req.Cluster, defaultStorageConfig)
 }
 
 func (a *AWSEBS) createStorageClasses(ctx context.Context,
 	configs []v1alpha1.StorageClassConfig,
+	cluster clusterv1.Cluster,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
 	for _, c := range configs {
@@ -114,13 +117,17 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 		}
 		params := defaultParams
 		if c.Parameters != nil {
-			params = c.DeepCopy().Parameters
+			m := make(map[string]string)
+			for k, v := range c.Parameters {
+				m[k] = v
+			}
+			params = m
 		}
 		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
 			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
 		sc := storagev1.StorageClass{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "storageclass",
+				Kind:       "StorageClass",
 				APIVersion: storagev1.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -135,7 +142,12 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 		if setAsDefault {
 			sc.ObjectMeta.Annotations = defaultStorageClassMap
 		}
-		if err := client.ServerSideApply(ctx, a.client, &sc); err != nil {
+		workloadClient, err := remote.NewClusterClient(ctx, "", a.client, capiutil.ObjectKey(&cluster))
+		if err != nil {
+			return err
+		}
+
+		if err := client.ServerSideApply(ctx, workloadClient, &sc); err != nil {
 			return fmt.Errorf(
 				"failed to create storage class %w",
 				err,
