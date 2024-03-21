@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -x
 
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
@@ -21,7 +21,7 @@ mkdir -p "${EXAMPLE_CLUSTERCLASSES_DIR}"
 readonly EXAMPLE_CLUSTERS_DIR=examples/capi-quick-start
 mkdir -p "${EXAMPLE_CLUSTERS_DIR}"
 
-for provider in "aws" "docker"; do
+for provider in "aws" "docker" "nutanix"; do
   kustomize build --load-restrictor LoadRestrictionsNone \
     ./hack/examples/overlays/clusterclasses/"${provider}" >"${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml
 
