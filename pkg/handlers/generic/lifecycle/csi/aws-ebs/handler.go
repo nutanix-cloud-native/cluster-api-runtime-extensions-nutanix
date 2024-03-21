@@ -77,7 +77,7 @@ func (a *AWSEBS) Apply(
 	strategy := provider.Strategy
 	switch strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		err := a.handleCRSApply(ctx, defaultStorageConfig, req)
+		err := a.handleCRSApply(ctx, req)
 		if err != nil {
 			return err
 		}
@@ -119,6 +119,10 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
 			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
 		sc := storagev1.StorageClass{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "storageclass",
+				APIVersion: storagev1.SchemeGroupVersion.String(),
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.Name,
 				Namespace: a.config.DefaultsNamespace(),
@@ -142,7 +146,6 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 }
 
 func (a *AWSEBS) handleCRSApply(ctx context.Context,
-	defaultStorageConfig *v1alpha1.DefaultStorage,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 ) error {
 	awsEBSCSIConfigMap := &corev1.ConfigMap{

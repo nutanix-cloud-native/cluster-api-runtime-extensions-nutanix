@@ -180,7 +180,6 @@ type StorageClassConfig struct {
 }
 
 func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
-	supportedCSIProviders := []string{CSIProviderAWSEBS, CSIProviderNutanix}
 	supportedReclaimPolicies := []string{
 		VolumeReclaimRecycle,
 		VolumeReclaimDelete,
@@ -197,7 +196,6 @@ func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
 				"name": {
 					Type:        "string",
 					Description: "Name of storage class config.",
-					Enum:        variables.MustMarshalValuesToEnumJSON(supportedCSIProviders...),
 				},
 				"parameters": {
 					Type:                   "object",

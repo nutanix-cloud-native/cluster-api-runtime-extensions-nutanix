@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -18,6 +17,7 @@ import (
 
 	caaphv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 )
 
 const (
@@ -53,7 +53,10 @@ func (s helmAddonStrategy) apply(
 	log logr.Logger,
 ) error {
 	log.Info("Retrieving cluster-autoscaler installation values template for cluster")
-	valuesTemplateConfigMap, err := s.retrieveValuesTemplateConfigMap(ctx, defaultsNamespace)
+	valuesTemplateConfigMap, err := utils.RetrieveValuesTemplateConfigMap(ctx,
+		s.client,
+		s.config.defaultValuesTemplateConfigMapName,
+		defaultsNamespace)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to retrieve cluster-autoscaler installation values template ConfigMap for cluster: %w",
@@ -107,29 +110,4 @@ func (s helmAddonStrategy) apply(
 	}
 
 	return nil
-}
-
-func (s helmAddonStrategy) retrieveValuesTemplateConfigMap(
-	ctx context.Context,
-	defaultsNamespace string,
-) (*corev1.ConfigMap, error) {
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: defaultsNamespace,
-			Name:      s.config.defaultValuesTemplateConfigMapName,
-		},
-	}
-	configMapObjName := ctrlclient.ObjectKeyFromObject(
-		configMap,
-	)
-	err := s.client.Get(ctx, configMapObjName, configMap)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to retrieve installation values template ConfigMap %q: %w",
-			configMapObjName,
-			err,
-		)
-	}
-
-	return configMap, nil
 }

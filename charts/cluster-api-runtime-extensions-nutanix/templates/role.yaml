@@ -69,3 +69,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclass
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
