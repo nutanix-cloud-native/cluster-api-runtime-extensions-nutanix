@@ -23,6 +23,11 @@ labels:
 patches:
 # Delete the patch and variable definitions.
 - target:
+    kind: KubeadmControlPlaneTemplate
+  patch: |-
+    - op: "remove"
+      path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/certSANs"
+- target:
     kind: ClusterClass
   patch: |-
     - op: "remove"

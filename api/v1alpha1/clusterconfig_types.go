@@ -4,6 +4,7 @@
 package v1alpha1
 
 import (
+	"fmt"
 	"maps"
 
 	corev1 "k8s.io/api/core/v1"
@@ -22,6 +23,13 @@ const (
 
 	CCMProviderAWS = "aws"
 )
+
+var DefaultDockerCertSANs = []string{
+	"localhost",
+	"127.0.0.1",
+	"0.0.0.0",
+	"host.docker.internal",
+}
 
 // +kubebuilder:object:root=true
 
@@ -234,7 +242,8 @@ type ExtraAPIServerCertSANs []string
 func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Extra Subject Alternative Names for the API Server signing cert",
+			Description: fmt.Sprintf("Extra Subject Alternative Names for the API Server signing cert. For Docker %v are injected automatically.",
+				DefaultDockerCertSANs),
 			Type:        "array",
 			UniqueItems: true,
 			Items: &clusterv1.JSONSchemaProps{
