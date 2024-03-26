@@ -23,7 +23,12 @@ const (
 )
 
 type CSIProvider interface {
-	Apply(context.Context, v1alpha1.CSIProvider, *v1alpha1.DefaultStorage, *runtimehooksv1.AfterControlPlaneInitializedRequest) error
+	Apply(
+		context.Context,
+		v1alpha1.CSIProvider,
+		*v1alpha1.DefaultStorage,
+		*runtimehooksv1.AfterControlPlaneInitializedRequest,
+	) error
 }
 
 type CSIHandler struct {
