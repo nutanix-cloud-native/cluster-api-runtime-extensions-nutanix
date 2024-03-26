@@ -1,3 +1,6 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 {{- if .Values.hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
 kind: ConfigMap

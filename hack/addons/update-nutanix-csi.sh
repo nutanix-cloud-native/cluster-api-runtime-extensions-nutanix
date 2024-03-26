@@ -31,7 +31,7 @@ kubectl create configmap nutanix-csi --dry-run=client --output yaml \
   >"${ASSETS_DIR}/nutanix-csi-configmap.yaml"
 
 # add warning not to edit file directly
-cat <<EOF >"${GIT_REPO_ROOT}/charts/capi-runtime-extensions/templates/csi/nutanix/manifests/nutanix-csi-configmap.yaml"
+cat <<EOF >"${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/csi/nutanix/manifests/nutanix-csi-configmap.yaml"
 $(cat "${GIT_REPO_ROOT}/hack/license-header.yaml.txt")
 
 #=================================================================
