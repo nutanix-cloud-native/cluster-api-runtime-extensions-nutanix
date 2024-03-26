@@ -6,15 +6,37 @@ package utils
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
+	capiutil "sigs.k8s.io/cluster-api/util"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+)
+
+const (
+	kindStorageClass      = "StorageClass"
+	awsEBSProvisionerName = "ebs.csi.aws.com"
+)
+
+var (
+	defualtStorageClassKey = "storageclass.kubernetes.io/is-default-class"
+	defaultStorageClassMap = map[string]string{
+		defualtStorageClassKey: "true",
+	}
+	defaultParams = map[string]string{
+		"csi.storage.k8s.io/fstype": "ext4",
+		"type":                      "gp3",
+	}
 )
 
 func EnsureCRSForClusterFromConfigMaps(
@@ -111,4 +133,69 @@ func RetrieveValuesTemplateConfigMap(
 		)
 	}
 	return configMap, nil
+}
+
+func CreateStorageClass(
+	ctx context.Context,
+	cl ctrlclient.Client,
+	storageConfig v1alpha1.StorageClassConfig,
+	cluster *clusterv1.Cluster,
+	defaultsNamespace string,
+	isDefault bool,
+) error {
+	var volumeBindingMode *storagev1.VolumeBindingMode
+	switch storageConfig.VolumeBindingMode {
+	case v1alpha1.VolumeBindingImmediate:
+		volumeBindingMode = ptr.To(storagev1.VolumeBindingImmediate)
+	case v1alpha1.VolumeBindingWaitForFirstConsumer:
+	default:
+		volumeBindingMode = ptr.To(storagev1.VolumeBindingWaitForFirstConsumer)
+	}
+	var reclaimPolicy *corev1.PersistentVolumeReclaimPolicy
+	switch storageConfig.ReclaimPolicy {
+	case v1alpha1.VolumeReclaimRecycle:
+		reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimRecycle)
+	case v1alpha1.VolumeReclaimDelete:
+		reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimDelete)
+	case v1alpha1.VolumeReclaimRetain:
+		reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimRetain)
+	}
+	params := defaultParams
+	if storageConfig.Parameters != nil {
+		params = maps.Clone(storageConfig.Parameters)
+	}
+	sc := storagev1.StorageClass{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "StorageClass",
+			APIVersion: storagev1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      storageConfig.Name,
+			Namespace: defaultsNamespace,
+		},
+		Provisioner:       awsEBSProvisionerName,
+		Parameters:        params,
+		VolumeBindingMode: volumeBindingMode,
+		ReclaimPolicy:     reclaimPolicy,
+	}
+	if isDefault {
+		sc.ObjectMeta.Annotations = defaultStorageClassMap
+	}
+	workloadClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		cl,
+		capiutil.ObjectKey(cluster),
+	)
+	if err != nil {
+		return err
+	}
+
+	if err := client.ServerSideApply(ctx, workloadClient, &sc); err != nil {
+		return fmt.Errorf(
+			"failed to create storage class %w",
+			err,
+		)
+	}
+	return nil
 }
