@@ -6,6 +6,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
@@ -117,11 +118,7 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 		}
 		params := defaultParams
 		if c.Parameters != nil {
-			m := make(map[string]string)
-			for k, v := range c.Parameters {
-				m[k] = v
-			}
-			params = m
+			params = maps.Clone(c.Parameters)
 		}
 		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
 			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
