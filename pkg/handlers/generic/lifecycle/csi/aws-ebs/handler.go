@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -21,7 +19,9 @@ import (
 	capiutil "sigs.k8s.io/cluster-api/util"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -85,16 +85,20 @@ func (a *AWSEBS) Apply(
 			return err
 		}
 	case v1alpha1.AddonStrategyHelmAddon:
-		fallthrough
 	default:
-		return fmt.Errorf("Stategy %s not implemented", strategy)
+		return fmt.Errorf("stategy %s not implemented", strategy)
 	}
-	return a.createStorageClasses(ctx, provider.StorageClassConfig, req.Cluster, defaultStorageConfig)
+	return a.createStorageClasses(
+		ctx,
+		provider.StorageClassConfig,
+		&req.Cluster,
+		defaultStorageConfig,
+	)
 }
 
 func (a *AWSEBS) createStorageClasses(ctx context.Context,
 	configs []v1alpha1.StorageClassConfig,
-	cluster clusterv1.Cluster,
+	cluster *clusterv1.Cluster,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
 	for _, c := range configs {
@@ -103,7 +107,6 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 		case v1alpha1.VolumeBindingImmediate:
 			volumeBindingMode = ptr.To(storagev1.VolumeBindingImmediate)
 		case v1alpha1.VolumeBindingWaitForFirstConsumer:
-			fallthrough
 		default:
 			volumeBindingMode = ptr.To(storagev1.VolumeBindingWaitForFirstConsumer)
 		}
@@ -139,7 +142,12 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 		if setAsDefault {
 			sc.ObjectMeta.Annotations = defaultStorageClassMap
 		}
-		workloadClient, err := remote.NewClusterClient(ctx, "", a.client, capiutil.ObjectKey(&cluster))
+		workloadClient, err := remote.NewClusterClient(
+			ctx,
+			"",
+			a.client,
+			capiutil.ObjectKey(cluster),
+		)
 		if err != nil {
 			return err
 		}
