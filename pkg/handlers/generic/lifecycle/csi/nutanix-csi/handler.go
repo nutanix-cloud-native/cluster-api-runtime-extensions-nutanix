@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -71,7 +71,12 @@ func (n *NutanixCSI) Apply(
 	default:
 		return fmt.Errorf("stategy %s not implemented", strategy)
 	}
-	return n.createStorageClasses(ctx, provider.StorageClassConfig, defaultStorageConfig)
+	return n.createStorageClasses(
+		ctx,
+		provider.StorageClassConfig,
+		&req.Cluster,
+		defaultStorageConfig,
+	)
 }
 
 func (n *NutanixCSI) handleHelmAddonApply(
@@ -103,7 +108,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			RepoURL:   defaultHelmRepositoryURL,
 			ChartName: defaultHelmChartName,
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{capiv1.ClusterNameLabel: req.Cluster.Name},
+				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: req.Cluster.Namespace,
 			ReleaseName:      fmt.Sprintf(defaultHelmReleaseNameTemplate, req.Cluster.Name),
@@ -128,7 +133,23 @@ func (n *NutanixCSI) handleHelmAddonApply(
 
 func (n *NutanixCSI) createStorageClasses(ctx context.Context,
 	configs []v1alpha1.StorageClassConfig,
+	cluster *clusterv1.Cluster,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
+	for _, c := range configs {
+		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
+			v1alpha1.CSIProviderNutanix == defaultStorageConfig.ProviderName
+		err := utils.CreateStorageClass(
+			ctx,
+			n.client,
+			c,
+			cluster,
+			n.config.GlobalOptions.DefaultsNamespace(),
+			setAsDefault,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create storageclass %w", err)
+		}
+	}
 	return nil
 }

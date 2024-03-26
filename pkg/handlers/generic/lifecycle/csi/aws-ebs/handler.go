@@ -6,40 +6,18 @@ package aws
 import (
 	"context"
 	"fmt"
-	"maps"
 
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	capiutil "sigs.k8s.io/cluster-api/util"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
-)
-
-const (
-	variableRootName      = "csi"
-	kindStorageClass      = "StorageClass"
-	awsEBSProvisionerName = "ebs.csi.aws.com"
-)
-
-var (
-	defualtStorageClassKey = "storageclass.kubernetes.io/is-default-class"
-	defaultStorageClassMap = map[string]string{
-		defualtStorageClassKey: "true",
-	}
-	defaultParams = map[string]string{
-		"csi.storage.k8s.io/fstype": "ext4",
-		"type":                      "gp3",
-	}
 )
 
 type AWSEBSConfig struct {
@@ -102,61 +80,18 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
 	for _, c := range configs {
-		var volumeBindingMode *storagev1.VolumeBindingMode
-		switch c.VolumeBindingMode {
-		case v1alpha1.VolumeBindingImmediate:
-			volumeBindingMode = ptr.To(storagev1.VolumeBindingImmediate)
-		case v1alpha1.VolumeBindingWaitForFirstConsumer:
-		default:
-			volumeBindingMode = ptr.To(storagev1.VolumeBindingWaitForFirstConsumer)
-		}
-		var reclaimPolicy *corev1.PersistentVolumeReclaimPolicy
-		switch c.ReclaimPolicy {
-		case v1alpha1.VolumeReclaimRecycle:
-			reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimRecycle)
-		case v1alpha1.VolumeReclaimDelete:
-			reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimDelete)
-		case v1alpha1.VolumeReclaimRetain:
-			reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimRetain)
-		}
-		params := defaultParams
-		if c.Parameters != nil {
-			params = maps.Clone(c.Parameters)
-		}
 		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
 			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
-		sc := storagev1.StorageClass{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "StorageClass",
-				APIVersion: storagev1.SchemeGroupVersion.String(),
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      c.Name,
-				Namespace: a.config.DefaultsNamespace(),
-			},
-			Provisioner:       awsEBSProvisionerName,
-			Parameters:        params,
-			VolumeBindingMode: volumeBindingMode,
-			ReclaimPolicy:     reclaimPolicy,
-		}
-		if setAsDefault {
-			sc.ObjectMeta.Annotations = defaultStorageClassMap
-		}
-		workloadClient, err := remote.NewClusterClient(
+		err := lifecycleutils.CreateStorageClass(
 			ctx,
-			"",
 			a.client,
-			capiutil.ObjectKey(cluster),
+			c,
+			cluster,
+			a.config.GlobalOptions.DefaultsNamespace(),
+			setAsDefault,
 		)
 		if err != nil {
-			return err
-		}
-
-		if err := client.ServerSideApply(ctx, workloadClient, &sc); err != nil {
-			return fmt.Errorf(
-				"failed to create storage class %w",
-				err,
-			)
+			return fmt.Errorf("failed to create storageclass %w", err)
 		}
 	}
 	return nil
