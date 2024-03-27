@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,7 +18,7 @@ import (
 	caaphv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
+	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -26,7 +27,6 @@ const (
 	defaultHelmChartVersion        = "v2.6.6"
 	defaultHelmChartName           = "nutanix-csi-storage"
 	defaultHelmReleaseNameTemplate = "nutanix-csi-storage-%s"
-	nutanixCSIProvisionerName      = "csi.nutanix.com"
 )
 
 type NutanixCSIConfig struct {
@@ -87,7 +87,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 ) error {
-	valuesTemplateConfigMap, err := utils.RetrieveValuesTemplateConfigMap(ctx,
+	valuesTemplateConfigMap, err := lifecycleutils.RetrieveValuesTemplateConfigMap(ctx,
 		n.client,
 		n.config.defaultValuesTemplateConfigMapName,
 		n.config.DefaultsNamespace())
@@ -140,21 +140,31 @@ func (n *NutanixCSI) createStorageClasses(ctx context.Context,
 	cluster *clusterv1.Cluster,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
+	allStorageClasses := make([]runtime.Object, 0, len(configs))
 	for _, c := range configs {
 		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
 			v1alpha1.CSIProviderNutanix == defaultStorageConfig.ProviderName
-		err := utils.CreateStorageClass(
-			ctx,
-			n.client,
+		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
 			c,
 			cluster,
-			nutanixCSIProvisionerName,
 			n.config.GlobalOptions.DefaultsNamespace(),
+			v1alpha1.NutanixDriver,
 			setAsDefault,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to create storageclass %w", err)
-		}
+		))
 	}
-	return nil
+	cm, err := lifecycleutils.CreateConfigMapForCRS(
+		"nutanix-storageclass-cm",
+		n.config.DefaultsNamespace(),
+		allStorageClasses...,
+	)
+	if err != nil {
+		return err
+	}
+	return lifecycleutils.EnsureCRSForClusterFromConfigMaps(
+		ctx,
+		"nutanix-storageclass-crs",
+		n.client,
+		cluster,
+		cm,
+	)
 }

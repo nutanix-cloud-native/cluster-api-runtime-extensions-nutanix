@@ -14,9 +14,13 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/openapi/patterns"
 )
 
+type StorageDriver string
+
 const (
-	CNIProviderCalico = "Calico"
-	CNIProviderCilium = "Cilium"
+	CNIProviderCalico               = "Calico"
+	CNIProviderCilium               = "Cilium"
+	AWSEBSDriver      StorageDriver = "ebs.csi.aws.com"
+	NutanixDriver     StorageDriver = "csi.nutanix.com"
 
 	CSIProviderAWSEBS  = "aws-ebs"
 	CSIProviderNutanix = "nutanix"

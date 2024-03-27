@@ -11,11 +11,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/controllers/remote"
 	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
-	capiutil "sigs.k8s.io/cluster-api/util"
+	utilyaml "sigs.k8s.io/cluster-api/util/yaml"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -24,7 +25,8 @@ import (
 )
 
 const (
-	kindStorageClass = "StorageClass"
+	kindStorageClass       = "StorageClass"
+	defaultCRSConfigMapKey = "custom-resources.yaml"
 )
 
 var (
@@ -135,20 +137,17 @@ func RetrieveValuesTemplateConfigMap(
 }
 
 func CreateStorageClass(
-	ctx context.Context,
-	cl ctrlclient.Client,
 	storageConfig v1alpha1.StorageClassConfig,
 	cluster *clusterv1.Cluster,
-	defaultsNamespace,
-	provisionerName string,
+	defaultsNamespace string,
+	provisionerName v1alpha1.StorageDriver,
 	isDefault bool,
-) error {
+) *storagev1.StorageClass {
 	var volumeBindingMode *storagev1.VolumeBindingMode
 	switch storageConfig.VolumeBindingMode {
 	case v1alpha1.VolumeBindingImmediate:
 		volumeBindingMode = ptr.To(storagev1.VolumeBindingImmediate)
 	case v1alpha1.VolumeBindingWaitForFirstConsumer:
-	default:
 		volumeBindingMode = ptr.To(storagev1.VolumeBindingWaitForFirstConsumer)
 	}
 	var reclaimPolicy *corev1.PersistentVolumeReclaimPolicy
@@ -173,7 +172,7 @@ func CreateStorageClass(
 			Name:      storageConfig.Name,
 			Namespace: defaultsNamespace,
 		},
-		Provisioner:       provisionerName,
+		Provisioner:       string(provisionerName),
 		Parameters:        params,
 		VolumeBindingMode: volumeBindingMode,
 		ReclaimPolicy:     reclaimPolicy,
@@ -181,21 +180,39 @@ func CreateStorageClass(
 	if isDefault {
 		sc.ObjectMeta.Annotations = defaultStorageClassMap
 	}
-	workloadClient, err := remote.NewClusterClient(
-		ctx,
-		"",
-		cl,
-		capiutil.ObjectKey(cluster),
-	)
-	if err != nil {
-		return err
-	}
+	return &sc
+}
 
-	if err := client.ServerSideApply(ctx, workloadClient, &sc); err != nil {
-		return fmt.Errorf(
-			"failed to create storage class %w",
-			err,
-		)
+func CreateConfigMapForCRS(configMapName, configMapNamespace string,
+	objs ...runtime.Object,
+) (*corev1.ConfigMap, error) {
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      configMapName,
+			Namespace: configMapNamespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "ConfigMap",
+		},
+		Data: make(map[string]string),
 	}
-	return nil
+	l := make([][]byte, 0, len(objs))
+	for _, v := range objs {
+		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(v)
+		if err != nil {
+			return nil, err
+		}
+		objYaml, err := utilyaml.FromUnstructured([]unstructured.Unstructured{
+			{
+				Object: obj,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		l = append(l, objYaml)
+	}
+	cm.Data[defaultCRSConfigMapKey] = fmt.Sprintf("|\n%s", string(utilyaml.JoinYaml(l...)))
+	return cm, nil
 }
