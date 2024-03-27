@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,10 +19,6 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
-)
-
-const (
-	awsEBSProvisionerName = "ebs.csi.aws.com"
 )
 
 type AWSEBSConfig struct {
@@ -83,23 +80,33 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 	cluster *clusterv1.Cluster,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
+	allStorageClasses := make([]runtime.Object, 0, len(configs))
 	for _, c := range configs {
 		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
 			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
-		err := lifecycleutils.CreateStorageClass(
-			ctx,
-			a.client,
+		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
 			c,
 			cluster,
 			a.config.GlobalOptions.DefaultsNamespace(),
-			awsEBSProvisionerName,
+			v1alpha1.CSIProviderAWSEBS,
 			setAsDefault,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to create storageclass %w", err)
-		}
+		))
 	}
-	return nil
+	cm, err := lifecycleutils.CreateConfigMapForCRS(
+		"aws-storageclass-cm",
+		a.config.DefaultsNamespace(),
+		allStorageClasses...,
+	)
+	if err != nil {
+		return err
+	}
+	return lifecycleutils.EnsureCRSForClusterFromConfigMaps(
+		ctx,
+		"aws-storageclass-crs",
+		a.client,
+		cluster,
+		cm,
+	)
 }
 
 func (a *AWSEBS) handleCRSApply(ctx context.Context,
