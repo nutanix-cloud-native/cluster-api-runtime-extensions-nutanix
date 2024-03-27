@@ -74,8 +74,8 @@ bench.%: ; $(info $(M) running benchmarks$(if $(GOTEST_RUN), matching "$(GOTEST_
 
 E2E_PARALLEL_NODES ?= $(shell nproc --ignore=1)
 E2E_FLAKE_ATTEMPTS ?= 1
-E2E_CONF_FILE ?= $(REPO_ROOT)/test/e2e/config/cre.yaml
-E2E_CONF_FILE_ENVSUBST ?= $(REPO_ROOT)/test/e2e/config/cre-envsubst.yaml
+E2E_CONF_FILE ?= $(REPO_ROOT)/test/e2e/config/caren.yaml
+E2E_CONF_FILE_ENVSUBST ?= $(basename $(E2E_CONF_FILE))-envsubst.yaml
 ARTIFACTS ?= ${REPO_ROOT}/_artifacts
 
 .PHONY: e2e-test

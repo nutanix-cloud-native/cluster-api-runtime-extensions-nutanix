@@ -75,7 +75,7 @@ func init() { //nolint:gochecknoinits // Idiomatically used to set up flags.
 func TestE2E(t *testing.T) {
 	ctrl.SetLogger(klog.Background())
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cre-e2e")
+	RunSpecs(t, "caren-e2e")
 }
 
 // Using a SynchronizedBeforeSuite for controlling how to create resources shared across ParallelNodes (~ginkgo
@@ -238,7 +238,7 @@ func setupBootstrapCluster(
 	} else {
 		// Loading image for already created cluster
 		imagesInput := capibootstrap.LoadImagesToKindClusterInput{
-			Name:   "cre-e2e",
+			Name:   "caren-e2e",
 			Images: config.Images,
 		}
 		err := capibootstrap.LoadImagesToKindCluster(context.TODO(), imagesInput)
