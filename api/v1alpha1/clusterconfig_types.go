@@ -365,9 +365,10 @@ type User struct {
 	// Name specifies the user name
 	Name string `json:"name"`
 
-	// Passwd specifies a hashed password for the user
+	// HashedPassword specifies a hashed password for the user.
+	// An empty string is not marshalled, because it is not a valid value.
 	// +optional
-	Passwd *string `json:"passwd,omitempty"`
+	HashedPassword string `json:"hashedPassword,omitempty"`
 
 	// SSHAuthorizedKeys specifies a list of ssh authorized keys for the user
 	// +optional
@@ -387,7 +388,7 @@ func (User) VariableSchema() clusterv1.VariableSchema {
 					Description: "The username",
 					Type:        "string",
 				},
-				"passwd": {
+				"hashedPassword": {
 					Description: "The hashed password for the user",
 					Type:        "string",
 				},
