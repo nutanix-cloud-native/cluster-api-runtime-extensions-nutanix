@@ -20,6 +20,10 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
+const (
+	awsEBSProvisionerName = "ebs.csi.aws.com"
+)
+
 type AWSEBSConfig struct {
 	*options.GlobalOptions
 	defaultAWSEBSConfigMapName string
@@ -88,6 +92,7 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 			c,
 			cluster,
 			a.config.GlobalOptions.DefaultsNamespace(),
+			awsEBSProvisionerName,
 			setAsDefault,
 		)
 		if err != nil {
