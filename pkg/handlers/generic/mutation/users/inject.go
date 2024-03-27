@@ -119,7 +119,7 @@ func (h *usersPatchHandler) Mutate(
 func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1.User {
 	bootstrapUser := bootstrapv1.User{
 		Name:              userFromVariable.Name,
-		Passwd:            userFromVariable.Passwd,
+		Passwd:            ptr.To(userFromVariable.HashedPassword),
 		SSHAuthorizedKeys: userFromVariable.SSHAuthorizedKeys,
 		Sudo:              userFromVariable.Sudo,
 	}
@@ -127,15 +127,15 @@ func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1.User {
 	// LockPassword is not part of our API, because we can derive its value
 	// for the use cases our API supports.
 	//
-	// We do not support the edge cases where a password is defined, but
-	// password authentication is disabled, or where no password is defined, but
-	// password authentication is enabled.
+	// We do not support these edge cases:
+	// (a) Hashed password is defined, password authentication is not enabled.
+	// (b) Hashed password is not defined, password authentication is enabled.
 	//
 	// We disable password authentication by default.
-	bootstrapUser.LockPassword = ptr.To[bool](true)
-	if userFromVariable.Passwd != nil {
-		// We enable password authentication only if a password is defined.
-		bootstrapUser.LockPassword = ptr.To[bool](true)
+	bootstrapUser.LockPassword = ptr.To(true)
+	if userFromVariable.HashedPassword != "" {
+		// We enable password authentication only if a hashed password is defined.
+		bootstrapUser.LockPassword = ptr.To(true)
 	}
 
 	return bootstrapUser

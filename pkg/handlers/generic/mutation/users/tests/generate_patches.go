@@ -19,13 +19,13 @@ import (
 
 var (
 	testUser1 = v1alpha1.User{
-		Name:   "complete",
-		Passwd: ptr.To[string]("password"),
+		Name:           "complete",
+		HashedPassword: "password",
 		SSHAuthorizedKeys: []string{
 			"key1",
 			"key2",
 		},
-		Sudo: ptr.To[string]("ALL=(ALL) NOPASSWD:ALL"),
+		Sudo: ptr.To("ALL=(ALL) NOPASSWD:ALL"),
 	}
 	testUser2 = v1alpha1.User{
 		Name: "onlyname",
