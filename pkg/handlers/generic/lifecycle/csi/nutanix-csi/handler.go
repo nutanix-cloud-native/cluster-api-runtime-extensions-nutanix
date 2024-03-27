@@ -26,6 +26,7 @@ const (
 	defaultHelmChartVersion        = "v2.6.6"
 	defaultHelmChartName           = "nutanix-csi-storage"
 	defaultHelmReleaseNameTemplate = "nutanix-csi-storage-%s"
+	nutanixCSIProvisionerName      = "csi.nutanix.com"
 )
 
 type NutanixCSIConfig struct {
@@ -147,6 +148,7 @@ func (n *NutanixCSI) createStorageClasses(ctx context.Context,
 			n.client,
 			c,
 			cluster,
+			nutanixCSIProvisionerName,
 			n.config.GlobalOptions.DefaultsNamespace(),
 			setAsDefault,
 		)

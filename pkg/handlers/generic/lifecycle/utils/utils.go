@@ -24,8 +24,7 @@ import (
 )
 
 const (
-	kindStorageClass      = "StorageClass"
-	awsEBSProvisionerName = "ebs.csi.aws.com"
+	kindStorageClass = "StorageClass"
 )
 
 var (
@@ -140,7 +139,8 @@ func CreateStorageClass(
 	cl ctrlclient.Client,
 	storageConfig v1alpha1.StorageClassConfig,
 	cluster *clusterv1.Cluster,
-	defaultsNamespace string,
+	defaultsNamespace,
+	provisionerName string,
 	isDefault bool,
 ) error {
 	var volumeBindingMode *storagev1.VolumeBindingMode
@@ -166,14 +166,14 @@ func CreateStorageClass(
 	}
 	sc := storagev1.StorageClass{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "StorageClass",
+			Kind:       kindStorageClass,
 			APIVersion: storagev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      storageConfig.Name,
 			Namespace: defaultsNamespace,
 		},
-		Provisioner:       awsEBSProvisionerName,
+		Provisioner:       provisionerName,
 		Parameters:        params,
 		VolumeBindingMode: volumeBindingMode,
 		ReclaimPolicy:     reclaimPolicy,
