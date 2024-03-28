@@ -119,7 +119,6 @@ func (h *usersPatchHandler) Mutate(
 func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1.User {
 	bootstrapUser := bootstrapv1.User{
 		Name:              userFromVariable.Name,
-		Passwd:            ptr.To(userFromVariable.HashedPassword),
 		SSHAuthorizedKeys: userFromVariable.SSHAuthorizedKeys,
 		Sudo:              userFromVariable.Sudo,
 	}
@@ -133,9 +132,12 @@ func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1.User {
 	//
 	// We disable password authentication by default.
 	bootstrapUser.LockPassword = ptr.To(true)
+
 	if userFromVariable.HashedPassword != "" {
 		// We enable password authentication only if a hashed password is defined.
-		bootstrapUser.LockPassword = ptr.To(true)
+		bootstrapUser.LockPassword = ptr.To(false)
+
+		bootstrapUser.Passwd = ptr.To(userFromVariable.HashedPassword)
 	}
 
 	return bootstrapUser
