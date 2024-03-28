@@ -53,7 +53,8 @@ func (s helmAddonStrategy) apply(
 	log logr.Logger,
 ) error {
 	log.Info("Retrieving cluster-autoscaler installation values template for cluster")
-	valuesTemplateConfigMap, err := utils.RetrieveValuesTemplateConfigMap(ctx,
+	valuesTemplateConfigMap, err := utils.RetrieveValuesTemplateConfigMap(
+		ctx,
 		s.client,
 		s.config.defaultValuesTemplateConfigMapName,
 		defaultsNamespace)
