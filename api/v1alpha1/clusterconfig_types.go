@@ -395,8 +395,14 @@ func (User) VariableSchema() clusterv1.VariableSchema {
 					Type:        "string",
 				},
 				"hashedPassword": {
-					Description: "The hashed password for the user",
+					Description: "The hashed password for the user. Must be in the format of some hash function supported by the OS.",
 					Type:        "string",
+					// The crypt (5) man page lists regexes for supported hash
+					// functions. We could validate input against a set of
+					// regexes, but because the set may be different from the
+					// set supported by the chosen OS, we might return a false
+					// negative or positive. For this reason, we do not validate
+					// the input.
 				},
 				"sshAuthorizedKeys": {
 					Description: "A list of SSH authorized keys for this user",
