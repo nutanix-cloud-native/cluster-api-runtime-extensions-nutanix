@@ -15,12 +15,12 @@ const (
 	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
 	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
 
-	VolumeBindingImmediate            string = "Immmediate"
-	VolumeBindingWaitForFirstConsumer string = "WaitForFirstConsumer"
+	VolumeBindingImmediate            = "Immmediate"
+	VolumeBindingWaitForFirstConsumer = "WaitForFirstConsumer"
 
-	VolumeReclaimRecycle string = "Recycle"
-	VolumeReclaimDelete  string = "Delete"
-	VolumeReclaimRetain  string = "Retain"
+	VolumeReclaimRecycle = "Recycle"
+	VolumeReclaimDelete  = "Delete"
+	VolumeReclaimRetain  = "Retain"
 )
 
 type Addons struct {
@@ -199,9 +199,11 @@ func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
 					Description: "Name of storage class config.",
 				},
 				"parameters": {
-					Type:                   "object",
-					Description:            "Parameters passed into the storage class object.",
-					XPreserveUnknownFields: true,
+					Type:        "object",
+					Description: "Parameters passed into the storage class object.",
+					AdditionalProperties: &clusterv1.JSONSchemaProps{
+						Type: "string",
+					},
 				},
 				"reclaimPolicy": {
 					Type:    "string",
@@ -251,11 +253,8 @@ func (CSIProvider) VariableSchema() clusterv1.VariableSchema {
 					},
 				},
 				"storageClassConfig": {
-					Type: "array",
-					Items: &clusterv1.JSONSchemaProps{
-						Type:  "object",
-						Items: ptr.To(StorageClassConfig{}.VariableSchema().OpenAPIV3Schema),
-					},
+					Type:  "array",
+					Items: ptr.To(StorageClassConfig{}.VariableSchema().OpenAPIV3Schema),
 				},
 			},
 		},
@@ -290,11 +289,8 @@ func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
 			Type: "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"providers": {
-					Type: "array",
-					Items: &clusterv1.JSONSchemaProps{
-						Type:  "object",
-						Items: ptr.To(CSIProvider{}.VariableSchema().OpenAPIV3Schema),
-					},
+					Type:  "array",
+					Items: ptr.To(CSIProvider{}.VariableSchema().OpenAPIV3Schema),
 				},
 				"defaultStorage": DefaultStorage{}.VariableSchema().OpenAPIV3Schema,
 			},
