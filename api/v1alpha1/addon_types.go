@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -203,12 +204,14 @@ func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
 					XPreserveUnknownFields: true,
 				},
 				"reclaimPolicy": {
-					Type: "string",
-					Enum: variables.MustMarshalValuesToEnumJSON(supportedReclaimPolicies...),
+					Type:    "string",
+					Enum:    variables.MustMarshalValuesToEnumJSON(supportedReclaimPolicies...),
+					Default: variables.MustMarshal(VolumeReclaimDelete),
 				},
 				"volumeBindingMode": {
-					Type: "string",
-					Enum: variables.MustMarshalValuesToEnumJSON(supportedBindingModes...),
+					Type:    "string",
+					Enum:    variables.MustMarshalValuesToEnumJSON(supportedBindingModes...),
+					Default: variables.MustMarshal(VolumeBindingWaitForFirstConsumer),
 				},
 			},
 		},
@@ -250,8 +253,8 @@ func (CSIProvider) VariableSchema() clusterv1.VariableSchema {
 				"storageClassConfig": {
 					Type: "array",
 					Items: &clusterv1.JSONSchemaProps{
-						Type:       "object",
-						Properties: StorageClassConfig{}.VariableSchema().OpenAPIV3Schema.Properties,
+						Type:  "object",
+						Items: ptr.To(StorageClassConfig{}.VariableSchema().OpenAPIV3Schema),
 					},
 				},
 			},
@@ -289,8 +292,8 @@ func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
 				"providers": {
 					Type: "array",
 					Items: &clusterv1.JSONSchemaProps{
-						Type:       "object",
-						Properties: CSIProvider{}.VariableSchema().OpenAPIV3Schema.Properties,
+						Type:  "object",
+						Items: ptr.To(CSIProvider{}.VariableSchema().OpenAPIV3Schema),
 					},
 				},
 				"defaultStorage": DefaultStorage{}.VariableSchema().OpenAPIV3Schema,
