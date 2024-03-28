@@ -34,7 +34,7 @@ var (
 	defaultStorageClassMap = map[string]string{
 		defaultStorageClassKey: "true",
 	}
-	defaultParams = map[string]string{
+	defaultAWSStorageClassParams = map[string]string{
 		"csi.storage.k8s.io/fstype": "ext4",
 		"type":                      "gp3",
 	}
@@ -138,9 +138,8 @@ func RetrieveValuesTemplateConfigMap(
 
 func CreateStorageClass(
 	storageConfig v1alpha1.StorageClassConfig,
-	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
-	provisionerName v1alpha1.StorageDriver,
+	provisionerName v1alpha1.StorageProvisioner,
 	isDefault bool,
 ) *storagev1.StorageClass {
 	var volumeBindingMode *storagev1.VolumeBindingMode
@@ -159,7 +158,10 @@ func CreateStorageClass(
 	case v1alpha1.VolumeReclaimRetain:
 		reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimRetain)
 	}
-	params := defaultParams
+	var params map[string]string
+	if provisionerName == v1alpha1.AWSEBSProvisioner {
+		params = defaultAWSStorageClassParams
+	}
 	if storageConfig.Parameters != nil {
 		params = maps.Clone(storageConfig.Parameters)
 	}
