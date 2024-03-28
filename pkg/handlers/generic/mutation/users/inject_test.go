@@ -49,6 +49,20 @@ func Test_generateBootstrapUser(t *testing.T) {
 				LockPassword: ptr.To(true),
 			},
 		},
+		{
+			name: "if user sets empty hashed password, disable password auth and do not set passwd",
+			args: args{
+				userFromVariable: v1alpha1.User{
+					Name:           "example",
+					HashedPassword: "",
+				},
+			},
+			want: bootstrapv1.User{
+				Name:         "example",
+				Passwd:       nil,
+				LockPassword: ptr.To(true),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
