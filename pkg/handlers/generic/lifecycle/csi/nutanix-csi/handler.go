@@ -153,7 +153,7 @@ func (n *NutanixCSI) createStorageClasses(ctx context.Context,
 		))
 	}
 	cm, err := lifecycleutils.CreateConfigMapForCRS(
-		"nutanix-storageclass-cm",
+		fmt.Sprintf("nutanix-storageclass-cm-%s", cluster.Name),
 		n.config.DefaultsNamespace(),
 		allStorageClasses...,
 	)

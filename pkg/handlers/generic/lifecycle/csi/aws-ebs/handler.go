@@ -93,7 +93,7 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 		))
 	}
 	cm, err := lifecycleutils.CreateConfigMapForCRS(
-		"aws-storageclass-cm",
+		fmt.Sprintf("aws-storageclass-cm-%s", cluster.Name),
 		a.config.DefaultsNamespace(),
 		allStorageClasses...,
 	)
