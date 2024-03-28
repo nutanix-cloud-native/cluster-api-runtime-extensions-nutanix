@@ -362,7 +362,7 @@ func (Users) VariableSchema() clusterv1.VariableSchema {
 
 // User defines the input for a generated user in cloud-init.
 type User struct {
-	// Name specifies the user name
+	// Name specifies the user name.
 	Name string `json:"name"`
 
 	// HashedPassword specifies a hashed password for the user. See your
@@ -387,7 +387,8 @@ type User struct {
 func (User) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
+			Type:     "object",
+			Required: []string{"name"},
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"name": {
 					Description: "The username",
