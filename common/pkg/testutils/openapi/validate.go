@@ -10,6 +10,7 @@ import (
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	structuralschema "k8s.io/apiextensions-apiserver/pkg/apiserver/schema"
+	"k8s.io/apiextensions-apiserver/pkg/apiserver/schema/defaulting"
 	structuralpruning "k8s.io/apiextensions-apiserver/pkg/apiserver/schema/pruning"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -61,6 +62,18 @@ func ValidateClusterVariable(
 			),
 		)}
 	}
+
+	s, err := structuralschema.NewStructural(apiExtensionsSchema)
+	if err != nil {
+		return field.ErrorList{field.InternalError(fldPath,
+			fmt.Errorf(
+				"failed to create structural schema for variable %q; ClusterClass should be checked: %v",
+				value.Name,
+				err,
+			),
+		)}
+	}
+	defaulting.Default(variableValue, s)
 
 	// Validate variable against the schema.
 	// NOTE: We're reusing a library func used in CRD validation.
