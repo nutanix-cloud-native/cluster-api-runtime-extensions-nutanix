@@ -120,7 +120,6 @@ func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1.User {
 	bootstrapUser := bootstrapv1.User{
 		Name:              userFromVariable.Name,
 		SSHAuthorizedKeys: userFromVariable.SSHAuthorizedKeys,
-		Sudo:              userFromVariable.Sudo,
 	}
 
 	// LockPassword is not part of our API, because we can derive its value
@@ -138,6 +137,10 @@ func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1.User {
 		bootstrapUser.LockPassword = ptr.To(false)
 
 		bootstrapUser.Passwd = ptr.To(userFromVariable.HashedPassword)
+	}
+
+	if userFromVariable.Sudo != "" {
+		bootstrapUser.Sudo = ptr.To(userFromVariable.Sudo)
 	}
 
 	return bootstrapUser

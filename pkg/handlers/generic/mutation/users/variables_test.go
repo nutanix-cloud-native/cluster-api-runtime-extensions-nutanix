@@ -32,7 +32,7 @@ func TestVariableValidation(t *testing.T) {
 							"key1",
 							"key2",
 						},
-						Sudo: ptr.To("ALL=(ALL) NOPASSWD:ALL"),
+						Sudo: "ALL=(ALL) NOPASSWD:ALL",
 					},
 					{
 						Name: "onlyname",

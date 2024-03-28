@@ -63,6 +63,47 @@ func Test_generateBootstrapUser(t *testing.T) {
 				LockPassword: ptr.To(true),
 			},
 		},
+		{
+			name: "if user sets sudo, include it in the patch",
+			args: args{
+				userFromVariable: v1alpha1.User{
+					Name: "example",
+					Sudo: "example",
+				},
+			},
+			want: bootstrapv1.User{
+				Name:         "example",
+				Sudo:         ptr.To("example"),
+				LockPassword: ptr.To(true),
+			},
+		},
+		{
+			name: "if user does not set sudo, do not include in the patch",
+			args: args{
+				userFromVariable: v1alpha1.User{
+					Name: "example",
+				},
+			},
+			want: bootstrapv1.User{
+				Name:         "example",
+				Sudo:         nil,
+				LockPassword: ptr.To(true),
+			},
+		},
+		{
+			name: "if user sets empty sudo, do not include in the patch",
+			args: args{
+				userFromVariable: v1alpha1.User{
+					Name: "example",
+					Sudo: "",
+				},
+			},
+			want: bootstrapv1.User{
+				Name:         "example",
+				Sudo:         nil,
+				LockPassword: ptr.To(true),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
