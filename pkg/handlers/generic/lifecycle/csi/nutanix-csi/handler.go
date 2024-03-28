@@ -160,6 +160,10 @@ func (n *NutanixCSI) createStorageClasses(ctx context.Context,
 	if err != nil {
 		return err
 	}
+	err = client.ServerSideApply(ctx, n.client, cm)
+	if err != nil {
+		return err
+	}
 	return lifecycleutils.EnsureCRSForClusterFromConfigMaps(
 		ctx,
 		"nutanix-storageclass-crs",

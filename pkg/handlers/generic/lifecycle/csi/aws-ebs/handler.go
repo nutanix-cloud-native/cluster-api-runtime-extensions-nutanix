@@ -100,6 +100,10 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 	if err != nil {
 		return err
 	}
+	err = client.ServerSideApply(ctx, a.client, cm)
+	if err != nil {
+		return err
+	}
 	return lifecycleutils.EnsureCRSForClusterFromConfigMaps(
 		ctx,
 		"aws-storageclass-crs",
