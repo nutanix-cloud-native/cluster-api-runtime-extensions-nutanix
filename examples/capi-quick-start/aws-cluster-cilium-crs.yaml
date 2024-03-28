@@ -30,7 +30,7 @@ spec:
           csi:
             defaultStorage:
               providerName: aws-ebs
-              storageClassConfigName: aws-ebs-sc
+              storageClassConfigName: aws-ebs
             providers:
             - name: aws-ebs
               storageClassConfig:
