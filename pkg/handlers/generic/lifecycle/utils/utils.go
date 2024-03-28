@@ -30,9 +30,9 @@ const (
 )
 
 var (
-	defualtStorageClassKey = "storageclass.kubernetes.io/is-default-class"
+	defaultStorageClassKey = "storageclass.kubernetes.io/is-default-class"
 	defaultStorageClassMap = map[string]string{
-		defualtStorageClassKey: "true",
+		defaultStorageClassKey: "true",
 	}
 	defaultParams = map[string]string{
 		"csi.storage.k8s.io/fstype": "ext4",
