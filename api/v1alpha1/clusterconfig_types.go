@@ -415,6 +415,9 @@ func (User) VariableSchema() clusterv1.VariableSchema {
 				"sudo": {
 					Description: "The sudo rule that applies to this user",
 					Type:        "string",
+					// A sudo rule is defined using an EBNF grammar, and must be
+					// parsed to be validated. We have decided to not integrate
+					// a sudo rule parser, so we do not validate the input.
 				},
 			},
 		},
