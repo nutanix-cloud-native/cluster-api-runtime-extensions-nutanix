@@ -10,5 +10,5 @@
     providers:
       - name: aws-ebs
         storageClassConfig:
-        - name: aws-ebs-sc
+        - name: aws-ebs
         strategy: ClusterResourceSet
