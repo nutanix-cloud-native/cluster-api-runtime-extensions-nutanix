@@ -20,7 +20,6 @@ func TestVariableValidation(t *testing.T) {
 		ptr.To(v1alpha1.GenericClusterConfig{}.VariableSchema()),
 		false,
 		clusterconfig.NewVariable,
-		// HTTPProxy
 		capitest.VariableTestDef{
 			Name: "valid users",
 			Vals: v1alpha1.GenericClusterConfig{
