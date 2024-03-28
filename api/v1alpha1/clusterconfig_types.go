@@ -365,20 +365,21 @@ type User struct {
 	// Name specifies the user name.
 	Name string `json:"name"`
 
-	// HashedPassword specifies a hashed password for the user. See your
-	// distribution's documentation for instructions to create a hashed
-	// password.
+	// HashedPassword is a hashed password for the user, formatted as described
+	// by the crypt(5) man page. See your distribution's documentation for
+	// instructions to create a hashed password.
 	// An empty string is not marshalled, because it is not a valid value.
 	// +optional
 	HashedPassword string `json:"hashedPassword,omitempty"`
 
-	// SSHAuthorizedKeys specifies a list of public SSH keys to write to the
+	// SSHAuthorizedKeys is a list of public SSH keys to write to the
 	// machine. Use the corresponding private SSH keys to authenticate. See SSH
 	// documentation for instructions to create a key pair.
 	// +optional
 	SSHAuthorizedKeys []string `json:"sshAuthorizedKeys,omitempty"`
 
-	// Sudo specifies a sudo role for the user.
+	// Sudo is a sudo user specification, formatted as described in the sudo
+	// documentation.
 	// An empty string is not marshalled, because it is not a valid value.
 	// +optional
 	Sudo string `json:"sudo,omitempty"`
