@@ -72,7 +72,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 	)
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-	csiProviders, found, err := variables.Get[v1alpha1.CSIProviders](
+	csiProviders, found, err := variables.Get[v1alpha1.CSI](
 		varMap,
 		c.variableName,
 		c.variablePath...)

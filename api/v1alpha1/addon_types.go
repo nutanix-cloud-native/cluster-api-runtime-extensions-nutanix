@@ -37,7 +37,7 @@ type Addons struct {
 	CCM *CCM `json:"ccm,omitempty"`
 
 	// +optional
-	CSIProviders *CSIProviders `json:"csi,omitempty"`
+	CSIProviders *CSI `json:"csi,omitempty"`
 }
 
 func (Addons) VariableSchema() clusterv1.VariableSchema {
@@ -49,7 +49,7 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 				"cni":               CNI{}.VariableSchema().OpenAPIV3Schema,
 				"nfd":               NFD{}.VariableSchema().OpenAPIV3Schema,
 				"clusterAutoscaler": ClusterAutoscaler{}.VariableSchema().OpenAPIV3Schema,
-				"csi":               CSIProviders{}.VariableSchema().OpenAPIV3Schema,
+				"csi":               CSI{}.VariableSchema().OpenAPIV3Schema,
 				"ccm":               CCM{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
@@ -148,7 +148,7 @@ type DefaultStorage struct {
 	StorageClassConfigName string `json:"storageClassConfigName"`
 }
 
-type CSIProviders struct {
+type CSI struct {
 	// +optional
 	Providers []CSIProvider `json:"providers,omitempty"`
 	// +optional
@@ -283,7 +283,7 @@ func (DefaultStorage) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
-func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
+func (CSI) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
