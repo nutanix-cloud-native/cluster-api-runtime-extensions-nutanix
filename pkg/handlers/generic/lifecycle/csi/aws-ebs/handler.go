@@ -86,9 +86,8 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
 		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
 			c,
-			cluster,
 			a.config.GlobalOptions.DefaultsNamespace(),
-			v1alpha1.CSIProviderAWSEBS,
+			v1alpha1.AWSEBSProvisioner,
 			setAsDefault,
 		))
 	}

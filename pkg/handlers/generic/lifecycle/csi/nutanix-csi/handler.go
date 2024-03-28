@@ -146,9 +146,8 @@ func (n *NutanixCSI) createStorageClasses(ctx context.Context,
 			v1alpha1.CSIProviderNutanix == defaultStorageConfig.ProviderName
 		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
 			c,
-			cluster,
 			n.config.GlobalOptions.DefaultsNamespace(),
-			v1alpha1.NutanixDriver,
+			v1alpha1.NutanixProvisioner,
 			setAsDefault,
 		))
 	}
