@@ -378,9 +378,10 @@ type User struct {
 	// +optional
 	SSHAuthorizedKeys []string `json:"sshAuthorizedKeys,omitempty"`
 
-	// Sudo specifies a sudo role for the user
+	// Sudo specifies a sudo role for the user.
+	// An empty string is not marshalled, because it is not a valid value.
 	// +optional
-	Sudo *string `json:"sudo,omitempty"`
+	Sudo string `json:"sudo,omitempty"`
 }
 
 func (User) VariableSchema() clusterv1.VariableSchema {

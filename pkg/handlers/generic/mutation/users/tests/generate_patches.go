@@ -8,7 +8,6 @@ import (
 
 	"github.com/onsi/gomega"
 	"k8s.io/apiserver/pkg/storage/names"
-	"k8s.io/utils/ptr"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -25,7 +24,7 @@ var (
 			"key1",
 			"key2",
 		},
-		Sudo: ptr.To("ALL=(ALL) NOPASSWD:ALL"),
+		Sudo: "ALL=(ALL) NOPASSWD:ALL",
 	}
 	testUser2 = v1alpha1.User{
 		Name: "onlyname",
