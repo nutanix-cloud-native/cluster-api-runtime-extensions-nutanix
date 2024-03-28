@@ -213,6 +213,6 @@ func CreateConfigMapForCRS(configMapName, configMapNamespace string,
 		}
 		l = append(l, objYaml)
 	}
-	cm.Data[defaultCRSConfigMapKey] = fmt.Sprintf("|\n%s", string(utilyaml.JoinYaml(l...)))
+	cm.Data[defaultCRSConfigMapKey] = string(utilyaml.JoinYaml(l...))
 	return cm, nil
 }

@@ -56,8 +56,7 @@ func TestCreateConfigMapForCRS(t *testing.T) {
 					Kind:       "ConfigMap",
 				},
 				Data: map[string]string{
-					defaultCRSConfigMapKey: `|
-apiVersion: storage.k8s.io/v1
+					defaultCRSConfigMapKey: `apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   creationTimestamp: null
