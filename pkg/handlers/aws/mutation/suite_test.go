@@ -4,6 +4,7 @@
 package mutation
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -18,12 +19,13 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	setup()
-	defer teardown()
+	setupCtx, cancel := context.WithCancel(ctx)
+	setup(setupCtx)
+	defer teardown(cancel)
 	m.Run()
 }
 
-func setup() {
+func setup(ctx context.Context) {
 	testEnvConfig := helpers.NewTestEnvironmentConfiguration()
 	var err error
 	testEnv, err = testEnvConfig.Build()
@@ -38,7 +40,8 @@ func setup() {
 	}()
 }
 
-func teardown() {
+func teardown(cancel context.CancelFunc) {
+	cancel()
 	if err := testEnv.Stop(); err != nil {
 		panic(fmt.Sprintf("Failed to stop envtest: %v", err))
 	}
