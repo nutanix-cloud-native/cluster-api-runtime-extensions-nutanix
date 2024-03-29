@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package cpi
+package ccm
 
 import (
 	"context"
@@ -23,30 +23,30 @@ import (
 )
 
 const (
-	variableRootName = "cpi"
+	variableRootName = "ccm"
 )
 
-type CPIProvider interface {
-	EnsureCPIConfigMapForCluster(context.Context, *clusterv1.Cluster) (*corev1.ConfigMap, error)
+type CCMProvider interface {
+	EnsureCCMConfigMapForCluster(context.Context, *clusterv1.Cluster) (*corev1.ConfigMap, error)
 }
 
-type CPIHandler struct {
+type CCMHandler struct {
 	client          ctrlclient.Client
 	variableName    string
 	variablePath    []string
-	ProviderHandler map[string]CPIProvider
+	ProviderHandler map[string]CCMProvider
 }
 
 var (
-	_ commonhandlers.Named                   = &CPIHandler{}
-	_ lifecycle.AfterControlPlaneInitialized = &CPIHandler{}
+	_ commonhandlers.Named                   = &CCMHandler{}
+	_ lifecycle.AfterControlPlaneInitialized = &CCMHandler{}
 )
 
 func New(
 	c ctrlclient.Client,
-	handlers map[string]CPIProvider,
-) *CPIHandler {
-	return &CPIHandler{
+	handlers map[string]CCMProvider,
+) *CCMHandler {
+	return &CCMHandler{
 		client:          c,
 		variableName:    clusterconfig.MetaVariableName,
 		variablePath:    []string{"addons", variableRootName},
@@ -54,11 +54,11 @@ func New(
 	}
 }
 
-func (c *CPIHandler) Name() string {
-	return "CPIHandler"
+func (c *CCMHandler) Name() string {
+	return "CCMHandler"
 }
 
-func (c *CPIHandler) AfterControlPlaneInitialized(
+func (c *CCMHandler) AfterControlPlaneInitialized(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
@@ -72,43 +72,43 @@ func (c *CPIHandler) AfterControlPlaneInitialized(
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	_, found, err := variables.Get[v1alpha1.CPI](varMap, c.variableName, c.variablePath...)
+	_, found, err := variables.Get[v1alpha1.CCM](varMap, c.variableName, c.variablePath...)
 	if err != nil {
 		log.Error(
 			err,
-			"failed to read CPI from cluster definition",
+			"failed to read CCM from cluster definition",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to read CPI provider from cluster definition: %v",
+			fmt.Sprintf("failed to read CCM provider from cluster definition: %v",
 				err,
 			),
 		)
 		return
 	}
 	if !found {
-		log.V(4).Info("Skipping CPI handler.")
+		log.V(4).Info("Skipping CCM handler.")
 		return
 	}
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
-	log.Info(fmt.Sprintf("finding cpi handler for %s", infraKind))
-	var handler CPIProvider
+	log.Info(fmt.Sprintf("finding CCM handler for %s", infraKind))
+	var handler CCMProvider
 	switch {
-	case strings.Contains(strings.ToLower(infraKind), v1alpha1.CPIProviderAWS):
-		handler = c.ProviderHandler[v1alpha1.CPIProviderAWS]
+	case strings.Contains(strings.ToLower(infraKind), v1alpha1.CCMProviderAWS):
+		handler = c.ProviderHandler[v1alpha1.CCMProviderAWS]
 	default:
-		log.Info(fmt.Sprintf("No CPI handler provided for infra kind %s", infraKind))
+		log.Info(fmt.Sprintf("No CCM handler provided for infra kind %s", infraKind))
 		return
 	}
-	cm, err := handler.EnsureCPIConfigMapForCluster(ctx, &req.Cluster)
+	cm, err := handler.EnsureCCMConfigMapForCluster(ctx, &req.Cluster)
 	if err != nil {
 		log.Error(
 			err,
-			"failed to generate CPI configmap",
+			"failed to generate CCM configmap",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to generate CPI configmap: %v",
+			fmt.Sprintf("failed to generate CCM configmap: %v",
 				err,
 			),
 		)
@@ -118,11 +118,11 @@ func (c *CPIHandler) AfterControlPlaneInitialized(
 	if err != nil {
 		log.Error(
 			err,
-			"failed to generate CPI CRS for cluster",
+			"failed to generate CCM CRS for cluster",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to generate CPI CRS: %v",
+			fmt.Sprintf("failed to generate CCM CRS: %v",
 				err,
 			),
 		)

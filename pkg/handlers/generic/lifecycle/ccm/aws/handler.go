@@ -19,40 +19,40 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
-type AWSCPIConfig struct {
+type AWSCCMConfig struct {
 	*options.GlobalOptions
 
-	kubernetesMinorVersionToCPIConfigMapNames map[string]string
+	kubernetesMinorVersionToCCMConfigMapNames map[string]string
 }
 
-func (a *AWSCPIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+func (a *AWSCCMConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringToStringVar(
-		&a.kubernetesMinorVersionToCPIConfigMapNames,
-		prefix+".default-aws-cpi-configmap-names",
+		&a.kubernetesMinorVersionToCCMConfigMapNames,
+		prefix+".default-aws-ccm-configmap-names",
 		map[string]string{
-			"1.27": "aws-cpi-v1.27.1",
-			"1.28": "aws-cpi-v1.28.1",
+			"1.27": "aws-ccm-v1.27.1",
+			"1.28": "aws-ccm-v1.28.1",
 		},
 		"map of provider cluster implementation type to default installation ConfigMap name",
 	)
 }
 
-type AWSCPI struct {
+type AWSCCM struct {
 	client ctrlclient.Client
-	config *AWSCPIConfig
+	config *AWSCCMConfig
 }
 
 func New(
 	c ctrlclient.Client,
-	cfg *AWSCPIConfig,
-) *AWSCPI {
-	return &AWSCPI{
+	cfg *AWSCCMConfig,
+) *AWSCCM {
+	return &AWSCCM{
 		client: c,
 		config: cfg,
 	}
 }
 
-func (a *AWSCPI) EnsureCPIConfigMapForCluster(
+func (a *AWSCCM) EnsureCCMConfigMapForCluster(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 ) (*corev1.ConfigMap, error) {
@@ -60,56 +60,56 @@ func (a *AWSCPI) EnsureCPIConfigMapForCluster(
 		"cluster",
 		cluster.Name,
 	)
-	log.Info("Creating AWS CPI ConfigMap for Cluster")
+	log.Info("Creating AWS CCM ConfigMap for Cluster")
 	version, err := semver.ParseTolerant(cluster.Spec.Topology.Version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version from cluster %w", err)
 	}
 	minorVersion := fmt.Sprintf("%d.%d", version.Major, version.Minor)
-	configMapForMinorVersion := a.config.kubernetesMinorVersionToCPIConfigMapNames[minorVersion]
-	cpiConfigMapForMinorVersion := &corev1.ConfigMap{
+	configMapForMinorVersion := a.config.kubernetesMinorVersionToCCMConfigMapNames[minorVersion]
+	ccmConfigMapForMinorVersion := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: a.config.DefaultsNamespace(),
 			Name:      configMapForMinorVersion,
 		},
 	}
 	objName := ctrlclient.ObjectKeyFromObject(
-		cpiConfigMapForMinorVersion,
+		ccmConfigMapForMinorVersion,
 	)
-	err = a.client.Get(ctx, objName, cpiConfigMapForMinorVersion)
+	err = a.client.Get(ctx, objName, ccmConfigMapForMinorVersion)
 	if err != nil {
-		log.Error(err, "failed to fetch CPI template for cluster")
+		log.Error(err, "failed to fetch CCM template for cluster")
 		return nil, fmt.Errorf(
-			"failed to retrieve default AWS CPI manifests ConfigMap %q: %w",
+			"failed to retrieve default AWS CCM manifests ConfigMap %q: %w",
 			objName,
 			err,
 		)
 	}
 
-	cpiConfigMap := generateCPIConfigMapForCluster(cpiConfigMapForMinorVersion, cluster)
-	if err := client.ServerSideApply(ctx, a.client, cpiConfigMap); err != nil {
-		log.Error(err, "failed to apply CPI configmap for cluster")
+	ccmConfigMap := generateCCMConfigMapForCluster(ccmConfigMapForMinorVersion, cluster)
+	if err := client.ServerSideApply(ctx, a.client, ccmConfigMap); err != nil {
+		log.Error(err, "failed to apply CCM configmap for cluster")
 		return nil, fmt.Errorf(
-			"failed to apply AWS CPI manifests ConfigMap: %w",
+			"failed to apply AWS CCM manifests ConfigMap: %w",
 			err,
 		)
 	}
-	return cpiConfigMap, nil
+	return ccmConfigMap, nil
 }
 
-func generateCPIConfigMapForCluster(
-	cpiConfigMapForVersion *corev1.ConfigMap, cluster *clusterv1.Cluster,
+func generateCCMConfigMapForCluster(
+	ccmConfigMapForVersion *corev1.ConfigMap, cluster *clusterv1.Cluster,
 ) *corev1.ConfigMap {
-	cpiConfigMapForCluster := &corev1.ConfigMap{
+	ccmConfigMapForCluster := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      fmt.Sprintf("%s-%s", cpiConfigMapForVersion.Name, cluster.Name),
+			Name:      fmt.Sprintf("%s-%s", ccmConfigMapForVersion.Name, cluster.Name),
 		},
-		Data: cpiConfigMapForVersion.Data,
+		Data: ccmConfigMapForVersion.Data,
 	}
-	return cpiConfigMapForCluster
+	return ccmConfigMapForCluster
 }

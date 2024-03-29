@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 - op: "add"
-  path: "/spec/topology/variables/0/value/addons/cpi"
+  path: "/spec/topology/variables/0/value/addons/ccm"
   value: {}
