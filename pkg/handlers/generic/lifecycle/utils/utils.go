@@ -40,18 +40,35 @@ var (
 	}
 )
 
-func EnsureCRSForClusterFromConfigMaps(
+func EnsureCRSForClusterFromObjects(
 	ctx context.Context,
 	crsName string,
 	c ctrlclient.Client,
 	cluster *clusterv1.Cluster,
-	configMaps ...*corev1.ConfigMap,
+	objects ...runtime.Object,
 ) error {
-	resources := make([]crsv1.ResourceRef, 0, len(configMaps))
-	for _, cm := range configMaps {
+	resources := make([]crsv1.ResourceRef, 0, len(objects))
+	for _, obj := range objects {
+		var name string
+		var kind crsv1.ClusterResourceSetResourceKind
+		cm, ok := obj.(*corev1.ConfigMap)
+		if !ok {
+			sec, secOk := obj.(*corev1.Secret)
+			if !secOk {
+				return fmt.Errorf(
+					"cannot create ClusterResourceSet with obj %v only secrets and configmaps are supported",
+					obj,
+				)
+			}
+			name = sec.Name
+			kind = crsv1.SecretClusterResourceSetResourceKind
+		} else {
+			name = cm.Name
+			kind = crsv1.ConfigMapClusterResourceSetResourceKind
+		}
 		resources = append(resources, crsv1.ResourceRef{
-			Kind: string(crsv1.ConfigMapClusterResourceSetResourceKind),
-			Name: cm.Name,
+			Name: name,
+			Kind: string(kind),
 		})
 	}
 

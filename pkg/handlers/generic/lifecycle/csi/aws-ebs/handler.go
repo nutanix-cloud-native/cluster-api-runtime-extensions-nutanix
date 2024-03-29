@@ -103,7 +103,7 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	return lifecycleutils.EnsureCRSForClusterFromConfigMaps(
+	return lifecycleutils.EnsureCRSForClusterFromObjects(
 		ctx,
 		"aws-storageclass-crs",
 		a.client,
@@ -140,7 +140,7 @@ func (a *AWSEBS) handleCRSApply(ctx context.Context,
 			err,
 		)
 	}
-	err = lifecycleutils.EnsureCRSForClusterFromConfigMaps(
+	err = lifecycleutils.EnsureCRSForClusterFromObjects(
 		ctx,
 		cm.Name,
 		a.client,
