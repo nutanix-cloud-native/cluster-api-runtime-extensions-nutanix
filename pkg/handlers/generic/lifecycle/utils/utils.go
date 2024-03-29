@@ -191,10 +191,11 @@ func CreateStorageClass(
 			Name:      storageConfig.Name,
 			Namespace: defaultsNamespace,
 		},
-		Provisioner:       string(provisionerName),
-		Parameters:        params,
-		VolumeBindingMode: volumeBindingMode,
-		ReclaimPolicy:     reclaimPolicy,
+		Provisioner:          string(provisionerName),
+		Parameters:           params,
+		VolumeBindingMode:    volumeBindingMode,
+		ReclaimPolicy:        reclaimPolicy,
+		AllowVolumeExpansion: ptr.To(storageConfig.AllowExpansion),
 	}
 	if isDefault {
 		sc.ObjectMeta.Annotations = defaultStorageClassMap
