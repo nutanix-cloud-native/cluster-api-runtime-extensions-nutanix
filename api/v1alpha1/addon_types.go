@@ -178,6 +178,9 @@ type StorageClassConfig struct {
 
 	// +optional
 	VolumeBindingMode string `json:"volumeBindingMode,omitempty"`
+
+	// +optional
+	AllowExpansion bool `json:"allowExpansion,omitempty"`
 }
 
 func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
@@ -192,7 +195,8 @@ func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
 	}
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
+			Type:     "object",
+			Required: []string{"name"},
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"name": {
 					Type:        "string",
@@ -215,6 +219,11 @@ func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
 					Enum:    variables.MustMarshalValuesToEnumJSON(supportedBindingModes...),
 					Default: variables.MustMarshal(VolumeBindingWaitForFirstConsumer),
 				},
+				"allowExpansion": {
+					Type:        "boolean",
+					Default:     variables.MustMarshal(false),
+					Description: "If the storage class should allow volume expanding",
+				},
 			},
 		},
 	}
@@ -224,7 +233,8 @@ func (CSIProvider) VariableSchema() clusterv1.VariableSchema {
 	supportedCSIProviders := []string{CSIProviderAWSEBS, CSIProviderNutanix}
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
+			Type:     "object",
+			Required: []string{"name", "strategy"},
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"name": {
 					Description: "Name of the CSI Provider",
@@ -267,12 +277,14 @@ func (DefaultStorage) VariableSchema() clusterv1.VariableSchema {
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type:        "object",
 			Description: "A tuple of provider name and storage class ",
+			Required:    []string{"providerName", "storageClassConfigName"},
 			Properties: map[string]clusterv1.JSONSchemaProps{
 				"providerName": {
 					Type:        "string",
 					Description: "Name of the CSI Provider for the default storage class",
 					Enum: variables.MustMarshalValuesToEnumJSON(
-						supportedCSIProviders...),
+						supportedCSIProviders...,
+					),
 				},
 				"storageClassConfigName": {
 					Type:        "string",
