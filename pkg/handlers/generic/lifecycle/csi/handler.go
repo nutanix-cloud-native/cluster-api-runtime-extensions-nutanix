@@ -27,6 +27,7 @@ type CSIProvider interface {
 		context.Context,
 		v1alpha1.CSIProvider,
 		*v1alpha1.DefaultStorage,
+		bool, // this is a bool which keeps track of the case where a user has only one provider and one storageclass
 		*runtimehooksv1.AfterControlPlaneInitializedRequest,
 	) error
 }
@@ -98,6 +99,10 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		)
 		return
 	}
+	hasOneProviderAndOneStorageClass := len(csiProviders.Providers) == 1 &&
+		len(csiProviders.Providers[0].StorageClassConfig) == 1 &&
+		csiProviders.DefaultStorage == nil
+
 	for _, provider := range csiProviders.Providers {
 		handler, ok := c.ProviderHandler[provider.Name]
 		if !ok {
@@ -110,7 +115,13 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			continue
 		}
 		log.Info(fmt.Sprintf("Creating csi provider %s", provider))
-		err = handler.Apply(ctx, provider, csiProviders.DefaultStorage, req)
+		err = handler.Apply(
+			ctx,
+			provider,
+			csiProviders.DefaultStorage,
+			hasOneProviderAndOneStorageClass,
+			req,
+		)
 		if err != nil {
 			log.Error(
 				err,
