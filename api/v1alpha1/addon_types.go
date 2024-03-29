@@ -20,7 +20,7 @@ type Addons struct {
 	ClusterAutoscaler *ClusterAutoscaler `json:"clusterAutoscaler,omitempty"`
 
 	// +optional
-	CPI *CPI `json:"cpi,omitempty"`
+	CCM *CCM `json:"ccm,omitempty"`
 
 	// +optional
 	CSIProviders *CSIProviders `json:"csi,omitempty"`
@@ -36,7 +36,7 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 				"nfd":               NFD{}.VariableSchema().OpenAPIV3Schema,
 				"clusterAutoscaler": ClusterAutoscaler{}.VariableSchema().OpenAPIV3Schema,
 				"csi":               CSIProviders{}.VariableSchema().OpenAPIV3Schema,
-				"cpi":               CPI{}.VariableSchema().OpenAPIV3Schema,
+				"ccm":               CCM{}.VariableSchema().OpenAPIV3Schema,
 			},
 		},
 	}
@@ -173,10 +173,10 @@ func (CSIProviders) VariableSchema() clusterv1.VariableSchema {
 	}
 }
 
-// CPI tells us to enable or disable the cloud provider interface.
-type CPI struct{}
+// CCM tells us to enable or disable the cloud provider interface.
+type CCM struct{}
 
-func (CPI) VariableSchema() clusterv1.VariableSchema {
+func (CCM) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",

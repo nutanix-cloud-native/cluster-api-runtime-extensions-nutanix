@@ -7,14 +7,14 @@ export NODE_FEATURE_DISCOVERY_VERSION := $(shell goprintconst -file pkg/handlers
 export CLUSTER_AUTOSCALER_VERSION := 9.35.0
 export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.3
 export AWS_EBS_CSI_CHART_VERSION := v2.28.1
-# a map of AWS CPI versions
-export AWS_CPI_VERSION_127 := v1.27.1
-export AWS_CPI_CHART_VERSION_127 := 0.0.8
-export AWS_CPI_VERSION_128 := v1.28.1
-export AWS_CPI_CHART_VERSION_128 := 0.0.8
+# a map of AWS CCM versions
+export AWS_CCM_VERSION_127 := v1.27.1
+export AWS_CCM_CHART_VERSION_127 := 0.0.8
+export AWS_CCM_VERSION_128 := v1.28.1
+export AWS_CCM_CHART_VERSION_128 := 0.0.8
 
 .PHONY: addons.sync
-addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler aws-ebs-csi aws-cpi.127 aws-cpi.128)
+addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler aws-ebs-csi aws-ccm.127 aws-ccm.128)
 
 .PHONY: update-addon.calico
 update-addon.calico: ; $(info $(M) updating calico manifests)
@@ -36,6 +36,6 @@ update-addon.cluster-autoscaler: ; $(info $(M) updating cluster-autoscaler manif
 update-addon.aws-ebs-csi: ; $(info $(M) updating aws ebs csi manifests)
 	./hack/addons/update-aws-ebs-csi.sh
 
-.PHONY: update-addon.aws-cpi.%
-update-addon.aws-cpi.%: ; $(info $(M) updating aws cpi $* manifests)
-	./hack/addons/update-aws-cpi.sh $(AWS_CPI_VERSION_$*) $(AWS_CPI_CHART_VERSION_$*)
+.PHONY: update-addon.aws-ccm.%
+update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)
+	./hack/addons/update-aws-ccm.sh $(AWS_CCM_VERSION_$*) $(AWS_CCM_CHART_VERSION_$*)

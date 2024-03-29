@@ -21,12 +21,12 @@ spec:
     - name: clusterConfig
       value:
         addons:
+          ccm: {}
           clusterAutoscaler:
             strategy: HelmAddon
           cni:
             provider: Calico
             strategy: HelmAddon
-          cpi: {}
           csi:
             providers:
             - name: aws-ebs

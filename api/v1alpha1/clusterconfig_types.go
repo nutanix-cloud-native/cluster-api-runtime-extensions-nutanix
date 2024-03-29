@@ -20,17 +20,17 @@ const (
 
 	CSIProviderAWSEBS = "aws-ebs"
 
-	CPIProviderAWS = "aws"
+	CCMProviderAWS = "aws"
 )
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // ClusterConfig is the Schema for the clusterconfigs API.
 type ClusterConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	//+optional
+	// +optional
 	Spec ClusterConfigSpec `json:"spec,omitempty"`
 }
 
@@ -43,7 +43,7 @@ type ClusterConfigSpec struct {
 
 	GenericClusterConfig `json:",inline"`
 
-	//+optional
+	// +optional
 	ControlPlane *NodeConfigSpec `json:"controlPlane,omitempty"`
 }
 
@@ -140,11 +140,11 @@ func (v KubernetesImageRepository) String() string {
 
 type Image struct {
 	// Repository is used to override the image repository to pull from.
-	//+optional
+	// +optional
 	Repository string `json:"repository,omitempty"`
 
 	// Tag is used to override the default image tag.
-	//+optional
+	// +optional
 	Tag string `json:"tag,omitempty"`
 }
 
@@ -170,7 +170,7 @@ func (Image) VariableSchema() clusterv1.VariableSchema {
 
 type Etcd struct {
 	// Image required for overriding etcd image details.
-	//+optional
+	// +optional
 	Image *Image `json:"image,omitempty"`
 }
 

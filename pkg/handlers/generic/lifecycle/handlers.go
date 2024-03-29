@@ -9,11 +9,11 @@ import (
 
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm"
+	awsccm "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/aws"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/clusterautoscaler"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/calico"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/cilium"
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cpi"
-	awscpi "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cpi/aws"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi"
 	awsebs "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/aws-ebs"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
@@ -27,7 +27,7 @@ type Handlers struct {
 	nfdConfig               *nfd.Config
 	clusterAutoscalerConfig *clusterautoscaler.Config
 	ebsConfig               *awsebs.AWSEBSConfig
-	awsCPIConfig            *awscpi.AWSCPIConfig
+	awsccmConfig            *awsccm.AWSCCMConfig
 }
 
 func New(globalOptions *options.GlobalOptions) *Handlers {
@@ -37,7 +37,7 @@ func New(globalOptions *options.GlobalOptions) *Handlers {
 		nfdConfig:               &nfd.Config{GlobalOptions: globalOptions},
 		clusterAutoscalerConfig: &clusterautoscaler.Config{GlobalOptions: globalOptions},
 		ebsConfig:               &awsebs.AWSEBSConfig{GlobalOptions: globalOptions},
-		awsCPIConfig:            &awscpi.AWSCPIConfig{GlobalOptions: globalOptions},
+		awsccmConfig:            &awsccm.AWSCCMConfig{GlobalOptions: globalOptions},
 	}
 }
 
@@ -45,8 +45,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	csiHandlers := map[string]csi.CSIProvider{
 		v1alpha1.CSIProviderAWSEBS: awsebs.New(mgr.GetClient(), h.ebsConfig),
 	}
-	cpiHandlers := map[string]cpi.CPIProvider{
-		v1alpha1.CPIProviderAWS: awscpi.New(mgr.GetClient(), h.awsCPIConfig),
+	ccmHandlers := map[string]ccm.CCMProvider{
+		v1alpha1.CCMProviderAWS: awsccm.New(mgr.GetClient(), h.awsccmConfig),
 	}
 
 	return []handlers.Named{
@@ -56,7 +56,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		clusterautoscaler.New(mgr.GetClient(), h.clusterAutoscalerConfig),
 		servicelbgc.New(mgr.GetClient()),
 		csi.New(mgr.GetClient(), csiHandlers),
-		cpi.New(mgr.GetClient(), cpiHandlers),
+		ccm.New(mgr.GetClient(), ccmHandlers),
 	}
 }
 
@@ -66,5 +66,5 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.calicoCNIConfig.AddFlags("cni.calico", flagSet)
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
 	h.ebsConfig.AddFlags("awsebs", pflag.CommandLine)
-	h.awsCPIConfig.AddFlags("awscpi", pflag.CommandLine)
+	h.awsccmConfig.AddFlags("awsccm", pflag.CommandLine)
 }

@@ -12,7 +12,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
-var startAWSCPIConfigMap = `
+var startAWSCCMConfigMap = `
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -77,7 +77,7 @@ spec:
     type: RollingUpdate
 `
 
-func Test_generateCPIConfigMapForCluster(t *testing.T) {
+func Test_generateCCMConfigMapForCluster(t *testing.T) {
 	tests := []struct {
 		name           string
 		startConfigMap *corev1.ConfigMap
@@ -87,11 +87,11 @@ func Test_generateCPIConfigMapForCluster(t *testing.T) {
 			name: "Can set cluster name in arguments",
 			startConfigMap: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "aws-cpi-v1.27.1",
+					Name:      "aws-ccm-v1.27.1",
 					Namespace: "default",
 				},
 				Data: map[string]string{
-					"aws-cpi-v1.27.1.yaml": startAWSCPIConfigMap,
+					"aws-ccm-v1.27.1.yaml": startAWSCCMConfigMap,
 				},
 			},
 			cluster: &clusterv1.Cluster{
@@ -104,19 +104,19 @@ func Test_generateCPIConfigMapForCluster(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cm := generateCPIConfigMapForCluster(
+			cm := generateCCMConfigMapForCluster(
 				test.startConfigMap,
 				test.cluster,
 			)
-			cpiConfigMapExpectedName := fmt.Sprintf(
+			ccmConfigMapExpectedName := fmt.Sprintf(
 				"%s-%s",
 				test.startConfigMap.Name,
 				test.cluster.Name,
 			)
-			if cm.Name != cpiConfigMapExpectedName {
+			if cm.Name != ccmConfigMapExpectedName {
 				t.Errorf(
 					"expected configmap name to be %s. got: %s",
-					cpiConfigMapExpectedName,
+					ccmConfigMapExpectedName,
 					cm.Name,
 				)
 			}
