@@ -29,7 +29,7 @@ type Handlers struct {
 	clusterAutoscalerConfig *clusterautoscaler.Config
 	ebsConfig               *awsebs.AWSEBSConfig
 	nutnaixCSIConfig        *nutanixcsi.NutanixCSIConfig
-	awsCPIConfig            *awscpi.AWSCPIConfig
+	awsccmConfig            *awsccm.AWSCCMConfig
 }
 
 func New(globalOptions *options.GlobalOptions) *Handlers {
@@ -70,10 +70,6 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.calicoCNIConfig.AddFlags("cni.calico", flagSet)
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
 	h.ebsConfig.AddFlags("awsebs", pflag.CommandLine)
-<<<<<<< HEAD
 	h.awsccmConfig.AddFlags("awsccm", pflag.CommandLine)
-=======
 	h.nutnaixCSIConfig.AddFlags("nutanixcsi", flagSet)
-	h.awsCPIConfig.AddFlags("awscpi", pflag.CommandLine)
->>>>>>> f7ff2e9 (fix: adds proper permissions and api fixes)
 }

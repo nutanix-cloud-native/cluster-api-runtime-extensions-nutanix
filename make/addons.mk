@@ -44,4 +44,3 @@ update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)
 .PHONY: update-addon.nutanix-csi
 update-addon.nutanix-csi: ; $(info $(M) updating nutanix csi manifests)
 	./hack/addons/update-nutanix-csi.sh
-
