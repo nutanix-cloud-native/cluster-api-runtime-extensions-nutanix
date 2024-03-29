@@ -99,7 +99,6 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		return
 	}
 	if len(csiProviders.Providers) == 1 &&
-		csiProviders.Providers[0].StorageClassConfig != nil &&
 		len(csiProviders.Providers[0].StorageClassConfig) == 1 &&
 		csiProviders.DefaultStorage == nil {
 		csiProviders.DefaultStorage = &v1alpha1.DefaultStorage{
@@ -113,13 +112,13 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		if !ok {
 			log.V(4).Info(
 				fmt.Sprintf(
-					"Skipping CSI handler, for provider given in %q. Provider handler not given ",
-					provider,
+					"Skipping CSI handler, for provider given in %s. Provider handler not given.",
+					provider.Name,
 				),
 			)
 			continue
 		}
-		log.Info(fmt.Sprintf("Creating csi provider %s", provider))
+		log.Info(fmt.Sprintf("Creating csi provider %s", provider.Name))
 		err = handler.Apply(
 			ctx,
 			provider,

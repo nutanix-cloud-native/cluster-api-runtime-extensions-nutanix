@@ -24,10 +24,14 @@ import (
 )
 
 const (
-	defaultHelmRepositoryURL       = "https://nutanix.github.io/helm/"
-	defaultHelmChartVersion        = "v2.6.6"
-	defaultHelmChartName           = "nutanix-csi-storage"
-	defaultHelmReleaseNameTemplate = "nutanix-csi-storage-%s"
+	defaultHelmRepositoryURL              = "https://nutanix.github.io/helm/"
+	defaultStorageHelmChartVersion        = "v2.6.6"
+	defaultStorageHelmChartName           = "nutanix-csi-storage"
+	defaultStorageHelmReleaseNameTemplate = "nutanix-csi-storage-%s"
+
+	defaultSnapshotHelmChartVersion        = "v6.3.2"
+	defaultSnapshotHelmChartName           = "nutanix-csi-snapshot"
+	defaultSnapshotHelmReleaseNameTemplate = "nutanix-csi-snapshot-%s"
 )
 
 type NutanixCSIConfig struct {
@@ -141,13 +145,13 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   defaultHelmRepositoryURL,
-			ChartName: defaultHelmChartName,
+			ChartName: defaultStorageHelmChartName,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: req.Cluster.Namespace,
-			ReleaseName:      fmt.Sprintf(defaultHelmReleaseNameTemplate, req.Cluster.Name),
-			Version:          defaultHelmChartVersion,
+			ReleaseName:      fmt.Sprintf(defaultStorageHelmReleaseNameTemplate, req.Cluster.Name),
+			Version:          defaultStorageHelmChartVersion,
 			ValuesTemplate:   values,
 		},
 	}
@@ -161,6 +165,41 @@ func (n *NutanixCSI) handleHelmAddonApply(
 
 	if err = client.ServerSideApply(ctx, n.client, hcp); err != nil {
 		return fmt.Errorf("failed to apply nutanix-csi installation HelmChartProxy: %w", err)
+	}
+
+	snapshotChart := &caaphv1.HelmChartProxy{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: caaphv1.GroupVersion.String(),
+			Kind:       "HelmChartProxy",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: req.Cluster.Namespace,
+			Name:      "nutanix-csi-snapshot" + req.Cluster.Name,
+		},
+		Spec: caaphv1.HelmChartProxySpec{
+			RepoURL:   defaultHelmRepositoryURL,
+			ChartName: defaultSnapshotHelmChartName,
+			ClusterSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
+			},
+			ReleaseNamespace: req.Cluster.Namespace,
+			ReleaseName:      fmt.Sprintf(defaultStorageHelmReleaseNameTemplate, req.Cluster.Name),
+			Version:          defaultSnapshotHelmChartVersion,
+		},
+	}
+
+	if err = controllerutil.SetOwnerReference(&req.Cluster, snapshotChart, n.client.Scheme()); err != nil {
+		return fmt.Errorf(
+			"failed to set owner reference on nutanix-csi installation HelmChartProxy: %w",
+			err,
+		)
+	}
+
+	if err = client.ServerSideApply(ctx, n.client, snapshotChart); err != nil {
+		return fmt.Errorf(
+			"failed to apply nutanix-csi-snapshot installation HelmChartProxy: %w",
+			err,
+		)
 	}
 
 	return nil
