@@ -91,6 +91,29 @@ func TestCreateStorageClass(t *testing.T) {
 			provisioner:       v1alpha1.NutanixProvisioner,
 			defaultsNamespace: "default",
 		},
+		{
+			name: "nutanix defaults",
+			storageConfig: v1alpha1.StorageClassConfig{
+				Name:              "nutanix-volumes",
+				ReclaimPolicy:     v1alpha1.VolumeReclaimDelete,
+				VolumeBindingMode: v1alpha1.VolumeBindingWaitForFirstConsumer,
+			},
+			expectedStorageClass: &storagev1.StorageClass{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       kindStorageClass,
+					APIVersion: storagev1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nutanix-volumes",
+					Namespace: "default",
+				},
+				ReclaimPolicy:     ptr.To(corev1.PersistentVolumeReclaimDelete),
+				VolumeBindingMode: ptr.To(storagev1.VolumeBindingWaitForFirstConsumer),
+				Provisioner:       string(v1alpha1.NutanixProvisioner),
+			},
+			provisioner:       v1alpha1.NutanixProvisioner,
+			defaultsNamespace: "default",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
