@@ -114,7 +114,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		)
 		return
 	}
-	err = lifecycleutils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, c.client, &req.Cluster, cm)
+	err = lifecycleutils.EnsureCRSForClusterFromObjects(ctx, cm.Name, c.client, &req.Cluster, cm)
 	if err != nil {
 		log.Error(
 			err,

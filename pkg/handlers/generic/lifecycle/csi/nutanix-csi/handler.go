@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -74,6 +75,36 @@ func (n *NutanixCSI) Apply(
 	case v1alpha1.AddonStrategyClusterResourceSet:
 	default:
 		return fmt.Errorf("stategy %s not implemented", strategy)
+	}
+	if provider.Credentials != nil {
+		sec := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: corev1.SchemeGroupVersion.String(),
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: provider.Credentials.Name,
+				Name:      provider.Credentials.Namespace,
+			},
+		}
+		err := n.client.Get(
+			ctx,
+			ctrlclient.ObjectKeyFromObject(sec),
+			sec,
+		)
+		if err != nil {
+			return err
+		}
+		err = lifecycleutils.EnsureCRSForClusterFromObjects(
+			ctx,
+			fmt.Sprintf("nutanix-csi-credentials-crs-%s", req.Cluster.Name),
+			n.client,
+			&req.Cluster,
+			sec,
+		)
+		if err != nil {
+			return err
+		}
 	}
 	return n.createStorageClasses(
 		ctx,
@@ -163,7 +194,7 @@ func (n *NutanixCSI) createStorageClasses(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	return lifecycleutils.EnsureCRSForClusterFromConfigMaps(
+	return lifecycleutils.EnsureCRSForClusterFromObjects(
 		ctx,
 		"nutanix-storageclass-crs",
 		n.client,

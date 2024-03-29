@@ -150,7 +150,7 @@ func (s crsStrategy) ensureCNICRSForCluster(
 		)
 	}
 
-	if err := utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, cluster, tigeraConfigMap, cm); err != nil {
+	if err := utils.EnsureCRSForClusterFromObjects(ctx, cm.Name, s.client, cluster, tigeraConfigMap, cm); err != nil {
 		return fmt.Errorf(
 			"failed to apply Calico CNI installation ClusterResourceSet: %w",
 			err,
