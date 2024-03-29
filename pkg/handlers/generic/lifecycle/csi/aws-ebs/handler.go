@@ -54,7 +54,6 @@ func (a *AWSEBS) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
-	hasOneProviderAndOneStorageClass bool,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 ) error {
 	strategy := provider.Strategy
@@ -72,7 +71,6 @@ func (a *AWSEBS) Apply(
 		ctx,
 		provider.StorageClassConfig,
 		&req.Cluster,
-		hasOneProviderAndOneStorageClass,
 		defaultStorageConfig,
 	)
 }
@@ -80,13 +78,12 @@ func (a *AWSEBS) Apply(
 func (a *AWSEBS) createStorageClasses(ctx context.Context,
 	configs []v1alpha1.StorageClassConfig,
 	cluster *clusterv1.Cluster,
-	hasOneProviderAndOneStorageClass bool,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
 	allStorageClasses := make([]runtime.Object, 0, len(configs))
 	for _, c := range configs {
 		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
-			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName || hasOneProviderAndOneStorageClass
+			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
 		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
 			c,
 			a.config.GlobalOptions.DefaultsNamespace(),
