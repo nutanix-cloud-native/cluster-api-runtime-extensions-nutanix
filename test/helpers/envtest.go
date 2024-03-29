@@ -132,14 +132,11 @@ func (t *TestEnvironmentConfiguration) Build() (*TestEnvironment, error) {
 
 // StartManager starts the test controller against the local API server.
 func (t *TestEnvironment) StartManager(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
-	t.cancel = cancel
 	return t.Manager.Start(ctx)
 }
 
 // Stop stops the test environment.
 func (t *TestEnvironment) Stop() error {
-	t.cancel()
 	return t.env.Stop()
 }
 
