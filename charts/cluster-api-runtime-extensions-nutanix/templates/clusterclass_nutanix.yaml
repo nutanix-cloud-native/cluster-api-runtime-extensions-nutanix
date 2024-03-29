@@ -1,0 +1,6 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if and .Values.deployDefaultClusterClasses (.Capabilities.APIVersions.Has "infrastructure.cluster.x-k8s.io/v1beta1/NutanixClusterTemplate") }}
+{{ .Files.Get "defaultclusterclasses/nutanix-cluster-class.yaml" }}
+{{- end}}
