@@ -63,7 +63,6 @@ func (n *NutanixCSI) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
-	hasOneProviderAndOneStorageClass bool,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 ) error {
 	strategy := provider.Strategy
@@ -111,7 +110,6 @@ func (n *NutanixCSI) Apply(
 		ctx,
 		provider.StorageClassConfig,
 		&req.Cluster,
-		hasOneProviderAndOneStorageClass,
 		defaultStorageConfig,
 	)
 }
@@ -171,14 +169,12 @@ func (n *NutanixCSI) handleHelmAddonApply(
 func (n *NutanixCSI) createStorageClasses(ctx context.Context,
 	configs []v1alpha1.StorageClassConfig,
 	cluster *clusterv1.Cluster,
-	hasOneProviderAndOneStorageClass bool,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
 	allStorageClasses := make([]runtime.Object, 0, len(configs))
 	for _, c := range configs {
 		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
-			v1alpha1.CSIProviderNutanix == defaultStorageConfig.ProviderName ||
-			hasOneProviderAndOneStorageClass
+			v1alpha1.CSIProviderNutanix == defaultStorageConfig.ProviderName
 		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
 			c,
 			n.config.GlobalOptions.DefaultsNamespace(),
