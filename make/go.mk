@@ -26,6 +26,7 @@ define go_test
 		-covermode=atomic \
 		-coverprofile=coverage.out \
 		-short \
+		-race \
 		-v \
 		$(if $(GOTEST_RUN),-run "$(GOTEST_RUN)") \
 		./... && \
