@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
@@ -12,15 +13,14 @@ import (
 )
 
 const (
-	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
-	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
+	AddonStrategyClusterResourceSet   AddonStrategy = "ClusterResourceSet"
+	AddonStrategyHelmAddon            AddonStrategy = "HelmAddon"
+	VolumeBindingImmediate                          = storagev1.VolumeBindingImmediate
+	VolumeBindingWaitForFirstConsumer               = storagev1.VolumeBindingWaitForFirstConsumer
 
-	VolumeBindingImmediate            = "Immmediate"
-	VolumeBindingWaitForFirstConsumer = "WaitForFirstConsumer"
-
-	VolumeReclaimRecycle = "Recycle"
-	VolumeReclaimDelete  = "Delete"
-	VolumeReclaimRetain  = "Retain"
+	VolumeReclaimRecycle = corev1.PersistentVolumeReclaimRecycle
+	VolumeReclaimDelete  = corev1.PersistentVolumeReclaimDelete
+	VolumeReclaimRetain  = corev1.PersistentVolumeReclaimRetain
 )
 
 type Addons struct {
@@ -174,10 +174,10 @@ type StorageClassConfig struct {
 	Parameters map[string]string `json:"parameters,omitempty"`
 
 	// +optional
-	ReclaimPolicy string `json:"reclaimPolicy,omitempty"`
+	ReclaimPolicy corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
 
 	// +optional
-	VolumeBindingMode string `json:"volumeBindingMode,omitempty"`
+	VolumeBindingMode storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
 
 	// +optional
 	AllowExpansion bool `json:"allowExpansion,omitempty"`
@@ -185,13 +185,13 @@ type StorageClassConfig struct {
 
 func (StorageClassConfig) VariableSchema() clusterv1.VariableSchema {
 	supportedReclaimPolicies := []string{
-		VolumeReclaimRecycle,
-		VolumeReclaimDelete,
-		VolumeReclaimRetain,
+		string(VolumeReclaimRecycle),
+		string(VolumeReclaimDelete),
+		string(VolumeReclaimRetain),
 	}
 	supportedBindingModes := []string{
-		VolumeBindingImmediate,
-		VolumeBindingWaitForFirstConsumer,
+		string(VolumeBindingImmediate),
+		string(VolumeBindingWaitForFirstConsumer),
 	}
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
