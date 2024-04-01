@@ -25,12 +25,16 @@ func TestGeneratePatches(
 			Name: "unset variable",
 		},
 		capitest.PatchTestDef{
-			Name:        "http proxy set for KubeadmControlPlaneTemplate",
+			Name:        "auditpolicy set for KubeadmControlPlaneTemplate",
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/kubeadmConfigSpec/files",
-				ValueMatcher: gomega.HaveLen(1),
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElements(
+					gomega.HaveKeyWithValue(
+						"path", "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml",
+					),
+				),
 			}, {
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
