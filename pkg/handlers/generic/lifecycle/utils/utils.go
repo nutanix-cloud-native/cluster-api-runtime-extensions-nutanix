@@ -159,22 +159,6 @@ func CreateStorageClass(
 	provisionerName v1alpha1.StorageProvisioner,
 	isDefault bool,
 ) *storagev1.StorageClass {
-	var volumeBindingMode *storagev1.VolumeBindingMode
-	switch storageConfig.VolumeBindingMode {
-	case v1alpha1.VolumeBindingImmediate:
-		volumeBindingMode = ptr.To(storagev1.VolumeBindingImmediate)
-	case v1alpha1.VolumeBindingWaitForFirstConsumer:
-		volumeBindingMode = ptr.To(storagev1.VolumeBindingWaitForFirstConsumer)
-	}
-	var reclaimPolicy *corev1.PersistentVolumeReclaimPolicy
-	switch storageConfig.ReclaimPolicy {
-	case v1alpha1.VolumeReclaimRecycle:
-		reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimRecycle)
-	case v1alpha1.VolumeReclaimDelete:
-		reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimDelete)
-	case v1alpha1.VolumeReclaimRetain:
-		reclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimRetain)
-	}
 	var params map[string]string
 	if provisionerName == v1alpha1.AWSEBSProvisioner {
 		params = defaultAWSStorageClassParams
@@ -193,8 +177,8 @@ func CreateStorageClass(
 		},
 		Provisioner:          string(provisionerName),
 		Parameters:           params,
-		VolumeBindingMode:    volumeBindingMode,
-		ReclaimPolicy:        reclaimPolicy,
+		VolumeBindingMode:    ptr.To(storageConfig.VolumeBindingMode),
+		ReclaimPolicy:        ptr.To(storageConfig.ReclaimPolicy),
 		AllowVolumeExpansion: ptr.To(storageConfig.AllowExpansion),
 	}
 	if isDefault {

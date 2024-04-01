@@ -183,7 +183,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: req.Cluster.Namespace,
-			ReleaseName:      fmt.Sprintf(defaultStorageHelmReleaseNameTemplate, req.Cluster.Name),
+			ReleaseName:      fmt.Sprintf(defaultSnapshotHelmReleaseNameTemplate, req.Cluster.Name),
 			Version:          defaultSnapshotHelmChartVersion,
 		},
 	}
