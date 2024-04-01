@@ -204,7 +204,7 @@ func generateTigeraOperatorConfigMap(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      defaultTigeraOperatorConfigMap.Name,
+			Name:      fmt.Sprintf("%s-%s", defaultTigeraOperatorConfigMap.Name, cluster.Name),
 		},
 		Data:       defaultTigeraOperatorConfigMap.Data,
 		BinaryData: defaultTigeraOperatorConfigMap.BinaryData,
