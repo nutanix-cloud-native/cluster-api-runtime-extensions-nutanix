@@ -16,6 +16,7 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/cilium"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi"
 	awsebs "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/aws-ebs"
+	nutanixcsi "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix-csi"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/servicelbgc"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -27,6 +28,7 @@ type Handlers struct {
 	nfdConfig               *nfd.Config
 	clusterAutoscalerConfig *clusterautoscaler.Config
 	ebsConfig               *awsebs.AWSEBSConfig
+	nutnaixCSIConfig        *nutanixcsi.NutanixCSIConfig
 	awsccmConfig            *awsccm.AWSCCMConfig
 }
 
@@ -38,12 +40,14 @@ func New(globalOptions *options.GlobalOptions) *Handlers {
 		clusterAutoscalerConfig: &clusterautoscaler.Config{GlobalOptions: globalOptions},
 		ebsConfig:               &awsebs.AWSEBSConfig{GlobalOptions: globalOptions},
 		awsccmConfig:            &awsccm.AWSCCMConfig{GlobalOptions: globalOptions},
+		nutnaixCSIConfig:        &nutanixcsi.NutanixCSIConfig{GlobalOptions: globalOptions},
 	}
 }
 
 func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	csiHandlers := map[string]csi.CSIProvider{
-		v1alpha1.CSIProviderAWSEBS: awsebs.New(mgr.GetClient(), h.ebsConfig),
+		v1alpha1.CSIProviderAWSEBS:  awsebs.New(mgr.GetClient(), h.ebsConfig),
+		v1alpha1.CSIProviderNutanix: nutanixcsi.New(mgr.GetClient(), h.nutnaixCSIConfig),
 	}
 	ccmHandlers := map[string]ccm.CCMProvider{
 		v1alpha1.CCMProviderAWS: awsccm.New(mgr.GetClient(), h.awsccmConfig),
@@ -67,4 +71,5 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
 	h.ebsConfig.AddFlags("awsebs", pflag.CommandLine)
 	h.awsccmConfig.AddFlags("awsccm", pflag.CommandLine)
+	h.nutnaixCSIConfig.AddFlags("nutanixcsi", flagSet)
 }

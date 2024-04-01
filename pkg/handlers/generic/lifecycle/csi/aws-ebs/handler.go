@@ -10,10 +10,14 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -46,10 +50,71 @@ func New(
 	}
 }
 
-func (a *AWSEBS) EnsureCSIConfigMapForCluster(
+func (a *AWSEBS) Apply(
 	ctx context.Context,
+	provider v1alpha1.CSIProvider,
+	defaultStorageConfig *v1alpha1.DefaultStorage,
+	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+) error {
+	strategy := provider.Strategy
+	switch strategy {
+	case v1alpha1.AddonStrategyClusterResourceSet:
+		err := a.handleCRSApply(ctx, req)
+		if err != nil {
+			return err
+		}
+	case v1alpha1.AddonStrategyHelmAddon:
+	default:
+		return fmt.Errorf("stategy %s not implemented", strategy)
+	}
+	return a.createStorageClasses(
+		ctx,
+		provider.StorageClassConfig,
+		&req.Cluster,
+		defaultStorageConfig,
+	)
+}
+
+func (a *AWSEBS) createStorageClasses(ctx context.Context,
+	configs []v1alpha1.StorageClassConfig,
 	cluster *clusterv1.Cluster,
-) (*corev1.ConfigMap, error) {
+	defaultStorageConfig *v1alpha1.DefaultStorage,
+) error {
+	allStorageClasses := make([]runtime.Object, 0, len(configs))
+	for _, c := range configs {
+		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
+			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
+		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
+			c,
+			a.config.GlobalOptions.DefaultsNamespace(),
+			v1alpha1.AWSEBSProvisioner,
+			setAsDefault,
+		))
+	}
+	cm, err := lifecycleutils.CreateConfigMapForCRS(
+		fmt.Sprintf("aws-storageclass-cm-%s", cluster.Name),
+		a.config.DefaultsNamespace(),
+		allStorageClasses...,
+	)
+	if err != nil {
+		return err
+	}
+	err = client.ServerSideApply(ctx, a.client, cm)
+	if err != nil {
+		return err
+	}
+	return lifecycleutils.EnsureCRSForClusterFromObjects(
+		ctx,
+		"aws-storageclass-crs",
+		a.client,
+		cluster,
+		cm,
+	)
+}
+
+func (a *AWSEBS) handleCRSApply(ctx context.Context,
+	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+) error {
 	awsEBSCSIConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: a.config.DefaultsNamespace(),
@@ -61,22 +126,31 @@ func (a *AWSEBS) EnsureCSIConfigMapForCluster(
 	)
 	err := a.client.Get(ctx, defaultAWSEBSCSIConfigMapObjName, awsEBSCSIConfigMap)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return fmt.Errorf(
 			"failed to retrieve default AWS EBS CSI manifests ConfigMap %q: %w",
 			defaultAWSEBSCSIConfigMapObjName,
 			err,
 		)
 	}
-
-	awsEBSConfigMap := generateAWSEBSCSIConfigMap(awsEBSCSIConfigMap, cluster)
-	if err := client.ServerSideApply(ctx, a.client, awsEBSConfigMap); err != nil {
-		return nil, fmt.Errorf(
+	cluster := req.Cluster
+	cm := generateAWSEBSCSIConfigMap(awsEBSCSIConfigMap, &cluster)
+	if err := client.ServerSideApply(ctx, a.client, cm); err != nil {
+		return fmt.Errorf(
 			"failed to apply AWS EBS CSI manifests ConfigMap: %w",
 			err,
 		)
 	}
-
-	return awsEBSConfigMap, nil
+	err = lifecycleutils.EnsureCRSForClusterFromObjects(
+		ctx,
+		cm.Name,
+		a.client,
+		&req.Cluster,
+		cm,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func generateAWSEBSCSIConfigMap(

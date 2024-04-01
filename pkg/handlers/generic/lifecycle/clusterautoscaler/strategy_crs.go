@@ -121,7 +121,7 @@ func (s crsStrategy) apply(
 		)
 	}
 
-	if err = utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, targetCluster, cm); err != nil {
+	if err = utils.EnsureCRSForClusterFromObjects(ctx, cm.Name, s.client, targetCluster, cm); err != nil {
 		return fmt.Errorf(
 			"failed to apply cluster-autoscaler installation ClusterResourceSet: %w",
 			err,

@@ -87,7 +87,7 @@ func (s crsStrategy) apply(
 		)
 	}
 
-	if err := utils.EnsureCRSForClusterFromConfigMaps(ctx, cm.Name, s.client, cluster, cm); err != nil {
+	if err := utils.EnsureCRSForClusterFromObjects(ctx, cm.Name, s.client, cluster, cm); err != nil {
 		return fmt.Errorf(
 			"failed to apply Cilium CNI installation ClusterResourceSet: %w",
 			err,
