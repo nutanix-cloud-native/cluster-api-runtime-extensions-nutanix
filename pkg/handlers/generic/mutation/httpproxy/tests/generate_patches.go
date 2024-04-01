@@ -53,9 +53,16 @@ func TestGeneratePatches(
 			},
 			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/files",
-				ValueMatcher: gomega.HaveLen(2),
+				Operation: "add",
+				Path:      "/spec/template/spec/files",
+				ValueMatcher: gomega.ContainElements(
+					gomega.HaveKeyWithValue(
+						"path", "/etc/systemd/system/containerd.service.d/http-proxy.conf",
+					),
+					gomega.HaveKeyWithValue(
+						"path", "/etc/systemd/system/kubelet.service.d/http-proxy.conf",
+					),
+				),
 			}},
 		},
 		capitest.PatchTestDef{
