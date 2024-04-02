@@ -44,12 +44,13 @@ For example, the following command will create a Docker cluster with Cilium CNI 
 ```shell
 export CLUSTER_NAME=docker-cluster-cilium-helm-addon
 export CLUSTER_FILE=examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml
+export KUBERNETES_VERSION=v1.28.7
 ```
 
 ```shell
 clusterctl generate cluster ${CLUSTER_NAME} \
   --from ${CLUSTER_FILE} \
-  --kubernetes-version v1.29.1 \
+  --kubernetes-version ${KUBERNETES_VERSION} \
   --worker-machine-count 1 | \
   kubectl apply --server-side -f -
 ```
