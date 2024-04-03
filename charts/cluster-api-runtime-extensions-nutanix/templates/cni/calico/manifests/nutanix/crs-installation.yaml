@@ -1,0 +1,36 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.NutanixCluster.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.NutanixCluster.configMap.name }}'
+data:
+  calico-installation: |
+{{- if .Values.hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.NutanixCluster.configMap.content -}}
+    {{ .Values.hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.NutanixCluster.configMap.content | nindent 4 }}
+{{- else -}}
+    # This section includes base Calico installation configuration.
+    # For more information, see: https://docs.projectcalico.org/reference/installation/api
+    apiVersion: operator.tigera.io/v1
+    kind: Installation
+    metadata:
+      name: default
+    spec:
+      cni:
+        type: Calico
+      # Configures Calico networking.
+      calicoNetwork:
+        # Note: The ipPools section cannot be modified post-install.
+        ipPools:
+        - blockSize: 26
+          cidr: {{ .Values.hooks.cni.calico.defaultPodSubnet }}
+          encapsulation: IPIP
+          natOutgoing: Enabled
+          nodeSelector: all()
+        bgp: Enabled
+      nodeMetricsPort: 9091
+      typhaMetricsPort: 9093
+{{- end -}}
+{{- end -}}

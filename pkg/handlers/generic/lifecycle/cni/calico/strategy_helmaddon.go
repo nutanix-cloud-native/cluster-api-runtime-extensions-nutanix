@@ -37,8 +37,9 @@ func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 		&c.defaultProviderInstallationValuesTemplatesConfigMapNames,
 		prefix+".default-provider-installation-values-templates-configmap-names",
 		map[string]string{
-			"DockerCluster": "calico-cni-helm-values-template-dockercluster",
-			"AWSCluster":    "calico-cni-helm-values-template-awscluster",
+			"DockerCluster":  "calico-cni-helm-values-template-dockercluster",
+			"AWSCluster":     "calico-cni-helm-values-template-awscluster",
+			"NutanixCluster": "calico-cni-helm-values-template-nutanixcluster",
 		},
 		"map of provider cluster implementation type to default installation values ConfigMap name",
 	)

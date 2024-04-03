@@ -51,7 +51,7 @@ spec:
 
 Applying this configuration will result in the following value being set:
 
-- control-plane `DockerMachineTemplte`:
+- control-plane `DockerMachineTemplate`:
 
   - ```yaml
     spec:
@@ -60,7 +60,7 @@ Applying this configuration will result in the following value being set:
           customImage: ghcr.io/mesosphere/kind-node:v1.2.3-cp
     ```
 
-- worker `DockerMachineTemplte`:
+- worker `DockerMachineTemplate`:
 
   - ```yaml
     spec:

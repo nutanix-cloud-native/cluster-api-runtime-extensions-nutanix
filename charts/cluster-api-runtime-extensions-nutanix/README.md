@@ -40,12 +40,17 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.content | string | `""` |  |
 | hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.name | string | `"calico-cni-crs-installation-dockercluster"` |  |
 | hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.create | bool | `true` |  |
+| hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.NutanixCluster.configMap.content | string | `""` |  |
+| hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.NutanixCluster.configMap.name | string | `"calico-cni-crs-installation-nutanixcluster"` |  |
+| hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.NutanixCluster.create | bool | `true` |  |
 | hooks.cni.calico.crsStrategy.defaultTigeraOperatorConfigMap.name | string | `"tigera-operator"` |  |
 | hooks.cni.calico.defaultPodSubnet | string | `"192.168.0.0/16"` |  |
 | hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.create | bool | `true` |  |
 | hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.name | string | `"calico-cni-helm-values-template-awscluster"` |  |
 | hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.DockerCluster.create | bool | `true` |  |
 | hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.DockerCluster.name | string | `"calico-cni-helm-values-template-dockercluster"` |  |
+| hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.NutanixCluster.create | bool | `true` |  |
+| hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.NutanixCluster.name | string | `"calico-cni-helm-values-template-nutanixcluster"` |  |
 | hooks.cni.cilium.crsStrategy.defaultCiliumConfigMap.name | string | `"cilium"` |  |
 | hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-cilium-cni-helm-values-template"` |  |
