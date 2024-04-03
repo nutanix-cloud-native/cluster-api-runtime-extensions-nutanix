@@ -19,6 +19,11 @@ hooks:
             configMap:
               name: calico-cni-crs-installation-awscluster
               content: ""
+          NutanixCluster:
+            create: true
+            configMap:
+              name: calico-cni-crs-installation-nutanixcluster
+              content: ""
       helmAddonStrategy:
         defaultValueTemplatesConfigMaps:
           DockerCluster:
@@ -27,6 +32,9 @@ hooks:
           AWSCluster:
             create: true
             name: calico-cni-helm-values-template-awscluster
+          NutanixCluster:
+            create: true
+            name: calico-cni-helm-values-template-nutanixcluster
     cilium:
       crsStrategy:
         defaultCiliumConfigMap:

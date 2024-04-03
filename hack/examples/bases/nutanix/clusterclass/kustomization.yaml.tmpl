@@ -5,7 +5,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://raw.githubusercontent.com/nutanix-cloud-native/cluster-api-provider-nutanix/51aa55fe8b194a261bc3cc4e6d24f5d430ec055a/templates/cluster-template-clusterclass.yaml
+- https://raw.githubusercontent.com/nutanix-cloud-native/cluster-api-provider-nutanix/1a7cd69ba35de01e56dcf2dda7f31973111d2317/templates/cluster-template-clusterclass.yaml
 
 configurations:
   - kustomizeconfig.yaml
@@ -29,3 +29,24 @@ patches:
       path: "/spec/patches"
     - op: "remove"
       path: "/spec/variables"
+
+# FIXME: Debug why some of the patches are needed.
+# When the handler runs, it sends back multiple patches for individual fields.
+# But CAPI fails applying them because of missing value.
+- target:
+    kind: NutanixClusterTemplate
+  patch: |-
+    - op: "add"
+      path: "/spec/template/spec/controlPlaneEndpoint"
+      value:
+        host: PLACEHOLDER
+        port: 6443
+    - op: "add"
+      path: "/spec/template/spec/prismCentral"
+      value:
+        address: PLACEHOLDER
+        port: 9440
+        credentialRef:
+          name: PLACEHOLDER
+          kind: Secret
+          namespace: default

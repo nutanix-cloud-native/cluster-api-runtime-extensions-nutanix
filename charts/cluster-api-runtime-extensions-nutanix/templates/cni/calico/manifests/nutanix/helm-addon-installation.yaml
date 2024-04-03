@@ -1,0 +1,23 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.NutanixCluster.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.NutanixCluster.name }}'
+data:
+  values.yaml: |-
+    installation:
+      cni:
+        type: Calico
+      calicoNetwork:
+        bgp: Enabled
+        ipPools:{{ printf "{{ range $cidr := .Cluster.spec.clusterNetwork.pods.cidrBlocks }}" }}
+        - cidr: {{ printf "{{ $cidr }}" }}
+          encapsulation: None
+          natOutgoing: Enabled
+          nodeSelector: all(){{ printf "{{ end }}" }}
+      nodeMetricsPort: 9091
+      typhaMetricsPort: 9093
+{{- end -}}

@@ -339,7 +339,7 @@ spec:
                 name: ${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
                 type: name
               memorySize: 4Gi
-              subnet:
+              subnets:
               - name: ${NUTANIX_SUBNET_NAME}
                 type: name
               systemDiskSize: 40Gi
@@ -348,10 +348,10 @@ spec:
         nutanix:
           controlPlaneEndpoint:
             host: ${CONTROL_PLANE_ENDPOINT_IP}
-            port: ${CONTROL_PLANE_ENDPOINT_PORT}
+            port: 6443
           prismCentralEndpoint:
-            additionalTrustBundle: ${CLUSTER_NAME}-pc-trusted-ca-bundle
-            credentialSecret: ${CLUSTER_NAME}-pc-creds
+            credentials:
+              name: ${CLUSTER_NAME}-pc-creds
             host: ${NUTANIX_ENDPOINT}
             insecure: ${NUTANIX_INSECURE}
             port: 9440
@@ -367,7 +367,7 @@ spec:
               name: ${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
               type: name
             memorySize: 4Gi
-            subnet:
+            subnets:
             - name: ${NUTANIX_SUBNET_NAME}
               type: name
             systemDiskSize: 40Gi

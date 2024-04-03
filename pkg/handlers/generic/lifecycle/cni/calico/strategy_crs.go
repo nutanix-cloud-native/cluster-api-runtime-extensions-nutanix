@@ -42,8 +42,9 @@ func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 		&c.defaultProviderInstallationConfigMapNames,
 		prefix+".default-provider-installation-configmap-names",
 		map[string]string{
-			"DockerCluster": "calico-cni-crs-installation-dockercluster",
-			"AWSCluster":    "calico-cni-crs-installation-awscluster",
+			"DockerCluster":  "calico-cni-crs-installation-dockercluster",
+			"AWSCluster":     "calico-cni-crs-installation-awscluster",
+			"NutanixCluster": "calico-cni-crs-installation-nutanixcluster",
 		},
 		"map of provider cluster implementation type to default installation ConfigMap name",
 	)

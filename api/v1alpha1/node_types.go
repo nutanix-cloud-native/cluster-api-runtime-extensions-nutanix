@@ -29,6 +29,8 @@ type NodeConfigSpec struct {
 	AWS *AWSNodeSpec `json:"aws,omitempty"`
 	// +optional
 	Docker *DockerNodeSpec `json:"docker,omitempty"`
+	// +optional
+	Nutanix *NutanixNodeSpec `json:"nutanix,omitempty"`
 }
 
 func (s NodeConfigSpec) VariableSchema() clusterv1.VariableSchema {
@@ -47,6 +49,13 @@ func (s NodeConfigSpec) VariableSchema() clusterv1.VariableSchema {
 			nodeConfigProps.OpenAPIV3Schema.Properties,
 			map[string]clusterv1.JSONSchemaProps{
 				"docker": DockerNodeSpec{}.VariableSchema().OpenAPIV3Schema,
+			},
+		)
+	case s.Nutanix != nil:
+		maps.Copy(
+			nodeConfigProps.OpenAPIV3Schema.Properties,
+			map[string]clusterv1.JSONSchemaProps{
+				"nutanix": NutanixNodeSpec{}.VariableSchema().OpenAPIV3Schema,
 			},
 		)
 	}

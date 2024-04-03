@@ -34,6 +34,9 @@ import (
 	dockermutation "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/mutation"
 	dockerworkerconfig "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
+	nutanixclusterconfig "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
+	nutanixmutation "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation"
+	nutanixworkerconfig "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/workerconfig"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -129,10 +132,20 @@ func main() {
 		dockermutation.MetaWorkerPatchHandler(),
 	}
 
+	// nutanixMetaHandlers combines all Nutanix patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	nutanixMetaHandlers := []handlers.Named{
+		nutanixclusterconfig.NewVariable(),
+		nutanixworkerconfig.NewVariable(),
+		nutanixmutation.MetaPatchHandler(mgr),
+		nutanixmutation.MetaWorkerPatchHandler(),
+	}
+
 	var allHandlers []handlers.Named
 	allHandlers = append(allHandlers, genericLifecycleHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, awsMetaHandlers...)
 	allHandlers = append(allHandlers, dockerMetaHandlers...)
+	allHandlers = append(allHandlers, nutanixMetaHandlers...)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
 
