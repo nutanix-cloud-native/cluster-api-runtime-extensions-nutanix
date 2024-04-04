@@ -128,7 +128,7 @@ func (c *CiliumCNI) AfterControlPlaneInitialized(
 			client: c.client,
 		}
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmSettings, err := c.helmAddonConfigGetter.GetSettingsFor(ctx, "cillium-config")
+		helmSettings, err := c.helmAddonConfigGetter.GetSettingsFor(ctx, "cilium-config")
 		if err != nil {
 			log.Error(
 				err,
