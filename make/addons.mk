@@ -44,3 +44,7 @@ update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)
 .PHONY: update-addon.nutanix-csi
 update-addon.nutanix-csi: ; $(info $(M) updating nutanix csi manifests)
 	./hack/addons/update-nutanix-csi.sh
+
+.PHONY: generate-helm-configmap
+generate-helm-configmap:
+	go run hack/tools/helm-cm/main.go -kustomize-directory="./hack/addons/kustomize" -output-file="./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
