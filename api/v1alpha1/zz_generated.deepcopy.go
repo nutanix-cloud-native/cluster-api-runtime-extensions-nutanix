@@ -774,7 +774,7 @@ func (in *NutanixPrismCentralEndpointSpec) DeepCopyInto(out *NutanixPrismCentral
 	*out = *in
 	if in.AdditionalTrustBundle != nil {
 		in, out := &in.AdditionalTrustBundle, &out.AdditionalTrustBundle
-		*out = new(v1.LocalObjectReference)
+		*out = new(string)
 		**out = **in
 	}
 	out.Credentials = in.Credentials

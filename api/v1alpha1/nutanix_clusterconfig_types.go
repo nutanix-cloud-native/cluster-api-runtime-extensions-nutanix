@@ -49,11 +49,11 @@ type NutanixPrismCentralEndpointSpec struct {
 	// +optional
 	Insecure bool `json:"insecure"`
 
-	// A reference to the ConfigMap containing a PEM encoded x509 cert for the RootCA that was used to create
+	// A base64 PEM encoded x509 cert for the RootCA that was used to create
 	// the certificate for a Prism Central that uses certificates that were issued by a non-publicly trusted RootCA.
 	// The trust bundle is added to the cert pool used to authenticate the TLS connection to the Prism Central.
 	// +optional
-	AdditionalTrustBundle *corev1.LocalObjectReference `json:"additionalTrustBundle,omitempty"`
+	AdditionalTrustBundle *string `json:"additionalTrustBundle,omitempty"`
 
 	// A reference to the Secret for credential information for the target Prism Central instance
 	Credentials corev1.LocalObjectReference `json:"credentials"`
@@ -82,19 +82,13 @@ func (NutanixPrismCentralEndpointSpec) VariableSchema() clusterv1.VariableSchema
 					Type:        "boolean",
 				},
 				"additionalTrustBundle": {
-					Description: "A reference to the ConfigMap containing a PEM encoded x509 cert for the RootCA " +
+					Description: "A base64 PEM encoded x509 cert for the RootCA " +
 						"that was used to create the certificate for a Prism Central that uses certificates " +
 						"that were issued by a non-publicly trusted RootCA." +
 						"The trust bundle is added to the cert pool used to authenticate the TLS connection " +
 						"to the Prism Central.",
-					Type: "object",
-					Properties: map[string]clusterv1.JSONSchemaProps{
-						"name": {
-							Description: "The name of the ConfigMap",
-							Type:        "string",
-						},
-					},
-					Required: []string{"name"},
+					Type:   "string",
+					Format: "byte",
 				},
 				"credentials": {
 					Description: "A reference to the Secret for credential information" +

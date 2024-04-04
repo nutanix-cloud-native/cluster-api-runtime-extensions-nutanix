@@ -5,10 +5,13 @@ package prismcentralendpoint
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 
 	"github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -105,13 +108,25 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 					Namespace: clusterKey.Namespace,
 				},
 			}
-			if prismCentralEndpointVar.AdditionalTrustBundle != nil {
-				prismCentral.AdditionalTrustBundle = &credentials.NutanixTrustBundleReference{
-					Kind: credentials.NutanixTrustBundleKindConfigMap,
-					Name: prismCentralEndpointVar.AdditionalTrustBundle.Name,
-					// Assume the ConfigMap is in the same namespace as Cluster
-					Namespace: clusterKey.Namespace,
+			additionalTrustBundle := ptr.Deref(prismCentralEndpointVar.AdditionalTrustBundle, "")
+			if additionalTrustBundle != "" {
+				var decoded []byte
+				decoded, err = base64.StdEncoding.DecodeString(additionalTrustBundle)
+				if err != nil {
+					log.Error(err, "error decoding additional trust bundle")
+					return fmt.Errorf("error decoding additional trust bundle: %w", err)
 				}
+				prismCentral.AdditionalTrustBundle = &credentials.NutanixTrustBundleReference{
+					Kind: credentials.NutanixTrustBundleKindString,
+					Data: string(decoded),
+				}
+			}
+
+			// Always force insecure to false if additional trust bundle is provided.
+			// This ensures that the trust bundle is actually used to validate the connection.
+			if additionalTrustBundle != "" && prismCentral.Insecure {
+				log.Info("AdditionalTrustBundle is provided, setting insecure to false")
+				prismCentral.Insecure = false
 			}
 
 			obj.Spec.Template.Spec.PrismCentral = prismCentral
