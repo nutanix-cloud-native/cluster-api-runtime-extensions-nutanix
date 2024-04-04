@@ -16,6 +16,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -52,10 +53,10 @@ func New(
 	}
 }
 
-func (a *AWSCCM) EnsureCCMConfigMapForCluster(
+func (a *AWSCCM) Apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
-) (*corev1.ConfigMap, error) {
+) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		cluster.Name,
@@ -63,7 +64,7 @@ func (a *AWSCCM) EnsureCCMConfigMapForCluster(
 	log.Info("Creating AWS CCM ConfigMap for Cluster")
 	version, err := semver.ParseTolerant(cluster.Spec.Topology.Version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version from cluster %w", err)
+		return fmt.Errorf("failed to parse version from cluster %w", err)
 	}
 	minorVersion := fmt.Sprintf("%d.%d", version.Major, version.Minor)
 	configMapForMinorVersion := a.config.kubernetesMinorVersionToCCMConfigMapNames[minorVersion]
@@ -79,7 +80,7 @@ func (a *AWSCCM) EnsureCCMConfigMapForCluster(
 	err = a.client.Get(ctx, objName, ccmConfigMapForMinorVersion)
 	if err != nil {
 		log.Error(err, "failed to fetch CCM template for cluster")
-		return nil, fmt.Errorf(
+		return fmt.Errorf(
 			"failed to retrieve default AWS CCM manifests ConfigMap %q: %w",
 			objName,
 			err,
@@ -87,14 +88,20 @@ func (a *AWSCCM) EnsureCCMConfigMapForCluster(
 	}
 
 	ccmConfigMap := generateCCMConfigMapForCluster(ccmConfigMapForMinorVersion, cluster)
-	if err := client.ServerSideApply(ctx, a.client, ccmConfigMap); err != nil {
+	if err = client.ServerSideApply(ctx, a.client, ccmConfigMap); err != nil {
 		log.Error(err, "failed to apply CCM configmap for cluster")
-		return nil, fmt.Errorf(
+		return fmt.Errorf(
 			"failed to apply AWS CCM manifests ConfigMap: %w",
 			err,
 		)
 	}
-	return ccmConfigMap, nil
+
+	err = lifecycleutils.EnsureCRSForClusterFromObjects(ctx, ccmConfigMap.Name, a.client, cluster, ccmConfigMap)
+	if err != nil {
+		return fmt.Errorf("failed to generate CCM CRS for cluster: %w", err)
+	}
+
+	return nil
 }
 
 func generateCCMConfigMapForCluster(

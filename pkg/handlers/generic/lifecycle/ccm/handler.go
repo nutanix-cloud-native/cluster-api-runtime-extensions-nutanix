@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,7 +18,6 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
-	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 )
 
 const (
@@ -27,7 +25,7 @@ const (
 )
 
 type CCMProvider interface {
-	EnsureCCMConfigMapForCluster(context.Context, *clusterv1.Cluster) (*corev1.ConfigMap, error)
+	Apply(context.Context, *clusterv1.Cluster) error
 }
 
 type CCMHandler struct {
@@ -100,31 +98,18 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		log.Info(fmt.Sprintf("No CCM handler provided for infra kind %s", infraKind))
 		return
 	}
-	cm, err := handler.EnsureCCMConfigMapForCluster(ctx, &req.Cluster)
+	err = handler.Apply(ctx, &req.Cluster)
 	if err != nil {
 		log.Error(
 			err,
-			"failed to generate CCM configmap",
+			"failed to deploy CCM for cluster",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to generate CCM configmap: %v",
+			fmt.Sprintf("failed to deploy CCM for cluster: %v",
 				err,
 			),
 		)
 		return
-	}
-	err = lifecycleutils.EnsureCRSForClusterFromObjects(ctx, cm.Name, c.client, &req.Cluster, cm)
-	if err != nil {
-		log.Error(
-			err,
-			"failed to generate CCM CRS for cluster",
-		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("failed to generate CCM CRS: %v",
-				err,
-			),
-		)
 	}
 }
