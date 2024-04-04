@@ -29,7 +29,7 @@ spec:
 
 Applying this configuration will result in the following value being set:
 
-- control-plane NutanixClusterTemplate:
+- `NutanixClusterTemplate`:
 
 ```yaml
 spec:
@@ -43,3 +43,47 @@ spec:
           kind: Secret
           name: secret-name
 ```
+
+### Provide an Optional Trusted CA Bundle
+
+If the Prism Central endpoint uses a self-signed certificate, you can provide an additional trust bundle
+to be used by the Nutanix provider.
+This is a base64 PEM encoded x509 cert for the RootCA that was used to create the certificate for a Prism Central
+
+See [Nutanix Security Guide] for more information.
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          nutanix:
+            prismCentralEndpoint:
+              # ...
+              additionalTrustBundle: "LS0...="
+```
+
+Applying this configuration will result in the following value being set:
+
+- `NutanixClusterTemplate`:
+
+```yaml
+spec:
+  template:
+    spec:
+      prismCentral:
+        # ...
+        additionalTrustBundle:
+          kind: String
+          data: |-
+            -----BEGIN CERTIFICATE-----
+            ...
+            -----END CERTIFICATE-----
+```
+
+[Nutanix Security Guide]: https://portal.nutanix.com/page/documents/details?targetId=Nutanix-Security-Guide-v6_5:mul-security-ssl-certificate-pc-t.html

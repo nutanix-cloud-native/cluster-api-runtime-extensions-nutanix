@@ -28,3 +28,9 @@ patches:
 - target:
     kind: Cluster
   path: ../../../patches/nutanix/initialize-variables.yaml
+
+# Remove Additional Trust Bundle ConfigMap
+- target:
+    kind: ConfigMap
+    name: ".*-pc-trusted-ca-bundle"
+  path: ../../../patches/nutanix/remove-additional-trust-bundle/cm.yaml
