@@ -52,7 +52,7 @@ type TestEnvironment struct {
 	client.Client
 	Config *rest.Config
 	env    *envtest.Environment
-	cancel context.CancelFunc
+	_      context.CancelFunc
 }
 
 // Cleanup deletes all the given objects.

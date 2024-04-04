@@ -123,7 +123,7 @@ repos:
     name: License headers - YAML and Makefiles
     stages: [commit]
     files: (^Makefile|\.(ya?ml|mk))$
-    exclude: ^(pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses)/.+\.ya?ml|docs/static/helm/index\.yaml$
+    exclude: ^(pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses)/.+\.ya?ml|docs/static/helm/index\.yaml|charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml$
     args:
       - --license-filepath
       - hack/license-header.txt
