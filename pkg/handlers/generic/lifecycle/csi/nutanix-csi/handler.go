@@ -18,16 +18,15 @@ import (
 	caaphv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	lifecycleutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
 const (
-	defaultHelmRepositoryURL           = "https://nutanix.github.io/helm/"
-	defaultStorageHelmChartVersion     = "v2.6.6"
-	defaultStorageHelmChartName        = "nutanix-csi-storage"
-	defaultStorageHelmReleaseName      = "nutanix-csi-storage"
-	defaultStorageHelmReleaseNamespace = "ntnx-system"
+	defaultStorageHelmReleaseNamespace    = "ntnx-system"
+	defaultHelmRepositoryURL              = "https://nutanix.github.io/helm/"
+	defaultStorageHelmReleaseNameTemplate = "nutanix-csi-storage-%s"
 
 	defaultSnapshotHelmChartVersion     = "v6.3.2"
 	defaultSnapshotHelmChartName        = "nutanix-csi-snapshot"
@@ -64,17 +63,20 @@ func (n *NutanixCSIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type NutanixCSI struct {
-	client ctrlclient.Client
-	config *NutanixCSIConfig
+	client                ctrlclient.Client
+	config                *NutanixCSIConfig
+	helmAddonConfigGetter *config.HelmConfig
 }
 
 func New(
 	c ctrlclient.Client,
 	cfg *NutanixCSIConfig,
+	helmAddonConfigGetter *config.HelmConfig,
 ) *NutanixCSI {
 	return &NutanixCSI{
-		client: c,
-		config: cfg,
+		client:                c,
+		config:                cfg,
+		helmAddonConfigGetter: helmAddonConfigGetter,
 	}
 }
 
@@ -144,6 +146,10 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		)
 	}
 	values := valuesTemplateConfigMap.Data["values.yaml"]
+	helmSettings, err := n.helmAddonConfigGetter.GetSettingsFor(ctx, "nutanix-csi-config")
+	if err != nil {
+		return fmt.Errorf("failed to get values for nutanix-csi-config %w", err)
+	}
 
 	hcp := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
@@ -155,14 +161,14 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			Name:      "nutanix-csi-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   defaultHelmRepositoryURL,
-			ChartName: defaultStorageHelmChartName,
+			RepoURL:   helmSettings.HelmChartRepository,
+			ChartName: helmSettings.HelmChartName,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
-			ReleaseNamespace: defaultStorageHelmReleaseNamespace,
-			ReleaseName:      defaultStorageHelmReleaseName,
-			Version:          defaultStorageHelmChartVersion,
+			ReleaseNamespace: req.Cluster.Namespace,
+			ReleaseName:      fmt.Sprintf(defaultStorageHelmReleaseNameTemplate, req.Cluster.Name),
+			Version:          helmSettings.HelmChartVersion,
 			ValuesTemplate:   values,
 		},
 	}
@@ -197,13 +203,6 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			ReleaseName:      defaultSnapshotHelmReleaseName,
 			Version:          defaultSnapshotHelmChartVersion,
 		},
-	}
-
-	if err = controllerutil.SetOwnerReference(&req.Cluster, snapshotChart, n.client.Scheme()); err != nil {
-		return fmt.Errorf(
-			"failed to set owner reference on nutanix-csi installation HelmChartProxy: %w",
-			err,
-		)
 	}
 
 	if err = client.ServerSideApply(ctx, n.client, snapshotChart); err != nil {

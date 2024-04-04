@@ -1,9 +1,9 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-export CALICO_VERSION := $(shell goprintconst -file pkg/handlers/generic/lifecycle/cni/calico/strategy_helmaddon.go -name defaultCalicoHelmChartVersion)
-export CILIUM_VERSION := $(shell goprintconst -file pkg/handlers/generic/lifecycle/cni/cilium/strategy_helmaddon.go -name defaultCiliumHelmChartVersion)
-export NODE_FEATURE_DISCOVERY_VERSION := $(shell goprintconst -file pkg/handlers/generic/lifecycle/nfd/strategy_helmaddon.go -name defaultHelmChartVersion)
+export CALICO_VERSION := v3.26.4
+export CILIUM_VERSION := 1.15.0
+export NODE_FEATURE_DISCOVERY_VERSION := 0.15.2
 export CLUSTER_AUTOSCALER_VERSION := 9.35.0
 export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.3
 export AWS_EBS_CSI_CHART_VERSION := v2.28.1
