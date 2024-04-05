@@ -7,8 +7,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
 	gomegatypes "github.com/onsi/gomega/types"
@@ -39,55 +39,57 @@ type JSONPatchMatcher struct {
 }
 
 func ValidateGeneratePatches[T mutation.GeneratePatches](
-	t *testing.T,
+	t GinkgoTInterface,
 	handlerCreator func() T,
 	testDefs ...PatchTestDef,
 ) {
 	t.Helper()
-
-	for testIdx := range testDefs {
-		tt := testDefs[testIdx]
-
-		t.Run(tt.Name, func(t *testing.T) {
-			t.Parallel()
-
-			g := gomega.NewWithT(t)
-			h := handlerCreator()
-			req := &runtimehooksv1.GeneratePatchesRequest{
-				Variables: tt.Vars,
-				Items: []runtimehooksv1.GeneratePatchesRequestItem{
-					tt.RequestItem,
-					{
-						HolderReference: runtimehooksv1.HolderReference{
-							APIVersion: capiv1.GroupVersion.String(),
-							Kind:       "Cluster",
-							Namespace:  request.Namespace,
-							Name:       request.ClusterName,
-						},
+	testFunc := func(tt *PatchTestDef) {
+		g := gomega.NewWithT(t)
+		h := handlerCreator()
+		req := &runtimehooksv1.GeneratePatchesRequest{
+			Variables: tt.Vars,
+			Items: []runtimehooksv1.GeneratePatchesRequestItem{
+				tt.RequestItem,
+				{
+					HolderReference: runtimehooksv1.HolderReference{
+						APIVersion: capiv1.GroupVersion.String(),
+						Kind:       "Cluster",
+						Namespace:  request.Namespace,
+						Name:       request.ClusterName,
 					},
 				},
-			}
-			resp := &runtimehooksv1.GeneratePatchesResponse{}
-			h.GeneratePatches(context.Background(), req, resp)
-			expectedStatus := runtimehooksv1.ResponseStatusSuccess
-			if tt.ExpectedFailure {
-				expectedStatus = runtimehooksv1.ResponseStatusFailure
-			}
-			g.Expect(resp.Status).
-				To(gomega.Equal(expectedStatus), fmt.Sprintf("Message: %s", resp.Message))
+			},
+		}
+		resp := &runtimehooksv1.GeneratePatchesResponse{}
+		h.GeneratePatches(context.Background(), req, resp)
+		expectedStatus := runtimehooksv1.ResponseStatusSuccess
+		if tt.ExpectedFailure {
+			expectedStatus = runtimehooksv1.ResponseStatusFailure
+		}
+		g.Expect(resp.Status).
+			To(gomega.Equal(expectedStatus), fmt.Sprintf("Message: %s", resp.Message))
 
-			if len(tt.ExpectedPatchMatchers) == 0 {
-				g.Expect(resp.Items).To(gomega.BeEmpty())
-				return
-			}
-			g.Expect(resp.Items).To(containPatches(&tt.RequestItem, tt.ExpectedPatchMatchers...))
+		if len(tt.ExpectedPatchMatchers) == 0 {
+			g.Expect(resp.Items).To(gomega.BeEmpty())
+			return
+		}
+		g.Expect(resp.Items).To(containPatches(&tt.RequestItem, tt.ExpectedPatchMatchers...))
 
-			if len(tt.UnexpectedPatchMatchers) > 0 {
-				g.Expect(resp.Items).
-					ToNot(containPatches(&tt.RequestItem, tt.UnexpectedPatchMatchers...))
-			}
-		})
+		if len(tt.UnexpectedPatchMatchers) > 0 {
+			g.Expect(resp.Items).
+				ToNot(containPatches(&tt.RequestItem, tt.UnexpectedPatchMatchers...))
+		}
 	}
+
+	// compose Ginkgo table arguments
+	// https://onsi.github.io/ginkgo/#table-specs for more details
+	testArgs := make([]TableEntry, 0, len(testDefs))
+	for testIdx := range testDefs {
+		tt := testDefs[testIdx]
+		testArgs = append(testArgs, Entry(tt.Name, &tt))
+	}
+	DescribeTable("Patches", testFunc, testArgs)
 }
 
 // VariableWithValue returns a runtimehooksv1.Variable with the passed name and value.

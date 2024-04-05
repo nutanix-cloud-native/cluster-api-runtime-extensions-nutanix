@@ -4,8 +4,7 @@
 package tests
 
 import (
-	"testing"
-
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"k8s.io/apiserver/pkg/storage/names"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -17,7 +16,7 @@ import (
 )
 
 func TestGeneratePatches(
-	t *testing.T,
+	t GinkgoTInterface,
 	generatorFunc func() mutation.GeneratePatches,
 	variableName string,
 	variablePath ...string,

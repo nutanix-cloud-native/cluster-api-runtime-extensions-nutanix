@@ -137,6 +137,9 @@ func (t *TestEnvironment) StartManager(ctx context.Context) error {
 
 // Stop stops the test environment.
 func (t *TestEnvironment) Stop() error {
+	if t.cancel != nil {
+		t.cancel()
+	}
 	return t.env.Stop()
 }
 
