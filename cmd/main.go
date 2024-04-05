@@ -34,7 +34,6 @@ import (
 	dockermutation "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/mutation"
 	dockerworkerconfig "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
-	lifecycleoptions "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/options"
 	nutanixclusterconfig "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 	nutanixmutation "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation"
 	nutanixworkerconfig "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/workerconfig"
@@ -82,9 +81,8 @@ func main() {
 	runtimeWebhookServerOpts := server.NewServerOptions()
 
 	globalOptions := options.NewGlobalOptions()
-	helmLifecycleOptions := lifecycleoptions.New()
 
-	genericLifecycleHandlers := lifecycle.New(globalOptions, helmLifecycleOptions)
+	genericLifecycleHandlers := lifecycle.New(globalOptions)
 
 	// Initialize and parse command line flags.
 	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())

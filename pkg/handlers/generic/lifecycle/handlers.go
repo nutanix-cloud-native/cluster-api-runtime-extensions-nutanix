@@ -19,13 +19,11 @@ import (
 	awsebs "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/aws-ebs"
 	nutanixcsi "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix-csi"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
-	lifecycleoptions "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/options"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/servicelbgc"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
 type Handlers struct {
-	helmLifecycleOptions    *lifecycleoptions.Options
 	globalOptions           *options.GlobalOptions
 	calicoCNIConfig         *calico.CNIConfig
 	ciliumCNIConfig         *cilium.CNIConfig
@@ -38,11 +36,9 @@ type Handlers struct {
 
 func New(
 	globalOptions *options.GlobalOptions,
-	helmLifecycleOptions *lifecycleoptions.Options,
 ) *Handlers {
 	return &Handlers{
-		helmLifecycleOptions: helmLifecycleOptions,
-		globalOptions:        globalOptions,
+		globalOptions: globalOptions,
 		calicoCNIConfig: &calico.CNIConfig{
 			GlobalOptions: globalOptions,
 		},
@@ -57,7 +53,7 @@ func New(
 
 func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	helmChartInfoGetter := config.NewHelmChartGetterFromConfigMap(
-		h.helmLifecycleOptions.HelmAddonsConfigMapName,
+		h.globalOptions.HelmAddonsConfigMapName(),
 		h.globalOptions.DefaultsNamespace(),
 		mgr.GetClient(),
 	)
@@ -84,7 +80,6 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 }
 
 func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
-	h.helmLifecycleOptions.AddFlags("lifecycle.", flagSet)
 	h.nfdConfig.AddFlags("nfd", flagSet)
 	h.clusterAutoscalerConfig.AddFlags("cluster-autoscaler", flagSet)
 	h.calicoCNIConfig.AddFlags("cni.calico", flagSet)
