@@ -119,7 +119,7 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 			name := info["name"].(string)
 			dirName := strings.Split(filepath, "/")[0]
 			i := configMapInfo{
-				configMapFieldName:   fmt.Sprintf("%s-config", dirName),
+				configMapFieldName:   dirName,
 				DefaultRepositoryURL: repo,
 				DefaultChartName:     name,
 			}
