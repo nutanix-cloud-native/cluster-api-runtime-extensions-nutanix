@@ -44,9 +44,9 @@ func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type DefaultNFD struct {
-	client                ctrlclient.Client
-	config                *Config
-	helmAddonConfigGetter *config.HelmConfig
+	client              ctrlclient.Client
+	config              *Config
+	helmChartInfoGetter *config.HelmChartGetter
 
 	variableName string   // points to the global config variable
 	variablePath []string // path of this variable on the global config variable
@@ -60,14 +60,14 @@ var (
 func New(
 	c ctrlclient.Client,
 	cfg *Config,
-	helmAddonConfigGetter *config.HelmConfig,
+	helmChartInfoGetter *config.HelmChartGetter,
 ) *DefaultNFD {
 	return &DefaultNFD{
-		client:                c,
-		config:                cfg,
-		helmAddonConfigGetter: helmAddonConfigGetter,
-		variableName:          clusterconfig.MetaVariableName,
-		variablePath:          []string{"addons", v1alpha1.NFDVariableName},
+		client:              c,
+		config:              cfg,
+		helmChartInfoGetter: helmChartInfoGetter,
+		variableName:        clusterconfig.MetaVariableName,
+		variablePath:        []string{"addons", v1alpha1.NFDVariableName},
 	}
 }
 
@@ -116,7 +116,7 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 			client: n.client,
 		}
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmSettings, err := n.helmAddonConfigGetter.GetSettingsFor(ctx, "nfd-config")
+		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NFD)
 		if err != nil {
 			log.Error(
 				err,
@@ -131,9 +131,9 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 			return
 		}
 		strategy = helmAddonStrategy{
-			config:       n.config.helmAddonConfig,
-			client:       n.client,
-			helmSettings: helmSettings,
+			config:    n.config.helmAddonConfig,
+			client:    n.client,
+			helmChart: helmChart,
 		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)

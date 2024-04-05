@@ -7,33 +7,47 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type HelmConfig struct {
+type Component string
+
+const (
+	Autoscaler        Component = "cluster-autoscaler-config"
+	Tigera            Component = "tigera-operator-config"
+	Cilium            Component = "cilium-config"
+	NFD               Component = "nfd-config"
+	NutanixStorageCSI Component = "nutanix-csi-config"
+)
+
+type HelmChartGetter struct {
 	cl          ctrlclient.Reader
 	cmName      string
 	cmNamespace string
 }
 
-type HelmSettings struct {
-	HelmChartName       string `yaml:"defaultChartName"`
-	HelmChartVersion    string `yaml:"defaultChartVersion"`
-	HelmChartRepository string `yaml:"defaultRepositoryUrl"`
+type HelmChart struct {
+	Name       string `yaml:"defaultChartName"`
+	Version    string `yaml:"defaultChartVersion"`
+	Repository string `yaml:"defaultRepositoryUrl"`
 }
 
-func NewHelmConfigFromConfigMap(cmName, cmNamespace string, cl ctrlclient.Reader) *HelmConfig {
-	return &HelmConfig{
+func NewHelmChartGetterFromConfigMap(
+	cmName, cmNamespace string,
+	cl ctrlclient.Reader,
+) *HelmChartGetter {
+	return &HelmChartGetter{
 		cl,
 		cmName,
 		cmNamespace,
 	}
 }
 
-func (h *HelmConfig) get(
+func (h *HelmChartGetter) get(
 	ctx context.Context,
 ) (*corev1.ConfigMap, error) {
 	cm := &corev1.ConfigMap{
@@ -54,19 +68,26 @@ func (h *HelmConfig) get(
 	return cm, err
 }
 
-func (h *HelmConfig) GetSettingsFor(
+func (h *HelmChartGetter) For(
 	ctx context.Context,
-	componentSettings string,
-) (*HelmSettings, error) {
+	log logr.Logger,
+	name Component,
+) (*HelmChart, error) {
+	log.Info(
+		fmt.Sprintf("Fetching HelmChart info for %s from configmap %s/%s",
+			string(name),
+			h.cmName,
+			h.cmNamespace),
+	)
 	cm, err := h.get(ctx)
 	if err != nil {
 		return nil, err
 	}
-	d, ok := cm.Data[componentSettings]
+	d, ok := cm.Data[string(name)]
 	if !ok {
-		return nil, fmt.Errorf("did not find key %s in %v", componentSettings, cm.Data)
+		return nil, fmt.Errorf("did not find key %s in %v", name, cm.Data)
 	}
-	var settings HelmSettings
+	var settings HelmChart
 	err = yaml.Unmarshal([]byte(d), &settings)
 	return &settings, err
 }

@@ -42,8 +42,8 @@ func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 type helmAddonStrategy struct {
 	config helmAddonConfig
 
-	client       ctrlclient.Client
-	helmSettings *config.HelmSettings
+	client    ctrlclient.Client
+	helmChart *config.HelmChart
 }
 
 func (s helmAddonStrategy) apply(
@@ -65,7 +65,7 @@ func (s helmAddonStrategy) apply(
 	values += fmt.Sprintf(`
 image:
   tag: v%s-minimal
-`, s.helmSettings.HelmChartVersion)
+`, s.helmChart.Version)
 
 	hcp := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
@@ -77,14 +77,14 @@ image:
 			Name:      "node-feature-discovery-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   s.helmSettings.HelmChartRepository,
-			ChartName: s.helmSettings.HelmChartName,
+			RepoURL:   s.helmChart.Repository,
+			ChartName: s.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{capiv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: defaultHelmReleaseNamespace,
 			ReleaseName:      defaultHelmReleaseName,
-			Version:          s.helmSettings.HelmChartVersion,
+			Version:          s.helmChart.Version,
 			ValuesTemplate:   values,
 		},
 	}

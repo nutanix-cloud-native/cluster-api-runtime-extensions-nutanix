@@ -44,9 +44,9 @@ func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type CalicoCNI struct {
-	client                ctrlclient.Client
-	config                *CNIConfig
-	helmAddonConfigGetter *config.HelmConfig
+	client              ctrlclient.Client
+	config              *CNIConfig
+	helmChartInfoGetter *config.HelmChartGetter
 
 	variableName string
 	variablePath []string
@@ -60,14 +60,14 @@ var (
 func New(
 	c ctrlclient.Client,
 	cfg *CNIConfig,
-	helmAddonConfigGetter *config.HelmConfig,
+	helmChartInfoGetter *config.HelmChartGetter,
 ) *CalicoCNI {
 	return &CalicoCNI{
-		client:                c,
-		config:                cfg,
-		helmAddonConfigGetter: helmAddonConfigGetter,
-		variableName:          clusterconfig.MetaVariableName,
-		variablePath:          []string{"addons", v1alpha1.CNIVariableName},
+		client:              c,
+		config:              cfg,
+		helmChartInfoGetter: helmChartInfoGetter,
+		variableName:        clusterconfig.MetaVariableName,
+		variablePath:        []string{"addons", v1alpha1.CNIVariableName},
 	}
 }
 
@@ -130,7 +130,7 @@ func (c *CalicoCNI) AfterControlPlaneInitialized(
 	case v1alpha1.AddonStrategyHelmAddon:
 		// this is tigera and not calico because we deploy calico via operataor
 		log.Info("fetching settings for tigera-operator-config")
-		helmSettings, err := c.helmAddonConfigGetter.GetSettingsFor(ctx, "tigera-operator-config")
+		helmChart, err := c.helmChartInfoGetter.For(ctx, log, config.Tigera)
 		if err != nil {
 			log.Error(
 				err,
@@ -144,11 +144,11 @@ func (c *CalicoCNI) AfterControlPlaneInitialized(
 			)
 			return
 		}
-		log.Info(fmt.Sprintf("using settings %v to install helm chart config", helmSettings))
+		log.Info(fmt.Sprintf("using settings %v to install helm chart config", helmChart))
 		strategy = helmAddonStrategy{
-			config:       c.config.helmAddonConfig,
-			client:       c.client,
-			helmSettings: helmSettings,
+			config:    c.config.helmAddonConfig,
+			client:    c.client,
+			helmChart: helmChart,
 		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)

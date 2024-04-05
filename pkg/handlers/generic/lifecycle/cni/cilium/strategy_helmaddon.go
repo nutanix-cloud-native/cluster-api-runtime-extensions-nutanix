@@ -40,9 +40,9 @@ func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type helmAddonStrategy struct {
-	config       helmAddonConfig
-	client       ctrlclient.Client
-	helmSettings *config.HelmSettings
+	config    helmAddonConfig
+	client    ctrlclient.Client
+	helmChart *config.HelmChart
 }
 
 func (s helmAddonStrategy) apply(
@@ -70,14 +70,14 @@ func (s helmAddonStrategy) apply(
 			Name:      "cilium-cni-installation-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   s.helmSettings.HelmChartRepository,
-			ChartName: s.helmSettings.HelmChartName,
+			RepoURL:   s.helmChart.Repository,
+			ChartName: s.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{capiv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: defaultCiliumNamespace,
 			ReleaseName:      defaultCiliumReleaseName,
-			Version:          s.helmSettings.HelmChartVersion,
+			Version:          s.helmChart.Version,
 			ValuesTemplate:   valuesTemplateConfigMap.Data["values.yaml"],
 		},
 	}

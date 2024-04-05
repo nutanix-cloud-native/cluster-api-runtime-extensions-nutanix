@@ -44,9 +44,9 @@ func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type CiliumCNI struct {
-	client                ctrlclient.Client
-	config                *CNIConfig
-	helmAddonConfigGetter *config.HelmConfig
+	client              ctrlclient.Client
+	config              *CNIConfig
+	helmChartInfoGetter *config.HelmChartGetter
 
 	variableName string
 	variablePath []string
@@ -60,14 +60,14 @@ var (
 func New(
 	c ctrlclient.Client,
 	cfg *CNIConfig,
-	helmAddonConfigGetter *config.HelmConfig,
+	helmChartInfoGetter *config.HelmChartGetter,
 ) *CiliumCNI {
 	return &CiliumCNI{
-		client:                c,
-		config:                cfg,
-		helmAddonConfigGetter: helmAddonConfigGetter,
-		variableName:          clusterconfig.MetaVariableName,
-		variablePath:          []string{"addons", v1alpha1.CNIVariableName},
+		client:              c,
+		config:              cfg,
+		helmChartInfoGetter: helmChartInfoGetter,
+		variableName:        clusterconfig.MetaVariableName,
+		variablePath:        []string{"addons", v1alpha1.CNIVariableName},
 	}
 }
 
@@ -128,7 +128,7 @@ func (c *CiliumCNI) AfterControlPlaneInitialized(
 			client: c.client,
 		}
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmSettings, err := c.helmAddonConfigGetter.GetSettingsFor(ctx, "cilium-config")
+		helmChart, err := c.helmChartInfoGetter.For(ctx, log, config.Cilium)
 		if err != nil {
 			log.Error(
 				err,
@@ -143,9 +143,9 @@ func (c *CiliumCNI) AfterControlPlaneInitialized(
 			return
 		}
 		strategy = helmAddonStrategy{
-			config:       c.config.helmAddonConfig,
-			client:       c.client,
-			helmSettings: helmSettings,
+			config:    c.config.helmAddonConfig,
+			client:    c.client,
+			helmChart: helmChart,
 		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)

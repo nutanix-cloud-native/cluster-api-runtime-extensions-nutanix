@@ -56,7 +56,7 @@ func New(
 }
 
 func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
-	helmAddonConfigGetter := config.NewHelmConfigFromConfigMap(
+	helmChartInfoGetter := config.NewHelmChartGetterFromConfigMap(
 		h.helmLifecycleOptions.HelmAddonsConfigMapName,
 		h.globalOptions.DefaultsNamespace(),
 		mgr.GetClient(),
@@ -66,17 +66,17 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		v1alpha1.CSIProviderNutanix: nutanixcsi.New(
 			mgr.GetClient(),
 			h.nutnaixCSIConfig,
-			helmAddonConfigGetter,
+			helmChartInfoGetter,
 		),
 	}
 	ccmHandlers := map[string]ccm.CCMProvider{
 		v1alpha1.CCMProviderAWS: awsccm.New(mgr.GetClient(), h.awsccmConfig),
 	}
 	return []handlers.Named{
-		calico.New(mgr.GetClient(), h.calicoCNIConfig, helmAddonConfigGetter),
-		cilium.New(mgr.GetClient(), h.ciliumCNIConfig, helmAddonConfigGetter),
-		nfd.New(mgr.GetClient(), h.nfdConfig, helmAddonConfigGetter),
-		clusterautoscaler.New(mgr.GetClient(), h.clusterAutoscalerConfig, helmAddonConfigGetter),
+		calico.New(mgr.GetClient(), h.calicoCNIConfig, helmChartInfoGetter),
+		cilium.New(mgr.GetClient(), h.ciliumCNIConfig, helmChartInfoGetter),
+		nfd.New(mgr.GetClient(), h.nfdConfig, helmChartInfoGetter),
+		clusterautoscaler.New(mgr.GetClient(), h.clusterAutoscalerConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
 		csi.New(mgr.GetClient(), csiHandlers),
 		ccm.New(mgr.GetClient(), ccmHandlers),

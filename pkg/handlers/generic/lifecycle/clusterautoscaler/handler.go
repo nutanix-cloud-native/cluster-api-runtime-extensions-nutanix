@@ -44,9 +44,9 @@ func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type DefaultClusterAutoscaler struct {
-	client                ctrlclient.Client
-	config                *Config
-	helmAddonConfigGetter *config.HelmConfig
+	client              ctrlclient.Client
+	config              *Config
+	helmChartInfoGetter *config.HelmChartGetter
 
 	variableName string   // points to the global config variable
 	variablePath []string // path of this variable on the global config variable
@@ -60,14 +60,14 @@ var (
 func New(
 	c ctrlclient.Client,
 	cfg *Config,
-	helmAddonConfigGetter *config.HelmConfig,
+	helmChartInfoGetter *config.HelmChartGetter,
 ) *DefaultClusterAutoscaler {
 	return &DefaultClusterAutoscaler{
-		client:                c,
-		config:                cfg,
-		helmAddonConfigGetter: helmAddonConfigGetter,
-		variableName:          clusterconfig.MetaVariableName,
-		variablePath:          []string{"addons", v1alpha1.ClusterAutoscalerVariableName},
+		client:              c,
+		config:              cfg,
+		helmChartInfoGetter: helmChartInfoGetter,
+		variableName:        clusterconfig.MetaVariableName,
+		variablePath:        []string{"addons", v1alpha1.ClusterAutoscalerVariableName},
 	}
 }
 
@@ -121,9 +121,10 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 			client: n.client,
 		}
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmSettings, err := n.helmAddonConfigGetter.GetSettingsFor(
+		helmChart, err := n.helmChartInfoGetter.For(
 			ctx,
-			"cluster-autoscaler-config",
+			log,
+			config.Autoscaler,
 		)
 		if err != nil {
 			log.Error(
@@ -139,9 +140,9 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 			return
 		}
 		strategy = helmAddonStrategy{
-			config:       n.config.helmAddonConfig,
-			client:       n.client,
-			helmSettings: helmSettings,
+			config:    n.config.helmAddonConfig,
+			client:    n.client,
+			helmChart: helmChart,
 		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)

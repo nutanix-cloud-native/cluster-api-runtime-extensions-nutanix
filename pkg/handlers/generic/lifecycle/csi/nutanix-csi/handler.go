@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -63,20 +64,20 @@ func (n *NutanixCSIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type NutanixCSI struct {
-	client                ctrlclient.Client
-	config                *NutanixCSIConfig
-	helmAddonConfigGetter *config.HelmConfig
+	client              ctrlclient.Client
+	config              *NutanixCSIConfig
+	helmChartInfoGetter *config.HelmChartGetter
 }
 
 func New(
 	c ctrlclient.Client,
 	cfg *NutanixCSIConfig,
-	helmAddonConfigGetter *config.HelmConfig,
+	helmChartInfoGetter *config.HelmChartGetter,
 ) *NutanixCSI {
 	return &NutanixCSI{
-		client:                c,
-		config:                cfg,
-		helmAddonConfigGetter: helmAddonConfigGetter,
+		client:              c,
+		config:              cfg,
+		helmChartInfoGetter: helmChartInfoGetter,
 	}
 }
 
@@ -146,7 +147,11 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		)
 	}
 	values := valuesTemplateConfigMap.Data["values.yaml"]
-	helmSettings, err := n.helmAddonConfigGetter.GetSettingsFor(ctx, "nutanix-csi-config")
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"cluster",
+		ctrlclient.ObjectKeyFromObject(&req.Cluster),
+	)
+	helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixStorageCSI)
 	if err != nil {
 		return fmt.Errorf("failed to get values for nutanix-csi-config %w", err)
 	}
@@ -161,14 +166,14 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			Name:      "nutanix-csi-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   helmSettings.HelmChartRepository,
-			ChartName: helmSettings.HelmChartName,
+			RepoURL:   helmChart.Repository,
+			ChartName: helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: req.Cluster.Namespace,
 			ReleaseName:      fmt.Sprintf(defaultStorageHelmReleaseNameTemplate, req.Cluster.Name),
-			Version:          helmSettings.HelmChartVersion,
+			Version:          helmChart.Version,
 			ValuesTemplate:   values,
 		},
 	}
