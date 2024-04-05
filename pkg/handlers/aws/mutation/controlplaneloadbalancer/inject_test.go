@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package region
+package controlplaneloadbalancer
 
 import (
 	"testing"
@@ -10,6 +10,7 @@ import (
 	"github.com/onsi/gomega"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	capav1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
@@ -17,13 +18,12 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
-func TestRegionPatch(t *testing.T) {
+func TestControlPlaneLoadBalancerPatch(t *testing.T) {
 	gomega.RegisterFailHandler(Fail)
-	RunSpecs(t, "AWS Region mutator suite")
+	RunSpecs(t, "AWS ControlPlane LoadBalancer mutator suite")
 }
 
-var _ = Describe("Generate AWS Region patches", func() {
-	// only add aws region patch
+var _ = Describe("Generate AWS ControlPlane LoadBalancer patches", func() {
 	patchGenerator := func() mutation.GeneratePatches {
 		return mutation.NewMetaGeneratePatchesHandler("", NewPatch()).(mutation.GeneratePatches)
 	}
@@ -33,20 +33,45 @@ var _ = Describe("Generate AWS Region patches", func() {
 			Name: "unset variable",
 		},
 		{
-			Name: "region set",
+			Name: "ControlPlaneLoadbalancer scheme set to internet-facing",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
-					"a-specific-region",
+					v1alpha1.AWSLoadBalancerSpec{
+						Scheme: &capav1.ELBSchemeInternetFacing,
+					},
 					v1alpha1.AWSVariableName,
 					VariableName,
 				),
 			},
 			RequestItem: request.NewAWSClusterTemplateRequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/region",
-				ValueMatcher: gomega.Equal("a-specific-region"),
+				Operation: "add",
+				Path:      "/spec/template/spec/controlPlaneLoadBalancer",
+				ValueMatcher: gomega.HaveKeyWithValue(
+					"scheme", "internet-facing",
+				),
+			}},
+		},
+		{
+			Name: "ControlPlaneLoadbalancer scheme set to internal",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					clusterconfig.MetaVariableName,
+					v1alpha1.AWSLoadBalancerSpec{
+						Scheme: &capav1.ELBSchemeInternal,
+					},
+					v1alpha1.AWSVariableName,
+					VariableName,
+				),
+			},
+			RequestItem: request.NewAWSClusterTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/controlPlaneLoadBalancer",
+				ValueMatcher: gomega.HaveKeyWithValue(
+					"scheme", "internal",
+				),
 			}},
 		},
 	}

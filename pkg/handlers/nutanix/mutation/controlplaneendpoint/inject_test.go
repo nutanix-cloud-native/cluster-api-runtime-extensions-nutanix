@@ -1,29 +1,29 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package region
+package controlplaneendpoint
 
 import (
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
+	nutanixclusterconfig "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
-func TestRegionPatch(t *testing.T) {
+func TestControlPlaneEndpointPatch(t *testing.T) {
 	gomega.RegisterFailHandler(Fail)
-	RunSpecs(t, "AWS Region mutator suite")
+	RunSpecs(t, "Nutanix ControlPlane endpoint suite")
 }
 
-var _ = Describe("Generate AWS Region patches", func() {
-	// only add aws region patch
+var _ = Describe("Generate Nutanix ControlPlane endpoint patches", func() {
 	patchGenerator := func() mutation.GeneratePatches {
 		return mutation.NewMetaGeneratePatchesHandler("", NewPatch()).(mutation.GeneratePatches)
 	}
@@ -33,21 +33,31 @@ var _ = Describe("Generate AWS Region patches", func() {
 			Name: "unset variable",
 		},
 		{
-			Name: "region set",
+			Name: "ControlPlaneEndpoint set to valid host and port",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
-					"a-specific-region",
-					v1alpha1.AWSVariableName,
+					clusterv1.APIEndpoint{
+						Host: "10.20.100.10",
+						Port: 6443,
+					},
+					nutanixclusterconfig.NutanixVariableName,
 					VariableName,
 				),
 			},
-			RequestItem: request.NewAWSClusterTemplateRequestItem("1234"),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/region",
-				ValueMatcher: gomega.Equal("a-specific-region"),
-			}},
+			RequestItem: request.NewNutanixClusterTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation:    "replace",
+					Path:         "/spec/template/spec/controlPlaneEndpoint/host",
+					ValueMatcher: gomega.Equal("10.20.100.10"),
+				},
+				{
+					Operation:    "replace",
+					Path:         "/spec/template/spec/controlPlaneEndpoint/port",
+					ValueMatcher: gomega.BeEquivalentTo(6443),
+				},
+			},
 		},
 	}
 

@@ -7,10 +7,18 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
+	"k8s.io/apiserver/pkg/storage/names"
 	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 func Test_generateBootstrapUser(t *testing.T) {
@@ -114,3 +122,83 @@ func Test_generateBootstrapUser(t *testing.T) {
 		})
 	}
 }
+
+var (
+	testUser1 = v1alpha1.User{
+		Name:           "complete",
+		HashedPassword: "password",
+		SSHAuthorizedKeys: []string{
+			"key1",
+			"key2",
+		},
+		Sudo: "ALL=(ALL) NOPASSWD:ALL",
+	}
+	testUser2 = v1alpha1.User{
+		Name: "onlyname",
+	}
+)
+
+func TestUsersPatch(t *testing.T) {
+	gomega.RegisterFailHandler(Fail)
+	RunSpecs(t, "Users mutator suite")
+}
+
+var _ = Describe("Generate Users patches", func() {
+	patchGenerator := func() mutation.GeneratePatches {
+		return mutation.NewMetaGeneratePatchesHandler("", NewPatch()).(mutation.GeneratePatches)
+	}
+
+	testDefs := []capitest.PatchTestDef{
+		{
+			Name: "unset variable",
+		},
+		{
+			Name: "users set for KubeadmControlPlaneTemplate",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					clusterconfig.MetaVariableName,
+					[]v1alpha1.User{testUser1, testUser2},
+					VariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/kubeadmConfigSpec/users",
+				ValueMatcher: gomega.HaveLen(2),
+			}},
+		},
+		{
+			Name: "users set for KubeadmConfigTemplate generic worker",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					clusterconfig.MetaVariableName,
+					[]v1alpha1.User{testUser1, testUser2},
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					map[string]any{
+						"machineDeployment": map[string]any{
+							"class": names.SimpleNameGenerator.GenerateName("worker-"),
+						},
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/users",
+				ValueMatcher: gomega.HaveLen(2),
+			}},
+		},
+	}
+
+	// create test node for each case
+	for testIdx := range testDefs {
+		tt := testDefs[testIdx]
+		It(tt.Name, func() {
+			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt)
+		})
+	}
+})

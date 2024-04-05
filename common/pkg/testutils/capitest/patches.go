@@ -92,6 +92,52 @@ func ValidateGeneratePatches[T mutation.GeneratePatches](
 	DescribeTable("Patches", testFunc, testArgs)
 }
 
+// TODO(shalinpatel): AssertGeneratePatches is a replacement of ValidateGeneratePatches function.
+// remove ValidateGeneratePatches once all the shared test cases are moved to their own patch package.
+func AssertGeneratePatches[T mutation.GeneratePatches](
+	t GinkgoTInterface,
+	handlerCreator func() T,
+	tt *PatchTestDef,
+) {
+	t.Helper()
+
+	g := gomega.NewWithT(t)
+	h := handlerCreator()
+	req := &runtimehooksv1.GeneratePatchesRequest{
+		Variables: tt.Vars,
+		Items: []runtimehooksv1.GeneratePatchesRequestItem{
+			tt.RequestItem,
+			{
+				HolderReference: runtimehooksv1.HolderReference{
+					APIVersion: capiv1.GroupVersion.String(),
+					Kind:       "Cluster",
+					Namespace:  request.Namespace,
+					Name:       request.ClusterName,
+				},
+			},
+		},
+	}
+	resp := &runtimehooksv1.GeneratePatchesResponse{}
+	h.GeneratePatches(context.Background(), req, resp)
+	expectedStatus := runtimehooksv1.ResponseStatusSuccess
+	if tt.ExpectedFailure {
+		expectedStatus = runtimehooksv1.ResponseStatusFailure
+	}
+	g.Expect(resp.Status).
+		To(gomega.Equal(expectedStatus), fmt.Sprintf("Message: %s", resp.Message))
+
+	if len(tt.ExpectedPatchMatchers) == 0 {
+		g.Expect(resp.Items).To(gomega.BeEmpty())
+		return
+	}
+	g.Expect(resp.Items).To(containPatches(&tt.RequestItem, tt.ExpectedPatchMatchers...))
+
+	if len(tt.UnexpectedPatchMatchers) > 0 {
+		g.Expect(resp.Items).
+			ToNot(containPatches(&tt.RequestItem, tt.UnexpectedPatchMatchers...))
+	}
+}
+
 // VariableWithValue returns a runtimehooksv1.Variable with the passed name and value.
 func VariableWithValue(
 	variableName string,
