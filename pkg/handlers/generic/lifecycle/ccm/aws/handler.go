@@ -96,7 +96,13 @@ func (a *AWSCCM) Apply(
 		)
 	}
 
-	err = lifecycleutils.EnsureCRSForClusterFromObjects(ctx, ccmConfigMap.Name, a.client, cluster, ccmConfigMap)
+	err = lifecycleutils.EnsureCRSForClusterFromObjects(
+		ctx,
+		ccmConfigMap.Name,
+		a.client,
+		cluster,
+		ccmConfigMap,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to generate CCM CRS for cluster: %w", err)
 	}

@@ -80,16 +80,27 @@ func (NutanixMachineDetails) VariableSchema() clusterv1.VariableSchema {
 					Description: "memorySize is the memory size (in Quantity format) of the VM eg. 4Gi",
 					Type:        "string",
 				},
-				"image":    NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
-				"cluster":  NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
-				"subnets":  NutanixResourceIdentifiers{}.VariableSchema().OpenAPIV3Schema,
-				"bootType": NutanixBootType(capxv1.NutanixBootTypeLegacy).VariableSchema().OpenAPIV3Schema,
+				"image":   NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
+				"cluster": NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
+				"subnets": NutanixResourceIdentifiers{}.VariableSchema().OpenAPIV3Schema,
+				"bootType": NutanixBootType(
+					capxv1.NutanixBootTypeLegacy,
+				).VariableSchema().
+					OpenAPIV3Schema,
 				"systemDiskSize": {
 					Description: "systemDiskSize is size (in Quantity format) of the system disk of the VM eg. 20Gi",
 					Type:        "string",
 				},
 			},
-			Required: []string{"vcpusPerSocket", "vcpuSockets", "memorySize", "image", "cluster", "subnets", "systemDiskSize"},
+			Required: []string{
+				"vcpusPerSocket",
+				"vcpuSockets",
+				"memorySize",
+				"image",
+				"cluster",
+				"subnets",
+				"systemDiskSize",
+			},
 		},
 	}
 }
@@ -134,7 +145,10 @@ func (NutanixResourceIdentifier) VariableSchema() clusterv1.VariableSchema {
 			Description: "Nutanix Resource Identifier",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"type": NutanixIdentifierType(capxv1.NutanixIdentifierName).VariableSchema().OpenAPIV3Schema,
+				"type": NutanixIdentifierType(
+					capxv1.NutanixIdentifierName,
+				).VariableSchema().
+					OpenAPIV3Schema,
 				"uuid": {
 					Type:        "string",
 					Description: "uuid is the UUID of the resource in the PC.",
