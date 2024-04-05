@@ -75,9 +75,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/apply-patches.sh",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/restart.sh",
-						),
 					),
 				},
 				{
@@ -85,7 +82,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 					ValueMatcher: gomega.ContainElements(
 						"/bin/bash /etc/containerd/apply-patches.sh",
-						"/bin/bash /etc/containerd/restart.sh",
 					),
 				},
 			},
@@ -124,9 +120,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/apply-patches.sh",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/restart.sh",
-						),
 					),
 				},
 				{
@@ -134,7 +127,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 					ValueMatcher: gomega.ContainElements(
 						"/bin/bash /etc/containerd/apply-patches.sh",
-						"/bin/bash /etc/containerd/restart.sh",
 					),
 				},
 			},
@@ -173,9 +165,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/apply-patches.sh",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/restart.sh",
-						),
 					),
 				},
 				{
@@ -183,7 +172,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 					Path:      "/spec/template/spec/preKubeadmCommands",
 					ValueMatcher: gomega.ContainElements(
 						"/bin/bash /etc/containerd/apply-patches.sh",
-						"/bin/bash /etc/containerd/restart.sh",
 					),
 				},
 			},
@@ -230,9 +218,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/apply-patches.sh",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/restart.sh",
-						),
 					),
 				},
 				{
@@ -240,7 +225,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 					Path:      "/spec/template/spec/preKubeadmCommands",
 					ValueMatcher: gomega.ContainElements(
 						"/bin/bash /etc/containerd/apply-patches.sh",
-						"/bin/bash /etc/containerd/restart.sh",
 					),
 				},
 			},

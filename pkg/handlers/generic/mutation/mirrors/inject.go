@@ -191,10 +191,6 @@ func generateFilesAndCommands(
 	}
 	files = append(files, applyPatchesFile...)
 	commands = append(commands, applyPatchesCommand)
-	// generate Containerd restart script and command
-	restartFile, restartCommand := generateContainerdRestartScript()
-	files = append(files, restartFile...)
-	commands = append(commands, restartCommand)
 
 	return files, commands, err
 }
