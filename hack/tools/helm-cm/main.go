@@ -58,7 +58,6 @@ func main() {
 		}
 		fullOutputfilePath = path.Join(wd, outputFile)
 	}
-	fmt.Println(fullOutputfilePath)
 	f, err := os.OpenFile(fullOutputfilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 	if err != nil {
 		log.Error(err, "failed to create file")
@@ -135,7 +134,7 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 
 	finalCM := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "default-helm-addons-config",
+			Name: "placeholder",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),

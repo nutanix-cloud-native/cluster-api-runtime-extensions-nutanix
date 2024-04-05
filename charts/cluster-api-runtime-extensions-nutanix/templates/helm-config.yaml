@@ -31,4 +31,4 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: default-helm-addons-config
+  name: {{ .Values.helmAddonsConfigMap }}
