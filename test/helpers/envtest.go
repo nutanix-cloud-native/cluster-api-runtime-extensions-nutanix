@@ -130,6 +130,13 @@ func (t *TestEnvironmentConfiguration) Build() (*TestEnvironment, error) {
 	}, nil
 }
 
+// GetK8sClient returns a “live” k8s client that does will not invoke against controller cache.
+// If a test is writeing an object, they are not immediately available to read since controller caches
+// are not synchronized yet.
+func (t *TestEnvironment) GetK8sClient() (client.Client, error) {
+	return client.New(t.Manager.GetConfig(), client.Options{Scheme: scheme.Scheme})
+}
+
 // StartManager starts the test controller against the local API server.
 func (t *TestEnvironment) StartManager(ctx context.Context) error {
 	return t.Manager.Start(ctx)

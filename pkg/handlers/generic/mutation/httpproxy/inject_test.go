@@ -9,11 +9,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apiserver/pkg/storage/names"
 	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
-	httpproxy "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/httpproxy/tests"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -201,10 +205,83 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 			"",
 			NewPatch(testEnv.Client)).(mutation.GeneratePatches)
 	}
-	httpproxy.TestGeneratePatches(
-		GinkgoT(),
-		patchGenerator,
-		clusterconfig.MetaVariableName,
-		VariableName,
-	)
+
+	testDefs := []capitest.PatchTestDef{
+		{
+			Name: "unset variable",
+		},
+		{
+			Name: "http proxy set for KubeadmConfigTemplate generic worker",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					clusterconfig.MetaVariableName,
+					v1alpha1.HTTPProxy{
+						HTTP:         "http://example.com",
+						HTTPS:        "https://example.com",
+						AdditionalNo: []string{"no-proxy.example.com"},
+					},
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					map[string]any{
+						"machineDeployment": map[string]any{
+							"class": names.SimpleNameGenerator.GenerateName("worker-"),
+						},
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/files",
+				ValueMatcher: gomega.ContainElements(
+					gomega.HaveKeyWithValue(
+						"path", "/etc/systemd/system/containerd.service.d/http-proxy.conf",
+					),
+					gomega.HaveKeyWithValue(
+						"path", "/etc/systemd/system/kubelet.service.d/http-proxy.conf",
+					),
+				),
+			}},
+		},
+		{
+			Name: "http proxy set for KubeadmControlPlaneTemplate",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					clusterconfig.MetaVariableName,
+					v1alpha1.HTTPProxy{
+						HTTP:         "http://example.com",
+						HTTPS:        "https://example.com",
+						AdditionalNo: []string{"no-proxy.example.com"},
+					},
+					VariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElements(
+					gomega.HaveKeyWithValue(
+						"path", "/etc/systemd/system/containerd.service.d/http-proxy.conf",
+					),
+					gomega.HaveKeyWithValue(
+						"path", "/etc/systemd/system/kubelet.service.d/http-proxy.conf",
+					),
+				),
+			}},
+		},
+	}
+	// create test node for each case
+	for testIdx := range testDefs {
+		tt := testDefs[testIdx]
+		It(tt.Name, func() {
+			capitest.AssertGeneratePatches(
+				GinkgoT(),
+				patchGenerator,
+				&tt,
+			)
+		})
+	}
 })

@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package region
+package extraapiservercertsans
 
 import (
 	"testing"
@@ -17,13 +17,12 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
-func TestRegionPatch(t *testing.T) {
+func TestExtraAPIServerCertSANsPatch(t *testing.T) {
 	gomega.RegisterFailHandler(Fail)
-	RunSpecs(t, "AWS Region mutator suite")
+	RunSpecs(t, "Extra API server certificate mutator suite")
 }
 
-var _ = Describe("Generate AWS Region patches", func() {
-	// only add aws region patch
+var _ = Describe("Generate Extra API server certificate patches", func() {
 	patchGenerator := func() mutation.GeneratePatches {
 		return mutation.NewMetaGeneratePatchesHandler("", NewPatch()).(mutation.GeneratePatches)
 	}
@@ -33,20 +32,25 @@ var _ = Describe("Generate AWS Region patches", func() {
 			Name: "unset variable",
 		},
 		{
-			Name: "region set",
+			Name: "extra API server cert SANs set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
-					"a-specific-region",
-					v1alpha1.AWSVariableName,
+					v1alpha1.ExtraAPIServerCertSANs{"a.b.c.example.com", "d.e.f.example.com"},
 					VariableName,
 				),
 			},
-			RequestItem: request.NewAWSClusterTemplateRequestItem("1234"),
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "add",
-				Path:         "/spec/template/spec/region",
-				ValueMatcher: gomega.Equal("a-specific-region"),
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
+				ValueMatcher: gomega.HaveKeyWithValue(
+					"apiServer",
+					gomega.HaveKeyWithValue(
+						"certSANs",
+						[]interface{}{"a.b.c.example.com", "d.e.f.example.com"},
+					),
+				),
 			}},
 		},
 	}
@@ -55,11 +59,7 @@ var _ = Describe("Generate AWS Region patches", func() {
 	for testIdx := range testDefs {
 		tt := testDefs[testIdx]
 		It(tt.Name, func() {
-			capitest.AssertGeneratePatches(
-				GinkgoT(),
-				patchGenerator,
-				&tt,
-			)
+			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt)
 		})
 	}
 })
