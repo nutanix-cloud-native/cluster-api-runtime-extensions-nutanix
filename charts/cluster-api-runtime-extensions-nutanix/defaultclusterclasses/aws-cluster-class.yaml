@@ -106,7 +106,7 @@ spec:
   template:
     spec:
       iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
-      instanceType: m5.xlarge
+      instanceType: PLACEHOLDER
       sshKeyName: ""
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
@@ -119,7 +119,7 @@ spec:
   template:
     spec:
       iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
-      instanceType: m5.2xlarge
+      instanceType: PLACEHOLDER
       sshKeyName: ""
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1

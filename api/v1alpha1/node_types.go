@@ -41,7 +41,7 @@ func (s NodeConfigSpec) VariableSchema() clusterv1.VariableSchema {
 		maps.Copy(
 			nodeConfigProps.OpenAPIV3Schema.Properties,
 			map[string]clusterv1.JSONSchemaProps{
-				AWSVariableName: AWSNodeSpec{}.VariableSchema().OpenAPIV3Schema,
+				AWSVariableName: s.AWS.VariableSchema().OpenAPIV3Schema,
 			},
 		)
 	case s.Docker != nil:
@@ -61,6 +61,12 @@ func (s NodeConfigSpec) VariableSchema() clusterv1.VariableSchema {
 	}
 
 	return nodeConfigProps
+}
+
+func NewAWSWorkerConfigSpec() *NodeConfigSpec {
+	return &NodeConfigSpec{
+		AWS: NewAWSWorkerNodeSpec(),
+	}
 }
 
 type GenericNodeConfig struct{}

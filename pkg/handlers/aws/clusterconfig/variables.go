@@ -43,7 +43,7 @@ func (h *awsClusterConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     clusterconfig.MetaVariableName,
 		Required: true,
-		Schema:   v1alpha1.ClusterConfigSpec{AWS: &v1alpha1.AWSSpec{}}.VariableSchema(),
+		Schema:   v1alpha1.NewAWSClusterConfigSpec().VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
