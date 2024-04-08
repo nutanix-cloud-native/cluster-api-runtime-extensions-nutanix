@@ -14,4 +14,6 @@ const (
 	AWSVariableName = "aws"
 	// NutanixVariableName is the Nutanix config patch variable name.
 	NutanixVariableName = "nutanix"
+	// HelmChartRepository is the variable name for the OCI registry for addons.
+	HelmChartRepository = "HelmChartRepository"
 )

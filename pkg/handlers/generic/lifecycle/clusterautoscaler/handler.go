@@ -123,6 +123,7 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := n.helmChartInfoGetter.For(
 			ctx,
+			&req.Cluster,
 			log,
 			config.Autoscaler,
 		)

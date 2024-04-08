@@ -148,7 +148,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		"cluster",
 		ctrlclient.ObjectKeyFromObject(&req.Cluster),
 	)
-	helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixStorageCSI)
+	helmChart, err := n.helmChartInfoGetter.For(ctx, &req.Cluster, log, config.NutanixStorageCSI)
 	if err != nil {
 		return fmt.Errorf("failed to get values for nutanix-csi-config %w", err)
 	}
@@ -186,7 +186,12 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		return fmt.Errorf("failed to apply nutanix-csi installation HelmChartProxy: %w", err)
 	}
 
-	snapshotHelmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixSnapshotCSI)
+	snapshotHelmChart, err := n.helmChartInfoGetter.For(
+		ctx,
+		&req.Cluster,
+		log,
+		config.NutanixSnapshotCSI,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to get values for nutanix-csi-config %w", err)
 	}

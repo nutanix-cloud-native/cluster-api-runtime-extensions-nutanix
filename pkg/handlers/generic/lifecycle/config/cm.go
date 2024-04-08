@@ -11,7 +11,12 @@ import (
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 type Component string
@@ -27,9 +32,10 @@ const (
 )
 
 type HelmChartGetter struct {
-	cl          ctrlclient.Reader
-	cmName      string
-	cmNamespace string
+	cl           ctrlclient.Reader
+	cmName       string
+	cmNamespace  string
+	variablePath []string
 }
 
 type HelmChart struct {
@@ -46,6 +52,7 @@ func NewHelmChartGetterFromConfigMap(
 		cl,
 		cmName,
 		cmNamespace,
+		[]string{"addons", v1alpha1.HelmChartRepository},
 	}
 }
 
@@ -72,6 +79,7 @@ func (h *HelmChartGetter) get(
 
 func (h *HelmChartGetter) For(
 	ctx context.Context,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 	name Component,
 ) (*HelmChart, error) {
@@ -81,6 +89,19 @@ func (h *HelmChartGetter) For(
 			h.cmName,
 			h.cmNamespace),
 	)
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+
+	helmChartRepo, found, err := variables.Get[string](
+		varMap,
+		clusterconfig.MetaVariableName,
+		h.variablePath...)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get helmChartRepo variable from %s: %w",
+			clusterconfig.MetaVariableName,
+			err,
+		)
+	}
 	cm, err := h.get(ctx)
 	if err != nil {
 		return nil, err
@@ -89,7 +110,10 @@ func (h *HelmChartGetter) For(
 	if !ok {
 		return nil, fmt.Errorf("did not find key %s in %v", name, cm.Data)
 	}
-	var settings HelmChart
-	err = yaml.Unmarshal([]byte(d), &settings)
-	return &settings, err
+	var chart HelmChart
+	err = yaml.Unmarshal([]byte(d), &chart)
+	if found {
+		chart.Repository = helmChartRepo
+	}
+	return &chart, err
 }

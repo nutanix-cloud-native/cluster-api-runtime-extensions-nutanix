@@ -9,6 +9,7 @@ import (
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/openapi/patterns"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
@@ -24,6 +25,7 @@ const (
 )
 
 type Addons struct {
+	HelmChartRepository *string `json:"helmChartRepository,omitempty"`
 	// +optional
 	CNI *CNI `json:"cni,omitempty"`
 
@@ -46,6 +48,10 @@ func (Addons) VariableSchema() clusterv1.VariableSchema {
 			Description: "Cluster configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
+				"helmChartRepository": {
+					Pattern:     patterns.HostAndOptionalPort,
+					Description: "Optional OCI registry used to pull helm charts for adons",
+				},
 				"cni":               CNI{}.VariableSchema().OpenAPIV3Schema,
 				"nfd":               NFD{}.VariableSchema().OpenAPIV3Schema,
 				"clusterAutoscaler": ClusterAutoscaler{}.VariableSchema().OpenAPIV3Schema,
