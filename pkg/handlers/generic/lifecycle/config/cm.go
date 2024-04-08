@@ -17,11 +17,12 @@ import (
 type Component string
 
 const (
-	Autoscaler        Component = "cluster-autoscaler"
-	Tigera            Component = "tigera-operator"
-	Cilium            Component = "cilium"
-	NFD               Component = "nfd"
-	NutanixStorageCSI Component = "nutanix-storage-csi"
+	Autoscaler         Component = "cluster-autoscaler"
+	Tigera             Component = "tigera-operator"
+	Cilium             Component = "cilium"
+	NFD                Component = "nfd"
+	NutanixStorageCSI  Component = "nutanix-storage-csi"
+	NutanixSnapshotCSI Component = "nutanix-snapshot-csi"
 )
 
 type HelmChartGetter struct {

@@ -20,6 +20,10 @@ data:
     defaultChartName: node-feature-discovery
     defaultChartVersion: 0.15.2
     defaultRepositoryUrl: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+  nutanix-snapshot-csi: |
+    defaultChartName: nutanix-csi-snapshot
+    defaultChartVersion: v6.3.2
+    defaultRepositoryUrl: https://nutanix.github.io/helm/
   nutanix-storage-csi: |
     defaultChartName: nutanix-csi-storage
     defaultChartVersion: v2.6.6
