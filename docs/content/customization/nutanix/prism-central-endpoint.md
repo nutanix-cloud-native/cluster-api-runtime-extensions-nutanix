@@ -22,9 +22,8 @@ spec:
             prismCentralEndpoint:
               credentials:
                 name: secret-name
-              host: x.x.x.x
+              url: https://x.x.x.x:9440
               insecure: false
-              port: 9440
 ```
 
 Applying this configuration will result in the following value being set:

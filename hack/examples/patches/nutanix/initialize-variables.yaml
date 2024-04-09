@@ -11,9 +11,8 @@
       host: ${CONTROL_PLANE_ENDPOINT_IP}
       port: 6443
     prismCentralEndpoint:
-      host: ${NUTANIX_ENDPOINT}
+      url: https://${NUTANIX_ENDPOINT}:9440
       insecure: ${NUTANIX_INSECURE}
-      port: 9440
       credentials:
         name: ${CLUSTER_NAME}-pc-creds
 - op: "add"

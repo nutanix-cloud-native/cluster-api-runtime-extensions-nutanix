@@ -6,3 +6,7 @@ package patterns
 func Anchored(pattern string) string {
 	return "^" + pattern + "$"
 }
+
+func HTTPSURL() string {
+	return `^https://`
+}

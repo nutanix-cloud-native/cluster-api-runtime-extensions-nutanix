@@ -365,9 +365,8 @@ spec:
           prismCentralEndpoint:
             credentials:
               name: ${CLUSTER_NAME}-pc-creds
-            host: ${NUTANIX_ENDPOINT}
             insecure: ${NUTANIX_INSECURE}
-            port: 9440
+            url: https://${NUTANIX_ENDPOINT}:9440
     - name: workerConfig
       value:
         nutanix:
