@@ -154,6 +154,7 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 
 var ignored = []string{
 	"aws-ccm",
+	"aws-ebs-csi",
 }
 
 func isIgnored(filepath string) bool {
