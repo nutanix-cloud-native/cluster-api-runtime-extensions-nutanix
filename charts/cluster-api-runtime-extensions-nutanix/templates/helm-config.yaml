@@ -1,37 +1,33 @@
 apiVersion: v1
 data:
-  aws-ccm: |
-    defaultChartName: aws-cloud-controller-manager
-    defaultChartVersion: ""
-    defaultRepositoryUrl: https://kubernetes.github.io/cloud-provider-aws
   aws-ebs-csi: |
-    defaultChartName: aws-ebs-csi-driver
-    defaultChartVersion: v2.28.1
-    defaultRepositoryUrl: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+    ChartName: aws-ebs-csi-driver
+    ChartVersion: v2.28.1
+    RepositoryURL: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
   cilium: |
-    defaultChartName: cilium
-    defaultChartVersion: 1.15.0
-    defaultRepositoryUrl: https://helm.cilium.io/
+    ChartName: cilium
+    ChartVersion: 1.15.0
+    RepositoryURL: https://helm.cilium.io/
   cluster-autoscaler: |
-    defaultChartName: cluster-autoscaler
-    defaultChartVersion: 9.35.0
-    defaultRepositoryUrl: https://kubernetes.github.io/autoscaler
+    ChartName: cluster-autoscaler
+    ChartVersion: 9.35.0
+    RepositoryURL: https://kubernetes.github.io/autoscaler
   nfd: |
-    defaultChartName: node-feature-discovery
-    defaultChartVersion: 0.15.2
-    defaultRepositoryUrl: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+    ChartName: node-feature-discovery
+    ChartVersion: 0.15.2
+    RepositoryURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
   nutanix-snapshot-csi: |
-    defaultChartName: nutanix-csi-snapshot
-    defaultChartVersion: v6.3.2
-    defaultRepositoryUrl: https://nutanix.github.io/helm/
+    ChartName: nutanix-csi-snapshot
+    ChartVersion: v6.3.2
+    RepositoryURL: https://nutanix.github.io/helm/
   nutanix-storage-csi: |
-    defaultChartName: nutanix-csi-storage
-    defaultChartVersion: v2.6.6
-    defaultRepositoryUrl: https://nutanix.github.io/helm/
+    ChartName: nutanix-csi-storage
+    ChartVersion: v2.6.6
+    RepositoryURL: https://nutanix.github.io/helm/
   tigera-operator: |
-    defaultChartName: tigera-operator
-    defaultChartVersion: v3.26.4
-    defaultRepositoryUrl: https://docs.tigera.io/calico/charts
+    ChartName: tigera-operator
+    ChartVersion: v3.26.4
+    RepositoryURL: https://docs.tigera.io/calico/charts
 kind: ConfigMap
 metadata:
   creationTimestamp: null

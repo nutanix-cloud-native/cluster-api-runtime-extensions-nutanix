@@ -70,10 +70,10 @@ func main() {
 }
 
 type configMapInfo struct {
-	configMapFieldName   string
-	DefaultRepositoryURL string `json:"defaultRepositoryUrl"`
-	DefaultChartVersion  string `json:"defaultChartVersion"`
-	DefaultChartName     string `json:"defaultChartName"`
+	configMapFieldName string
+	RepositoryURL      string `json:"RepositoryURL"`
+	ChartVersion       string `json:"ChartVersion"`
+	ChartName          string `json:"ChartName"`
 }
 
 func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
@@ -91,7 +91,7 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 		if err != nil {
 			return err
 		}
-		if strings.Contains(filepath, "kustomization.yaml.tmpl") {
+		if strings.Contains(filepath, "kustomization.yaml.tmpl") && !isIgnored(filepath) {
 			f, err := os.Open(path.Join(fullPath, filepath))
 			if err != nil {
 				return fmt.Errorf("failed to open file: %w", err)
@@ -119,13 +119,13 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 			name := info["name"].(string)
 			dirName := strings.Split(filepath, "/")[0]
 			i := configMapInfo{
-				configMapFieldName:   dirName,
-				DefaultRepositoryURL: repo,
-				DefaultChartName:     name,
+				configMapFieldName: dirName,
+				RepositoryURL:      repo,
+				ChartName:          name,
 			}
 			versionEnvVar := info["version"].(string)
 			version := os.ExpandEnv(versionEnvVar)
-			i.DefaultChartVersion = version
+			i.ChartVersion = version
 			results = append(results, i)
 			return nil
 		}
@@ -150,4 +150,17 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 		finalCM.Data[res.configMapFieldName] = string(d)
 	}
 	return &finalCM, err
+}
+
+var ignored = []string{
+	"aws-ccm",
+}
+
+func isIgnored(filepath string) bool {
+	for _, i := range ignored {
+		if strings.Contains(filepath, i) {
+			return true
+		}
+	}
+	return false
 }
