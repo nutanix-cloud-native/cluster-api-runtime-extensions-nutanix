@@ -13,7 +13,8 @@ func NewGlobalOptions() *GlobalOptions {
 }
 
 type GlobalOptions struct {
-	defaultsNamespace string
+	defaultsNamespace       string
+	helmAddonsConfigMapName string
 }
 
 func (o *GlobalOptions) AddFlags(flags *pflag.FlagSet) {
@@ -23,8 +24,18 @@ func (o *GlobalOptions) AddFlags(flags *pflag.FlagSet) {
 		corev1.NamespaceDefault,
 		"namespace for default configurations",
 	)
+	flags.StringVar(
+		&o.helmAddonsConfigMapName,
+		"helm-addons-configmap",
+		"default-helm-addons-config",
+		"Name of helm addons configmap",
+	)
 }
 
 func (o *GlobalOptions) DefaultsNamespace() string {
 	return o.defaultsNamespace
+}
+
+func (o *GlobalOptions) HelmAddonsConfigMapName() string {
+	return o.helmAddonsConfigMapName
 }

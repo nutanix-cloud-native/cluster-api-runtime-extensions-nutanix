@@ -17,13 +17,11 @@ import (
 
 	caaphv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 )
 
 const (
-	defaultHelmRepositoryURL       = "https://kubernetes.github.io/autoscaler"
-	defaultHelmChartVersion        = "9.35.0"
-	defaultHelmChartName           = "cluster-autoscaler"
 	defaultHelmReleaseNameTemplate = "cluster-autoscaler-%s"
 )
 
@@ -43,7 +41,8 @@ func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 type helmAddonStrategy struct {
 	config helmAddonConfig
 
-	client ctrlclient.Client
+	client    ctrlclient.Client
+	helmChart *config.HelmChart
 }
 
 func (s helmAddonStrategy) apply(
@@ -87,14 +86,14 @@ func (s helmAddonStrategy) apply(
 			Name:      "cluster-autoscaler-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   defaultHelmRepositoryURL,
-			ChartName: defaultHelmChartName,
+			RepoURL:   s.helmChart.Repository,
+			ChartName: s.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{capiv1.ClusterNameLabel: targetCluster.Name},
 			},
 			ReleaseNamespace: req.Cluster.Namespace,
 			ReleaseName:      fmt.Sprintf(defaultHelmReleaseNameTemplate, req.Cluster.Name),
-			Version:          defaultHelmChartVersion,
+			Version:          s.helmChart.Version,
 			ValuesTemplate:   values,
 		},
 	}

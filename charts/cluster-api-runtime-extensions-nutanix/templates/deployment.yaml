@@ -30,6 +30,7 @@ spec:
         args:
         - --webhook-cert-dir=/runtimehooks-certs/
         - --defaults-namespace=$(POD_NAMESPACE)
+        - --helm-addons-configmap={{ .Values.helmAddonsConfigMap }}
         - --cni.cilium.helm-addon.default-values-template-configmap-name={{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --nfd.helm-addon.default-values-template-configmap-name={{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         {{- range $key, $value := .Values.extraArgs }}

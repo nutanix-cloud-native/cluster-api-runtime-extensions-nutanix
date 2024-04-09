@@ -18,6 +18,7 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -43,8 +44,9 @@ func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type CalicoCNI struct {
-	client ctrlclient.Client
-	config *CNIConfig
+	client              ctrlclient.Client
+	config              *CNIConfig
+	helmChartInfoGetter *config.HelmChartGetter
 
 	variableName string
 	variablePath []string
@@ -58,20 +60,22 @@ var (
 func New(
 	c ctrlclient.Client,
 	cfg *CNIConfig,
+	helmChartInfoGetter *config.HelmChartGetter,
 ) *CalicoCNI {
 	return &CalicoCNI{
-		client:       c,
-		config:       cfg,
-		variableName: clusterconfig.MetaVariableName,
-		variablePath: []string{"addons", v1alpha1.CNIVariableName},
+		client:              c,
+		config:              cfg,
+		helmChartInfoGetter: helmChartInfoGetter,
+		variableName:        clusterconfig.MetaVariableName,
+		variablePath:        []string{"addons", v1alpha1.CNIVariableName},
 	}
 }
 
-func (s *CalicoCNI) Name() string {
+func (c *CalicoCNI) Name() string {
 	return "CalicoCNI"
 }
 
-func (s *CalicoCNI) AfterControlPlaneInitialized(
+func (c *CalicoCNI) AfterControlPlaneInitialized(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
@@ -85,7 +89,7 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	cniVar, found, err := variables.Get[v1alpha1.CNI](varMap, s.variableName, s.variablePath...)
+	cniVar, found, err := variables.Get[v1alpha1.CNI](varMap, c.variableName, c.variablePath...)
 	if err != nil {
 		log.Error(
 			err,
@@ -120,13 +124,31 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 	switch cniVar.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
-			config: s.config.crsConfig,
-			client: s.client,
+			config: c.config.crsConfig,
+			client: c.client,
 		}
 	case v1alpha1.AddonStrategyHelmAddon:
+		// this is tigera and not calico because we deploy calico via operataor
+		log.Info("fetching settings for tigera-operator-config")
+		helmChart, err := c.helmChartInfoGetter.For(ctx, log, config.Tigera)
+		if err != nil {
+			log.Error(
+				err,
+				"failed to get configmap with helm settings",
+			)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(
+				fmt.Sprintf("failed to get configration to create helm addon: %v",
+					err,
+				),
+			)
+			return
+		}
+		log.Info(fmt.Sprintf("using settings %v to install helm chart config", helmChart))
 		strategy = helmAddonStrategy{
-			config: s.config.helmAddonConfig,
-			client: s.client,
+			config:    c.config.helmAddonConfig,
+			client:    c.client,
+			helmChart: helmChart,
 		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -134,7 +156,7 @@ func (s *CalicoCNI) AfterControlPlaneInitialized(
 		return
 	}
 
-	if err := strategy.apply(ctx, req, s.config.DefaultsNamespace(), log); err != nil {
+	if err := strategy.apply(ctx, req, c.config.DefaultsNamespace(), log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return

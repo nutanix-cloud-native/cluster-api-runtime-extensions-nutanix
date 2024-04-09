@@ -66,6 +66,8 @@ hooks:
         create: true
         name: default-cluster-autoscaler-helm-values-template
 
+helmAddonsConfigMap: default-helm-addons-config
+
 deployDefaultClusterClasses: true
 
 deployment:

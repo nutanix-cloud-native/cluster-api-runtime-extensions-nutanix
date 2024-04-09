@@ -18,12 +18,10 @@ import (
 
 	caaphv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 )
 
 const (
-	defaultHelmRepositoryURL    = "https://kubernetes-sigs.github.io/node-feature-discovery/charts"
-	defaultHelmChartVersion     = "0.15.2"
-	defaultHelmChartName        = "node-feature-discovery"
 	defaultHelmReleaseName      = "node-feature-discovery"
 	defaultHelmReleaseNamespace = "node-feature-discovery"
 )
@@ -44,7 +42,8 @@ func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 type helmAddonStrategy struct {
 	config helmAddonConfig
 
-	client ctrlclient.Client
+	client    ctrlclient.Client
+	helmChart *config.HelmChart
 }
 
 func (s helmAddonStrategy) apply(
@@ -66,7 +65,7 @@ func (s helmAddonStrategy) apply(
 	values += fmt.Sprintf(`
 image:
   tag: v%s-minimal
-`, defaultHelmChartVersion)
+`, s.helmChart.Version)
 
 	hcp := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
@@ -78,14 +77,14 @@ image:
 			Name:      "node-feature-discovery-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   defaultHelmRepositoryURL,
-			ChartName: defaultHelmChartName,
+			RepoURL:   s.helmChart.Repository,
+			ChartName: s.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{capiv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: defaultHelmReleaseNamespace,
 			ReleaseName:      defaultHelmReleaseName,
-			Version:          defaultHelmChartVersion,
+			Version:          s.helmChart.Version,
 			ValuesTemplate:   values,
 		},
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/clusterautoscaler"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/calico"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/cilium"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi"
 	awsebs "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/aws-ebs"
 	nutanixcsi "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix-csi"
@@ -23,6 +24,7 @@ import (
 )
 
 type Handlers struct {
+	globalOptions           *options.GlobalOptions
 	calicoCNIConfig         *calico.CNIConfig
 	ciliumCNIConfig         *cilium.CNIConfig
 	nfdConfig               *nfd.Config
@@ -32,9 +34,14 @@ type Handlers struct {
 	awsccmConfig            *awsccm.AWSCCMConfig
 }
 
-func New(globalOptions *options.GlobalOptions) *Handlers {
+func New(
+	globalOptions *options.GlobalOptions,
+) *Handlers {
 	return &Handlers{
-		calicoCNIConfig:         &calico.CNIConfig{GlobalOptions: globalOptions},
+		globalOptions: globalOptions,
+		calicoCNIConfig: &calico.CNIConfig{
+			GlobalOptions: globalOptions,
+		},
 		ciliumCNIConfig:         &cilium.CNIConfig{GlobalOptions: globalOptions},
 		nfdConfig:               &nfd.Config{GlobalOptions: globalOptions},
 		clusterAutoscalerConfig: &clusterautoscaler.Config{GlobalOptions: globalOptions},
@@ -45,19 +52,27 @@ func New(globalOptions *options.GlobalOptions) *Handlers {
 }
 
 func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
+	helmChartInfoGetter := config.NewHelmChartGetterFromConfigMap(
+		h.globalOptions.HelmAddonsConfigMapName(),
+		h.globalOptions.DefaultsNamespace(),
+		mgr.GetClient(),
+	)
 	csiHandlers := map[string]csi.CSIProvider{
-		v1alpha1.CSIProviderAWSEBS:  awsebs.New(mgr.GetClient(), h.ebsConfig),
-		v1alpha1.CSIProviderNutanix: nutanixcsi.New(mgr.GetClient(), h.nutnaixCSIConfig),
+		v1alpha1.CSIProviderAWSEBS: awsebs.New(mgr.GetClient(), h.ebsConfig),
+		v1alpha1.CSIProviderNutanix: nutanixcsi.New(
+			mgr.GetClient(),
+			h.nutnaixCSIConfig,
+			helmChartInfoGetter,
+		),
 	}
 	ccmHandlers := map[string]ccm.CCMProvider{
 		v1alpha1.CCMProviderAWS: awsccm.New(mgr.GetClient(), h.awsccmConfig),
 	}
-
 	return []handlers.Named{
-		calico.New(mgr.GetClient(), h.calicoCNIConfig),
-		cilium.New(mgr.GetClient(), h.ciliumCNIConfig),
-		nfd.New(mgr.GetClient(), h.nfdConfig),
-		clusterautoscaler.New(mgr.GetClient(), h.clusterAutoscalerConfig),
+		calico.New(mgr.GetClient(), h.calicoCNIConfig, helmChartInfoGetter),
+		cilium.New(mgr.GetClient(), h.ciliumCNIConfig, helmChartInfoGetter),
+		nfd.New(mgr.GetClient(), h.nfdConfig, helmChartInfoGetter),
+		clusterautoscaler.New(mgr.GetClient(), h.clusterAutoscalerConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
 		csi.New(mgr.GetClient(), csiHandlers),
 		ccm.New(mgr.GetClient(), ccmHandlers),

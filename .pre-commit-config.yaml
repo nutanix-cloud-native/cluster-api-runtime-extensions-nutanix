@@ -34,6 +34,12 @@ repos:
     language: system
     files: "^(hack/addons/|charts/cluster-api-runtime-extensions-nutanix/templates/.+/manifests/|make/addons.mk$)"
     pass_filenames: false
+  - id: addons-configmap
+    name: addons-configmap
+    entry: make generate-helm-configmap
+    language: system
+    files: "^(hack/addons/|charts/cluster-api-runtime-extensions-nutanix/templates/.+|make/addons.mk$)"
+    pass_filenames: false
 - repo: https://github.com/tekwizely/pre-commit-golang
   rev: v1.0.0-rc.1
   hooks:
@@ -117,7 +123,7 @@ repos:
     name: License headers - YAML and Makefiles
     stages: [commit]
     files: (^Makefile|\.(ya?ml|mk))$
-    exclude: ^(pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses)/.+\.ya?ml|docs/static/helm/index\.yaml$
+    exclude: ^(pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses)/.+\.ya?ml|docs/static/helm/index\.yaml|charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml$
     args:
       - --license-filepath
       - hack/license-header.txt

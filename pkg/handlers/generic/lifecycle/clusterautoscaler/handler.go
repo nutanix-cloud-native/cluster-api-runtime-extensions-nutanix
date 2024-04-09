@@ -18,6 +18,7 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -43,8 +44,9 @@ func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type DefaultClusterAutoscaler struct {
-	client ctrlclient.Client
-	config *Config
+	client              ctrlclient.Client
+	config              *Config
+	helmChartInfoGetter *config.HelmChartGetter
 
 	variableName string   // points to the global config variable
 	variablePath []string // path of this variable on the global config variable
@@ -58,12 +60,14 @@ var (
 func New(
 	c ctrlclient.Client,
 	cfg *Config,
+	helmChartInfoGetter *config.HelmChartGetter,
 ) *DefaultClusterAutoscaler {
 	return &DefaultClusterAutoscaler{
-		client:       c,
-		config:       cfg,
-		variableName: clusterconfig.MetaVariableName,
-		variablePath: []string{"addons", v1alpha1.ClusterAutoscalerVariableName},
+		client:              c,
+		config:              cfg,
+		helmChartInfoGetter: helmChartInfoGetter,
+		variableName:        clusterconfig.MetaVariableName,
+		variablePath:        []string{"addons", v1alpha1.ClusterAutoscalerVariableName},
 	}
 }
 
@@ -117,9 +121,28 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 			client: n.client,
 		}
 	case v1alpha1.AddonStrategyHelmAddon:
+		helmChart, err := n.helmChartInfoGetter.For(
+			ctx,
+			log,
+			config.Autoscaler,
+		)
+		if err != nil {
+			log.Error(
+				err,
+				"failed to get configmap with helm settings",
+			)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(
+				fmt.Sprintf("failed to get config to create helm addon: %v",
+					err,
+				),
+			)
+			return
+		}
 		strategy = helmAddonStrategy{
-			config: n.config.helmAddonConfig,
-			client: n.client,
+			config:    n.config.helmAddonConfig,
+			client:    n.client,
+			helmChart: helmChart,
 		}
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)

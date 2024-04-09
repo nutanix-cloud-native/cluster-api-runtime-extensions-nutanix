@@ -18,14 +18,12 @@ import (
 
 	caaphv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 )
 
 const (
-	defaultCiliumHelmRepositoryURL = "https://helm.cilium.io/"
-	defaultCiliumHelmChartVersion  = "1.15.0"
-	defaultCiliumChartName         = "cilium"
-	defaultCiliumReleaseName       = "cilium"
-	defaultCiliumNamespace         = "kube-system"
+	defaultCiliumReleaseName = "cilium"
+	defaultCiliumNamespace   = "kube-system"
 )
 
 type helmAddonConfig struct {
@@ -42,9 +40,9 @@ func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 }
 
 type helmAddonStrategy struct {
-	config helmAddonConfig
-
-	client ctrlclient.Client
+	config    helmAddonConfig
+	client    ctrlclient.Client
+	helmChart *config.HelmChart
 }
 
 func (s helmAddonStrategy) apply(
@@ -72,14 +70,14 @@ func (s helmAddonStrategy) apply(
 			Name:      "cilium-cni-installation-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   defaultCiliumHelmRepositoryURL,
-			ChartName: defaultCiliumChartName,
+			RepoURL:   s.helmChart.Repository,
+			ChartName: s.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{capiv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: defaultCiliumNamespace,
 			ReleaseName:      defaultCiliumReleaseName,
-			Version:          defaultCiliumHelmChartVersion,
+			Version:          s.helmChart.Version,
 			ValuesTemplate:   valuesTemplateConfigMap.Data["values.yaml"],
 		},
 	}
