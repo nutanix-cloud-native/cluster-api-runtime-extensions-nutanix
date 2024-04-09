@@ -34,6 +34,7 @@ import (
 	dockermutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/mutation"
 	dockerworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/validation"
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 	nutanixmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation"
 	nutanixworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/workerconfig"
@@ -84,6 +85,7 @@ func main() {
 
 	genericLifecycleHandlers := lifecycle.New(globalOptions)
 
+	validationHandlers := validation.New()
 	// Initialize and parse command line flags.
 	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())
 	logsv1.AddFlags(logOptions, pflag.CommandLine)
@@ -142,6 +144,7 @@ func main() {
 	}
 
 	var allHandlers []handlers.Named
+	allHandlers = append(allHandlers, validationHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, genericLifecycleHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, awsMetaHandlers...)
 	allHandlers = append(allHandlers, dockerMetaHandlers...)
