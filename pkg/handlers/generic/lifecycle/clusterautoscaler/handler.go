@@ -133,7 +133,7 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 			resp.SetMessage(
-				fmt.Sprintf("failed to get configration to create helm addon: %v",
+				fmt.Sprintf("failed to get config to create helm addon: %v",
 					err,
 				),
 			)
