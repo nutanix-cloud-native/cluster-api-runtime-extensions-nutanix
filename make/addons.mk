@@ -49,5 +49,4 @@ update-addon.nutanix-storage-csi: ; $(info $(M) updating nutanix-storage csi man
 .PHONY: generate-helm-configmap
 generate-helm-configmap:
 	go run hack/tools/helm-cm/main.go -kustomize-directory="./hack/addons/kustomize" -output-file="./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
-	sed -i s/placeholder/"{{ .Values.helmAddonsConfigMap }}"/g charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml
 	./hack/addons/add-warning-helm-configmap.sh
