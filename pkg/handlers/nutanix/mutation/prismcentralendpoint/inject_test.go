@@ -102,8 +102,8 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 							gomega.BeEquivalentTo("prism-central.nutanix.com"),
 						),
 						gomega.HaveKeyWithValue("port", gomega.BeEquivalentTo(9441)),
-						// Assert the insecure field was set to false as the additional trust bundle is set
-						gomega.HaveKeyWithValue("insecure", false),
+						// Assert the insecure field was not modified when additional trust bundle is set.
+						gomega.HaveKeyWithValue("insecure", true),
 						gomega.HaveKey("credentialRef"),
 						gomega.HaveKey("additionalTrustBundle"),
 					),

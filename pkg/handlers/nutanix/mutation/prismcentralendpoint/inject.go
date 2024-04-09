@@ -120,13 +120,8 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 					Kind: credentials.NutanixTrustBundleKindString,
 					Data: string(decoded),
 				}
-			}
-
-			// Always force insecure to false if additional trust bundle is provided.
-			// This ensures that the trust bundle is actually used to validate the connection.
-			if additionalTrustBundle != "" && prismCentral.Insecure {
-				log.Info("AdditionalTrustBundle is provided, setting insecure to false")
-				prismCentral.Insecure = false
+				// TODO: Consider always setting Insecure to false when AdditionalTrustBundle is set.
+				// But do it in a webhook and not hidden in this handler.
 			}
 
 			obj.Spec.Template.Spec.PrismCentral = prismCentral
