@@ -118,7 +118,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			)
 			continue
 		}
-		log.Info(fmt.Sprintf("Creating csi provider %s", provider.Name))
+		log.Info(fmt.Sprintf("Creating CSI provider %s", provider.Name))
 		err = handler.Apply(
 			ctx,
 			provider,
@@ -129,11 +129,17 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			log.Error(
 				err,
 				fmt.Sprintf(
-					"failed to create %s csi driver object.",
+					"failed to delpoy %s CSI driver",
 					provider.Name,
 				),
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(
+				fmt.Sprintf(
+					"failed to deploy CSI driver: %v",
+					err,
+				),
+			)
 		}
 	}
 }

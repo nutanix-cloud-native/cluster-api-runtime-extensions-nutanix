@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -24,15 +23,31 @@ import (
 )
 
 const (
-	defaultHelmRepositoryURL              = "https://nutanix.github.io/helm/"
-	defaultStorageHelmChartVersion        = "v2.6.6"
-	defaultStorageHelmChartName           = "nutanix-csi-storage"
-	defaultStorageHelmReleaseNameTemplate = "nutanix-csi-storage-%s"
+	defaultHelmRepositoryURL           = "https://nutanix.github.io/helm/"
+	defaultStorageHelmChartVersion     = "v2.6.6"
+	defaultStorageHelmChartName        = "nutanix-csi-storage"
+	defaultStorageHelmReleaseName      = "nutanix-csi-storage"
+	defaultStorageHelmReleaseNamespace = "ntnx-system"
 
-	defaultSnapshotHelmChartVersion        = "v6.3.2"
-	defaultSnapshotHelmChartName           = "nutanix-csi-snapshot"
-	defaultSnapshotHelmReleaseNameTemplate = "nutanix-csi-snapshot-%s"
+	defaultSnapshotHelmChartVersion     = "v6.3.2"
+	defaultSnapshotHelmChartName        = "nutanix-csi-snapshot"
+	defaultSnapshotHelmReleaseName      = "nutanix-csi-snapshot"
+	defaultSnapshotHelmReleaseNamespace = "ntnx-system"
+
+	//nolint:gosec // Does not contain hard coded credentials.
+	defaultCredentialsSecretName = "nutanix-csi-credentials"
 )
+
+var defaultStorageClassParameters = map[string]string{
+	"storageType":                                           "NutanixVolumes",
+	"csi.storage.k8s.io/fstype":                             "xfs",
+	"csi.storage.k8s.io/provisioner-secret-name":            defaultCredentialsSecretName,
+	"csi.storage.k8s.io/provisioner-secret-namespace":       defaultStorageHelmReleaseNamespace,
+	"csi.storage.k8s.io/node-publish-secret-name":           defaultCredentialsSecretName,
+	"csi.storage.k8s.io/node-publish-secret-namespace":      defaultStorageHelmReleaseNamespace,
+	"csi.storage.k8s.io/controller-expand-secret-name":      defaultCredentialsSecretName,
+	"csi.storage.k8s.io/controller-expand-secret-namespace": defaultStorageHelmReleaseNamespace,
+}
 
 type NutanixCSIConfig struct {
 	*options.GlobalOptions
@@ -80,42 +95,38 @@ func (n *NutanixCSI) Apply(
 	default:
 		return fmt.Errorf("stategy %s not implemented", strategy)
 	}
+
 	if provider.Credentials != nil {
-		sec := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: corev1.SchemeGroupVersion.String(),
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      provider.Credentials.Name,
-				Namespace: req.Cluster.Namespace,
-			},
+		key := ctrlclient.ObjectKey{
+			Name:      defaultCredentialsSecretName,
+			Namespace: defaultStorageHelmReleaseNamespace,
 		}
-		err := n.client.Get(
+		err := lifecycleutils.CopySecretToRemoteCluster(
 			ctx,
-			ctrlclient.ObjectKeyFromObject(sec),
-			sec,
-		)
-		if err != nil {
-			return err
-		}
-		err = lifecycleutils.EnsureCRSForClusterFromObjects(
-			ctx,
-			fmt.Sprintf("nutanix-csi-credentials-crs-%s", req.Cluster.Name),
 			n.client,
+			provider.Credentials.Name,
+			key,
 			&req.Cluster,
-			sec,
 		)
 		if err != nil {
-			return err
+			return fmt.Errorf(
+				"error creating credentials Secret for the Nutanix CSI driver: %w",
+				err,
+			)
 		}
 	}
-	return n.createStorageClasses(
+
+	err := n.createStorageClasses(
 		ctx,
 		provider.StorageClassConfig,
 		&req.Cluster,
 		defaultStorageConfig,
 	)
+	if err != nil {
+		return fmt.Errorf("error creating StorageClasses for the Nutanix CSI driver: %w", err)
+	}
+
+	return nil
 }
 
 func (n *NutanixCSI) handleHelmAddonApply(
@@ -149,8 +160,8 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
-			ReleaseNamespace: req.Cluster.Namespace,
-			ReleaseName:      fmt.Sprintf(defaultStorageHelmReleaseNameTemplate, req.Cluster.Name),
+			ReleaseNamespace: defaultStorageHelmReleaseNamespace,
+			ReleaseName:      defaultStorageHelmReleaseName,
 			Version:          defaultStorageHelmChartVersion,
 			ValuesTemplate:   values,
 		},
@@ -174,7 +185,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: req.Cluster.Namespace,
-			Name:      "nutanix-csi-snapshot" + req.Cluster.Name,
+			Name:      "nutanix-csi-snapshot-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   defaultHelmRepositoryURL,
@@ -182,8 +193,8 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
-			ReleaseNamespace: req.Cluster.Namespace,
-			ReleaseName:      fmt.Sprintf(defaultSnapshotHelmReleaseNameTemplate, req.Cluster.Name),
+			ReleaseNamespace: defaultSnapshotHelmReleaseNamespace,
+			ReleaseName:      defaultSnapshotHelmReleaseName,
 			Version:          defaultSnapshotHelmChartVersion,
 		},
 	}
@@ -205,20 +216,21 @@ func (n *NutanixCSI) handleHelmAddonApply(
 	return nil
 }
 
-func (n *NutanixCSI) createStorageClasses(ctx context.Context,
+func (n *NutanixCSI) createStorageClasses(
+	ctx context.Context,
 	configs []v1alpha1.StorageClassConfig,
 	cluster *clusterv1.Cluster,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
 	allStorageClasses := make([]runtime.Object, 0, len(configs))
-	for _, c := range configs {
-		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
+	for _, config := range configs {
+		setAsDefault := config.Name == defaultStorageConfig.StorageClassConfigName &&
 			v1alpha1.CSIProviderNutanix == defaultStorageConfig.ProviderName
 		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
-			c,
-			n.config.GlobalOptions.DefaultsNamespace(),
+			config,
 			v1alpha1.NutanixProvisioner,
 			setAsDefault,
+			defaultStorageClassParameters,
 		))
 	}
 	cm, err := lifecycleutils.CreateConfigMapForCRS(

@@ -6,26 +6,21 @@ package utils
 import (
 	"context"
 	"fmt"
-	"maps"
 
 	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	utilyaml "sigs.k8s.io/cluster-api/util/yaml"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
 const (
-	kindStorageClass       = "StorageClass"
 	defaultCRSConfigMapKey = "custom-resources.yaml"
 )
 
@@ -33,10 +28,6 @@ var (
 	defaultStorageClassKey = "storageclass.kubernetes.io/is-default-class"
 	defaultStorageClassMap = map[string]string{
 		defaultStorageClassKey: "true",
-	}
-	defaultAWSStorageClassParams = map[string]string{
-		"csi.storage.k8s.io/fstype": "ext4",
-		"type":                      "gp3",
 	}
 )
 
@@ -151,40 +142,6 @@ func RetrieveValuesTemplateConfigMap(
 		)
 	}
 	return configMap, nil
-}
-
-func CreateStorageClass(
-	storageConfig v1alpha1.StorageClassConfig,
-	defaultsNamespace string,
-	provisionerName v1alpha1.StorageProvisioner,
-	isDefault bool,
-) *storagev1.StorageClass {
-	var params map[string]string
-	if provisionerName == v1alpha1.AWSEBSProvisioner {
-		params = defaultAWSStorageClassParams
-	}
-	if storageConfig.Parameters != nil {
-		params = maps.Clone(storageConfig.Parameters)
-	}
-	sc := storagev1.StorageClass{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       kindStorageClass,
-			APIVersion: storagev1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      storageConfig.Name,
-			Namespace: defaultsNamespace,
-		},
-		Provisioner:          string(provisionerName),
-		Parameters:           params,
-		VolumeBindingMode:    ptr.To(storageConfig.VolumeBindingMode),
-		ReclaimPolicy:        ptr.To(storageConfig.ReclaimPolicy),
-		AllowVolumeExpansion: ptr.To(storageConfig.AllowExpansion),
-	}
-	if isDefault {
-		sc.ObjectMeta.Annotations = defaultStorageClassMap
-	}
-	return &sc
 }
 
 func CreateConfigMapForCRS(configMapName, configMapNamespace string,
