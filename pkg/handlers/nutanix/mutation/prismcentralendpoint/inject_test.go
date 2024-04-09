@@ -44,8 +44,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
 					v1alpha1.NutanixPrismCentralEndpointSpec{
-						Host:     "prism-central.nutanix.com",
-						Port:     9441,
+						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
 						Credentials: corev1.LocalObjectReference{
 							Name: "credentials",
@@ -74,13 +73,46 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 			},
 		},
 		{
+			Name: "all required fields set without port",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					clusterconfig.MetaVariableName,
+					v1alpha1.NutanixPrismCentralEndpointSpec{
+						URL:      "https://prism-central.nutanix.com",
+						Insecure: true,
+						Credentials: corev1.LocalObjectReference{
+							Name: "credentials",
+						},
+					},
+					nutanixclusterconfig.NutanixVariableName,
+					VariableName,
+				),
+			},
+			RequestItem: request.NewNutanixClusterTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "replace",
+					Path:      "/spec/template/spec/prismCentral",
+					ValueMatcher: gomega.SatisfyAll(
+						gomega.HaveKeyWithValue(
+							"address",
+							gomega.BeEquivalentTo("prism-central.nutanix.com"),
+						),
+						gomega.HaveKeyWithValue("port", gomega.BeEquivalentTo(v1alpha1.DefaultPrismCentralPort)),
+						gomega.HaveKeyWithValue("insecure", true),
+						gomega.HaveKey("credentialRef"),
+						gomega.Not(gomega.HaveKey("additionalTrustBundle")),
+					),
+				},
+			},
+		},
+		{
 			Name: "additional trust bundle is set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
 					v1alpha1.NutanixPrismCentralEndpointSpec{
-						Host:     "prism-central.nutanix.com",
-						Port:     9441,
+						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
 						Credentials: corev1.LocalObjectReference{
 							Name: "credentials",

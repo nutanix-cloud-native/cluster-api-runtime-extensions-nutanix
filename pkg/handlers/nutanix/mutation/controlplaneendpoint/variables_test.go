@@ -4,6 +4,7 @@
 package controlplaneendpoint
 
 import (
+	"fmt"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -15,6 +16,8 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	nutanixclusterconfig "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
+
+var testPrismCentralURL = fmt.Sprintf("https://prism-central.nutanix.com:%d", v1alpha1.DefaultPrismCentralPort)
 
 func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
@@ -33,8 +36,7 @@ func TestVariableValidation(t *testing.T) {
 					},
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
-						Host: "prism-central.nutanix.com",
-						Port: v1alpha1.PrismCentralPort,
+						URL: testPrismCentralURL,
 						Credentials: corev1.LocalObjectReference{
 							Name: "credentials",
 						},
@@ -52,8 +54,7 @@ func TestVariableValidation(t *testing.T) {
 					},
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
-						Host: "prism-central.nutanix.com",
-						Port: v1alpha1.PrismCentralPort,
+						URL: testPrismCentralURL,
 						Credentials: corev1.LocalObjectReference{
 							Name: "credentials",
 						},
@@ -72,8 +73,7 @@ func TestVariableValidation(t *testing.T) {
 					},
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
-						Host: "prism-central.nutanix.com",
-						Port: v1alpha1.PrismCentralPort,
+						URL: testPrismCentralURL,
 						Credentials: corev1.LocalObjectReference{
 							Name: "credentials",
 						},

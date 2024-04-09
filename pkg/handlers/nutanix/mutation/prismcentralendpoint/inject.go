@@ -7,6 +7,8 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/url"
+	"strconv"
 
 	"github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -97,9 +99,15 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting prismCentralEndpoint in NutanixCluster spec")
 
+			var address string
+			var port int32
+			address, port, err = parsePrismCentralURL(prismCentralEndpointVar.URL)
+			if err != nil {
+				return err
+			}
 			prismCentral := &credentials.NutanixPrismEndpoint{
-				Address:  prismCentralEndpointVar.Host,
-				Port:     prismCentralEndpointVar.Port,
+				Address:  address,
+				Port:     port,
 				Insecure: prismCentralEndpointVar.Insecure,
 				CredentialRef: &credentials.NutanixCredentialReference{
 					Kind: credentials.SecretKind,
@@ -129,4 +137,27 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 			return nil
 		},
 	)
+}
+
+//nolint:gocritic // no need for named return values
+func parsePrismCentralURL(in string) (string, int32, error) {
+	var prismCentralURL *url.URL
+	prismCentralURL, err := url.Parse(in)
+	if err != nil {
+		return "", -1, fmt.Errorf("error parsing Prism Central URL: %w", err)
+	}
+
+	hostname := prismCentralURL.Hostname()
+
+	// return early with the default port if no port is specified
+	if prismCentralURL.Port() == "" {
+		return hostname, v1alpha1.DefaultPrismCentralPort, nil
+	}
+
+	port, err := strconv.ParseInt(prismCentralURL.Port(), 10, 32)
+	if err != nil {
+		return "", -1, fmt.Errorf("error converting port to int: %w", err)
+	}
+
+	return hostname, int32(port), nil
 }

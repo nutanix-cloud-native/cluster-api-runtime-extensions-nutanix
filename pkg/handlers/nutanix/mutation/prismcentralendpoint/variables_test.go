@@ -4,6 +4,7 @@
 package prismcentralendpoint
 
 import (
+	"fmt"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -24,12 +25,11 @@ func TestVariableValidation(t *testing.T) {
 		true,
 		nutanixclusterconfig.NewVariable,
 		capitest.VariableTestDef{
-			Name: "valid PC address and port",
+			Name: "valid PC URL",
 			Vals: v1alpha1.ClusterConfigSpec{
 				Nutanix: &v1alpha1.NutanixSpec{
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
-						Host:     "prism-central.nutanix.com",
-						Port:     v1alpha1.PrismCentralPort,
+						URL:      fmt.Sprintf("https://prism-central.nutanix.com:%d", v1alpha1.DefaultPrismCentralPort),
 						Insecure: false,
 						Credentials: corev1.LocalObjectReference{
 							Name: "credentials",
@@ -44,11 +44,88 @@ func TestVariableValidation(t *testing.T) {
 			},
 		},
 		capitest.VariableTestDef{
-			Name: "empty PC address",
+			Name: "valid PC URL as an IP",
 			Vals: v1alpha1.ClusterConfigSpec{
 				Nutanix: &v1alpha1.NutanixSpec{
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
-						Port:     v1alpha1.PrismCentralPort,
+						URL:      fmt.Sprintf("https://10.0.0.1:%d", v1alpha1.DefaultPrismCentralPort),
+						Insecure: false,
+						Credentials: corev1.LocalObjectReference{
+							Name: "credentials",
+						},
+					},
+					// ControlPlaneEndpoint is a required field and must always be set
+					ControlPlaneEndpoint: clusterv1.APIEndpoint{
+						Host: "10.20.100.10",
+						Port: 6443,
+					},
+				},
+			},
+		},
+		capitest.VariableTestDef{
+			Name: "valid PC URL without a port",
+			Vals: v1alpha1.ClusterConfigSpec{
+				Nutanix: &v1alpha1.NutanixSpec{
+					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+						URL:      "https://prism-central.nutanix.com",
+						Insecure: false,
+						Credentials: corev1.LocalObjectReference{
+							Name: "credentials",
+						},
+					},
+					// ControlPlaneEndpoint is a required field and must always be set
+					ControlPlaneEndpoint: clusterv1.APIEndpoint{
+						Host: "10.20.100.10",
+						Port: 6443,
+					},
+				},
+			},
+		},
+		capitest.VariableTestDef{
+			Name: "empty PC URL",
+			Vals: v1alpha1.ClusterConfigSpec{
+				Nutanix: &v1alpha1.NutanixSpec{
+					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+						Insecure: false,
+						Credentials: corev1.LocalObjectReference{
+							Name: "credentials",
+						},
+					},
+					// ControlPlaneEndpoint is a required field and must always be set
+					ControlPlaneEndpoint: clusterv1.APIEndpoint{
+						Host: "10.20.100.10",
+						Port: 6443,
+					},
+				},
+			},
+			ExpectError: true,
+		},
+		capitest.VariableTestDef{
+			Name: "http is not a valid PC URL",
+			Vals: v1alpha1.ClusterConfigSpec{
+				Nutanix: &v1alpha1.NutanixSpec{
+					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+						URL:      "http://prism-central.nutanix.com",
+						Insecure: false,
+						Credentials: corev1.LocalObjectReference{
+							Name: "credentials",
+						},
+					},
+					// ControlPlaneEndpoint is a required field and must always be set
+					ControlPlaneEndpoint: clusterv1.APIEndpoint{
+						Host: "10.20.100.10",
+						Port: 6443,
+					},
+				},
+			},
+			ExpectError: true,
+		},
+		capitest.VariableTestDef{
+			Name: "not a valid PC URL",
+			Vals: v1alpha1.ClusterConfigSpec{
+				Nutanix: &v1alpha1.NutanixSpec{
+					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+						URL:      "not-a-valid-url",
 						Insecure: false,
 						Credentials: corev1.LocalObjectReference{
 							Name: "credentials",
@@ -68,8 +145,7 @@ func TestVariableValidation(t *testing.T) {
 			Vals: v1alpha1.ClusterConfigSpec{
 				Nutanix: &v1alpha1.NutanixSpec{
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
-						Host:     "prism-central.nutanix.com",
-						Port:     v1alpha1.PrismCentralPort,
+						URL:      fmt.Sprintf("https://prism-central.nutanix.com:%d", v1alpha1.DefaultPrismCentralPort),
 						Insecure: false,
 					},
 					// ControlPlaneEndpoint is a required field and must always be set

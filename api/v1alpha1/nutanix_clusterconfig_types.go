@@ -8,11 +8,11 @@ import (
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/variables"
+	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/openapi/patterns"
 )
 
 const (
-	PrismCentralPort = 9440
+	DefaultPrismCentralPort = 9440
 )
 
 // NutanixSpec defines the desired state of NutanixCluster.
@@ -39,11 +39,8 @@ func (NutanixSpec) VariableSchema() clusterv1.VariableSchema {
 }
 
 type NutanixPrismCentralEndpointSpec struct {
-	// host is the DNS name or IP address of the Nutanix Prism Central
-	Host string `json:"host"`
-
-	// port is the port number to access the Nutanix Prism Central
-	Port int32 `json:"port"`
+	// The URL of Nutanix Prism Central, can be DNS name or an IP address
+	URL string `json:"url"`
 
 	// use insecure connection to Prism Central endpoint
 	// +optional
@@ -65,17 +62,12 @@ func (NutanixPrismCentralEndpointSpec) VariableSchema() clusterv1.VariableSchema
 			Description: "Nutanix Prism Central endpoint configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"host": {
-					Description: "the DNS name or IP address of the Nutanix Prism Central",
+				"url": {
+					Description: "The URL of Nutanix Prism Central, can be DNS name or an IP address",
 					Type:        "string",
 					MinLength:   ptr.To[int64](1),
-				},
-				"port": {
-					Description: "The port number to access the Nutanix Prism Central",
-					Type:        "integer",
-					Default:     variables.MustMarshal(PrismCentralPort),
-					Minimum:     ptr.To[int64](1),
-					Maximum:     ptr.To[int64](65535),
+					Format:      "uri",
+					Pattern:     patterns.HTTPSURL(),
 				},
 				"insecure": {
 					Description: "Use insecure connection to Prism Central endpoint",
@@ -103,7 +95,7 @@ func (NutanixPrismCentralEndpointSpec) VariableSchema() clusterv1.VariableSchema
 					Required: []string{"name"},
 				},
 			},
-			Required: []string{"host", "port", "credentials"},
+			Required: []string{"url", "credentials"},
 		},
 	}
 }
