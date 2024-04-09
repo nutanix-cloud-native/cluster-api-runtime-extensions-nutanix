@@ -5,8 +5,9 @@
 # to be private (not available publicly) and should therefore not use the proxy or checksum database
 export GOPRIVATE ?=
 
-ALL_GO_SUBMODULES := $(shell PATH='$(PATH)'; find -mindepth 2 -maxdepth 2 -name go.mod -printf '%P\n' | sort)
+ALL_GO_SUBMODULES := $(shell find -mindepth 2 -maxdepth 2 -name go.mod -printf '%P\n' | sort)
 GO_SUBMODULES_NO_DOCS := $(filter-out $(addsuffix /go.mod,docs),$(ALL_GO_SUBMODULES))
+THIRD_PARTY_GO_SUBMODULES := $(shell find hack/third-party -mindepth 2 -name go.mod -printf 'hack/third-party/%P\n' | sort)
 
 ifndef GOOS
 export GOOS := $(OS)
@@ -146,12 +147,16 @@ endif
 ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
 mod-tidy: $(addprefix mod-tidy.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
+ifneq ($(words $(THIRD_PARTY_GO_SUBMODULES)),0)
+mod-tidy: $(addprefix mod-tidy.,$(THIRD_PARTY_GO_SUBMODULES:/go.mod=))
+endif
 
 .PHONY: mod-tidy.%
-mod-tidy.%: ## Runs go mod tidy for a specific module
-mod-tidy.%: ; $(info $(M) running go mod tidy for $* module)
-	$(if $(filter-out root,$*),cd $* && )go mod tidy -v
-	$(if $(filter-out root,$*),cd $* && )go mod verify
+.PHONY: mod-tidy.hack/third-party/%
+mod-tidy.% mod-tidy.hack/third-party/%: ## Runs go mod tidy for a specific module
+mod-tidy.% mod-tidy.hack/third-party/%: ; $(info $(M) running go mod tidy for $* module)
+	$(if $(filter-out root,$*),cd $(@:mod-tidy.%=%) && )go mod tidy -v
+	$(if $(filter-out root,$*),cd $(@:mod-tidy.%=%) && )go mod verify
 
 .PHONY: go-clean
 go-clean: ## Cleans go build, test and modules caches for all modules
