@@ -87,8 +87,8 @@ func (n *NutanixCSI) Apply(
 				Kind:       "Secret",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: provider.Credentials.Name,
-				Name:      provider.Credentials.Namespace,
+				Name:      provider.Credentials.Name,
+				Namespace: req.Cluster.Namespace,
 			},
 		}
 		err := n.client.Get(

@@ -290,7 +290,7 @@ func (in *CSIProvider) DeepCopyInto(out *CSIProvider) {
 	}
 	if in.Credentials != nil {
 		in, out := &in.Credentials, &out.Credentials
-		*out = new(v1.SecretReference)
+		*out = new(v1.LocalObjectReference)
 		**out = **in
 	}
 }
