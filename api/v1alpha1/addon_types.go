@@ -164,7 +164,7 @@ type CSIProvider struct {
 	Strategy AddonStrategy `json:"strategy"`
 
 	// +optional
-	Credentials *corev1.SecretReference `json:"credentials,omitempty"`
+	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
 }
 
 type StorageClassConfig struct {
@@ -255,9 +255,6 @@ func (CSIProvider) VariableSchema() clusterv1.VariableSchema {
 					Description: "The reference to any secret used by the CSI Provider.",
 					Properties: map[string]clusterv1.JSONSchemaProps{
 						"name": {
-							Type: "string",
-						},
-						"namespace": {
 							Type: "string",
 						},
 					},
