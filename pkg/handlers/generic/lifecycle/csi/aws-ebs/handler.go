@@ -21,6 +21,11 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
+var defaultStorageClassParams = map[string]string{
+	"csi.storage.k8s.io/fstype": "ext4",
+	"type":                      "gp3",
+}
+
 type AWSEBSConfig struct {
 	*options.GlobalOptions
 	defaultAWSEBSConfigMapName string
@@ -81,14 +86,14 @@ func (a *AWSEBS) createStorageClasses(ctx context.Context,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 ) error {
 	allStorageClasses := make([]runtime.Object, 0, len(configs))
-	for _, c := range configs {
-		setAsDefault := c.Name == defaultStorageConfig.StorageClassConfigName &&
+	for _, config := range configs {
+		setAsDefault := config.Name == defaultStorageConfig.StorageClassConfigName &&
 			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
 		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
-			c,
-			a.config.GlobalOptions.DefaultsNamespace(),
+			config,
 			v1alpha1.AWSEBSProvisioner,
 			setAsDefault,
+			defaultStorageClassParams,
 		))
 	}
 	cm, err := lifecycleutils.CreateConfigMapForCRS(

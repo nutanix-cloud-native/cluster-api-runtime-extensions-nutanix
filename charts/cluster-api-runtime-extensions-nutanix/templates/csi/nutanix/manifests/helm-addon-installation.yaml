@@ -8,5 +8,7 @@ metadata:
   name: '{{ .Values.hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
+    # The Secret containing the credentials will be created by the handler.
     createSecret: false
+    secretName: nutanix-csi-credentials
 {{- end -}}
