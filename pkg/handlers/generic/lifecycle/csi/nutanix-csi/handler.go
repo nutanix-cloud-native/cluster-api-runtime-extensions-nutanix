@@ -25,11 +25,11 @@ import (
 )
 
 const (
-	defaultStorageHelmReleaseNameTemplate = "nutanix-csi-storage-%s"
-	defaultStorageHelmReleaseNamespace    = "ntnx-system"
+	defaultStorageHelmReleaseName      = "nutanix-csi-storage"
+	defaultStorageHelmReleaseNamespace = "ntnx-system"
 
-	defaultSnapshotHelmReleaseNameTemplate = "nutanix-csi-snapshot-%s"
-	defaultSnapshotHelmReleaseNamespace    = "ntnx-system"
+	defaultSnapshotHelmReleaseName      = "nutanix-csi-snapshot"
+	defaultSnapshotHelmReleaseNamespace = "ntnx-system"
 
 	//nolint:gosec // Does not contain hard coded credentials.
 	defaultCredentialsSecretName = "nutanix-csi-credentials"
@@ -168,8 +168,8 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
-			ReleaseNamespace: req.Cluster.Namespace,
-			ReleaseName:      fmt.Sprintf(defaultStorageHelmReleaseNameTemplate, req.Cluster.Name),
+			ReleaseNamespace: defaultStorageHelmReleaseNamespace,
+			ReleaseName:      defaultStorageHelmReleaseName,
 			Version:          helmChart.Version,
 			ValuesTemplate:   values,
 		},
@@ -206,8 +206,8 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
-			ReleaseNamespace: req.Cluster.Namespace,
-			ReleaseName:      fmt.Sprintf(defaultSnapshotHelmReleaseNameTemplate, req.Cluster.Name),
+			ReleaseNamespace: defaultSnapshotHelmReleaseNamespace,
+			ReleaseName:      defaultSnapshotHelmReleaseName,
 			Version:          snapshotHelmChart.Version,
 		},
 	}
