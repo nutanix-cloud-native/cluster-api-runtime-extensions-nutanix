@@ -1,4 +1,13 @@
 apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
+  name: ${CLUSTER_NAME}-pe-creds-for-csi
+stringData:
+  key: ${NUTANIX_PRISM_ELEMENT_ENDPOINT}:${NUTANIX_PORT}:${NUTANIX_USER}:${NUTANIX_PASSWORD}
+---
+apiVersion: v1
 data:
   nutanix-ccm.yaml: |
     ---
@@ -317,6 +326,19 @@ spec:
           cni:
             provider: Calico
             strategy: HelmAddon
+          csi:
+            defaultStorage:
+              providerName: nutanix
+              storageClassConfigName: nutanix-volume
+            providers:
+            - credentials:
+                name: ${CLUSTER_NAME}-pe-creds-for-csi
+              name: nutanix
+              storageClassConfig:
+              - name: nutanix-volume
+                parameters:
+                  storageContainer: ${NUTANIX_STORAGE_CONTAINER_NAME}
+              strategy: HelmAddon
           nfd:
             strategy: HelmAddon
         controlPlane:
