@@ -225,12 +225,11 @@ jobs:
     strategy:
       matrix:
         module: [api, common, .]
+      fail-fast: false
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
       - id: govulncheck
         uses: golang/govulncheck-action@v1
         with:
           work-dir: ${{ matrix.module }}
           go-version-file: go.mod
+          check-latest: true
