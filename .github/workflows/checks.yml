@@ -59,6 +59,7 @@ jobs:
       matrix:
         provider:
           - Docker
+      fail-fast: false
     uses: ./.github/workflows/e2e.yml
     with:
       provider: ${{ matrix.provider }}
@@ -72,6 +73,7 @@ jobs:
     strategy:
       matrix:
         module: [api, common, .]
+      fail-fast: false
     steps:
       - name: Check out code
         uses: actions/checkout@v4
