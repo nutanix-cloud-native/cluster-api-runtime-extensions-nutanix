@@ -5,7 +5,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://github.com/kubernetes-sigs/cluster-api/releases/download/${CLUSTERCTL_VERSION}/clusterclass-quick-start.yaml
+- https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/clusterclass-quick-start.yaml
 
 configurations:
   - kustomizeconfig.yaml
