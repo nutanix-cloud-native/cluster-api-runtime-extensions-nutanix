@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -73,13 +73,15 @@ func (p *provider) Apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	clusterConfig *v1alpha1.ClusterConfigSpec,
+	log logr.Logger,
 ) error {
 	// No need to check for nil values in the struct, this function will only be called if CCM is not nil
 	if clusterConfig.Addons.CCM.Credentials == nil {
 		return ErrMissingCredentials
 	}
 
-	valuesTemplateConfigMap, err := lifecycleutils.RetrieveValuesTemplateConfigMap(
+	log.Info("Retrieving Nutanix CCM installation values template for cluster")
+	values, err := lifecycleutils.RetrieveValuesTemplate(
 		ctx,
 		p.client,
 		p.config.defaultValuesTemplateConfigMapName,
@@ -87,7 +89,7 @@ func (p *provider) Apply(
 	)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to retrieve Nutanix CCM installation values template ConfigMap for cluster: %w",
+			"failed to retrieve Nutanix CCM installation values template for cluster: %w",
 			err,
 		)
 	}
@@ -115,16 +117,11 @@ func (p *provider) Apply(
 		}
 	}
 
-	log := ctrl.LoggerFrom(ctx).WithValues(
-		"cluster",
-		ctrlclient.ObjectKeyFromObject(cluster),
-	)
 	helmChart, err := p.helmChartInfoGetter.For(ctx, log, config.NutanixCCM)
 	if err != nil {
 		return fmt.Errorf("failed to get values for nutanix-ccm-config %w", err)
 	}
 
-	values := valuesTemplateConfigMap.Data["values.yaml"]
 	// The configMap will contain the Helm values, but templated with fields that need to be filled in.
 	values, err = templateValues(clusterConfig, values)
 	if err != nil {

@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -19,6 +18,7 @@ import (
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
+	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 )
 
 const (
@@ -68,14 +68,15 @@ func (s helmAddonStrategy) apply(
 	}
 
 	log.Info("Retrieving Calico installation values template for cluster")
-	valuesTemplateConfigMap, err := s.retrieveValuesTemplateConfigMap(
+	values, err := lifecycleutils.RetrieveValuesTemplate(
 		ctx,
-		defaultsNamespace,
+		s.client,
 		defaultInstallationConfigMapName,
+		defaultsNamespace,
 	)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to retrieve Calico installation values template ConfigMap for cluster: %w",
+			"failed to retrieve Calico installation values template for cluster: %w",
 			err,
 		)
 	}
@@ -98,7 +99,7 @@ func (s helmAddonStrategy) apply(
 			ReleaseNamespace: defaultTigerOperatorNamespace,
 			ReleaseName:      defaultTigeraOperatorReleaseName,
 			Version:          s.helmChart.Version,
-			ValuesTemplate:   valuesTemplateConfigMap.Data["values.yaml"],
+			ValuesTemplate:   values,
 		},
 	}
 
@@ -114,30 +115,4 @@ func (s helmAddonStrategy) apply(
 	}
 
 	return nil
-}
-
-func (s helmAddonStrategy) retrieveValuesTemplateConfigMap(
-	ctx context.Context,
-	defaultsNamespace string,
-	configMapName string,
-) (*corev1.ConfigMap, error) {
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: defaultsNamespace,
-			Name:      configMapName,
-		},
-	}
-	configMapObjName := ctrlclient.ObjectKeyFromObject(
-		configMap,
-	)
-	err := s.client.Get(ctx, configMapObjName, configMap)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to retrieve installation values template ConfigMap %q: %w",
-			configMapObjName,
-			err,
-		)
-	}
-
-	return configMap, nil
 }

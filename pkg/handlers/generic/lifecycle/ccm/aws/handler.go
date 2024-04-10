@@ -8,11 +8,11 @@ import (
 	"fmt"
 
 	"github.com/blang/semver/v4"
+	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -58,11 +58,8 @@ func (a *AWSCCM) Apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	_ *v1alpha1.ClusterConfigSpec,
+	log logr.Logger,
 ) error {
-	log := ctrl.LoggerFrom(ctx).WithValues(
-		"cluster",
-		cluster.Name,
-	)
 	log.Info("Creating AWS CCM ConfigMap for Cluster")
 	version, err := semver.ParseTolerant(cluster.Spec.Topology.Version)
 	if err != nil {

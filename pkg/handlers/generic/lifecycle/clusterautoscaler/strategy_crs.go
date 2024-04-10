@@ -20,19 +20,10 @@ import (
 )
 
 type crsConfig struct {
-	defaultsNamespace string
-
 	defaultClusterAutoscalerConfigMap string
 }
 
 func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&c.defaultsNamespace,
-		prefix+".defaults-namespace",
-		corev1.NamespaceDefault,
-		"namespace of the ConfigMap used to deploy cluster-autoscaler",
-	)
-
 	flags.StringVar(
 		&c.defaultClusterAutoscalerConfigMap,
 		prefix+".default-cluster-autoscaler-configmap-name",

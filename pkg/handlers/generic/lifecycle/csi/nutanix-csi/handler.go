@@ -7,12 +7,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -83,11 +83,12 @@ func (n *NutanixCSI) Apply(
 	provider v1alpha1.CSIProvider,
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	log logr.Logger,
 ) error {
 	strategy := provider.Strategy
 	switch strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
-		err := n.handleHelmAddonApply(ctx, req)
+		err := n.handleHelmAddonApply(ctx, req, log)
 		if err != nil {
 			return err
 		}
@@ -132,22 +133,22 @@ func (n *NutanixCSI) Apply(
 func (n *NutanixCSI) handleHelmAddonApply(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	log logr.Logger,
 ) error {
-	valuesTemplateConfigMap, err := lifecycleutils.RetrieveValuesTemplateConfigMap(ctx,
+	log.Info("Retrieving Nutanix CSI installation values template for cluster")
+	values, err := lifecycleutils.RetrieveValuesTemplate(
+		ctx,
 		n.client,
 		n.config.defaultValuesTemplateConfigMapName,
-		n.config.DefaultsNamespace())
+		n.config.DefaultsNamespace(),
+	)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to retrieve nutanix csi installation values template ConfigMap for cluster: %w",
 			err,
 		)
 	}
-	values := valuesTemplateConfigMap.Data["values.yaml"]
-	log := ctrl.LoggerFrom(ctx).WithValues(
-		"cluster",
-		ctrlclient.ObjectKeyFromObject(&req.Cluster),
-	)
+
 	helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixStorageCSI)
 	if err != nil {
 		return fmt.Errorf("failed to get values for nutanix-csi-config %w", err)

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,6 +29,7 @@ type CSIProvider interface {
 		v1alpha1.CSIProvider,
 		*v1alpha1.DefaultStorage,
 		*runtimehooksv1.AfterControlPlaneInitializedRequest,
+		logr.Logger,
 	) error
 }
 
@@ -124,6 +126,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			provider,
 			csiProviders.DefaultStorage,
 			req,
+			log,
 		)
 		if err != nil {
 			log.Error(

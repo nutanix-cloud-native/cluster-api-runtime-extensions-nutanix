@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-logr/logr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,7 +26,12 @@ const (
 )
 
 type CCMProvider interface {
-	Apply(context.Context, *clusterv1.Cluster, *v1alpha1.ClusterConfigSpec) error
+	Apply(
+		context.Context,
+		*clusterv1.Cluster,
+		*v1alpha1.ClusterConfigSpec,
+		logr.Logger,
+	) error
 }
 
 type CCMHandler struct {
@@ -120,7 +126,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		return
 	}
 
-	err = handler.Apply(ctx, &req.Cluster, &clusterConfigVar)
+	err = handler.Apply(ctx, &req.Cluster, &clusterConfigVar, log)
 	if err != nil {
 		log.Error(
 			err,
