@@ -15,6 +15,8 @@ export AWS_CCM_CHART_VERSION_127 := 0.0.8
 export AWS_CCM_VERSION_128 := v1.28.1
 export AWS_CCM_CHART_VERSION_128 := 0.0.8
 
+export NUTANIX_CCM_CHART_VERSION := 0.3.3
+
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler aws-ebs-csi aws-ccm.127 nutanix-storage-csi aws-ccm.128)
 

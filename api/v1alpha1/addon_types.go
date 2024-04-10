@@ -308,12 +308,34 @@ func (CSI) VariableSchema() clusterv1.VariableSchema {
 }
 
 // CCM tells us to enable or disable the cloud provider interface.
-type CCM struct{}
+type CCM struct {
+	// A reference to the Secret for credential information for the target Prism Central instance
+	// +optional
+	Credentials *corev1.LocalObjectReference `json:"credentials"`
+}
 
 func (CCM) VariableSchema() clusterv1.VariableSchema {
+	// TODO Validate credentials is set.
+	// This CCM is shared across all providers.
+	// Some of these providers may require credentials to be set, but we don't want to require it for all providers.
+	// The Nutanix CCM handler will fail in at runtime if credentials are not set.
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type: "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"credentials": {
+					Description: "A reference to the Secret for credential information" +
+						"for the target Prism Central instance",
+					Type: "object",
+					Properties: map[string]clusterv1.JSONSchemaProps{
+						"name": {
+							Description: "The name of the Secret",
+							Type:        "string",
+						},
+					},
+					Required: []string{"name"},
+				},
+			},
 		},
 	}
 }

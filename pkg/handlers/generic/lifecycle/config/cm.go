@@ -23,6 +23,7 @@ const (
 	NFD                Component = "nfd"
 	NutanixStorageCSI  Component = "nutanix-storage-csi"
 	NutanixSnapshotCSI Component = "nutanix-snapshot-csi"
+	NutanixCCM         Component = "nutanix-ccm"
 )
 
 type HelmChartGetter struct {

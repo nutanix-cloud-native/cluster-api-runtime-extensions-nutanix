@@ -1,0 +1,8 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables/0/value/addons/ccm"
+  value:
+    credentials:
+      name: ${CLUSTER_NAME}-pc-creds

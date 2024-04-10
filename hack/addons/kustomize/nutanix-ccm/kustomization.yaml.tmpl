@@ -1,0 +1,18 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: nutanix-ccm-kustomize
+
+helmCharts:
+- name: nutanix-cloud-provider
+  namespace: kube-system
+  repo: https://nutanix.github.io/helm/
+  releaseName: nutanix-ccm
+  version: ${NUTANIX_CCM_CHART_VERSION}
+  valuesFile: helm-values.yaml
+  includeCRDs: true
+  skipTests: true

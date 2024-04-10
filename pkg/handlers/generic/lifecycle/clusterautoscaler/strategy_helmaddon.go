@@ -56,7 +56,8 @@ func (s helmAddonStrategy) apply(
 		ctx,
 		s.client,
 		s.config.defaultValuesTemplateConfigMapName,
-		defaultsNamespace)
+		defaultsNamespace,
+	)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to retrieve cluster-autoscaler installation values template ConfigMap for cluster: %w",

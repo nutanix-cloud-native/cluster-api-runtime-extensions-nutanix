@@ -1,0 +1,20 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
+data:
+  values.yaml: |-
+    ---
+    prismCentralEndPoint: {{ `{{ .PrismCentralHost }}` }}
+    prismCentralPort: {{ `{{ .PrismCentralPort }}` }}
+    prismCentralInsecure: {{ `{{ .PrismCentralInsecure }}` }}
+    prismCentralAdditionalTrustBundle: {{ `"{{ or .PrismCentralAdditionalTrustBundle "" }}"`  }}
+
+    # The Secret containing the credentials will be created by the handler.
+    createSecret: false
+    secretName: nutanix-ccm-credentials
+{{- end -}}

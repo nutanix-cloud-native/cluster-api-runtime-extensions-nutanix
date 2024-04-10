@@ -4,6 +4,10 @@
 package v1alpha1
 
 import (
+	"fmt"
+	"net/url"
+	"strconv"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -98,4 +102,27 @@ func (NutanixPrismCentralEndpointSpec) VariableSchema() clusterv1.VariableSchema
 			Required: []string{"url", "credentials"},
 		},
 	}
+}
+
+//nolint:gocritic // no need for named return values
+func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, int32, error) {
+	var prismCentralURL *url.URL
+	prismCentralURL, err := url.Parse(s.URL)
+	if err != nil {
+		return "", -1, fmt.Errorf("error parsing Prism Central URL: %w", err)
+	}
+
+	hostname := prismCentralURL.Hostname()
+
+	// return early with the default port if no port is specified
+	if prismCentralURL.Port() == "" {
+		return hostname, DefaultPrismCentralPort, nil
+	}
+
+	port, err := strconv.ParseInt(prismCentralURL.Port(), 10, 32)
+	if err != nil {
+		return "", -1, fmt.Errorf("error converting port to int: %w", err)
+	}
+
+	return hostname, int32(port), nil
 }

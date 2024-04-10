@@ -1,0 +1,5 @@
+# Copyright 2024 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "remove"
+  path: "/metadata/labels/ccm"

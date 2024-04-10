@@ -19,6 +19,10 @@ data:
     ChartName: node-feature-discovery
     ChartVersion: 0.15.2
     RepositoryURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+  nutanix-ccm: |
+    ChartName: nutanix-cloud-provider
+    ChartVersion: 0.3.3
+    RepositoryURL: https://nutanix.github.io/helm/
   nutanix-snapshot-csi: |
     ChartName: nutanix-csi-snapshot
     ChartVersion: v6.3.2

@@ -11,6 +11,7 @@ import (
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm"
 	awsccm "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/aws"
+	nutanixccm "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/nutanix"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/clusterautoscaler"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/calico"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/cilium"
@@ -32,6 +33,7 @@ type Handlers struct {
 	ebsConfig               *awsebs.AWSEBSConfig
 	nutnaixCSIConfig        *nutanixcsi.NutanixCSIConfig
 	awsccmConfig            *awsccm.AWSCCMConfig
+	nutanixCCMConfig        *nutanixccm.Config
 }
 
 func New(
@@ -48,6 +50,7 @@ func New(
 		ebsConfig:               &awsebs.AWSEBSConfig{GlobalOptions: globalOptions},
 		awsccmConfig:            &awsccm.AWSCCMConfig{GlobalOptions: globalOptions},
 		nutnaixCSIConfig:        &nutanixcsi.NutanixCSIConfig{GlobalOptions: globalOptions},
+		nutanixCCMConfig:        &nutanixccm.Config{GlobalOptions: globalOptions},
 	}
 }
 
@@ -66,7 +69,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		),
 	}
 	ccmHandlers := map[string]ccm.CCMProvider{
-		v1alpha1.CCMProviderAWS: awsccm.New(mgr.GetClient(), h.awsccmConfig),
+		v1alpha1.CCMProviderAWS:     awsccm.New(mgr.GetClient(), h.awsccmConfig),
+		v1alpha1.CCMProviderNutanix: nutanixccm.New(mgr.GetClient(), h.nutanixCCMConfig, helmChartInfoGetter),
 	}
 	return []handlers.Named{
 		calico.New(mgr.GetClient(), h.calicoCNIConfig, helmChartInfoGetter),
@@ -87,4 +91,5 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.ebsConfig.AddFlags("awsebs", pflag.CommandLine)
 	h.awsccmConfig.AddFlags("awsccm", pflag.CommandLine)
 	h.nutnaixCSIConfig.AddFlags("nutanixcsi", flagSet)
+	h.nutanixCCMConfig.AddFlags("nutanixccm", flagSet)
 }

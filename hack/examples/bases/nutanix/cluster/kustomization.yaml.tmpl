@@ -31,6 +31,9 @@ patches:
   path: ../../../patches/nutanix/csi.yaml
 - target:
     kind: Cluster
+  path: ../../../patches/nutanix/ccm.yaml
+- target:
+    kind: Cluster
   path: ../../../patches/nutanix/initialize-variables.yaml
 
 # Remove Additional Trust Bundle ConfigMap
@@ -38,3 +41,20 @@ patches:
     kind: ConfigMap
     name: ".*-pc-trusted-ca-bundle"
   path: ../../../patches/nutanix/remove-additional-trust-bundle/cm.yaml
+
+# Remove CCM CRS
+- target:
+    kind: Secret
+    name: nutanix-ccm-secret
+  path: ../../../patches/nutanix/remove-ccm/secret.yaml
+- target:
+    kind: ClusterResourceSet
+    name: nutanix-ccm-crs
+  path: ../../../patches/nutanix/remove-ccm/crs.yaml
+- target:
+    kind: ConfigMap
+    name: nutanix-ccm
+  path: ../../../patches/nutanix/remove-ccm/crs-cm.yaml
+- target:
+    kind: Cluster
+  path: ../../../patches/nutanix/remove-ccm/cluster-label.yaml

@@ -25,7 +25,7 @@ const (
 )
 
 type CCMProvider interface {
-	Apply(context.Context, *clusterv1.Cluster) error
+	Apply(context.Context, *clusterv1.Cluster, *v1alpha1.ClusterConfigSpec) error
 }
 
 type CCMHandler struct {
@@ -78,7 +78,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to read CCM provider from cluster definition: %v",
+			fmt.Sprintf("failed to read CCM from cluster definition: %v",
 				err,
 			),
 		)
@@ -88,17 +88,39 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		log.V(4).Info("Skipping CCM handler.")
 		return
 	}
+
+	clusterConfigVar, _, err := variables.Get[v1alpha1.ClusterConfigSpec](
+		varMap,
+		clusterconfig.MetaVariableName,
+	)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to read clusterConfig variable from cluster definition",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("failed to read clusterConfig variable from cluster definition: %v",
+				err,
+			),
+		)
+		return
+	}
+
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
 	log.Info(fmt.Sprintf("finding CCM handler for %s", infraKind))
 	var handler CCMProvider
 	switch {
 	case strings.Contains(strings.ToLower(infraKind), v1alpha1.CCMProviderAWS):
 		handler = c.ProviderHandler[v1alpha1.CCMProviderAWS]
+	case strings.Contains(strings.ToLower(infraKind), v1alpha1.CCMProviderNutanix):
+		handler = c.ProviderHandler[v1alpha1.CCMProviderNutanix]
 	default:
 		log.Info(fmt.Sprintf("No CCM handler provided for infra kind %s", infraKind))
 		return
 	}
-	err = handler.Apply(ctx, &req.Cluster)
+
+	err = handler.Apply(ctx, &req.Cluster, &clusterConfigVar)
 	if err != nil {
 		log.Error(
 			err,

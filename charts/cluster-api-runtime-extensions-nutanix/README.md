@@ -32,6 +32,8 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
 | helmAddonsConfigMap | string | `"default-helm-addons-config"` |  |
+| hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
+| hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-ccm-helm-values-template"` |  |
 | hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name | string | `"cluster-autoscaler"` |  |
 | hooks.clusterAutoscaler.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.clusterAutoscaler.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-cluster-autoscaler-helm-values-template"` |  |

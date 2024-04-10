@@ -25,7 +25,8 @@ const (
 	CSIProviderAWSEBS  = "aws-ebs"
 	CSIProviderNutanix = "nutanix"
 
-	CCMProviderAWS = "aws"
+	CCMProviderAWS     = "aws"
+	CCMProviderNutanix = "nutanix"
 )
 
 // +kubebuilder:object:root=true
