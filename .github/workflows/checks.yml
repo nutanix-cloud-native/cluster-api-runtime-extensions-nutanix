@@ -229,9 +229,15 @@ jobs:
         module: [api, common, .]
       fail-fast: false
     steps:
-      - id: govulncheck
-        uses: golang/govulncheck-action@v1
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          work-dir: ${{ matrix.module }}
-          go-version-file: go.mod
-          check-latest: true
+          fetch-depth: 0
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.9.0
+        with:
+          enable-cache: true
+
+      - id: govulncheck
+        run: devbox run -- make govulncheck.${{ matrix.module }}
