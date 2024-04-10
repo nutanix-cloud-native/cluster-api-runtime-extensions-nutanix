@@ -59,3 +59,8 @@ patches:
       - op: "add"
         path: "/spec/template/spec/instanceType"
         value: "PLACEHOLDER"
+  - target:
+        kind: AWSMachineTemplate
+    patch: |-
+      - op: "remove"
+        path: "/spec/template/spec/iamInstanceProfile"

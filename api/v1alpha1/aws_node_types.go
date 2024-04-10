@@ -14,6 +14,9 @@ import (
 const (
 	AWSControlPlaneInstanceType InstanceType = "m5.xlarge"
 	AWSWorkerInstanceType       InstanceType = "m5.2xlarge"
+
+	AWSControlPlaneInstanceProfile IAMInstanceProfile = "control-plane.cluster-api-provider-aws.sigs.k8s.io"
+	AWSWorkerInstanceProfile       IAMInstanceProfile = "nodes.cluster-api-provider-aws.sigs.k8s.io"
 )
 
 type AWSNodeSpec struct {
@@ -34,13 +37,15 @@ type AWSNodeSpec struct {
 
 func NewAWSControlPlaneNodeSpec() *AWSNodeSpec {
 	return &AWSNodeSpec{
-		InstanceType: ptr.To(AWSControlPlaneInstanceType),
+		InstanceType:       ptr.To(AWSControlPlaneInstanceType),
+		IAMInstanceProfile: ptr.To(AWSControlPlaneInstanceProfile),
 	}
 }
 
 func NewAWSWorkerNodeSpec() *AWSNodeSpec {
 	return &AWSNodeSpec{
-		InstanceType: ptr.To(AWSWorkerInstanceType),
+		InstanceType:       ptr.To(AWSWorkerInstanceType),
+		IAMInstanceProfile: ptr.To(AWSWorkerInstanceProfile),
 	}
 }
 
@@ -75,7 +80,7 @@ func (a AWSNodeSpec) VariableSchema() clusterv1.VariableSchema {
 			Description: "AWS Node configuration",
 			Type:        "object",
 			Properties: map[string]clusterv1.JSONSchemaProps{
-				"iamInstanceProfile":       IAMInstanceProfile("").VariableSchema().OpenAPIV3Schema,
+				"iamInstanceProfile":       a.IAMInstanceProfile.VariableSchema().OpenAPIV3Schema,
 				"instanceType":             a.InstanceType.VariableSchema().OpenAPIV3Schema,
 				"ami":                      AMISpec{}.VariableSchema().OpenAPIV3Schema,
 				"additionalSecurityGroups": AdditionalSecurityGroup{}.VariableSchema().OpenAPIV3Schema,
@@ -87,11 +92,12 @@ func (a AWSNodeSpec) VariableSchema() clusterv1.VariableSchema {
 
 type IAMInstanceProfile string
 
-func (IAMInstanceProfile) VariableSchema() clusterv1.VariableSchema {
+func (i IAMInstanceProfile) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type:        "string",
 			Description: "The IAM instance profile to use for the cluster Machines",
+			Default:     variables.MustMarshal(i),
 		},
 	}
 }

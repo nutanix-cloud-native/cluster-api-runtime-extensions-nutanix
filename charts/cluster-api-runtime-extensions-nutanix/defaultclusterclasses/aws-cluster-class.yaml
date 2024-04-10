@@ -105,7 +105,6 @@ metadata:
 spec:
   template:
     spec:
-      iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
       instanceType: PLACEHOLDER
       sshKeyName: ""
 ---
@@ -118,7 +117,6 @@ metadata:
 spec:
   template:
     spec:
-      iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
       instanceType: PLACEHOLDER
       sshKeyName: ""
 ---
