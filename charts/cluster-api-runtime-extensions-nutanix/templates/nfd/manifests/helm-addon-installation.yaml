@@ -8,6 +8,8 @@ metadata:
   name: '{{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
+    image:
+      tag: v{{ .Chart.Version }}-minimal
     master:
       extraLabelNs:
         - nvidia.com
