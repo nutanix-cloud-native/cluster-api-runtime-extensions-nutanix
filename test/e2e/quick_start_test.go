@@ -42,9 +42,7 @@ var _ = Describe("Quick start", Serial, func() {
 				)
 				Context(
 					flavour,
-					Label(
-						"provider:"+provider,
-					),
+					Label("provider:"+provider),
 					Label("cni:"+cniProvider),
 					Label("addonStrategy:"+addonStrategy),
 					func() {
