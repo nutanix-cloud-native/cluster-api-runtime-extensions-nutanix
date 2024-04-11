@@ -21,7 +21,7 @@ changelog:
 release:
   footer: |
     ### Summary
-    **Full Changelog**: https://github.com/d2iq-labs/{{.ProjectName}}/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/nutanix-cloud-native/{{.ProjectName}}/compare/{{ .PreviousTag }}...{{ .Tag }}
   extra_files:
     - glob: ./examples/capi-quick-start/*.yaml
     - glob: metadata.yaml
@@ -107,7 +107,7 @@ kos:
     platforms:
       - linux/amd64
       - linux/arm64
-    repository: ghcr.io/d2iq-labs/cluster-api-runtime-extensions-nutanix
+    repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
     bare: true
     tags:
       - v{{trimprefix .Version "v"}}

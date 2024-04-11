@@ -12,7 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
 const (
@@ -78,7 +78,10 @@ func Test_templateValues(t *testing.T) {
 				},
 				Nutanix: &v1alpha1.NutanixSpec{
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
-						URL:                   fmt.Sprintf("https://prism-central.nutanix.com:%d", v1alpha1.DefaultPrismCentralPort),
+						URL: fmt.Sprintf(
+							"https://prism-central.nutanix.com:%d",
+							v1alpha1.DefaultPrismCentralPort,
+						),
 						AdditionalTrustBundle: ptr.To(testCertBundle),
 					},
 				},
@@ -100,7 +103,10 @@ func Test_templateValues(t *testing.T) {
 				},
 				Nutanix: &v1alpha1.NutanixSpec{
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
-						URL:      fmt.Sprintf("https://prism-central.nutanix.com:%d", v1alpha1.DefaultPrismCentralPort),
+						URL: fmt.Sprintf(
+							"https://prism-central.nutanix.com:%d",
+							v1alpha1.DefaultPrismCentralPort,
+						),
 						Insecure: true,
 					},
 				},

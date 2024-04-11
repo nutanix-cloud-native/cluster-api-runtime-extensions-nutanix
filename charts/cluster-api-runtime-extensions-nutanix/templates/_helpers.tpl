@@ -20,7 +20,7 @@ Common labels
 app.kubernetes.io/name: {{ include "chart.name" . }}
 helm.sh/chart: {{ include "chart.fullname" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-cluster.x-k8s.io/provider: runtime-extensions-d2iq-labs
+cluster.x-k8s.io/provider: runtime-extensions-nutanix
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}

@@ -7,8 +7,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	capxv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/variables"
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
 type NutanixNodeSpec struct {

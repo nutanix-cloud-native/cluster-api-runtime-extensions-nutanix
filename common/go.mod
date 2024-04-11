@@ -1,16 +1,16 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-module github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common
+module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common
 
 go 1.21
 
-replace github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api => ../api
+replace github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api => ../api
 
 require (
-	github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api v0.0.0-00010101000000-000000000000
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/go-logr/logr v1.4.1
+	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.32.0
 	github.com/spf13/pflag v1.0.5

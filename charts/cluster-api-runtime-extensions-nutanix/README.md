@@ -9,7 +9,7 @@
 
 A Helm chart for cluster-api-runtime-extensions-nutanix
 
-**Homepage:** <https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix>
+**Homepage:** <https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix>
 
 ## Maintainers
 
@@ -19,7 +19,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 
 ## Source Code
 
-* <https://github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix>
+* <https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix>
 
 ## Values
 
@@ -63,7 +63,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nfd-helm-values-template"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
-| image.repository | string | `"ghcr.io/d2iq-labs/cluster-api-runtime-extensions-nutanix"` |  |
+| image.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` | Optional secrets used for pulling the container image |
 | nodeSelector | object | `{}` |  |

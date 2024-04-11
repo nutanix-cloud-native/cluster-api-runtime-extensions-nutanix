@@ -12,7 +12,7 @@ import (
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/openapi/patterns"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/openapi/patterns"
 )
 
 const (

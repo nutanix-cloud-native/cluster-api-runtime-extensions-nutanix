@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	capiutils "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
+	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 // findTargetCluster returns the management Cluster if it exists, otherwise returns the given cluster.

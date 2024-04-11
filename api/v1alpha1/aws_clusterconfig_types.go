@@ -6,8 +6,8 @@ package v1alpha1
 import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	capav1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/variables"
+	capav1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
 type AWSSpec struct {

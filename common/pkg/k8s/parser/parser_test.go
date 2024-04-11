@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/parser"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/parser"
 )
 
 func placeholderUnstructured(apiVersion, kind, namespace, name string) *unstructured.Unstructured {
