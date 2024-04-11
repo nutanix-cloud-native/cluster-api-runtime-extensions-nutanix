@@ -165,10 +165,7 @@ func getFilePathsToCAPICRDs() []string {
 			"config", "crd", "bases",
 		),
 		filepath.Join(
-			getModulePath(
-				filepath.Join(rootDir(), "hack", "third-party", "capd"),
-				"sigs.k8s.io/cluster-api/test",
-			),
+			getModulePath(rootDir(), "sigs.k8s.io/cluster-api/test"),
 			"infrastructure",
 			"docker",
 			"config",
