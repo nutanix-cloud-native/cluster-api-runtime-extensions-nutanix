@@ -49,9 +49,14 @@ linters-settings:
   depguard:
     rules:
       main:
+        list-mode: lax # Allow everything unless explicitly denied below.
         deny:
           - pkg: k8s.io/kubernetes
             desc: "do not use k8s.io/kubernetes directly"
+          - pkg: sigs.k8s.io/cluster-api-provider-
+            desc: "do not use CAPI providers directly, instead vendor necessary APIs"
+          - pkg: sigs.k8s.io/cluster-api-addon-provider-
+            desc: "do not use CAPI providers directly, instead vendor necessary APIs"
   errcheck:
     exclude-functions:
       - encoding/json.Marshal

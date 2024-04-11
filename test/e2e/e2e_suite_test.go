@@ -21,13 +21,13 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
-	addonsv1 "sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	capibootstrap "sigs.k8s.io/cluster-api/test/framework/bootstrap"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	addonsv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/test/framework/bootstrap"
 	clusterctltemp "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/test/framework/clusterctl"
 )
