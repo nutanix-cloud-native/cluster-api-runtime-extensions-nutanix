@@ -8,7 +8,7 @@ import (
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
 const (
@@ -103,7 +103,7 @@ func (i InstanceType) VariableSchema() clusterv1.VariableSchema {
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Type:        "string",
 			Description: "The AWS instance type to use for the cluster Machines",
-			Default:     variables.MustMarshal(string(i)),
+			Default:     variables.MustMarshal(i),
 		},
 	}
 }
