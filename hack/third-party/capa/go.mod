@@ -5,7 +5,7 @@ module github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/external/capa
 
 go 1.21
 
-require sigs.k8s.io/cluster-api-provider-aws/v2 v2.4.0
+require sigs.k8s.io/cluster-api-provider-aws/v2 v2.4.1
 
 require (
 	github.com/aws/aws-sdk-go v1.50.28 // indirect
