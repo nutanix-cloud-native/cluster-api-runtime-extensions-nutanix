@@ -5,7 +5,7 @@
 
 # CAPI Runtime Extensions
 
-For user docs, please see [https://d2iq-labs.github.io/cluster-api-runtime-extensions-nutanix/].
+For user docs, please see [https://nutanix-cloud-native.github.io/cluster-api-runtime-extensions-nutanix/].
 
 See [upstream documentation](https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/index.html).
 

@@ -27,9 +27,9 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	addonsv1 "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
-	"github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/test/framework/bootstrap"
-	clusterctltemp "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/test/framework/clusterctl"
+	addonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/bootstrap"
+	clusterctltemp "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/clusterctl"
 )
 
 func init() { //nolint:gochecknoinits // Idiomatically used to set up flags.

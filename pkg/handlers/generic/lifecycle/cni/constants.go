@@ -3,7 +3,7 @@
 
 package cni
 
-import "github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/pkg/handlers"
+import "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers"
 
 const (
 	CNIProviderLabelKey = handlers.MetadataDomain + "/cni"

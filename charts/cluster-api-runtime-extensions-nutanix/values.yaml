@@ -80,7 +80,7 @@ deployment:
   replicas: 1
 
 image:
-  repository: ghcr.io/d2iq-labs/cluster-api-runtime-extensions-nutanix
+  repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
   tag: ""
   pullPolicy: IfNotPresent
 

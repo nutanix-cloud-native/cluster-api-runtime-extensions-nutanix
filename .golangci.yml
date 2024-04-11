@@ -67,8 +67,8 @@ linters-settings:
     sections:
       - Standard
       - Default
-      - Prefix(github.com/d2iq-labs)
-      - Prefix(github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix)
+      - Prefix(github.com/nutanix-cloud-native)
+      - Prefix(github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix)
   gocritic:
     enabled-tags:
       - diagnostic

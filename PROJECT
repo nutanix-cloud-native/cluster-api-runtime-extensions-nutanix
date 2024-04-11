@@ -6,7 +6,7 @@ domain: labs.d2iq.io
 layout:
 - go.kubebuilder.io/v4
 projectName: cluster-api-runtime-extensions-nutanix
-repo: github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix
+repo: github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
 resources:
 - api:
     crdVersion: v1
@@ -14,6 +14,6 @@ resources:
   domain: labs.d2iq.io
   group: capiext.labs.d2iq.io
   kind: ClusterConfig
-  path: github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api/v1alpha1
+  path: github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1
   version: v1alpha1
 version: "3"

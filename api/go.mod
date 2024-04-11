@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-module github.com/d2iq-labs/cluster-api-runtime-extensions-nutanix/api
+module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api
 
 go 1.21
 
