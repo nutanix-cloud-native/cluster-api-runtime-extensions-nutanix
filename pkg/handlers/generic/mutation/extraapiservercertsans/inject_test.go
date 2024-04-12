@@ -15,6 +15,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
 func TestExtraAPIServerCertSANsPatch(t *testing.T) {
@@ -23,8 +24,9 @@ func TestExtraAPIServerCertSANsPatch(t *testing.T) {
 }
 
 var _ = Describe("Generate Extra API server certificate patches", func() {
+	testEnv := helpers.TestEnv
 	patchGenerator := func() mutation.GeneratePatches {
-		return mutation.NewMetaGeneratePatchesHandler("", NewPatch()).(mutation.GeneratePatches)
+		return mutation.NewMetaGeneratePatchesHandler("", NewPatch(testEnv.Client)).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{
