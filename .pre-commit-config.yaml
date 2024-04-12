@@ -104,7 +104,7 @@ repos:
   hooks:
   - id: markdownlint
     stages: [commit]
-    exclude: ^(CHANGELOG.md|charts/.+/README.md)$
+    exclude: ^(CHANGELOG.md|charts/.+/README.md|.github/pull_request_template.md)$
 - repo: https://github.com/Lucas-C/pre-commit-hooks
   rev: v1.5.4
   hooks:
