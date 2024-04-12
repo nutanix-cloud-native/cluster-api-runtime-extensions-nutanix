@@ -65,7 +65,6 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	clusterConfig, found, err := variables.Get[v1alpha1.ClusterConfigSpec](
 		vars,
 		h.variableName,
-		"spec",
 	)
 	if err != nil {
 		log.Error(
