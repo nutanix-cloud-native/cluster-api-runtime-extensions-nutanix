@@ -5,6 +5,7 @@ package extraapiservercertsans
 
 import (
 	"context"
+	"fmt"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -31,27 +32,22 @@ const (
 type extraAPIServerCertSANsPatchHandler struct {
 	variableName      string
 	variableFieldPath []string
-	client            ctrlclient.Reader
 }
 
-func NewPatch(
-	cl ctrlclient.Reader,
-) *extraAPIServerCertSANsPatchHandler {
+func NewPatch() *extraAPIServerCertSANsPatchHandler {
 	scheme := runtime.NewScheme()
 	_ = capiv1.AddToScheme(scheme)
 	_ = bootstrapv1.AddToScheme(scheme)
 	_ = controlplanev1.AddToScheme(scheme)
-	return newExtraAPIServerCertSANsPatchHandler(clusterconfig.MetaVariableName, cl, VariableName)
+	return newExtraAPIServerCertSANsPatchHandler(clusterconfig.MetaVariableName, VariableName)
 }
 
 func newExtraAPIServerCertSANsPatchHandler(
 	variableName string,
-	cl ctrlclient.Reader,
 	variableFieldPath ...string,
 ) *extraAPIServerCertSANsPatchHandler {
 	return &extraAPIServerCertSANsPatchHandler{
 		variableName:      variableName,
-		client:            cl,
 		variableFieldPath: variableFieldPath,
 	}
 }
@@ -66,33 +62,39 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
 	)
-	cluster := &capiv1.Cluster{}
-	if err := h.client.Get(ctx, clusterKey, cluster); err != nil {
-		return err
-	}
-	defaultAPICertSANs := getDefaultAPIServerSANs(cluster)
-	extraAPIServerCertSANsVar, found, err := variables.Get[v1alpha1.ExtraAPIServerCertSANs](
+	clusterConfig, found, err := variables.Get[v1alpha1.ClusterConfigSpec](
 		vars,
 		h.variableName,
-		h.variableFieldPath...,
+		"spec",
 	)
 	if err != nil {
-		return err
+		log.Error(
+			err,
+			"failed to get cluster config variable from extraAPIServerCertSANs mutation handler",
+		)
 	}
-	if !found && len(defaultAPICertSANs) == 0 {
-		log.V(5).Info("No Extra API server cert SANs needed to be added")
+	// this really shouldn't happen, but we'll account for this case anyways
+	if !found {
+		log.Info("clusterConfig.Spec not found form extraAPIServerCertSANs mutation handler")
+		return fmt.Errorf(
+			"clusterConfig.Spec not found form extraAPIServerCertSANs mutation handler from vars %v",
+			vars,
+		)
+	}
+	defaultAPICertSANs := getDefaultAPIServerSANs(&clusterConfig)
+	//nolint: gocritic // this is more readable
+	apiCertSANs := append(clusterConfig.ExtraAPIServerCertSANs, defaultAPICertSANs...)
+	if len(apiCertSANs) == 0 {
+		log.Info("No APIServerSANs to apply")
 		return nil
 	}
-
-	extraSans := append(extraAPIServerCertSANsVar, defaultAPICertSANs...)
-
 	log = log.WithValues(
 		"variableName",
 		h.variableName,
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		extraAPIServerCertSANsVar,
+		apiCertSANs,
 	)
 
 	return patches.MutateIfApplicable(
@@ -106,21 +108,15 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
 			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.CertSANs = extraSans
+			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.CertSANs = apiCertSANs
 			return nil
 		},
 	)
 }
 
-func getDefaultAPIServerSANs(cluster *capiv1.Cluster) []string {
-	provider, ok := cluster.Labels[capiv1.ProviderNameLabel]
-	if !ok {
-		return []string{}
-	}
-	switch provider {
-	case "docker":
+func getDefaultAPIServerSANs(spec *v1alpha1.ClusterConfigSpec) []string {
+	if spec.Docker != nil && spec.AWS == nil && spec.Nutanix == nil {
 		return v1alpha1.DefaultDockerCertSANs
-	default:
-		return []string{}
 	}
+	return []string{}
 }

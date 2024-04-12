@@ -25,7 +25,7 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 	return []mutation.MetaMutator{
 		auditpolicy.NewPatch(),
 		etcd.NewPatch(),
-		extraapiservercertsans.NewPatch(mgr.GetClient()),
+		extraapiservercertsans.NewPatch(),
 		httpproxy.NewPatch(mgr.GetClient()),
 		kubernetesimagerepository.NewPatch(),
 		credentials.NewPatch(mgr.GetClient()),
