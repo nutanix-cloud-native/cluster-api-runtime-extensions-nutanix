@@ -9,6 +9,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/mutation/customimage"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/mutation/dockerapiservercertsans"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
 )
 
@@ -17,6 +18,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
 			customimage.NewControlPlanePatch(),
+			dockerapiservercertsans.NewPatch(),
 		},
 		genericmutation.MetaMutators(mgr)...,
 	)
