@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.7.0 (2024-04-15)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Sync up from d2iq-labs fork by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/489
+* feat: set default instance profile for AWS CP and worker nodes by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/506
+### Fixes 🔧
+* fix: set defaults for AWS CP and Worker instanceType by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/504
+### Other Changes
+* build: Remove unused tool crane by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/459
+* ci: Add govulncheck check by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/461
+* ci: Remove auto-approve PR steps by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/462
+* build: Tidy up examples sync script by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/458
+* test: Remove redundant test case from httpproxy handler by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/463
+* ci: Fix pages workflow concurrency by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/493
+* refactor: Replace direct usage of CAAPH API with vendored types by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/492
+* refactor: Update module paths to use nutanix-cloud-native GH org by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/494
+* build: Remove unused capbk and capd hack modules by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/496
+* docs: add pull request template for the repository by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/502
+* docs: Add file extension to containerd-metrics doc by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/503
+* build: set dockerhub credentials for Nutanix examples by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/501
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.6.0...v0.7.0
+
 ## 0.6.0 (2024-03-19)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
