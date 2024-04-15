@@ -27,18 +27,20 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"nutanixClusterConfigPatch",
+		mgr.GetClient(),
 		patchHandlers...,
 	)
 }
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
-func MetaWorkerPatchHandler() handlers.Named {
+func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		machinedetails.NewWorkerPatch(),
 	}
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"nutanixWorkerConfigPatch",
+		mgr.GetClient(),
 		patchHandlers...,
 	)
 }

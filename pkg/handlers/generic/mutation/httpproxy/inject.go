@@ -18,6 +18,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
@@ -64,14 +65,15 @@ func (h *httpProxyPatchHandler) Mutate(
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	clusterKey ctrlclient.ObjectKey,
+	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
-
-	noProxy, err := h.detectNoProxy(ctx, clusterKey)
+	cluster, err := clusterGetter(ctx)
 	if err != nil {
-		log.Error(err, "failed to resolve no proxy value")
+		log.Error(err, "failed to fetch cluster")
+		return err
 	}
-
+	noProxy := generateNoProxy(cluster)
 	httpProxyVariable, found, err := variables.Get[v1alpha1.HTTPProxy](
 		vars,
 		h.variableName,
@@ -127,18 +129,6 @@ func (h *httpProxyPatchHandler) Mutate(
 	}
 
 	return nil
-}
-
-func (h *httpProxyPatchHandler) detectNoProxy(
-	ctx context.Context,
-	clusterKey ctrlclient.ObjectKey,
-) ([]string, error) {
-	cluster := &clusterv1.Cluster{}
-	if err := h.client.Get(ctx, clusterKey, cluster); err != nil {
-		return nil, err
-	}
-
-	return generateNoProxy(cluster), nil
 }
 
 // generateNoProxy creates default NO_PROXY values that should be applied on cluster

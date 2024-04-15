@@ -37,6 +37,7 @@ func (h *testHandler) Mutate(
 	_ map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ client.ObjectKey,
+	_ ClusterGetter,
 ) error {
 	if h.returnErr {
 		return fmt.Errorf("This is a failure")
@@ -219,7 +220,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 
 			g := gomega.NewWithT(t)
 
-			h := NewMetaGeneratePatchesHandler("", tt.mutaters...).(GeneratePatches)
+			h := NewMetaGeneratePatchesHandler("", nil, tt.mutaters...).(GeneratePatches)
 
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
 			h.GeneratePatches(context.Background(), &runtimehooksv1.GeneratePatchesRequest{
