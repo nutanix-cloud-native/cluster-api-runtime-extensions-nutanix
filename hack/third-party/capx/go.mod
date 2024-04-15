@@ -3,7 +3,8 @@
 
 module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/external/capx
 
-go 1.21
+go 1.22.1
+
 toolchain go1.22.2
 
 require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.4.0-alpha.2
