@@ -5,7 +5,7 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/ex
 
 go 1.21
 
-require sigs.k8s.io/cluster-api-provider-aws/v2 v2.4.1
+require sigs.k8s.io/cluster-api-provider-aws/v2 v2.4.2
 
 require (
 	github.com/aws/aws-sdk-go v1.50.28 // indirect
