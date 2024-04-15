@@ -43,7 +43,7 @@ func (h *awsWorkerConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     workerconfig.MetaVariableName,
 		Required: false,
-		Schema:   v1alpha1.NodeConfigSpec{AWS: &v1alpha1.AWSNodeSpec{}}.VariableSchema(),
+		Schema:   v1alpha1.NewAWSWorkerConfigSpec().VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

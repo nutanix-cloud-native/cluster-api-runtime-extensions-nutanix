@@ -57,16 +57,13 @@ type ClusterConfigSpec struct {
 
 func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	clusterConfigProps := GenericClusterConfig{}.VariableSchema()
-
 	switch {
 	case s.AWS != nil:
 		maps.Copy(
 			clusterConfigProps.OpenAPIV3Schema.Properties,
 			map[string]clusterv1.JSONSchemaProps{
-				AWSVariableName: AWSSpec{}.VariableSchema().OpenAPIV3Schema,
-				"controlPlane": NodeConfigSpec{
-					AWS: &AWSNodeSpec{},
-				}.VariableSchema().OpenAPIV3Schema,
+				AWSVariableName: s.AWS.VariableSchema().OpenAPIV3Schema,
+				"controlPlane":  s.ControlPlane.VariableSchema().OpenAPIV3Schema,
 			},
 		)
 	case s.Docker != nil:
@@ -92,6 +89,15 @@ func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:
 	}
 
 	return clusterConfigProps
+}
+
+func NewAWSClusterConfigSpec() *ClusterConfigSpec {
+	return &ClusterConfigSpec{
+		AWS: &AWSSpec{},
+		ControlPlane: &NodeConfigSpec{
+			AWS: NewAWSControlPlaneNodeSpec(),
+		},
+	}
 }
 
 // GenericClusterConfig defines the generic cluster configdesired.
