@@ -5,6 +5,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+- ../../../additional-resources/dockerhub-secret.yaml
 - ../../../additional-resources/nutanix/csi-secret.yaml
 - https://raw.githubusercontent.com/nutanix-cloud-native/cluster-api-provider-nutanix/1a7cd69ba35de01e56dcf2dda7f31973111d2317/templates/cluster-template-topology.yaml
 
@@ -58,3 +59,10 @@ patches:
 - target:
     kind: Cluster
   path: ../../../patches/nutanix/remove-ccm/cluster-label.yaml
+
+# A Nutanix cluster uses SNAT for outbound traffic by default.
+# Because Dockerhub only sees a single request IP the rate limit gets hit for almost every cluster.
+# Add a patch to set imageRegistry with docker.io credentials.
+- target:
+    kind: Cluster
+  path: ../../../patches/dockerhub-image-registry.yaml
