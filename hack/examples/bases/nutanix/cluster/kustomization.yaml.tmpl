@@ -7,7 +7,7 @@ kind: Kustomization
 resources:
 - ../../../additional-resources/dockerhub-secret.yaml
 - ../../../additional-resources/nutanix/csi-secret.yaml
-- https://raw.githubusercontent.com/nutanix-cloud-native/cluster-api-provider-nutanix/1a7cd69ba35de01e56dcf2dda7f31973111d2317/templates/cluster-template-topology.yaml
+- https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/${CAPX_VERSION}/cluster-template-topology.yaml
 
 sortOptions:
   order: fifo
