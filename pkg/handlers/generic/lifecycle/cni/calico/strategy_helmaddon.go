@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -93,7 +93,7 @@ func (s helmAddonStrategy) apply(
 			RepoURL:   s.helmChart.Repository,
 			ChartName: s.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{capiv1.ClusterNameLabel: req.Cluster.Name},
+				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: defaultTigerOperatorNamespace,
 			ReleaseName:      defaultTigeraOperatorReleaseName,

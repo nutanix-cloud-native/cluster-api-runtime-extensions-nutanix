@@ -17,7 +17,7 @@ import (
 	logsv1 "k8s.io/component-base/logs/api/v1"
 	"k8s.io/component-base/version/verflag"
 	"k8s.io/klog/v2"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -47,7 +47,7 @@ func main() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
 	utilruntime.Must(crsv1.AddToScheme(clientScheme))
-	utilruntime.Must(capiv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
 	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
 
 	mgrOptions := &ctrl.Options{

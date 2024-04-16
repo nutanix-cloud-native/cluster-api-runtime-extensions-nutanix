@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,7 +22,7 @@ import (
 type waitForClusterResourceSetToApplyResourcesInClusterInput struct {
 	name         string
 	clusterProxy framework.ClusterProxy
-	cluster      *capiv1.Cluster
+	cluster      *clusterv1.Cluster
 	intervals    []interface{}
 }
 

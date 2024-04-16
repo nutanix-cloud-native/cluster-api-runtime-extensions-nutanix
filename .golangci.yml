@@ -30,6 +30,7 @@ linters:
     - gosimple
     - govet
     - ineffassign
+    - importas
     - lll
     - misspell
     - nolintlint
@@ -85,6 +86,11 @@ linters-settings:
     dot-import-whitelist:
       - github.com/onsi/ginkgo/v2
       - github.com/onsi/gomega
+  importas:
+    no-unaliased: false
+    alias:
+      - pkg: "sigs.k8s.io/cluster-api/api/v1beta1"
+        alias: clusterv1
 
 issues:
   exclude-rules:

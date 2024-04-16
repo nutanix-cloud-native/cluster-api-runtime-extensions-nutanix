@@ -9,7 +9,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -123,7 +123,7 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting controlPlaneEndpoint in NutanixCluster spec")
 
-			obj.Spec.Template.Spec.ControlPlaneEndpoint = capiv1.APIEndpoint{
+			obj.Spec.Template.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
 				Host: controlPlaneEndpointVar.Host,
 				Port: controlPlaneEndpointVar.Port,
 			}
