@@ -260,9 +260,9 @@ func initBootstrapCluster(
 		clusterctl.InitManagementClusterAndWatchControllerLogsInput{
 			ClusterProxy:              bootstrapClusterProxy,
 			ClusterctlConfigPath:      clusterctlConfig,
-			InfrastructureProviders:   config.InfrastructureProviders(),
-			AddonProviders:            config.AddonProviders(),
-			RuntimeExtensionProviders: config.RuntimeExtensionProviders(),
+			InfrastructureProviders:   config.GetProviderLatestVersionsByContract("*", config.InfrastructureProviders()...),
+			AddonProviders:            config.GetProviderLatestVersionsByContract("*", config.AddonProviders()...),
+			RuntimeExtensionProviders: config.GetProviderLatestVersionsByContract("*", config.RuntimeExtensionProviders()...),
 			LogFolder: filepath.Join(
 				artifactFolder,
 				"clusters",
