@@ -5,6 +5,8 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/ap
 
 go 1.21
 
+toolchain go1.22.2
+
 require (
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/gomega v1.32.0
