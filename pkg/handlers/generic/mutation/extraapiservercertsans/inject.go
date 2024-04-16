@@ -8,7 +8,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
@@ -21,6 +20,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
@@ -35,10 +35,6 @@ type extraAPIServerCertSANsPatchHandler struct {
 }
 
 func NewPatch() *extraAPIServerCertSANsPatchHandler {
-	scheme := runtime.NewScheme()
-	_ = clusterv1.AddToScheme(scheme)
-	_ = bootstrapv1.AddToScheme(scheme)
-	_ = controlplanev1.AddToScheme(scheme)
 	return newExtraAPIServerCertSANsPatchHandler(clusterconfig.MetaVariableName, VariableName)
 }
 
@@ -105,7 +101,7 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("adding API server extra cert SANs in kubeadm config spec")
 
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
@@ -118,13 +114,10 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 }
 
 func getDefaultAPIServerSANs(cluster *clusterv1.Cluster) []string {
-	if cluster == nil {
-		return nil
-	}
-	switch cluster.GetLabels()[clusterv1.ProviderNameLabel] {
+	switch utils.GetProvider(cluster) {
 	case "docker":
 		return v1alpha1.DefaultDockerCertSANs
 	default:
-		return []string{}
+		return nil
 	}
 }
