@@ -84,11 +84,8 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	defaultAPICertSANs := getDefaultAPIServerSANs(cluster)
 	apiCertSANs := slices.Clone[[]string](extraAPIServerCertSANsVar)
 	apiCertSANs = append(apiCertSANs, defaultAPICertSANs...)
+	slices.Sort(apiCertSANs)
 	apiCertSANs = slices.Compact(apiCertSANs)
-	if len(apiCertSANs) == 0 {
-		log.Info("No APIServerSANs to apply")
-		return nil
-	}
 	log = log.WithValues(
 		"variableName",
 		h.variableName,

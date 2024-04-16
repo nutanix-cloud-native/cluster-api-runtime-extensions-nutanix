@@ -55,6 +55,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 							GenericClusterConfig: v1alpha1.GenericClusterConfig{
 								ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
 									"a.b.c.example.com",
+									"a.b.c.example.com",
 									"d.e.f.example.com",
 								},
 							},
@@ -109,11 +110,11 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 						gomega.HaveKeyWithValue(
 							"certSANs",
 							[]interface{}{
-								"a.b.c.example.com",
-								"localhost",
-								"127.0.0.1",
 								"0.0.0.0",
+								"127.0.0.1",
+								"a.b.c.example.com",
 								"host.docker.internal",
+								"localhost",
 							},
 						),
 					),
