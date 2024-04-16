@@ -215,7 +215,14 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		},
 	}
 
-	if err = client.ServerSideApply(ctx, n.client, snapshotChart, client.ForceOwnership); err != nil {
+	if err = controllerutil.SetOwnerReference(&req.Cluster, snapshotChart, n.client.Scheme()); err != nil {
+		return fmt.Errorf(
+			"failed to set owner reference on nutanix-csi-snapshot installation HelmChartProxy: %w",
+			err,
+		)
+	}
+
+	if err = client.ServerSideApply(ctx, n.client, snapshotChart); err != nil {
 		return fmt.Errorf(
 			"failed to apply nutanix-csi-snapshot installation HelmChartProxy: %w",
 			err,

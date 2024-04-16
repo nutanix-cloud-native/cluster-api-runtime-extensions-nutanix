@@ -22,7 +22,7 @@ import (
 )
 
 var _ = Describe("Quick start", Serial, func() {
-	for _, provider := range []string{"Docker", "AWS"} {
+	for _, provider := range []string{"Docker", "AWS", "Nutanix"} {
 		lowercaseProvider := strings.ToLower(provider)
 		for _, cniProvider := range []string{"Cilium", "Calico"} {
 			for _, addonStrategy := range []string{"HelmAddon", "ClusterResourceSet"} {
@@ -94,6 +94,7 @@ var _ = Describe("Quick start", Serial, func() {
 										framework.KubeadmControlPlaneOwnerReferenceAssertions,
 										framework.KubernetesReferenceAssertions,
 										AWSInfraOwnerReferenceAssertions,
+										NutanixInfraOwnerReferenceAssertions,
 										AddonReferenceAssertions,
 									)
 

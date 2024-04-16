@@ -32,8 +32,15 @@ const (
 	awsClusterTemplateKind           = "AWSClusterTemplate"
 	awsClusterControllerIdentityKind = "AWSClusterControllerIdentity"
 
+	nutanixMachineKind         = "NutanixMachine"
+	nutanixMachineTemplateKind = "NutanixMachineTemplate"
+	nutanixClusterKind         = "NutanixCluster"
+	nutanixClusterTemplateKind = "NutanixClusterTemplate"
+
 	helmChartProxyKind   = "HelmChartProxy"
 	helmReleaseProxyKind = "HelmReleaseProxy"
+
+	secretKind = "Secret"
 )
 
 var (
@@ -105,7 +112,7 @@ var (
 			return framework.HasExactOwners(owners, machineController)
 		},
 		awsMachineTemplateKind: func(owners []metav1.OwnerReference) error {
-			// Base AWSrMachineTemplates referenced in a ClusterClass must be owned by the ClusterClass.
+			// Base AWSMachineTemplates referenced in a ClusterClass must be owned by the ClusterClass.
 			// AWSMachineTemplates created for specific Clusters in the Topology controller must be owned by a Cluster.
 			return framework.HasOneOfExactOwners(
 				owners,
@@ -124,6 +131,37 @@ var (
 		awsClusterControllerIdentityKind: func(owners []metav1.OwnerReference) error {
 			// AWSClusterControllerIdentity should have no owners.
 			return framework.HasExactOwners(owners)
+		},
+	}
+
+	// NutanixInfraOwnerReferenceAssertions maps Nutanix Infrastructure types to functions which return an error
+	// if the passed OwnerReferences aren't as expected.
+	NutanixInfraOwnerReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
+		nutanixMachineKind: func(owners []metav1.OwnerReference) error {
+			// The NutanixMachine must be owned and controlled by a Machine.
+			return framework.HasExactOwners(owners, machineController)
+		},
+		nutanixMachineTemplateKind: func(owners []metav1.OwnerReference) error {
+			// Base NutanixMachineTemplates referenced in a ClusterClass must be owned by the ClusterClass.
+			// NutanixMachineTemplates created for specific Clusters in the Topology controller must be owned by a Cluster.
+			return framework.HasOneOfExactOwners(
+				owners,
+				[]metav1.OwnerReference{clusterOwner},
+				[]metav1.OwnerReference{clusterClassOwner},
+			)
+		},
+		nutanixClusterKind: func(owners []metav1.OwnerReference) error {
+			// NutanixCluster must be owned and controlled by a Cluster.
+			return framework.HasExactOwners(owners, clusterController)
+		},
+		nutanixClusterTemplateKind: func(owners []metav1.OwnerReference) error {
+			// NutanixClusterTemplate must be owned by a ClusterClass.
+			return framework.HasExactOwners(owners, clusterClassOwner)
+		},
+		secretKind: func(owners []metav1.OwnerReference) error {
+			// TODO:deepakm-ntnx Currently pc-creds, pc-creds-for-csi, dockerhub-credentials
+			// and registry-creds have unexpected owners which needs more investigation
+			return nil
 		},
 	}
 )

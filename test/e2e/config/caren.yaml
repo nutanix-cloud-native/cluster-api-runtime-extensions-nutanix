@@ -93,6 +93,29 @@ providers:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
 
+- name: nutanix
+  type: InfrastructureProvider
+  versions:
+  - name: "${CAPX_VERSION}"
+    value: "https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/${CAPX_VERSION}/infrastructure-components.yaml"
+    type: "url"
+    contract: v1beta1
+    files:
+    - sourcePath: "../data/shared/v1beta1-capx/metadata.yaml"
+    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/nutanix-cluster-class.yaml"
+      targetName: clusterclass-nutanix-quick-start.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-helm-addon.yaml"
+      targetName: cluster-template-topology-cilium-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-crs.yaml"
+      targetName: cluster-template-topology-cilium-crs.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-helm-addon.yaml"
+      targetName: cluster-template-topology-calico-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-crs.yaml"
+      targetName: cluster-template-topology-calico-crs.yaml
+    replacements:
+    - old: --metrics-addr=127.0.0.1:8080
+      new: --metrics-addr=:8080
+
 - name: helm
   type: AddonProvider
   versions:
@@ -161,6 +184,32 @@ variables:
   AMI_LOOKUP_FORMAT: "konvoy-ami-{{.BaseOS}}-release-?{{.K8sVersion}}-*"
   AMI_LOOKUP_BASEOS: "rocky-9.1"
   AMI_LOOKUP_ORG: "999867407951"
+  # To run Nutanix provider tests, set following variables here or as an env var
+  # # IP/FQDN of Prism Central.
+  # NUTANIX_ENDPOINT: ""
+  # # Port of Prism Central. Default: 9440
+  # NUTANIX_PORT: 9440
+  # # Disable Prism Central certificate checking. Default: false
+  # NUTANIX_INSECURE: false
+  # # Prism Central user
+  # NUTANIX_USER: ""
+  # # Prism Central password
+  # NUTANIX_PASSWORD: ""
+  # # Host IP to be assigned to the CAPX Kubernetes cluster.
+  # CONTROL_PLANE_ENDPOINT_IP: ""
+  # # Port of the CAPX Kubernetes cluster. Default: 6443
+  # CONTROL_PLANE_ENDPOINT_PORT: 6443
+  # # Name of the Prism Element cluster.
+  # NUTANIX_PRISM_ELEMENT_CLUSTER_NAME: ""
+  # # Name of the OS image pre-uploaded in PC.
+  # NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME: ""
+  # # Name of the subnet to be assigned to the VMs.
+  # NUTANIX_SUBNET_NAME: ""
+  # # Name of the storage container to CSI driver
+  # NUTANIX_STORAGE_CONTAINER_NAME: ""
+  # # Username/Password of dockerhub account to avoid download rate limiting
+  # DOCKER_HUB_USERNAME: ""
+  # DOCKER_HUB_PASSWORD: ""
 
 intervals:
   default/wait-controllers: ["3m", "10s"]
