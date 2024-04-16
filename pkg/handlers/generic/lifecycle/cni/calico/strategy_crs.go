@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructuredscheme"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -110,7 +110,7 @@ func (s crsStrategy) apply(
 
 func (s crsStrategy) ensureCNICRSForCluster(
 	ctx context.Context,
-	cluster *capiv1.Cluster,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	defaultInstallationConfigMapName string,
 	tigeraConfigMap *corev1.ConfigMap,
@@ -163,7 +163,7 @@ func (s crsStrategy) ensureCNICRSForCluster(
 
 func (s crsStrategy) ensureTigeraOperatorConfigMap(
 	ctx context.Context,
-	cluster *capiv1.Cluster,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 ) (*corev1.ConfigMap, error) {
 	defaultTigeraOperatorConfigMap := &corev1.ConfigMap{
@@ -196,7 +196,7 @@ func (s crsStrategy) ensureTigeraOperatorConfigMap(
 }
 
 func generateTigeraOperatorConfigMap(
-	defaultTigeraOperatorConfigMap *corev1.ConfigMap, cluster *capiv1.Cluster,
+	defaultTigeraOperatorConfigMap *corev1.ConfigMap, cluster *clusterv1.Cluster,
 ) *corev1.ConfigMap {
 	namespacedTigeraConfigMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -216,7 +216,7 @@ func generateTigeraOperatorConfigMap(
 
 func generateProviderCNIManifestsConfigMap(
 	installationConfigMap *corev1.ConfigMap,
-	cluster *capiv1.Cluster,
+	cluster *clusterv1.Cluster,
 ) (*corev1.ConfigMap, error) {
 	defaultManifestStrings := make([]string, 0, len(installationConfigMap.Data))
 	for _, v := range installationConfigMap.Data {

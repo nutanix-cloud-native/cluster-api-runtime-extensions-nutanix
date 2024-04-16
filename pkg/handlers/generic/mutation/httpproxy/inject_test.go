@@ -10,7 +10,7 @@ import (
 	"github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apiserver/pkg/storage/names"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -26,21 +26,21 @@ func TestGenerateNoProxy(t *testing.T) {
 
 	testCases := []struct {
 		name            string
-		cluster         *capiv1.Cluster
+		cluster         *clusterv1.Cluster
 		expectedNoProxy []string
 	}{{
 		name:    "no networking config",
-		cluster: &capiv1.Cluster{},
+		cluster: &clusterv1.Cluster{},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
 			".svc", ".svc.cluster.local",
 		},
 	}, {
 		name: "custom pod network",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
-				ClusterNetwork: &capiv1.ClusterNetwork{
-					Pods: &capiv1.NetworkRanges{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
+				ClusterNetwork: &clusterv1.ClusterNetwork{
+					Pods: &clusterv1.NetworkRanges{
 						CIDRBlocks: []string{"10.0.0.0/24", "10.0.1.0/24"},
 					},
 				},
@@ -52,8 +52,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "Unknown infrastructure cluster",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
 				InfrastructureRef: &v1.ObjectReference{
 					Kind: "SomeFakeInfrastructureCluster",
 				},
@@ -65,8 +65,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "AWS cluster",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
 				InfrastructureRef: &v1.ObjectReference{
 					Kind: "AWSCluster",
 				},
@@ -78,8 +78,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "AWS managed (EKS) cluster",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
 				InfrastructureRef: &v1.ObjectReference{
 					Kind: "AWSManagedCluster",
 				},
@@ -91,8 +91,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "Azure cluster",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
 				InfrastructureRef: &v1.ObjectReference{
 					Kind: "AzureCluster",
 				},
@@ -104,8 +104,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "Azure managed (AKS) cluster",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
 				InfrastructureRef: &v1.ObjectReference{
 					Kind: "AzureCluster",
 				},
@@ -117,8 +117,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "GCP cluster",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
 				InfrastructureRef: &v1.ObjectReference{
 					Kind: "GCPCluster",
 				},
@@ -130,10 +130,10 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "custom service network",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
-				ClusterNetwork: &capiv1.ClusterNetwork{
-					Services: &capiv1.NetworkRanges{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
+				ClusterNetwork: &clusterv1.ClusterNetwork{
+					Services: &clusterv1.NetworkRanges{
 						CIDRBlocks: []string{"172.16.0.0/24", "172.16.1.0/24"},
 					},
 				},
@@ -145,9 +145,9 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "custom servicedomain",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
-				ClusterNetwork: &capiv1.ClusterNetwork{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
+				ClusterNetwork: &clusterv1.ClusterNetwork{
 					ServiceDomain: "foo.bar",
 				},
 			},
@@ -158,13 +158,13 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "all options",
-		cluster: &capiv1.Cluster{
-			Spec: capiv1.ClusterSpec{
-				ClusterNetwork: &capiv1.ClusterNetwork{
-					Pods: &capiv1.NetworkRanges{
+		cluster: &clusterv1.Cluster{
+			Spec: clusterv1.ClusterSpec{
+				ClusterNetwork: &clusterv1.ClusterNetwork{
+					Pods: &clusterv1.NetworkRanges{
 						CIDRBlocks: []string{"10.10.0.0/16"},
 					},
-					Services: &capiv1.NetworkRanges{
+					Services: &clusterv1.NetworkRanges{
 						CIDRBlocks: []string{"172.16.0.0/16"},
 					},
 					ServiceDomain: "foo.bar",

@@ -10,7 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -90,7 +90,7 @@ func (s helmAddonStrategy) apply(
 			RepoURL:   s.helmChart.Repository,
 			ChartName: s.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{capiv1.ClusterNameLabel: targetCluster.Name},
+				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: targetCluster.Name},
 			},
 			ReleaseNamespace: req.Cluster.Namespace,
 			ReleaseName:      fmt.Sprintf(defaultHelmReleaseNameTemplate, req.Cluster.Name),

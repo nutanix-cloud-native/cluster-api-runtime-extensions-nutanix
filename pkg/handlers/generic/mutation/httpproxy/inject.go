@@ -10,7 +10,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -133,7 +133,7 @@ func (h *httpProxyPatchHandler) detectNoProxy(
 	ctx context.Context,
 	clusterKey ctrlclient.ObjectKey,
 ) ([]string, error) {
-	cluster := &capiv1.Cluster{}
+	cluster := &clusterv1.Cluster{}
 	if err := h.client.Get(ctx, clusterKey, cluster); err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (h *httpProxyPatchHandler) detectNoProxy(
 // generateNoProxy creates default NO_PROXY values that should be applied on cluster
 // in any environment and are preventing the use of proxy for cluster internal
 // networking.
-func generateNoProxy(cluster *capiv1.Cluster) []string {
+func generateNoProxy(cluster *clusterv1.Cluster) []string {
 	noProxy := []string{
 		"localhost",
 		"127.0.0.1",

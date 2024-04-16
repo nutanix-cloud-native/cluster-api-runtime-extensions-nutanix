@@ -6,7 +6,7 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	capdv1 "sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
@@ -25,7 +25,7 @@ func CAPIRegisterFuncs() []func(*runtime.Scheme) error {
 	return []func(*runtime.Scheme) error{
 		bootstrapv1.AddToScheme,
 		controlplanev1.AddToScheme,
-		capiv1.AddToScheme,
+		clusterv1.AddToScheme,
 	}
 }
 
