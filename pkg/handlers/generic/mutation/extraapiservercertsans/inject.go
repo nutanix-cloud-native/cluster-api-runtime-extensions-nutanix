@@ -5,6 +5,7 @@ package extraapiservercertsans
 
 import (
 	"context"
+	"slices"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -81,9 +82,9 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 		)
 	}
 	defaultAPICertSANs := getDefaultAPIServerSANs(cluster)
-	apiCertSANs := make([]string, len(extraAPIServerCertSANsVar))
-	copy(apiCertSANs, extraAPIServerCertSANsVar)
+	apiCertSANs := slices.Clone[[]string](extraAPIServerCertSANsVar)
 	apiCertSANs = append(apiCertSANs, defaultAPICertSANs...)
+	apiCertSANs = slices.Compact(apiCertSANs)
 	if len(apiCertSANs) == 0 {
 		log.Info("No APIServerSANs to apply")
 		return nil
