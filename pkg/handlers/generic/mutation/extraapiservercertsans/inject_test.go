@@ -130,6 +130,49 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 				},
 			},
 		},
+		{
+			patchTest: capitest.PatchTestDef{
+				Name: "extra API server cert SANs set with Nutanix",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						clusterconfig.MetaVariableName,
+						v1alpha1.ClusterConfigSpec{
+							GenericClusterConfig: v1alpha1.GenericClusterConfig{
+								ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
+									"a.b.c.example.com",
+								},
+							},
+						},
+					),
+				},
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
+					ValueMatcher: gomega.HaveKeyWithValue(
+						"apiServer",
+						gomega.HaveKeyWithValue(
+							"certSANs",
+							[]interface{}{
+								"0.0.0.0",
+								"127.0.0.1",
+								"a.b.c.example.com",
+								"localhost",
+							},
+						),
+					),
+				}},
+			},
+			cluster: clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: metav1.NamespaceDefault,
+					Labels: map[string]string{
+						clusterv1.ProviderNameLabel: "nutanix",
+					},
+				},
+			},
+		},
 	}
 
 	// create test node for each case

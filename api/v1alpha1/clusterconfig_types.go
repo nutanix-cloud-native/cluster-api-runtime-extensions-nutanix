@@ -38,6 +38,12 @@ var DefaultDockerCertSANs = []string{
 	"host.docker.internal",
 }
 
+var DefaultNutanixCertSANs = []string{
+	"localhost",
+	"127.0.0.1",
+	"0.0.0.0",
+}
+
 // +kubebuilder:object:root=true
 
 // ClusterConfig is the Schema for the clusterconfigs API.
@@ -272,8 +278,10 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: fmt.Sprintf(
-				"Extra Subject Alternative Names for the API Server signing cert. For Docker %s are injected automatically.",
+				//nolint:lll // its a user facing message
+				"Subject Alternative Names for the API Server signing cert. For Docker %s are injected automatically. For Nutanix %s are injected automatically.",
 				strings.Join(DefaultDockerCertSANs, ","),
+				strings.Join(DefaultNutanixCertSANs, ","),
 			),
 			Type:        "array",
 			UniqueItems: true,

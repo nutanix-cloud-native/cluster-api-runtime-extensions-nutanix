@@ -95,6 +95,10 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 		"variableValue",
 		apiCertSANs,
 	)
+	if len(apiCertSANs) == 0 {
+		log.Info("No APIServerSANs to apply")
+		return nil
+	}
 
 	return patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
@@ -117,6 +121,8 @@ func getDefaultAPIServerSANs(cluster *clusterv1.Cluster) []string {
 	switch utils.GetProvider(cluster) {
 	case "docker":
 		return v1alpha1.DefaultDockerCertSANs
+	case "nutanix":
+		return v1alpha1.DefaultNutanixCertSANs
 	default:
 		return nil
 	}
