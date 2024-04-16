@@ -33,8 +33,7 @@ endif
 
 .PHONY: dev.update-bootstrap-credentials-aws
 dev.update-bootstrap-credentials-aws: export KUBECONFIG := $(KIND_KUBECONFIG)
-dev.update-bootstrap-credentials-aws: export AWS_B64ENCODED_CREDENTIALS := $(shell clusterawsadm bootstrap credentials encode-as-profile)
 dev.update-bootstrap-credentials-aws:
-	kubectl patch secret capa-manager-bootstrap-credentials -n capa-system -p='{"data":{"credentials": "$(AWS_B64ENCODED_CREDENTIALS)"}}'
+	kubectl patch secret capa-manager-bootstrap-credentials -n capa-system -p="{\"data\":{\"credentials\": \"$$(clusterawsadm bootstrap credentials encode-as-profile)\"}}"
 	kubectl rollout restart deployment capa-controller-manager -n capa-system
 	kubectl rollout status deployment capa-controller-manager -n capa-system
