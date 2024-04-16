@@ -120,7 +120,7 @@ func main() {
 		awsclusterconfig.NewVariable(),
 		awsworkerconfig.NewVariable(),
 		awsmutation.MetaPatchHandler(mgr),
-		awsmutation.MetaWorkerPatchHandler(),
+		awsmutation.MetaWorkerPatchHandler(mgr),
 	}
 
 	// dockerMetaHandlers combines all Docker patch and variable handlers under a single handler.
@@ -129,7 +129,7 @@ func main() {
 		dockerclusterconfig.NewVariable(),
 		dockerworkerconfig.NewVariable(),
 		dockermutation.MetaPatchHandler(mgr),
-		dockermutation.MetaWorkerPatchHandler(),
+		dockermutation.MetaWorkerPatchHandler(mgr),
 	}
 
 	// nutanixMetaHandlers combines all Nutanix patch and variable handlers under a single handler.
@@ -138,7 +138,7 @@ func main() {
 		nutanixclusterconfig.NewVariable(),
 		nutanixworkerconfig.NewVariable(),
 		nutanixmutation.MetaPatchHandler(mgr),
-		nutanixmutation.MetaWorkerPatchHandler(),
+		nutanixmutation.MetaWorkerPatchHandler(mgr),
 	}
 
 	var allHandlers []handlers.Named

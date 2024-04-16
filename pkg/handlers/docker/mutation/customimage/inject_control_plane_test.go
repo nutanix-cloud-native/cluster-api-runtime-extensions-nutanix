@@ -14,11 +14,15 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
 var _ = Describe("Docker CustomImage patches for ControlPlane", func() {
 	patchGenerator := func() mutation.GeneratePatches {
-		return mutation.NewMetaGeneratePatchesHandler("", NewControlPlanePatch()).(mutation.GeneratePatches)
+		return mutation.NewMetaGeneratePatchesHandler("",
+			helpers.TestEnv.Client,
+			NewControlPlanePatch(),
+		).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{

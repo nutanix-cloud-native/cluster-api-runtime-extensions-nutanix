@@ -8,6 +8,10 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -15,6 +19,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
 func TestExtraAPIServerCertSANsPatch(t *testing.T) {
@@ -24,7 +29,12 @@ func TestExtraAPIServerCertSANsPatch(t *testing.T) {
 
 var _ = Describe("Generate Extra API server certificate patches", func() {
 	patchGenerator := func() mutation.GeneratePatches {
-		return mutation.NewMetaGeneratePatchesHandler("", NewPatch()).(mutation.GeneratePatches)
+		clientScheme := runtime.NewScheme()
+		utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+		utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+		cl, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		gomega.Expect(err).To(gomega.BeNil())
+		return mutation.NewMetaGeneratePatchesHandler("", cl, NewPatch()).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{

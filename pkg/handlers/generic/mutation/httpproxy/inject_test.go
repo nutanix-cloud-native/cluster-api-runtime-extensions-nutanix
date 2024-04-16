@@ -4,12 +4,17 @@
 package httpproxy
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
@@ -200,10 +205,15 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 	patchGenerator := func() mutation.GeneratePatches {
 		// Always initialize the testEnv variable in the closure.
 		// This will allow ginkgo to initialize testEnv variable during test execution time.
-		testEnv := helpers.TestEnv
+		clientScheme := runtime.NewScheme()
+		utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+		utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+		cl, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		gomega.Expect(err).To(gomega.BeNil())
 		return mutation.NewMetaGeneratePatchesHandler(
 			"",
-			NewPatch(testEnv.Client)).(mutation.GeneratePatches)
+			cl,
+			NewPatch(cl)).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{
@@ -277,11 +287,26 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 	for testIdx := range testDefs {
 		tt := testDefs[testIdx]
 		It(tt.Name, func() {
+			clientScheme := runtime.NewScheme()
+			utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+			utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+			cl, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+			gomega.Expect(err).To(gomega.BeNil())
+			c := &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: request.Namespace,
+				},
+			}
+			err = cl.Create(context.Background(), c)
+			gomega.Expect(err).To(gomega.BeNil())
 			capitest.AssertGeneratePatches(
 				GinkgoT(),
 				patchGenerator,
 				&tt,
 			)
+			err = cl.Delete(context.Background(), c)
+			gomega.Expect(err).To(gomega.BeNil())
 		})
 	}
 })

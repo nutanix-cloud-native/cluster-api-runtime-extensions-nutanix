@@ -45,7 +45,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 		// Using direct client will enable reading it immediately.
 		client, err := testEnv.GetK8sClient()
 		gomega.Expect(err).To(gomega.BeNil())
-		return mutation.NewMetaGeneratePatchesHandler("", NewPatch(client)).(mutation.GeneratePatches)
+		return mutation.NewMetaGeneratePatchesHandler("", client, NewPatch(client)).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{

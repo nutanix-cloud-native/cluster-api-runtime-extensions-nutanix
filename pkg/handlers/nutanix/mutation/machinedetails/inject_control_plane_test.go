@@ -17,6 +17,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
 var (
@@ -98,7 +99,11 @@ var (
 
 var _ = Describe("Generate Nutanix Machine Details patches for ControlPlane", func() {
 	patchGenerator := func() mutation.GeneratePatches {
-		return mutation.NewMetaGeneratePatchesHandler("", NewControlPlanePatch()).(mutation.GeneratePatches)
+		return mutation.NewMetaGeneratePatchesHandler(
+			"",
+			helpers.TestEnv.Client,
+			NewControlPlanePatch(),
+		).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{

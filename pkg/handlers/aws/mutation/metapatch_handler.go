@@ -37,12 +37,13 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"awsClusterConfigPatch",
+		mgr.GetClient(),
 		patchHandlers...,
 	)
 }
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
-func MetaWorkerPatchHandler() handlers.Named {
+func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		iaminstanceprofile.NewWorkerPatch(),
 		instancetype.NewWorkerPatch(),
@@ -52,6 +53,7 @@ func MetaWorkerPatchHandler() handlers.Named {
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"awsWorkerConfigPatch",
+		mgr.GetClient(),
 		patchHandlers...,
 	)
 }

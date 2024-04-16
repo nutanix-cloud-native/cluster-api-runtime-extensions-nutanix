@@ -14,11 +14,12 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 	dockerworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
 var _ = Describe("Docker CustomImage patches for workers", func() {
 	patchGenerator := func() mutation.GeneratePatches {
-		return mutation.NewMetaGeneratePatchesHandler("", NewWorkerPatch()).(mutation.GeneratePatches)
+		return mutation.NewMetaGeneratePatchesHandler("", helpers.TestEnv.Client, NewWorkerPatch()).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{

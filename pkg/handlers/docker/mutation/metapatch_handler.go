@@ -23,18 +23,20 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"dockerClusterConfigPatch",
+		mgr.GetClient(),
 		patchHandlers...,
 	)
 }
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
-func MetaWorkerPatchHandler() handlers.Named {
+func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		customimage.NewWorkerPatch(),
 	}
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"dockerWorkerConfigPatch",
+		mgr.GetClient(),
 		patchHandlers...,
 	)
 }

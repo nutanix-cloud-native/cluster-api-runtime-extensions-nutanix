@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -131,10 +132,17 @@ func (t *TestEnvironmentConfiguration) Build() (*TestEnvironment, error) {
 }
 
 // GetK8sClient returns a “live” k8s client that does will not invoke against controller cache.
-// If a test is writeing an object, they are not immediately available to read since controller caches
+// If a test is writing an object, they are not immediately available to read since controller caches
 // are not synchronized yet.
 func (t *TestEnvironment) GetK8sClient() (client.Client, error) {
 	return client.New(t.Manager.GetConfig(), client.Options{Scheme: scheme.Scheme})
+}
+
+// GetK8sClientWithScheme - same as GetK8sClient but can pass in a configurable scheme.
+func (t *TestEnvironment) GetK8sClientWithScheme(
+	clientScheme *runtime.Scheme,
+) (client.Client, error) {
+	return client.New(t.Manager.GetConfig(), client.Options{Scheme: clientScheme})
 }
 
 // StartManager starts the test controller against the local API server.
