@@ -34,10 +34,10 @@ before:
       apiVersion: v1
       kind: Namespace
       metadata:
-        name: {{.ProjectName}}-system
-      $(helm template {{.ProjectName}} ./charts/{{.ProjectName}} \
-        --namespace {{.ProjectName}}-system \
-        --set-string image.tag={{ .Version }} \
+        name: {{ .ProjectName }}-system
+      $(helm template {{ .ProjectName }} ./charts/{{ .ProjectName }} \
+        --namespace {{ .ProjectName }}-system \
+        --set-string image.tag=v{{ trimprefix .Version "v" }} \
         {{ if .IsSnapshot }}--set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
       EOF'
@@ -75,12 +75,12 @@ builds:
                 KO_DOCKER_REPO=ko.local/{{ .ProjectName }} \
                 ko build \
                   --bare \
-                  -t {{ .Version }} \
+                  -t v{{ trimprefix .Version "v" }} \
                   ./cmd
           fi'
 
 archives:
-  - name_template: '{{ .ProjectName }}_v{{trimprefix .Version "v"}}_{{ .Os }}_{{ .Arch }}'
+  - name_template: '{{ .ProjectName }}_v{{ trimprefix .Version "v" }}_{{ .Os }}_{{ .Arch }}'
     rlcp: true
     builds:
       - cluster-api-runtime-extensions-nutanix
@@ -102,7 +102,7 @@ kos:
       org.opencontainers.image.created: "{{ .CommitDate }}"
       org.opencontainers.image.title: "{{ .ProjectName }}"
       org.opencontainers.image.revision: "{{ .FullCommit }}"
-      org.opencontainers.image.version: v{{trimprefix .Version "v"}}
+      org.opencontainers.image.version: v{{ .Version }}
       org.opencontainers.image.source: "{{ .GitURL }}"
     platforms:
       - linux/amd64
@@ -110,7 +110,7 @@ kos:
     repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
     bare: true
     tags:
-      - v{{trimprefix .Version "v"}}
+      - v{{ trimprefix .Version "v" }}
 
 checksum:
   name_template: 'checksums.txt'
