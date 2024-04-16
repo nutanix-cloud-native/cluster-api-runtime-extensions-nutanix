@@ -13,7 +13,6 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -52,7 +51,7 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
-	clusterKey ctrlclient.ObjectKey,
+	clusterKey client.ObjectKey,
 	_ mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
