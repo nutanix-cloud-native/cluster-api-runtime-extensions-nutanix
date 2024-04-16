@@ -8,6 +8,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -33,6 +35,10 @@ type extraAPIServerCertSANsPatchHandler struct {
 }
 
 func NewPatch() *extraAPIServerCertSANsPatchHandler {
+	scheme := runtime.NewScheme()
+	_ = clusterv1.AddToScheme(scheme)
+	_ = bootstrapv1.AddToScheme(scheme)
+	_ = controlplanev1.AddToScheme(scheme)
 	return newExtraAPIServerCertSANsPatchHandler(clusterconfig.MetaVariableName, VariableName)
 }
 
@@ -52,7 +58,7 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	clusterKey client.ObjectKey,
-	_ mutation.ClusterGetter,
+	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
@@ -63,24 +69,35 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 		h.variableFieldPath...,
 	)
 	if err != nil {
-		return err
+		log.Error(
+			err,
+			"failed to get cluster config variable from extraAPIServerCertSANs mutation handler",
+		)
 	}
 	if !found {
 		log.V(5).Info("Extra API server cert SANs variable not defined")
 	}
-	apiCertSANs := extraAPIServerCertSANsVar
+	cluster, err := clusterGetter(ctx)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to get cluster from extraAPIServerCertSANs mutation handler",
+		)
+	}
+	defaultAPICertSANs := getDefaultAPIServerSANs(cluster)
+	//nolint: gocritic // this is more readable
+	apiCertSANs := append(extraAPIServerCertSANsVar, defaultAPICertSANs...)
 	if len(apiCertSANs) == 0 {
 		log.Info("No APIServerSANs to apply")
 		return nil
 	}
-
 	log = log.WithValues(
 		"variableName",
 		h.variableName,
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		extraAPIServerCertSANsVar,
+		apiCertSANs,
 	)
 
 	return patches.MutateIfApplicable(
@@ -88,15 +105,26 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", client.ObjectKeyFromObject(obj),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding API server extra cert SANs in kubeadm config spec")
 
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
 			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.CertSANs = extraAPIServerCertSANsVar
-
+			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.CertSANs = apiCertSANs
 			return nil
 		},
 	)
+}
+
+func getDefaultAPIServerSANs(cluster *clusterv1.Cluster) []string {
+	if cluster == nil {
+		return nil
+	}
+	switch cluster.GetLabels()[clusterv1.ProviderNameLabel] {
+	case "docker":
+		return v1alpha1.DefaultDockerCertSANs
+	default:
+		return []string{}
+	}
 }
