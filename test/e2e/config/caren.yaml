@@ -11,8 +11,8 @@ providers:
 - name: cluster-api
   type: CoreProvider
   versions:
-  - name: "{go://sigs.k8s.io/cluster-api@v1.6}"
-    value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/{go://sigs.k8s.io/cluster-api@v1.6}/core-components.yaml"
+  - name: "${CAPI_VERSION}"
+    value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/core-components.yaml"
     type: url
     contract: v1beta1
     files:
@@ -24,8 +24,8 @@ providers:
 - name: kubeadm
   type: BootstrapProvider
   versions:
-  - name: "{go://sigs.k8s.io/cluster-api@v1.6}"
-    value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/{go://sigs.k8s.io/cluster-api@v1.6}/bootstrap-components.yaml"
+  - name: "${CAPI_VERSION}"
+    value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/bootstrap-components.yaml"
     type: url
     contract: v1beta1
     files:
@@ -37,8 +37,8 @@ providers:
 - name: kubeadm
   type: ControlPlaneProvider
   versions:
-  - name: "{go://sigs.k8s.io/cluster-api@v1.6}"
-    value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/{go://sigs.k8s.io/cluster-api@v1.6}/control-plane-components.yaml"
+  - name: "${CAPI_VERSION}"
+    value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/control-plane-components.yaml"
     type: url
     contract: v1beta1
     files:
@@ -50,8 +50,8 @@ providers:
 - name: aws
   type: InfrastructureProvider
   versions:
-  - name: "{go://sigs.k8s.io/cluster-api-provider-aws/v2@v2.4}"
-    value: "https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/{go://sigs.k8s.io/cluster-api-provider-aws/v2@v2.4}/infrastructure-components.yaml"
+  - name: "${CAPA_VERSION}"
+    value: "https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/${CAPA_VERSION}/infrastructure-components.yaml"
     type: "url"
     contract: v1beta1
     files:
@@ -73,8 +73,8 @@ providers:
 - name: docker
   type: InfrastructureProvider
   versions:
-  - name: "{go://sigs.k8s.io/cluster-api@v1.6}"
-    value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/{go://sigs.k8s.io/cluster-api@v1.6}/infrastructure-components-development.yaml"
+  - name: "${CAPD_VERSION}"
+    value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPD_VERSION}/infrastructure-components-development.yaml"
     type: "url"
     contract: v1beta1
     files:
@@ -96,8 +96,8 @@ providers:
 - name: helm
   type: AddonProvider
   versions:
-  - name: "{go://sigs.k8s.io/cluster-api-addon-provider-helm@latest-v0.1}"
-    value: "https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm/releases/download/{go://sigs.k8s.io/cluster-api-addon-provider-helm@latest-v0.1}/addon-components.yaml"
+  - name: "${CAAPH_VERSION}"
+    value: "https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm/releases/download/${CAAPH_VERSION}/addon-components.yaml"
     type: "url"
     contract: v1beta1
     files:
