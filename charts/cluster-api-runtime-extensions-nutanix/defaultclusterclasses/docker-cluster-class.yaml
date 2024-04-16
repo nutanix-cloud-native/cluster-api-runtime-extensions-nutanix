@@ -65,7 +65,6 @@ spec:
     spec:
       kubeadmConfigSpec:
         clusterConfiguration:
-          apiServer: {}
           controllerManager:
             extraArgs:
               enable-hostpath-provisioner: "true"
