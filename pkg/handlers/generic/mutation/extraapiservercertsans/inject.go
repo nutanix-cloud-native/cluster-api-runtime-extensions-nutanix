@@ -81,8 +81,9 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 		)
 	}
 	defaultAPICertSANs := getDefaultAPIServerSANs(cluster)
-	//nolint: gocritic // this is more readable
-	apiCertSANs := append(extraAPIServerCertSANsVar, defaultAPICertSANs...)
+	apiCertSANs := make([]string, len(extraAPIServerCertSANsVar))
+	copy(apiCertSANs, extraAPIServerCertSANsVar)
+	apiCertSANs = append(apiCertSANs, defaultAPICertSANs...)
 	if len(apiCertSANs) == 0 {
 		log.Info("No APIServerSANs to apply")
 		return nil
