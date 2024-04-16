@@ -41,6 +41,16 @@ var (
 				Name: ptr.To("fake-subnet"),
 			},
 		},
+		AdditionalCategories: []v1alpha1.NutanixCategoryIdentifier{
+			{
+				Key:   "fake-key",
+				Value: "fake-value",
+			},
+			{
+				Key:   "fake-key2",
+				Value: "fake-value2",
+			},
+		},
 	}
 
 	matchersForAllFieldsSet = []capitest.JSONPatchMatcher{
@@ -93,6 +103,20 @@ var (
 			Operation:    "replace",
 			Path:         "/spec/template/spec/subnet",
 			ValueMatcher: gomega.HaveLen(1),
+		},
+		{
+			Operation: "add",
+			Path:      "/spec/template/spec/additionalCategories",
+			ValueMatcher: gomega.ContainElements(
+				gomega.SatisfyAll(
+					gomega.HaveKeyWithValue("key", "fake-key"),
+					gomega.HaveKeyWithValue("value", "fake-value"),
+				),
+				gomega.SatisfyAll(
+					gomega.HaveKeyWithValue("key", "fake-key2"),
+					gomega.HaveKeyWithValue("value", "fake-value2"),
+				),
+			),
 		},
 	}
 )

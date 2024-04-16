@@ -51,6 +51,11 @@ type NutanixMachineDetails struct {
 	// The identifier (uuid or name) can be obtained from the console or API.
 	Subnets []NutanixResourceIdentifier `json:"subnets"`
 
+	// List of categories that need to be added to the machines. Categories must already
+	// exist in Prism Central. One category key can have more than one value.
+	// +optional
+	AdditionalCategories []NutanixCategoryIdentifier `json:"additionalCategories,omitempty"`
+
 	// Defines the boot type of the virtual machine. Only supports UEFI and Legacy
 	BootType NutanixBootType `json:"bootType,omitempty"`
 
@@ -92,6 +97,12 @@ func (NutanixMachineDetails) VariableSchema() clusterv1.VariableSchema {
 						//nolint:lll // Long description.
 						"subnet identifies the network subnet to use for the machine. The identifier (uuid or name) can be obtained from the console or API.",
 					).OpenAPIV3Schema),
+				},
+				"additionalCategories": {
+					Type: "array",
+					//nolint:lll // Description is long.
+					Description: "List of categories that need to be added to the machines. Categories must already exist in Prism Central. One category key can have more than one value.",
+					Items:       ptr.To(NutanixCategoryIdentifier{}.VariableSchema().OpenAPIV3Schema),
 				},
 				"bootType": NutanixBootType(
 					capxv1.NutanixBootTypeLegacy,
@@ -168,6 +179,27 @@ func (NutanixResourceIdentifier) VariableSchemaFromDescription(
 				"name": {
 					Type:        "string",
 					Description: "name is the resource name in the PC.",
+				},
+			},
+		},
+	}
+}
+
+type NutanixCategoryIdentifier capxv1.NutanixCategoryIdentifier
+
+func (NutanixCategoryIdentifier) VariableSchema() clusterv1.VariableSchema {
+	return clusterv1.VariableSchema{
+		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
+			Description: "Nutanix Category Identifier",
+			Type:        "object",
+			Properties: map[string]clusterv1.JSONSchemaProps{
+				"key": {
+					Type:        "string",
+					Description: "key is the Key of category in PC.",
+				},
+				"value": {
+					Type:        "string",
+					Description: "value is the category value linked to the category key in PC.",
 				},
 			},
 		},
