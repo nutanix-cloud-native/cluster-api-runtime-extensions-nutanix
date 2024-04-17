@@ -132,7 +132,7 @@ repos:
     name: License headers - Markdown
     stages: [commit]
     files: \.md$
-    exclude: ^(CHANGELOG.md$|docs/)
+    exclude: ^(CHANGELOG.md$|docs/|.github/pull_request_template.md$)
     args:
       - --license-filepath
       - hack/license-header.txt
