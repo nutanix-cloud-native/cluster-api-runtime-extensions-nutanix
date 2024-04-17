@@ -18,7 +18,7 @@ import (
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
+	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 )
 
 const (
@@ -52,7 +52,7 @@ func (s helmAddonStrategy) apply(
 	log logr.Logger,
 ) error {
 	log.Info("Retrieving cluster-autoscaler installation values template for cluster")
-	valuesTemplateConfigMap, err := utils.RetrieveValuesTemplateConfigMap(
+	values, err := lifecycleutils.RetrieveValuesTemplate(
 		ctx,
 		s.client,
 		s.config.defaultValuesTemplateConfigMapName,
@@ -60,19 +60,15 @@ func (s helmAddonStrategy) apply(
 	)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to retrieve cluster-autoscaler installation values template ConfigMap for cluster: %w",
+			"failed to retrieve cluster-autoscaler installation values template for cluster: %w",
 			err,
 		)
 	}
 
-	cluster := &req.Cluster
-
-	values := valuesTemplateConfigMap.Data["values.yaml"]
-
 	// The cluster-autoscaler is different from other addons.
 	// It requires all resources to be created in the management cluster,
 	// which means creating the HelmChartProxy always targeting the management cluster.
-	targetCluster, err := findTargetCluster(ctx, s.client, cluster)
+	targetCluster, err := findTargetCluster(ctx, s.client, &req.Cluster)
 	if err != nil {
 		return err
 	}

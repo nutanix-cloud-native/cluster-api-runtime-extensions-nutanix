@@ -122,11 +122,11 @@ func RetrieveValuesTemplateConfigMap(
 	ctx context.Context,
 	c ctrlclient.Client,
 	configMapName,
-	defaultsNamespace string,
+	namespace string,
 ) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: defaultsNamespace,
+			Namespace: namespace,
 			Name:      configMapName,
 		},
 	}
@@ -142,6 +142,19 @@ func RetrieveValuesTemplateConfigMap(
 		)
 	}
 	return configMap, nil
+}
+
+func RetrieveValuesTemplate(
+	ctx context.Context,
+	c ctrlclient.Client,
+	configMapName,
+	namespace string,
+) (string, error) {
+	configMap, err := RetrieveValuesTemplateConfigMap(ctx, c, configMapName, namespace)
+	if err != nil {
+		return "", err
+	}
+	return configMap.Data["values.yaml"], nil
 }
 
 func CreateConfigMapForCRS(configMapName, configMapNamespace string,
