@@ -30,6 +30,12 @@ patches:
     - op: "remove"
       path: "/spec/variables"
 
+- target:
+    kind: KubeadmControlPlaneTemplate
+  patch: |-
+    - op: "remove"
+      path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/certSANs"
+
 # FIXME: Debug why some of the patches are needed.
 # When the handler runs, it sends back multiple patches for individual fields.
 # But CAPI fails applying them because of missing value.
