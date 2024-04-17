@@ -31,18 +31,20 @@ const (
 	CCMProviderNutanix = "nutanix"
 )
 
-var DefaultDockerCertSANs = []string{
-	"localhost",
-	"127.0.0.1",
-	"0.0.0.0",
-	"host.docker.internal",
-}
+var (
+	DefaultDockerCertSANs = []string{
+		"localhost",
+		"127.0.0.1",
+		"0.0.0.0",
+		"host.docker.internal",
+	}
 
-var DefaultNutanixCertSANs = []string{
-	"localhost",
-	"127.0.0.1",
-	"0.0.0.0",
-}
+	DefaultNutanixCertSANs = []string{
+		"localhost",
+		"127.0.0.1",
+		"0.0.0.0",
+	}
+)
 
 // +kubebuilder:object:root=true
 

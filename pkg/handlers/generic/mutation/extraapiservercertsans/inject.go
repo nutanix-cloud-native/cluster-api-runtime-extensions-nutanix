@@ -96,7 +96,7 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 		apiCertSANs,
 	)
 	if len(apiCertSANs) == 0 {
-		log.Info("No APIServerSANs to apply")
+		log.V(5).Info("No APIServerSANs to apply")
 		return nil
 	}
 
