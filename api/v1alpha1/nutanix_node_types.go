@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -38,21 +39,17 @@ type NutanixMachineDetails struct {
 	// memorySize is the memory size (in Quantity format) of the VM
 	MemorySize resource.Quantity `json:"memorySize"`
 
-	// image is to identify the rhcos image uploaded to the Prism Central (PC)
-	// The image identifier (uuid or name) can be obtained from the Prism Central console
-	// or using the prism_central API.
+	// image identifies the image uploaded to Prism Central (PC). The identifier
+	// (uuid or name) can be obtained from the console or API.
 	Image NutanixResourceIdentifier `json:"image"`
 
-	// cluster is to identify the cluster (the Prism Element under management
-	// of the Prism Central), in which the Machine's VM will be created.
-	// The cluster identifier (uuid or name) can be obtained from the Prism Central console
-	// or using the prism_central API.
+	// cluster identifies the Prism Element in which the machine will be created.
+	// The identifier (uuid or name) can be obtained from the console or API.
 	Cluster NutanixResourceIdentifier `json:"cluster"`
 
-	// subnet is to identify the cluster's network subnet to use for the Machine's VM
-	// The cluster identifier (uuid or name) can be obtained from the Prism Central console
-	// or using the prism_central API.
-	Subnets NutanixResourceIdentifiers `json:"subnets"`
+	// subnet identifies the network subnet to use for the machine.
+	// The identifier (uuid or name) can be obtained from the console or API.
+	Subnets []NutanixResourceIdentifier `json:"subnets"`
 
 	// Defines the boot type of the virtual machine. Only supports UEFI and Legacy
 	BootType NutanixBootType `json:"bootType,omitempty"`
@@ -80,9 +77,22 @@ func (NutanixMachineDetails) VariableSchema() clusterv1.VariableSchema {
 					Description: "memorySize is the memory size (in Quantity format) of the VM eg. 4Gi",
 					Type:        "string",
 				},
-				"image":   NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
-				"cluster": NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema,
-				"subnets": NutanixResourceIdentifiers{}.VariableSchema().OpenAPIV3Schema,
+				"image": NutanixResourceIdentifier{}.VariableSchemaFromDescription(
+					//nolint:lll // Long description.
+					"image identifies the image uploaded to Prism Central (PC). The identifier (uuid or name) can be obtained from the console or API.",
+				).OpenAPIV3Schema,
+				"cluster": NutanixResourceIdentifier{}.VariableSchemaFromDescription(
+					//nolint:lll // Long description.
+					"cluster identifies the Prism Element in which the machine will be created. The identifier (uuid or name) can be obtained from the console or API.",
+				).OpenAPIV3Schema,
+				"subnets": {
+					Type:        "array",
+					Description: "subnets is a list of network subnets to use for the machine",
+					Items: ptr.To(NutanixResourceIdentifier{}.VariableSchemaFromDescription(
+						//nolint:lll // Long description.
+						"subnet identifies the network subnet to use for the machine. The identifier (uuid or name) can be obtained from the console or API.",
+					).OpenAPIV3Schema),
+				},
 				"bootType": NutanixBootType(
 					capxv1.NutanixBootTypeLegacy,
 				).VariableSchema().
@@ -139,7 +149,9 @@ func (NutanixBootType) VariableSchema() clusterv1.VariableSchema {
 
 type NutanixResourceIdentifier capxv1.NutanixResourceIdentifier
 
-func (NutanixResourceIdentifier) VariableSchema() clusterv1.VariableSchema {
+func (NutanixResourceIdentifier) VariableSchemaFromDescription(
+	description string,
+) clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: "Nutanix Resource Identifier",
@@ -158,20 +170,6 @@ func (NutanixResourceIdentifier) VariableSchema() clusterv1.VariableSchema {
 					Description: "name is the resource name in the PC.",
 				},
 			},
-		},
-	}
-}
-
-type NutanixResourceIdentifiers []NutanixResourceIdentifier
-
-func (NutanixResourceIdentifiers) VariableSchema() clusterv1.VariableSchema {
-	resourceSchema := NutanixResourceIdentifier{}.VariableSchema().OpenAPIV3Schema
-
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Nutanix resource identifier",
-			Type:        "array",
-			Items:       &resourceSchema,
 		},
 	}
 }
