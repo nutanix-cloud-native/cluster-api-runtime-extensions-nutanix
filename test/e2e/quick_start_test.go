@@ -59,8 +59,24 @@ var _ = Describe("Quick start", Serial, func() {
 								))
 							}
 
+							// Check if a provider-specific Kubernetes version is set in the environment and use that. This allows
+							// for testing against different Kubernetes versions, as some providers (e.g. Docker) have machine images
+							// available that are not available in other providers.
+							// This version can be specified in `test/e2e/config/caren.yaml` with a variable named
+							// `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
+							// `KUBERNETES_VERSION_DOCKER: v1.29.4`.
+							testE2EConfig := e2eConfig.DeepCopy()
+							varName := capie2e.KubernetesVersion + "_" + strings.ToUpper(
+								lowercaseProvider,
+							)
+							if testE2EConfig.HasVariable(varName) {
+								testE2EConfig.Variables[capie2e.KubernetesVersion] = testE2EConfig.GetVariable(
+									varName,
+								)
+							}
+
 							return capie2e.QuickStartSpecInput{
-								E2EConfig:              e2eConfig,
+								E2EConfig:              testE2EConfig,
 								ClusterctlConfigPath:   clusterctlConfigPath,
 								BootstrapClusterProxy:  bootstrapClusterProxy,
 								ArtifactFolder:         artifactFolder,
@@ -92,11 +108,11 @@ var _ = Describe("Quick start", Serial, func() {
 										ctx,
 										framework.WaitForNodesReadyInput{
 											Lister: workloadClient,
-											KubernetesVersion: e2eConfig.GetVariable(
+											KubernetesVersion: testE2EConfig.GetVariable(
 												capie2e.KubernetesVersion,
 											),
 											Count: 2,
-											WaitForNodesReady: e2eConfig.GetIntervals(
+											WaitForNodesReady: testE2EConfig.GetIntervals(
 												flavour,
 												"wait-nodes-ready",
 											),
@@ -131,19 +147,19 @@ var _ = Describe("Quick start", Serial, func() {
 											AddonsConfig:    addonsConfig,
 											ClusterProxy:    proxy,
 											WorkloadCluster: workloadCluster,
-											DeploymentIntervals: e2eConfig.GetIntervals(
+											DeploymentIntervals: testE2EConfig.GetIntervals(
 												flavour,
 												"wait-deployment",
 											),
-											DaemonSetIntervals: e2eConfig.GetIntervals(
+											DaemonSetIntervals: testE2EConfig.GetIntervals(
 												flavour,
 												"wait-daemonset",
 											),
-											HelmReleaseIntervals: e2eConfig.GetIntervals(
+											HelmReleaseIntervals: testE2EConfig.GetIntervals(
 												flavour,
 												"wait-helmrelease",
 											),
-											ClusterResourceSetIntervals: e2eConfig.GetIntervals(
+											ClusterResourceSetIntervals: testE2EConfig.GetIntervals(
 												flavour,
 												"wait-clusterresourceset",
 											),
