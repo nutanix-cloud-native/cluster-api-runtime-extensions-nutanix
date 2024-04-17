@@ -5,9 +5,11 @@ package extraapiservercertsans
 
 import (
 	"context"
+	"slices"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -19,6 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
@@ -51,8 +54,8 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
-	clusterKey client.ObjectKey,
-	_ mutation.ClusterGetter,
+	_ client.ObjectKey,
+	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
@@ -63,24 +66,34 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		log.Error(
+			err,
+			"failed to get cluster config variable from extraAPIServerCertSANs mutation handler",
+		)
 		return err
 	}
 	if !found {
 		log.V(5).Info("Extra API server cert SANs variable not defined")
 	}
-	apiCertSANs := extraAPIServerCertSANsVar
-	if len(apiCertSANs) == 0 {
-		log.Info("No APIServerSANs to apply")
-		return nil
+	cluster, err := clusterGetter(ctx)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to get cluster from extraAPIServerCertSANs mutation handler",
+		)
+		return err
 	}
-
+	defaultAPICertSANs := getDefaultAPIServerSANs(cluster)
+	apiCertSANs := slices.Concat(extraAPIServerCertSANsVar, defaultAPICertSANs)
+	slices.Sort(apiCertSANs)
+	apiCertSANs = slices.Compact(apiCertSANs)
 	log = log.WithValues(
 		"variableName",
 		h.variableName,
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		extraAPIServerCertSANsVar,
+		apiCertSANs,
 	)
 
 	return patches.MutateIfApplicable(
@@ -94,9 +107,17 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
 			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.CertSANs = extraAPIServerCertSANsVar
-
+			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.CertSANs = apiCertSANs
 			return nil
 		},
 	)
+}
+
+func getDefaultAPIServerSANs(cluster *clusterv1.Cluster) []string {
+	switch utils.GetProvider(cluster) {
+	case "docker":
+		return v1alpha1.DefaultDockerCertSANs
+	default:
+		return nil
+	}
 }

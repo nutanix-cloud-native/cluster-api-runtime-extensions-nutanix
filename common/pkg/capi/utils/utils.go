@@ -45,3 +45,10 @@ func ManagementCluster(ctx context.Context, c client.Client) (*clusterv1.Cluster
 
 	return cluster, nil
 }
+
+func GetProvider(cluster *clusterv1.Cluster) string {
+	if cluster == nil {
+		return ""
+	}
+	return cluster.GetLabels()[clusterv1.ProviderNameLabel]
+}
