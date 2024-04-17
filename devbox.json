@@ -35,6 +35,7 @@
     "path:./hack/flakes#go-mod-upgrade",
     "path:./hack/flakes#golangci-lint",
     "path:./hack/flakes#goprintconst",
+    "path:./hack/flakes#release-please",
     "path:./hack/flakes#setup-envtest"
   ],
   "shell": {

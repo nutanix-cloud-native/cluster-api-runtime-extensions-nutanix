@@ -37,3 +37,12 @@ dev.update-bootstrap-credentials-aws:
 	kubectl patch secret capa-manager-bootstrap-credentials -n capa-system -p="{\"data\":{\"credentials\": \"$$(clusterawsadm bootstrap credentials encode-as-profile)\"}}"
 	kubectl rollout restart deployment capa-controller-manager -n capa-system
 	kubectl rollout status deployment capa-controller-manager -n capa-system
+
+.PHONY: release-please
+release-please:
+ifneq ($(GIT_CURRENT_BRANCH),main)
+	$(error "release-please should only be run on the main branch")
+else
+	release-please release-pr \
+	  --repo-url $(GITHUB_ORG)/$(GITHUB_REPOSITORY) --token "$$(gh auth token)"
+endif
