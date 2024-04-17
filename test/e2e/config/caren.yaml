@@ -139,8 +139,13 @@ variables:
   # allowing the same e2e config file to be re-used in different Prow jobs e.g. each one with a K8s version permutation.
   # The following Kubernetes versions should be the latest versions with already published kindest/node images.
   # This avoids building node images in the default case which improves the test duration significantly.
-  KUBERNETES_VERSION_MANAGEMENT: "v1.29.2"
-  KUBERNETES_VERSION: "v1.28.7"
+  KUBERNETES_VERSION_MANAGEMENT: "${KINDEST_IMAGE_TAG}"
+  # The default Kubernetes version for the test workload clusters for all providers, unless overridden below.
+  KUBERNETES_VERSION: "${E2E_DEFAULT_KUBERNETES_VERSION}"
+  # Override Kubernetes version for test workload clusters for specific providers by setting the env variables
+  # `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
+  # `KUBERNETES_VERSION_DOCKER: v1.29.4`.
+  KUBERNETES_VERSION_DOCKER: "${KINDEST_IMAGE_TAG}"
   SERVICE_CIDR: "10.128.0.0/12"
   POD_CIDR: "192.168.0.0/16"
   NODE_DRAIN_TIMEOUT: "60s"

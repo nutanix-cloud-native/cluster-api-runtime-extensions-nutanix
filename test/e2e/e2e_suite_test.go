@@ -67,7 +67,7 @@ func init() { //nolint:gochecknoinits // Idiomatically used to set up flags.
 	flag.StringVar(
 		&bootstrapKubernetesVersion,
 		"e2e.bootstrap-kind-version",
-		"v1.29.2",
+		"v1.29.4",
 		"the version of the image used in bootstrap cluster",
 	)
 }
@@ -258,11 +258,17 @@ func initBootstrapCluster(
 	clusterctl.InitManagementClusterAndWatchControllerLogs(
 		context.TODO(),
 		clusterctl.InitManagementClusterAndWatchControllerLogsInput{
-			ClusterProxy:              bootstrapClusterProxy,
-			ClusterctlConfigPath:      clusterctlConfig,
-			InfrastructureProviders:   config.GetProviderLatestVersionsByContract("*", config.InfrastructureProviders()...),
-			AddonProviders:            config.GetProviderLatestVersionsByContract("*", config.AddonProviders()...),
-			RuntimeExtensionProviders: config.GetProviderLatestVersionsByContract("*", config.RuntimeExtensionProviders()...),
+			ClusterProxy:         bootstrapClusterProxy,
+			ClusterctlConfigPath: clusterctlConfig,
+			InfrastructureProviders: config.GetProviderLatestVersionsByContract(
+				"*",
+				config.InfrastructureProviders()...),
+			AddonProviders: config.GetProviderLatestVersionsByContract(
+				"*",
+				config.AddonProviders()...),
+			RuntimeExtensionProviders: config.GetProviderLatestVersionsByContract(
+				"*",
+				config.RuntimeExtensionProviders()...),
 			LogFolder: filepath.Join(
 				artifactFolder,
 				"clusters",

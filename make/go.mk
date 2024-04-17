@@ -78,6 +78,7 @@ E2E_PARALLEL_NODES ?= $(shell nproc --ignore=1)
 E2E_FLAKE_ATTEMPTS ?= 1
 E2E_CONF_FILE ?= $(REPO_ROOT)/test/e2e/config/caren.yaml
 E2E_CONF_FILE_ENVSUBST ?= $(basename $(E2E_CONF_FILE))-envsubst.yaml
+export E2E_DEFAULT_KUBERNETES_VERSION ?= v1.28.7
 ARTIFACTS ?= ${REPO_ROOT}/_artifacts
 
 .PHONY: e2e-test
@@ -115,7 +116,8 @@ endif
 	    test/e2e/... -- \
 	      -e2e.artifacts-folder="$(ARTIFACTS)" \
 	      -e2e.config="$(E2E_CONF_FILE_ENVSUBST)" \
-	      $(if $(filter $(E2E_SKIP_CLEANUP),true),-e2e.skip-resource-cleanup)
+	      $(if $(filter $(E2E_SKIP_CLEANUP),true),-e2e.skip-resource-cleanup) \
+	      -e2e.bootstrap-kind-version="$(KINDEST_IMAGE_TAG)"
 	go tool cover \
 	  -html=coverage-e2e.out \
 	  -o coverage-e2e.html
