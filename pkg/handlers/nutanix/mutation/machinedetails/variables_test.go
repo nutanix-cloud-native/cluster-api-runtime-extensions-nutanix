@@ -19,6 +19,10 @@ import (
 func TestVariableValidation(t *testing.T) {
 	testImageName := "fake-image"
 	testPEClusterName := "fake-pe-cluster"
+	testProject := ptr.To(v1alpha1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierName,
+		Name: ptr.To("fake-project"),
+	})
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
@@ -43,6 +47,7 @@ func TestVariableValidation(t *testing.T) {
 								Name: &testPEClusterName,
 							},
 							MemorySize:     resource.MustParse("8Gi"),
+							Project:        testProject,
 							SystemDiskSize: resource.MustParse("40Gi"),
 							Subnets:        []v1alpha1.NutanixResourceIdentifier{},
 							AdditionalCategories: []v1alpha1.NutanixCategoryIdentifier{

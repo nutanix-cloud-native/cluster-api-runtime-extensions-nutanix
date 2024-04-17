@@ -29,6 +29,9 @@ spec:
                   name: os-image-name
                   type: name
                 memorySize: 4Gi
+                project:
+                  type: name
+                  name: project-name
                 subnets:
                 - name: subnet-name
                   type: name
@@ -47,6 +50,9 @@ spec:
                 name: os-image-name
                 type: name
               memorySize: 4Gi
+              project:
+                type: name
+                name: project-name
               subnets:
               - name: subnet-name
                 type: name
@@ -78,6 +84,9 @@ spec:
         name: os-image-name
         type: name
       memorySize: 4Gi
+      project:
+        type: name
+        name: project-name
       providerID: nutanix://vm-uuid
       subnet:
       - name: subnet-name
@@ -108,6 +117,9 @@ spec:
         name: os-image-name
         type: name
       memorySize: 4Gi
+      project:
+        type: name
+        name: project-name
       providerID: nutanix://vm-uuid
       subnet:
       - name: subnet-name
