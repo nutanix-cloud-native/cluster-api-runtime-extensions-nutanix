@@ -81,6 +81,19 @@
               "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitTreeState=clean"
             ];
           };
+
+          release-please = buildNpmPackage rec {
+            pname = "release-please";
+            version = "16.10.2";
+            src = fetchFromGitHub {
+              owner = "googleapis";
+              repo = "release-please";
+              rev = "v${version}";
+              hash = "sha256-5EST9dNB59wZ9NSHx7V8pAZsws0Py3Q73R6MxvS7zFA=";
+            };
+            npmDepsHash = "sha256-HZAjBF4dH8JTgJrDrXtxJLyAfKKGn9P5fGBSILx00b8=";
+            dontNpmBuild = true;
+          };
         };
 
         formatter = alejandra;
