@@ -66,6 +66,11 @@ func (s helmAddonStrategy) apply(
 		)
 	}
 
+	values += fmt.Sprintf(`
+image:
+  tag: v%s-minimal
+`, s.helmChart.Version)
+
 	hcp := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: caaphv1.GroupVersion.String(),
