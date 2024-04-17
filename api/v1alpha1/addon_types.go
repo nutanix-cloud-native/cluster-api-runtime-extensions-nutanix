@@ -311,7 +311,7 @@ func (CSI) VariableSchema() clusterv1.VariableSchema {
 type CCM struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
 	// +optional
-	Credentials *corev1.LocalObjectReference `json:"credentials"`
+	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
 }
 
 func (CCM) VariableSchema() clusterv1.VariableSchema {
