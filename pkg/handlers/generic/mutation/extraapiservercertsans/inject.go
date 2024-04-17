@@ -54,7 +54,7 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
-	clusterKey client.ObjectKey,
+	_ client.ObjectKey,
 	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
@@ -70,6 +70,7 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 			err,
 			"failed to get cluster config variable from extraAPIServerCertSANs mutation handler",
 		)
+		return err
 	}
 	if !found {
 		log.V(5).Info("Extra API server cert SANs variable not defined")
@@ -80,10 +81,10 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 			err,
 			"failed to get cluster from extraAPIServerCertSANs mutation handler",
 		)
+		return err
 	}
 	defaultAPICertSANs := getDefaultAPIServerSANs(cluster)
-	apiCertSANs := slices.Clone[[]string](extraAPIServerCertSANsVar)
-	apiCertSANs = append(apiCertSANs, defaultAPICertSANs...)
+	apiCertSANs := slices.Concat(extraAPIServerCertSANsVar, defaultAPICertSANs)
 	slices.Sort(apiCertSANs)
 	apiCertSANs = slices.Compact(apiCertSANs)
 	log = log.WithValues(
