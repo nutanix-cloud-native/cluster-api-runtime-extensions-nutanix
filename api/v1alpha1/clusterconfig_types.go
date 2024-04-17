@@ -6,6 +6,7 @@ package v1alpha1
 import (
 	"fmt"
 	"maps"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -271,8 +272,8 @@ func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
 	return clusterv1.VariableSchema{
 		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
 			Description: fmt.Sprintf(
-				"Extra Subject Alternative Names for the API Server signing cert. For Docker %v are injected automatically.",
-				DefaultDockerCertSANs,
+				"Extra Subject Alternative Names for the API Server signing cert. For Docker %s are injected automatically.",
+				strings.Join(DefaultDockerCertSANs, ","),
 			),
 			Type:        "array",
 			UniqueItems: true,
