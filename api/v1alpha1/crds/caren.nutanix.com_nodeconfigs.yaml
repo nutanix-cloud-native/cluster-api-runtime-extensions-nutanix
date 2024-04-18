@@ -1,0 +1,209 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: nodeconfigs.caren.nutanix.com
+spec:
+  group: caren.nutanix.com
+  names:
+    kind: NodeConfig
+    listKind: NodeConfigList
+    plural: nodeconfigs
+    singular: nodeconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: NodeConfig is the Schema for the workerconfigs API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              NodeConfigSpec defines the desired state of NodeConfig.
+              Place any configuration that can be applied to individual Nodes here.
+              Otherwise, it should go into the ClusterConfigSpec.
+            properties:
+              aws:
+                properties:
+                  additionalSecurityGroups:
+                    items:
+                      properties:
+                        id:
+                          description: ID is the id of the security group
+                          type: string
+                      type: object
+                    type: array
+                  ami:
+                    description: |-
+                      AMI or AMI Lookup arguments for machine image of a AWS machine.
+                      If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
+                    properties:
+                      id:
+                        description: ID is an explicit AMI to use.
+                        type: string
+                      lookup:
+                        description: Lookup is the lookup arguments for the AMI.
+                        properties:
+                          baseOS:
+                            description: BaseOS is the name of the base os for image
+                              lookup
+                            type: string
+                          format:
+                            description: Format is the AMI naming format
+                            type: string
+                          org:
+                            description: Org is the AWS Organization ID to use for
+                              image lookup
+                            type: string
+                        type: object
+                    type: object
+                  iamInstanceProfile:
+                    type: string
+                  instanceType:
+                    type: string
+                type: object
+              docker:
+                properties:
+                  customImage:
+                    type: string
+                type: object
+              nutanix:
+                properties:
+                  machineDetails:
+                    properties:
+                      bootType:
+                        description: Defines the boot type of the virtual machine.
+                          Only supports UEFI and Legacy
+                        type: string
+                      cluster:
+                        description: |-
+                          cluster identifies the Prism Element in which the machine will be created.
+                          The identifier (uuid or name) can be obtained from the console or API.
+                        properties:
+                          name:
+                            description: name is the resource name in the PC
+                            type: string
+                          type:
+                            description: Type is the identifier type to use for this
+                              resource.
+                            enum:
+                            - uuid
+                            - name
+                            type: string
+                          uuid:
+                            description: uuid is the UUID of the resource in the PC.
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      image:
+                        description: |-
+                          image identifies the image uploaded to Prism Central (PC). The identifier
+                          (uuid or name) can be obtained from the console or API.
+                        properties:
+                          name:
+                            description: name is the resource name in the PC
+                            type: string
+                          type:
+                            description: Type is the identifier type to use for this
+                              resource.
+                            enum:
+                            - uuid
+                            - name
+                            type: string
+                          uuid:
+                            description: uuid is the UUID of the resource in the PC.
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      memorySize:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: memorySize is the memory size (in Quantity format)
+                          of the VM
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      subnets:
+                        description: |-
+                          subnet identifies the network subnet to use for the machine.
+                          The identifier (uuid or name) can be obtained from the console or API.
+                        items:
+                          description: NutanixResourceIdentifier holds the identity
+                            of a Nutanix PC resource (cluster, image, subnet, etc.)
+                          properties:
+                            name:
+                              description: name is the resource name in the PC
+                              type: string
+                            type:
+                              description: Type is the identifier type to use for
+                                this resource.
+                              enum:
+                              - uuid
+                              - name
+                              type: string
+                            uuid:
+                              description: uuid is the UUID of the resource in the
+                                PC.
+                              type: string
+                          required:
+                          - type
+                          type: object
+                        type: array
+                      systemDiskSize:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: |-
+                          systemDiskSize is size (in Quantity format) of the system disk of the VM
+                          The minimum systemDiskSize is 20Gi bytes
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      vcpuSockets:
+                        description: vcpuSockets is the number of vCPU sockets of
+                          the VM
+                        format: int32
+                        type: integer
+                      vcpusPerSocket:
+                        description: vcpusPerSocket is the number of vCPUs per socket
+                          of the VM
+                        format: int32
+                        type: integer
+                    required:
+                    - cluster
+                    - image
+                    - memorySize
+                    - subnets
+                    - systemDiskSize
+                    - vcpuSockets
+                    - vcpusPerSocket
+                    type: object
+                required:
+                - machineDetails
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
