@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,7 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
-var defaultStorageClassParams = map[string]string{
+var defaultStorageClassParameters = map[string]string{
 	"csi.storage.k8s.io/fstype": "ext4",
 	"type":                      "gp3",
 }
@@ -74,49 +73,20 @@ func (a *AWSEBS) Apply(
 	default:
 		return fmt.Errorf("stategy %s not implemented", strategy)
 	}
-	return a.createStorageClasses(
+	err := lifecycleutils.CreateStorageClassOnRemote(
 		ctx,
+		a.client,
 		provider.StorageClassConfig,
 		&req.Cluster,
 		defaultStorageConfig,
-	)
-}
-
-func (a *AWSEBS) createStorageClasses(ctx context.Context,
-	configs []v1alpha1.StorageClassConfig,
-	cluster *clusterv1.Cluster,
-	defaultStorageConfig *v1alpha1.DefaultStorage,
-) error {
-	allStorageClasses := make([]runtime.Object, 0, len(configs))
-	for _, config := range configs {
-		setAsDefault := config.Name == defaultStorageConfig.StorageClassConfigName &&
-			v1alpha1.CSIProviderAWSEBS == defaultStorageConfig.ProviderName
-		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
-			config,
-			v1alpha1.AWSEBSProvisioner,
-			setAsDefault,
-			defaultStorageClassParams,
-		))
-	}
-	cm, err := lifecycleutils.CreateConfigMapForCRS(
-		fmt.Sprintf("aws-storageclass-cm-%s", cluster.Name),
-		a.config.DefaultsNamespace(),
-		allStorageClasses...,
+		v1alpha1.CSIProviderAWSEBS,
+		v1alpha1.AWSEBSProvisioner,
+		defaultStorageClassParameters,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating StorageClasses for the AWS EBS CSI driver: %w", err)
 	}
-	err = client.ServerSideApply(ctx, a.client, cm)
-	if err != nil {
-		return err
-	}
-	return lifecycleutils.EnsureCRSForClusterFromObjects(
-		ctx,
-		"aws-storageclass-crs",
-		a.client,
-		cluster,
-		cm,
-	)
+	return nil
 }
 
 func (a *AWSEBS) handleCRSApply(ctx context.Context,

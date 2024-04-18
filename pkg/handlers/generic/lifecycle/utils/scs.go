@@ -4,11 +4,18 @@
 package utils
 
 import (
+	"context"
+	"fmt"
+
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
 const (
@@ -49,4 +56,39 @@ func CreateStorageClass(
 		sc.ObjectMeta.Annotations = defaultStorageClassMap
 	}
 	return &sc
+}
+
+func CreateStorageClassOnRemote(
+	ctx context.Context,
+	cl ctrlclient.Client,
+	configs []v1alpha1.StorageClassConfig,
+	cluster *clusterv1.Cluster,
+	defaultStorageConfig *v1alpha1.DefaultStorage,
+	csiProvider string,
+	provisioner v1alpha1.StorageProvisioner,
+	storageClassParameters map[string]string,
+) error {
+	allStorageClasses := make([]*storagev1.StorageClass, 0, len(configs))
+	for _, config := range configs {
+		setAsDefault := config.Name == defaultStorageConfig.StorageClassConfigName &&
+			csiProvider == defaultStorageConfig.ProviderName
+		allStorageClasses = append(allStorageClasses, CreateStorageClass(
+			config,
+			provisioner,
+			setAsDefault,
+			storageClassParameters,
+		))
+	}
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+	remoteClient, err := remote.NewClusterClient(ctx, "", cl, clusterKey)
+	if err != nil {
+		return fmt.Errorf("error creating client for remote cluster: %w", err)
+	}
+	for _, o := range allStorageClasses {
+		err = client.ServerSideApply(ctx, remoteClient, o)
+		if err != nil {
+			return fmt.Errorf("error creating client for remote cluster: %w", err)
+		}
+	}
+	return nil
 }

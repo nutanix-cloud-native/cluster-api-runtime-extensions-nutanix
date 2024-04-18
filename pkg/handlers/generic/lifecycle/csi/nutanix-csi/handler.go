@@ -10,7 +10,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -117,16 +116,19 @@ func (n *NutanixCSI) Apply(
 		}
 	}
 
-	err := n.createStorageClasses(
+	err := lifecycleutils.CreateStorageClassOnRemote(
 		ctx,
+		n.client,
 		provider.StorageClassConfig,
 		&req.Cluster,
 		defaultStorageConfig,
+		v1alpha1.CSIProviderNutanix,
+		v1alpha1.NutanixProvisioner,
+		defaultStorageClassParameters,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating StorageClasses for the Nutanix CSI driver: %w", err)
 	}
-
 	return nil
 }
 
@@ -221,42 +223,4 @@ func (n *NutanixCSI) handleHelmAddonApply(
 	}
 
 	return nil
-}
-
-func (n *NutanixCSI) createStorageClasses(
-	ctx context.Context,
-	configs []v1alpha1.StorageClassConfig,
-	cluster *clusterv1.Cluster,
-	defaultStorageConfig *v1alpha1.DefaultStorage,
-) error {
-	allStorageClasses := make([]runtime.Object, 0, len(configs))
-	for _, config := range configs {
-		setAsDefault := config.Name == defaultStorageConfig.StorageClassConfigName &&
-			v1alpha1.CSIProviderNutanix == defaultStorageConfig.ProviderName
-		allStorageClasses = append(allStorageClasses, lifecycleutils.CreateStorageClass(
-			config,
-			v1alpha1.NutanixProvisioner,
-			setAsDefault,
-			defaultStorageClassParameters,
-		))
-	}
-	cm, err := lifecycleutils.CreateConfigMapForCRS(
-		fmt.Sprintf("nutanix-storageclass-cm-%s", cluster.Name),
-		n.config.DefaultsNamespace(),
-		allStorageClasses...,
-	)
-	if err != nil {
-		return err
-	}
-	err = client.ServerSideApply(ctx, n.client, cm)
-	if err != nil {
-		return err
-	}
-	return lifecycleutils.EnsureCRSForClusterFromObjects(
-		ctx,
-		"nutanix-storageclass-crs",
-		n.client,
-		cluster,
-		cm,
-	)
 }
