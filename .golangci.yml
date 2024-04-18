@@ -99,7 +99,7 @@ issues:
     - source: "flags.Parse|response.WriteError"
       linters:
         - errcheck
-    - source: "^// \\+kubebuilder:"
+    - source: "// \\+kubebuilder:"
       linters:
         - lll
     # Idiomatic to use init functions to register APIs with scheme

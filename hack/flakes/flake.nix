@@ -94,6 +94,21 @@
             npmDepsHash = "sha256-HZAjBF4dH8JTgJrDrXtxJLyAfKKGn9P5fGBSILx00b8=";
             dontNpmBuild = true;
           };
+
+          controller-gen = buildGo122Module rec {
+            name = "controller-gen";
+            version = "0.0.1-dev";
+            src = fetchFromGitHub {
+              owner = "kubernetes-sigs";
+              repo = "controller-tools";
+              rev = "8cc57e3c0607f984b4a595a7cc048ed5c54a6a0d";
+              hash = "sha256-vB85JQuvCdCe4qeFiS2SU7NM2ZoKQf7usvY9VUKtGUw=";
+            };
+            doCheck = false;
+            subPackages = [ "./cmd/controller-gen" ];
+            vendorHash = "sha256-Fu883lUmlG5PrGdJ9TpvGwvewxP+Riq/gvPxZeq1cy4=";
+            ldflags = [ "-s" "-w" ];
+          };
         };
 
         formatter = alejandra;

@@ -26,7 +26,7 @@ func TestVariableValidation(t *testing.T) {
 			Vals: v1alpha1.DockerClusterConfigSpec{
 				ControlPlane: &v1alpha1.DockerNodeConfigSpec{
 					Docker: &v1alpha1.DockerNodeSpec{
-						CustomImage: ptr.To(v1alpha1.OCIImage("docker.io/some/image:v2.3.4")),
+						CustomImage: ptr.To("docker.io/some/image:v2.3.4"),
 					},
 				},
 			},
@@ -36,7 +36,7 @@ func TestVariableValidation(t *testing.T) {
 			Vals: v1alpha1.DockerClusterConfigSpec{
 				ControlPlane: &v1alpha1.DockerNodeConfigSpec{
 					Docker: &v1alpha1.DockerNodeSpec{
-						CustomImage: ptr.To(v1alpha1.OCIImage("this.is.not.valid?")),
+						CustomImage: ptr.To("this.is.not.valid?"),
 					},
 				},
 			},

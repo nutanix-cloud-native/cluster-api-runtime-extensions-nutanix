@@ -75,7 +75,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	imageRegistries, imageRegistriesFound, err := variables.Get[v1alpha1.ImageRegistries](
+	imageRegistries, imageRegistriesFound, err := variables.Get[[]v1alpha1.ImageRegistry](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,

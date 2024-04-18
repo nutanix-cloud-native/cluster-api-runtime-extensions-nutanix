@@ -14,7 +14,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
@@ -58,7 +57,7 @@ func (h *imageRepositoryPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	imageRepositoryVar, found, err := variables.Get[v1alpha1.KubernetesImageRepository](
+	imageRepositoryVar, found, err := variables.Get[string](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -91,7 +90,7 @@ func (h *imageRepositoryPatchHandler) Mutate(
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
 			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.ImageRepository = imageRepositoryVar.String()
+			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.ImageRepository = imageRepositoryVar
 
 			return nil
 		},

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: (devel)
   name: dockerclusterconfigs.caren.nutanix.com
 spec:
   group: caren.nutanix.com
@@ -66,23 +66,50 @@ spec:
                       cluster-autoscaler addon.
                     properties:
                       strategy:
+                        description: |-
+                          Addon strategy used to deploy cluster-autoscaler to the management cluster
+                          targeting the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
                         type: string
+                    required:
+                    - strategy
                     type: object
                   cni:
                     description: CNI required for providing CNI configuration.
                     properties:
                       provider:
+                        description: CNI provider to deploy.
+                        enum:
+                        - Calico
+                        - Cilium
                         type: string
                       strategy:
+                        description: Addon strategy used to deploy the CNI provider
+                          to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
                         type: string
+                    required:
+                    - provider
+                    - strategy
                     type: object
                   csi:
                     properties:
                       defaultStorage:
                         properties:
                           providerName:
+                            description: Name of the CSI Provider for the default
+                              storage class.
+                            enum:
+                            - aws-ebs
+                            - nutanix
                             type: string
                           storageClassConfigName:
+                            description: Name of storage class config in any of the
+                              provider objects.
                             type: string
                         required:
                         - providerName
@@ -92,9 +119,8 @@ spec:
                         items:
                           properties:
                             credentials:
-                              description: |-
-                                LocalObjectReference contains enough information to let you locate the
-                                referenced object inside the same namespace.
+                              description: The reference to any secret used by the
+                                CSI Provider.
                               properties:
                                 name:
                                   description: |-
@@ -105,32 +131,56 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             name:
+                              description: Name of the CSI Provider.
+                              enum:
+                              - aws-ebs
+                              - nutanix
                               type: string
                             storageClassConfig:
                               items:
                                 properties:
                                   allowExpansion:
+                                    default: false
+                                    description: If the storage class should allow
+                                      volume expanding
                                     type: boolean
                                   name:
+                                    description: Name of storage class config.
                                     type: string
                                   parameters:
                                     additionalProperties:
                                       type: string
+                                    description: Parameters passed into the storage
+                                      class object.
                                     type: object
                                   reclaimPolicy:
+                                    default: Delete
                                     description: PersistentVolumeReclaimPolicy describes
                                       a policy for end-of-life maintenance of persistent
                                       volumes.
+                                    enum:
+                                    - Delete
+                                    - Retain
+                                    - Recycle
                                     type: string
                                   volumeBindingMode:
+                                    default: WaitForFirstConsumer
                                     description: VolumeBindingMode indicates how PersistentVolumeClaims
                                       should be bound.
+                                    enum:
+                                    - Immediate
+                                    - WaitForFirstConsumer
                                     type: string
                                 required:
                                 - name
                                 type: object
                               type: array
                             strategy:
+                              description: Addon strategy used to deploy the CSI provider
+                                to the workload cluster.
+                              enum:
+                              - ClusterResourceSet
+                              - HelmAddon
                               type: string
                           required:
                           - name
@@ -143,7 +193,14 @@ spec:
                       discovery addon.
                     properties:
                       strategy:
+                        description: Addon strategy used to deploy Node Feature Discovery
+                          (NFD) to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
                         type: string
+                    required:
+                    - strategy
                     type: object
                 type: object
               controlPlane:
@@ -152,6 +209,9 @@ spec:
                   docker:
                     properties:
                       customImage:
+                        description: Custom OCI image for control plane and worker
+                          Nodes.
+                        pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*(:[\w][\w.-]{0,127})?(@[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,})?$
                         type: string
                     type: object
                 type: object
@@ -165,18 +225,24 @@ spec:
                       repository:
                         description: Repository is used to override the image repository
                           to pull from.
+                        pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
                         type: string
                       tag:
                         description: Tag is used to override the default image tag.
+                        pattern: ^[\w][\w.-]{0,127}$
                         type: string
                     type: object
                 type: object
               extraAPIServerCertSANs:
-                description: ExtraAPIServerCertSANs required for providing API server
-                  cert SANs.
+                description: |-
+                  Subject Alternative Names for the API Server signing cert.
+                  For Docker  are injected automatically.
+                  For Nutanix  are injected automatically.
                 items:
+                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                   type: string
                 type: array
+                uniqueItems: true
               globalImageRegistryMirror:
                 description: GlobalImageRegistryMirror sets default mirror configuration
                   for all the image registries.
@@ -201,7 +267,9 @@ spec:
                         x-kubernetes-map-type: atomic
                     type: object
                   url:
-                    description: Registry URL.
+                    description: Registry mirror URL.
+                    format: uri
+                    pattern: ^https?://
                     type: string
                 required:
                 - url
@@ -229,14 +297,16 @@ spec:
                       type: object
                     url:
                       description: Registry URL.
+                      format: uri
+                      pattern: ^https?://
                       type: string
                   required:
                   - url
                   type: object
                 type: array
               kubernetesImageRepository:
-                description: KubernetesImageRepository required for overriding Kubernetes
-                  image repository.
+                description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
+                pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
                 type: string
               proxy:
                 description: HTTPProxy required for providing proxy configuration.
@@ -251,10 +321,10 @@ spec:
                       type: string
                     type: array
                   http:
-                    description: HTTP proxy.
+                    description: HTTP proxy value.
                     type: string
                   https:
-                    description: HTTPS proxy.
+                    description: HTTPS proxy value.
                     type: string
                 required:
                 - additionalNo

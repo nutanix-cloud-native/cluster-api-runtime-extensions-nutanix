@@ -8,9 +8,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
@@ -38,7 +38,7 @@ var _ = Describe("Generate Nutanix ControlPlane endpoint patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
-					clusterv1.APIEndpoint{
+					v1alpha1.ControlPlaneEndpointSpec{
 						Host: "10.20.100.10",
 						Port: 6443,
 					},

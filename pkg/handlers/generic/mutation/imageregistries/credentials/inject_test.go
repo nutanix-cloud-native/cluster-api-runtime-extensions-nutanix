@@ -148,11 +148,9 @@ var _ = Describe("Generate Image registry patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
-					v1alpha1.ImageRegistries{
-						v1alpha1.ImageRegistry{
-							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
-						},
-					},
+					[]v1alpha1.ImageRegistry{{
+						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+					}},
 					imageregistries.VariableName,
 				),
 			},
@@ -203,16 +201,14 @@ var _ = Describe("Generate Image registry patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
-					v1alpha1.ImageRegistries{
-						v1alpha1.ImageRegistry{
-							URL: "https://registry.example.com",
-							Credentials: &v1alpha1.RegistryCredentials{
-								SecretRef: &corev1.LocalObjectReference{
-									Name: validSecretName,
-								},
+					[]v1alpha1.ImageRegistry{{
+						URL: "https://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
+							SecretRef: &corev1.LocalObjectReference{
+								Name: validSecretName,
 							},
 						},
-					},
+					}},
 					imageregistries.VariableName,
 				),
 			},
@@ -269,11 +265,9 @@ var _ = Describe("Generate Image registry patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
-					v1alpha1.ImageRegistries{
-						v1alpha1.ImageRegistry{
-							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
-						},
-					},
+					[]v1alpha1.ImageRegistry{{
+						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+					}},
 					imageregistries.VariableName,
 				),
 				capitest.VariableWithValue(
@@ -324,16 +318,14 @@ var _ = Describe("Generate Image registry patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
-					v1alpha1.ImageRegistries{
-						v1alpha1.ImageRegistry{
-							URL: "https://registry.example.com",
-							Credentials: &v1alpha1.RegistryCredentials{
-								SecretRef: &corev1.LocalObjectReference{
-									Name: validSecretName,
-								},
+					[]v1alpha1.ImageRegistry{{
+						URL: "https://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
+							SecretRef: &corev1.LocalObjectReference{
+								Name: validSecretName,
 							},
 						},
-					},
+					}},
 					imageregistries.VariableName,
 				),
 				capitest.VariableWithValue(
@@ -387,11 +379,9 @@ var _ = Describe("Generate Image registry patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
-					v1alpha1.ImageRegistries{
-						v1alpha1.ImageRegistry{
-							URL: "https://registry.example.com",
-						},
-					},
+					[]v1alpha1.ImageRegistry{{
+						URL: "https://registry.example.com",
+					}},
 					imageregistries.VariableName,
 				),
 			},

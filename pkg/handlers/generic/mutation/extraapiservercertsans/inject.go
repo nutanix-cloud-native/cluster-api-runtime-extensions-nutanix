@@ -60,7 +60,7 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
 	)
-	extraAPIServerCertSANsVar, found, err := variables.Get[v1alpha1.ExtraAPIServerCertSANs](
+	extraAPIServerCertSANsVar, found, err := variables.Get[[]string](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,

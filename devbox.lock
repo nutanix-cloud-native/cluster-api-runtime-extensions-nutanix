@@ -461,26 +461,6 @@
         }
       }
     },
-    "kubernetes-controller-tools@latest": {
-      "last_modified": "2024-03-08T13:51:52Z",
-      "resolved": "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b#kubernetes-controller-tools",
-      "source": "devbox-search",
-      "version": "0.14.0",
-      "systems": {
-        "aarch64-darwin": {
-          "store_path": "/nix/store/jblk86f5bi2dwg2w8g42xl9mpw1yrbi4-controller-tools-0.14.0"
-        },
-        "aarch64-linux": {
-          "store_path": "/nix/store/sq48wn8yyqkya8as690h61d1dlxwlkbi-controller-tools-0.14.0"
-        },
-        "x86_64-darwin": {
-          "store_path": "/nix/store/nm2vx0f6ajmqpbi2c6z8wani5f1fdqb4-controller-tools-0.14.0"
-        },
-        "x86_64-linux": {
-          "store_path": "/nix/store/f8h9pj08ksm49v980yb0slzrbpqqc98r-controller-tools-0.14.0"
-        }
-      }
-    },
     "kubernetes-helm@latest": {
       "last_modified": "2024-03-14T09:34:31Z",
       "resolved": "github:NixOS/nixpkgs/bd5ddf2c6bfafff031edf80221e1ee94e86ca10a#kubernetes-helm",

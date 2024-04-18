@@ -82,6 +82,7 @@ func (s AWSClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:g
 
 // AWSClusterConfigSpec defines the desired state of ClusterConfig.
 type AWSClusterConfigSpec struct {
+	// AWS cluster configuration.
 	// +optional
 	AWS *AWSSpec `json:"aws,omitempty"`
 
@@ -160,8 +161,10 @@ func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //noli
 
 // GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
 type GenericClusterConfigSpec struct {
+	// Sets the Kubernetes image repository used for the KubeadmControlPlane.
+	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
 	// +optional
-	KubernetesImageRepository *KubernetesImageRepository `json:"kubernetesImageRepository,omitempty"`
+	KubernetesImageRepository *string `json:"kubernetesImageRepository,omitempty"`
 
 	// +optional
 	Etcd *Etcd `json:"etcd,omitempty"`
@@ -169,11 +172,16 @@ type GenericClusterConfigSpec struct {
 	// +optional
 	Proxy *HTTPProxy `json:"proxy,omitempty"`
 
+	// Subject Alternative Names for the API Server signing cert.
+	// For Docker  are injected automatically.
+	// For Nutanix  are injected automatically.
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 	// +optional
-	ExtraAPIServerCertSANs ExtraAPIServerCertSANs `json:"extraAPIServerCertSANs,omitempty"`
+	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 
 	// +optional
-	ImageRegistries ImageRegistries `json:"imageRegistries,omitempty"`
+	ImageRegistries []ImageRegistry `json:"imageRegistries,omitempty"`
 
 	// +optional
 	GlobalImageRegistryMirror *GlobalImageRegistryMirror `json:"globalImageRegistryMirror,omitempty"`
@@ -182,22 +190,17 @@ type GenericClusterConfigSpec struct {
 	Addons *Addons `json:"addons,omitempty"`
 
 	// +optional
-	Users Users `json:"users,omitempty"`
-}
-
-// KubernetesImageRepository required for overriding Kubernetes image repository.
-type KubernetesImageRepository string
-
-func (v KubernetesImageRepository) String() string {
-	return string(v)
+	Users []User `json:"users,omitempty"`
 }
 
 type Image struct {
 	// Repository is used to override the image repository to pull from.
+	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
 	// +optional
 	Repository string `json:"repository,omitempty"`
 
 	// Tag is used to override the default image tag.
+	// +kubebuilder:validation:Pattern=`^[\w][\w.-]{0,127}$`
 	// +optional
 	Tag string `json:"tag,omitempty"`
 }
@@ -210,10 +213,10 @@ type Etcd struct {
 
 // HTTPProxy required for providing proxy configuration.
 type HTTPProxy struct {
-	// HTTP proxy.
+	// HTTP proxy value.
 	HTTP string `json:"http,omitempty"`
 
-	// HTTPS proxy.
+	// HTTPS proxy value.
 	HTTPS string `json:"https,omitempty"`
 
 	// AdditionalNo Proxy list that will be added to the automatically calculated
@@ -222,9 +225,6 @@ type HTTPProxy struct {
 	//   ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
 	AdditionalNo []string `json:"additionalNo"`
 }
-
-// ExtraAPIServerCertSANs required for providing API server cert SANs.
-type ExtraAPIServerCertSANs []string
 
 type RegistryCredentials struct {
 	// A reference to the Secret containing the registry credentials and optional CA certificate
@@ -236,7 +236,9 @@ type RegistryCredentials struct {
 
 // GlobalImageRegistryMirror sets default mirror configuration for all the image registries.
 type GlobalImageRegistryMirror struct {
-	// Registry URL.
+	// Registry mirror URL.
+	// +kubebuilder:validation:Format=`uri`
+	// +kubebuilder:validation:Pattern=`^https?://`
 	URL string `json:"url"`
 
 	// Credentials and CA certificate for the image registry mirror
@@ -246,16 +248,14 @@ type GlobalImageRegistryMirror struct {
 
 type ImageRegistry struct {
 	// Registry URL.
+	// +kubebuilder:validation:Format=`uri`
+	// +kubebuilder:validation:Pattern=`^https?://`
 	URL string `json:"url"`
 
 	// Credentials and CA certificate for the image registry
 	// +optional
 	Credentials *RegistryCredentials `json:"credentials,omitempty"`
 }
-
-type ImageRegistries []ImageRegistry
-
-type Users []User
 
 // User defines the input for a generated user in cloud-init.
 type User struct {

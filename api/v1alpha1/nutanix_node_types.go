@@ -47,6 +47,8 @@ type NutanixMachineDetails struct {
 type NutanixIdentifierType capxv1.NutanixIdentifierType
 
 // NutanixBootType is an enumeration of different boot types.
+// +kubebuilder:validation:Required
+// +kubebuilder:validation:Enum:=legacy;uefi
 type NutanixBootType capxv1.NutanixBootType
 
 type NutanixResourceIdentifier capxv1.NutanixResourceIdentifier
