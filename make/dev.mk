@@ -46,3 +46,8 @@ else
 	release-please release-pr \
 	  --repo-url $(GITHUB_ORG)/$(GITHUB_REPOSITORY) --token "$$(gh auth token)"
 endif
+
+.PHONY: .envrc.local
+.envrc.local:
+	gojq --yaml-input --raw-output '.variables | to_entries | map("\(.key)=\(.value|tostring)")|.[]' < test/e2e/config/caren.yaml | envsubst > .envrc.local
+	direnv reload
