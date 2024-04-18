@@ -60,7 +60,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.ClusterConfigSpec{Nutanix: &v1alpha1.NutanixSpec{}}.VariableSchema()),
+		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		nutanixclusterconfig.NewVariable,
 		capitest.VariableTestDef{
@@ -98,9 +98,9 @@ func TestVariableValidation(t *testing.T) {
 	)
 }
 
-func minimumClusterConfigSpec() v1alpha1.ClusterConfigSpec {
-	return v1alpha1.ClusterConfigSpec{
-		ControlPlane: &v1alpha1.NodeConfigSpec{
+func minimumClusterConfigSpec() v1alpha1.NutanixClusterConfigSpec {
+	return v1alpha1.NutanixClusterConfigSpec{
+		ControlPlane: &v1alpha1.NutanixNodeConfigSpec{
 			Nutanix: &v1alpha1.NutanixNodeSpec{
 				MachineDetails: v1alpha1.NutanixMachineDetails{
 					BootType:       v1alpha1.NutanixBootType(capxv1.NutanixBootTypeLegacy),

@@ -15,8 +15,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	commonclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/clusterconfig"
 	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
@@ -57,7 +57,7 @@ func New(
 func (a *AWSCCM) Apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
-	_ *v1alpha1.ClusterConfigSpec,
+	_ *commonclusterconfig.ClusterConfig,
 	log logr.Logger,
 ) error {
 	log.Info("Creating AWS CCM ConfigMap for Cluster")

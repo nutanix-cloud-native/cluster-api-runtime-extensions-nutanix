@@ -14,18 +14,6 @@ type DockerNodeSpec struct {
 	CustomImage *OCIImage `json:"customImage,omitempty"`
 }
 
-func (DockerNodeSpec) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Docker Node configuration",
-			Type:        "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"customImage": OCIImage("").VariableSchema().OpenAPIV3Schema,
-			},
-		},
-	}
-}
-
 type OCIImage string
 
 func (OCIImage) VariableSchema() clusterv1.VariableSchema {

@@ -4,16 +4,13 @@
 package v1alpha1
 
 import (
-	"fmt"
-	"maps"
-	"strings"
+	_ "embed"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/openapi/patterns"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
 type StorageProvisioner string
@@ -44,81 +41,125 @@ var (
 		"127.0.0.1",
 		"0.0.0.0",
 	}
+
+	//go:embed crds/caren.nutanix.com_genericclusterconfigs.yaml
+	genericClusterConfigCRDDefinition []byte
+	//go:embed crds/caren.nutanix.com_dockerclusterconfigs.yaml
+	dockerClusterConfigCRDDefinition []byte
+	//go:embed crds/caren.nutanix.com_awsclusterconfigs.yaml
+	awsClusterConfigCRDDefinition []byte
+	//go:embed crds/caren.nutanix.com_nutanixclusterconfigs.yaml
+	nutanixClusterConfigCRDDefinition []byte
+
+	genericClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		genericClusterConfigCRDDefinition,
+	)
+	dockerClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		dockerClusterConfigCRDDefinition,
+	)
+	awsClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		awsClusterConfigCRDDefinition,
+	)
+	nutanixClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		nutanixClusterConfigCRDDefinition,
+	)
 )
 
 // +kubebuilder:object:root=true
 
-// ClusterConfig is the Schema for the clusterconfigs API.
-type ClusterConfig struct {
+// AWSClusterConfig is the Schema for the awsclusterconfigs API.
+type AWSClusterConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +optional
-	Spec ClusterConfigSpec `json:"spec,omitempty"`
+	Spec AWSClusterConfigSpec `json:"spec,omitempty"`
 }
 
-// ClusterConfigSpec defines the desired state of ClusterConfig.
-type ClusterConfigSpec struct {
+func (s AWSClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return awsClusterConfigVariableSchema
+}
+
+// AWSClusterConfigSpec defines the desired state of ClusterConfig.
+type AWSClusterConfigSpec struct {
 	// +optional
 	AWS *AWSSpec `json:"aws,omitempty"`
+
+	GenericClusterConfigSpec `json:",inline"`
+
+	// +optional
+	ControlPlane *AWSNodeConfigSpec `json:"controlPlane,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// DockerClusterConfig is the Schema for the dockerclusterconfigs API.
+type DockerClusterConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +optional
+	Spec DockerClusterConfigSpec `json:"spec,omitempty"`
+}
+
+func (s DockerClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return dockerClusterConfigVariableSchema
+}
+
+// DockerClusterConfigSpec defines the desired state of DockerClusterConfig.
+type DockerClusterConfigSpec struct {
 	// +optional
 	Docker *DockerSpec `json:"docker,omitempty"`
+
+	GenericClusterConfigSpec `json:",inline"`
+
+	// +optional
+	ControlPlane *DockerNodeConfigSpec `json:"controlPlane,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// NutanixClusterConfig is the Schema for the nutanixclusterconfigs API.
+type NutanixClusterConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +optional
+	Spec NutanixClusterConfigSpec `json:"spec,omitempty"`
+}
+
+func (s NutanixClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return nutanixClusterConfigVariableSchema
+}
+
+// NutanixClusterConfigSpec defines the desired state of NutanixClusterConfig.
+type NutanixClusterConfigSpec struct {
 	// +optional
 	Nutanix *NutanixSpec `json:"nutanix,omitempty"`
 
-	GenericClusterConfig `json:",inline"`
+	GenericClusterConfigSpec `json:",inline"`
 
 	// +optional
-	ControlPlane *NodeConfigSpec `json:"controlPlane,omitempty"`
+	ControlPlane *NutanixNodeConfigSpec `json:"controlPlane,omitempty"`
 }
 
-func (s ClusterConfigSpec) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
-	clusterConfigProps := GenericClusterConfig{}.VariableSchema()
-	switch {
-	case s.AWS != nil:
-		maps.Copy(
-			clusterConfigProps.OpenAPIV3Schema.Properties,
-			map[string]clusterv1.JSONSchemaProps{
-				AWSVariableName: s.AWS.VariableSchema().OpenAPIV3Schema,
-				"controlPlane":  s.ControlPlane.VariableSchema().OpenAPIV3Schema,
-			},
-		)
-	case s.Docker != nil:
-		maps.Copy(
-			clusterConfigProps.OpenAPIV3Schema.Properties,
-			map[string]clusterv1.JSONSchemaProps{
-				"docker": DockerSpec{}.VariableSchema().OpenAPIV3Schema,
-				"controlPlane": NodeConfigSpec{
-					Docker: &DockerNodeSpec{},
-				}.VariableSchema().OpenAPIV3Schema,
-			},
-		)
-	case s.Nutanix != nil:
-		maps.Copy(
-			clusterConfigProps.OpenAPIV3Schema.Properties,
-			map[string]clusterv1.JSONSchemaProps{
-				NutanixVariableName: NutanixSpec{}.VariableSchema().OpenAPIV3Schema,
-				"controlPlane": NodeConfigSpec{
-					Nutanix: &NutanixNodeSpec{},
-				}.VariableSchema().OpenAPIV3Schema,
-			},
-		)
-	}
+// +kubebuilder:object:root=true
 
-	return clusterConfigProps
-}
-
-func NewAWSClusterConfigSpec() *ClusterConfigSpec {
-	return &ClusterConfigSpec{
-		AWS: &AWSSpec{},
-		ControlPlane: &NodeConfigSpec{
-			AWS: NewAWSControlPlaneNodeSpec(),
-		},
-	}
-}
-
-// GenericClusterConfig defines the generic cluster configdesired.
+// GenericClusterConfig is the Schema for the clusterconfigs API.
 type GenericClusterConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +optional
+	Spec GenericClusterConfigSpec `json:"spec,omitempty"`
+}
+
+func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return genericClusterConfigVariableSchema
+}
+
+// GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
+type GenericClusterConfigSpec struct {
 	// +optional
 	KubernetesImageRepository *KubernetesImageRepository `json:"kubernetesImageRepository,omitempty"`
 
@@ -144,40 +185,8 @@ type GenericClusterConfig struct {
 	Users Users `json:"users,omitempty"`
 }
 
-func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Cluster configuration",
-			Type:        "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"addons":                 Addons{}.VariableSchema().OpenAPIV3Schema,
-				"etcd":                   Etcd{}.VariableSchema().OpenAPIV3Schema,
-				"extraAPIServerCertSANs": ExtraAPIServerCertSANs{}.VariableSchema().OpenAPIV3Schema,
-				"proxy":                  HTTPProxy{}.VariableSchema().OpenAPIV3Schema,
-				"kubernetesImageRepository": KubernetesImageRepository(
-					"",
-				).VariableSchema().
-					OpenAPIV3Schema,
-				"imageRegistries":           ImageRegistries{}.VariableSchema().OpenAPIV3Schema,
-				"globalImageRegistryMirror": GlobalImageRegistryMirror{}.VariableSchema().OpenAPIV3Schema,
-				"users":                     Users{}.VariableSchema().OpenAPIV3Schema,
-			},
-		},
-	}
-}
-
 // KubernetesImageRepository required for overriding Kubernetes image repository.
 type KubernetesImageRepository string
-
-func (KubernetesImageRepository) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Sets the Kubernetes image repository used for the KubeadmControlPlane.",
-			Type:        "string",
-			Pattern:     patterns.Anchored(patterns.ImageRepository),
-		},
-	}
-}
 
 func (v KubernetesImageRepository) String() string {
 	return string(v)
@@ -193,41 +202,10 @@ type Image struct {
 	Tag string `json:"tag,omitempty"`
 }
 
-func (Image) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"repository": {
-					Description: "Image repository to pull from.",
-					Type:        "string",
-					Pattern:     patterns.Anchored(patterns.ImageRepository),
-				},
-				"tag": {
-					Description: "Image tag to use.",
-					Type:        "string",
-					Pattern:     patterns.Anchored(patterns.ImageTag),
-				},
-			},
-		},
-	}
-}
-
 type Etcd struct {
 	// Image required for overriding etcd image details.
 	// +optional
 	Image *Image `json:"image,omitempty"`
-}
-
-func (Etcd) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"image": Image{}.VariableSchema().OpenAPIV3Schema,
-			},
-		},
-	}
 }
 
 // HTTPProxy required for providing proxy configuration.
@@ -245,55 +223,8 @@ type HTTPProxy struct {
 	AdditionalNo []string `json:"additionalNo"`
 }
 
-func (HTTPProxy) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"http": {
-					Description: "HTTP proxy value.",
-					Type:        "string",
-				},
-				"https": {
-					Description: "HTTPS proxy value.",
-					Type:        "string",
-				},
-				"additionalNo": {
-					Description: "Additional No Proxy list that will be added to the automatically calculated " +
-						"values required for cluster internal network. " +
-						"Default value: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes," +
-						"kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>",
-					Type: "array",
-					Items: &clusterv1.JSONSchemaProps{
-						Type: "string",
-					},
-				},
-			},
-		},
-	}
-}
-
 // ExtraAPIServerCertSANs required for providing API server cert SANs.
 type ExtraAPIServerCertSANs []string
-
-func (ExtraAPIServerCertSANs) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: fmt.Sprintf(
-				//nolint:lll // its a user facing message
-				"Subject Alternative Names for the API Server signing cert. For Docker %s are injected automatically. For Nutanix %s are injected automatically.",
-				strings.Join(DefaultDockerCertSANs, ","),
-				strings.Join(DefaultNutanixCertSANs, ","),
-			),
-			Type:        "array",
-			UniqueItems: true,
-			Items: &clusterv1.JSONSchemaProps{
-				Type:    "string",
-				Pattern: patterns.Anchored(patterns.DNS1123Subdomain),
-			},
-		},
-	}
-}
 
 type RegistryCredentials struct {
 	// A reference to the Secret containing the registry credentials and optional CA certificate
@@ -301,30 +232,6 @@ type RegistryCredentials struct {
 	// This credentials Secret is not required for some registries, e.g. ECR.
 	// +optional
 	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
-}
-
-func (RegistryCredentials) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"secretRef": {
-					Description: "A reference to the Secret containing the registry credentials and optional CA certificate. " +
-						"The Secret should have keys 'username', 'password' and optional 'ca.crt'. " +
-						"This credentials Secret is not required for some registries, e.g. ECR.",
-					Type: "object",
-					Properties: map[string]clusterv1.JSONSchemaProps{
-						"name": {
-							Description: "The name of the Secret containing the registry credentials. This Secret must exist in " +
-								"the same namespace as the Cluster.",
-							Type: "string",
-						},
-					},
-					Required: []string{"name"},
-				},
-			},
-		},
-	}
 }
 
 // GlobalImageRegistryMirror sets default mirror configuration for all the image registries.
@@ -337,24 +244,6 @@ type GlobalImageRegistryMirror struct {
 	Credentials *RegistryCredentials `json:"credentials,omitempty"`
 }
 
-func (GlobalImageRegistryMirror) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"url": {
-					Description: "Registry mirror URL.",
-					Type:        "string",
-					Format:      "uri",
-					Pattern:     "^https?://",
-				},
-				"credentials": RegistryCredentials{}.VariableSchema().OpenAPIV3Schema,
-			},
-			Required: []string{"url"},
-		},
-	}
-}
-
 type ImageRegistry struct {
 	// Registry URL.
 	URL string `json:"url"`
@@ -364,47 +253,9 @@ type ImageRegistry struct {
 	Credentials *RegistryCredentials `json:"credentials,omitempty"`
 }
 
-func (ImageRegistry) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type: "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"url": {
-					Description: "Registry URL.",
-					Type:        "string",
-					Format:      "uri",
-					Pattern:     "^https?://",
-				},
-				"credentials": RegistryCredentials{}.VariableSchema().OpenAPIV3Schema,
-			},
-			Required: []string{"url"},
-		},
-	}
-}
-
 type ImageRegistries []ImageRegistry
 
-func (ImageRegistries) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Configuration for image registries.",
-			Type:        "array",
-			Items:       ptr.To(ImageRegistry{}.VariableSchema().OpenAPIV3Schema),
-		},
-	}
-}
-
 type Users []User
-
-func (Users) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Users to add to the machine",
-			Type:        "array",
-			Items:       ptr.To(User{}.VariableSchema().OpenAPIV3Schema),
-		},
-	}
-}
 
 // User defines the input for a generated user in cloud-init.
 type User struct {
@@ -431,46 +282,11 @@ type User struct {
 	Sudo string `json:"sudo,omitempty"`
 }
 
-func (User) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Type:     "object",
-			Required: []string{"name"},
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"name": {
-					Description: "The username",
-					Type:        "string",
-				},
-				"hashedPassword": {
-					Description: "The hashed password for the user. Must be in the format of some hash function supported by the OS.",
-					Type:        "string",
-					// The crypt (5) man page lists regexes for supported hash
-					// functions. We could validate input against a set of
-					// regexes, but because the set may be different from the
-					// set supported by the chosen OS, we might return a false
-					// negative or positive. For this reason, we do not validate
-					// the input.
-				},
-				"sshAuthorizedKeys": {
-					Description: "A list of SSH authorized keys for this user",
-					Type:        "array",
-					Items: &clusterv1.JSONSchemaProps{
-						// No description, because the one for the parent array is enough.
-						Type: "string",
-					},
-				},
-				"sudo": {
-					Description: "The sudo rule that applies to this user",
-					Type:        "string",
-					// A sudo rule is defined using an EBNF grammar, and must be
-					// parsed to be validated. We have decided to not integrate
-					// a sudo rule parser, so we do not validate the input.
-				},
-			},
-		},
-	}
-}
-
 func init() {
-	SchemeBuilder.Register(&ClusterConfig{})
+	SchemeBuilder.Register(
+		&AWSClusterConfig{},
+		&DockerClusterConfig{},
+		&NutanixClusterConfig{},
+		&GenericClusterConfig{},
+	)
 }

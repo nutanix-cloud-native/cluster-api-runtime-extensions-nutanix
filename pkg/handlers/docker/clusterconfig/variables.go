@@ -46,7 +46,7 @@ func (h *dockerClusterConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     clusterconfig.MetaVariableName,
 		Required: true,
-		Schema:   v1alpha1.ClusterConfigSpec{Docker: &v1alpha1.DockerSpec{}}.VariableSchema(),
+		Schema:   v1alpha1.DockerClusterConfig{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

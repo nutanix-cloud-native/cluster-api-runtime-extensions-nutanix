@@ -46,7 +46,7 @@ func (h *nutanixWorkerConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     workerconfig.MetaVariableName,
 		Required: false,
-		Schema:   v1alpha1.NodeConfigSpec{Nutanix: &v1alpha1.NutanixNodeSpec{}}.VariableSchema(),
+		Schema:   v1alpha1.NutanixNodeConfig{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

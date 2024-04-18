@@ -22,7 +22,7 @@ func TestVariableValidation(t *testing.T) {
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "set with valid provider using ClusterResourceSet strategy",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Addons: &v1alpha1.Addons{
 					CNI: &v1alpha1.CNI{
 						Provider: v1alpha1.CNIProviderCalico,
@@ -33,7 +33,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "set with valid provider using HelmAddon strategy",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Addons: &v1alpha1.Addons{
 					CNI: &v1alpha1.CNI{
 						Provider: v1alpha1.CNIProviderCalico,
@@ -44,7 +44,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "set with invalid provider",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Addons: &v1alpha1.Addons{
 					CNI: &v1alpha1.CNI{
 						Provider: "invalid-provider",
@@ -56,7 +56,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "set with invalid strategy",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Addons: &v1alpha1.Addons{
 					CNI: &v1alpha1.CNI{
 						Provider: v1alpha1.CNIProviderCalico,

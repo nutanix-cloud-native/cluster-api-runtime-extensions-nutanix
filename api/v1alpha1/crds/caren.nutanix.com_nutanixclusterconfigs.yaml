@@ -6,20 +6,21 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: (devel)
-  name: clusterconfigs.caren.nutanix.com
+  name: nutanixclusterconfigs.caren.nutanix.com
 spec:
   group: caren.nutanix.com
   names:
-    kind: ClusterConfig
-    listKind: ClusterConfigList
-    plural: clusterconfigs
-    singular: clusterconfig
+    kind: NutanixClusterConfig
+    listKind: NutanixClusterConfigList
+    plural: nutanixclusterconfigs
+    singular: nutanixclusterconfig
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ClusterConfig is the Schema for the clusterconfigs API.
+        description: NutanixClusterConfig is the Schema for the nutanixclusterconfigs
+          API.
         properties:
           apiVersion:
             description: |-
@@ -39,7 +40,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterConfigSpec defines the desired state of ClusterConfig.
+            description: NutanixClusterConfigSpec defines the desired state of NutanixClusterConfig.
             properties:
               addons:
                 properties:
@@ -145,97 +146,9 @@ spec:
                         type: string
                     type: object
                 type: object
-              aws:
-                properties:
-                  controlPlaneLoadBalancer:
-                    description: AWSLoadBalancerSpec configures an AWS control-plane
-                      LoadBalancer.
-                    properties:
-                      scheme:
-                        default: internet-facing
-                        description: Scheme sets the scheme of the load balancer (defaults
-                          to internet-facing)
-                        enum:
-                        - internet-facing
-                        - internal
-                        type: string
-                    type: object
-                  network:
-                    properties:
-                      subnets:
-                        items:
-                          description: SubnetSpec configures an AWS Subnet.
-                          properties:
-                            id:
-                              description: ID defines a unique identifier to reference
-                                this resource.
-                              type: string
-                          required:
-                          - id
-                          type: object
-                        type: array
-                      vpc:
-                        properties:
-                          id:
-                            description: ID is the vpc-id of the VPC this provider
-                              should use to create resources.
-                            type: string
-                        type: object
-                    type: object
-                  region:
-                    description: AWS region to create cluster in.
-                    type: string
-                type: object
               controlPlane:
-                description: |-
-                  NodeConfigSpec defines the desired state of NodeConfig.
-                  Place any configuration that can be applied to individual Nodes here.
-                  Otherwise, it should go into the ClusterConfigSpec.
+                description: NutanixNodeSpec defines the desired state of NutanixNodeSpec.
                 properties:
-                  aws:
-                    properties:
-                      additionalSecurityGroups:
-                        items:
-                          properties:
-                            id:
-                              description: ID is the id of the security group
-                              type: string
-                          type: object
-                        type: array
-                      ami:
-                        description: |-
-                          AMI or AMI Lookup arguments for machine image of a AWS machine.
-                          If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
-                        properties:
-                          id:
-                            description: ID is an explicit AMI to use.
-                            type: string
-                          lookup:
-                            description: Lookup is the lookup arguments for the AMI.
-                            properties:
-                              baseOS:
-                                description: BaseOS is the name of the base os for
-                                  image lookup
-                                type: string
-                              format:
-                                description: Format is the AMI naming format
-                                type: string
-                              org:
-                                description: Org is the AWS Organization ID to use
-                                  for image lookup
-                                type: string
-                            type: object
-                        type: object
-                      iamInstanceProfile:
-                        type: string
-                      instanceType:
-                        type: string
-                    type: object
-                  docker:
-                    properties:
-                      customImage:
-                        type: string
-                    type: object
                   nutanix:
                     properties:
                       machineDetails:
@@ -391,8 +304,6 @@ spec:
                     required:
                     - machineDetails
                     type: object
-                type: object
-              docker:
                 type: object
               etcd:
                 properties:

@@ -22,20 +22,20 @@ func TestVariableValidation(t *testing.T) {
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "single valid SAN",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{"a.b.c.example.com"},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "single invalid SAN",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{"invalid:san"},
 			},
 			ExpectError: true,
 		},
 		capitest.VariableTestDef{
 			Name: "duplicate valid SANs",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
 					"a.b.c.example.com",
 					"a.b.c.example.com",

@@ -21,7 +21,7 @@ func TestVariableValidation(t *testing.T) {
 		NewVariable,
 		capitest.VariableTestDef{
 			Name: "valid config",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Proxy: &v1alpha1.HTTPProxy{
 					HTTP:         "http://a.b.c.example.com",
 					HTTPS:        "https://a.b.c.example.com",

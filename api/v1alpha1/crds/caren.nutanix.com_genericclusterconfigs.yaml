@@ -1,0 +1,285 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: genericclusterconfigs.caren.nutanix.com
+spec:
+  group: caren.nutanix.com
+  names:
+    kind: GenericClusterConfig
+    listKind: GenericClusterConfigList
+    plural: genericclusterconfigs
+    singular: genericclusterconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: GenericClusterConfig is the Schema for the clusterconfigs API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
+            properties:
+              addons:
+                properties:
+                  ccm:
+                    description: CCM tells us to enable or disable the cloud provider
+                      interface.
+                    properties:
+                      credentials:
+                        description: A reference to the Secret for credential information
+                          for the target Prism Central instance
+                        properties:
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  clusterAutoscaler:
+                    description: ClusterAutoscaler tells us to enable or disable the
+                      cluster-autoscaler addon.
+                    properties:
+                      strategy:
+                        type: string
+                    type: object
+                  cni:
+                    description: CNI required for providing CNI configuration.
+                    properties:
+                      provider:
+                        type: string
+                      strategy:
+                        type: string
+                    type: object
+                  csi:
+                    properties:
+                      defaultStorage:
+                        properties:
+                          providerName:
+                            type: string
+                          storageClassConfigName:
+                            type: string
+                        required:
+                        - providerName
+                        - storageClassConfigName
+                        type: object
+                      providers:
+                        items:
+                          properties:
+                            credentials:
+                              description: |-
+                                LocalObjectReference contains enough information to let you locate the
+                                referenced object inside the same namespace.
+                              properties:
+                                name:
+                                  description: |-
+                                    Name of the referent.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind, uid?
+                                  type: string
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            name:
+                              type: string
+                            storageClassConfig:
+                              items:
+                                properties:
+                                  allowExpansion:
+                                    type: boolean
+                                  name:
+                                    type: string
+                                  parameters:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                  reclaimPolicy:
+                                    description: PersistentVolumeReclaimPolicy describes
+                                      a policy for end-of-life maintenance of persistent
+                                      volumes.
+                                    type: string
+                                  volumeBindingMode:
+                                    description: VolumeBindingMode indicates how PersistentVolumeClaims
+                                      should be bound.
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              type: array
+                            strategy:
+                              type: string
+                          required:
+                          - name
+                          - strategy
+                          type: object
+                        type: array
+                    type: object
+                  nfd:
+                    description: NFD tells us to enable or disable the node feature
+                      discovery addon.
+                    properties:
+                      strategy:
+                        type: string
+                    type: object
+                type: object
+              etcd:
+                properties:
+                  image:
+                    description: Image required for overriding etcd image details.
+                    properties:
+                      repository:
+                        description: Repository is used to override the image repository
+                          to pull from.
+                        type: string
+                      tag:
+                        description: Tag is used to override the default image tag.
+                        type: string
+                    type: object
+                type: object
+              extraAPIServerCertSANs:
+                description: ExtraAPIServerCertSANs required for providing API server
+                  cert SANs.
+                items:
+                  type: string
+                type: array
+              globalImageRegistryMirror:
+                description: GlobalImageRegistryMirror sets default mirror configuration
+                  for all the image registries.
+                properties:
+                  credentials:
+                    description: Credentials and CA certificate for the image registry
+                      mirror
+                    properties:
+                      secretRef:
+                        description: |-
+                          A reference to the Secret containing the registry credentials and optional CA certificate
+                          using the keys `username`, `password` and `ca.crt`.
+                          This credentials Secret is not required for some registries, e.g. ECR.
+                        properties:
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  url:
+                    description: Registry URL.
+                    type: string
+                required:
+                - url
+                type: object
+              imageRegistries:
+                items:
+                  properties:
+                    credentials:
+                      description: Credentials and CA certificate for the image registry
+                      properties:
+                        secretRef:
+                          description: |-
+                            A reference to the Secret containing the registry credentials and optional CA certificate
+                            using the keys `username`, `password` and `ca.crt`.
+                            This credentials Secret is not required for some registries, e.g. ECR.
+                          properties:
+                            name:
+                              description: |-
+                                Name of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                      type: object
+                    url:
+                      description: Registry URL.
+                      type: string
+                  required:
+                  - url
+                  type: object
+                type: array
+              kubernetesImageRepository:
+                description: KubernetesImageRepository required for overriding Kubernetes
+                  image repository.
+                type: string
+              proxy:
+                description: HTTPProxy required for providing proxy configuration.
+                properties:
+                  additionalNo:
+                    description: |-
+                      AdditionalNo Proxy list that will be added to the automatically calculated
+                      values that will apply no_proxy configuration for cluster internal network.
+                      Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
+                        ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
+                    items:
+                      type: string
+                    type: array
+                  http:
+                    description: HTTP proxy.
+                    type: string
+                  https:
+                    description: HTTPS proxy.
+                    type: string
+                required:
+                - additionalNo
+                type: object
+              users:
+                items:
+                  description: User defines the input for a generated user in cloud-init.
+                  properties:
+                    hashedPassword:
+                      description: |-
+                        HashedPassword is a hashed password for the user, formatted as described
+                        by the crypt(5) man page. See your distribution's documentation for
+                        instructions to create a hashed password.
+                        An empty string is not marshalled, because it is not a valid value.
+                      type: string
+                    name:
+                      description: Name specifies the user name.
+                      type: string
+                    sshAuthorizedKeys:
+                      description: |-
+                        SSHAuthorizedKeys is a list of public SSH keys to write to the
+                        machine. Use the corresponding private SSH keys to authenticate. See SSH
+                        documentation for instructions to create a key pair.
+                      items:
+                        type: string
+                      type: array
+                    sudo:
+                      description: |-
+                        Sudo is a sudo user specification, formatted as described in the sudo
+                        documentation.
+                        An empty string is not marshalled, because it is not a valid value.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true

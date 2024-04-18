@@ -23,7 +23,7 @@ func TestVariableValidation(t *testing.T) {
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "without a credentials secret",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
 					URL: "http://a.b.c.example.com",
 				},
@@ -31,7 +31,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "with a credentials CA secret",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
 					URL: "http://a.b.c.example.com",
 					Credentials: &v1alpha1.RegistryCredentials{
@@ -44,7 +44,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "invalid mirror registry URL",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
 					URL: "unsupportedformat://a.b.c.example.com",
 				},
@@ -53,7 +53,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "mirror URL without format",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
 					URL: "a.b.c.example.com/a/b/c",
 				},

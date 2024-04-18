@@ -1,0 +1,372 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: awsclusterconfigs.caren.nutanix.com
+spec:
+  group: caren.nutanix.com
+  names:
+    kind: AWSClusterConfig
+    listKind: AWSClusterConfigList
+    plural: awsclusterconfigs
+    singular: awsclusterconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AWSClusterConfig is the Schema for the awsclusterconfigs API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AWSClusterConfigSpec defines the desired state of ClusterConfig.
+            properties:
+              addons:
+                properties:
+                  ccm:
+                    description: CCM tells us to enable or disable the cloud provider
+                      interface.
+                    properties:
+                      credentials:
+                        description: A reference to the Secret for credential information
+                          for the target Prism Central instance
+                        properties:
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  clusterAutoscaler:
+                    description: ClusterAutoscaler tells us to enable or disable the
+                      cluster-autoscaler addon.
+                    properties:
+                      strategy:
+                        type: string
+                    type: object
+                  cni:
+                    description: CNI required for providing CNI configuration.
+                    properties:
+                      provider:
+                        type: string
+                      strategy:
+                        type: string
+                    type: object
+                  csi:
+                    properties:
+                      defaultStorage:
+                        properties:
+                          providerName:
+                            type: string
+                          storageClassConfigName:
+                            type: string
+                        required:
+                        - providerName
+                        - storageClassConfigName
+                        type: object
+                      providers:
+                        items:
+                          properties:
+                            credentials:
+                              description: |-
+                                LocalObjectReference contains enough information to let you locate the
+                                referenced object inside the same namespace.
+                              properties:
+                                name:
+                                  description: |-
+                                    Name of the referent.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind, uid?
+                                  type: string
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            name:
+                              type: string
+                            storageClassConfig:
+                              items:
+                                properties:
+                                  allowExpansion:
+                                    type: boolean
+                                  name:
+                                    type: string
+                                  parameters:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                  reclaimPolicy:
+                                    description: PersistentVolumeReclaimPolicy describes
+                                      a policy for end-of-life maintenance of persistent
+                                      volumes.
+                                    type: string
+                                  volumeBindingMode:
+                                    description: VolumeBindingMode indicates how PersistentVolumeClaims
+                                      should be bound.
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              type: array
+                            strategy:
+                              type: string
+                          required:
+                          - name
+                          - strategy
+                          type: object
+                        type: array
+                    type: object
+                  nfd:
+                    description: NFD tells us to enable or disable the node feature
+                      discovery addon.
+                    properties:
+                      strategy:
+                        type: string
+                    type: object
+                type: object
+              aws:
+                properties:
+                  controlPlaneLoadBalancer:
+                    description: AWSLoadBalancerSpec configures an AWS control-plane
+                      LoadBalancer.
+                    properties:
+                      scheme:
+                        default: internet-facing
+                        description: Scheme sets the scheme of the load balancer (defaults
+                          to internet-facing)
+                        enum:
+                        - internet-facing
+                        - internal
+                        type: string
+                    type: object
+                  network:
+                    properties:
+                      subnets:
+                        items:
+                          description: SubnetSpec configures an AWS Subnet.
+                          properties:
+                            id:
+                              description: ID defines a unique identifier to reference
+                                this resource.
+                              type: string
+                          required:
+                          - id
+                          type: object
+                        type: array
+                      vpc:
+                        properties:
+                          id:
+                            description: ID is the vpc-id of the VPC this provider
+                              should use to create resources.
+                            type: string
+                        type: object
+                    type: object
+                  region:
+                    description: AWS region to create cluster in.
+                    type: string
+                type: object
+              controlPlane:
+                description: |-
+                  AWSNodeConfigSpec defines the desired state of AWSNodeConfig.
+                  Place any configuration that can be applied to individual Nodes here.
+                  Otherwise, it should go into the ClusterConfigSpec.
+                properties:
+                  aws:
+                    properties:
+                      additionalSecurityGroups:
+                        items:
+                          properties:
+                            id:
+                              description: ID is the id of the security group
+                              type: string
+                          type: object
+                        type: array
+                      ami:
+                        description: |-
+                          AMI or AMI Lookup arguments for machine image of a AWS machine.
+                          If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
+                        properties:
+                          id:
+                            description: ID is an explicit AMI to use.
+                            type: string
+                          lookup:
+                            description: Lookup is the lookup arguments for the AMI.
+                            properties:
+                              baseOS:
+                                description: BaseOS is the name of the base os for
+                                  image lookup
+                                type: string
+                              format:
+                                description: Format is the AMI naming format
+                                type: string
+                              org:
+                                description: Org is the AWS Organization ID to use
+                                  for image lookup
+                                type: string
+                            type: object
+                        type: object
+                      iamInstanceProfile:
+                        type: string
+                      instanceType:
+                        type: string
+                    type: object
+                type: object
+              etcd:
+                properties:
+                  image:
+                    description: Image required for overriding etcd image details.
+                    properties:
+                      repository:
+                        description: Repository is used to override the image repository
+                          to pull from.
+                        type: string
+                      tag:
+                        description: Tag is used to override the default image tag.
+                        type: string
+                    type: object
+                type: object
+              extraAPIServerCertSANs:
+                description: ExtraAPIServerCertSANs required for providing API server
+                  cert SANs.
+                items:
+                  type: string
+                type: array
+              globalImageRegistryMirror:
+                description: GlobalImageRegistryMirror sets default mirror configuration
+                  for all the image registries.
+                properties:
+                  credentials:
+                    description: Credentials and CA certificate for the image registry
+                      mirror
+                    properties:
+                      secretRef:
+                        description: |-
+                          A reference to the Secret containing the registry credentials and optional CA certificate
+                          using the keys `username`, `password` and `ca.crt`.
+                          This credentials Secret is not required for some registries, e.g. ECR.
+                        properties:
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  url:
+                    description: Registry URL.
+                    type: string
+                required:
+                - url
+                type: object
+              imageRegistries:
+                items:
+                  properties:
+                    credentials:
+                      description: Credentials and CA certificate for the image registry
+                      properties:
+                        secretRef:
+                          description: |-
+                            A reference to the Secret containing the registry credentials and optional CA certificate
+                            using the keys `username`, `password` and `ca.crt`.
+                            This credentials Secret is not required for some registries, e.g. ECR.
+                          properties:
+                            name:
+                              description: |-
+                                Name of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                      type: object
+                    url:
+                      description: Registry URL.
+                      type: string
+                  required:
+                  - url
+                  type: object
+                type: array
+              kubernetesImageRepository:
+                description: KubernetesImageRepository required for overriding Kubernetes
+                  image repository.
+                type: string
+              proxy:
+                description: HTTPProxy required for providing proxy configuration.
+                properties:
+                  additionalNo:
+                    description: |-
+                      AdditionalNo Proxy list that will be added to the automatically calculated
+                      values that will apply no_proxy configuration for cluster internal network.
+                      Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
+                        ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
+                    items:
+                      type: string
+                    type: array
+                  http:
+                    description: HTTP proxy.
+                    type: string
+                  https:
+                    description: HTTPS proxy.
+                    type: string
+                required:
+                - additionalNo
+                type: object
+              users:
+                items:
+                  description: User defines the input for a generated user in cloud-init.
+                  properties:
+                    hashedPassword:
+                      description: |-
+                        HashedPassword is a hashed password for the user, formatted as described
+                        by the crypt(5) man page. See your distribution's documentation for
+                        instructions to create a hashed password.
+                        An empty string is not marshalled, because it is not a valid value.
+                      type: string
+                    name:
+                      description: Name specifies the user name.
+                      type: string
+                    sshAuthorizedKeys:
+                      description: |-
+                        SSHAuthorizedKeys is a list of public SSH keys to write to the
+                        machine. Use the corresponding private SSH keys to authenticate. See SSH
+                        documentation for instructions to create a key pair.
+                      items:
+                        type: string
+                      type: array
+                    sudo:
+                      description: |-
+                        Sudo is a sudo user specification, formatted as described in the sudo
+                        documentation.
+                        An empty string is not marshalled, because it is not a valid value.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true

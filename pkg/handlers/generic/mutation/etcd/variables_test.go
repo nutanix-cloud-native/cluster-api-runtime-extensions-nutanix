@@ -22,13 +22,13 @@ func TestVariableValidation(t *testing.T) {
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "unset",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Etcd: &v1alpha1.Etcd{},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "set with valid image values",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Etcd: &v1alpha1.Etcd{
 					Image: &v1alpha1.Image{
 						Repository: "my-registry.io/my-org/my-repo",
@@ -39,7 +39,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "set with invalid image repository",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Etcd: &v1alpha1.Etcd{
 					Image: &v1alpha1.Image{
 						Repository: "https://this.should.not.have.a.scheme",
@@ -50,7 +50,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "set with invalid image tag",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Etcd: &v1alpha1.Etcd{
 					Image: &v1alpha1.Image{
 						Tag: "this:is:not:a:valid:tag",

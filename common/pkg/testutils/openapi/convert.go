@@ -14,12 +14,12 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
-// ConvertToAPIExtensionsJSONSchemaProps converts a clusterv1.JSONSchemaProps to apiextensions.JSONSchemaProp.
+// ConvertJSONSchemaPropsToAPIExtensions converts a clusterv1.JSONSchemaProps to apiextensions.JSONSchemaProp.
 // NOTE: This is used whenever we want to use one of the upstream libraries, as they use apiextensions.JSONSchemaProp.
 // NOTE: If new fields are added to clusterv1.JSONSchemaProps (e.g. to support complex types), the corresponding
 // schema validation must be added to validateRootSchema too.
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/v1.5.1/internal/topology/variables/schema.go#L35
-func ConvertToAPIExtensionsJSONSchemaProps(
+func ConvertJSONSchemaPropsToAPIExtensions(
 	schema *clusterv1.JSONSchemaProps, fldPath *field.Path,
 ) (*apiextensions.JSONSchemaProps, field.ErrorList) {
 	var allErrs field.ErrorList
@@ -142,7 +142,7 @@ func ConvertToAPIExtensionsJSONSchemaProps(
 	}
 
 	if schema.AdditionalProperties != nil {
-		apiExtensionsSchema, err := ConvertToAPIExtensionsJSONSchemaProps(
+		apiExtensionsSchema, err := ConvertJSONSchemaPropsToAPIExtensions(
 			schema.AdditionalProperties, fldPath.Child("additionalProperties"),
 		)
 		if err != nil {
@@ -168,7 +168,7 @@ func ConvertToAPIExtensionsJSONSchemaProps(
 		props.Properties = map[string]apiextensions.JSONSchemaProps{}
 		for propertyName := range schema.Properties {
 			p := schema.Properties[propertyName]
-			apiExtensionsSchema, err := ConvertToAPIExtensionsJSONSchemaProps(
+			apiExtensionsSchema, err := ConvertJSONSchemaPropsToAPIExtensions(
 				&p,
 				fldPath.Child("properties").Key(propertyName),
 			)
@@ -188,7 +188,7 @@ func ConvertToAPIExtensionsJSONSchemaProps(
 	}
 
 	if schema.Items != nil {
-		apiExtensionsSchema, err := ConvertToAPIExtensionsJSONSchemaProps(
+		apiExtensionsSchema, err := ConvertJSONSchemaPropsToAPIExtensions(
 			schema.Items,
 			fldPath.Child("items"),
 		)

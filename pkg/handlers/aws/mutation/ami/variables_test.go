@@ -18,13 +18,13 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.NewAWSClusterConfigSpec().VariableSchema()),
+		ptr.To(v1alpha1.AWSClusterConfig{}.VariableSchema()),
 		true,
 		awsclusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "AMI specification",
-			Vals: v1alpha1.ClusterConfigSpec{
-				ControlPlane: &v1alpha1.NodeConfigSpec{
+			Vals: v1alpha1.AWSClusterConfigSpec{
+				ControlPlane: &v1alpha1.AWSNodeConfigSpec{
 					AWS: &v1alpha1.AWSNodeSpec{
 						AMISpec: &v1alpha1.AMISpec{
 							ID: "ami-1234",

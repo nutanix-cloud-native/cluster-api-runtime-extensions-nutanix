@@ -26,12 +26,12 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.ClusterConfigSpec{Nutanix: &v1alpha1.NutanixSpec{}}.VariableSchema()),
+		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		nutanixclusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "valid host and port",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.NutanixClusterConfigSpec{
 				Nutanix: &v1alpha1.NutanixSpec{
 					ControlPlaneEndpoint: clusterv1.APIEndpoint{
 						Host: "10.20.100.10",
@@ -49,7 +49,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "empty host",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.NutanixClusterConfigSpec{
 				Nutanix: &v1alpha1.NutanixSpec{
 					ControlPlaneEndpoint: clusterv1.APIEndpoint{
 						Host: "",
@@ -68,7 +68,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "port set to 0",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.NutanixClusterConfigSpec{
 				Nutanix: &v1alpha1.NutanixSpec{
 					ControlPlaneEndpoint: clusterv1.APIEndpoint{
 						Host: "10.20.100.10",
