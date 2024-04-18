@@ -32,7 +32,7 @@ const (
 	defaultSnapshotHelmReleaseNamespace = "ntnx-system"
 
 	//nolint:gosec // Does not contain hard coded credentials.
-	defaultCredentialsSecretName = "ntnx-pc-secret"
+	defaultCredentialsSecretName = "nutanix-csi-credentials"
 )
 
 var defaultStorageClassParameters = map[string]string{
