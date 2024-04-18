@@ -29,8 +29,8 @@ data:
     RepositoryURL: https://nutanix.github.io/helm/
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
-    ChartVersion: v2.6.6
-    RepositoryURL: https://nutanix.github.io/helm/
+    ChartVersion: v3.0.0-beta.1912
+    RepositoryURL: https://nutanix.github.io/helm-releases/
   tigera-operator: |
     ChartName: tigera-operator
     ChartVersion: v3.26.4

@@ -9,6 +9,6 @@ metadata:
 data:
   values.yaml: |-
     # The Secret containing the credentials will be created by the handler.
-    createSecret: false
-    secretName: nutanix-csi-credentials
+    createPrismCentralSecret: false
+    pcSecretName: nutanix-csi-credentials
 {{- end -}}
