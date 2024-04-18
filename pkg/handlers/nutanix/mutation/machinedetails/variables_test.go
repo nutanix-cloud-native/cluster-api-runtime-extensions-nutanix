@@ -22,13 +22,13 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.ClusterConfigSpec{Nutanix: &v1alpha1.NutanixSpec{}}.VariableSchema()),
+		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		nutanixclusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "all fields set",
-			Vals: v1alpha1.ClusterConfigSpec{
-				ControlPlane: &v1alpha1.NodeConfigSpec{
+			Vals: v1alpha1.NutanixClusterConfigSpec{
+				ControlPlane: &v1alpha1.NutanixNodeConfigSpec{
 					Nutanix: &v1alpha1.NutanixNodeSpec{
 						MachineDetails: v1alpha1.NutanixMachineDetails{
 							BootType:       v1alpha1.NutanixBootType(capxv1.NutanixBootTypeLegacy),
@@ -52,8 +52,8 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "invalid boot type",
-			Vals: v1alpha1.ClusterConfigSpec{
-				ControlPlane: &v1alpha1.NodeConfigSpec{
+			Vals: v1alpha1.NutanixClusterConfigSpec{
+				ControlPlane: &v1alpha1.NutanixNodeConfigSpec{
 					Nutanix: &v1alpha1.NutanixNodeSpec{
 						MachineDetails: v1alpha1.NutanixMachineDetails{
 							BootType:       "invalid",
@@ -78,8 +78,8 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "invalid image type",
-			Vals: v1alpha1.ClusterConfigSpec{
-				ControlPlane: &v1alpha1.NodeConfigSpec{
+			Vals: v1alpha1.NutanixClusterConfigSpec{
+				ControlPlane: &v1alpha1.NutanixNodeConfigSpec{
 					Nutanix: &v1alpha1.NutanixNodeSpec{
 						MachineDetails: v1alpha1.NutanixMachineDetails{
 							BootType:       v1alpha1.NutanixBootType(capxv1.NutanixBootTypeLegacy),
@@ -104,8 +104,8 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "invalid cluster type",
-			Vals: v1alpha1.ClusterConfigSpec{
-				ControlPlane: &v1alpha1.NodeConfigSpec{
+			Vals: v1alpha1.NutanixClusterConfigSpec{
+				ControlPlane: &v1alpha1.NutanixNodeConfigSpec{
 					Nutanix: &v1alpha1.NutanixNodeSpec{
 						MachineDetails: v1alpha1.NutanixMachineDetails{
 							BootType:       v1alpha1.NutanixBootType(capxv1.NutanixBootTypeLegacy),

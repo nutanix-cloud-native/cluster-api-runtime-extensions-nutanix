@@ -19,12 +19,12 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.NewAWSClusterConfigSpec().VariableSchema()),
+		ptr.To(v1alpha1.AWSClusterConfig{}.VariableSchema()),
 		true,
 		awsclusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "specified internet-facing scheme",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.AWSClusterConfigSpec{
 				AWS: &v1alpha1.AWSSpec{
 					ControlPlaneLoadBalancer: &v1alpha1.AWSLoadBalancerSpec{
 						Scheme: &capav1.ELBSchemeInternetFacing,
@@ -34,7 +34,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "specified internal scheme",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.AWSClusterConfigSpec{
 				AWS: &v1alpha1.AWSSpec{
 					ControlPlaneLoadBalancer: &v1alpha1.AWSLoadBalancerSpec{
 						Scheme: &capav1.ELBSchemeInternal,
@@ -44,7 +44,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "specified invalid scheme",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.AWSClusterConfigSpec{
 				AWS: &v1alpha1.AWSSpec{
 					ControlPlaneLoadBalancer: &v1alpha1.AWSLoadBalancerSpec{
 						Scheme: ptr.To(capav1.ELBScheme("invalid")),

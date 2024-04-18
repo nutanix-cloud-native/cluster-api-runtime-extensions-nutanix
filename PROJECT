@@ -2,7 +2,7 @@
 # This file is used to track the info used to scaffold your project
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
-domain: labs.d2iq.io
+domain: nutanix.com
 layout:
 - go.kubebuilder.io/v4
 projectName: cluster-api-runtime-extensions-nutanix
@@ -11,8 +11,8 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  domain: labs.d2iq.io
-  group: capiext.labs.d2iq.io
+  domain: nutanix.com
+  group: caren.nutanix.com
   kind: ClusterConfig
   path: github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1
   version: v1alpha1

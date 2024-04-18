@@ -23,7 +23,7 @@ func TestVariableValidation(t *testing.T) {
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "without a credentials secret",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
 						URL: "http://a.b.c.example.com",
@@ -33,7 +33,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "with a credentials secret",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
 						URL: "https://a.b.c.example.com/a/b/c",
@@ -48,7 +48,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "support for multiple image registries",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
 						URL: "http://first-image-registry.example.com",
@@ -61,7 +61,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "invalid registry URL",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
 						URL: "unsupportedformat://a.b.c.example.com",
@@ -72,7 +72,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "registry URL without format",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				ImageRegistries: []v1alpha1.ImageRegistry{
 					{
 						URL: "a.b.c.example.com/a/b/c",

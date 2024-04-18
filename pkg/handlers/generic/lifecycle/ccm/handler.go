@@ -18,6 +18,7 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	commonclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
@@ -29,7 +30,7 @@ type CCMProvider interface {
 	Apply(
 		context.Context,
 		*clusterv1.Cluster,
-		*v1alpha1.ClusterConfigSpec,
+		*commonclusterconfig.ClusterConfig,
 		logr.Logger,
 	) error
 }
@@ -95,7 +96,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		return
 	}
 
-	clusterConfigVar, _, err := variables.Get[v1alpha1.ClusterConfigSpec](
+	clusterConfigVar, _, err := variables.Get[commonclusterconfig.ClusterConfig](
 		varMap,
 		clusterconfig.MetaVariableName,
 	)

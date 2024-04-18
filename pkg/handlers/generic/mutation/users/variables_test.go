@@ -22,7 +22,7 @@ func TestVariableValidation(t *testing.T) {
 		clusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "valid users",
-			Vals: v1alpha1.GenericClusterConfig{
+			Vals: v1alpha1.GenericClusterConfigSpec{
 				Users: []v1alpha1.User{
 					{
 						Name:           "complete",

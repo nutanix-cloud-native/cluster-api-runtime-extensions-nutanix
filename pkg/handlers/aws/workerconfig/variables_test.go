@@ -17,12 +17,12 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		workerconfig.MetaVariableName,
-		ptr.To(v1alpha1.NewAWSWorkerConfigSpec().VariableSchema()),
+		ptr.To(v1alpha1.AWSNodeConfig{}.VariableSchema()),
 		false,
 		NewVariable,
 		capitest.VariableTestDef{
 			Name: "specified IAM instance profile",
-			Vals: v1alpha1.NodeConfigSpec{
+			Vals: v1alpha1.AWSNodeConfigSpec{
 				AWS: &v1alpha1.AWSNodeSpec{
 					IAMInstanceProfile: ptr.To(
 						v1alpha1.IAMInstanceProfile("nodes.cluster-api-provider-aws.sigs.k8s.io"),
@@ -32,7 +32,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "specified instance type",
-			Vals: v1alpha1.NodeConfigSpec{
+			Vals: v1alpha1.AWSNodeConfigSpec{
 				AWS: &v1alpha1.AWSNodeSpec{InstanceType: ptr.To(v1alpha1.InstanceType("m5.small"))},
 			},
 		},
