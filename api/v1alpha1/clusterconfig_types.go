@@ -42,8 +42,6 @@ var (
 		"0.0.0.0",
 	}
 
-	//go:embed crds/caren.nutanix.com_genericclusterconfigs.yaml
-	genericClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_dockerclusterconfigs.yaml
 	dockerClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_awsclusterconfigs.yaml
@@ -51,9 +49,6 @@ var (
 	//go:embed crds/caren.nutanix.com_nutanixclusterconfigs.yaml
 	nutanixClusterConfigCRDDefinition []byte
 
-	genericClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
-		genericClusterConfigCRDDefinition,
-	)
 	dockerClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		dockerClusterConfigCRDDefinition,
 	)
@@ -90,6 +85,12 @@ type AWSClusterConfigSpec struct {
 
 	// +optional
 	ControlPlane *AWSNodeConfigSpec `json:"controlPlane,omitempty"`
+
+	// Extra Subject Alternative Names for the API Server signing cert.
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +optional
+	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -116,6 +117,17 @@ type DockerClusterConfigSpec struct {
 
 	// +optional
 	ControlPlane *DockerNodeConfigSpec `json:"controlPlane,omitempty"`
+
+	// Extra Subject Alternative Names for the API Server signing cert.
+	// For the Nutanix provider, the following default SANs will always be added:
+	// - localhost
+	// - 127.0.0.1
+	// - 0.0.0.0
+	// - host.docker.internal
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +optional
+	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -142,21 +154,16 @@ type NutanixClusterConfigSpec struct {
 
 	// +optional
 	ControlPlane *NutanixNodeConfigSpec `json:"controlPlane,omitempty"`
-}
 
-// +kubebuilder:object:root=true
-
-// GenericClusterConfig is the Schema for the clusterconfigs API.
-type GenericClusterConfig struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
+	// Subject Alternative Names for the API Server signing cert.
+	// For the Nutanix provider, the following default SANs will always be added:
+	// - localhost
+	// - 127.0.0.1
+	// - 0.0.0.0
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 	// +optional
-	Spec GenericClusterConfigSpec `json:"spec,omitempty"`
-}
-
-func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
-	return genericClusterConfigVariableSchema
+	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
 // GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
@@ -171,14 +178,6 @@ type GenericClusterConfigSpec struct {
 
 	// +optional
 	Proxy *HTTPProxy `json:"proxy,omitempty"`
-
-	// Subject Alternative Names for the API Server signing cert.
-	// For Docker  are injected automatically.
-	// For Nutanix  are injected automatically.
-	// +kubebuilder:validation:UniqueItems=true
-	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
-	// +optional
-	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 
 	// +optional
 	ImageRegistries []ImageRegistry `json:"imageRegistries,omitempty"`
@@ -287,6 +286,5 @@ func init() {
 		&AWSClusterConfig{},
 		&DockerClusterConfig{},
 		&NutanixClusterConfig{},
-		&GenericClusterConfig{},
 	)
 }

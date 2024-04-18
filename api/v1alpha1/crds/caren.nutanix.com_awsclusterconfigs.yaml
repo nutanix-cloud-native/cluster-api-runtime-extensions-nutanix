@@ -308,10 +308,8 @@ spec:
                     type: object
                 type: object
               extraAPIServerCertSANs:
-                description: |-
-                  Subject Alternative Names for the API Server signing cert.
-                  For Docker  are injected automatically.
-                  For Nutanix  are injected automatically.
+                description: Extra Subject Alternative Names for the API Server signing
+                  cert.
                 items:
                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                   type: string

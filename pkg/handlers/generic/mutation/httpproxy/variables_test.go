@@ -10,26 +10,52 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
+	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
+	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
+	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
-func TestVariableValidation(t *testing.T) {
+var testDefs = []capitest.VariableTestDef{{
+	Name: "valid proxy config",
+	Vals: v1alpha1.GenericClusterConfigSpec{
+		Proxy: &v1alpha1.HTTPProxy{
+			HTTP:         "http://a.b.c.example.com",
+			HTTPS:        "https://a.b.c.example.com",
+			AdditionalNo: []string{"d.e.f.example.com"},
+		},
+	},
+}}
+
+func TestVariableValidation_AWS(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.GenericClusterConfig{}.VariableSchema()),
-		false,
-		clusterconfig.NewVariable,
-		// HTTPProxy
-		capitest.VariableTestDef{
-			Name: "valid proxy config",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Proxy: &v1alpha1.HTTPProxy{
-					HTTP:         "http://a.b.c.example.com",
-					HTTPS:        "https://a.b.c.example.com",
-					AdditionalNo: []string{"d.e.f.example.com"},
-				},
-			},
-		},
+		ptr.To(v1alpha1.AWSClusterConfig{}.VariableSchema()),
+		true,
+		awsclusterconfig.NewVariable,
+		testDefs...,
+	)
+}
+
+func TestVariableValidation_Docker(t *testing.T) {
+	capitest.ValidateDiscoverVariables(
+		t,
+		clusterconfig.MetaVariableName,
+		ptr.To(v1alpha1.DockerClusterConfig{}.VariableSchema()),
+		true,
+		dockerclusterconfig.NewVariable,
+		testDefs...,
+	)
+}
+
+func TestVariableValidation_Nutanix(t *testing.T) {
+	capitest.ValidateDiscoverVariables(
+		t,
+		clusterconfig.MetaVariableName,
+		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
+		true,
+		nutanixclusterconfig.NewVariable,
+		testDefs...,
 	)
 }

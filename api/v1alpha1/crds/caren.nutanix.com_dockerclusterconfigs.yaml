@@ -235,9 +235,12 @@ spec:
                 type: object
               extraAPIServerCertSANs:
                 description: |-
-                  Subject Alternative Names for the API Server signing cert.
-                  For Docker  are injected automatically.
-                  For Nutanix  are injected automatically.
+                  Extra Subject Alternative Names for the API Server signing cert.
+                  For the Nutanix provider, the following default SANs will always be added:
+                  - localhost
+                  - 127.0.0.1
+                  - 0.0.0.0
+                  - host.docker.internal
                 items:
                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                   type: string
