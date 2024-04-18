@@ -63,6 +63,9 @@ spec:
                       bootType:
                         description: Defines the boot type of the virtual machine.
                           Only supports UEFI and Legacy
+                        enum:
+                        - legacy
+                        - uefi
                         type: string
                       cluster:
                         description: |-

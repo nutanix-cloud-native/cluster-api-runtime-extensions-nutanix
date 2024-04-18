@@ -3,25 +3,9 @@
 
 package v1alpha1
 
-import (
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/openapi/patterns"
-)
-
 type DockerNodeSpec struct {
+	// Custom OCI image for control plane and worker Nodes.
+	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*(:[\w][\w.-]{0,127})?(@[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,})?$`
 	// +optional
-	CustomImage *OCIImage `json:"customImage,omitempty"`
-}
-
-type OCIImage string
-
-func (OCIImage) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Custom OCI image for control plane and worker Nodes.",
-			Type:        "string",
-			Pattern:     patterns.Anchored(patterns.ImageReference),
-		},
-	}
+	CustomImage *string `json:"customImage,omitempty"`
 }

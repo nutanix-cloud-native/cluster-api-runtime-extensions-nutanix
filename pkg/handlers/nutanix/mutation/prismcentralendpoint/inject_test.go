@@ -47,7 +47,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
-						Credentials: corev1.LocalObjectReference{
+						Credentials: &corev1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -81,7 +81,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com",
 						Insecure: true,
-						Credentials: corev1.LocalObjectReference{
+						Credentials: &corev1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -118,7 +118,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
-						Credentials: corev1.LocalObjectReference{
+						Credentials: &corev1.LocalObjectReference{
 							Name: "credentials",
 						},
 						AdditionalTrustBundle: ptr.To(testCertBundle),

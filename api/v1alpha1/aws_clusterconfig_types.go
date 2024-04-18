@@ -11,6 +11,7 @@ type AWSSpec struct {
 	// AWS region to create cluster in.
 	// +optional
 	Region *Region `json:"region,omitempty"`
+	// AWS network configuration.
 	// +optional
 	Network *AWSNetwork `json:"network,omitempty"`
 	// +optional
@@ -23,26 +24,27 @@ type AWSNetwork struct {
 	// +optional
 	VPC *VPC `json:"vpc,omitempty"`
 
+	// AWS Subnet configuration.
 	// +optional
 	Subnets Subnets `json:"subnets,omitempty"`
 }
 
 type VPC struct {
-	// ID is the vpc-id of the VPC this provider should use to create resources.
-	ID string `json:"id,omitempty"`
+	// Existing VPC ID to use for the cluster.
+	ID string `json:"id"`
 }
 
 type Subnets []SubnetSpec
 
 // SubnetSpec configures an AWS Subnet.
 type SubnetSpec struct {
-	// ID defines a unique identifier to reference this resource.
+	// Existing Subnet ID to use for the cluster.
 	ID string `json:"id"`
 }
 
 // AWSLoadBalancerSpec configures an AWS control-plane LoadBalancer.
 type AWSLoadBalancerSpec struct {
-	// Scheme sets the scheme of the load balancer (defaults to internet-facing)
+	// Scheme sets the scheme of the load balancer.
 	// +kubebuilder:default=internet-facing
 	// +kubebuilder:validation:Enum=internet-facing;internal
 	// +optional

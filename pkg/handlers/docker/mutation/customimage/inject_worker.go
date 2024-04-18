@@ -13,7 +13,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
@@ -57,7 +56,7 @@ func (h *customImageWorkerPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	customImageVar, err := variables.Get[v1alpha1.OCIImage](
+	customImageVar, err := variables.Get[string](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -100,9 +99,7 @@ func (h *customImageWorkerPatchHandler) Mutate(
 					return err
 				}
 
-				customImageVar = v1alpha1.OCIImage(
-					defaultKinDImageRepository + ":" + kubernetesVersion,
-				)
+				customImageVar = defaultKinDImageRepository + ":" + kubernetesVersion
 			}
 
 			log.WithValues(
@@ -111,7 +108,7 @@ func (h *customImageWorkerPatchHandler) Mutate(
 				"customImage", customImageVar,
 			).Info("setting customImage in workers DockerMachineTemplate spec")
 
-			obj.Spec.Template.Spec.CustomImage = string(customImageVar)
+			obj.Spec.Template.Spec.CustomImage = customImageVar
 
 			return nil
 		},

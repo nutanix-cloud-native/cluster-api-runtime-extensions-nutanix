@@ -53,7 +53,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 						clusterconfig.MetaVariableName,
 						v1alpha1.AWSClusterConfigSpec{
 							GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
-								ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
+								ExtraAPIServerCertSANs: []string{
 									"a.b.c.example.com",
 									"a.b.c.example.com",
 									"d.e.f.example.com",
@@ -93,7 +93,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 					capitest.VariableWithValue(
 						clusterconfig.MetaVariableName,
 						v1alpha1.GenericClusterConfigSpec{
-							ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
+							ExtraAPIServerCertSANs: []string{
 								"a.b.c.example.com",
 							},
 						},
@@ -135,7 +135,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 					capitest.VariableWithValue(
 						clusterconfig.MetaVariableName,
 						v1alpha1.GenericClusterConfigSpec{
-							ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
+							ExtraAPIServerCertSANs: []string{
 								"a.b.c.example.com",
 							},
 						},

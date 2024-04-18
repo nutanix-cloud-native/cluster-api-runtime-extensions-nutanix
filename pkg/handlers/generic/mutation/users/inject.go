@@ -59,7 +59,7 @@ func (h *usersPatchHandler) Mutate(
 ) error {
 	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
 
-	usersVariable, err := variables.Get[v1alpha1.Users](
+	usersVariable, err := variables.Get[[]v1alpha1.User](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,

@@ -27,7 +27,7 @@ func TestVariableValidation(t *testing.T) {
 					HTTPS:        "https://a.b.c.example.com",
 					AdditionalNo: []string{"d.e.f.example.com"},
 				},
-				ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{"a.b.c.example.com"},
+				ExtraAPIServerCertSANs: []string{"a.b.c.example.com"},
 			},
 		},
 	)

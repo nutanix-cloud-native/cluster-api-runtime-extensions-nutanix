@@ -27,7 +27,7 @@ var (
 	)
 )
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // AWSNodeConfig is the Schema for the awsnodeconfigs API.
 type AWSNodeConfig struct {
@@ -50,7 +50,7 @@ type AWSNodeConfigSpec struct {
 	AWS *AWSNodeSpec `json:"aws,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // DockerNodeConfig is the Schema for the dockernodeconfigs API.
 type DockerNodeConfig struct {

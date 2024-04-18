@@ -25,7 +25,7 @@ func TestVariableValidation(t *testing.T) {
 			Name: "set",
 			Vals: v1alpha1.GenericClusterConfigSpec{
 				KubernetesImageRepository: ptr.To(
-					v1alpha1.KubernetesImageRepository("my-registry.io/my-org/my-repo"),
+					"my-registry.io/my-org/my-repo",
 				),
 			},
 		},

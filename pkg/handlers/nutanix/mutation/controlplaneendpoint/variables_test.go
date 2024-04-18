@@ -9,7 +9,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
@@ -33,14 +32,14 @@ func TestVariableValidation(t *testing.T) {
 			Name: "valid host and port",
 			Vals: v1alpha1.NutanixClusterConfigSpec{
 				Nutanix: &v1alpha1.NutanixSpec{
-					ControlPlaneEndpoint: clusterv1.APIEndpoint{
+					ControlPlaneEndpoint: v1alpha1.ControlPlaneEndpointSpec{
 						Host: "10.20.100.10",
 						Port: 6443,
 					},
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL: testPrismCentralURL,
-						Credentials: corev1.LocalObjectReference{
+						Credentials: &corev1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -51,14 +50,14 @@ func TestVariableValidation(t *testing.T) {
 			Name: "empty host",
 			Vals: v1alpha1.NutanixClusterConfigSpec{
 				Nutanix: &v1alpha1.NutanixSpec{
-					ControlPlaneEndpoint: clusterv1.APIEndpoint{
+					ControlPlaneEndpoint: v1alpha1.ControlPlaneEndpointSpec{
 						Host: "",
 						Port: 6443,
 					},
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL: testPrismCentralURL,
-						Credentials: corev1.LocalObjectReference{
+						Credentials: &corev1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -70,14 +69,14 @@ func TestVariableValidation(t *testing.T) {
 			Name: "port set to 0",
 			Vals: v1alpha1.NutanixClusterConfigSpec{
 				Nutanix: &v1alpha1.NutanixSpec{
-					ControlPlaneEndpoint: clusterv1.APIEndpoint{
+					ControlPlaneEndpoint: v1alpha1.ControlPlaneEndpointSpec{
 						Host: "10.20.100.10",
 						Port: 0,
 					},
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL: testPrismCentralURL,
-						Credentials: corev1.LocalObjectReference{
+						Credentials: &corev1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
