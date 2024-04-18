@@ -66,7 +66,7 @@ func CreateStorageClassOnRemote(
 	defaultStorageConfig *v1alpha1.DefaultStorage,
 	csiProvider string,
 	provisioner v1alpha1.StorageProvisioner,
-	storageClassParameters map[string]string,
+	defaultParameters map[string]string,
 ) error {
 	allStorageClasses := make([]*storagev1.StorageClass, 0, len(configs))
 	for _, config := range configs {
@@ -76,7 +76,7 @@ func CreateStorageClassOnRemote(
 			config,
 			provisioner,
 			setAsDefault,
-			storageClassParameters,
+			defaultParameters,
 		))
 	}
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
