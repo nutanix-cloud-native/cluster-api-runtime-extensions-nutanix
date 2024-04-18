@@ -84,10 +84,10 @@ func CreateStorageClassOnRemote(
 	if err != nil {
 		return fmt.Errorf("error creating client for remote cluster: %w", err)
 	}
-	for _, o := range allStorageClasses {
-		err = client.ServerSideApply(ctx, remoteClient, o)
+	for _, sc := range allStorageClasses {
+		err = client.ServerSideApply(ctx, remoteClient, sc)
 		if err != nil {
-			return fmt.Errorf("error creating client for remote cluster: %w", err)
+			return fmt.Errorf("error creating storage class %v on remote cluster %w", sc, err)
 		}
 	}
 	return nil
