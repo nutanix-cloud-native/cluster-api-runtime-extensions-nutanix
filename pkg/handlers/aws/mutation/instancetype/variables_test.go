@@ -24,9 +24,9 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "specified instance type",
 			Vals: v1alpha1.AWSClusterConfigSpec{
-				ControlPlane: &v1alpha1.AWSNodeConfigSpec{
-					AWS: &v1alpha1.AWSNodeSpec{
-						InstanceType: ptr.To(v1alpha1.InstanceType("m5.small")),
+				ControlPlane: &v1alpha1.AWSControlPlaneNodeConfigSpec{
+					AWS: &v1alpha1.AWSControlPlaneNodeSpec{
+						InstanceType: "m5.small",
 					},
 				},
 			},

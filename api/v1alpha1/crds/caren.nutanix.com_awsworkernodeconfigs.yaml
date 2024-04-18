@@ -6,20 +6,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: (devel)
-  name: awsnodeconfigs.caren.nutanix.com
+  name: awsworkernodeconfigs.caren.nutanix.com
 spec:
   group: caren.nutanix.com
   names:
-    kind: AWSNodeConfig
-    listKind: AWSNodeConfigList
-    plural: awsnodeconfigs
-    singular: awsnodeconfig
+    kind: AWSWorkerNodeConfig
+    listKind: AWSWorkerNodeConfigList
+    plural: awsworkernodeconfigs
+    singular: awsworkernodeconfig
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: AWSNodeConfig is the Schema for the awsnodeconfigs API.
+        description: AWSWorkerNodeConfig is the Schema for the awsnodeconfigs API.
         properties:
           apiVersion:
             description: |-
@@ -40,7 +40,7 @@ spec:
             type: object
           spec:
             description: |-
-              AWSNodeConfigSpec defines the desired state of AWSNodeConfig.
+              AWSWorkerNodeConfigSpec defines the desired state of AWSNodeConfig.
               Place any configuration that can be applied to individual Nodes here.
               Otherwise, it should go into the ClusterConfigSpec.
             properties:
@@ -60,27 +60,34 @@ spec:
                       If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
                     properties:
                       id:
-                        description: ID is an explicit AMI to use.
+                        description: AMI ID is the reference to the AMI from which
+                          to create the machine instance.
                         type: string
                       lookup:
                         description: Lookup is the lookup arguments for the AMI.
                         properties:
                           baseOS:
-                            description: BaseOS is the name of the base os for image
-                              lookup
+                            description: The name of the base os for image lookup
                             type: string
                           format:
-                            description: Format is the AMI naming format
+                            description: |-
+                              AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
+                              base OS and kubernetes version.
+                            example: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
                             type: string
                           org:
-                            description: Org is the AWS Organization ID to use for
-                              image lookup
+                            description: The AWS Organization ID to use for image
+                              lookup.
                             type: string
                         type: object
                     type: object
                   iamInstanceProfile:
+                    default: nodes.cluster-api-provider-aws.sigs.k8s.io
+                    description: The IAM instance profile to use for the cluster Machines.
                     type: string
                   instanceType:
+                    default: m5.2xlarge
+                    description: The AWS instance type to use for the cluster Machines.
                     type: string
                 type: object
             type: object

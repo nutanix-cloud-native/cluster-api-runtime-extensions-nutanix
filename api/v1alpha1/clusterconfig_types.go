@@ -84,7 +84,7 @@ type AWSClusterConfigSpec struct {
 	GenericClusterConfigSpec `json:",inline"`
 
 	// +optional
-	ControlPlane *AWSNodeConfigSpec `json:"controlPlane,omitempty"`
+	ControlPlane *AWSControlPlaneNodeConfigSpec `json:"controlPlane,omitempty"`
 
 	// Extra Subject Alternative Names for the API Server signing cert.
 	// +kubebuilder:validation:UniqueItems=true

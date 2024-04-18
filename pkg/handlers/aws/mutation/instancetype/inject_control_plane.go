@@ -62,7 +62,7 @@ func (h *awsInstanceTypeControlPlanePatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	instanceTypeVar, err := variables.Get[v1alpha1.InstanceType](
+	instanceTypeVar, err := variables.Get[string](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -99,7 +99,7 @@ func (h *awsInstanceTypeControlPlanePatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting instance type in control plane AWSMachineTemplate spec")
 
-			obj.Spec.Template.Spec.InstanceType = string(instanceTypeVar)
+			obj.Spec.Template.Spec.InstanceType = instanceTypeVar
 
 			return nil
 		},

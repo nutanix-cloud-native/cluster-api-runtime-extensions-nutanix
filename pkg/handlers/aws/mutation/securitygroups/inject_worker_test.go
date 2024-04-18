@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/utils/ptr"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -33,9 +32,9 @@ var _ = Describe("Generate AWS SecurityGroups patches for Worker", func() {
 				capitest.VariableWithValue(
 					workerconfig.MetaVariableName,
 					v1alpha1.AdditionalSecurityGroup{
-						{ID: ptr.To("sg-1")},
-						{ID: ptr.To("sg-2")},
-						{ID: ptr.To("sg-3")},
+						{ID: "sg-1"},
+						{ID: "sg-2"},
+						{ID: "sg-3"},
 					},
 					v1alpha1.AWSVariableName,
 					VariableName,

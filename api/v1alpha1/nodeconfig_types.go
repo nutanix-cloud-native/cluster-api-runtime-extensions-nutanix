@@ -15,39 +15,49 @@ import (
 var (
 	//go:embed crds/caren.nutanix.com_dockernodeconfigs.yaml
 	dockerNodeConfigCRDDefinition []byte
-	//go:embed crds/caren.nutanix.com_awsnodeconfigs.yaml
+	//go:embed crds/caren.nutanix.com_awsworkernodeconfigs.yaml
 	awsNodeConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_nutanixnodeconfigs.yaml
 	nutanixNodeConfigCRDDefinition []byte
 
-	dockerNodeConfigVariableSchema  = variables.MustSchemaFromCRDYAML(dockerNodeConfigCRDDefinition)
-	awsNodeConfigVariableSchema     = variables.MustSchemaFromCRDYAML(awsNodeConfigCRDDefinition)
-	nutanixNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+	dockerNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		dockerNodeConfigCRDDefinition,
+	)
+	awsWorkerNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(awsNodeConfigCRDDefinition)
+	nutanixNodeConfigVariableSchema   = variables.MustSchemaFromCRDYAML(
 		nutanixNodeConfigCRDDefinition,
 	)
 )
 
 // +kubebuilder:object:root=true
 
-// AWSNodeConfig is the Schema for the awsnodeconfigs API.
-type AWSNodeConfig struct {
+// AWSWorkerNodeConfig is the Schema for the awsnodeconfigs API.
+type AWSWorkerNodeConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	//+optional
-	Spec AWSNodeConfigSpec `json:"spec,omitempty"`
+	Spec AWSWorkerNodeConfigSpec `json:"spec,omitempty"`
 }
 
-func (s AWSNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
-	return awsNodeConfigVariableSchema
+func (s AWSWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return awsWorkerNodeConfigVariableSchema
 }
 
-// AWSNodeConfigSpec defines the desired state of AWSNodeConfig.
+// AWSWorkerNodeConfigSpec defines the desired state of AWSNodeConfig.
 // Place any configuration that can be applied to individual Nodes here.
 // Otherwise, it should go into the ClusterConfigSpec.
-type AWSNodeConfigSpec struct {
+type AWSWorkerNodeConfigSpec struct {
 	// +optional
-	AWS *AWSNodeSpec `json:"aws,omitempty"`
+	AWS *AWSWorkerNodeSpec `json:"aws,omitempty"`
+}
+
+// AWSControlPlaneConfigSpec defines the desired state of AWSNodeConfig.
+// Place any configuration that can be applied to individual Nodes here.
+// Otherwise, it should go into the ClusterConfigSpec.
+type AWSControlPlaneNodeConfigSpec struct {
+	// +optional
+	AWS *AWSControlPlaneNodeSpec `json:"aws,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -93,5 +103,5 @@ type NutanixNodeConfigSpec struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&AWSNodeConfig{}, &DockerNodeConfig{}, &NutanixNodeConfig{})
+	SchemeBuilder.Register(&AWSWorkerNodeConfig{}, &DockerNodeConfig{}, &NutanixNodeConfig{})
 }

@@ -247,7 +247,7 @@ spec:
                 type: object
               controlPlane:
                 description: |-
-                  AWSNodeConfigSpec defines the desired state of AWSNodeConfig.
+                  AWSControlPlaneConfigSpec defines the desired state of AWSNodeConfig.
                   Place any configuration that can be applied to individual Nodes here.
                   Otherwise, it should go into the ClusterConfigSpec.
                 properties:
@@ -267,27 +267,34 @@ spec:
                           If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
                         properties:
                           id:
-                            description: ID is an explicit AMI to use.
+                            description: AMI ID is the reference to the AMI from which
+                              to create the machine instance.
                             type: string
                           lookup:
                             description: Lookup is the lookup arguments for the AMI.
                             properties:
                               baseOS:
-                                description: BaseOS is the name of the base os for
-                                  image lookup
+                                description: The name of the base os for image lookup
                                 type: string
                               format:
-                                description: Format is the AMI naming format
+                                description: |-
+                                  AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
+                                  base OS and kubernetes version.
+                                example: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
                                 type: string
                               org:
-                                description: Org is the AWS Organization ID to use
-                                  for image lookup
+                                description: The AWS Organization ID to use for image
+                                  lookup.
                                 type: string
                             type: object
                         type: object
                       iamInstanceProfile:
+                        default: control-plane.cluster-api-provider-aws.sigs.k8s.io
+                        description: The IAM instance profile to use for the cluster
+                          Machines.
                         type: string
                       instanceType:
+                        default: m5.xlarge
                         type: string
                     type: object
                 type: object
