@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
-const APIGroup = "capiext.labs.d2iq.io"
+const APIGroup = "caren.nutanix.com"
 
 var (
 	// GroupVersion is group version used to register these objects.
