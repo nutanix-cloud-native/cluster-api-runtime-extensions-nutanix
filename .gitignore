@@ -32,6 +32,7 @@ capd-kubeconfig
 ct_previous_*/
 
 .envrc.local*
+.envrc.e2e*
 
 public/
 resources/
