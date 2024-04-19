@@ -6,7 +6,7 @@ Configure Machine Details of Control plane and Worker nodes
 
 ## Examples
 
-### Set Machine details of Control Plane and Worker nodes
+### (Required) Set Machine details for Control Plane and Worker nodes
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -29,9 +29,6 @@ spec:
                   name: os-image-name
                   type: name
                 memorySize: 4Gi
-                project:
-                  type: name
-                  name: project-name
                 subnets:
                 - name: subnet-name
                   type: name
@@ -50,9 +47,6 @@ spec:
                 name: os-image-name
                 type: name
               memorySize: 4Gi
-              project:
-                type: name
-                name: project-name
               subnets:
               - name: subnet-name
                 type: name
@@ -84,9 +78,6 @@ spec:
         name: os-image-name
         type: name
       memorySize: 4Gi
-      project:
-        type: name
-        name: project-name
       providerID: nutanix://vm-uuid
       subnet:
       - name: subnet-name
@@ -117,9 +108,6 @@ spec:
         name: os-image-name
         type: name
       memorySize: 4Gi
-      project:
-        type: name
-        name: project-name
       providerID: nutanix://vm-uuid
       subnet:
       - name: subnet-name
@@ -130,4 +118,122 @@ spec:
       systemDiskSize: 40Gi
       vcpuSockets: 2
       vcpusPerSocket: 1
+```
+
+### (Optional) Set Additional Categories for Control Plane and Worker nodes
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          controlPlane:
+            nutanix:
+              machineDetails:
+                additionalCategories:
+                - key: example-key
+                  value: example-value
+      - name: workerConfig
+        value:
+          nutanix:
+            machineDetails:
+              additionalCategories:
+              - key: example-key
+                value: example-value
+```
+
+Applying this configuration will result in the following value being set:
+
+- control-plane `NutanixMachineTemplate`:
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixMachineTemplate
+metadata:
+  name: nutanix-quick-start-cp-nmt
+spec:
+  template:
+    spec:
+      additionalCategories:
+      - key: example-key
+        value: example-value
+```
+
+- worker `NutanixMachineTemplate`:
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixMachineTemplate
+metadata:
+  name: nutanix-quick-start-md-nmt
+spec:
+  template:
+    spec:
+      additionalCategories:
+      - key: example-key
+        value: example-value
+```
+
+### (Optional) Set Project for Control Plane and Worker nodes
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          controlPlane:
+            nutanix:
+              machineDetails:
+                project:
+                  type: name
+                  name: project-name
+      - name: workerConfig
+        value:
+          nutanix:
+            machineDetails:
+              project:
+                type: name
+                name: project-name
+```
+
+Applying this configuration will result in the following value being set:
+
+- control-plane `NutanixMachineTemplate`:
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixMachineTemplate
+metadata:
+  name: nutanix-quick-start-cp-nmt
+spec:
+  template:
+    spec:
+      project:
+        type: name
+        name: project-name
+```
+
+- worker `NutanixMachineTemplate`:
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixMachineTemplate
+metadata:
+  name: nutanix-quick-start-md-nmt
+spec:
+  template:
+    spec:
+      project:
+        type: name
+        name: project-name
 ```
