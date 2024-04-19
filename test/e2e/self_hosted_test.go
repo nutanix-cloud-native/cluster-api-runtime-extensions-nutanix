@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/utils/ptr"
-	capiv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -55,7 +55,7 @@ var _ = Describe("Self-hosted", Serial, func() {
 							SkipCleanup:            skipCleanup,
 							Flavor:                 flavour,
 							InfrastructureProvider: ptr.To(lowercaseProvider),
-							PostClusterMoved: func(proxy capiframework.ClusterProxy, cluster *capiv1.Cluster) {
+							PostClusterMoved: func(proxy capiframework.ClusterProxy, cluster *clusterv1.Cluster) {
 								By(
 									"Waiting for all requested addons to be ready in workload cluster",
 								)
@@ -71,13 +71,12 @@ var _ = Describe("Self-hosted", Serial, func() {
 								clusterVars := variables.ClusterVariablesToVariablesMap(
 									workloadCluster.Spec.Topology.Variables,
 								)
-								addonsConfig, found, err := variables.Get[v1alpha1.Addons](
+								addonsConfig, err := variables.Get[v1alpha1.Addons](
 									clusterVars,
 									clusterconfig.MetaVariableName,
 									"addons",
 								)
 								Expect(err).ToNot(HaveOccurred())
-								Expect(found).To(BeTrue())
 								WaitForAddonsToBeReadyInWorkloadCluster(
 									ctx,
 									WaitForAddonsToBeReadyInWorkloadClusterInput{
