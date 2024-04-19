@@ -108,6 +108,14 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 				spec.Subnets[i] = capxv1.NutanixResourceIdentifier(subnet)
 			}
 
+			spec.AdditionalCategories = make(
+				[]capxv1.NutanixCategoryIdentifier,
+				len(nutanixMachineDetailsVar.AdditionalCategories),
+			)
+			for i, category := range nutanixMachineDetailsVar.AdditionalCategories {
+				spec.AdditionalCategories[i] = capxv1.NutanixCategoryIdentifier(category)
+			}
+
 			obj.Spec.Template.Spec = spec
 			return nil
 		},

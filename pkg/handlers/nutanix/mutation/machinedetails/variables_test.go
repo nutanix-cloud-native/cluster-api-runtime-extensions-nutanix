@@ -45,6 +45,16 @@ func TestVariableValidation(t *testing.T) {
 							MemorySize:     resource.MustParse("8Gi"),
 							SystemDiskSize: resource.MustParse("40Gi"),
 							Subnets:        []v1alpha1.NutanixResourceIdentifier{},
+							AdditionalCategories: []v1alpha1.NutanixCategoryIdentifier{
+								{
+									Key:   "fake-key",
+									Value: "fake-value1",
+								},
+								{
+									Key:   "fake-key",
+									Value: "fake-value2",
+								},
+							},
 						},
 					},
 				},

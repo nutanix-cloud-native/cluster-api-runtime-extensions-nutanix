@@ -50,6 +50,9 @@ spec:
               subnets:
               - name: subnet-name
                 type: name
+              additionalCategories:
+              - key: example-key
+                value: example-value
               systemDiskSize: 40Gi
               vcpuSockets: 2
               vcpusPerSocket: 1
@@ -79,6 +82,9 @@ spec:
       subnet:
       - name: subnet-name
         type: name
+      additionalCategories:
+      - key: example-key
+        value: example-value
       systemDiskSize: 40Gi
       vcpuSockets: 2
       vcpusPerSocket: 1
@@ -106,6 +112,9 @@ spec:
       subnet:
       - name: subnet-name
         type: name
+      additionalCategories:
+      - key: example-key
+        value: example-value
       systemDiskSize: 40Gi
       vcpuSockets: 2
       vcpusPerSocket: 1
