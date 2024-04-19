@@ -33,7 +33,7 @@ type NutanixMachineDetails struct {
 
 	// subnet identifies the network subnet to use for the machine.
 	// The identifier (uuid or name) can be obtained from the console or API.
-	Subnets NutanixResourceIdentifiers `json:"subnets"`
+	Subnets []NutanixResourceIdentifier `json:"subnets"`
 
 	// List of categories that need to be added to the machines. Categories must already
 	// exist in Prism Central. One category key can have more than one value.
@@ -64,5 +64,3 @@ type NutanixBootType capxv1.NutanixBootType
 type NutanixResourceIdentifier capxv1.NutanixResourceIdentifier
 
 type NutanixCategoryIdentifier capxv1.NutanixCategoryIdentifier
-
-type NutanixResourceIdentifiers []NutanixResourceIdentifier
