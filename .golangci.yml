@@ -3,10 +3,6 @@
 
 run:
   timeout: 10m
-  skip-dirs:
-    # Although this is actually in api/external, api is a go module
-    # and so need to specify the dir relative to the module root.
-    - external
   build-tags:
     - e2e
 
@@ -40,7 +36,6 @@ linters:
     - tenv
     - thelper
     - tparallel
-    - typecheck
     - unconvert
     - unparam
     - unused
@@ -93,13 +88,17 @@ linters-settings:
         alias: clusterv1
 
 issues:
+  exclude-dirs:
+    # Although this is actually in api/external, api is a go module
+    # and so need to specify the dir relative to the module root.
+    - external
   exclude-rules:
     # ignore errcheck for flags.Parse (it is expected that we flag.ExitOnError)
     # ignore response.WriteError as it always returns the err it was passed
     - source: "flags.Parse|response.WriteError"
       linters:
         - errcheck
-    - source: "^// \\+kubebuilder:"
+    - source: "// \\+kubebuilder:"
       linters:
         - lll
     # Idiomatic to use init functions to register APIs with scheme
