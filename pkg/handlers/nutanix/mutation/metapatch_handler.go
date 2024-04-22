@@ -15,10 +15,10 @@ import (
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPX clusters.
-func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+func MetaPatchHandler(mgr manager.Manager, cfg *controlplaneendpoint.Config) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
-			controlplaneendpoint.NewPatch(),
+			controlplaneendpoint.NewPatch(cfg),
 			prismcentralendpoint.NewPatch(),
 			machinedetails.NewControlPlanePatch(),
 		},

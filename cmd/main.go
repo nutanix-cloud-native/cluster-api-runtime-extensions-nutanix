@@ -27,16 +27,10 @@ import (
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
-	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
-	awsmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation"
-	awsworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/workerconfig"
-	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
-	dockermutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/mutation"
-	dockerworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
-	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
-	nutanixmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation"
-	nutanixworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/workerconfig"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -84,12 +78,27 @@ func main() {
 
 	genericLifecycleHandlers := lifecycle.New(globalOptions)
 
+	// awsMetaHandlers combines all AWS patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	awsMetaHandlers := aws.New(globalOptions)
+
+	// dockerMetaHandlers combines all Docker patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	dockerMetaHandlers := docker.New(globalOptions)
+
+	// nutanixMetaHandlers combines all Nutanix patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	nutanixMetaHandlers := nutanix.New(globalOptions)
+
 	// Initialize and parse command line flags.
 	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())
 	logsv1.AddFlags(logOptions, pflag.CommandLine)
 	globalOptions.AddFlags(pflag.CommandLine)
 	runtimeWebhookServerOpts.AddFlags(pflag.CommandLine)
 	genericLifecycleHandlers.AddFlags(pflag.CommandLine)
+	awsMetaHandlers.AddFlags(pflag.CommandLine)
+	dockerMetaHandlers.AddFlags(pflag.CommandLine)
+	nutanixMetaHandlers.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
@@ -113,39 +122,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	// This genericMetaPatchHandlers combines all other patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	// awsMetaHandlers combines all AWS patch and variable handlers under a single handler.
-	awsMetaHandlers := []handlers.Named{
-		awsclusterconfig.NewVariable(),
-		awsworkerconfig.NewVariable(),
-		awsmutation.MetaPatchHandler(mgr),
-		awsmutation.MetaWorkerPatchHandler(mgr),
-	}
-
-	// dockerMetaHandlers combines all Docker patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	dockerMetaHandlers := []handlers.Named{
-		dockerclusterconfig.NewVariable(),
-		dockerworkerconfig.NewVariable(),
-		dockermutation.MetaPatchHandler(mgr),
-		dockermutation.MetaWorkerPatchHandler(mgr),
-	}
-
-	// nutanixMetaHandlers combines all Nutanix patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	nutanixMetaHandlers := []handlers.Named{
-		nutanixclusterconfig.NewVariable(),
-		nutanixworkerconfig.NewVariable(),
-		nutanixmutation.MetaPatchHandler(mgr),
-		nutanixmutation.MetaWorkerPatchHandler(mgr),
-	}
-
 	var allHandlers []handlers.Named
 	allHandlers = append(allHandlers, genericLifecycleHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, awsMetaHandlers...)
-	allHandlers = append(allHandlers, dockerMetaHandlers...)
-	allHandlers = append(allHandlers, nutanixMetaHandlers...)
+	allHandlers = append(allHandlers, awsMetaHandlers.AllHandlers(mgr)...)
+	allHandlers = append(allHandlers, dockerMetaHandlers.AllHandlers(mgr)...)
+	allHandlers = append(allHandlers, nutanixMetaHandlers.AllHandlers(mgr)...)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
 

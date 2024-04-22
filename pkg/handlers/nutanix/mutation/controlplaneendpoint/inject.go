@@ -22,6 +22,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
 const (
@@ -29,13 +30,20 @@ const (
 	VariableName = "controlPlaneEndpoint"
 )
 
+type Config struct {
+	*options.GlobalOptions
+}
+
 type nutanixControlPlaneEndpoint struct {
+	config *Config
+
 	variableName      string
 	variableFieldPath []string
 }
 
-func NewPatch() *nutanixControlPlaneEndpoint {
+func NewPatch(cfg *Config) *nutanixControlPlaneEndpoint {
 	return newNutanixControlPlaneEndpoint(
+		cfg,
 		clusterconfig.MetaVariableName,
 		v1alpha1.NutanixVariableName,
 		VariableName,
@@ -43,10 +51,12 @@ func NewPatch() *nutanixControlPlaneEndpoint {
 }
 
 func newNutanixControlPlaneEndpoint(
+	cfg *Config,
 	variableName string,
 	variableFieldPath ...string,
 ) *nutanixControlPlaneEndpoint {
 	return &nutanixControlPlaneEndpoint{
+		config:            cfg,
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
