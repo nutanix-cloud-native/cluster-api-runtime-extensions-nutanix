@@ -10,30 +10,23 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 	nutanixmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/controlplaneendpoint"
 	nutanixworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
-type Handlers struct {
-	nutanixControlPlaneEndpointConfig *controlplaneendpoint.Config
-}
+type Handlers struct{}
 
 func New(
-	globalOptions *options.GlobalOptions,
+	_ *options.GlobalOptions,
 ) *Handlers {
-	return &Handlers{
-		nutanixControlPlaneEndpointConfig: &controlplaneendpoint.Config{
-			GlobalOptions: globalOptions,
-		},
-	}
+	return &Handlers{}
 }
 
 func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	return []handlers.Named{
 		nutanixclusterconfig.NewVariable(),
 		nutanixworkerconfig.NewVariable(),
-		nutanixmutation.MetaPatchHandler(mgr, h.nutanixControlPlaneEndpointConfig),
+		nutanixmutation.MetaPatchHandler(mgr),
 		nutanixmutation.MetaWorkerPatchHandler(mgr),
 	}
 }

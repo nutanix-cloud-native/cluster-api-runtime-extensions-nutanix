@@ -26,7 +26,7 @@ func TestControlPlaneEndpointPatch(t *testing.T) {
 
 var _ = Describe("Generate Nutanix ControlPlane endpoint patches", func() {
 	patchGenerator := func() mutation.GeneratePatches {
-		return mutation.NewMetaGeneratePatchesHandler("", helpers.TestEnv.Client, NewPatch(nil)).(mutation.GeneratePatches)
+		return mutation.NewMetaGeneratePatchesHandler("", helpers.TestEnv.Client, NewPatch()).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{
