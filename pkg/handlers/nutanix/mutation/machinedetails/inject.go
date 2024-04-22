@@ -8,6 +8,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -114,6 +115,10 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			)
 			for i, category := range nutanixMachineDetailsVar.AdditionalCategories {
 				spec.AdditionalCategories[i] = capxv1.NutanixCategoryIdentifier(category)
+			}
+
+			if nutanixMachineDetailsVar.Project != nil {
+				spec.Project = ptr.To(capxv1.NutanixResourceIdentifier(*nutanixMachineDetailsVar.Project))
 			}
 
 			obj.Spec.Template.Spec = spec

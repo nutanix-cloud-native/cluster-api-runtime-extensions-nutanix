@@ -51,6 +51,10 @@ var (
 				Value: "fake-value2",
 			},
 		},
+		Project: ptr.To(v1alpha1.NutanixResourceIdentifier{
+			Type: capxv1.NutanixIdentifierName,
+			Name: ptr.To("fake-project"),
+		}),
 	}
 
 	matchersForAllFieldsSet = []capitest.JSONPatchMatcher{
@@ -116,6 +120,14 @@ var (
 					gomega.HaveKeyWithValue("key", "fake-key2"),
 					gomega.HaveKeyWithValue("value", "fake-value2"),
 				),
+			),
+		},
+		{
+			Operation: "add",
+			Path:      "/spec/template/spec/project",
+			ValueMatcher: gomega.SatisfyAll(
+				gomega.HaveKeyWithValue("type", "name"),
+				gomega.HaveKeyWithValue("name", "fake-project"),
 			),
 		},
 	}

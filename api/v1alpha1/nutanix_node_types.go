@@ -62,6 +62,11 @@ type NutanixMachineDetails struct {
 	// systemDiskSize is size (in Quantity format) of the system disk of the VM
 	// The minimum systemDiskSize is 20Gi bytes
 	SystemDiskSize resource.Quantity `json:"systemDiskSize"`
+
+	// add the virtual machines to the project defined in Prism Central.
+	// The project must already be present in the Prism Central.
+	// +optional
+	Project *NutanixResourceIdentifier `json:"project,omitempty"`
 }
 
 func (NutanixMachineDetails) VariableSchema() clusterv1.VariableSchema {
@@ -112,6 +117,10 @@ func (NutanixMachineDetails) VariableSchema() clusterv1.VariableSchema {
 					Description: "systemDiskSize is size (in Quantity format) of the system disk of the VM eg. 20Gi",
 					Type:        "string",
 				},
+				"project": NutanixResourceIdentifier{}.VariableSchemaFromDescription(
+					//nolint:lll // Long description.
+					"add the virtual machines to the project defined in Prism Central. The project must already be present in the Prism Central.",
+				).OpenAPIV3Schema,
 			},
 			Required: []string{
 				"vcpusPerSocket",
