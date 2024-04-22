@@ -1,0 +1,355 @@
+openAPIV3Schema:
+  description: Cluster configuration
+  properties:
+    addons:
+      description: Cluster configuration
+      properties:
+        ccm:
+          properties:
+            credentials:
+              description: A reference to the Secret for credential informationfor
+                the target Prism Central instance
+              properties:
+                name:
+                  description: The name of the Secret
+                  type: string
+              required:
+              - name
+              type: object
+          type: object
+        clusterAutoscaler:
+          properties:
+            strategy:
+              description: Addon strategy used to deploy cluster-autoscaler to the
+                management cluster,targeting the workload cluster.
+              enum:
+              - ClusterResourceSet
+              - HelmAddon
+              type: string
+          required:
+          - strategy
+          type: object
+        cni:
+          properties:
+            provider:
+              description: CNI provider to deploy
+              enum:
+              - Calico
+              - Cilium
+              type: string
+            strategy:
+              description: Addon strategy used to deploy the CNI provider to the workload
+                cluster
+              enum:
+              - ClusterResourceSet
+              - HelmAddon
+              type: string
+          required:
+          - provider
+          - strategy
+          type: object
+        csi:
+          properties:
+            defaultStorage:
+              description: 'A tuple of provider name and storage class '
+              properties:
+                providerName:
+                  description: Name of the CSI Provider for the default storage class
+                  enum:
+                  - aws-ebs
+                  - nutanix
+                  type: string
+                storageClassConfigName:
+                  description: Name of storage class config in any of the provider
+                    objects
+                  type: string
+              required:
+              - providerName
+              - storageClassConfigName
+              type: object
+            providers:
+              items:
+                properties:
+                  credentials:
+                    description: The reference to any secret used by the CSI Provider.
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                  name:
+                    description: Name of the CSI Provider
+                    enum:
+                    - aws-ebs
+                    - nutanix
+                    type: string
+                  storageClassConfig:
+                    items:
+                      properties:
+                        allowExpansion:
+                          default: false
+                          description: If the storage class should allow volume expanding
+                          type: boolean
+                        name:
+                          description: Name of storage class config.
+                          type: string
+                        parameters:
+                          additionalProperties:
+                            type: string
+                          description: Parameters passed into the storage class object.
+                          type: object
+                        reclaimPolicy:
+                          default: Delete
+                          enum:
+                          - Recycle
+                          - Delete
+                          - Retain
+                          type: string
+                        volumeBindingMode:
+                          default: WaitForFirstConsumer
+                          enum:
+                          - Immediate
+                          - WaitForFirstConsumer
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  strategy:
+                    description: Addon strategy used to deploy the CSI provider to
+                      the workload cluster
+                    enum:
+                    - ClusterResourceSet
+                    - HelmAddon
+                    type: string
+                required:
+                - name
+                - strategy
+                type: object
+              type: array
+          type: object
+        nfd:
+          properties:
+            strategy:
+              description: Addon strategy used to deploy Node Feature Discovery (NFD)
+                to the workload cluster
+              enum:
+              - ClusterResourceSet
+              - HelmAddon
+              type: string
+          required:
+          - strategy
+          type: object
+      type: object
+    aws:
+      description: AWS cluster configuration
+      properties:
+        controlPlaneLoadBalancer:
+          description: AWS control-plane LoadBalancer configuration
+          properties:
+            scheme:
+              description: Scheme sets the scheme of the load balancer (defaults to
+                internet-facing)
+              enum:
+              - internet-facing
+              - internal
+              type: string
+          type: object
+        network:
+          description: AWS network configuration
+          properties:
+            subnets:
+              description: AWS Subnet configurations
+              items:
+                description: An AWS Subnet configuration
+                properties:
+                  id:
+                    description: Existing Subnet ID to use for the cluster
+                    type: string
+                type: object
+              type: array
+            vpc:
+              description: AWS VPC configuration
+              properties:
+                id:
+                  description: Existing VPC ID to use for the cluster
+                  type: string
+              type: object
+          type: object
+        region:
+          description: AWS region to create cluster in
+          type: string
+      type: object
+    controlPlane:
+      description: Node configuration
+      properties:
+        aws:
+          description: AWS Node configuration
+          properties:
+            additionalSecurityGroups:
+              items:
+                properties:
+                  id:
+                    description: Security group ID to add for the cluster Machines
+                    type: string
+                type: object
+              type: array
+            ami:
+              default: null
+              description: AMI or AMI Lookup arguments for machine image of a AWS
+                machine.If both AMI ID and AMI lookup arguments are provided then
+                AMI ID takes precedence
+              properties:
+                id:
+                  description: AMI ID is the reference to the AMI from which to create
+                    the machine instance.
+                  type: string
+                lookup:
+                  default: null
+                  properties:
+                    baseOS:
+                      description: The name of the base os for image lookup
+                      type: string
+                    format:
+                      description: 'AMI naming format. Supports substitutions for
+                        {{.BaseOS}} and {{.K8sVersion}} with thebase OS and kubernetes
+                        version. example: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*'
+                      type: string
+                    org:
+                      description: The AWS Organization ID to use for image lookup
+                      type: string
+                  type: object
+              type: object
+            iamInstanceProfile:
+              default: control-plane.cluster-api-provider-aws.sigs.k8s.io
+              description: The IAM instance profile to use for the cluster Machines
+              type: string
+            instanceType:
+              default: m5.xlarge
+              description: The AWS instance type to use for the cluster Machines
+              type: string
+          required:
+          - instanceType
+          type: object
+      type: object
+    etcd:
+      properties:
+        image:
+          properties:
+            repository:
+              description: Image repository to pull from.
+              pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+              type: string
+            tag:
+              description: Image tag to use.
+              pattern: ^[\w][\w.-]{0,127}$
+              type: string
+          type: object
+      type: object
+    extraAPIServerCertSANs:
+      description: Subject Alternative Names for the API Server signing cert. For
+        Docker localhost,127.0.0.1,0.0.0.0,host.docker.internal are injected automatically.
+        For Nutanix localhost,127.0.0.1,0.0.0.0 are injected automatically.
+      items:
+        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+        type: string
+      type: array
+      uniqueItems: true
+    globalImageRegistryMirror:
+      properties:
+        credentials:
+          properties:
+            secretRef:
+              description: A reference to the Secret containing the registry credentials
+                and optional CA certificate. The Secret should have keys 'username',
+                'password' and optional 'ca.crt'. This credentials Secret is not required
+                for some registries, e.g. ECR.
+              properties:
+                name:
+                  description: The name of the Secret containing the registry credentials.
+                    This Secret must exist in the same namespace as the Cluster.
+                  type: string
+              required:
+              - name
+              type: object
+          type: object
+        url:
+          description: Registry mirror URL.
+          format: uri
+          pattern: ^https?://
+          type: string
+      required:
+      - url
+      type: object
+    imageRegistries:
+      description: Configuration for image registries.
+      items:
+        properties:
+          credentials:
+            properties:
+              secretRef:
+                description: A reference to the Secret containing the registry credentials
+                  and optional CA certificate. The Secret should have keys 'username',
+                  'password' and optional 'ca.crt'. This credentials Secret is not
+                  required for some registries, e.g. ECR.
+                properties:
+                  name:
+                    description: The name of the Secret containing the registry credentials.
+                      This Secret must exist in the same namespace as the Cluster.
+                    type: string
+                required:
+                - name
+                type: object
+            type: object
+          url:
+            description: Registry URL.
+            format: uri
+            pattern: ^https?://
+            type: string
+        required:
+        - url
+        type: object
+      type: array
+    kubernetesImageRepository:
+      description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
+      pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+      type: string
+    proxy:
+      properties:
+        additionalNo:
+          description: 'Additional No Proxy list that will be added to the automatically
+            calculated values required for cluster internal network. Default value:
+            localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>'
+          items:
+            type: string
+          type: array
+        http:
+          description: HTTP proxy value.
+          type: string
+        https:
+          description: HTTPS proxy value.
+          type: string
+      type: object
+    users:
+      description: Users to add to the machine
+      items:
+        properties:
+          hashedPassword:
+            description: The hashed password for the user. Must be in the format of
+              some hash function supported by the OS.
+            type: string
+          name:
+            description: The username
+            type: string
+          sshAuthorizedKeys:
+            description: A list of SSH authorized keys for this user
+            items:
+              type: string
+            type: array
+          sudo:
+            description: The sudo rule that applies to this user
+            type: string
+        required:
+        - name
+        type: object
+      type: array
+  type: object

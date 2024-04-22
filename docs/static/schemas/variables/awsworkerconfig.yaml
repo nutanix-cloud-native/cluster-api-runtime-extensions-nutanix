@@ -1,0 +1,51 @@
+openAPIV3Schema:
+  description: Node configuration
+  properties:
+    aws:
+      description: AWS Node configuration
+      properties:
+        additionalSecurityGroups:
+          items:
+            properties:
+              id:
+                description: Security group ID to add for the cluster Machines
+                type: string
+            type: object
+          type: array
+        ami:
+          default: null
+          description: AMI or AMI Lookup arguments for machine image of a AWS machine.If
+            both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
+          properties:
+            id:
+              description: AMI ID is the reference to the AMI from which to create
+                the machine instance.
+              type: string
+            lookup:
+              default: null
+              properties:
+                baseOS:
+                  description: The name of the base os for image lookup
+                  type: string
+                format:
+                  description: 'AMI naming format. Supports substitutions for {{.BaseOS}}
+                    and {{.K8sVersion}} with thebase OS and kubernetes version. example:
+                    capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*'
+                  type: string
+                org:
+                  description: The AWS Organization ID to use for image lookup
+                  type: string
+              type: object
+          type: object
+        iamInstanceProfile:
+          default: nodes.cluster-api-provider-aws.sigs.k8s.io
+          description: The IAM instance profile to use for the cluster Machines
+          type: string
+        instanceType:
+          default: m5.2xlarge
+          description: The AWS instance type to use for the cluster Machines
+          type: string
+      required:
+      - instanceType
+      type: object
+  type: object

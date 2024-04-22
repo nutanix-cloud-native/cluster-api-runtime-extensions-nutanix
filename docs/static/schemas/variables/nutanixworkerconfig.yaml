@@ -1,0 +1,113 @@
+openAPIV3Schema:
+  description: Node configuration
+  properties:
+    nutanix:
+      description: Nutanix Node configuration
+      properties:
+        machineDetails:
+          description: Nutanix Machine configuration
+          properties:
+            additionalCategories:
+              description: List of categories that need to be added to the machines.
+                Categories must already exist in Prism Central. One category key can
+                have more than one value.
+              items:
+                description: Nutanix Category Identifier
+                properties:
+                  key:
+                    description: key is the Key of category in PC.
+                    type: string
+                  value:
+                    description: value is the category value linked to the category
+                      key in PC.
+                    type: string
+                type: object
+              type: array
+            bootType:
+              description: NutanixBootType is an enumeration of different boot types.
+              enum:
+              - legacy
+              - uefi
+              type: string
+            cluster:
+              description: Nutanix Resource Identifier
+              properties:
+                name:
+                  description: name is the resource name in the PC.
+                  type: string
+                type:
+                  description: NutanixIdentifierType is an enumeration of different
+                    resource identifier types
+                  enum:
+                  - uuid
+                  - name
+                  type: string
+                uuid:
+                  description: uuid is the UUID of the resource in the PC.
+                  type: string
+              type: object
+            image:
+              description: Nutanix Resource Identifier
+              properties:
+                name:
+                  description: name is the resource name in the PC.
+                  type: string
+                type:
+                  description: NutanixIdentifierType is an enumeration of different
+                    resource identifier types
+                  enum:
+                  - uuid
+                  - name
+                  type: string
+                uuid:
+                  description: uuid is the UUID of the resource in the PC.
+                  type: string
+              type: object
+            memorySize:
+              description: memorySize is the memory size (in Quantity format) of the
+                VM eg. 4Gi
+              type: string
+            subnets:
+              description: subnets is a list of network subnets to use for the machine
+              items:
+                description: Nutanix Resource Identifier
+                properties:
+                  name:
+                    description: name is the resource name in the PC.
+                    type: string
+                  type:
+                    description: NutanixIdentifierType is an enumeration of different
+                      resource identifier types
+                    enum:
+                    - uuid
+                    - name
+                    type: string
+                  uuid:
+                    description: uuid is the UUID of the resource in the PC.
+                    type: string
+                type: object
+              type: array
+            systemDiskSize:
+              description: systemDiskSize is size (in Quantity format) of the system
+                disk of the VM eg. 20Gi
+              type: string
+            vcpuSockets:
+              description: vcpuSockets is the number of vCPU sockets of the VM
+              type: integer
+            vcpusPerSocket:
+              description: vcpusPerSocket is the number of vCPUs per socket of the
+                VM
+              type: integer
+          required:
+          - vcpusPerSocket
+          - vcpuSockets
+          - memorySize
+          - image
+          - cluster
+          - subnets
+          - systemDiskSize
+          type: object
+      required:
+      - machineDetails
+      type: object
+  type: object

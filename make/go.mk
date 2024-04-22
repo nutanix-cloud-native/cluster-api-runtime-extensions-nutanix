@@ -195,6 +195,9 @@ go-generate: ; $(info $(M) running go generate)
 	controller-gen paths="./..." rbac:headerFile="hack/license-header.yaml.txt",roleName=cluster-api-runtime-extensions-nutanix-manager-role output:rbac:artifacts:config=charts/cluster-api-runtime-extensions-nutanix/templates
 	sed --in-place 's/cluster-api-runtime-extensions-nutanix-manager-role/{{ include "chart.name" . }}-manager-role/' charts/cluster-api-runtime-extensions-nutanix/templates/role.yaml
 	controller-gen paths="./api/v1alpha1/..." object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/dev/null
+	rm -rf docs/static/schemas/variables
+	mkdir -p docs/static/schemas/variables
+	go run ./hack/export-variable-schema -output-dir=./docs/static/schemas/variables
 	$(MAKE) go-fix
 
 .PHONY: go-mod-upgrade

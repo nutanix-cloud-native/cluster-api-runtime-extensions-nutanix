@@ -1,0 +1,12 @@
+openAPIV3Schema:
+  description: Node configuration
+  properties:
+    docker:
+      description: Docker Node configuration
+      properties:
+        customImage:
+          description: Custom OCI image for control plane and worker Nodes.
+          pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*(:[\w][\w.-]{0,127})?(@[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,})?$
+          type: string
+      type: object
+  type: object
