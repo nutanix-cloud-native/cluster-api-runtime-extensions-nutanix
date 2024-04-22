@@ -9,7 +9,7 @@ toolchain go1.22.2
 
 require (
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
-	github.com/onsi/gomega v1.32.0
+	github.com/onsi/gomega v1.33.0
 	k8s.io/api v0.29.3
 	k8s.io/apiextensions-apiserver v0.29.3
 	k8s.io/apimachinery v0.29.3
