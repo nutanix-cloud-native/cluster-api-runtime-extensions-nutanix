@@ -20,7 +20,7 @@ require (
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.0.0-00010101000000-000000000000
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo/v2 v2.17.1
-	github.com/onsi/gomega v1.32.0
+	github.com/onsi/gomega v1.33.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
