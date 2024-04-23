@@ -11,7 +11,7 @@ import (
 )
 
 // ServerSideApply will apply (i.e. create or update) objects via server-side apply. This will overwrite any changes
-// that have been manually applied.
+// that have been manually applied to fields managed by CAREN.
 func ServerSideApply(
 	ctx context.Context,
 	c ctrlclient.Client,
@@ -22,7 +22,6 @@ func ServerSideApply(
 			ctx,
 			objs[i],
 			ctrlclient.Apply,
-			ctrlclient.ForceOwnership,
 			ctrlclient.FieldOwner("d2iq-cluster-api-runtime-extensions-nutanix"),
 		)
 		if err != nil {
