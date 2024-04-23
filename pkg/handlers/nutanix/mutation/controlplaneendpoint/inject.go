@@ -5,7 +5,6 @@ package controlplaneendpoint
 
 import (
 	"context"
-	"fmt"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,6 +20,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/controlplaneendpoint/virtualip"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
@@ -30,12 +30,15 @@ const (
 )
 
 type nutanixControlPlaneEndpoint struct {
+	virtualIPProvider virtualip.Provider
+
 	variableName      string
 	variableFieldPath []string
 }
 
-func NewPatch() *nutanixControlPlaneEndpoint {
+func NewPatch(virtualIPProvider virtualip.Provider) *nutanixControlPlaneEndpoint {
 	return newNutanixControlPlaneEndpoint(
+		virtualIPProvider,
 		clusterconfig.MetaVariableName,
 		v1alpha1.NutanixVariableName,
 		VariableName,
@@ -43,10 +46,12 @@ func NewPatch() *nutanixControlPlaneEndpoint {
 }
 
 func newNutanixControlPlaneEndpoint(
+	virtualIPProvider virtualip.Provider,
 	variableName string,
 	variableFieldPath ...string,
 ) *nutanixControlPlaneEndpoint {
 	return &nutanixControlPlaneEndpoint{
+		virtualIPProvider: virtualIPProvider,
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -93,19 +98,18 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 		selectors.ControlPlane(),
 		log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-			commands := []string{
-				fmt.Sprintf("sed -i 's/control_plane_endpoint_ip/%s/g' /etc/kubernetes/manifests/kube-vip.yaml",
-					controlPlaneEndpointVar.Host),
-				fmt.Sprintf("sed -i 's/control_plane_endpoint_port/%d/g' /etc/kubernetes/manifests/kube-vip.yaml",
-					controlPlaneEndpointVar.Port),
+			virtualIPProviderFile, virtualIPProviderErr := h.virtualIPProvider.GetFile(ctx, controlPlaneEndpointVar)
+			if virtualIPProviderErr != nil {
+				return virtualIPProviderErr
 			}
+
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("adding PreKubeadmCommands to control plane kubeadm config spec")
-			obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
-				commands...,
+			).Info("adding kube-vip static Pod file to control plane kubeadm config spec")
+			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
+				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+				*virtualIPProviderFile,
 			)
 			return nil
 		},
