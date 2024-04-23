@@ -8,6 +8,7 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/controlplaneendpoint/virtualip"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/controlplaneendpoint"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/machinedetails"
@@ -15,10 +16,10 @@ import (
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPX clusters.
-func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+func MetaPatchHandler(mgr manager.Manager, virtualIPProvider virtualip.Provider) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
-			controlplaneendpoint.NewPatch(),
+			controlplaneendpoint.NewPatch(virtualIPProvider),
 			prismcentralendpoint.NewPatch(),
 			machinedetails.NewControlPlanePatch(),
 		},
