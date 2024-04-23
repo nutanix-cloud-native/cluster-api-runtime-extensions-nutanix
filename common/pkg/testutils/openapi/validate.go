@@ -38,7 +38,7 @@ func ValidateClusterVariable(
 	}
 
 	// Convert schema to Kubernetes APIExtensions Schema.
-	apiExtensionsSchema, allErrs := ConvertToAPIExtensionsJSONSchemaProps(
+	apiExtensionsSchema, allErrs := ConvertJSONSchemaPropsToAPIExtensions(
 		&definition.Schema.OpenAPIV3Schema, field.NewPath("schema"),
 	)
 	if len(allErrs) > 0 {

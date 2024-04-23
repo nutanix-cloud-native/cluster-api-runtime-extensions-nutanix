@@ -51,13 +51,11 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
 						clusterconfig.MetaVariableName,
-						v1alpha1.ClusterConfigSpec{
-							GenericClusterConfig: v1alpha1.GenericClusterConfig{
-								ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
-									"a.b.c.example.com",
-									"a.b.c.example.com",
-									"d.e.f.example.com",
-								},
+						v1alpha1.AWSClusterConfigSpec{
+							ExtraAPIServerCertSANs: []string{
+								"a.b.c.example.com",
+								"a.b.c.example.com",
+								"d.e.f.example.com",
 							},
 							AWS: &v1alpha1.AWSSpec{},
 						},
@@ -92,11 +90,9 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
 						clusterconfig.MetaVariableName,
-						v1alpha1.ClusterConfigSpec{
-							GenericClusterConfig: v1alpha1.GenericClusterConfig{
-								ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
-									"a.b.c.example.com",
-								},
+						v1alpha1.DockerClusterConfigSpec{
+							ExtraAPIServerCertSANs: []string{
+								"a.b.c.example.com",
 							},
 						},
 					),
@@ -136,11 +132,9 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
 						clusterconfig.MetaVariableName,
-						v1alpha1.ClusterConfigSpec{
-							GenericClusterConfig: v1alpha1.GenericClusterConfig{
-								ExtraAPIServerCertSANs: v1alpha1.ExtraAPIServerCertSANs{
-									"a.b.c.example.com",
-								},
+						v1alpha1.NutanixClusterConfigSpec{
+							ExtraAPIServerCertSANs: []string{
+								"a.b.c.example.com",
 							},
 						},
 					),

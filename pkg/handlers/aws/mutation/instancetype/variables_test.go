@@ -18,15 +18,15 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.NewAWSClusterConfigSpec().VariableSchema()),
+		ptr.To(v1alpha1.AWSClusterConfig{}.VariableSchema()),
 		true,
 		awsclusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "specified instance type",
-			Vals: v1alpha1.ClusterConfigSpec{
-				ControlPlane: &v1alpha1.NodeConfigSpec{
-					AWS: &v1alpha1.AWSNodeSpec{
-						InstanceType: ptr.To(v1alpha1.InstanceType("m5.small")),
+			Vals: v1alpha1.AWSClusterConfigSpec{
+				ControlPlane: &v1alpha1.AWSControlPlaneNodeConfigSpec{
+					AWS: &v1alpha1.AWSControlPlaneNodeSpec{
+						InstanceType: "m5.small",
 					},
 				},
 			},

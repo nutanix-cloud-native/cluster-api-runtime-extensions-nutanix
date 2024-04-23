@@ -56,7 +56,7 @@ func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	iamInstanceProfileVar, err := variables.Get[v1alpha1.IAMInstanceProfile](
+	iamInstanceProfileVar, err := variables.Get[string](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -93,7 +93,7 @@ func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting IAM instance profile in worker AWSMachineTemplate spec")
 
-			obj.Spec.Template.Spec.IAMInstanceProfile = string(iamInstanceProfileVar)
+			obj.Spec.Template.Spec.IAMInstanceProfile = iamInstanceProfileVar
 
 			return nil
 		},

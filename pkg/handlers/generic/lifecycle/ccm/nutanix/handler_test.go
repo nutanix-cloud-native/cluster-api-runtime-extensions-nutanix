@@ -13,6 +13,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	commonclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/clusterconfig"
 )
 
 const (
@@ -60,14 +61,15 @@ func Test_templateValues(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		clusterConfig *v1alpha1.ClusterConfigSpec
-		in            string
-		expected      string
+		clusterConfig *commonclusterconfig.ClusterConfig
+
+		in       string
+		expected string
 	}{
 		{
 			name: "With AdditionalTrustBundle set",
-			clusterConfig: &v1alpha1.ClusterConfigSpec{
-				GenericClusterConfig: v1alpha1.GenericClusterConfig{
+			clusterConfig: &commonclusterconfig.ClusterConfig{
+				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
 					Addons: &v1alpha1.Addons{
 						CCM: &v1alpha1.CCM{
 							Credentials: &corev1.LocalObjectReference{
@@ -91,8 +93,8 @@ func Test_templateValues(t *testing.T) {
 		},
 		{
 			name: "Without an AdditionalTrustBundle set",
-			clusterConfig: &v1alpha1.ClusterConfigSpec{
-				GenericClusterConfig: v1alpha1.GenericClusterConfig{
+			clusterConfig: &commonclusterconfig.ClusterConfig{
+				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
 					Addons: &v1alpha1.Addons{
 						CCM: &v1alpha1.CCM{
 							Credentials: &corev1.LocalObjectReference{

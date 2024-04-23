@@ -6,20 +6,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: (devel)
-  name: nodeconfigs.caren.nutanix.com
+  name: nutanixnodeconfigs.caren.nutanix.com
 spec:
   group: caren.nutanix.com
   names:
-    kind: NodeConfig
-    listKind: NodeConfigList
-    plural: nodeconfigs
-    singular: nodeconfig
+    kind: NutanixNodeConfig
+    listKind: NutanixNodeConfigList
+    plural: nutanixnodeconfigs
+    singular: nutanixnodeconfig
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: NodeConfig is the Schema for the workerconfigs API.
+        description: NutanixNodeConfig is the Schema for the nutanixnodeconfigs API.
         properties:
           apiVersion:
             description: |-
@@ -39,55 +39,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: |-
-              NodeConfigSpec defines the desired state of NodeConfig.
-              Place any configuration that can be applied to individual Nodes here.
-              Otherwise, it should go into the ClusterConfigSpec.
+            description: NutanixNodeSpec defines the desired state of NutanixNodeSpec.
             properties:
-              aws:
-                properties:
-                  additionalSecurityGroups:
-                    items:
-                      properties:
-                        id:
-                          description: ID is the id of the security group
-                          type: string
-                      type: object
-                    type: array
-                  ami:
-                    description: |-
-                      AMI or AMI Lookup arguments for machine image of a AWS machine.
-                      If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
-                    properties:
-                      id:
-                        description: ID is an explicit AMI to use.
-                        type: string
-                      lookup:
-                        description: Lookup is the lookup arguments for the AMI.
-                        properties:
-                          baseOS:
-                            description: BaseOS is the name of the base os for image
-                              lookup
-                            type: string
-                          format:
-                            description: Format is the AMI naming format
-                            type: string
-                          org:
-                            description: Org is the AWS Organization ID to use for
-                              image lookup
-                            type: string
-                        type: object
-                    type: object
-                  iamInstanceProfile:
-                    type: string
-                  instanceType:
-                    type: string
-                type: object
-              docker:
-                properties:
-                  customImage:
-                    type: string
-                type: object
               nutanix:
                 properties:
                   machineDetails:
@@ -110,6 +63,9 @@ spec:
                       bootType:
                         description: Defines the boot type of the virtual machine.
                           Only supports UEFI and Legacy
+                        enum:
+                        - legacy
+                        - uefi
                         type: string
                       cluster:
                         description: |-

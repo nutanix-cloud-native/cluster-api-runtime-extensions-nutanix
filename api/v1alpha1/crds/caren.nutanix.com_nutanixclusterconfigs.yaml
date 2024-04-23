@@ -1,0 +1,578 @@
+# Copyright 2023 D2iQ, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: nutanixclusterconfigs.caren.nutanix.com
+spec:
+  group: caren.nutanix.com
+  names:
+    kind: NutanixClusterConfig
+    listKind: NutanixClusterConfigList
+    plural: nutanixclusterconfigs
+    singular: nutanixclusterconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: NutanixClusterConfig is the Schema for the nutanixclusterconfigs
+          API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NutanixClusterConfigSpec defines the desired state of NutanixClusterConfig.
+            properties:
+              addons:
+                properties:
+                  ccm:
+                    description: CCM tells us to enable or disable the cloud provider
+                      interface.
+                    properties:
+                      credentials:
+                        description: A reference to the Secret for credential information
+                          for the target Prism Central instance
+                        properties:
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  clusterAutoscaler:
+                    description: ClusterAutoscaler tells us to enable or disable the
+                      cluster-autoscaler addon.
+                    properties:
+                      strategy:
+                        description: |-
+                          Addon strategy used to deploy cluster-autoscaler to the management cluster
+                          targeting the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    required:
+                    - strategy
+                    type: object
+                  cni:
+                    description: CNI required for providing CNI configuration.
+                    properties:
+                      provider:
+                        description: CNI provider to deploy.
+                        enum:
+                        - Calico
+                        - Cilium
+                        type: string
+                      strategy:
+                        description: Addon strategy used to deploy the CNI provider
+                          to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    required:
+                    - provider
+                    - strategy
+                    type: object
+                  csi:
+                    properties:
+                      defaultStorage:
+                        properties:
+                          providerName:
+                            description: Name of the CSI Provider for the default
+                              storage class.
+                            enum:
+                            - aws-ebs
+                            - nutanix
+                            type: string
+                          storageClassConfigName:
+                            description: Name of storage class config in any of the
+                              provider objects.
+                            type: string
+                        required:
+                        - providerName
+                        - storageClassConfigName
+                        type: object
+                      providers:
+                        items:
+                          properties:
+                            credentials:
+                              description: The reference to any secret used by the
+                                CSI Provider.
+                              properties:
+                                name:
+                                  description: |-
+                                    Name of the referent.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind, uid?
+                                  type: string
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            name:
+                              description: Name of the CSI Provider.
+                              enum:
+                              - aws-ebs
+                              - nutanix
+                              type: string
+                            storageClassConfig:
+                              items:
+                                properties:
+                                  allowExpansion:
+                                    default: false
+                                    description: If the storage class should allow
+                                      volume expanding
+                                    type: boolean
+                                  name:
+                                    description: Name of storage class config.
+                                    type: string
+                                  parameters:
+                                    additionalProperties:
+                                      type: string
+                                    description: Parameters passed into the storage
+                                      class object.
+                                    type: object
+                                  reclaimPolicy:
+                                    default: Delete
+                                    description: PersistentVolumeReclaimPolicy describes
+                                      a policy for end-of-life maintenance of persistent
+                                      volumes.
+                                    enum:
+                                    - Delete
+                                    - Retain
+                                    - Recycle
+                                    type: string
+                                  volumeBindingMode:
+                                    default: WaitForFirstConsumer
+                                    description: VolumeBindingMode indicates how PersistentVolumeClaims
+                                      should be bound.
+                                    enum:
+                                    - Immediate
+                                    - WaitForFirstConsumer
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              type: array
+                            strategy:
+                              description: Addon strategy used to deploy the CSI provider
+                                to the workload cluster.
+                              enum:
+                              - ClusterResourceSet
+                              - HelmAddon
+                              type: string
+                          required:
+                          - name
+                          - strategy
+                          type: object
+                        type: array
+                    type: object
+                  nfd:
+                    description: NFD tells us to enable or disable the node feature
+                      discovery addon.
+                    properties:
+                      strategy:
+                        description: Addon strategy used to deploy Node Feature Discovery
+                          (NFD) to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    required:
+                    - strategy
+                    type: object
+                type: object
+              controlPlane:
+                description: NutanixNodeSpec defines the desired state of NutanixNodeSpec.
+                properties:
+                  nutanix:
+                    properties:
+                      machineDetails:
+                        properties:
+                          additionalCategories:
+                            description: |-
+                              List of categories that need to be added to the machines. Categories must already
+                              exist in Prism Central. One category key can have more than one value.
+                            items:
+                              properties:
+                                key:
+                                  description: key is the Key of category in PC.
+                                  type: string
+                                value:
+                                  description: value is the category value linked
+                                    to the category key in PC
+                                  type: string
+                              type: object
+                            type: array
+                          bootType:
+                            description: Defines the boot type of the virtual machine.
+                              Only supports UEFI and Legacy
+                            enum:
+                            - legacy
+                            - uefi
+                            type: string
+                          cluster:
+                            description: |-
+                              cluster identifies the Prism Element in which the machine will be created.
+                              The identifier (uuid or name) can be obtained from the console or API.
+                            properties:
+                              name:
+                                description: name is the resource name in the PC
+                                type: string
+                              type:
+                                description: Type is the identifier type to use for
+                                  this resource.
+                                enum:
+                                - uuid
+                                - name
+                                type: string
+                              uuid:
+                                description: uuid is the UUID of the resource in the
+                                  PC.
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          image:
+                            description: |-
+                              image identifies the image uploaded to Prism Central (PC). The identifier
+                              (uuid or name) can be obtained from the console or API.
+                            properties:
+                              name:
+                                description: name is the resource name in the PC
+                                type: string
+                              type:
+                                description: Type is the identifier type to use for
+                                  this resource.
+                                enum:
+                                - uuid
+                                - name
+                                type: string
+                              uuid:
+                                description: uuid is the UUID of the resource in the
+                                  PC.
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          memorySize:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: memorySize is the memory size (in Quantity
+                              format) of the VM
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          project:
+                            description: |-
+                              add the virtual machines to the project defined in Prism Central.
+                              The project must already be present in the Prism Central.
+                            properties:
+                              name:
+                                description: name is the resource name in the PC
+                                type: string
+                              type:
+                                description: Type is the identifier type to use for
+                                  this resource.
+                                enum:
+                                - uuid
+                                - name
+                                type: string
+                              uuid:
+                                description: uuid is the UUID of the resource in the
+                                  PC.
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          subnets:
+                            description: |-
+                              subnet identifies the network subnet to use for the machine.
+                              The identifier (uuid or name) can be obtained from the console or API.
+                            items:
+                              description: NutanixResourceIdentifier holds the identity
+                                of a Nutanix PC resource (cluster, image, subnet,
+                                etc.)
+                              properties:
+                                name:
+                                  description: name is the resource name in the PC
+                                  type: string
+                                type:
+                                  description: Type is the identifier type to use
+                                    for this resource.
+                                  enum:
+                                  - uuid
+                                  - name
+                                  type: string
+                                uuid:
+                                  description: uuid is the UUID of the resource in
+                                    the PC.
+                                  type: string
+                              required:
+                              - type
+                              type: object
+                            type: array
+                          systemDiskSize:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: |-
+                              systemDiskSize is size (in Quantity format) of the system disk of the VM
+                              The minimum systemDiskSize is 20Gi bytes
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          vcpuSockets:
+                            description: vcpuSockets is the number of vCPU sockets
+                              of the VM
+                            format: int32
+                            type: integer
+                          vcpusPerSocket:
+                            description: vcpusPerSocket is the number of vCPUs per
+                              socket of the VM
+                            format: int32
+                            type: integer
+                        required:
+                        - cluster
+                        - image
+                        - memorySize
+                        - subnets
+                        - systemDiskSize
+                        - vcpuSockets
+                        - vcpusPerSocket
+                        type: object
+                    required:
+                    - machineDetails
+                    type: object
+                type: object
+              etcd:
+                properties:
+                  image:
+                    description: Image required for overriding etcd image details.
+                    properties:
+                      repository:
+                        description: Repository is used to override the image repository
+                          to pull from.
+                        pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                        type: string
+                      tag:
+                        description: Tag is used to override the default image tag.
+                        pattern: ^[\w][\w.-]{0,127}$
+                        type: string
+                    type: object
+                type: object
+              extraAPIServerCertSANs:
+                description: |-
+                  Subject Alternative Names for the API Server signing cert.
+                  For the Nutanix provider, the following default SANs will always be added:
+                  - localhost
+                  - 127.0.0.1
+                  - 0.0.0.0
+                items:
+                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  type: string
+                type: array
+                uniqueItems: true
+              globalImageRegistryMirror:
+                description: GlobalImageRegistryMirror sets default mirror configuration
+                  for all the image registries.
+                properties:
+                  credentials:
+                    description: Credentials and CA certificate for the image registry
+                      mirror
+                    properties:
+                      secretRef:
+                        description: |-
+                          A reference to the Secret containing the registry credentials and optional CA certificate
+                          using the keys `username`, `password` and `ca.crt`.
+                          This credentials Secret is not required for some registries, e.g. ECR.
+                        properties:
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  url:
+                    description: Registry mirror URL.
+                    format: uri
+                    pattern: ^https?://
+                    type: string
+                required:
+                - url
+                type: object
+              imageRegistries:
+                items:
+                  properties:
+                    credentials:
+                      description: Credentials and CA certificate for the image registry
+                      properties:
+                        secretRef:
+                          description: |-
+                            A reference to the Secret containing the registry credentials and optional CA certificate
+                            using the keys `username`, `password` and `ca.crt`.
+                            This credentials Secret is not required for some registries, e.g. ECR.
+                          properties:
+                            name:
+                              description: |-
+                                Name of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                      type: object
+                    url:
+                      description: Registry URL.
+                      format: uri
+                      pattern: ^https?://
+                      type: string
+                  required:
+                  - url
+                  type: object
+                type: array
+              kubernetesImageRepository:
+                description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
+                pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                type: string
+              nutanix:
+                description: NutanixSpec defines the desired state of NutanixCluster.
+                properties:
+                  controlPlaneEndpoint:
+                    description: |-
+                      ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
+                      host can be either DNS name or ip address
+                    properties:
+                      host:
+                        description: The hostname on which the API server is serving.
+                        minLength: 1
+                        type: string
+                      port:
+                        description: The port on which the API server is serving.
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                    required:
+                    - host
+                    - port
+                    type: object
+                  prismCentralEndpoint:
+                    description: Nutanix Prism Central endpoint configuration.
+                    properties:
+                      additionalTrustBundle:
+                        description: |-
+                          A base64 PEM encoded x509 cert for the RootCA that was used to create
+                          the certificate for a Prism Central that uses certificates that were issued by a non-publicly trusted RootCA.
+                          The trust bundle is added to the cert pool used to authenticate the TLS connection to the Prism Central.
+                        format: byte
+                        type: string
+                      credentials:
+                        description: A reference to the Secret for credential information
+                          for the target Prism Central instance.
+                        properties:
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      insecure:
+                        description: use insecure connection to Prism Central endpoint
+                        type: boolean
+                      url:
+                        description: The URL of Nutanix Prism Central, can be DNS
+                          name or an IP address.
+                        format: uri
+                        pattern: ^https://
+                        type: string
+                    required:
+                    - credentials
+                    - url
+                    type: object
+                required:
+                - controlPlaneEndpoint
+                - prismCentralEndpoint
+                type: object
+              proxy:
+                description: HTTPProxy required for providing proxy configuration.
+                properties:
+                  additionalNo:
+                    description: |-
+                      AdditionalNo Proxy list that will be added to the automatically calculated
+                      values that will apply no_proxy configuration for cluster internal network.
+                      Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
+                        ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
+                    items:
+                      type: string
+                    type: array
+                  http:
+                    description: HTTP proxy value.
+                    type: string
+                  https:
+                    description: HTTPS proxy value.
+                    type: string
+                required:
+                - additionalNo
+                type: object
+              users:
+                items:
+                  description: User defines the input for a generated user in cloud-init.
+                  properties:
+                    hashedPassword:
+                      description: |-
+                        HashedPassword is a hashed password for the user, formatted as described
+                        by the crypt(5) man page. See your distribution's documentation for
+                        instructions to create a hashed password.
+                        An empty string is not marshalled, because it is not a valid value.
+                      type: string
+                    name:
+                      description: Name specifies the user name.
+                      type: string
+                    sshAuthorizedKeys:
+                      description: |-
+                        SSHAuthorizedKeys is a list of public SSH keys to write to the
+                        machine. Use the corresponding private SSH keys to authenticate. See SSH
+                        documentation for instructions to create a key pair.
+                      items:
+                        type: string
+                      type: array
+                    sudo:
+                      description: |-
+                        Sudo is a sudo user specification, formatted as described in the sudo
+                        documentation.
+                        An empty string is not marshalled, because it is not a valid value.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true

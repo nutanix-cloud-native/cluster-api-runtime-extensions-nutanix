@@ -3,13 +3,6 @@
 
 package v1alpha1
 
-import (
-	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
-)
-
 const (
 	APIServerPort = 6443
 )
@@ -35,28 +28,13 @@ type ObjectMeta struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-type ControlPlaneEndpointSpec clusterv1.APIEndpoint
+type ControlPlaneEndpointSpec struct {
+	// The hostname on which the API server is serving.
+	// +kubebuilder:validation:MinLength=1
+	Host string `json:"host"`
 
-func (ControlPlaneEndpointSpec) VariableSchema() clusterv1.VariableSchema {
-	return clusterv1.VariableSchema{
-		OpenAPIV3Schema: clusterv1.JSONSchemaProps{
-			Description: "Kubernetes control-plane endpoint configuration",
-			Type:        "object",
-			Properties: map[string]clusterv1.JSONSchemaProps{
-				"host": {
-					Description: "host ip/fqdn for control plane API Server",
-					Type:        "string",
-					MinLength:   ptr.To[int64](1),
-				},
-				"port": {
-					Description: "port for control plane API Server",
-					Type:        "integer",
-					Default:     variables.MustMarshal(APIServerPort),
-					Minimum:     ptr.To[int64](1),
-					Maximum:     ptr.To[int64](65535),
-				},
-			},
-			Required: []string{"host", "port"},
-		},
-	}
+	// The port on which the API server is serving.
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	Port int32 `json:"port"`
 }

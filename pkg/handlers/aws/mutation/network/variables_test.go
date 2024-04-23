@@ -18,12 +18,12 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		clusterconfig.MetaVariableName,
-		ptr.To(v1alpha1.NewAWSClusterConfigSpec().VariableSchema()),
+		ptr.To(v1alpha1.AWSClusterConfig{}.VariableSchema()),
 		true,
 		awsclusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "specified VPC ID",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.AWSClusterConfigSpec{
 				AWS: &v1alpha1.AWSSpec{
 					Network: &v1alpha1.AWSNetwork{
 						VPC: &v1alpha1.VPC{
@@ -35,7 +35,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "specified subnet IDs",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.AWSClusterConfigSpec{
 				AWS: &v1alpha1.AWSSpec{
 					Network: &v1alpha1.AWSNetwork{
 						Subnets: v1alpha1.Subnets{
@@ -49,7 +49,7 @@ func TestVariableValidation(t *testing.T) {
 		},
 		capitest.VariableTestDef{
 			Name: "specified both VPC ID and subnet IDs",
-			Vals: v1alpha1.ClusterConfigSpec{
+			Vals: v1alpha1.AWSClusterConfigSpec{
 				AWS: &v1alpha1.AWSSpec{
 					Network: &v1alpha1.AWSNetwork{
 						VPC: &v1alpha1.VPC{
