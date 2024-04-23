@@ -2,7 +2,6 @@
   "packages": [
     "actionlint@latest",
     "chart-testing@latest",
-    "clusterctl@latest",
     "coreutils@latest",
     "envsubst@latest",
     "findutils@latest",
@@ -31,6 +30,7 @@
     "yamale@latest",
     "yamllint@latest",
     "path:./hack/flakes#clusterawsadm",
+    "path:./hack/flakes#clusterctl",
     "path:./hack/flakes#controller-gen",
     "path:./hack/flakes#go-mod-upgrade",
     "path:./hack/flakes#golangci-lint",
