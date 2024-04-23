@@ -10,7 +10,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestAMIPatch(t *testing.T) {
+// TestUtils is the entrypoint for integration (envtest) tests.
+func TestUtils(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Utils")
 }
