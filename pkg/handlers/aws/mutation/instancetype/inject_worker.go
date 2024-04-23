@@ -56,17 +56,17 @@ func (h *awsInstanceTypeWorkerPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	instanceTypeVar, found, err := variables.Get[v1alpha1.InstanceType](
+	instanceTypeVar, err := variables.Get[v1alpha1.InstanceType](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("AWS instance type variable for worker not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("AWS instance type variable for worker not defined")
-		return nil
 	}
 
 	log = log.WithValues(

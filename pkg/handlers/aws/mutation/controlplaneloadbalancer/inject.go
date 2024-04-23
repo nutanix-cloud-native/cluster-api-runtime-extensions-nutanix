@@ -61,17 +61,17 @@ func (h *awsControlPlaneLoadBalancer) Mutate(
 		"holderRef", holderRef,
 	)
 
-	controlPlaneLoadBalancerVar, found, err := variables.Get[v1alpha1.AWSLoadBalancerSpec](
+	controlPlaneLoadBalancerVar, err := variables.Get[v1alpha1.AWSLoadBalancerSpec](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("AWS ControlPlaneLoadBalancer variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("AWS ControlPlaneLoadBalancer variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

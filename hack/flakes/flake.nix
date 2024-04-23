@@ -109,6 +109,26 @@
             vendorHash = "sha256-Fu883lUmlG5PrGdJ9TpvGwvewxP+Riq/gvPxZeq1cy4=";
             ldflags = [ "-s" "-w" ];
           };
+
+          clusterctl = buildGo122Module rec {
+            pname = "clusterctl";
+            version = "1.7.0";
+
+            src = fetchFromGitHub {
+              owner = "kubernetes-sigs";
+              repo = "cluster-api";
+              rev = "v${version}";
+              hash = "sha256-pG0jr+LCKMwJGDndEZw6vho3zylsoGBVdXqruSS7SDQ=";
+            };
+            doCheck = false;
+            subPackages = [ "cmd/clusterctl" ];
+            vendorHash = "sha256-ALRnccGjPGuAITtuz79Cao95NhvSczAzspSMXytlw+A=";
+            ldflags = let t = "sigs.k8s.io/cluster-api/version"; in [
+              "-X ${t}.gitMajor=${lib.versions.major version}"
+              "-X ${t}.gitMinor=${lib.versions.minor version}"
+              "-X ${t}.gitVersion=v${version}"
+            ];
+          };
         };
 
         formatter = alejandra;

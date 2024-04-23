@@ -64,10 +64,7 @@ spec:
   template:
     spec:
       kubeadmConfigSpec:
-        clusterConfiguration:
-          controllerManager:
-            extraArgs:
-              enable-hostpath-provisioner: "true"
+        clusterConfiguration: {}
         initConfiguration:
           nodeRegistration: {}
         joinConfiguration:

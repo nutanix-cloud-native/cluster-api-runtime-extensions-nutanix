@@ -67,17 +67,17 @@ func (h *globalMirrorPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	globalMirror, found, err := variables.Get[v1alpha1.GlobalImageRegistryMirror](
+	globalMirror, err := variables.Get[v1alpha1.GlobalImageRegistryMirror](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("Global registry mirror variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("Global registry mirror variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

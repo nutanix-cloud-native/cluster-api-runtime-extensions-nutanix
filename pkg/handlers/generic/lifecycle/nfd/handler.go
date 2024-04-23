@@ -89,8 +89,12 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	cniVar, found, err := variables.Get[v1alpha1.NFD](varMap, n.variableName, n.variablePath...)
+	cniVar, err := variables.Get[v1alpha1.NFD](varMap, n.variableName, n.variablePath...)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.Info("Skipping NFD handler, cluster does not specify request NFDaddon deployment")
+			return
+		}
 		log.Error(
 			err,
 			"failed to read NFD variable from cluster definition",
@@ -101,10 +105,6 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 				err,
 			),
 		)
-		return
-	}
-	if !found {
-		log.Info("Skipping NFD handler, cluster does not specify request NFDaddon deployment")
 		return
 	}
 

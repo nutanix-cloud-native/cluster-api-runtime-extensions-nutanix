@@ -64,17 +64,17 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 		"holderRef", holderRef,
 	)
 
-	controlPlaneEndpointVar, found, err := variables.Get[v1alpha1.ControlPlaneEndpointSpec](
+	controlPlaneEndpointVar, err := variables.Get[v1alpha1.ControlPlaneEndpointSpec](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("Nutanix ControlPlaneEndpoint variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("Nutanix ControlPlaneEndpoint variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

@@ -41,26 +41,6 @@
         }
       }
     },
-    "clusterctl@latest": {
-      "last_modified": "2024-03-15T20:27:35Z",
-      "resolved": "github:NixOS/nixpkgs/9af9c1c87ed3e3ed271934cb896e0cdd33dae212#clusterctl",
-      "source": "devbox-search",
-      "version": "1.6.3",
-      "systems": {
-        "aarch64-darwin": {
-          "store_path": "/nix/store/6hsi8bj8ddbrv29jff467q1rqcfgs964-clusterctl-1.6.3"
-        },
-        "aarch64-linux": {
-          "store_path": "/nix/store/jysji089cqrygcwl2ryvbb0sa3cjj8vv-clusterctl-1.6.3"
-        },
-        "x86_64-darwin": {
-          "store_path": "/nix/store/gbch3dp061am97j79b56pp07121j781k-clusterctl-1.6.3"
-        },
-        "x86_64-linux": {
-          "store_path": "/nix/store/1xy66gcyxaqjhb5h15slyxzw64d920c6-clusterctl-1.6.3"
-        }
-      }
-    },
     "coreutils@latest": {
       "last_modified": "2024-03-11T21:09:54Z",
       "resolved": "github:NixOS/nixpkgs/bf8462aeba50cc753971480f613fbae0747cffc0#coreutils",

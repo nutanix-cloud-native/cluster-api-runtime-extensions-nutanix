@@ -54,18 +54,18 @@ func (h *awsSecurityGroupSpecPatchHandler) Mutate(
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
 	)
-	additionalSecGroupVar, found, err := variables.Get[v1alpha1.AdditionalSecurityGroup](
+	additionalSecGroupVar, err := variables.Get[v1alpha1.AdditionalSecurityGroup](
 		vars,
 		h.metaVariableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).
+				Info("No additional security groups provided. Skipping.")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).
-			Info("No additional security groups provided. Skipping.")
-		return nil
 	}
 
 	log = log.WithValues(

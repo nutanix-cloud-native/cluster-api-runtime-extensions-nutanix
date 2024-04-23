@@ -89,11 +89,17 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	cniVar, found, err := variables.Get[v1alpha1.ClusterAutoscaler](
+	cniVar, err := variables.Get[v1alpha1.ClusterAutoscaler](
 		varMap,
 		n.variableName,
 		n.variablePath...)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.Info(
+				"Skipping cluster-autoscaler handler, cluster does not specify request cluster-autoscaler addon deployment",
+			)
+			return
+		}
 		log.Error(
 			err,
 			"failed to read cluster-autoscaler variable from cluster definition",
@@ -103,12 +109,6 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 			fmt.Sprintf("failed to read cluster-autoscaler variable from cluster definition: %v",
 				err,
 			),
-		)
-		return
-	}
-	if !found {
-		log.Info(
-			"Skipping cluster-autoscaler handler, cluster does not specify request cluster-autoscaler addon deployment",
 		)
 		return
 	}

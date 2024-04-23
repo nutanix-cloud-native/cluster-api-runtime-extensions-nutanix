@@ -66,17 +66,17 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 		"holderRef", holderRef,
 	)
 
-	prismCentralEndpointVar, found, err := variables.Get[v1alpha1.NutanixPrismCentralEndpointSpec](
+	prismCentralEndpointVar, err := variables.Get[v1alpha1.NutanixPrismCentralEndpointSpec](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("Nutanix PrismCentralEndpoint variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("Nutanix PrismCentralEndpoint variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

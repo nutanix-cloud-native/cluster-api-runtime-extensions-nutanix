@@ -61,17 +61,17 @@ func (h *awsRegionPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	regionVar, found, err := variables.Get[v1alpha1.Region](
+	regionVar, err := variables.Get[v1alpha1.Region](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("AWS region variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("AWS region variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

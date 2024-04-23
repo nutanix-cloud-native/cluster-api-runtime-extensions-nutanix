@@ -74,11 +74,22 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 	)
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-	csiProviders, found, err := variables.Get[v1alpha1.CSI](
+	csiProviders, err := variables.Get[v1alpha1.CSI](
 		varMap,
 		c.variableName,
 		c.variablePath...)
 	if err != nil {
+		if variables.IsNotFoundError(err) ||
+			csiProviders.Providers == nil ||
+			len(csiProviders.Providers) == 0 {
+			log.V(4).Info(
+				fmt.Sprintf(
+					"Skipping CSI handler, no providers given in %v",
+					csiProviders,
+				),
+			)
+			return
+		}
 		log.Error(
 			err,
 			"failed to read CSI provider from cluster definition",
@@ -87,15 +98,6 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		resp.SetMessage(
 			fmt.Sprintf("failed to read CSI provider from cluster definition: %v",
 				err,
-			),
-		)
-		return
-	}
-	if !found || csiProviders.Providers == nil || len(csiProviders.Providers) == 0 {
-		log.V(4).Info(
-			fmt.Sprintf(
-				"Skipping CSI handler, no providers given in %v",
-				csiProviders,
 			),
 		)
 		return

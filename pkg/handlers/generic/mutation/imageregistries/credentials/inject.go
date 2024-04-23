@@ -75,28 +75,27 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	imageRegistries, imageRegistriesFound, err := variables.Get[v1alpha1.ImageRegistries](
+	imageRegistries, imageRegistriesErr := variables.Get[v1alpha1.ImageRegistries](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
-	if err != nil {
-		return err
-	}
 
 	// add credentials for global image registry mirror
-	globalMirror, globalMirrorFound, err := variables.Get[v1alpha1.GlobalImageRegistryMirror](
+	globalMirror, globalMirrorErr := variables.Get[v1alpha1.GlobalImageRegistryMirror](
 		vars,
 		h.variableName,
 		mirrors.GlobalMirrorVariableName,
 	)
-	if err != nil {
-		return err
-	}
 
-	if !imageRegistriesFound && !globalMirrorFound {
+	switch {
+	case variables.IsNotFoundError(imageRegistriesErr) && variables.IsNotFoundError(globalMirrorErr):
 		log.V(5).Info("Image Registry Credentials variable not defined")
 		return nil
+	case imageRegistriesErr != nil && !variables.IsNotFoundError(imageRegistriesErr):
+		return imageRegistriesErr
+	case globalMirrorErr != nil && !variables.IsNotFoundError(globalMirrorErr):
+		return globalMirrorErr
 	}
 
 	registriesWithOptionalCredentials := make([]providerConfig, 0, len(imageRegistries))
@@ -117,7 +116,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		)
 	}
 
-	if globalMirrorFound {
+	if globalMirrorErr == nil {
 		mirrorCredentials, generateErr := mirrorConfigFromGlobalImageRegistryMirror(
 			ctx,
 			h.client,
@@ -125,7 +124,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			obj,
 		)
 		if generateErr != nil {
-			return err
+			return generateErr
 		}
 		registriesWithOptionalCredentials = append(
 			registriesWithOptionalCredentials,

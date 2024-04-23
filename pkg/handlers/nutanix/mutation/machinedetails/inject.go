@@ -56,17 +56,17 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	nutanixMachineDetailsVar, found, err := variables.Get[v1alpha1.NutanixMachineDetails](
+	nutanixMachineDetailsVar, err := variables.Get[v1alpha1.NutanixMachineDetails](
 		vars,
 		h.metaVariableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("Nutanix machine details variable for workers not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("Nutanix machine details variable for workers not defined")
-		return nil
 	}
 
 	log = log.WithValues(
@@ -118,7 +118,9 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			}
 
 			if nutanixMachineDetailsVar.Project != nil {
-				spec.Project = ptr.To(capxv1.NutanixResourceIdentifier(*nutanixMachineDetailsVar.Project))
+				spec.Project = ptr.To(
+					capxv1.NutanixResourceIdentifier(*nutanixMachineDetailsVar.Project),
+				)
 			}
 
 			obj.Spec.Template.Spec = spec

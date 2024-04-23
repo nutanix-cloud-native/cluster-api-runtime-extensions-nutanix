@@ -107,7 +107,9 @@ func (NutanixMachineDetails) VariableSchema() clusterv1.VariableSchema {
 					Type: "array",
 					//nolint:lll // Description is long.
 					Description: "List of categories that need to be added to the machines. Categories must already exist in Prism Central. One category key can have more than one value.",
-					Items:       ptr.To(NutanixCategoryIdentifier{}.VariableSchema().OpenAPIV3Schema),
+					Items: ptr.To(
+						NutanixCategoryIdentifier{}.VariableSchema().OpenAPIV3Schema,
+					),
 				},
 				"bootType": NutanixBootType(
 					capxv1.NutanixBootTypeLegacy,
