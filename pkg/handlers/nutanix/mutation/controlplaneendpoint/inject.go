@@ -36,9 +36,8 @@ type nutanixControlPlaneEndpoint struct {
 	variableFieldPath []string
 }
 
-func NewPatch(virtualIPProvider virtualip.Provider) *nutanixControlPlaneEndpoint {
+func NewPatch() *nutanixControlPlaneEndpoint {
 	return newNutanixControlPlaneEndpoint(
-		virtualIPProvider,
 		clusterconfig.MetaVariableName,
 		v1alpha1.NutanixVariableName,
 		VariableName,
@@ -46,15 +45,20 @@ func NewPatch(virtualIPProvider virtualip.Provider) *nutanixControlPlaneEndpoint
 }
 
 func newNutanixControlPlaneEndpoint(
-	virtualIPProvider virtualip.Provider,
 	variableName string,
 	variableFieldPath ...string,
 ) *nutanixControlPlaneEndpoint {
 	return &nutanixControlPlaneEndpoint{
-		virtualIPProvider: virtualIPProvider,
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
+}
+
+func (h *nutanixControlPlaneEndpoint) WithVirtualIPProvider(
+	virtualIPProvider virtualip.Provider,
+) *nutanixControlPlaneEndpoint {
+	h.virtualIPProvider = virtualIPProvider
+	return h
 }
 
 func (h *nutanixControlPlaneEndpoint) Mutate(
@@ -98,6 +102,10 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 		selectors.ControlPlane(),
 		log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+			if h.virtualIPProvider == nil {
+				return nil
+			}
+
 			virtualIPProviderFile, virtualIPProviderErr := h.virtualIPProvider.GetFile(ctx, controlPlaneEndpointVar)
 			if virtualIPProviderErr != nil {
 				return virtualIPProviderErr

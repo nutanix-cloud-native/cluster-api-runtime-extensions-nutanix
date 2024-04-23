@@ -144,7 +144,11 @@ var _ = Describe("Generate Nutanix ControlPlane endpoint patches", func() {
 
 func testPatchGenerator(virtualIPProvider virtualip.Provider) func() mutation.GeneratePatches {
 	return func() mutation.GeneratePatches {
-		return mutation.NewMetaGeneratePatchesHandler("", helpers.TestEnv.Client, NewPatch(virtualIPProvider)).(mutation.GeneratePatches)
+		return mutation.NewMetaGeneratePatchesHandler(
+			"",
+			helpers.TestEnv.Client,
+			NewPatch().WithVirtualIPProvider(virtualIPProvider),
+		).(mutation.GeneratePatches)
 	}
 }
 
