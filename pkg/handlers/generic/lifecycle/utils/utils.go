@@ -105,11 +105,6 @@ func EnsureNamespace(ctx context.Context, c ctrlclient.Client, name string) erro
 		},
 	}
 
-	// check if namespace exists and return early if it does
-	if err := c.Get(ctx, ctrlclient.ObjectKeyFromObject(ns), ns); err == nil {
-		return nil
-	}
-
 	err := client.ServerSideApply(ctx, c, ns)
 	if err != nil {
 		return fmt.Errorf("failed to server side apply %w", err)
