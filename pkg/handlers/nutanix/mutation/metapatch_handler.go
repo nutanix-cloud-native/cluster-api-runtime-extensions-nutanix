@@ -19,7 +19,7 @@ import (
 func MetaPatchHandler(mgr manager.Manager, virtualIPProvider virtualip.Provider) handlers.Named {
 	patchHandlers := append(
 		[]mutation.MetaMutator{
-			controlplaneendpoint.NewPatch(virtualIPProvider),
+			controlplaneendpoint.NewPatch().WithVirtualIPProvider(virtualIPProvider),
 			prismcentralendpoint.NewPatch(),
 			machinedetails.NewControlPlanePatch(),
 		},
