@@ -108,6 +108,29 @@ func EnsureNamespaceWithName(ctx context.Context, c ctrlclient.Client, name stri
 	return EnsureNamespace(ctx, c, ns)
 }
 
+// EnsureNamespaceWithMetadata will create the namespace with the specified name,
+// labels, and/or annotations, if it does not exist.
+func EnsureNamespaceWithMetadata(ctx context.Context,
+	c ctrlclient.Client,
+	name string,
+	labels,
+	annotations map[string]string,
+) error {
+	ns := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Annotations: annotations,
+			Labels:      labels,
+		},
+	}
+
+	return EnsureNamespace(ctx, c, ns)
+}
+
 // EnsureNamespace will create the namespace if it does not exist.
 func EnsureNamespace(ctx context.Context, c ctrlclient.Client, ns *corev1.Namespace) error {
 	if ns.TypeMeta.APIVersion == "" {
