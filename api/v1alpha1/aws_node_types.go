@@ -3,14 +3,6 @@
 
 package v1alpha1
 
-const (
-	AWSControlPlaneInstanceType = "m5.xlarge"
-	AWSWorkerInstanceType       = "m5.2xlarge"
-
-	AWSControlPlaneInstanceProfile = "control-plane.cluster-api-provider-aws.sigs.k8s.io"
-	AWSWorkerInstanceProfile       = "nodes.cluster-api-provider-aws.sigs.k8s.io"
-)
-
 type AWSControlPlaneNodeSpec struct {
 	// The IAM instance profile to use for the cluster Machines.
 	// +kubebuilder:default=control-plane.cluster-api-provider-aws.sigs.k8s.io
