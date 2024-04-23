@@ -59,17 +59,17 @@ func (h *usersPatchHandler) Mutate(
 ) error {
 	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
 
-	usersVariable, found, err := variables.Get[v1alpha1.Users](
+	usersVariable, err := variables.Get[v1alpha1.Users](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("users variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("users variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

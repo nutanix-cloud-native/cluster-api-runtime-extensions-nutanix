@@ -61,17 +61,17 @@ func (h *awsNetworkPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	networkVar, found, err := variables.Get[v1alpha1.AWSNetwork](
+	networkVar, err := variables.Get[v1alpha1.AWSNetwork](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("AWS Network variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("AWS Network variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

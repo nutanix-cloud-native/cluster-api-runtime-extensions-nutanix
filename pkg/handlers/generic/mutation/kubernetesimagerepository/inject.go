@@ -58,17 +58,17 @@ func (h *imageRepositoryPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	imageRepositoryVar, found, err := variables.Get[v1alpha1.KubernetesImageRepository](
+	imageRepositoryVar, err := variables.Get[v1alpha1.KubernetesImageRepository](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("kubernetesImageRepository variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("kubernetesImageRepository variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

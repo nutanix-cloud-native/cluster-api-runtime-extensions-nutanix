@@ -74,17 +74,17 @@ func (h *httpProxyPatchHandler) Mutate(
 		return err
 	}
 	noProxy := generateNoProxy(cluster)
-	httpProxyVariable, found, err := variables.Get[v1alpha1.HTTPProxy](
+	httpProxyVariable, err := variables.Get[v1alpha1.HTTPProxy](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("http proxy variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("http proxy variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

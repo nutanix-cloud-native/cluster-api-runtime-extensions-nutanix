@@ -21,9 +21,8 @@ func TestGet(t *testing.T) {
 	vars := map[string]apiextensionsv1.JSON{
 		"sampleVar": {Raw: sampleValue},
 	}
-	parsed, found, err := Get[sampleStruct](vars, "sampleVar")
+	parsed, err := Get[sampleStruct](vars, "sampleVar")
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	g.Expect(found).To(gomega.BeTrue())
 	g.Expect(parsed).To(gomega.Equal(sampleStruct{
 		Foo: "bar",
 	}))
@@ -33,9 +32,9 @@ func TestGetVariable_NotFound(t *testing.T) {
 	g := gomega.NewWithT(t)
 
 	vars := map[string]apiextensionsv1.JSON{}
-	parsed, found, err := Get[string](vars, "not_found")
-	g.Expect(err).NotTo(gomega.HaveOccurred())
-	g.Expect(found).To(gomega.BeFalse())
+	parsed, err := Get[string](vars, "not_found")
+	g.Expect(err).To(gomega.HaveOccurred())
+	g.Expect(IsNotFoundError(err)).To(gomega.BeTrue())
 	g.Expect(parsed).To(gomega.BeEmpty())
 }
 
@@ -45,9 +44,9 @@ func TestGetVariable_ParseError(t *testing.T) {
 	vars := map[string]apiextensionsv1.JSON{
 		"intvar": {Raw: []byte("10")},
 	}
-	parsed, found, err := Get[string](vars, "intvar")
+	parsed, err := Get[string](vars, "intvar")
 	g.Expect(err).To(gomega.HaveOccurred())
-	g.Expect(found).To(gomega.BeFalse())
+	g.Expect(IsNotFoundError(err)).To(gomega.BeFalse())
 	g.Expect(parsed).To(gomega.BeEmpty())
 }
 
@@ -61,9 +60,8 @@ func TestGet_ValidNestedFieldAsStruct(t *testing.T) {
 	vars := map[string]apiextensionsv1.JSON{
 		"sampleVar": {Raw: sampleValue},
 	}
-	parsed, found, err := Get[nestedStruct](vars, "sampleVar", "foo")
+	parsed, err := Get[nestedStruct](vars, "sampleVar", "foo")
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	g.Expect(found).To(gomega.BeTrue())
 	g.Expect(parsed).To(gomega.Equal(nestedStruct{
 		Bar: "baz",
 	}))
@@ -76,9 +74,8 @@ func TestGet_ValidNestedFieldAsPrimitive(t *testing.T) {
 	vars := map[string]apiextensionsv1.JSON{
 		"sampleVar": {Raw: sampleValue},
 	}
-	parsed, found, err := Get[string](vars, "sampleVar", "foo", "bar")
+	parsed, err := Get[string](vars, "sampleVar", "foo", "bar")
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	g.Expect(found).To(gomega.BeTrue())
 	g.Expect(parsed).To(gomega.Equal("baz"))
 }
 
@@ -89,8 +86,10 @@ func TestGet_InvalidNestedFieldType(t *testing.T) {
 	vars := map[string]apiextensionsv1.JSON{
 		"sampleVar": {Raw: sampleValue},
 	}
-	_, _, err := Get[int](vars, "sampleVar", "foo", "bar")
+	parsed, err := Get[int](vars, "sampleVar", "foo", "bar")
 	g.Expect(err).To(gomega.HaveOccurred())
+	g.Expect(IsNotFoundError(err)).To(gomega.BeFalse())
+	g.Expect(parsed).To(gomega.Equal(0))
 }
 
 func TestGet_MissingNestedField(t *testing.T) {
@@ -100,9 +99,10 @@ func TestGet_MissingNestedField(t *testing.T) {
 	vars := map[string]apiextensionsv1.JSON{
 		"sampleVar": {Raw: sampleValue},
 	}
-	_, found, err := Get[string](vars, "sampleVar", "foo", "nonexistent")
-	g.Expect(err).NotTo(gomega.HaveOccurred())
-	g.Expect(found).To(gomega.BeFalse())
+	parsed, err := Get[string](vars, "sampleVar", "foo", "nonexistent")
+	g.Expect(err).To(gomega.HaveOccurred())
+	g.Expect(IsNotFoundError(err)).To(gomega.BeTrue())
+	g.Expect(parsed).To(gomega.BeEmpty())
 }
 
 func TestClusterVariablesToVariablesMap(t *testing.T) {

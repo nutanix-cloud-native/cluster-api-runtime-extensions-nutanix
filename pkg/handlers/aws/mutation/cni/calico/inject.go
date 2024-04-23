@@ -63,17 +63,17 @@ func (h *calicoPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	cniVar, found, err := variables.Get[v1alpha1.CNI](
+	cniVar, err := variables.Get[v1alpha1.CNI](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("cni variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("cni variable not defined")
-		return nil
 	}
 	if cniVar.Provider != v1alpha1.CNIProviderCalico {
 		log.V(5).

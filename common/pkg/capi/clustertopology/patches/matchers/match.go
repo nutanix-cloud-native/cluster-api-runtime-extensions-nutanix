@@ -90,13 +90,12 @@ func MatchesMachineDeploymentClass(
 		(holderRef.FieldPath == "spec.template.spec.bootstrap.configRef" ||
 			holderRef.FieldPath == "spec.template.spec.infrastructureRef") {
 		// Read the builtin.machineDeployment.class variable.
-		templateMDClassJSON, found, err := topologymutation.GetVariable(
+		templateMDClassJSON, err := topologymutation.GetVariable(
 			templateVariables,
 			"builtin.machineDeployment.class",
 		)
-
-		// If the builtin variable could be read.
-		if err != nil || !found {
+		// If the built-in variable could not be read.
+		if err != nil {
 			return false
 		}
 

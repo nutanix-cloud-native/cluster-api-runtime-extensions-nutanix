@@ -58,17 +58,17 @@ func (h *etcdPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	etcd, found, err := variables.Get[v1alpha1.Etcd](
+	etcd, err := variables.Get[v1alpha1.Etcd](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("etcd variable not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("etcd variable not defined")
-		return nil
 	}
 
 	log = log.WithValues(

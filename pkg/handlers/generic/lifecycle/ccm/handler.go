@@ -76,8 +76,12 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	_, found, err := variables.Get[v1alpha1.CCM](varMap, c.variableName, c.variablePath...)
+	_, err := variables.Get[v1alpha1.CCM](varMap, c.variableName, c.variablePath...)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(4).Info("Skipping CCM handler.")
+			return
+		}
 		log.Error(
 			err,
 			"failed to read CCM from cluster definition",
@@ -90,12 +94,8 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		)
 		return
 	}
-	if !found {
-		log.V(4).Info("Skipping CCM handler.")
-		return
-	}
 
-	clusterConfigVar, _, err := variables.Get[v1alpha1.ClusterConfigSpec](
+	clusterConfigVar, err := variables.Get[v1alpha1.ClusterConfigSpec](
 		varMap,
 		clusterconfig.MetaVariableName,
 	)

@@ -56,17 +56,17 @@ func (h *awsIAMInstanceProfileWorkerPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	iamInstanceProfileVar, found, err := variables.Get[v1alpha1.IAMInstanceProfile](
+	iamInstanceProfileVar, err := variables.Get[v1alpha1.IAMInstanceProfile](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("AWS IAM instance profile variable for workers not defined")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).Info("AWS IAM instance profile variable for workers not defined")
-		return nil
 	}
 
 	log = log.WithValues(

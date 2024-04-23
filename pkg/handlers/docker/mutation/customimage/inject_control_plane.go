@@ -5,8 +5,6 @@ package customimage
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -67,15 +65,15 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	customImageVar, found, err := variables.Get[v1alpha1.OCIImage](
+	customImageVar, err := variables.Get[v1alpha1.OCIImage](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
-		return err
-	}
-	if !found {
+		if !variables.IsNotFoundError(err) {
+			return err
+		}
 		log.V(5).
 			Info("Docker customImage variable not defined for control-plane, using default KinD node image")
 	}
@@ -102,18 +100,12 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 			variablePath := []string{"builtin", "controlPlane", "version"}
 
 			if customImageVar == "" {
-				kubernetesVersion, found, err := variables.Get[string](
+				kubernetesVersion, err := variables.Get[string](
 					vars,
 					variablePath[0],
 					variablePath[1:]...)
-				if err != nil {
+				if err != nil && !variables.IsNotFoundError(err) {
 					return err
-				}
-				if !found {
-					return fmt.Errorf(
-						"missing required variable: %s",
-						strings.Join(variablePath, "."),
-					)
 				}
 
 				customImageVar = v1alpha1.OCIImage(

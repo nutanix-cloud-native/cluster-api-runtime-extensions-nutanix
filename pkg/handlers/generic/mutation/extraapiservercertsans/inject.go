@@ -60,19 +60,19 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
 	)
-	extraAPIServerCertSANsVar, found, err := variables.Get[v1alpha1.ExtraAPIServerCertSANs](
+	extraAPIServerCertSANsVar, err := variables.Get[v1alpha1.ExtraAPIServerCertSANs](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
-		log.Error(
-			err,
-			"failed to get cluster config variable from extraAPIServerCertSANs mutation handler",
-		)
-		return err
-	}
-	if !found {
+		if !variables.IsNotFoundError(err) {
+			log.Error(
+				err,
+				"failed to get cluster config variable from extraAPIServerCertSANs mutation handler",
+			)
+			return err
+		}
 		log.V(5).Info("Extra API server cert SANs variable not defined")
 	}
 	cluster, err := clusterGetter(ctx)

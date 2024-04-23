@@ -134,13 +134,12 @@ var _ = Describe("Quick start", Serial, func() {
 									clusterVars := variables.ClusterVariablesToVariablesMap(
 										workloadCluster.Spec.Topology.Variables,
 									)
-									addonsConfig, found, err := variables.Get[v1alpha1.Addons](
+									addonsConfig, err := variables.Get[v1alpha1.Addons](
 										clusterVars,
 										clusterconfig.MetaVariableName,
 										"addons",
 									)
 									Expect(err).ToNot(HaveOccurred())
-									Expect(found).To(BeTrue())
 									WaitForAddonsToBeReadyInWorkloadCluster(
 										ctx,
 										WaitForAddonsToBeReadyInWorkloadClusterInput{

@@ -55,18 +55,18 @@ func (h *awsAMISpecPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	amiSpecVar, found, err := variables.Get[v1alpha1.AMISpec](
+	amiSpecVar, err := variables.Get[v1alpha1.AMISpec](
 		vars,
 		h.metaVariableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).
+				Info("AWS amiSpec variable not defined. Default AMI provided by CAPA will be used.")
+			return nil
+		}
 		return err
-	}
-	if !found {
-		log.V(5).
-			Info("AWS amiSpec variable not defined. Default AMI provided by CAPA will be used.")
-		return nil
 	}
 
 	log = log.WithValues(

@@ -89,8 +89,15 @@ func (c *CalicoCNI) AfterControlPlaneInitialized(
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	cniVar, found, err := variables.Get[v1alpha1.CNI](varMap, c.variableName, c.variablePath...)
+	cniVar, err := variables.Get[v1alpha1.CNI](varMap, c.variableName, c.variablePath...)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.
+				Info(
+					"Skipping Calico CNI handler, cluster does not specify request CNI addon deployment",
+				)
+			return
+		}
 		log.Error(
 			err,
 			"failed to read CNI provider from cluster definition",
@@ -101,13 +108,6 @@ func (c *CalicoCNI) AfterControlPlaneInitialized(
 				err,
 			),
 		)
-		return
-	}
-	if !found {
-		log.
-			Info(
-				"Skipping Calico CNI handler, cluster does not specify request CNI addon deployment",
-			)
 		return
 	}
 	if cniVar.Provider != v1alpha1.CNIProviderCalico {
