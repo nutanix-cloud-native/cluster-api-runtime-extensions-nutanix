@@ -105,7 +105,7 @@ func (s crsStrategy) apply(
 	if err != nil {
 		return fmt.Errorf("error creating remote cluster client: %w", err)
 	}
-	if err = utils.EnsureNamespace(ctx, remoteClient, cluster.Namespace); err != nil {
+	if err = utils.EnsureNamespaceWithName(ctx, remoteClient, cluster.Namespace); err != nil {
 		return fmt.Errorf(
 			"failed to create Namespace in remote cluster: %w",
 			err,
