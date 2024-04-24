@@ -59,7 +59,7 @@ func CopySecretToRemoteCluster(
 		return fmt.Errorf("error creating client for remote cluster: %w", err)
 	}
 
-	err = EnsureNamespace(ctx, remoteClient, dstSecretKey.Namespace)
+	err = EnsureNamespaceWithName(ctx, remoteClient, dstSecretKey.Namespace)
 	if err != nil {
 		return fmt.Errorf("error creating namespace on the remote cluster: %w", err)
 	}

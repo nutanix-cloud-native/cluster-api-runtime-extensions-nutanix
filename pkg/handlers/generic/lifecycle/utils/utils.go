@@ -93,8 +93,8 @@ func EnsureCRSForClusterFromObjects(
 	return nil
 }
 
-// EnsureNamespace will create the namespace if it does not exist.
-func EnsureNamespace(ctx context.Context, c ctrlclient.Client, name string) error {
+// EnsureNamespaceWithName will create the namespace with the specified name if it does not exist.
+func EnsureNamespaceWithName(ctx context.Context, c ctrlclient.Client, name string) error {
 	ns := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -105,6 +105,17 @@ func EnsureNamespace(ctx context.Context, c ctrlclient.Client, name string) erro
 		},
 	}
 
+	return EnsureNamespace(ctx, c, ns)
+}
+
+// EnsureNamespace will create the namespace if it does not exist.
+func EnsureNamespace(ctx context.Context, c ctrlclient.Client, ns *corev1.Namespace) error {
+	if ns.TypeMeta.APIVersion == "" {
+		ns.TypeMeta.APIVersion = corev1.SchemeGroupVersion.String()
+	}
+	if ns.TypeMeta.Kind == "" {
+		ns.TypeMeta.Kind = "Namespace"
+	}
 	err := client.ServerSideApply(ctx, c, ns)
 	if err != nil {
 		return fmt.Errorf("failed to server side apply %w", err)
