@@ -29,12 +29,12 @@
 
           setup-envtest = buildGo122Module rec {
             name = "setup-envtest";
-            version = "0.17.2";
+            version = "0.17.3";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "controller-runtime";
               rev = "v${version}";
-              hash = "sha256-1u4aFmiDLgvx3CRWv+uZdnP4XuVWpQMmZq27CAF12a4=";
+              hash = "sha256-MSuo7m2WDg+z9Si0M9YbqhqryI6Fa4BHxLGlnON2zmA=";
             } + "/tools/setup-envtest";
             doCheck = false;
             subPackages = [ "." ];
@@ -59,16 +59,16 @@
 
           clusterawsadm = buildGo122Module rec {
             name = "clusterawsadm";
-            version = "2.4.0";
+            version = "2.4.2";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-va11PBwLh0IcMV4kvXqxAOr9owezYdqvoenIaJPWsDo=";
+              hash = "sha256-ZGIUn6blXVMHeTbUK/FIfSO68W/ieJjk5bUq7b1z05M=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
-            vendorHash = "sha256-YoIeRVYnQHG9dYGlSmLsDY1ACbAlXB1t063UFhaJG1w=";
+            vendorHash = "sha256-USmydddJ0wJwGECxpg6W9Arm17aFRr07SeeqwsbBGTY=";
             ldflags = [
               "-s"
               "-w"
