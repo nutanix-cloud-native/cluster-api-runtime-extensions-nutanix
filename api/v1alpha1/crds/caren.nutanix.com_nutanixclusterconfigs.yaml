@@ -476,6 +476,9 @@ spec:
                         maximum: 65535
                         minimum: 1
                         type: integer
+                      virtualIP:
+                        description: Configuration for the virtual IP provider.
+                        type: object
                     required:
                     - host
                     - port

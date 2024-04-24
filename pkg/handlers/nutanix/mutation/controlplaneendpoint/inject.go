@@ -9,7 +9,6 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,7 +19,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/controlplaneendpoint/virtualip"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
@@ -30,8 +28,6 @@ const (
 )
 
 type nutanixControlPlaneEndpoint struct {
-	virtualIPProvider virtualip.Provider
-
 	variableName      string
 	variableFieldPath []string
 }
@@ -52,13 +48,6 @@ func newNutanixControlPlaneEndpoint(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
-}
-
-func (h *nutanixControlPlaneEndpoint) WithVirtualIPProvider(
-	virtualIPProvider virtualip.Provider,
-) *nutanixControlPlaneEndpoint {
-	h.virtualIPProvider = virtualIPProvider
-	return h
 }
 
 func (h *nutanixControlPlaneEndpoint) Mutate(
@@ -94,36 +83,6 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 		"variableValue",
 		controlPlaneEndpointVar,
 	)
-
-	if err := patches.MutateIfApplicable(
-		obj,
-		vars,
-		&holderRef,
-		selectors.ControlPlane(),
-		log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-			if h.virtualIPProvider == nil {
-				return nil
-			}
-
-			virtualIPProviderFile, virtualIPProviderErr := h.virtualIPProvider.GetFile(ctx, controlPlaneEndpointVar)
-			if virtualIPProviderErr != nil {
-				return virtualIPProviderErr
-			}
-
-			log.WithValues(
-				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("adding kube-vip static Pod file to control plane kubeadm config spec")
-			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				*virtualIPProviderFile,
-			)
-			return nil
-		},
-	); err != nil {
-		return err
-	}
 
 	return patches.MutateIfApplicable(
 		obj,

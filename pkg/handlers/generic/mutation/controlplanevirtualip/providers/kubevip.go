@@ -1,35 +1,18 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package virtualip
+package providers
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
-
-type KubeVIPFromConfigMapConfig struct {
-	*options.GlobalOptions
-
-	defaultConfigMapName string
-}
-
-func (c *KubeVIPFromConfigMapConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&c.defaultConfigMapName,
-		prefix+".default-kube-vip-template-configmap-name",
-		"default-kube-vip-template",
-		"default ConfigMap name that holds the kube-vip template used for the control-plane virtual IP",
-	)
-}
 
 type kubeVIPFromConfigMapProvider struct {
 	client client.Reader
@@ -39,15 +22,19 @@ type kubeVIPFromConfigMapProvider struct {
 
 func NewKubeVIPFromConfigMapProvider(
 	cl client.Reader,
-	config *KubeVIPFromConfigMapConfig,
+	name, namespace string,
 ) *kubeVIPFromConfigMapProvider {
 	return &kubeVIPFromConfigMapProvider{
 		client: cl,
 		configMapKey: client.ObjectKey{
-			Name:      config.defaultConfigMapName,
-			Namespace: config.DefaultsNamespace(),
+			Name:      name,
+			Namespace: namespace,
 		},
 	}
+}
+
+func (p *kubeVIPFromConfigMapProvider) Name() string {
+	return "kube-vip"
 }
 
 // GetFile reads the kube-vip template from the ConfigMap

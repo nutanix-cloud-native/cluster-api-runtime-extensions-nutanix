@@ -1,7 +1,7 @@
 // Copyright 2023 D2iQ, Inc. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package virtualip
+package providers
 
 import (
 	"bytes"
@@ -22,6 +22,7 @@ const (
 
 // Provider is an interface for getting the kube-vip static Pod as a file.
 type Provider interface {
+	Name() string
 	GetFile(ctx context.Context, spec v1alpha1.ControlPlaneEndpointSpec) (*bootstrapv1.File, error)
 }
 

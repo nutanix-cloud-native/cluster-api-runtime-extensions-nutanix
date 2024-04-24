@@ -22,6 +22,7 @@ spec:
             controlPlaneEndpoint:
               host: x.x.x.x
               port: 6443
+              virtualIP: {}
 ```
 
 Applying this configuration will result in the following value being set:
@@ -35,4 +36,23 @@ spec:
       controlPlaneEndpoint:
         host: x.x.x.x
         port: 6443
+```
+
+- `KubeadmControlPlaneTemplate`
+
+```yaml
+  spec:
+    kubeadmConfigSpec:
+      files:
+      - content: |
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: kube-vip
+            namespace: kube-system
+          spec:
+          ...
+        owner: root:root
+        path: /etc/kubernetes/manifests/kube-vip.yaml
+        permissions: "0600"
 ```

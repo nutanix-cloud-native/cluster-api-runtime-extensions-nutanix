@@ -4,6 +4,8 @@
 package options
 
 import (
+	"cmp"
+
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -33,7 +35,7 @@ func (o *GlobalOptions) AddFlags(flags *pflag.FlagSet) {
 }
 
 func (o *GlobalOptions) DefaultsNamespace() string {
-	return o.defaultsNamespace
+	return cmp.Or(o.defaultsNamespace, corev1.NamespaceDefault)
 }
 
 func (o *GlobalOptions) HelmAddonsConfigMapName() string {
