@@ -39,7 +39,7 @@ patches:
       path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/certSANs"
 
 # Delete the kube-vip file.
-# Will be templated and added back in the handler.
+# Will be templated and added back in the handler if enabled.
 - target:
     kind: KubeadmControlPlaneTemplate
   patch: |-

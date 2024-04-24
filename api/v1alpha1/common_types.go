@@ -37,4 +37,10 @@ type ControlPlaneEndpointSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
 	Port int32 `json:"port"`
+
+	// Configuration for the virtual IP provider.
+	// +optional
+	VirtualIPSpec *ControlPlaneVirtualIPSpec `json:"virtualIP,omitempty"`
 }
+
+type ControlPlaneVirtualIPSpec struct{}
