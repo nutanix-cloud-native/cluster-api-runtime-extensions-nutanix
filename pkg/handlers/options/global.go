@@ -4,14 +4,14 @@
 package options
 
 import (
-	"cmp"
-
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func NewGlobalOptions() *GlobalOptions {
-	return &GlobalOptions{}
+	return &GlobalOptions{
+		defaultsNamespace: corev1.NamespaceDefault,
+	}
 }
 
 type GlobalOptions struct {
@@ -23,7 +23,7 @@ func (o *GlobalOptions) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVar(
 		&o.defaultsNamespace,
 		"defaults-namespace",
-		corev1.NamespaceDefault,
+		o.defaultsNamespace,
 		"namespace for default configurations",
 	)
 	flags.StringVar(
@@ -35,7 +35,7 @@ func (o *GlobalOptions) AddFlags(flags *pflag.FlagSet) {
 }
 
 func (o *GlobalOptions) DefaultsNamespace() string {
-	return cmp.Or(o.defaultsNamespace, corev1.NamespaceDefault)
+	return o.defaultsNamespace
 }
 
 func (o *GlobalOptions) HelmAddonsConfigMapName() string {

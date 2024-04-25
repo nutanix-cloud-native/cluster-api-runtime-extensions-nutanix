@@ -68,7 +68,10 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 									gomega.ContainSubstring("value: \"6443\""),
 								),
 								gomega.HaveKey("owner"),
-								gomega.HaveKeyWithValue("path", gomega.ContainSubstring("kube-vip")),
+								gomega.HaveKeyWithValue(
+									"path",
+									gomega.ContainSubstring("kube-vip"),
+								),
 								gomega.HaveKey("permissions"),
 							),
 						),
@@ -136,7 +139,10 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 									gomega.ContainSubstring("value: \"6443\""),
 								),
 								gomega.HaveKey("owner"),
-								gomega.HaveKeyWithValue("path", gomega.ContainSubstring("kube-vip")),
+								gomega.HaveKeyWithValue(
+									"path",
+									gomega.ContainSubstring("kube-vip"),
+								),
 								gomega.HaveKey("permissions"),
 							),
 						),
