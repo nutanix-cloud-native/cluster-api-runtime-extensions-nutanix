@@ -1,4 +1,4 @@
-# Copyright 2023 D2iQ, Inc. All rights reserved.
+# Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 # The GOPRIVATE environment variable controls which modules the go command considers

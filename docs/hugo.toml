@@ -52,7 +52,7 @@ anchor = "Smart"
 section = ["HTML", "print"]
 
 [params]
-copyright = "D2iQ, Inc."
+copyright = "Nutanix."
 # privacy_policy = "https://policies.google.com/privacy"
 
 # First one is picked as the Twitter card image if not set on page.
