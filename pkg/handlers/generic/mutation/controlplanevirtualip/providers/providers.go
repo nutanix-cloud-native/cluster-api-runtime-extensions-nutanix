@@ -28,7 +28,10 @@ type Provider interface {
 	GetCommands(cluster *clusterv1.Cluster) ([]string, []string, error)
 }
 
-func templateValues(controlPlaneEndpoint v1alpha1.ControlPlaneEndpointSpec, text string) (string, error) {
+func templateValues(
+	controlPlaneEndpoint v1alpha1.ControlPlaneEndpointSpec,
+	text string,
+) (string, error) {
 	kubeVIPTemplate, err := template.New("").Parse(text)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)

@@ -74,8 +74,11 @@ func (p *kubeVIPFromConfigMapProvider) GetFile(
 	}, nil
 }
 
+//
 //nolint:gocritic // No need for named return values
-func (p *kubeVIPFromConfigMapProvider) GetCommands(cluster *clusterv1.Cluster) ([]string, []string, error) {
+func (p *kubeVIPFromConfigMapProvider) GetCommands(
+	cluster *clusterv1.Cluster,
+) ([]string, []string, error) {
 	// The kube-vip static Pod uses admin.conf on the host to connect to the API server.
 	// But, starting with Kubernetes 1.29, admin.conf first gets created with no RBAC permissions.
 	// At the same time, 'kubeadm init' command waits for the API server to be reachable on the kube-vip IP.
@@ -102,7 +105,10 @@ type multipleKeysError struct {
 }
 
 func (e multipleKeysError) Error() string {
-	return fmt.Sprintf("found multiple keys in ConfigMap %q, when only 1 is expected", e.configMapKey)
+	return fmt.Sprintf(
+		"found multiple keys in ConfigMap %q, when only 1 is expected",
+		e.configMapKey,
+	)
 }
 
 type emptyValuesError struct {
@@ -110,7 +116,10 @@ type emptyValuesError struct {
 }
 
 func (e emptyValuesError) Error() string {
-	return fmt.Sprintf("could not find any keys with non-empty vaules in ConfigMap %q", e.configMapKey)
+	return fmt.Sprintf(
+		"could not find any keys with non-empty vaules in ConfigMap %q",
+		e.configMapKey,
+	)
 }
 
 func getTemplateFromConfigMap(
