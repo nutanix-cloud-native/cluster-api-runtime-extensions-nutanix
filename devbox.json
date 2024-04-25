@@ -17,7 +17,7 @@
     "gotestsum@latest",
     "govulncheck@latest",
     "helm-docs@latest",
-    "hugo@latest",
+    "hugo@0.124.1",
     "kind@latest",
     "ko@latest",
     "kubebuilder@latest",
