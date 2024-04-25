@@ -7,11 +7,24 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/blang/semver/v4"
 	corev1 "k8s.io/api/core/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+)
+
+var (
+	//nolint:lll // for readability prefer to keep the long line
+	KubeVipPreKubeadmCommands = []string{`if [ -f /run/kubeadm/kubeadm.yaml ]; then
+  sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
+fi`}
+	//nolint:lll // for readability prefer to keep the long line
+	KubeVipPostKubeadmCommands = []string{`if [ -f /run/kubeadm/kubeadm.yaml ]; then
+  sed -i 's#path: /etc/kubernetes/super-admin.conf#path: /etc/kubernetes/admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
+fi`}
 )
 
 type kubeVIPFromConfigMapProvider struct {
@@ -61,6 +74,29 @@ func (p *kubeVIPFromConfigMapProvider) GetFile(
 	}, nil
 }
 
+//nolint:gocritic // No need for named return values
+func (p *kubeVIPFromConfigMapProvider) GetCommands(cluster *clusterv1.Cluster) ([]string, []string, error) {
+	// The kube-vip static Pod uses admin.conf on the host to connect to the API server.
+	// But, starting with Kubernetes 1.29, admin.conf first gets created with no RBAC permissions.
+	// At the same time, 'kubeadm init' command waits for the API server to be reachable on the kube-vip IP.
+	// And since the kube-vip Pod is crashlooping with a permissions error, 'kubeadm init' fails.
+	// To work around this:
+	// 1. return a preKubeadmCommand to change the kube-vip Pod to use the new super-admin.conf file.
+	// 2. return a postKubeadmCommand to change the kube-vip Pod back to use admin.conf,
+	// after kubeadm has assigned it the necessary RBAC permissions.
+	//
+	// See https://github.com/kube-vip/kube-vip/issues/684
+	needCommands, err := needHackCommands(cluster)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to determine if kube-vip commands are needed: %w", err)
+	}
+	if !needCommands {
+		return nil, nil, nil
+	}
+
+	return KubeVipPreKubeadmCommands, KubeVipPostKubeadmCommands, nil
+}
+
 type multipleKeysError struct {
 	configMapKey client.ObjectKey
 }
@@ -100,4 +136,13 @@ func getTemplateFromConfigMap(
 	}
 
 	return "", emptyValuesError{configMapKey: configMapKey}
+}
+
+func needHackCommands(cluster *clusterv1.Cluster) (bool, error) {
+	version, err := semver.ParseTolerant(cluster.Spec.Topology.Version)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse version from cluster %w", err)
+	}
+
+	return version.Minor >= 29, nil
 }

@@ -55,4 +55,16 @@ spec:
         owner: root:root
         path: /etc/kubernetes/manifests/kube-vip.yaml
         permissions: "0600"
+      postKubeadmCommands:
+        # Only added for clusters version >=v1.29.0
+        - |-
+          if [ -f /run/kubeadm/kubeadm.yaml ]; then
+            sed -i 's#path: /etc/kubernetes/super-admin.conf#path: ...
+          fi
+      preKubeadmCommands:
+        # Only added for clusters version >=v1.29.0
+        - |-
+          if [ -f /run/kubeadm/kubeadm.yaml ]; then
+            sed -i 's#path: /etc/kubernetes/admin.conf#path: ...
+          fi
 ```
