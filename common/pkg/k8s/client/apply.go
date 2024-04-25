@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -17,7 +16,7 @@ const (
 )
 
 // ForceOwnership is an convenience alias of the same option in the controller-runtime client.
-var ForceOwnership = client.ForceOwnership
+var ForceOwnership = ctrlclient.ForceOwnership
 
 // ServerSideApply will apply (i.e. create or update) objects via server-side apply.
 func ServerSideApply(
