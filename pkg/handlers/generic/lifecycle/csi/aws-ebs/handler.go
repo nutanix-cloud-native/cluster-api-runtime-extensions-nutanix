@@ -111,7 +111,7 @@ func (a *AWSEBS) handleCRSApply(ctx context.Context,
 	}
 	cluster := req.Cluster
 	cm := generateAWSEBSCSIConfigMap(awsEBSCSIConfigMap, &cluster)
-	if err := client.ServerSideApply(ctx, a.client, cm); err != nil {
+	if err := client.ServerSideApply(ctx, a.client, cm, client.ForceOwnership); err != nil {
 		return fmt.Errorf(
 			"failed to apply AWS EBS CSI manifests ConfigMap: %w",
 			err,

@@ -81,7 +81,7 @@ func (s crsStrategy) apply(
 		Data: data,
 	}
 
-	if err := client.ServerSideApply(ctx, s.client, cm); err != nil {
+	if err := client.ServerSideApply(ctx, s.client, cm, client.ForceOwnership); err != nil {
 		return fmt.Errorf(
 			"failed to apply cluster-autoscaler installation ConfigMap: %w",
 			err,

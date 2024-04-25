@@ -185,7 +185,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		)
 	}
 
-	if err = client.ServerSideApply(ctx, n.client, hcp); err != nil {
+	if err = client.ServerSideApply(ctx, n.client, hcp, client.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply nutanix-csi installation HelmChartProxy: %w", err)
 	}
 
@@ -215,7 +215,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		},
 	}
 
-	if err = client.ServerSideApply(ctx, n.client, snapshotChart); err != nil {
+	if err = client.ServerSideApply(ctx, n.client, snapshotChart, client.ForceOwnership); err != nil {
 		return fmt.Errorf(
 			"failed to apply nutanix-csi-snapshot installation HelmChartProxy: %w",
 			err,

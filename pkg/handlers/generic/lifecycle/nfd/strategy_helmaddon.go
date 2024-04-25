@@ -100,7 +100,7 @@ image:
 		)
 	}
 
-	if err := client.ServerSideApply(ctx, s.client, hcp); err != nil {
+	if err := client.ServerSideApply(ctx, s.client, hcp, client.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply NFD installation HelmChartProxy: %w", err)
 	}
 

@@ -349,7 +349,7 @@ func createSecretIfNeeded(
 		)
 	}
 	if credentialsSecret != nil {
-		if err := client.ServerSideApply(ctx, c, credentialsSecret); err != nil {
+		if err := client.ServerSideApply(ctx, c, credentialsSecret, client.ForceOwnership); err != nil {
 			return fmt.Errorf("failed to apply Image Registry Credentials Secret: %w", err)
 		}
 	}

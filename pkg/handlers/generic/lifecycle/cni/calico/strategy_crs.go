@@ -144,7 +144,7 @@ func (s crsStrategy) ensureCNICRSForCluster(
 		)
 	}
 
-	if err := client.ServerSideApply(ctx, s.client, cm); err != nil {
+	if err := client.ServerSideApply(ctx, s.client, cm, client.ForceOwnership); err != nil {
 		return fmt.Errorf(
 			"failed to apply Calico CNI installation manifests ConfigMap: %w",
 			err,
@@ -185,7 +185,7 @@ func (s crsStrategy) ensureTigeraOperatorConfigMap(
 	}
 
 	tigeraConfigMap := generateTigeraOperatorConfigMap(defaultTigeraOperatorConfigMap, cluster)
-	if err := client.ServerSideApply(ctx, s.client, tigeraConfigMap); err != nil {
+	if err := client.ServerSideApply(ctx, s.client, tigeraConfigMap, client.ForceOwnership); err != nil {
 		return nil, fmt.Errorf(
 			"failed to apply Tigera Operator manifests ConfigMap: %w",
 			err,

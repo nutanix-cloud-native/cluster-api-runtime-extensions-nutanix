@@ -80,7 +80,7 @@ func (s crsStrategy) apply(
 		BinaryData: defaultCiliumConfigMap.BinaryData,
 	}
 
-	if err := client.ServerSideApply(ctx, s.client, cm); err != nil {
+	if err := client.ServerSideApply(ctx, s.client, cm, client.ForceOwnership); err != nil {
 		return fmt.Errorf(
 			"failed to apply Cilium CNI installation ConfigMap: %w",
 			err,

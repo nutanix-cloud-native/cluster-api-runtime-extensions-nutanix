@@ -64,7 +64,7 @@ func CopySecretToRemoteCluster(
 		return fmt.Errorf("error creating namespace on the remote cluster: %w", err)
 	}
 
-	err = client.ServerSideApply(ctx, remoteClient, credentialsOnRemote)
+	err = client.ServerSideApply(ctx, remoteClient, credentialsOnRemote, client.ForceOwnership)
 	if err != nil {
 		return fmt.Errorf("error creating Secret on the remote cluster: %w", err)
 	}
