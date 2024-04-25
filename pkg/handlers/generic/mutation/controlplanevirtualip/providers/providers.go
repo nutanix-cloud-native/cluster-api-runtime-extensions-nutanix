@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"text/template"
 
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -24,6 +25,7 @@ const (
 type Provider interface {
 	Name() string
 	GetFile(ctx context.Context, spec v1alpha1.ControlPlaneEndpointSpec) (*bootstrapv1.File, error)
+	GetCommands(cluster *clusterv1.Cluster) ([]string, []string, error)
 }
 
 func templateValues(controlPlaneEndpoint v1alpha1.ControlPlaneEndpointSpec, text string) (string, error) {

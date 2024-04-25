@@ -49,6 +49,17 @@ patches:
     - op: "remove"
       path: "/spec/template/spec/kubeadmConfigSpec/files/0"
 
+# Delete the kube-vip related pre and postKubeadmCommands.
+# Will be added back in the handler if enabled.
+# If the index of these changes upstream this will need to change, but will show up as a git diff.
+- target:
+    kind: KubeadmControlPlaneTemplate
+  patch: |-
+    - op: "remove"
+      path: "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/6"
+    - op: "remove"
+      path: "/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands/1"
+
 # FIXME: Debug why some of the patches are needed.
 # When the handler runs, it sends back multiple patches for individual fields.
 # But CAPI fails applying them because of missing value.

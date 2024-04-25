@@ -75,7 +75,7 @@ func (h *ControlPlaneVirtualIP) Mutate(
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ client.ObjectKey,
-	_ mutation.ClusterGetter,
+	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
@@ -108,6 +108,15 @@ func (h *ControlPlaneVirtualIP) Mutate(
 		return nil
 	}
 
+	cluster, err := clusterGetter(ctx)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to get cluster from extraAPIServerCertSANs mutation handler",
+		)
+		return err
+	}
+
 	// only kube-vip is supported, but more providers can be added in the future
 	virtualIPProvider := providers.NewKubeVIPFromConfigMapProvider(
 		h.client,
@@ -138,6 +147,40 @@ func (h *ControlPlaneVirtualIP) Mutate(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
 				*virtualIPProviderFile,
 			)
+
+			preKubeadmCommands, postKubeadmCommands, getCommandsErr := virtualIPProvider.GetCommands(cluster)
+			if getCommandsErr != nil {
+				return getCommandsErr
+			}
+
+			if len(preKubeadmCommands) > 0 {
+				log.WithValues(
+					"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+					"patchedObjectName", client.ObjectKeyFromObject(obj),
+				).Info(fmt.Sprintf(
+					"adding %s preKubeadmCommands to control plane kubeadm config spec",
+					virtualIPProvider.Name(),
+				))
+				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
+					obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
+					preKubeadmCommands...,
+				)
+			}
+
+			if len(postKubeadmCommands) > 0 {
+				log.WithValues(
+					"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+					"patchedObjectName", client.ObjectKeyFromObject(obj),
+				).Info(fmt.Sprintf(
+					"adding %s postKubeadmCommands to control plane kubeadm config spec",
+					virtualIPProvider.Name(),
+				))
+				obj.Spec.Template.Spec.KubeadmConfigSpec.PostKubeadmCommands = append(
+					obj.Spec.Template.Spec.KubeadmConfigSpec.PostKubeadmCommands,
+					postKubeadmCommands...,
+				)
+			}
+
 			return nil
 		},
 	)
