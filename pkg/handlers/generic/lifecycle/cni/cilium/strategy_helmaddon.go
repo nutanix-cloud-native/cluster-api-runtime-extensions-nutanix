@@ -94,7 +94,7 @@ func (s helmAddonStrategy) apply(
 		)
 	}
 
-	if err := client.ServerSideApply(ctx, s.client, hcp); err != nil {
+	if err := client.ServerSideApply(ctx, s.client, hcp, client.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply Cilium CNI installation HelmChartProxy: %w", err)
 	}
 

@@ -87,7 +87,7 @@ func (a *AWSCCM) Apply(
 	}
 
 	ccmConfigMap := generateCCMConfigMapForCluster(ccmConfigMapForMinorVersion, cluster)
-	if err = client.ServerSideApply(ctx, a.client, ccmConfigMap); err != nil {
+	if err = client.ServerSideApply(ctx, a.client, ccmConfigMap, client.ForceOwnership); err != nil {
 		log.Error(err, "failed to apply CCM configmap for cluster")
 		return fmt.Errorf(
 			"failed to apply AWS CCM manifests ConfigMap: %w",

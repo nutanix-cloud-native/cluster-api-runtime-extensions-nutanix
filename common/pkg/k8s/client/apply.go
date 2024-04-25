@@ -7,27 +7,33 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ServerSideApply will apply (i.e. create or update) objects via server-side apply. This will overwrite any changes
-// that have been manually applied to fields managed by CAREN.
+const (
+	// FieldOwner is the field manager name used for server-side apply.
+	FieldOwner = "d2iq-cluster-api-runtime-extensions-nutanix"
+)
+
+// ForceOwnership is an convenience alias of the same option in the controller-runtime client.
+var ForceOwnership = client.ForceOwnership
+
+// ServerSideApply will apply (i.e. create or update) objects via server-side apply.
 func ServerSideApply(
 	ctx context.Context,
 	c ctrlclient.Client,
-	objs ...ctrlclient.Object,
+	obj ctrlclient.Object,
+	opts ...ctrlclient.PatchOption,
 ) error {
-	for i := range objs {
-		err := c.Patch(
-			ctx,
-			objs[i],
-			ctrlclient.Apply,
-			ctrlclient.FieldOwner("d2iq-cluster-api-runtime-extensions-nutanix"),
-		)
-		if err != nil {
-			return fmt.Errorf("server-side apply failed: %w", err)
-		}
+	err := c.Patch(
+		ctx,
+		obj,
+		ctrlclient.Apply,
+		ctrlclient.FieldOwner(FieldOwner),
+	)
+	if err != nil {
+		return fmt.Errorf("server-side apply failed: %w", err)
 	}
-
 	return nil
 }

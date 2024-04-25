@@ -80,7 +80,7 @@ func (s crsStrategy) apply(
 		BinaryData: defaultCM.BinaryData,
 	}
 
-	if err := client.ServerSideApply(ctx, s.client, cm); err != nil {
+	if err := client.ServerSideApply(ctx, s.client, cm, client.ForceOwnership); err != nil {
 		return fmt.Errorf(
 			"failed to apply NFD installation ConfigMap: %w",
 			err,

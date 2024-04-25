@@ -85,7 +85,7 @@ func EnsureCRSForClusterFromObjects(
 		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
 
-	err := client.ServerSideApply(ctx, c, crs)
+	err := client.ServerSideApply(ctx, c, crs, client.ForceOwnership)
 	if err != nil {
 		return fmt.Errorf("failed to server side apply %w", err)
 	}
@@ -110,7 +110,7 @@ func EnsureNamespace(ctx context.Context, c ctrlclient.Client, name string) erro
 		return nil
 	}
 
-	err := client.ServerSideApply(ctx, c, ns)
+	err := client.ServerSideApply(ctx, c, ns, client.ForceOwnership)
 	if err != nil {
 		return fmt.Errorf("failed to server side apply %w", err)
 	}

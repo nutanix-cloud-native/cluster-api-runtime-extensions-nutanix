@@ -157,7 +157,7 @@ func (p *provider) Apply(
 		)
 	}
 
-	if err = client.ServerSideApply(ctx, p.client, hcp); err != nil {
+	if err = client.ServerSideApply(ctx, p.client, hcp, client.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply nutanix-ccm installation HelmChartProxy: %w", err)
 	}
 
