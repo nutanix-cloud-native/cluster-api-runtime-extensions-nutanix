@@ -14,13 +14,15 @@ export AWS_CCM_VERSION_127 := v1.27.1
 export AWS_CCM_CHART_VERSION_127 := 0.0.8
 export AWS_CCM_VERSION_128 := v1.28.1
 export AWS_CCM_CHART_VERSION_128 := 0.0.8
+export AWS_CCM_VERSION_129 := v1.29.2
+export AWS_CCM_CHART_VERSION_129 := 0.0.8
 
 export NUTANIX_CCM_CHART_VERSION := 0.3.3
 
 export KUBE_VIP_VERSION := v0.8.0
 
 .PHONY: addons.sync
-addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler aws-ebs-csi aws-ccm.127 aws-ccm.128 kube-vip)
+addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler aws-ebs-csi aws-ccm.127 aws-ccm.128 aws-ccm.129 kube-vip)
 
 .PHONY: update-addon.calico
 update-addon.calico: ; $(info $(M) updating calico manifests)
