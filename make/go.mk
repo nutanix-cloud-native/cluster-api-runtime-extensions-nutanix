@@ -78,7 +78,7 @@ E2E_PARALLEL_NODES ?= $(shell nproc --ignore=1)
 E2E_FLAKE_ATTEMPTS ?= 1
 E2E_CONF_FILE ?= $(REPO_ROOT)/test/e2e/config/caren.yaml
 E2E_CONF_FILE_ENVSUBST ?= $(basename $(E2E_CONF_FILE))-envsubst.yaml
-export E2E_DEFAULT_KUBERNETES_VERSION ?= v1.28.7
+export E2E_DEFAULT_KUBERNETES_VERSION ?= v1.29.4
 ARTIFACTS ?= ${REPO_ROOT}/_artifacts
 
 .PHONY: e2e-test
