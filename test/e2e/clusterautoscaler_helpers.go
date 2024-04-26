@@ -40,12 +40,11 @@ func WaitForClusterAutoscalerToBeReadyInWorkloadCluster(
 		return
 	}
 
-	// Only check for ClusterAutoscaler if the cluster is self-managed.
-	// ManagementCluster function will return a nil managementCluster if workloadClusterClient
-	// is not a self-managed cluster.
 	workloadClusterClient := input.ClusterProxy.GetWorkloadCluster(
 		ctx, input.WorkloadCluster.Namespace, input.WorkloadCluster.Name,
 	).GetClient()
+	// Only check for ClusterAutoscaler if the cluster is self-managed.
+	// managementCluster will be nil if workloadClusterClient is not a self-managed cluster.
 	managementCluster, err := utils.ManagementCluster(ctx, workloadClusterClient)
 	Expect(err).NotTo(HaveOccurred())
 	if managementCluster == nil {
