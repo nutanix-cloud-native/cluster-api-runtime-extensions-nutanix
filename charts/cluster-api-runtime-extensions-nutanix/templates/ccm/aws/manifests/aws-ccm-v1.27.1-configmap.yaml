@@ -167,6 +167,7 @@ data:
                 cpu: 200m
             securityContext: {}
           dnsPolicy: Default
+          hostNetwork: true
           nodeSelector:
             node-role.kubernetes.io/control-plane: ""
           priorityClassName: system-node-critical
