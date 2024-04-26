@@ -59,11 +59,11 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-cilium-cni-helm-values-template"` |  |
 | hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-csi-helm-values-template"` |  |
-| hooks.kubeVip.defaultTemplateConfigMap.create | bool | `true` |  |
-| hooks.kubeVip.defaultTemplateConfigMap.name | string | `"default-kube-vip-template"` |  |
 | hooks.nfd.crsStrategy.defaultInstallationConfigMap.name | string | `"node-feature-discovery"` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nfd-helm-values-template"` |  |
+| hooks.virtualIP.kubeVip.defaultTemplateConfigMap.create | bool | `true` |  |
+| hooks.virtualIP.kubeVip.defaultTemplateConfigMap.name | string | `"default-kube-vip-template"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix"` |  |
 | image.tag | string | `""` |  |
