@@ -71,7 +71,11 @@ hooks:
       defaultValueTemplateConfigMap:
         create: true
         name: default-cluster-autoscaler-helm-values-template
-
+  serviceLoadbalancer:
+    metalLB:
+      defaultValueTemplateConfigMap:
+        create: true
+        name: default-metallb-helm-values-template
   virtualIP:
     kubeVip:
       defaultTemplateConfigMap:

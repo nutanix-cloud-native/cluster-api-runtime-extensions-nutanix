@@ -202,6 +202,18 @@ spec:
                     required:
                     - strategy
                     type: object
+                  serviceLoadbalancer:
+                    properties:
+                      provider:
+                        description: |-
+                          The Loadbalancer-type Service provider to deploy. Not required in infrastructures where
+                          the CCM acts as the provider.
+                        enum:
+                        - MetalLB
+                        type: string
+                    required:
+                    - provider
+                    type: object
                 type: object
               controlPlane:
                 description: NutanixNodeSpec defines the desired state of NutanixNodeSpec.
