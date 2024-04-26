@@ -112,7 +112,7 @@ func (h *ControlPlaneVirtualIP) Mutate(
 	if err != nil {
 		log.Error(
 			err,
-			"failed to get cluster from extraAPIServerCertSANs mutation handler",
+			"failed to get cluster from ControlPlaneVirtualIP mutation handler",
 		)
 		return err
 	}
