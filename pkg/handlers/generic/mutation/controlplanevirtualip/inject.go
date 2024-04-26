@@ -32,12 +32,12 @@ const (
 type Config struct {
 	*options.GlobalOptions
 
-	defaultKubeVipConfigMapName string
+	defaultKubeVIPConfigMapName string
 }
 
 func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringVar(
-		&c.defaultKubeVipConfigMapName,
+		&c.defaultKubeVIPConfigMapName,
 		prefix+".default-kube-vip-template-configmap-name",
 		"default-kube-vip-template",
 		"default ConfigMap name that holds the kube-vip template used for the control-plane virtual IP",
@@ -123,7 +123,7 @@ func (h *ControlPlaneVirtualIP) Mutate(
 	case v1alpha1.VirtualIPProviderKubeVIP:
 		virtualIPProvider = providers.NewKubeVIPFromConfigMapProvider(
 			h.client,
-			h.config.defaultKubeVipConfigMapName,
+			h.config.defaultKubeVIPConfigMapName,
 			h.config.DefaultsNamespace(),
 		)
 	}

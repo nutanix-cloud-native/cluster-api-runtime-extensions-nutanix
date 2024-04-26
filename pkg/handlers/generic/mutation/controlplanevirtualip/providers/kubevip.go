@@ -18,11 +18,11 @@ import (
 
 var (
 	//nolint:lll // for readability prefer to keep the long line
-	KubeVipPreKubeadmCommands = []string{`if [ -f /run/kubeadm/kubeadm.yaml ]; then
+	KubeVIPPreKubeadmCommands = []string{`if [ -f /run/kubeadm/kubeadm.yaml ]; then
   sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
 fi`}
 	//nolint:lll // for readability prefer to keep the long line
-	KubeVipPostKubeadmCommands = []string{`if [ -f /run/kubeadm/kubeadm.yaml ]; then
+	KubeVIPPostKubeadmCommands = []string{`if [ -f /run/kubeadm/kubeadm.yaml ]; then
   sed -i 's#path: /etc/kubernetes/super-admin.conf#path: /etc/kubernetes/admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
 fi`}
 )
@@ -97,7 +97,7 @@ func (p *kubeVIPFromConfigMapProvider) GetCommands(
 		return nil, nil, nil
 	}
 
-	return KubeVipPreKubeadmCommands, KubeVipPostKubeadmCommands, nil
+	return KubeVIPPreKubeadmCommands, KubeVIPPostKubeadmCommands, nil
 }
 
 type multipleKeysError struct {

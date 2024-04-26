@@ -84,14 +84,14 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							virtuialipproviders.KubeVipPreKubeadmCommands,
+							virtuialipproviders.KubeVIPPreKubeadmCommands,
 						),
 					},
 					{
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							virtuialipproviders.KubeVipPostKubeadmCommands,
+							virtuialipproviders.KubeVIPPostKubeadmCommands,
 						),
 					},
 				},
@@ -155,14 +155,14 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							virtuialipproviders.KubeVipPreKubeadmCommands,
+							virtuialipproviders.KubeVIPPreKubeadmCommands,
 						),
 					},
 					{
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							virtuialipproviders.KubeVipPostKubeadmCommands,
+							virtuialipproviders.KubeVIPPostKubeadmCommands,
 						),
 					},
 				},
@@ -226,7 +226,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 
 			cfg := &Config{
 				GlobalOptions:               options.NewGlobalOptions(),
-				defaultKubeVipConfigMapName: cm.Name,
+				defaultKubeVIPConfigMapName: cm.Name,
 			}
 			patchGenerator := func() mutation.GeneratePatches {
 				return mutation.NewMetaGeneratePatchesHandler(
