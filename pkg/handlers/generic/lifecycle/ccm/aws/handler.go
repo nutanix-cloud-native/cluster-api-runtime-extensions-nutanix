@@ -34,6 +34,7 @@ func (a *AWSCCMConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 		map[string]string{
 			"1.27": "aws-ccm-v1.27.1",
 			"1.28": "aws-ccm-v1.28.1",
+			"1.29": "aws-ccm-v1.29.2",
 		},
 		"map of provider cluster implementation type to default installation ConfigMap name",
 	)
