@@ -476,6 +476,16 @@ spec:
                         maximum: 65535
                         minimum: 1
                         type: integer
+                      virtualIP:
+                        description: Configuration for the virtual IP provider.
+                        properties:
+                          provider:
+                            default: KubeVIP
+                            description: Virtual IP provider to deploy.
+                            enum:
+                            - KubeVIP
+                            type: string
+                        type: object
                     required:
                     - host
                     - port

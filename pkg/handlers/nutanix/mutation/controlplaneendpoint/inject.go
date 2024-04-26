@@ -5,12 +5,10 @@ package controlplaneendpoint
 
 import (
 	"context"
-	"fmt"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,33 +83,6 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 		"variableValue",
 		controlPlaneEndpointVar,
 	)
-
-	if err := patches.MutateIfApplicable(
-		obj,
-		vars,
-		&holderRef,
-		selectors.ControlPlane(),
-		log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-			commands := []string{
-				fmt.Sprintf("sed -i 's/control_plane_endpoint_ip/%s/g' /etc/kubernetes/manifests/kube-vip.yaml",
-					controlPlaneEndpointVar.Host),
-				fmt.Sprintf("sed -i 's/control_plane_endpoint_port/%d/g' /etc/kubernetes/manifests/kube-vip.yaml",
-					controlPlaneEndpointVar.Port),
-			}
-			log.WithValues(
-				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("adding PreKubeadmCommands to control plane kubeadm config spec")
-			obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
-				commands...,
-			)
-			return nil
-		},
-	); err != nil {
-		return err
-	}
 
 	return patches.MutateIfApplicable(
 		obj,

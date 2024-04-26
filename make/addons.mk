@@ -17,8 +17,10 @@ export AWS_CCM_CHART_VERSION_128 := 0.0.8
 
 export NUTANIX_CCM_CHART_VERSION := 0.3.3
 
+export KUBE_VIP_VERSION := v0.8.0
+
 .PHONY: addons.sync
-addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler aws-ebs-csi aws-ccm.127 aws-ccm.128)
+addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler aws-ebs-csi aws-ccm.127 aws-ccm.128 kube-vip)
 
 .PHONY: update-addon.calico
 update-addon.calico: ; $(info $(M) updating calico manifests)
@@ -43,6 +45,10 @@ update-addon.aws-ebs-csi: ; $(info $(M) updating aws ebs csi manifests)
 .PHONY: update-addon.aws-ccm.%
 update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)
 	./hack/addons/update-aws-ccm.sh $(AWS_CCM_VERSION_$*) $(AWS_CCM_CHART_VERSION_$*)
+
+.PHONY: update-addon.kube-vip
+update-addon.kube-vip: ; $(info $(M) updating kube-vip manifests)
+	./hack/addons/update-kube-vip-manifests.sh
 
 .PHONY: generate-helm-configmap
 generate-helm-configmap:

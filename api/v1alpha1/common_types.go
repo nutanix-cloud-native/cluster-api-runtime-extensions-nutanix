@@ -5,6 +5,8 @@ package v1alpha1
 
 const (
 	APIServerPort = 6443
+
+	VirtualIPProviderKubeVIP = "KubeVIP"
 )
 
 // ObjectMeta is metadata that all persisted resources must have, which includes all objects
@@ -37,4 +39,16 @@ type ControlPlaneEndpointSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
 	Port int32 `json:"port"`
+
+	// Configuration for the virtual IP provider.
+	// +optional
+	VirtualIPSpec *ControlPlaneVirtualIPSpec `json:"virtualIP,omitempty"`
+}
+
+type ControlPlaneVirtualIPSpec struct {
+	// Virtual IP provider to deploy.
+	// +kubebuilder:validation:Enum=KubeVIP
+	// +kubebuilder:default=KubeVIP
+	// +optional
+	Provider string `json:"provider,omitempty"`
 }

@@ -9,7 +9,9 @@ import (
 )
 
 func NewGlobalOptions() *GlobalOptions {
-	return &GlobalOptions{}
+	return &GlobalOptions{
+		defaultsNamespace: corev1.NamespaceDefault,
+	}
 }
 
 type GlobalOptions struct {
@@ -21,7 +23,7 @@ func (o *GlobalOptions) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVar(
 		&o.defaultsNamespace,
 		"defaults-namespace",
-		corev1.NamespaceDefault,
+		o.defaultsNamespace,
 		"namespace for default configurations",
 	)
 	flags.StringVar(

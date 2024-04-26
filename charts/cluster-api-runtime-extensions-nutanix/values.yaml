@@ -72,6 +72,12 @@ hooks:
         create: true
         name: default-cluster-autoscaler-helm-values-template
 
+  virtualIP:
+    kubeVip:
+      defaultTemplateConfigMap:
+        create: true
+        name: default-kube-vip-template
+
 helmAddonsConfigMap: default-helm-addons-config
 
 deployDefaultClusterClasses: true
