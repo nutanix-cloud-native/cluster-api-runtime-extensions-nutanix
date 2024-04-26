@@ -10,7 +10,9 @@
     controlPlaneEndpoint:
       host: ${CONTROL_PLANE_ENDPOINT_IP}
       port: 6443
-      virtualIP: {}
+      virtualIP: {
+        provider: KubeVIP
+      }
     prismCentralEndpoint:
       url: https://${NUTANIX_ENDPOINT}:9440
       insecure: ${NUTANIX_INSECURE}

@@ -45,9 +45,11 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 					capitest.VariableWithValue(
 						clusterconfig.MetaVariableName,
 						v1alpha1.ControlPlaneEndpointSpec{
-							Host:          "10.20.100.10",
-							Port:          6443,
-							VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{},
+							Host: "10.20.100.10",
+							Port: 6443,
+							VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
+								Provider: v1alpha1.VirtualIPProviderKubeVIP,
+							},
 						},
 						VariableName,
 					),
@@ -114,9 +116,11 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 					capitest.VariableWithValue(
 						clusterconfig.MetaVariableName,
 						v1alpha1.ControlPlaneEndpointSpec{
-							Host:          "10.20.100.10",
-							Port:          6443,
-							VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{},
+							Host: "10.20.100.10",
+							Port: 6443,
+							VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
+								Provider: v1alpha1.VirtualIPProviderKubeVIP,
+							},
 						},
 						VariableName,
 					),
