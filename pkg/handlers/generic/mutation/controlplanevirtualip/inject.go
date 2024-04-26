@@ -118,9 +118,8 @@ func (h *ControlPlaneVirtualIP) Mutate(
 	}
 
 	var virtualIPProvider providers.Provider
-	switch controlPlaneEndpointVar.VirtualIPSpec.Provider {
 	// only kube-vip is supported, but more providers can be added in the future
-	case v1alpha1.VirtualIPProviderKubeVIP:
+	if controlPlaneEndpointVar.VirtualIPSpec.Provider == v1alpha1.VirtualIPProviderKubeVIP {
 		virtualIPProvider = providers.NewKubeVIPFromConfigMapProvider(
 			h.client,
 			h.config.defaultKubeVIPConfigMapName,
