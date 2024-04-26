@@ -12,14 +12,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 const clusterAutoscalerPrefix = "cluster-autoscaler-"
@@ -42,23 +40,17 @@ func WaitForClusterAutoscalerToBeReadyInWorkloadCluster(
 		return
 	}
 
-	// Only check for ClusterAutoscaler if the cluster is self-managed. Check this by checking if the kubeconfig
-	// exists in the workload cluster itself.
+	// Only check for ClusterAutoscaler if the cluster is self-managed.
+	// ManagementCluster function will return a nil managementCluster if workloadClusterClient
+	// is not a self-managed cluster.
 	workloadClusterClient := input.ClusterProxy.GetWorkloadCluster(
 		ctx, input.WorkloadCluster.Namespace, input.WorkloadCluster.Name,
 	).GetClient()
-	err := workloadClusterClient.Get(
-		ctx,
-		client.ObjectKey{
-			Namespace: input.WorkloadCluster.Namespace,
-			Name:      input.WorkloadCluster.Name + "-kubeconfig",
-		},
-		&corev1.Secret{},
-	)
-	if err != nil && errors.IsNotFound(err) {
+	managementCluster, err := utils.ManagementCluster(ctx, workloadClusterClient)
+	Expect(err).NotTo(HaveOccurred())
+	if managementCluster == nil {
 		return
 	}
-	Expect(err).NotTo(HaveOccurred())
 
 	switch input.ClusterAutoscaler.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:

@@ -59,8 +59,9 @@ jobs:
       matrix:
         provider:
           - Docker
-          # Uncomment below once we have the ability to run e2e tests on AWS from GHA.
+          # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - AWS
+          # - Nutanix
       fail-fast: false
     uses: ./.github/workflows/e2e.yml
     with:
@@ -76,8 +77,9 @@ jobs:
       matrix:
         provider:
           - Docker
-          # Uncomment below once we have the ability to run e2e tests on AWS from GHA.
+          # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - AWS
+          # - Nutanix
       fail-fast: false
     uses: ./.github/workflows/e2e.yml
     with:
