@@ -114,6 +114,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		return
 	}
 
+	// There's a 1:1 mapping of infra to CCM provider. We derive the CCM provider from the infra.
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
 	log.Info(fmt.Sprintf("finding CCM handler for %s", infraKind))
 	var handler CCMProvider

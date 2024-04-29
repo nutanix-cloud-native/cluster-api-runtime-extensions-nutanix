@@ -6,17 +6,52 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+
+	nutanixv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 )
 
+// All kubebuilder "Enum" build tag values are available in the OpenAPI spec.
+// So that all these values are available to users of the api package, we
+// we define a constant for each of the values.
+//
+// TODO: Generate these constants from the kubebuilder build tags, if possible.
 const (
-	AddonStrategyClusterResourceSet   AddonStrategy = "ClusterResourceSet"
-	AddonStrategyHelmAddon            AddonStrategy = "HelmAddon"
-	VolumeBindingImmediate                          = storagev1.VolumeBindingImmediate
-	VolumeBindingWaitForFirstConsumer               = storagev1.VolumeBindingWaitForFirstConsumer
+	CNIProviderCalico = "Calico"
+	CNIProviderCilium = "Cilium"
+
+	CSIProviderAWSEBS  = "aws-ebs"
+	CSIProviderNutanix = "nutanix"
+
+	VirtualIPProviderKubeVIP = "KubeVIP"
+
+	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
+	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
+
+	VolumeBindingImmediate            = storagev1.VolumeBindingImmediate
+	VolumeBindingWaitForFirstConsumer = storagev1.VolumeBindingWaitForFirstConsumer
 
 	VolumeReclaimRecycle = corev1.PersistentVolumeReclaimRecycle
 	VolumeReclaimDelete  = corev1.PersistentVolumeReclaimDelete
 	VolumeReclaimRetain  = corev1.PersistentVolumeReclaimRetain
+
+	NutanixBootTypeLegacy = nutanixv1.NutanixBootTypeLegacy
+	NutanixBootTypeUEFI   = nutanixv1.NutanixBootTypeUEFI
+)
+
+// FIXME: Remove StorageProvisioner from the API. Users do not provide this
+// value; we derive it from the CSI provider.
+type StorageProvisioner string
+
+const (
+	AWSEBSProvisioner  StorageProvisioner = "ebs.csi.aws.com"
+	NutanixProvisioner StorageProvisioner = "csi.nutanix.com"
+)
+
+// FIXME: Remove the CCM providers from the API. Users do not provider this
+// value; we derive it from the cluster infrastructure.
+const (
+	CCMProviderAWS     = "aws"
+	CCMProviderNutanix = "nutanix"
 )
 
 type Addons struct {

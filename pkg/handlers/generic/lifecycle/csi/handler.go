@@ -111,6 +111,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		}
 	}
 
+	// There's a 1:N mapping of infra to CSI providers. The user chooses the provider.
 	for _, provider := range csiProviders.Providers {
 		handler, ok := c.ProviderHandler[provider.Name]
 		if !ok {
