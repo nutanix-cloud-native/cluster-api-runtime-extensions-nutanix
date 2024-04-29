@@ -156,7 +156,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		return fmt.Errorf("failed to get helm chart %q: %w", config.NutanixStorageCSI, err)
 	}
 
-	snapshotHelmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixSnapshotCSI)
+	snapshotChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixSnapshotCSI)
 	if err != nil {
 		return fmt.Errorf("failed to get helm chart %q: %w", config.NutanixSnapshotCSI, err)
 	}
@@ -193,21 +193,25 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			Name:      "nutanix-csi-snapshot-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   snapshotHelmChart.Repository,
-			ChartName: snapshotHelmChart.Name,
+			RepoURL:   snapshotChart.Repository,
+			ChartName: snapshotChart.Name,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: defaultSnapshotHelmReleaseNamespace,
 			ReleaseName:      defaultSnapshotHelmReleaseName,
-			Version:          snapshotHelmChart.Version,
+			Version:          snapshotChart.Version,
 		},
 	}
 
 	// We use a slice of pointers to satisfy the gocritic linter rangeValCopy check.
 	for _, cp := range []*caaphv1.HelmChartProxy{storageChartProxy, snapshotChartProxy} {
 		if err = controllerutil.SetOwnerReference(&req.Cluster, cp, n.client.Scheme()); err != nil {
-			return fmt.Errorf("failed to set owner reference on HelmChartProxy %q: %w", cp.Name, err)
+			return fmt.Errorf(
+				"failed to set owner reference on HelmChartProxy %q: %w",
+				cp.Name,
+				err,
+			)
 		}
 
 		if err = client.ServerSideApply(ctx, n.client, cp, client.ForceOwnership); err != nil {
