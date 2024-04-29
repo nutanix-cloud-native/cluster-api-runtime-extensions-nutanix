@@ -171,6 +171,9 @@ jobs:
         env:
           SKIP: no-commit-to-branch,golangci-lint,actionlint-system
 
+      - name: Run git status and fail on a dirty state
+        run: devbox run -- make git.status
+
   lint-test-helm:
     runs-on: ubuntu-22.04
     steps:
