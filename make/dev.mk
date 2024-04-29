@@ -50,4 +50,5 @@ endif
 .PHONY: .envrc.e2e
 .envrc.e2e:
 	gojq --yaml-input --raw-output '.variables | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' < test/e2e/config/caren.yaml | envsubst > .envrc.e2e
+	setup-envtest use -p env $(ENVTEST_VERSION) >> .envrc.e2e
 	direnv reload
