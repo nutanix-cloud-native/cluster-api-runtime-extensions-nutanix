@@ -41,26 +41,6 @@
         }
       }
     },
-    "clusterctl@latest": {
-      "last_modified": "2024-03-15T20:27:35Z",
-      "resolved": "github:NixOS/nixpkgs/9af9c1c87ed3e3ed271934cb896e0cdd33dae212#clusterctl",
-      "source": "devbox-search",
-      "version": "1.6.3",
-      "systems": {
-        "aarch64-darwin": {
-          "store_path": "/nix/store/6hsi8bj8ddbrv29jff467q1rqcfgs964-clusterctl-1.6.3"
-        },
-        "aarch64-linux": {
-          "store_path": "/nix/store/jysji089cqrygcwl2ryvbb0sa3cjj8vv-clusterctl-1.6.3"
-        },
-        "x86_64-darwin": {
-          "store_path": "/nix/store/gbch3dp061am97j79b56pp07121j781k-clusterctl-1.6.3"
-        },
-        "x86_64-linux": {
-          "store_path": "/nix/store/1xy66gcyxaqjhb5h15slyxzw64d920c6-clusterctl-1.6.3"
-        }
-      }
-    },
     "coreutils@latest": {
       "last_modified": "2024-03-11T21:09:54Z",
       "resolved": "github:NixOS/nixpkgs/bf8462aeba50cc753971480f613fbae0747cffc0#coreutils",
@@ -361,23 +341,51 @@
         }
       }
     },
-    "hugo@latest": {
-      "last_modified": "2024-03-17T10:00:07Z",
-      "resolved": "github:NixOS/nixpkgs/6af7e814afb3b62171eee1edc31989ee61528d25#hugo",
+    "hugo@0.124.1": {
+      "last_modified": "2024-04-01T22:53:36-04:00",
+      "resolved": "github:NixOS/nixpkgs/080a4a27f206d07724b88da096e27ef63401a504#hugo",
       "source": "devbox-search",
-      "version": "0.124.0",
+      "version": "0.124.1",
       "systems": {
         "aarch64-darwin": {
-          "store_path": "/nix/store/rfkfvwigv0282mw24n3cdym7cyi542jy-hugo-0.124.0"
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/svp323dq8pkvkdpgwm6kacirvj306gk7-hugo-0.124.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/svp323dq8pkvkdpgwm6kacirvj306gk7-hugo-0.124.1"
         },
         "aarch64-linux": {
-          "store_path": "/nix/store/0rnv4sichypqbprm4nqd0jjc27z5286c-hugo-0.124.0"
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/23g4yy8nljj46iahh4h6hr9q5sbwl0sx-hugo-0.124.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/23g4yy8nljj46iahh4h6hr9q5sbwl0sx-hugo-0.124.1"
         },
         "x86_64-darwin": {
-          "store_path": "/nix/store/ip5zhc1rf2li8cmjwffjrj42r7nkkj4a-hugo-0.124.0"
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/nhfnhk99rwq5ving0adayix38m4kfkpq-hugo-0.124.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/nhfnhk99rwq5ving0adayix38m4kfkpq-hugo-0.124.1"
         },
         "x86_64-linux": {
-          "store_path": "/nix/store/8syg9xrkp3nbpb1r4b469068kvk8gq2a-hugo-0.124.0"
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4rwm1ni7hnhjlpn1v3w6g376hzkks7za-hugo-0.124.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4rwm1ni7hnhjlpn1v3w6g376hzkks7za-hugo-0.124.1"
         }
       }
     },
@@ -458,26 +466,6 @@
         },
         "x86_64-linux": {
           "store_path": "/nix/store/xha7i9pddiz31bm9cr33njwnmzdpd3rf-kubectl-1.29.3"
-        }
-      }
-    },
-    "kubernetes-controller-tools@latest": {
-      "last_modified": "2024-03-08T13:51:52Z",
-      "resolved": "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b#kubernetes-controller-tools",
-      "source": "devbox-search",
-      "version": "0.14.0",
-      "systems": {
-        "aarch64-darwin": {
-          "store_path": "/nix/store/jblk86f5bi2dwg2w8g42xl9mpw1yrbi4-controller-tools-0.14.0"
-        },
-        "aarch64-linux": {
-          "store_path": "/nix/store/sq48wn8yyqkya8as690h61d1dlxwlkbi-controller-tools-0.14.0"
-        },
-        "x86_64-darwin": {
-          "store_path": "/nix/store/nm2vx0f6ajmqpbi2c6z8wani5f1fdqb4-controller-tools-0.14.0"
-        },
-        "x86_64-linux": {
-          "store_path": "/nix/store/f8h9pj08ksm49v980yb0slzrbpqqc98r-controller-tools-0.14.0"
         }
       }
     },
