@@ -197,7 +197,7 @@ go-generate: ; $(info $(M) running go generate)
 	controller-gen paths="./api/v1alpha1" \
 	  object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/dev/null \
 	  crd:headerFile=hack/license-header.yaml.txt output:crd:artifacts:config=./api/v1alpha1/crds
-	$(MAKE) go-fix
+	#$(MAKE) go-fix
 
 .PHONY: go-mod-upgrade
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades
