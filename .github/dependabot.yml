@@ -16,10 +16,6 @@ updates:
       k8s:
         patterns:
           - "k8s.io*"
-        update-types:
-          - patch
-      k8s-sigs:
-        patterns:
           - "sigs.k8s.io*"
 
   - package-ecosystem: "gomod"
@@ -30,10 +26,6 @@ updates:
       k8s:
         patterns:
           - "k8s.io*"
-        update-types:
-          - patch
-      k8s-sigs:
-        patterns:
           - "sigs.k8s.io*"
 
   - package-ecosystem: "gomod"
@@ -44,10 +36,6 @@ updates:
       k8s:
         patterns:
           - "k8s.io*"
-        update-types:
-          - patch
-      k8s-sigs:
-        patterns:
           - "sigs.k8s.io*"
 
   - package-ecosystem: "gomod"
