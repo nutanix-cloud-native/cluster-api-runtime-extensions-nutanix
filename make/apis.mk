@@ -37,7 +37,7 @@ PROVIDER_API_VERSION_capx := v1beta1
 
 .PHONY: apis.sync
 apis.sync: ## Syncs third-party CAPI providers' types
-apis.sync: $(addprefix api.sync.,capa caaph capx) go-fix.api mod-tidy.api
+apis.sync: $(addprefix api.sync.,capa caaph capx) mod-tidy.api # go-fix.api
 
 .PHONY: api.sync.%
 api.sync.%: ## Syncs a third-party CAPI provider's API types
