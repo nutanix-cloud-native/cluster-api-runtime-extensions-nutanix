@@ -5,7 +5,7 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/ex
 
 go 1.21
 
-require sigs.k8s.io/cluster-api-addon-provider-helm v0.2.1
+require sigs.k8s.io/cluster-api-addon-provider-helm v0.2.2
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -62,7 +62,7 @@ require (
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e // indirect
-	sigs.k8s.io/cluster-api v1.6.3 // indirect
+	sigs.k8s.io/cluster-api v1.6.4 // indirect
 	sigs.k8s.io/controller-runtime v0.16.5 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect

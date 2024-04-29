@@ -78,8 +78,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/onsi/ginkgo/v2 v2.17.1 h1:V++EzdbhI4ZV4ev0UTIj0PzhzOcReJFyJaLjtSF55M8=
 github.com/onsi/ginkgo/v2 v2.17.1/go.mod h1:llBI3WDLL9Z6taip6f33H76YcWtJv+7R3HigUjbIBOs=
-github.com/onsi/gomega v1.32.0 h1:JRYU78fJ1LPxlckP6Txi/EYqJvjtMrDC04/MM5XRHPk=
-github.com/onsi/gomega v1.32.0/go.mod h1:a4x4gW6Pz2yK1MAmvluYme5lvYTn61afQ2ETw/8n4Lg=
+github.com/onsi/gomega v1.33.0 h1:snPCflnZrpMsy94p4lXVEkHo12lmPnc3vY5XBbreexE=
+github.com/onsi/gomega v1.33.0/go.mod h1:+925n5YtiFsLzzafLUHzVMBpvvRAzrydIBiSIxjX3wY=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
@@ -194,10 +194,10 @@ k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 h1:aVUu9fTY98ivBPKR9Y5w/A
 k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00/go.mod h1:AsvuZPBlUDVuCdzJ87iajxtXuR9oktsTctW/R9wwouA=
 k8s.io/utils v0.0.0-20240102154912-e7106e64919e h1:eQ/4ljkx21sObifjzXwlPKpdGLrCfRziVtos3ofG/sQ=
 k8s.io/utils v0.0.0-20240102154912-e7106e64919e/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
-sigs.k8s.io/cluster-api v1.6.3 h1:VOlPNg92PQLlhBVLc5pg+cbAuPvGOOBujeFLk9zgnoo=
-sigs.k8s.io/cluster-api v1.6.3/go.mod h1:4FzfgPPiYaFq8X9F9j2SvmggH/4OOLEDgVJuWDqKLig=
-sigs.k8s.io/cluster-api-addon-provider-helm v0.2.1 h1:g9SAxnECqaAaCQXH3vHcZdgTJZjz+1hDC6hOdHy2R1c=
-sigs.k8s.io/cluster-api-addon-provider-helm v0.2.1/go.mod h1:gEvyp4dS9RjNFQTDxugRfo1Cp228Q+ptZ0vxVyeotLc=
+sigs.k8s.io/cluster-api v1.6.4 h1:O3J+Dm/wBMAQSyTtdkEPcWbv4KyY4yqv8Q8g6pJVefM=
+sigs.k8s.io/cluster-api v1.6.4/go.mod h1:az1S/g/6umDjmh3ZWpjJWm23peUZOqEt3vv2FuOIZ3s=
+sigs.k8s.io/cluster-api-addon-provider-helm v0.2.2 h1:gPVgqF4QfW55F4Pq/UJKZus8fIiQ6SL2qgUG9nHJzuw=
+sigs.k8s.io/cluster-api-addon-provider-helm v0.2.2/go.mod h1:6QfhZgTxFKe9UEu7hi8IIrggAbETF/mF4ACnHza+JTo=
 sigs.k8s.io/controller-runtime v0.16.5 h1:yr1cEJbX08xsTW6XEIzT13KHHmIyX8Umvme2cULvFZw=
 sigs.k8s.io/controller-runtime v0.16.5/go.mod h1:j7bialYoSn142nv9sCOJmQgDXQXxnroFU4VnX/brVJ0=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd h1:EDPBXCAspyGV4jQlpZSudPeMmr1bNJefnuqLsRAsHZo=
