@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	addonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 )
 
 // WaitForHelmReleaseProxyReadyInput is the input for WaitForHelmReleaseProxyReady.
@@ -66,12 +66,12 @@ func getHelmReleaseProxy(
 	clusterName string,
 	clusterNamespace string,
 	helmChartProxyName string,
-) (*addonsv1.HelmReleaseProxy, error) {
+) (*helmaddonsv1.HelmReleaseProxy, error) {
 	// Get the HelmReleaseProxy using label selectors since we don't know the name of the HelmReleaseProxy.
-	releaseList := &addonsv1.HelmReleaseProxyList{}
+	releaseList := &helmaddonsv1.HelmReleaseProxyList{}
 	labels := map[string]string{
-		clusterv1.ClusterNameLabel:       clusterName,
-		addonsv1.HelmChartProxyLabelName: helmChartProxyName,
+		clusterv1.ClusterNameLabel:           clusterName,
+		helmaddonsv1.HelmChartProxyLabelName: helmChartProxyName,
 	}
 	if err := getLister.List(
 		ctx,

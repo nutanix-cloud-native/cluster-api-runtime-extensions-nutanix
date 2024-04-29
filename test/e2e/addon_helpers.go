@@ -53,4 +53,17 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 			ClusterResourceSetIntervals: input.ClusterResourceSetIntervals,
 		},
 	)
+
+	WaitForClusterAutoscalerToBeReadyInWorkloadCluster(
+		ctx,
+		WaitForClusterAutoscalerToBeReadyInWorkloadClusterInput{
+			ClusterAutoscaler:           input.AddonsConfig.ClusterAutoscaler,
+			WorkloadCluster:             input.WorkloadCluster,
+			ClusterProxy:                input.ClusterProxy,
+			DeploymentIntervals:         input.DeploymentIntervals,
+			DaemonSetIntervals:          input.DaemonSetIntervals,
+			HelmReleaseIntervals:        input.HelmReleaseIntervals,
+			ClusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+		},
+	)
 }

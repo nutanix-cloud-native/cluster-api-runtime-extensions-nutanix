@@ -54,15 +54,37 @@ jobs:
         with:
           test-results: test.json
 
-  e2e-test:
+  e2e-quick-start:
     strategy:
       matrix:
         provider:
           - Docker
+          # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
+          # - AWS
+          # - Nutanix
       fail-fast: false
     uses: ./.github/workflows/e2e.yml
     with:
       provider: ${{ matrix.provider }}
+      focus: Quick start
+    secrets: inherit
+    permissions:
+      contents: read
+      checks: write
+
+  e2e-self-hosted:
+    strategy:
+      matrix:
+        provider:
+          - Docker
+          # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
+          # - AWS
+          # - Nutanix
+      fail-fast: false
+    uses: ./.github/workflows/e2e.yml
+    with:
+      provider: ${{ matrix.provider }}
+      focus: Self-hosted
     secrets: inherit
     permissions:
       contents: read

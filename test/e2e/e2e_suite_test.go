@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	addonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/bootstrap"
 	clusterctltemp "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/clusterctl"
 )
@@ -205,7 +205,7 @@ func createClusterctlLocalRepository(config *clusterctl.E2EConfig, repositoryFol
 func initScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
 	framework.TryAddDefaultSchemes(scheme)
-	Expect(addonsv1.AddToScheme(scheme)).To(Succeed())
+	Expect(helmaddonsv1.AddToScheme(scheme)).To(Succeed())
 	return scheme
 }
 
