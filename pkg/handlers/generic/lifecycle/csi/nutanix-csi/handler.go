@@ -151,12 +151,17 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		)
 	}
 
-	helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixStorageCSI)
+	storageChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixStorageCSI)
 	if err != nil {
-		return fmt.Errorf("failed to get values for nutanix-csi-config %w", err)
+		return fmt.Errorf("failed to get helm chart %q: %w", config.NutanixStorageCSI, err)
 	}
 
-	hcp := &caaphv1.HelmChartProxy{
+	snapshotChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixSnapshotCSI)
+	if err != nil {
+		return fmt.Errorf("failed to get helm chart %q: %w", config.NutanixSnapshotCSI, err)
+	}
+
+	storageChartProxy := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: caaphv1.GroupVersion.String(),
 			Kind:       "HelmChartProxy",
@@ -166,35 +171,19 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			Name:      "nutanix-csi-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   helmChart.Repository,
-			ChartName: helmChart.Name,
+			RepoURL:   storageChart.Repository,
+			ChartName: storageChart.Name,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: defaultStorageHelmReleaseNamespace,
 			ReleaseName:      defaultStorageHelmReleaseName,
-			Version:          helmChart.Version,
+			Version:          storageChart.Version,
 			ValuesTemplate:   values,
 		},
 	}
 
-	if err = controllerutil.SetOwnerReference(&req.Cluster, hcp, n.client.Scheme()); err != nil {
-		return fmt.Errorf(
-			"failed to set owner reference on nutanix-csi installation HelmChartProxy: %w",
-			err,
-		)
-	}
-
-	if err = client.ServerSideApply(ctx, n.client, hcp, client.ForceOwnership); err != nil {
-		return fmt.Errorf("failed to apply nutanix-csi installation HelmChartProxy: %w", err)
-	}
-
-	snapshotHelmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixSnapshotCSI)
-	if err != nil {
-		return fmt.Errorf("failed to get values for nutanix-csi-config %w", err)
-	}
-
-	snapshotChart := &caaphv1.HelmChartProxy{
+	snapshotChartProxy := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: caaphv1.GroupVersion.String(),
 			Kind:       "HelmChartProxy",
@@ -204,29 +193,30 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			Name:      "nutanix-csi-snapshot-" + req.Cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   snapshotHelmChart.Repository,
-			ChartName: snapshotHelmChart.Name,
+			RepoURL:   snapshotChart.Repository,
+			ChartName: snapshotChart.Name,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
 			},
 			ReleaseNamespace: defaultSnapshotHelmReleaseNamespace,
 			ReleaseName:      defaultSnapshotHelmReleaseName,
-			Version:          snapshotHelmChart.Version,
+			Version:          snapshotChart.Version,
 		},
 	}
 
-	if err = controllerutil.SetOwnerReference(&req.Cluster, snapshotChart, n.client.Scheme()); err != nil {
-		return fmt.Errorf(
-			"failed to set owner reference on nutanix-csi-snapshot installation HelmChartProxy: %w",
-			err,
-		)
-	}
+	// We use a slice of pointers to satisfy the gocritic linter rangeValCopy check.
+	for _, cp := range []*caaphv1.HelmChartProxy{storageChartProxy, snapshotChartProxy} {
+		if err = controllerutil.SetOwnerReference(&req.Cluster, cp, n.client.Scheme()); err != nil {
+			return fmt.Errorf(
+				"failed to set owner reference on HelmChartProxy %q: %w",
+				cp.Name,
+				err,
+			)
+		}
 
-	if err = client.ServerSideApply(ctx, n.client, snapshotChart); err != nil {
-		return fmt.Errorf(
-			"failed to apply nutanix-csi-snapshot installation HelmChartProxy: %w",
-			err,
-		)
+		if err = client.ServerSideApply(ctx, n.client, cp, client.ForceOwnership); err != nil {
+			return fmt.Errorf("failed to apply HelmChartProxy %q: %w", cp.Name, err)
+		}
 	}
 
 	return nil
