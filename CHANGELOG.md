@@ -1,5 +1,61 @@
 # Changelog
 
+## 0.8.0 (2024-04-29)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: give mutators a clusterGetter function by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/514
+* feat: get default sans via cluster object in patch handler for docker by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/519
+* feat: adds nutanix SANs via patchHandler by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/522
+* feat: nutanix csi driver 3.0 by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/531
+* feat: Add additionalCategories field to Nutanix machine details patch by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/525
+* feat: support setting Nutanix project on machines by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/535
+* feat: Upgrade to CAPI v1.7.0 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/555
+* feat: CAPI v1.7.1 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/560
+* feat: Preserve user-managed fields when applying resources by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/556
+* feat: Preserve user-managed fields when creating namespace by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/557
+* feat: Added e2e test for capx cluster by @deepakm-ntnx in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/523
+* feat: add kube-vip static Pod in a Nutanix handler by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/558
+* feat: AWS CCM for Kubernetes v1.29 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/564
+### Fixes 🔧
+* fix: updated the capx version used by @deepakm-ntnx in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/513
+* fix: add omitempty to CCM Credentials struct by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/524
+* fix: Add specific descriptions to Nutanix machine details fields by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/532
+* refactor: setting ownership references to Nutanix CSI Helm Chart Proxies by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/565
+### Other Changes
+* build: Specify go1.22.2 as toolchain to fix govulncheck issues by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/517
+* build: Add metadata for latest v0.7.0 release by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/515
+* refactor: Consistently import CAPI v1beta1 package as clusterv1 alias by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/518
+* build: Fix image tags in release manifests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/516
+* test(e2e): Use same versions of providers from module dependencies by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/521
+* build: update aws credentials on kind bootstrap cluster by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/507
+* refactor: standardize the code for getting Helm values by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/500
+* build: Use latest k8s for dev and test management cluster by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/526
+* docs: Add how to release doc by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/530
+* build: adds a .envrc.local file for local development for dotenv by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/538
+* refactor: create storage classes directly instead of using CRS by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/539
+* refactor: Move API to caren.nutanix.com group by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/534
+* build: Add Kubernetes v1.30.0 option for bootstrap and Docker provider by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/541
+* build: create .envrc.e2e file from caren e2e config by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/540
+* build: Only allow patch updates to k8s libs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/551
+* build: Generate CRD YAML by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/536
+* build: Minor golangci-lint config updates for recent versions by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/552
+* build: generated CRDs yamls by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/553
+* refactor: Use separate types for provider cluster configs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/537
+* docs: Remove additionalCategories from required fields by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/543
+* build: Upgrade tooling, notably go to v1.22.2 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/561
+* refactor: provider an entrypoint to the infra provider meta handlers by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/554
+* test(e2e): Add self-hosted e2e test by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/439
+* build: Bundle k8s.io/* back in with sigs.k8s.io/* dependencies  by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/583
+* build: Add envtest setup to e2e envrc by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/563
+
+## New Contributors
+* @deepakm-ntnx made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/513
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.7.0...v0.8.0
+
 ## 0.7.0 (2024-04-15)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
