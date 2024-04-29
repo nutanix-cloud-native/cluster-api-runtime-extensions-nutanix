@@ -17,10 +17,3 @@ ifneq ($(shell git status --porcelain 2>/dev/null; echo $$?), 0)
 else
 	export GIT_TREE_STATE :=
 endif
-
-.PHONY: git.status
-git.status: ## Returns exit code of 1 if the git tree is dirty
-	@if [ -n "$(GIT_TREE_STATE)" ]; then \
-		git status --porcelain 2>/dev/null; \
-		exit 1; \
-	fi
