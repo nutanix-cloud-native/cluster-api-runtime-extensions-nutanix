@@ -55,9 +55,33 @@ var (
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-project"),
 		}),
+		GPUs: []v1alpha1.NutanixGPU{
+			{
+				Type: "name",
+				Name: ptr.To("gpu1"),
+			},
+			{
+				Type:     "deviceID",
+				DeviceID: ptr.To(int64(1)),
+			},
+		},
 	}
 
 	matchersForAllFieldsSet = []capitest.JSONPatchMatcher{
+		{
+			Operation: "add",
+			Path:      "/spec/template/spec/gpus",
+			ValueMatcher: gomega.ContainElements(
+				gomega.SatisfyAll(
+					gomega.HaveKeyWithValue("type", "name"),
+					gomega.HaveKeyWithValue("name", "gpu1"),
+				),
+				gomega.SatisfyAll(
+					gomega.HaveKeyWithValue("type", "deviceID"),
+					gomega.HaveKeyWithValue("deviceID", gomega.BeNumerically("==", 1)),
+				),
+			),
+		},
 		{
 			Operation:    "add",
 			Path:         "/spec/template/spec/bootType",
