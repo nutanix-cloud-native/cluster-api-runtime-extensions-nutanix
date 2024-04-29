@@ -60,6 +60,25 @@ type NutanixMachineDetails struct {
 	// The project must already be present in the Prism Central.
 	// +kubebuilder:validation:Optional
 	Project *NutanixResourceIdentifier `json:"project,omitempty"`
+
+	// List of GPU devices that need to be added to the machines.
+	// +kubebuilder:validation:Optional
+	GPUs []NutanixGPU `json:"gpus,omitempty"`
+}
+
+type NutanixGPU struct {
+	// Type is the identifier type to use for this resource.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum:=deviceID;name
+	Type string `json:"type"`
+
+	// deviceID is the id of the GPU entity.
+	// +optional
+	DeviceID *int64 `json:"deviceID,omitempty"`
+
+	// name is the GPU name
+	// +optional
+	Name *string `json:"name,omitempty"`
 }
 
 // NutanixIdentifierType is an enumeration of different resource identifier types.
