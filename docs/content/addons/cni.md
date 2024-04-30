@@ -75,10 +75,11 @@ ConfigMaps from the same namespace as the CAPI runtime extensions hook pod is ru
 configure defaults specific for their environment rather than compiling the defaults into the binary.
 
 The Helm chart comes with default configurations for the Calico Installation CRS per supported provider, but overriding
-is possible. To do so, specify:
+is possible. For example. to change Docker provider's Calico configuration, specify following helm argument when
+deploying cluster-api-runtime-extensions-nutanix chart:
 
 ```shell
---set-file handlers.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.content=<file>
+--set-file hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.content=<file>
 ```
 
 [Cluster API Add-on Provider for Helm]: https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm
