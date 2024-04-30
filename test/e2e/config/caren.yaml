@@ -132,8 +132,8 @@ providers:
 - name: caren
   type: RuntimeExtensionProvider
   versions:
-  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.7}"
-    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.7}/runtime-extension-components.yaml"
+  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.8}"
+    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.8}/runtime-extension-components.yaml"
     type: "url"
     contract: v1beta1
     files:
@@ -143,7 +143,7 @@ providers:
       new: "--v=8"
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
-  - name: v0.8.99 # "vNext"; use manifests from local source files
+  - name: v0.9.99 # "vNext"; use manifests from local source files
     value: "file://../../../runtime-extension-components.yaml"
     type: "url"
     contract: v1beta1
@@ -154,8 +154,6 @@ providers:
       new: "--v=8"
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
-    - old: "imagePullPolicy: Always"
-      new: "imagePullPolicy: IfNotPresent"
 
 variables:
   # Default variables for the e2e test; those values could be overridden via env variables, thus
