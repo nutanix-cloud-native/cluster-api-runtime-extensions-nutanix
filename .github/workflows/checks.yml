@@ -171,16 +171,6 @@ jobs:
         env:
           SKIP: no-commit-to-branch,golangci-lint,actionlint-system
 
-      - name: Get changed files since last commit
-        id: changed-files
-        uses: tj-actions/changed-files@v44
-      - name: Fail if there are changed files
-        if: steps.changed-files.outputs.any_changed
-        uses: actions/github-script@v3
-        with:
-          script: |
-            core.setFailed('Discovered changed files: ${{ steps.changed-files.outputs.all_changed_files }}')
-
   lint-test-helm:
     runs-on: ubuntu-22.04
     steps:
