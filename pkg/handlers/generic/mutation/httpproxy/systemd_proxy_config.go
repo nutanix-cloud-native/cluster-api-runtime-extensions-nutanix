@@ -33,10 +33,6 @@ func generateSystemdFiles(vars v1alpha1.HTTPProxy, noProxy []string) []bootstrap
 		return nil
 	}
 
-	allNoProxy := []string{}
-	allNoProxy = append(allNoProxy, noProxy...)
-	allNoProxy = append(allNoProxy, vars.AdditionalNo...)
-
 	tplVars := struct {
 		HTTP  string
 		HTTPS string
@@ -44,7 +40,7 @@ func generateSystemdFiles(vars v1alpha1.HTTPProxy, noProxy []string) []bootstrap
 	}{
 		HTTP:  vars.HTTP,
 		HTTPS: vars.HTTPS,
-		NO:    strings.Join(allNoProxy, ","),
+		NO:    strings.Join(noProxy, ","),
 	}
 
 	var buf bytes.Buffer
