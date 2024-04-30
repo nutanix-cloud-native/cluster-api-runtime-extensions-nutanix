@@ -27,8 +27,8 @@ gh pr checkout <RELEASE_PR_NUMBER>
 
 Sign the previous commit:
 
-```shell
-git commit --gpg-sign --amend
+```bash
+git commit --gpg-sign --amend --no-edit
 ```
 
 And force push:
