@@ -40,6 +40,12 @@ repos:
     language: system
     files: "^(hack/addons/|charts/cluster-api-runtime-extensions-nutanix/templates/.+|make/addons.mk$)"
     pass_filenames: false
+  - id: check-devbox-lock
+    name: check-devbox-lock
+    entry: devbox install
+    language: system
+    files: "^devbox.(yaml|lock)$"
+    pass_filenames: false
 - repo: https://github.com/tekwizely/pre-commit-golang
   rev: v1.0.0-rc.1
   hooks:
