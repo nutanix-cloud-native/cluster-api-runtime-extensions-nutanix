@@ -76,10 +76,10 @@ func (h *HelmChartGetter) For(
 	name Component,
 ) (*HelmChart, error) {
 	log.Info(
-		fmt.Sprintf("Fetching HelmChart info for %s from configmap %s/%s",
+		fmt.Sprintf("Fetching HelmChart info for %q from configmap %s/%s",
 			string(name),
-			h.cmName,
-			h.cmNamespace),
+			h.cmNamespace,
+			h.cmName),
 	)
 	cm, err := h.get(ctx)
 	if err != nil {
@@ -87,7 +87,7 @@ func (h *HelmChartGetter) For(
 	}
 	d, ok := cm.Data[string(name)]
 	if !ok {
-		return nil, fmt.Errorf("did not find key %s in %v", name, cm.Data)
+		return nil, fmt.Errorf("did not find key %q in configmap %s/%s", name, h.cmNamespace, h.cmName)
 	}
 	var settings HelmChart
 	err = yaml.Unmarshal([]byte(d), &settings)
