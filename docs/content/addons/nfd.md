@@ -3,13 +3,13 @@ title = "Node Feature Discovery"
 icon = "fa-solid fa-eye"
 +++
 
-By leveraging CAPI cluster lifecycle hooks, this handler deploys [Node Feature
-Discovery](https://github.com/kubernetes-sigs/node-feature-discovery) (NFD) on the new cluster via `ClusterResourceSets`
-at the `AfterControlPlaneInitialized` phase.
+By leveraging CAPI cluster lifecycle hooks, this handler deploys [Node Feature Discovery] (NFD) on the new cluster at
+the `AfterControlPlaneInitialized` phase.
 
-Deployment of NFD is opt-in via the  [provider-specific cluster configuration]({{< ref ".." >}}).
+Deployment of NFD is opt-in via the [provider-specific cluster configuration]({{< ref ".." >}}).
 
-The hook creates a `ClusterResourceSet` to deploy the NFD resources.
+The hook uses either the [Cluster API Add-on Provider for Helm] or `ClusterResourceSet` to deploy the NFD resources
+depending on the selected deployment strategy.
 
 ## Example
 
@@ -29,3 +29,8 @@ spec:
             nfd:
               strategy: HelmAddon
 ```
+
+To deploy the addon via `ClusterResourceSet` replace the value of `strategy` with `ClusterResourceSet`.
+
+[Node Feature Discovery]: https://github.com/kubernetes-sigs/node-feature-discovery
+[Cluster API Add-on Provider for Helm]: https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm

@@ -3,12 +3,13 @@ title = "Cluster Autoscaler"
 icon = "fa-solid fa-up-right-and-down-left-from-center"
 +++
 
-By leveraging CAPI cluster lifecycle hooks, this handler deploys [Cluster Autoscaler][cluster-autoscaler]
-on the new cluster via `ClusterResourceSets` at the `AfterControlPlaneInitialized` phase.
+By leveraging CAPI cluster lifecycle hooks, this handler deploys [Cluster Autoscaler] on the new cluster at the
+`AfterControlPlaneInitialized` phase.
 
 Deployment of Cluster Autoscaler is opt-in via the  [provider-specific cluster configuration]({{< ref ".." >}}).
 
-The hook creates a `ClusterResourceSet` to deploy the Cluster Autoscaler resources.
+The hook uses either the [Cluster API Add-on Provider for Helm] or `ClusterResourceSet` to deploy the cluster-autoscaler
+resources depending on the selected deployment strategy.
 
 ## Example
 
@@ -26,7 +27,7 @@ spec:
         value:
           addons:
             clusterAutoscaler:
-              strategy: ClusterResourceSet
+              strategy: HelmAddon
     workers:
       machineDeployments:
         - class: default-worker
@@ -40,4 +41,7 @@ spec:
           # Remove the replicas field, otherwise the topology controller will revert back the autoscaler's changes
 ```
 
-[cluster-autoscaler]: https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/clusterapi
+To deploy the addon via `ClusterResourceSet` replace the value of `strategy` with `ClusterResourceSet`.
+
+[Cluster Autoscaler]: https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/clusterapi
+[Cluster API Add-on Provider for Helm]: https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm
