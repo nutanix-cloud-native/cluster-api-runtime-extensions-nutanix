@@ -1,5 +1,6 @@
 +++
 title = "Cluster Autoscaler"
+icon = "fa-solid fa-up-right-and-down-left-from-center"
 +++
 
 By leveraging CAPI cluster lifecycle hooks, this handler deploys [Cluster Autoscaler][cluster-autoscaler]

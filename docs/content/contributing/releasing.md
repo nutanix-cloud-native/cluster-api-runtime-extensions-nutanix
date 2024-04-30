@@ -1,5 +1,6 @@
 +++
 title = "Releasing"
+icon = "fa-solid fa-gift"
 +++
 
 This project uses [release-please] to automate changelog updates per release. Due to security restrictions[^1] in the
