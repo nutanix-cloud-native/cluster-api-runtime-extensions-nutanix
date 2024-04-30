@@ -5,12 +5,9 @@ package httpproxy
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -28,10 +25,6 @@ import (
 const (
 	// VariableName is the external patch variable name.
 	VariableName = "proxy"
-
-	// instanceMetadataIP is the IPv4 address used to retrieve
-	// instance metadata in AWS, Azure, OpenStack, etc.
-	instanceMetadataIP = "169.254.169.254"
 )
 
 type httpProxyPatchHandler struct {
@@ -73,7 +66,6 @@ func (h *httpProxyPatchHandler) Mutate(
 		log.Error(err, "failed to fetch cluster")
 		return err
 	}
-	noProxy := generateNoProxy(cluster)
 	httpProxyVariable, err := variables.Get[v1alpha1.HTTPProxy](
 		vars,
 		h.variableName,
@@ -105,7 +97,7 @@ func (h *httpProxyPatchHandler) Mutate(
 			).Info("adding files to control plane kubeadm config spec")
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				generateSystemdFiles(httpProxyVariable, noProxy)...,
+				generateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
 			)
 			return nil
 		}); err != nil {
@@ -121,7 +113,7 @@ func (h *httpProxyPatchHandler) Mutate(
 			).Info("adding files to worker node kubeadm config template")
 			obj.Spec.Template.Spec.Files = append(
 				obj.Spec.Template.Spec.Files,
-				generateSystemdFiles(httpProxyVariable, noProxy)...,
+				generateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
 			)
 			return nil
 		}); err != nil {
@@ -129,74 +121,4 @@ func (h *httpProxyPatchHandler) Mutate(
 	}
 
 	return nil
-}
-
-// generateNoProxy creates default NO_PROXY values that should be applied on cluster
-// in any environment and are preventing the use of proxy for cluster internal
-// networking.
-func generateNoProxy(cluster *clusterv1.Cluster) []string {
-	noProxy := []string{
-		"localhost",
-		"127.0.0.1",
-	}
-
-	if cluster.Spec.ClusterNetwork != nil &&
-		cluster.Spec.ClusterNetwork.Pods != nil {
-		noProxy = append(noProxy, cluster.Spec.ClusterNetwork.Pods.CIDRBlocks...)
-	}
-
-	if cluster.Spec.ClusterNetwork != nil &&
-		cluster.Spec.ClusterNetwork.Services != nil {
-		noProxy = append(noProxy, cluster.Spec.ClusterNetwork.Services.CIDRBlocks...)
-	}
-
-	serviceDomain := "cluster.local"
-	if cluster.Spec.ClusterNetwork != nil &&
-		cluster.Spec.ClusterNetwork.ServiceDomain != "" {
-		serviceDomain = cluster.Spec.ClusterNetwork.ServiceDomain
-	}
-
-	noProxy = append(
-		noProxy,
-		"kubernetes",
-		"kubernetes.default",
-		".svc",
-		// append .svc.<SERVICE_DOMAIN>
-		fmt.Sprintf(".svc.%s", strings.TrimLeft(serviceDomain, ".")),
-	)
-
-	if cluster.Spec.InfrastructureRef == nil {
-		return noProxy
-	}
-
-	// Add infra-specific entries
-	switch cluster.Spec.InfrastructureRef.Kind {
-	case "AWSCluster", "AWSManagedCluster":
-		noProxy = append(
-			noProxy,
-			// Exclude the instance metadata service
-			instanceMetadataIP,
-			// Exclude the control plane endpoint
-			".elb.amazonaws.com",
-		)
-	case "AzureCluster", "AzureManagedControlPlane":
-		noProxy = append(
-			noProxy,
-			// Exclude the instance metadata service
-			instanceMetadataIP,
-		)
-	case "GCPCluster":
-		noProxy = append(
-			noProxy,
-			// Exclude the instance metadata service
-			instanceMetadataIP,
-			// Exclude aliases for instance metadata service.
-			// See https://cloud.google.com/vpc/docs/special-configurations
-			"metadata",
-			"metadata.google.internal",
-		)
-	default:
-		// Unknown infrastructure. Do nothing.
-	}
-	return noProxy
 }

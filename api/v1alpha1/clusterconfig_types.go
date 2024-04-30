@@ -210,21 +210,6 @@ type Etcd struct {
 	Image *Image `json:"image,omitempty"`
 }
 
-// HTTPProxy required for providing proxy configuration.
-type HTTPProxy struct {
-	// HTTP proxy value.
-	HTTP string `json:"http,omitempty"`
-
-	// HTTPS proxy value.
-	HTTPS string `json:"https,omitempty"`
-
-	// AdditionalNo Proxy list that will be added to the automatically calculated
-	// values that will apply no_proxy configuration for cluster internal network.
-	// Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
-	//   ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
-	AdditionalNo []string `json:"additionalNo"`
-}
-
 type RegistryCredentials struct {
 	// A reference to the Secret containing the registry credentials and optional CA certificate
 	// using the keys `username`, `password` and `ca.crt`.
