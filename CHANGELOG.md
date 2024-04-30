@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.1 (2024-04-30)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* build: fix outdated devbox.lock file by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/590
+* build: Ensure devbox.lock file is always kept up to date by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/589
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.8.0...v0.8.1
+
 ## 0.8.0 (2024-04-29)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
