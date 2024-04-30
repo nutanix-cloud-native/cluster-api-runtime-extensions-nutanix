@@ -3,12 +3,6 @@
 
 package v1alpha1
 
-const (
-	APIServerPort = 6443
-
-	VirtualIPProviderKubeVIP = "KubeVIP"
-)
-
 // ObjectMeta is metadata that all persisted resources must have, which includes all objects
 // users must create. This is a copy of customizable fields from metav1.ObjectMeta.
 //

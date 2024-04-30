@@ -13,21 +13,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
-type StorageProvisioner string
-
-const (
-	CNIProviderCalico                     = "Calico"
-	CNIProviderCilium                     = "Cilium"
-	AWSEBSProvisioner  StorageProvisioner = "ebs.csi.aws.com"
-	NutanixProvisioner StorageProvisioner = "csi.nutanix.com"
-
-	CSIProviderAWSEBS  = "aws-ebs"
-	CSIProviderNutanix = "nutanix"
-
-	CCMProviderAWS     = "aws"
-	CCMProviderNutanix = "nutanix"
-)
-
 var (
 	DefaultDockerCertSANs = []string{
 		"localhost",
