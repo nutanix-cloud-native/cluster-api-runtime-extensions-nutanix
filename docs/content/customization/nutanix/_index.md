@@ -1,6 +1,6 @@
 +++
 title = "Nutanix"
-icon = "fa-brands fa-nutanix"
+icon = "fa-solid fa-server"
 +++
 
 The customizations in this section are applicable only to Nutanix clusters. They will only be applied to clusters that

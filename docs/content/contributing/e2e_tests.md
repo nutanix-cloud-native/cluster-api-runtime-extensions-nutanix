@@ -1,5 +1,6 @@
 +++
 title = "End-to-end tests"
+icon = "fa-solid fa-bugs"
 +++
 
 This project uses [Ginkgo] to run end-to-end tests. Tests are labelled to make running targeted or specific tests
