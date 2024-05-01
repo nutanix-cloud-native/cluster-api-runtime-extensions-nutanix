@@ -1,6 +1,7 @@
 +++
 title = "Deploying CAREN"
 icon = "fa-solid fa-truck-fast"
+weight = 1
 +++
 
 CAREN is implemented as a CAPI runtime extension provider, which means it can be deployed alongside all other CAPI

@@ -15,5 +15,14 @@
     ],
     "settings": {
         "go.buildTags": "e2e",
-    }
+        "json.schemaDownload.enable": true,
+        "json.schemas": [
+            {
+                "fileMatch": [
+                    "/release-please-config.json"
+                ],
+                "url": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+            },
+        ],
+    },
 }
