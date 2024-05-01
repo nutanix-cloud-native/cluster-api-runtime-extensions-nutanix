@@ -1,5 +1,5 @@
 +++
 title = "Addons"
-weight = 2
+weight = 3
 icon = "fa-solid fa-cubes"
 +++

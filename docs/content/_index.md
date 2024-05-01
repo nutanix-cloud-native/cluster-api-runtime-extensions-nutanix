@@ -1,5 +1,5 @@
 +++
-title = "CAPI Runtime Extensions"
+title = "Cluster API Runtime Extensions - Nutanix (CAREN)"
 
 # [[cascade]]
 # type = "blog"
@@ -23,11 +23,12 @@ templating by introducing variables specified with an OpenAPI schema that can th
 via patches.
 
 The [Runtime SDK] feature provides an extensibility mechanism to hook into `ClusterClass` managed Kubernetes clusters'
-lifecycle. This project, CAPI Runtime Extensions, provides implementations of various runtime hooks that can be used in
-`ClusterClasses` across providers. This includes variables and patches that can be used across any provider to configure
-generic Kubernetes capabilities, such as configuring audit policy or HTTP proxy configuration. These capabilities are
-not provider-specific and delivering these capabilities in code instead of directly embedded in `ClusterClass`
-definitions leads to a much more robust experience via fast-feedback unit tests, as opposed to long running e2e tests.
+lifecycle. This project, Cluster API Runtime Extensions - Nutanix (CAREN), provides implementations of various runtime
+hooks that can be used in `ClusterClasses` across providers. This includes variables and patches that can be used across
+any provider to configure generic Kubernetes capabilities, such as configuring audit policy or HTTP proxy configuration.
+These capabilities are not provider-specific and delivering these capabilities in code instead of directly embedded in
+`ClusterClass` definitions leads to a much more robust experience via fast-feedback unit tests, as opposed to long
+running e2e tests.
 
 In addition to cluster resource customizations, this project enables management of essential cluster addons (e.g. CNI)
 via variable definitions, e.g. selecting a CNI provider via variables defined on the `Cluster` resource itself. The goal

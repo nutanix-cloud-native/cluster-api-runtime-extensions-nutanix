@@ -1,6 +1,6 @@
 +++
 title = "Cluster customizations"
-weight = 1
+weight = 2
 icon = "fa-solid fa-screwdriver-wrench"
 +++
 

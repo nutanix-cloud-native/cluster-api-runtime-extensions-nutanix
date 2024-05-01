@@ -10,7 +10,7 @@ This project uses [release-please] to automate changelog updates per release. Du
 When a release has been cut, a new release PR can be created manually using the `release-please` CLI locally. This needs
 to be run by someone with write permissions to the repository. Create the `release-please` branch and PR:
 
-```bash
+```shell
 make release-please
 ```
 
@@ -21,19 +21,19 @@ date).
 When a release is ready, the commits in the release PR will need to be signed (again, this is a security requirement).
 To do this, check out the PR branch locally:
 
-```bash
+```shell
 gh pr checkout <RELEASE_PR_NUMBER>
 ```
 
 Sign the previous commit:
 
-```bash
+```shell
 git commit --gpg-sign --amend
 ```
 
 And force push:
 
-```bash
+```shell
 git push --force-with-lease
 ```
 

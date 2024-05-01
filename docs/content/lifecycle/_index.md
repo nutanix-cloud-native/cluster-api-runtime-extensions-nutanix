@@ -1,5 +1,5 @@
 +++
 title = "Lifecycle handlers"
-weight = 3
+weight = 4
 icon = "fa-solid fa-seedling"
 +++
