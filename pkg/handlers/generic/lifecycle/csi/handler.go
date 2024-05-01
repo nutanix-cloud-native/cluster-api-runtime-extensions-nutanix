@@ -74,60 +74,95 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 	)
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-	csiProviders, err := variables.Get[v1alpha1.CSI](
+	csi, err := variables.Get[v1alpha1.CSI](
 		varMap,
 		c.variableName,
 		c.variablePath...)
 	if err != nil {
-		if variables.IsNotFoundError(err) ||
-			csiProviders.Providers == nil ||
-			len(csiProviders.Providers) == 0 {
-			log.V(4).Info(
-				fmt.Sprintf(
-					"Skipping CSI handler, no providers given in %v",
-					csiProviders,
-				),
-			)
+		if variables.IsNotFoundError(err) {
+			log.Info("Skipping CSI handler, the cluster does not define the CSI variable")
 			return
 		}
 		log.Error(
 			err,
-			"failed to read CSI provider from cluster definition",
+			"failed to read the CSI variable from the cluster",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to read CSI provider from cluster definition: %v",
+			fmt.Sprintf("failed to read the CSI variable from the cluster: %v",
 				err,
 			),
 		)
 		return
 	}
-	if len(csiProviders.Providers) == 1 &&
-		len(csiProviders.Providers[0].StorageClassConfig) == 1 &&
-		csiProviders.DefaultStorage == nil {
-		csiProviders.DefaultStorage = &v1alpha1.DefaultStorage{
-			ProviderName:           csiProviders.Providers[0].Name,
-			StorageClassConfigName: csiProviders.Providers[0].StorageClassConfig[0].Name,
+
+	if len(csi.Providers) == 0 {
+		log.Error(
+			err,
+			"The list of CSI providers must include at least one provider.",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage("the list of CSI providers must include at least one provider")
+		return
+	}
+
+	for _, provider := range csi.Providers {
+		if len(provider.StorageClassConfig) == 0 {
+			log.Error(
+				err,
+				"The CSI provider must configure at least one storage class.",
+				"name",
+				provider.Name,
+			)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(
+				fmt.Sprintf("the CSI provider %q must configure at least one storage class",
+					provider.Name),
+			)
+			return
+		}
+	}
+
+	if csi.DefaultStorage == nil {
+		if len(csi.Providers) > 1 {
+			log.Error(
+				err,
+				"A CSI configuration with two or more providers must configure the default storage.",
+			)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(
+				"CSI configuration with two or more providers must configure the default storage",
+			)
+			return
+		}
+		// When there is one provider, we can derive the default storage configuration.
+		csi.DefaultStorage = &v1alpha1.DefaultStorage{
+			ProviderName:           csi.Providers[0].Name,
+			StorageClassConfigName: csi.Providers[0].StorageClassConfig[0].Name,
 		}
 	}
 
 	// There's a 1:N mapping of infra to CSI providers. The user chooses the provider.
-	for _, provider := range csiProviders.Providers {
+	for _, provider := range csi.Providers {
 		handler, ok := c.ProviderHandler[provider.Name]
 		if !ok {
-			log.V(4).Info(
-				fmt.Sprintf(
-					"Skipping CSI handler, for provider given in %s. Provider handler not given.",
-					provider.Name,
-				),
+			log.Error(
+				err,
+				"CSI provider is unknown",
+				"name",
+				provider.Name,
 			)
-			continue
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(
+				fmt.Sprintf("CSI provider %q is unknown", provider.Name),
+			)
+			return
 		}
 		log.Info(fmt.Sprintf("Creating CSI provider %s", provider.Name))
 		err = handler.Apply(
 			ctx,
 			provider,
-			csiProviders.DefaultStorage,
+			csi.DefaultStorage,
 			req,
 			log,
 		)
@@ -135,7 +170,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			log.Error(
 				err,
 				fmt.Sprintf(
-					"failed to delpoy %s CSI driver",
+					"failed to deploy %s CSI driver",
 					provider.Name,
 				),
 			)
