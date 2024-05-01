@@ -43,3 +43,4 @@ node_modules/
 /runtime-extension-components.yaml
 /_artifacts/
 test/e2e/config/caren-envsubst.yaml
+/release-metadata.yaml

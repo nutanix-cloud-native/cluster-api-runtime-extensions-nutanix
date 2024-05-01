@@ -24,7 +24,8 @@ release:
     **Full Changelog**: https://github.com/nutanix-cloud-native/{{.ProjectName}}/compare/{{ .PreviousTag }}...{{ .Tag }}
   extra_files:
     - glob: ./examples/capi-quick-start/*.yaml
-    - glob: metadata.yaml
+    - glob: release-metadata.yaml
+      name_template: metadata.yaml
     - glob: runtime-extension-components.yaml
 
 before:
@@ -41,7 +42,11 @@ before:
         {{ if .IsSnapshot }}--set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
       EOF'
-    - sed -i 's/\${/$${/g' runtime-extension-components.yaml
+    - sed -i -e 's/\${/$${/g' -e 's/v0.0.0-dev/v{{ trimprefix .Version "v" }}/g' runtime-extension-components.yaml
+    - |
+      sh -ec 'gojq --yaml-input --yaml-output \
+        ".releaseSeries |= (. + [{contract: \"v1beta1\", major: {{ .Major }}, minor: {{ .Minor }}}] | unique)" \
+        metadata.yaml >release-metadata.yaml'
 
 builds:
   - id: cluster-api-runtime-extensions-nutanix
