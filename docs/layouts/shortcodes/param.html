@@ -1,0 +1,3 @@
+{{- $v := .Site.Params -}}
+{{- range (split (.Get 0) ".") }}{{ $v = index $v (.) }}{{- end -}}
+{{- $v -}}

@@ -27,6 +27,7 @@ release:
     - glob: release-metadata.yaml
       name_template: metadata.yaml
     - glob: runtime-extension-components.yaml
+    - glob: ./charts/{{ .ProjectName }}/defaultclusterclasses/*.yaml
 
 before:
   hooks:
