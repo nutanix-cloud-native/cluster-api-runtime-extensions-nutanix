@@ -20,7 +20,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
-type ServiceLoadbalancerProvider interface {
+type ServiceLoadBalancerProvider interface {
 	Apply(
 		ctx context.Context,
 		cluster *clusterv1.Cluster,
@@ -28,35 +28,35 @@ type ServiceLoadbalancerProvider interface {
 	) error
 }
 
-type ServiceLoadbalancerHandler struct {
+type ServiceLoadBalancerHandler struct {
 	client          ctrlclient.Client
 	variableName    string
 	variablePath    []string
-	ProviderHandler map[string]ServiceLoadbalancerProvider
+	ProviderHandler map[string]ServiceLoadBalancerProvider
 }
 
 var (
-	_ commonhandlers.Named                   = &ServiceLoadbalancerHandler{}
-	_ lifecycle.AfterControlPlaneInitialized = &ServiceLoadbalancerHandler{}
+	_ commonhandlers.Named                   = &ServiceLoadBalancerHandler{}
+	_ lifecycle.AfterControlPlaneInitialized = &ServiceLoadBalancerHandler{}
 )
 
 func New(
 	c ctrlclient.Client,
-	handlers map[string]ServiceLoadbalancerProvider,
-) *ServiceLoadbalancerHandler {
-	return &ServiceLoadbalancerHandler{
+	handlers map[string]ServiceLoadBalancerProvider,
+) *ServiceLoadBalancerHandler {
+	return &ServiceLoadBalancerHandler{
 		client:          c,
 		variableName:    clusterconfig.MetaVariableName,
-		variablePath:    []string{"addons", v1alpha1.ServiceLoadbalancerVariableName},
+		variablePath:    []string{"addons", v1alpha1.ServiceLoadBalancerVariableName},
 		ProviderHandler: handlers,
 	}
 }
 
-func (c *ServiceLoadbalancerHandler) Name() string {
-	return "ServiceLoadbalancerHandler"
+func (c *ServiceLoadBalancerHandler) Name() string {
+	return "ServiceLoadBalancerHandler"
 }
 
-func (c *ServiceLoadbalancerHandler) AfterControlPlaneInitialized(
+func (c *ServiceLoadBalancerHandler) AfterControlPlaneInitialized(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
@@ -70,18 +70,18 @@ func (c *ServiceLoadbalancerHandler) AfterControlPlaneInitialized(
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 
-	slb, err := variables.Get[v1alpha1.ServiceLoadbalancer](
+	slb, err := variables.Get[v1alpha1.ServiceLoadBalancer](
 		varMap,
 		c.variableName,
 		c.variablePath...)
 	if err != nil {
 		log.Error(
 			err,
-			"failed to read ServiceLoadbalancer provider from cluster definition",
+			"failed to read ServiceLoadBalancer provider from cluster definition",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to read ServiceLoadbalancer provider from cluster definition: %v",
+			fmt.Sprintf("failed to read ServiceLoadBalancer provider from cluster definition: %v",
 				err,
 			),
 		)
@@ -90,7 +90,7 @@ func (c *ServiceLoadbalancerHandler) AfterControlPlaneInitialized(
 
 	handler, ok := c.ProviderHandler[slb.Provider]
 	if !ok {
-		err = fmt.Errorf("unknown ServiceLoadbalancer Provider")
+		err = fmt.Errorf("unknown ServiceLoadBalancer Provider")
 		log.Error(err, "provider", slb.Provider)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
@@ -99,7 +99,7 @@ func (c *ServiceLoadbalancerHandler) AfterControlPlaneInitialized(
 		return
 	}
 
-	log.Info(fmt.Sprintf("Deploying ServiceLoadbalancer provider %s", slb.Provider))
+	log.Info(fmt.Sprintf("Deploying ServiceLoadBalancer provider %s", slb.Provider))
 	err = handler.Apply(
 		ctx,
 		&req.Cluster,
@@ -109,14 +109,14 @@ func (c *ServiceLoadbalancerHandler) AfterControlPlaneInitialized(
 		log.Error(
 			err,
 			fmt.Sprintf(
-				"failed to deploy ServiceLoadbalancer provider %s",
+				"failed to deploy ServiceLoadBalancer provider %s",
 				slb.Provider,
 			),
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
 			fmt.Sprintf(
-				"failed to deploy ServiceLoadbalancer provider: %v",
+				"failed to deploy ServiceLoadBalancer provider: %v",
 				err,
 			),
 		)
@@ -125,7 +125,7 @@ func (c *ServiceLoadbalancerHandler) AfterControlPlaneInitialized(
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	resp.SetMessage(
 		fmt.Sprintf(
-			"deployed ServiceLoadbalancer provider %s",
+			"deployed ServiceLoadBalancer provider %s",
 			slb.Provider),
 	)
 }

@@ -202,11 +202,11 @@ spec:
                     required:
                     - strategy
                     type: object
-                  serviceLoadbalancer:
+                  serviceLoadBalancer:
                     properties:
                       provider:
                         description: |-
-                          The Loadbalancer-type Service provider to deploy. Not required in infrastructures where
+                          The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
                           the CCM acts as the provider.
                         enum:
                         - MetalLB

@@ -71,7 +71,7 @@ hooks:
       defaultValueTemplateConfigMap:
         create: true
         name: default-cluster-autoscaler-helm-values-template
-  serviceLoadbalancer:
+  serviceLoadBalancer:
     metalLB:
       defaultValueTemplateConfigMap:
         create: true

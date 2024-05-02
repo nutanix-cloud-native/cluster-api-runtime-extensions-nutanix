@@ -80,8 +80,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 			helmChartInfoGetter,
 		),
 	}
-	serviceLoadbalancerHandlers := map[string]serviceloadbalancer.ServiceLoadbalancerProvider{
-		v1alpha1.ServiceLoadbalancerProviderMetalLB: metallb.New(
+	serviceLoadBalancerHandlers := map[string]serviceloadbalancer.ServiceLoadBalancerProvider{
+		v1alpha1.ServiceLoadBalancerProviderMetalLB: metallb.New(
 			mgr.GetClient(),
 			h.metalLBConfig,
 			helmChartInfoGetter,
@@ -95,7 +95,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		servicelbgc.New(mgr.GetClient()),
 		csi.New(mgr.GetClient(), csiHandlers),
 		ccm.New(mgr.GetClient(), ccmHandlers),
-		serviceloadbalancer.New(mgr.GetClient(), serviceLoadbalancerHandlers),
+		serviceloadbalancer.New(mgr.GetClient(), serviceLoadBalancerHandlers),
 	}
 }
 

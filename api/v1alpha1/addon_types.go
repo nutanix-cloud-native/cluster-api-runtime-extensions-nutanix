@@ -24,7 +24,7 @@ const (
 
 	VirtualIPProviderKubeVIP = "KubeVIP"
 
-	ServiceLoadbalancerProviderMetalLB = "MetalLB"
+	ServiceLoadBalancerProviderMetalLB = "MetalLB"
 
 	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
 	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
@@ -73,7 +73,7 @@ type Addons struct {
 	CSIProviders *CSI `json:"csi,omitempty"`
 
 	// +optional
-	ServiceLoadbalancer *ServiceLoadbalancer `json:"serviceLoadbalancer,omitempty"`
+	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
 }
 
 type AddonStrategy string
@@ -166,8 +166,8 @@ type CCM struct {
 	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
 }
 
-type ServiceLoadbalancer struct {
-	// The Loadbalancer-type Service provider to deploy. Not required in infrastructures where
+type ServiceLoadBalancer struct {
+	// The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
 	// the CCM acts as the provider.
 	// +kubebuilder:validation:Enum=MetalLB
 	Provider string `json:"provider"`
