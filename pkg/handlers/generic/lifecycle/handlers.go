@@ -21,6 +21,8 @@ import (
 	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix-csi"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/servicelbgc"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer/metallb"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -34,6 +36,7 @@ type Handlers struct {
 	nutnaixCSIConfig        *nutanixcsi.NutanixCSIConfig
 	awsccmConfig            *awsccm.AWSCCMConfig
 	nutanixCCMConfig        *nutanixccm.Config
+	metalLBConfig           *metallb.Config
 }
 
 func New(
@@ -51,6 +54,7 @@ func New(
 		awsccmConfig:            &awsccm.AWSCCMConfig{GlobalOptions: globalOptions},
 		nutnaixCSIConfig:        &nutanixcsi.NutanixCSIConfig{GlobalOptions: globalOptions},
 		nutanixCCMConfig:        &nutanixccm.Config{GlobalOptions: globalOptions},
+		metalLBConfig:           &metallb.Config{GlobalOptions: globalOptions},
 	}
 }
 
@@ -76,6 +80,13 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 			helmChartInfoGetter,
 		),
 	}
+	serviceLoadBalancerHandlers := map[string]serviceloadbalancer.ServiceLoadBalancerProvider{
+		v1alpha1.ServiceLoadBalancerProviderMetalLB: metallb.New(
+			mgr.GetClient(),
+			h.metalLBConfig,
+			helmChartInfoGetter,
+		),
+	}
 	return []handlers.Named{
 		calico.New(mgr.GetClient(), h.calicoCNIConfig, helmChartInfoGetter),
 		cilium.New(mgr.GetClient(), h.ciliumCNIConfig, helmChartInfoGetter),
@@ -84,6 +95,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		servicelbgc.New(mgr.GetClient()),
 		csi.New(mgr.GetClient(), csiHandlers),
 		ccm.New(mgr.GetClient(), ccmHandlers),
+		serviceloadbalancer.New(mgr.GetClient(), serviceLoadBalancerHandlers),
 	}
 }
 
@@ -96,4 +108,5 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.awsccmConfig.AddFlags("awsccm", pflag.CommandLine)
 	h.nutnaixCSIConfig.AddFlags("nutanixcsi", flagSet)
 	h.nutanixCCMConfig.AddFlags("nutanixccm", flagSet)
+	h.metalLBConfig.AddFlags("metallb", flagSet)
 }

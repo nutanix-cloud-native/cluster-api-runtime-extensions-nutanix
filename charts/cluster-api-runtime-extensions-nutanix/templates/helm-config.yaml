@@ -15,6 +15,10 @@ data:
     ChartName: cluster-autoscaler
     ChartVersion: 9.35.0
     RepositoryURL: https://kubernetes.github.io/autoscaler
+  metallb: |
+    ChartName: metallb
+    ChartVersion: v0.14.5
+    RepositoryURL: https://metallb.github.io/metallb
   nfd: |
     ChartName: node-feature-discovery
     ChartVersion: 0.15.2

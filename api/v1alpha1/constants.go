@@ -14,4 +14,6 @@ const (
 	AWSVariableName = "aws"
 	// NutanixVariableName is the Nutanix config patch variable name.
 	NutanixVariableName = "nutanix"
+	// ServiceLoadBalancerName is the Service LoadBalancer config patch variable name.
+	ServiceLoadBalancerVariableName = "serviceLoadBalancer"
 )

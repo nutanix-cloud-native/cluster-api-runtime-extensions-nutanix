@@ -34,7 +34,7 @@ var _ = Describe("Generate AWS ControlPlane LoadBalancer patches", func() {
 			Name: "unset variable",
 		},
 		{
-			Name: "ControlPlaneLoadbalancer scheme set to internet-facing",
+			Name: "ControlPlaneLoadBalancer scheme set to internet-facing",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
@@ -55,7 +55,7 @@ var _ = Describe("Generate AWS ControlPlane LoadBalancer patches", func() {
 			}},
 		},
 		{
-			Name: "ControlPlaneLoadbalancer scheme set to internal",
+			Name: "ControlPlaneLoadBalancer scheme set to internal",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,

@@ -24,6 +24,8 @@ const (
 
 	VirtualIPProviderKubeVIP = "KubeVIP"
 
+	ServiceLoadBalancerProviderMetalLB = "MetalLB"
+
 	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
 	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
 
@@ -69,6 +71,9 @@ type Addons struct {
 
 	// +optional
 	CSIProviders *CSI `json:"csi,omitempty"`
+
+	// +optional
+	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
 }
 
 type AddonStrategy string
@@ -159,4 +164,11 @@ type CCM struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
 	// +optional
 	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
+}
+
+type ServiceLoadBalancer struct {
+	// The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
+	// the CCM acts as the provider.
+	// +kubebuilder:validation:Enum=MetalLB
+	Provider string `json:"provider"`
 }

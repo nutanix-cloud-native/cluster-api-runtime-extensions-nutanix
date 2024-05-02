@@ -62,6 +62,8 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.nfd.crsStrategy.defaultInstallationConfigMap.name | string | `"node-feature-discovery"` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nfd-helm-values-template"` |  |
+| hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.create | bool | `true` |  |
+| hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.name | string | `"default-metallb-helm-values-template"` |  |
 | hooks.virtualIP.kubeVip.defaultTemplateConfigMap.create | bool | `true` |  |
 | hooks.virtualIP.kubeVip.defaultTemplateConfigMap.name | string | `"default-kube-vip-template"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
