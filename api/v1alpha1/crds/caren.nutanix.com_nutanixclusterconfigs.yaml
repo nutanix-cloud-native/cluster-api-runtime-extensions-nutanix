@@ -178,6 +178,7 @@ spec:
                                 required:
                                 - name
                                 type: object
+                              minItems: 1
                               type: array
                             strategy:
                               description: Addon strategy used to deploy the CSI provider
@@ -188,9 +189,13 @@ spec:
                               type: string
                           required:
                           - name
+                          - storageClassConfig
                           - strategy
                           type: object
+                        minItems: 1
                         type: array
+                    required:
+                    - providers
                     type: object
                   nfd:
                     description: NFD tells us to enable or disable the node feature
