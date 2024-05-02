@@ -154,12 +154,12 @@ type StorageClassConfig struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=Delete;Retain;Recycle
 	// +kubebuilder:default=Delete
-	ReclaimPolicy corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
+	ReclaimPolicy *corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
 
 	// +kubebuilder:validation:Enum=Immediate;WaitForFirstConsumer
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=WaitForFirstConsumer
-	VolumeBindingMode storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
+	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
 
 	// If the storage class should allow volume expanding
 	// +kubebuilder:validation:Optional

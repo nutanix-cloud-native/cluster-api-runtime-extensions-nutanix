@@ -55,8 +55,8 @@ func TestCreateStorageClass(t *testing.T) {
 			name: "with only default parameters",
 			storageConfig: v1alpha1.StorageClassConfig{
 				Name:              "aws-ebs",
-				ReclaimPolicy:     v1alpha1.VolumeReclaimDelete,
-				VolumeBindingMode: v1alpha1.VolumeBindingWaitForFirstConsumer,
+				ReclaimPolicy:     ptr.To(v1alpha1.VolumeReclaimDelete),
+				VolumeBindingMode: ptr.To(v1alpha1.VolumeBindingWaitForFirstConsumer),
 				Parameters:        nil,
 				AllowExpansion:    true,
 			},
@@ -81,8 +81,8 @@ func TestCreateStorageClass(t *testing.T) {
 			name: "with only user provided parameters",
 			storageConfig: v1alpha1.StorageClassConfig{
 				Name:              "nutanix-volumes",
-				ReclaimPolicy:     v1alpha1.VolumeReclaimDelete,
-				VolumeBindingMode: v1alpha1.VolumeBindingWaitForFirstConsumer,
+				ReclaimPolicy:     ptr.To(v1alpha1.VolumeReclaimDelete),
+				VolumeBindingMode: ptr.To(v1alpha1.VolumeBindingWaitForFirstConsumer),
 				Parameters:        userProviderParameters,
 			},
 			provisioner: v1alpha1.NutanixProvisioner,
@@ -105,8 +105,8 @@ func TestCreateStorageClass(t *testing.T) {
 			name: "with both default and user provided parameters",
 			storageConfig: v1alpha1.StorageClassConfig{
 				Name:              "aws-ebs",
-				ReclaimPolicy:     v1alpha1.VolumeReclaimDelete,
-				VolumeBindingMode: v1alpha1.VolumeBindingWaitForFirstConsumer,
+				ReclaimPolicy:     ptr.To(v1alpha1.VolumeReclaimDelete),
+				VolumeBindingMode: ptr.To(v1alpha1.VolumeBindingWaitForFirstConsumer),
 				Parameters:        userProviderParameters,
 				AllowExpansion:    true,
 			},

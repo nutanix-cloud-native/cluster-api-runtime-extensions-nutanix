@@ -48,8 +48,8 @@ func CreateStorageClass(
 		},
 		Provisioner:          string(provisionerName),
 		Parameters:           parameters,
-		VolumeBindingMode:    ptr.To(storageConfig.VolumeBindingMode),
-		ReclaimPolicy:        ptr.To(storageConfig.ReclaimPolicy),
+		VolumeBindingMode:    storageConfig.VolumeBindingMode,
+		ReclaimPolicy:        storageConfig.ReclaimPolicy,
 		AllowVolumeExpansion: ptr.To(storageConfig.AllowExpansion),
 	}
 	if isDefault {

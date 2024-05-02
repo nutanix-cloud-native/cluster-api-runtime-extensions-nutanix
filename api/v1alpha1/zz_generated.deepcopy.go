@@ -9,6 +9,8 @@ package v1alpha1
 
 import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	"k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -1133,6 +1135,16 @@ func (in *StorageClassConfig) DeepCopyInto(out *StorageClassConfig) {
 		for key, val := range *in {
 			(*out)[key] = val
 		}
+	}
+	if in.ReclaimPolicy != nil {
+		in, out := &in.ReclaimPolicy, &out.ReclaimPolicy
+		*out = new(v1.PersistentVolumeReclaimPolicy)
+		**out = **in
+	}
+	if in.VolumeBindingMode != nil {
+		in, out := &in.VolumeBindingMode, &out.VolumeBindingMode
+		*out = new(storagev1.VolumeBindingMode)
+		**out = **in
 	}
 }
 
