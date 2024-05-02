@@ -55,10 +55,11 @@ spec:
                             description: |-
                               Name of the referent.
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Add other useful fields. apiVersion, kind, uid?
+                            minLength: 1
                             type: string
+                        required:
+                        - name
                         type: object
-                        x-kubernetes-map-type: atomic
                     type: object
                   clusterAutoscaler:
                     description: ClusterAutoscaler tells us to enable or disable the
@@ -109,6 +110,7 @@ spec:
                           storageClassConfigName:
                             description: Name of storage class config in any of the
                               provider objects.
+                            minLength: 1
                             type: string
                         required:
                         - providerName
@@ -125,10 +127,11 @@ spec:
                                   description: |-
                                     Name of the referent.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
+                                  minLength: 1
                                   type: string
+                              required:
+                              - name
                               type: object
-                              x-kubernetes-map-type: atomic
                             name:
                               description: Name of the CSI Provider.
                               enum:
@@ -145,6 +148,7 @@ spec:
                                     type: boolean
                                   name:
                                     description: Name of storage class config.
+                                    minLength: 1
                                     type: string
                                   parameters:
                                     additionalProperties:
@@ -227,6 +231,7 @@ spec:
                           properties:
                             id:
                               description: Existing Subnet ID to use for the cluster.
+                              minLength: 1
                               type: string
                           required:
                           - id
@@ -236,6 +241,7 @@ spec:
                         properties:
                           id:
                             description: Existing VPC ID to use for the cluster.
+                            minLength: 1
                             type: string
                         required:
                         - id
@@ -340,10 +346,11 @@ spec:
                             description: |-
                               Name of the referent.
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Add other useful fields. apiVersion, kind, uid?
+                            minLength: 1
                             type: string
+                        required:
+                        - name
                         type: object
-                        x-kubernetes-map-type: atomic
                     type: object
                   url:
                     description: Registry mirror URL.
@@ -369,10 +376,11 @@ spec:
                               description: |-
                                 Name of the referent.
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?
+                              minLength: 1
                               type: string
+                          required:
+                          - name
                           type: object
-                          x-kubernetes-map-type: atomic
                       type: object
                     url:
                       description: Registry URL.
@@ -405,8 +413,6 @@ spec:
                   https:
                     description: HTTPS proxy value.
                     type: string
-                required:
-                - additionalNo
                 type: object
               users:
                 items:

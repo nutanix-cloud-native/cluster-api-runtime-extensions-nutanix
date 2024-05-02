@@ -19,16 +19,19 @@ const (
 // HTTPProxy required for providing proxy configuration.
 type HTTPProxy struct {
 	// HTTP proxy value.
+	// +kubebuilder:validation:Optional
 	HTTP string `json:"http,omitempty"`
 
 	// HTTPS proxy value.
+	// +kubebuilder:validation:Optional
 	HTTPS string `json:"https,omitempty"`
 
 	// AdditionalNo Proxy list that will be added to the automatically calculated
 	// values that will apply no_proxy configuration for cluster internal network.
 	// Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
 	//   ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
-	AdditionalNo []string `json:"additionalNo"`
+	// +kubebuilder:validation:Optional
+	AdditionalNo []string `json:"additionalNo,omitempty"`
 }
 
 // GenerateNoProxy creates default NO_PROXY values that should be applied on cluster

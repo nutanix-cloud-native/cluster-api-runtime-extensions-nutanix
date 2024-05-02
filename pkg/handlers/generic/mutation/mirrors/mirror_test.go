@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -127,7 +126,7 @@ func Test_generateMirrorCACertFile(t *testing.T) {
 				URL: "https://registry.example.com",
 
 				Credentials: &v1alpha1.RegistryCredentials{
-					SecretRef: &v1.LocalObjectReference{
+					SecretRef: &v1alpha1.LocalObjectReference{
 						Name: "my-registry-credentials-secret",
 					},
 				},

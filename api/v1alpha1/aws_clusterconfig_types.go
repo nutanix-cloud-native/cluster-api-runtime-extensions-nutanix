@@ -9,28 +9,32 @@ import (
 
 type AWSSpec struct {
 	// AWS region to create cluster in.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Region *Region `json:"region,omitempty"`
+
 	// AWS network configuration.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Network *AWSNetwork `json:"network,omitempty"`
-	// +optional
+
+	// +kubebuilder:validation:Optional
 	ControlPlaneLoadBalancer *AWSLoadBalancerSpec `json:"controlPlaneLoadBalancer,omitempty"`
 }
 
 type Region string
 
 type AWSNetwork struct {
-	// +optional
+	// +kubebuilder:validation:Optional
 	VPC *VPC `json:"vpc,omitempty"`
 
 	// AWS Subnet configuration.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Subnets Subnets `json:"subnets,omitempty"`
 }
 
 type VPC struct {
 	// Existing VPC ID to use for the cluster.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	ID string `json:"id"`
 }
 
@@ -39,6 +43,8 @@ type Subnets []SubnetSpec
 // SubnetSpec configures an AWS Subnet.
 type SubnetSpec struct {
 	// Existing Subnet ID to use for the cluster.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	ID string `json:"id"`
 }
 
@@ -47,6 +53,6 @@ type AWSLoadBalancerSpec struct {
 	// Scheme sets the scheme of the load balancer.
 	// +kubebuilder:default=internet-facing
 	// +kubebuilder:validation:Enum=internet-facing;internal
-	// +optional
+	// +kubebuilder:validation:Optional
 	Scheme *capav1.ELBScheme `json:"scheme,omitempty"`
 }

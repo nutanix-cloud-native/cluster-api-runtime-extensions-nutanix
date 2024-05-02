@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -19,31 +17,35 @@ const (
 type NutanixSpec struct {
 	// ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// host can be either DNS name or ip address
+	// +kubebuilder:validation:Required
 	ControlPlaneEndpoint ControlPlaneEndpointSpec `json:"controlPlaneEndpoint"`
 
 	// Nutanix Prism Central endpoint configuration.
+	// +kubebuilder:validation:Required
 	PrismCentralEndpoint NutanixPrismCentralEndpointSpec `json:"prismCentralEndpoint"`
 }
 
 type NutanixPrismCentralEndpointSpec struct {
 	// The URL of Nutanix Prism Central, can be DNS name or an IP address.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Format=`uri`
 	// +kubebuilder:validation:Pattern=`^https://`
 	URL string `json:"url"`
 
 	// use insecure connection to Prism Central endpoint
-	// +optional
+	// +kubebuilder:validation:Optional
 	Insecure bool `json:"insecure"`
 
 	// A base64 PEM encoded x509 cert for the RootCA that was used to create
 	// the certificate for a Prism Central that uses certificates that were issued by a non-publicly trusted RootCA.
 	// The trust bundle is added to the cert pool used to authenticate the TLS connection to the Prism Central.
 	// +kubebuilder:validation:Format=`byte`
-	// +optional
-	AdditionalTrustBundle *string `json:"additionalTrustBundle,omitempty"`
+	// +kubebuilder:validation:Optional
+	AdditionalTrustBundle string `json:"additionalTrustBundle,omitempty"`
 
 	// A reference to the Secret for credential information for the target Prism Central instance.
-	Credentials *corev1.LocalObjectReference `json:"credentials"`
+	// +kubebuilder:validation:Required
+	Credentials LocalObjectReference `json:"credentials"`
 }
 
 //nolint:gocritic // No need for named return values

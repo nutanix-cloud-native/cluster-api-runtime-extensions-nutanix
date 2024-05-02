@@ -87,7 +87,12 @@ func (h *HelmChartGetter) For(
 	}
 	d, ok := cm.Data[string(name)]
 	if !ok {
-		return nil, fmt.Errorf("did not find key %q in configmap %s/%s", name, h.cmNamespace, h.cmName)
+		return nil, fmt.Errorf(
+			"did not find key %q in configmap %s/%s",
+			name,
+			h.cmNamespace,
+			h.cmName,
+		)
 	}
 	var settings HelmChart
 	err = yaml.Unmarshal([]byte(d), &settings)

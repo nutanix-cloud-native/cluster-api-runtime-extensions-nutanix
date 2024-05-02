@@ -10,7 +10,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -117,7 +116,7 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 					Namespace: clusterKey.Namespace,
 				},
 			}
-			additionalTrustBundle := ptr.Deref(prismCentralEndpointVar.AdditionalTrustBundle, "")
+			additionalTrustBundle := prismCentralEndpointVar.AdditionalTrustBundle
 			if additionalTrustBundle != "" {
 				var decoded []byte
 				decoded, err = base64.StdEncoding.DecodeString(additionalTrustBundle)

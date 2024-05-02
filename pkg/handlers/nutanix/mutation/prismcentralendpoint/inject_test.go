@@ -8,8 +8,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -47,7 +45,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -81,7 +79,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com",
 						Insecure: true,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -118,10 +116,10 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
-						AdditionalTrustBundle: ptr.To(testCertBundle),
+						AdditionalTrustBundle: testCertBundle,
 					},
 					nutanixclusterconfig.NutanixVariableName,
 					VariableName,

@@ -174,7 +174,7 @@ func templateValues(clusterConfig *commonclusterconfig.ClusterConfig, text strin
 		PrismCentralHost                  string
 		PrismCentralPort                  int32
 		PrismCentralInsecure              bool
-		PrismCentralAdditionalTrustBundle *string
+		PrismCentralAdditionalTrustBundle string
 	}
 
 	address, port, err := clusterConfig.Nutanix.PrismCentralEndpoint.ParseURL()

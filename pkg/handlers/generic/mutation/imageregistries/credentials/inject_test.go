@@ -204,7 +204,7 @@ var _ = Describe("Generate Image registry patches", func() {
 					[]v1alpha1.ImageRegistry{{
 						URL: "https://registry.example.com",
 						Credentials: &v1alpha1.RegistryCredentials{
-							SecretRef: &corev1.LocalObjectReference{
+							SecretRef: &v1alpha1.LocalObjectReference{
 								Name: validSecretName,
 							},
 						},
@@ -321,7 +321,7 @@ var _ = Describe("Generate Image registry patches", func() {
 					[]v1alpha1.ImageRegistry{{
 						URL: "https://registry.example.com",
 						Credentials: &v1alpha1.RegistryCredentials{
-							SecretRef: &corev1.LocalObjectReference{
+							SecretRef: &v1alpha1.LocalObjectReference{
 								Name: validSecretName,
 							},
 						},

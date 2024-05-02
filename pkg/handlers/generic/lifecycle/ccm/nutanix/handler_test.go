@@ -9,8 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	commonclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/clusterconfig"
@@ -72,7 +70,7 @@ func Test_templateValues(t *testing.T) {
 				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
 					Addons: &v1alpha1.Addons{
 						CCM: &v1alpha1.CCM{
-							Credentials: &corev1.LocalObjectReference{
+							Credentials: &v1alpha1.LocalObjectReference{
 								Name: "creds",
 							},
 						},
@@ -84,7 +82,7 @@ func Test_templateValues(t *testing.T) {
 							"https://prism-central.nutanix.com:%d",
 							v1alpha1.DefaultPrismCentralPort,
 						),
-						AdditionalTrustBundle: ptr.To(testCertBundle),
+						AdditionalTrustBundle: testCertBundle,
 					},
 				},
 			},
@@ -97,7 +95,7 @@ func Test_templateValues(t *testing.T) {
 				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
 					Addons: &v1alpha1.Addons{
 						CCM: &v1alpha1.CCM{
-							Credentials: &corev1.LocalObjectReference{
+							Credentials: &v1alpha1.LocalObjectReference{
 								Name: "creds",
 							},
 						},
