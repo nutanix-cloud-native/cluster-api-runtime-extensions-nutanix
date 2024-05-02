@@ -29,6 +29,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -90,6 +91,10 @@ func main() {
 	// It allows to specify configuration under a single variable.
 	nutanixMetaHandlers := nutanix.New(globalOptions)
 
+	// genericMetaHandlers combines all generic patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	genericMetaHandlers := generic.New()
+
 	// Initialize and parse command line flags.
 	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())
 	logsv1.AddFlags(logOptions, pflag.CommandLine)
@@ -127,6 +132,7 @@ func main() {
 	allHandlers = append(allHandlers, awsMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, dockerMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, nutanixMetaHandlers.AllHandlers(mgr)...)
+	allHandlers = append(allHandlers, genericMetaHandlers.AllHandlers(mgr)...)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
 

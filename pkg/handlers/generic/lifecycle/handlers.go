@@ -33,7 +33,7 @@ type Handlers struct {
 	nfdConfig               *nfd.Config
 	clusterAutoscalerConfig *clusterautoscaler.Config
 	ebsConfig               *awsebs.AWSEBSConfig
-	nutnaixCSIConfig        *nutanixcsi.NutanixCSIConfig
+	nutanixCSIConfig        *nutanixcsi.NutanixCSIConfig
 	awsccmConfig            *awsccm.AWSCCMConfig
 	nutanixCCMConfig        *nutanixccm.Config
 	metalLBConfig           *metallb.Config
@@ -52,7 +52,7 @@ func New(
 		clusterAutoscalerConfig: &clusterautoscaler.Config{GlobalOptions: globalOptions},
 		ebsConfig:               &awsebs.AWSEBSConfig{GlobalOptions: globalOptions},
 		awsccmConfig:            &awsccm.AWSCCMConfig{GlobalOptions: globalOptions},
-		nutnaixCSIConfig:        &nutanixcsi.NutanixCSIConfig{GlobalOptions: globalOptions},
+		nutanixCSIConfig:        &nutanixcsi.NutanixCSIConfig{GlobalOptions: globalOptions},
 		nutanixCCMConfig:        &nutanixccm.Config{GlobalOptions: globalOptions},
 		metalLBConfig:           &metallb.Config{GlobalOptions: globalOptions},
 	}
@@ -68,7 +68,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		v1alpha1.CSIProviderAWSEBS: awsebs.New(mgr.GetClient(), h.ebsConfig),
 		v1alpha1.CSIProviderNutanix: nutanixcsi.New(
 			mgr.GetClient(),
-			h.nutnaixCSIConfig,
+			h.nutanixCSIConfig,
 			helmChartInfoGetter,
 		),
 	}
@@ -106,7 +106,7 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
 	h.ebsConfig.AddFlags("awsebs", pflag.CommandLine)
 	h.awsccmConfig.AddFlags("awsccm", pflag.CommandLine)
-	h.nutnaixCSIConfig.AddFlags("nutanixcsi", flagSet)
+	h.nutanixCSIConfig.AddFlags("nutanixcsi", flagSet)
 	h.nutanixCCMConfig.AddFlags("nutanixccm", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
 }

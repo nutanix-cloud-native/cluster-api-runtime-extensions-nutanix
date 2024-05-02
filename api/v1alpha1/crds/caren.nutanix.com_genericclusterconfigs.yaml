@@ -6,20 +6,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: (devel)
-  name: dockerclusterconfigs.caren.nutanix.com
+  name: genericclusterconfigs.caren.nutanix.com
 spec:
   group: caren.nutanix.com
   names:
-    kind: DockerClusterConfig
-    listKind: DockerClusterConfigList
-    plural: dockerclusterconfigs
-    singular: dockerclusterconfig
+    kind: GenericClusterConfig
+    listKind: GenericClusterConfigList
+    plural: genericclusterconfigs
+    singular: genericclusterconfig
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: DockerClusterConfig is the Schema for the dockerclusterconfigs
+        description: GenericClusterConfig is the Schema for the genericclusterconfigs
           API.
         properties:
           apiVersion:
@@ -29,6 +29,14 @@ spec:
               may reject unrecognized values.
               More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
+          extraAPIServerCertSANs:
+            description: Extra Subject Alternative Names for the API Server signing
+              cert.
+            items:
+              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+              type: string
+            type: array
+            uniqueItems: true
           kind:
             description: |-
               Kind is a string value representing the REST resource this object represents.
@@ -40,7 +48,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: DockerClusterConfigSpec defines the desired state of DockerClusterConfig.
+            description: GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
             properties:
               addons:
                 properties:
@@ -225,20 +233,6 @@ spec:
                     - provider
                     type: object
                 type: object
-              controlPlane:
-                description: DockerNodeConfigSpec defines the desired state of DockerNodeSpec.
-                properties:
-                  docker:
-                    properties:
-                      customImage:
-                        description: Custom OCI image for control plane and worker
-                          Nodes.
-                        pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*(:[\w][\w.-]{0,127})?(@[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,})?$
-                        type: string
-                    type: object
-                type: object
-              docker:
-                type: object
               etcd:
                 properties:
                   image:
@@ -255,19 +249,6 @@ spec:
                         type: string
                     type: object
                 type: object
-              extraAPIServerCertSANs:
-                description: |-
-                  Extra Subject Alternative Names for the API Server signing cert.
-                  For the Docker provider, the following default SANs will always be added:
-                  - localhost
-                  - 127.0.0.1
-                  - 0.0.0.0
-                  - host.docker.internal
-                items:
-                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                  type: string
-                type: array
-                uniqueItems: true
               globalImageRegistryMirror:
                 description: GlobalImageRegistryMirror sets default mirror configuration
                   for all the image registries.
