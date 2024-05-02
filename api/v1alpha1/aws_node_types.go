@@ -5,12 +5,12 @@ package v1alpha1
 
 type AWSControlPlaneNodeSpec struct {
 	// The IAM instance profile to use for the cluster Machines.
-	// +kubebuilder:default=control-plane.cluster-api-provider-aws.sigs.k8s.io
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=control-plane.cluster-api-provider-aws.sigs.k8s.io
 	IAMInstanceProfile string `json:"iamInstanceProfile,omitempty"`
 
-	// +kubebuilder:default=m5.xlarge
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=m5.xlarge
 	InstanceType string `json:"instanceType,omitempty"`
 
 	AWSGenericNodeSpec `json:",inline"`
@@ -18,13 +18,13 @@ type AWSControlPlaneNodeSpec struct {
 
 type AWSWorkerNodeSpec struct {
 	// The IAM instance profile to use for the cluster Machines.
-	// +kubebuilder:default=nodes.cluster-api-provider-aws.sigs.k8s.io
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=nodes.cluster-api-provider-aws.sigs.k8s.io
 	IAMInstanceProfile string `json:"iamInstanceProfile,omitempty"`
 
 	// The AWS instance type to use for the cluster Machines.
-	// +kubebuilder:default=m5.2xlarge
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=m5.2xlarge
 	InstanceType string `json:"instanceType,omitempty"`
 
 	AWSGenericNodeSpec `json:",inline"`
@@ -61,8 +61,8 @@ type AMISpec struct {
 type AMILookup struct {
 	// AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
 	// base OS and kubernetes version.
-	// +kubebuilder:example=`capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:example=`capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*`
 	Format string `json:"format,omitempty"`
 
 	// The AWS Organization ID to use for image lookup.

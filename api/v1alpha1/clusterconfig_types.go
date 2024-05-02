@@ -71,9 +71,9 @@ type AWSClusterConfigSpec struct {
 	ControlPlane *AWSControlPlaneNodeConfigSpec `json:"controlPlane,omitempty"`
 
 	// Extra Subject Alternative Names for the API Server signing cert.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:UniqueItems=true
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
-	// +kubebuilder:validation:Optional
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
@@ -108,9 +108,9 @@ type DockerClusterConfigSpec struct {
 	// - 127.0.0.1
 	// - 0.0.0.0
 	// - host.docker.internal
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:UniqueItems=true
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
-	// +kubebuilder:validation:Optional
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
@@ -144,17 +144,17 @@ type NutanixClusterConfigSpec struct {
 	// - localhost
 	// - 127.0.0.1
 	// - 0.0.0.0
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:UniqueItems=true
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
-	// +kubebuilder:validation:Optional
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
 // GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
 type GenericClusterConfigSpec struct {
 	// Sets the Kubernetes image repository used for the KubeadmControlPlane.
-	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
 	KubernetesImageRepository *string `json:"kubernetesImageRepository,omitempty"`
 
 	// +kubebuilder:validation:Optional
@@ -178,13 +178,13 @@ type GenericClusterConfigSpec struct {
 
 type Image struct {
 	// Repository is used to override the image repository to pull from.
-	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
 	Repository string `json:"repository,omitempty"`
 
 	// Tag is used to override the default image tag.
-	// +kubebuilder:validation:Pattern=`^[\w][\w.-]{0,127}$`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Pattern=`^[\w][\w.-]{0,127}$`
 	Tag string `json:"tag,omitempty"`
 }
 
@@ -205,9 +205,9 @@ type RegistryCredentials struct {
 // GlobalImageRegistryMirror sets default mirror configuration for all the image registries.
 type GlobalImageRegistryMirror struct {
 	// Registry mirror URL.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Format=`uri`
 	// +kubebuilder:validation:Pattern=`^https?://`
-	// +kubebuilder:validation:Required
 	URL string `json:"url"`
 
 	// Credentials and CA certificate for the image registry mirror
@@ -216,11 +216,10 @@ type GlobalImageRegistryMirror struct {
 }
 
 type ImageRegistry struct {
+	// Registry URL.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Format=`uri`
 	// +kubebuilder:validation:Pattern=`^https?://`
-	// +kubebuilder:validation:Required
-
-	// Registry URL.
 	URL string `json:"url"`
 
 	// Credentials and CA certificate for the image registry
@@ -230,9 +229,8 @@ type ImageRegistry struct {
 
 // User defines the input for a generated user in cloud-init.
 type User struct {
-	// +kubebuilder:validation:Required
-
 	// Name specifies the user name.
+	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 
 	// HashedPassword is a hashed password for the user, formatted as described

@@ -51,8 +51,8 @@ type SubnetSpec struct {
 // AWSLoadBalancerSpec configures an AWS control-plane LoadBalancer.
 type AWSLoadBalancerSpec struct {
 	// Scheme sets the scheme of the load balancer.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=internet-facing
 	// +kubebuilder:validation:Enum=internet-facing;internal
-	// +kubebuilder:validation:Optional
 	Scheme *capav1.ELBScheme `json:"scheme,omitempty"`
 }

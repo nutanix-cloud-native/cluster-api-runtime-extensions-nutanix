@@ -76,8 +76,8 @@ type AddonStrategy string
 // CNI required for providing CNI configuration.
 type CNI struct {
 	// CNI provider to deploy.
-	// +kubebuilder:validation:Enum=Calico;Cilium
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=Calico;Cilium
 	Provider string `json:"provider"`
 	// Addon strategy used to deploy the CNI provider to the workload cluster.
 	// +kubebuilder:validation:Required
@@ -128,7 +128,7 @@ type CSIProvider struct {
 	// +kubebuilder:validation:Enum=aws-ebs;nutanix
 	Name string `json:"name"`
 
-	// +optional
+	// +kubebuilder:validation:Optional
 	StorageClassConfig []StorageClassConfig `json:"storageClassConfig,omitempty"`
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
@@ -151,19 +151,19 @@ type StorageClassConfig struct {
 	// +kubebuilder:validation:Optional
 	Parameters map[string]string `json:"parameters,omitempty"`
 
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=Delete;Retain;Recycle
 	// +kubebuilder:default=Delete
-	// +kubebuilder:validation:Optional
 	ReclaimPolicy corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
 
 	// +kubebuilder:validation:Enum=Immediate;WaitForFirstConsumer
-	// +kubebuilder:default=WaitForFirstConsumer
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=WaitForFirstConsumer
 	VolumeBindingMode storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
 
 	// If the storage class should allow volume expanding
-	// +kubebuilder:default=false
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
 	AllowExpansion bool `json:"allowExpansion,omitempty"`
 }
 

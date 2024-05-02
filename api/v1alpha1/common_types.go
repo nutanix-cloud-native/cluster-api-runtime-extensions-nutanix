@@ -43,9 +43,9 @@ type ControlPlaneEndpointSpec struct {
 
 type ControlPlaneVirtualIPSpec struct {
 	// Virtual IP provider to deploy.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=KubeVIP
 	// +kubebuilder:default=KubeVIP
-	// +kubebuilder:validation:Optional
 	Provider string `json:"provider,omitempty"`
 }
 

@@ -39,8 +39,8 @@ type NutanixPrismCentralEndpointSpec struct {
 	// A base64 PEM encoded x509 cert for the RootCA that was used to create
 	// the certificate for a Prism Central that uses certificates that were issued by a non-publicly trusted RootCA.
 	// The trust bundle is added to the cert pool used to authenticate the TLS connection to the Prism Central.
-	// +kubebuilder:validation:Format=`byte`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=`byte`
 	AdditionalTrustBundle string `json:"additionalTrustBundle,omitempty"`
 
 	// A reference to the Secret for credential information for the target Prism Central instance.
