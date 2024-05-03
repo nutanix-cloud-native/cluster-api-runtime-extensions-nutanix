@@ -3,8 +3,10 @@ title = "Cluster Autoscaler"
 icon = "fa-solid fa-up-right-and-down-left-from-center"
 +++
 
-By leveraging CAPI cluster lifecycle hooks, this handler deploys [Cluster Autoscaler] on the new cluster at the
-`AfterControlPlaneInitialized` phase.
+By leveraging CAPI cluster lifecycle hooks, this handler deploys [Cluster Autoscaler] on the management cluster
+for every Cluster at the `AfterControlPlaneInitialized` phase.
+Unlike other addons, the Cluster Autoscaler is deployed on the management cluster because it also interacts
+with the CAPI resources to scale the number of Machines.
 
 Deployment of Cluster Autoscaler is opt-in via the  [provider-specific cluster configuration]({{< ref ".." >}}).
 
