@@ -72,11 +72,11 @@ type NutanixGPU struct {
 	// +kubebuilder:validation:Enum:=deviceID;name
 	Type string `json:"type"`
 
-	// deviceID is the id of the GPU entity.
+	// DeviceID is the id of the GPU entity.
 	// +optional
 	DeviceID *int64 `json:"deviceID,omitempty"`
 
-	// name is the GPU name
+	// Name is the GPU name
 	// +optional
 	Name *string `json:"name,omitempty"`
 }

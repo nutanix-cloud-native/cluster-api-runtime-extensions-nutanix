@@ -94,11 +94,11 @@ spec:
                         items:
                           properties:
                             deviceID:
-                              description: deviceID is the id of the GPU entity.
+                              description: DeviceID is the id of the GPU entity.
                               format: int64
                               type: integer
                             name:
-                              description: name is the GPU name
+                              description: Name is the GPU name
                               type: string
                             type:
                               description: Type is the identifier type to use for
