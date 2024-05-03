@@ -5,6 +5,7 @@ package csi
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -17,21 +18,26 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
-type fakeCSIProvider struct{}
+type fakeCSIProvider struct {
+	returnedErr error
+}
 
-func (n *fakeCSIProvider) Apply(
+func (p *fakeCSIProvider) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
 	defaultStorageConfig v1alpha1.DefaultStorage,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	log logr.Logger,
 ) error {
-	return nil
+	return p.returnedErr
 }
 
 var testProviderHandlers = map[string]CSIProvider{
 	"test1": &fakeCSIProvider{},
 	"test2": &fakeCSIProvider{},
+	"broken": &fakeCSIProvider{
+		returnedErr: fmt.Errorf("fake error"),
+	},
 }
 
 func testReq(csi *v1alpha1.CSI) (*runtimehooksv1.AfterControlPlaneInitializedRequest, error) {
@@ -201,6 +207,26 @@ func Test_AfterControlPlaneInitialized(t *testing.T) {
 				},
 			},
 			wantStatus: runtimehooksv1.ResponseStatusSuccess,
+		},
+		{
+			name: "csi handler fails to apply",
+			csi: &v1alpha1.CSI{
+				Providers: []v1alpha1.CSIProvider{
+					{
+						Name: "broken",
+						StorageClassConfig: []v1alpha1.StorageClassConfig{
+							{
+								Name: "broken",
+							},
+						},
+					},
+				},
+				DefaultStorage: v1alpha1.DefaultStorage{
+					ProviderName:           "broken",
+					StorageClassConfigName: "broken",
+				},
+			},
+			wantStatus: runtimehooksv1.ResponseStatusFailure,
 		},
 	}
 	for _, tt := range tests {
