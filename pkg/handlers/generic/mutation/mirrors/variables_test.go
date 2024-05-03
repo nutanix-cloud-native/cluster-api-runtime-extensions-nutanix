@@ -6,7 +6,6 @@ package mirrors
 import (
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -30,7 +29,7 @@ var testDefs = []capitest.VariableTestDef{{
 		GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
 			URL: "http://a.b.c.example.com",
 			Credentials: &v1alpha1.RegistryCredentials{
-				SecretRef: &corev1.LocalObjectReference{
+				SecretRef: &v1alpha1.LocalObjectReference{
 					Name: "a.b.c.example.com-ca-cert-creds",
 				},
 			},

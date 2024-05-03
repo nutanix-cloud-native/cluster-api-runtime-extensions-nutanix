@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -33,7 +32,7 @@ func TestVariableValidation(t *testing.T) {
 							v1alpha1.DefaultPrismCentralPort,
 						),
 						Insecure: false,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -55,7 +54,7 @@ func TestVariableValidation(t *testing.T) {
 							v1alpha1.DefaultPrismCentralPort,
 						),
 						Insecure: false,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -74,7 +73,7 @@ func TestVariableValidation(t *testing.T) {
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com",
 						Insecure: false,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -92,7 +91,7 @@ func TestVariableValidation(t *testing.T) {
 				Nutanix: &v1alpha1.NutanixSpec{
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						Insecure: false,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -112,7 +111,7 @@ func TestVariableValidation(t *testing.T) {
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "http://prism-central.nutanix.com",
 						Insecure: false,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -132,7 +131,7 @@ func TestVariableValidation(t *testing.T) {
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "not-a-valid-url",
 						Insecure: false,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},

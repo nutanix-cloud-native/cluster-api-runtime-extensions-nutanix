@@ -5,12 +5,12 @@ package v1alpha1
 
 type AWSControlPlaneNodeSpec struct {
 	// The IAM instance profile to use for the cluster Machines.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=control-plane.cluster-api-provider-aws.sigs.k8s.io
-	// +optional
 	IAMInstanceProfile string `json:"iamInstanceProfile,omitempty"`
 
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=m5.xlarge
-	// +optional
 	InstanceType string `json:"instanceType,omitempty"`
 
 	AWSGenericNodeSpec `json:",inline"`
@@ -18,13 +18,13 @@ type AWSControlPlaneNodeSpec struct {
 
 type AWSWorkerNodeSpec struct {
 	// The IAM instance profile to use for the cluster Machines.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=nodes.cluster-api-provider-aws.sigs.k8s.io
-	// +optional
 	IAMInstanceProfile string `json:"iamInstanceProfile,omitempty"`
 
 	// The AWS instance type to use for the cluster Machines.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=m5.2xlarge
-	// +optional
 	InstanceType string `json:"instanceType,omitempty"`
 
 	AWSGenericNodeSpec `json:",inline"`
@@ -33,10 +33,10 @@ type AWSWorkerNodeSpec struct {
 type AWSGenericNodeSpec struct {
 	// AMI or AMI Lookup arguments for machine image of a AWS machine.
 	// If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
-	//+optional
+	// +kubebuilder:validation:Optional
 	AMISpec *AMISpec `json:"ami,omitempty"`
 
-	//+optional
+	// +kubebuilder:validation:Optional
 	AdditionalSecurityGroups AdditionalSecurityGroup `json:"additionalSecurityGroups,omitempty"`
 }
 
@@ -44,32 +44,32 @@ type AdditionalSecurityGroup []SecurityGroup
 
 type SecurityGroup struct {
 	// ID is the id of the security group
-	// +optional
+	// +kubebuilder:validation:Optional
 	ID string `json:"id,omitempty"`
 }
 
 type AMISpec struct {
 	// AMI ID is the reference to the AMI from which to create the machine instance.
-	// +optional
+	// +kubebuilder:validation:Optional
 	ID string `json:"id,omitempty"`
 
 	// Lookup is the lookup arguments for the AMI.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Lookup *AMILookup `json:"lookup,omitempty"`
 }
 
 type AMILookup struct {
 	// AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
 	// base OS and kubernetes version.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:example=`capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*`
-	// +optional
 	Format string `json:"format,omitempty"`
 
 	// The AWS Organization ID to use for image lookup.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Org string `json:"org,omitempty"`
 
 	// The name of the base os for image lookup
-	// +optional
+	// +kubebuilder:validation:Optional
 	BaseOS string `json:"baseOS,omitempty"`
 }

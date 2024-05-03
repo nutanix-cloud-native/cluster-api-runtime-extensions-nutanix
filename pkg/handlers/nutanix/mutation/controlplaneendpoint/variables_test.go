@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -39,7 +38,7 @@ func TestVariableValidation(t *testing.T) {
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL: testPrismCentralURL,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -57,7 +56,7 @@ func TestVariableValidation(t *testing.T) {
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL: testPrismCentralURL,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},
@@ -76,7 +75,7 @@ func TestVariableValidation(t *testing.T) {
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL: testPrismCentralURL,
-						Credentials: &corev1.LocalObjectReference{
+						Credentials: v1alpha1.LocalObjectReference{
 							Name: "credentials",
 						},
 					},

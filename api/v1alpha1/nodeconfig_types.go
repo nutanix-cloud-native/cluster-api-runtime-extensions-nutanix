@@ -36,7 +36,7 @@ type AWSWorkerNodeConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	//+optional
+	// +kubebuilder:validation:Optional
 	Spec AWSWorkerNodeConfigSpec `json:"spec,omitempty"`
 }
 
@@ -48,7 +48,7 @@ func (s AWSWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolin
 // Place any configuration that can be applied to individual Nodes here.
 // Otherwise, it should go into the ClusterConfigSpec.
 type AWSWorkerNodeConfigSpec struct {
-	// +optional
+	// +kubebuilder:validation:Optional
 	AWS *AWSWorkerNodeSpec `json:"aws,omitempty"`
 }
 
@@ -56,7 +56,7 @@ type AWSWorkerNodeConfigSpec struct {
 // Place any configuration that can be applied to individual Nodes here.
 // Otherwise, it should go into the ClusterConfigSpec.
 type AWSControlPlaneNodeConfigSpec struct {
-	// +optional
+	// +kubebuilder:validation:Optional
 	AWS *AWSControlPlaneNodeSpec `json:"aws,omitempty"`
 }
 
@@ -67,7 +67,7 @@ type DockerNodeConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	//+optional
+	// +kubebuilder:validation:Optional
 	Spec DockerNodeConfigSpec `json:"spec,omitempty"`
 }
 
@@ -77,7 +77,7 @@ func (s DockerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:g
 
 // DockerNodeConfigSpec defines the desired state of DockerNodeSpec.
 type DockerNodeConfigSpec struct {
-	// +optional
+	// +kubebuilder:validation:Optional
 	Docker *DockerNodeSpec `json:"docker,omitempty"`
 }
 
@@ -88,7 +88,7 @@ type NutanixNodeConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	//+optional
+	// +kubebuilder:validation:Optional
 	Spec NutanixNodeConfigSpec `json:"spec,omitempty"`
 }
 
@@ -98,7 +98,7 @@ func (s NutanixNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:
 
 // NutanixNodeSpec defines the desired state of NutanixNodeSpec.
 type NutanixNodeConfigSpec struct {
-	// +optional
+	// +kubebuilder:validation:Optional
 	Nutanix *NutanixNodeSpec `json:"nutanix,omitempty"`
 }
 

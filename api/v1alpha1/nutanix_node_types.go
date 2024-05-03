@@ -15,41 +15,50 @@ type NutanixNodeSpec struct {
 
 type NutanixMachineDetails struct {
 	// vcpusPerSocket is the number of vCPUs per socket of the VM
+	// +kubebuilder:validation:Required
 	VCPUsPerSocket int32 `json:"vcpusPerSocket"`
 
 	// vcpuSockets is the number of vCPU sockets of the VM
+	// +kubebuilder:validation:Required
 	VCPUSockets int32 `json:"vcpuSockets"`
 
 	// memorySize is the memory size (in Quantity format) of the VM
+	// +kubebuilder:validation:Required
 	MemorySize resource.Quantity `json:"memorySize"`
 
 	// image identifies the image uploaded to Prism Central (PC). The identifier
 	// (uuid or name) can be obtained from the console or API.
+	// +kubebuilder:validation:Required
 	Image NutanixResourceIdentifier `json:"image"`
 
 	// cluster identifies the Prism Element in which the machine will be created.
 	// The identifier (uuid or name) can be obtained from the console or API.
+	// +kubebuilder:validation:Required
 	Cluster NutanixResourceIdentifier `json:"cluster"`
 
 	// subnet identifies the network subnet to use for the machine.
 	// The identifier (uuid or name) can be obtained from the console or API.
+	// +kubebuilder:validation:Required
 	Subnets []NutanixResourceIdentifier `json:"subnets"`
 
 	// List of categories that need to be added to the machines. Categories must already
 	// exist in Prism Central. One category key can have more than one value.
-	// +optional
+	// +kubebuilder:validation:Optional
 	AdditionalCategories []NutanixCategoryIdentifier `json:"additionalCategories,omitempty"`
 
 	// Defines the boot type of the virtual machine. Only supports UEFI and Legacy
-	BootType NutanixBootType `json:"bootType,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum:=legacy;uefi
+	BootType NutanixBootType `json:"bootType"`
 
 	// systemDiskSize is size (in Quantity format) of the system disk of the VM
 	// The minimum systemDiskSize is 20Gi bytes
+	// +kubebuilder:validation:Required
 	SystemDiskSize resource.Quantity `json:"systemDiskSize"`
 
 	// add the virtual machines to the project defined in Prism Central.
 	// The project must already be present in the Prism Central.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Project *NutanixResourceIdentifier `json:"project,omitempty"`
 }
 
@@ -57,8 +66,6 @@ type NutanixMachineDetails struct {
 type NutanixIdentifierType capxv1.NutanixIdentifierType
 
 // NutanixBootType is an enumeration of different boot types.
-// +kubebuilder:validation:Required
-// +kubebuilder:validation:Enum:=legacy;uefi
 type NutanixBootType capxv1.NutanixBootType
 
 type NutanixResourceIdentifier capxv1.NutanixResourceIdentifier

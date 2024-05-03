@@ -6,7 +6,6 @@ package credentials
 import (
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -34,7 +33,7 @@ var testDefs = []capitest.VariableTestDef{
 				{
 					URL: "https://a.b.c.example.com/a/b/c",
 					Credentials: &v1alpha1.RegistryCredentials{
-						SecretRef: &corev1.LocalObjectReference{
+						SecretRef: &v1alpha1.LocalObjectReference{
 							Name: "a.b.c.example.com-creds",
 						},
 					},

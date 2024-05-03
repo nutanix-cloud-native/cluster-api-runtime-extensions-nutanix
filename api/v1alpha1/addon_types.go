@@ -57,19 +57,19 @@ const (
 )
 
 type Addons struct {
-	// +optional
+	// +kubebuilder:validation:Optional
 	CNI *CNI `json:"cni,omitempty"`
 
-	// +optional
+	// +kubebuilder:validation:Optional
 	NFD *NFD `json:"nfd,omitempty"`
 
-	// +optional
+	// +kubebuilder:validation:Optional
 	ClusterAutoscaler *ClusterAutoscaler `json:"clusterAutoscaler,omitempty"`
 
-	// +optional
+	// +kubebuilder:validation:Optional
 	CCM *CCM `json:"ccm,omitempty"`
 
-	// +optional
+	// +kubebuilder:validation:Optional
 	CSIProviders *CSI `json:"csi,omitempty"`
 
 	// +optional
@@ -81,9 +81,11 @@ type AddonStrategy string
 // CNI required for providing CNI configuration.
 type CNI struct {
 	// CNI provider to deploy.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=Calico;Cilium
 	Provider string `json:"provider"`
 	// Addon strategy used to deploy the CNI provider to the workload cluster.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 }
@@ -91,6 +93,7 @@ type CNI struct {
 // NFD tells us to enable or disable the node feature discovery addon.
 type NFD struct {
 	// Addon strategy used to deploy Node Feature Discovery (NFD) to the workload cluster.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 }
@@ -99,71 +102,81 @@ type NFD struct {
 type ClusterAutoscaler struct {
 	// Addon strategy used to deploy cluster-autoscaler to the management cluster
 	// targeting the workload cluster.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 }
 
 type DefaultStorage struct {
 	// Name of the CSI Provider for the default storage class.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=aws-ebs;nutanix
 	ProviderName string `json:"providerName"`
+
 	// Name of storage class config in any of the provider objects.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	StorageClassConfigName string `json:"storageClassConfigName"`
 }
 
 type CSI struct {
-	// +optional
+	// +kubebuilder:validation:Optional
 	Providers []CSIProvider `json:"providers,omitempty"`
-	// +optional
+
+	// +kubebuilder:validation:Optional
 	DefaultStorage *DefaultStorage `json:"defaultStorage,omitempty"`
 }
 
 type CSIProvider struct {
 	// Name of the CSI Provider.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=aws-ebs;nutanix
 	Name string `json:"name"`
 
-	// +optional
+	// +kubebuilder:validation:Optional
 	StorageClassConfig []StorageClassConfig `json:"storageClassConfig,omitempty"`
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 
 	// The reference to any secret used by the CSI Provider.
-	// +optional
-	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
+	// +kubebuilder:validation:Optional
+	Credentials *LocalObjectReference `json:"credentials,omitempty"`
 }
 
 type StorageClassConfig struct {
 	// Name of storage class config.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
 	// Parameters passed into the storage class object.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Parameters map[string]string `json:"parameters,omitempty"`
 
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=Delete;Retain;Recycle
 	// +kubebuilder:default=Delete
-	// +optional
-	ReclaimPolicy corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
+	ReclaimPolicy *corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
 
 	// +kubebuilder:validation:Enum=Immediate;WaitForFirstConsumer
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=WaitForFirstConsumer
-	// +optional
-	VolumeBindingMode storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
+	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
 
 	// If the storage class should allow volume expanding
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	// +optional
 	AllowExpansion bool `json:"allowExpansion,omitempty"`
 }
 
 // CCM tells us to enable or disable the cloud provider interface.
 type CCM struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
-	// +optional
-	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
+	// +kubebuilder:validation:Optional
+	Credentials *LocalObjectReference `json:"credentials,omitempty"`
 }
 
 type ServiceLoadBalancer struct {
