@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	commonclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/clusterconfig"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
 const (
@@ -59,14 +59,14 @@ func Test_templateValues(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		clusterConfig *commonclusterconfig.ClusterConfig
+		clusterConfig *apivariables.ClusterConfigSpec
 
 		in       string
 		expected string
 	}{
 		{
 			name: "With AdditionalTrustBundle set",
-			clusterConfig: &commonclusterconfig.ClusterConfig{
+			clusterConfig: &apivariables.ClusterConfigSpec{
 				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
 					Addons: &v1alpha1.Addons{
 						CCM: &v1alpha1.CCM{
@@ -93,7 +93,7 @@ func Test_templateValues(t *testing.T) {
 		},
 		{
 			name: "Without an AdditionalTrustBundle set",
-			clusterConfig: &commonclusterconfig.ClusterConfig{
+			clusterConfig: &apivariables.ClusterConfigSpec{
 				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
 					Addons: &v1alpha1.Addons{
 						CCM: &v1alpha1.CCM{

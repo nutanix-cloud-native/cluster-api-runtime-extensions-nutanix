@@ -13,12 +13,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	dockerworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 )
 
 type customImageWorkerPatchHandler struct {
@@ -28,8 +27,8 @@ type customImageWorkerPatchHandler struct {
 
 func NewWorkerPatch() *customImageWorkerPatchHandler {
 	return newcustomImageWorkerPatchHandler(
-		workerconfig.MetaVariableName,
-		dockerworkerconfig.DockerVariableName,
+		v1alpha1.WorkerConfigVariableName,
+		v1alpha1.DockerVariableName,
 		VariableName,
 	)
 }

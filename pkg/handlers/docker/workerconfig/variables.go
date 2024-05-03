@@ -12,7 +12,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 )
 
 var (
@@ -23,9 +22,6 @@ var (
 const (
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "DockerWorkerConfigVars"
-
-	// DockerVariableName is the Docker config patch variable name.
-	DockerVariableName = "docker"
 )
 
 func NewVariable() *dockerWorkerConfigVariableHandler {
@@ -44,7 +40,7 @@ func (h *dockerWorkerConfigVariableHandler) DiscoverVariables(
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     workerconfig.MetaVariableName,
+		Name:     v1alpha1.WorkerConfigVariableName,
 		Required: false,
 		Schema:   v1alpha1.DockerNodeConfig{}.VariableSchema(),
 	})

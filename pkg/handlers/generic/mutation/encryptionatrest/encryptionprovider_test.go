@@ -10,21 +10,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/config/v1"
 
-	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
 func Test_encryptionConfigForSecretsAndConfigMaps(t *testing.T) {
 	testcases := []struct {
 		name      string
-		providers *carenv1.EncryptionProviders
+		providers *v1alpha1.EncryptionProviders
 		wantErr   error
 		want      *apiserverv1.ResourceConfiguration
 	}{
 		{
 			name: "encryption configuration using all providers",
-			providers: &carenv1.EncryptionProviders{
-				AESCBC:    &carenv1.AESConfiguration{},
-				Secretbox: &carenv1.SecretboxConfiguration{},
+			providers: &v1alpha1.EncryptionProviders{
+				AESCBC:    &v1alpha1.AESConfiguration{},
+				Secretbox: &v1alpha1.SecretboxConfiguration{},
 			},
 			wantErr: nil,
 			want: &apiserverv1.ResourceConfiguration{
@@ -53,8 +53,8 @@ func Test_encryptionConfigForSecretsAndConfigMaps(t *testing.T) {
 		},
 		{
 			name: "encryption configuration using single provider",
-			providers: &carenv1.EncryptionProviders{
-				AESCBC: &carenv1.AESConfiguration{},
+			providers: &v1alpha1.EncryptionProviders{
+				AESCBC: &v1alpha1.AESConfiguration{},
 			},
 			wantErr: nil,
 			want: &apiserverv1.ResourceConfiguration{

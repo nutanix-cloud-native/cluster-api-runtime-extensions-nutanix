@@ -13,7 +13,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -30,7 +29,7 @@ var _ = Describe("Generate AWS SecurityGroups patches for Worker", func() {
 			Name: "SecurityGroups for workers set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					workerconfig.MetaVariableName,
+					v1alpha1.WorkerConfigVariableName,
 					v1alpha1.AdditionalSecurityGroup{
 						{ID: "sg-1"},
 						{ID: "sg-2"},

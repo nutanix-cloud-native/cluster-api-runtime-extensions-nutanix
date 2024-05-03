@@ -18,8 +18,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
-	commonclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -72,7 +72,7 @@ func New(
 func (p *provider) Apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
-	clusterConfig *commonclusterconfig.ClusterConfig,
+	clusterConfig *apivariables.ClusterConfigSpec,
 	log logr.Logger,
 ) error {
 	// No need to check for nil values in the struct, this function will only be called if CCM is not nil
@@ -164,7 +164,7 @@ func (p *provider) Apply(
 	return nil
 }
 
-func templateValues(clusterConfig *commonclusterconfig.ClusterConfig, text string) (string, error) {
+func templateValues(clusterConfig *apivariables.ClusterConfigSpec, text string) (string, error) {
 	helmValuesTemplate, err := template.New("").Parse(text)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse Helm values template: %w", err)

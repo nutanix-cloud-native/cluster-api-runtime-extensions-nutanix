@@ -15,11 +15,10 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	commonclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common/clusterconfig"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 const (
@@ -30,7 +29,7 @@ type CCMProvider interface {
 	Apply(
 		context.Context,
 		*clusterv1.Cluster,
-		*commonclusterconfig.ClusterConfig,
+		*apivariables.ClusterConfigSpec,
 		logr.Logger,
 	) error
 }
@@ -53,7 +52,7 @@ func New(
 ) *CCMHandler {
 	return &CCMHandler{
 		client:          c,
-		variableName:    clusterconfig.MetaVariableName,
+		variableName:    v1alpha1.ClusterConfigVariableName,
 		variablePath:    []string{"addons", variableRootName},
 		ProviderHandler: handlers,
 	}
@@ -96,9 +95,9 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		return
 	}
 
-	clusterConfigVar, err := variables.Get[commonclusterconfig.ClusterConfig](
+	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
 		varMap,
-		clusterconfig.MetaVariableName,
+		v1alpha1.ClusterConfigVariableName,
 	)
 	if err != nil {
 		log.Error(

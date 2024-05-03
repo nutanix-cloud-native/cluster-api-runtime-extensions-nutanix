@@ -21,7 +21,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	virtuialipproviders "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/controlplanevirtualip/providers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
@@ -43,7 +42,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				Name: "host and port should be templated in a new file and no pre/post commands",
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
-						clusterconfig.MetaVariableName,
+						v1alpha1.ClusterConfigVariableName,
 						v1alpha1.ControlPlaneEndpointSpec{
 							Host: "10.20.100.10",
 							Port: 6443,
@@ -114,7 +113,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				Name: "host and port should be templated in a new file with pre/post commands",
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
-						clusterconfig.MetaVariableName,
+						v1alpha1.ClusterConfigVariableName,
 						v1alpha1.ControlPlaneEndpointSpec{
 							Host: "10.20.100.10",
 							Port: 6443,
@@ -232,7 +231,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				return mutation.NewMetaGeneratePatchesHandler(
 					"",
 					client,
-					NewControlPlaneVirtualIP(client, cfg, clusterconfig.MetaVariableName, VariableName),
+					NewControlPlaneVirtualIP(client, cfg, v1alpha1.ClusterConfigVariableName, VariableName),
 				).(mutation.GeneratePatches)
 			}
 

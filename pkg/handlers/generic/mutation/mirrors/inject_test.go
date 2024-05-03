@@ -17,7 +17,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -53,7 +52,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 			Name: "files added in KubeadmControlPlaneTemplate for registry with mirror without CA Certificate",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.GlobalImageRegistryMirror{
 						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 					},
@@ -80,7 +79,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 			Name: "files added in KubeadmControlPlaneTemplate for registry with mirror with CA Certificate",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.GlobalImageRegistryMirror{
 						URL: "https://registry.example.com",
 						Credentials: &v1alpha1.RegistryCredentials{
@@ -115,7 +114,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 			Name: "files added in KubeadmConfigTemplate for registry mirror wihthout CA certificate",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.GlobalImageRegistryMirror{
 						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 					},
@@ -150,7 +149,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 			Name: "files added in KubeadmConfigTemplate for registry mirror with secret for CA certificate",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.GlobalImageRegistryMirror{
 						URL: "https://registry.example.com",
 						Credentials: &v1alpha1.RegistryCredentials{

@@ -10,13 +10,12 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 )
 
 func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		workerconfig.MetaVariableName,
+		v1alpha1.WorkerConfigVariableName,
 		ptr.To(v1alpha1.AWSWorkerNodeConfig{}.VariableSchema()),
 		false,
 		NewVariable,

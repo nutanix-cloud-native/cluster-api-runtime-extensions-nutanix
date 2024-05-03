@@ -19,11 +19,10 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -67,11 +66,11 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 
 	encryptionVar := []runtimehooksv1.Variable{
 		capitest.VariableWithValue(
-			clusterconfig.MetaVariableName,
-			carenv1.EncryptionAtRest{
-				Providers: []carenv1.EncryptionProviders{
+			v1alpha1.ClusterConfigVariableName,
+			v1alpha1.EncryptionAtRest{
+				Providers: []v1alpha1.EncryptionProviders{
 					{
-						AESCBC: &carenv1.AESConfiguration{},
+						AESCBC: &v1alpha1.AESConfiguration{},
 					},
 				},
 			},

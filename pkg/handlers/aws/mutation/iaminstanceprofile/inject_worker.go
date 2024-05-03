@@ -18,7 +18,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 )
 
 type awsIAMInstanceProfileWorkerPatchHandler struct {
@@ -28,7 +27,7 @@ type awsIAMInstanceProfileWorkerPatchHandler struct {
 
 func NewWorkerPatch() *awsIAMInstanceProfileWorkerPatchHandler {
 	return newAWSIAMInstanceProfileWorkerPatchHandler(
-		workerconfig.MetaVariableName,
+		v1alpha1.WorkerConfigVariableName,
 		v1alpha1.AWSVariableName,
 		VariableName,
 	)

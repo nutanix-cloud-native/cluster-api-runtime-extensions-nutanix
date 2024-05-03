@@ -17,7 +17,6 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
 )
 
@@ -73,7 +72,7 @@ var _ = Describe("Self-hosted", Serial, func() {
 								)
 								addonsConfig, err := variables.Get[v1alpha1.Addons](
 									clusterVars,
-									clusterconfig.MetaVariableName,
+									v1alpha1.ClusterConfigVariableName,
 									"addons",
 								)
 								Expect(err).ToNot(HaveOccurred())
