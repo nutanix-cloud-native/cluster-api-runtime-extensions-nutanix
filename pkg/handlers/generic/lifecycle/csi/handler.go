@@ -27,7 +27,7 @@ type CSIProvider interface {
 	Apply(
 		context.Context,
 		v1alpha1.CSIProvider,
-		*v1alpha1.DefaultStorage,
+		v1alpha1.DefaultStorage,
 		*runtimehooksv1.AfterControlPlaneInitializedRequest,
 		logr.Logger,
 	) error
@@ -96,6 +96,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		return
 	}
 
+	// This is defensive, because the API validation requires at least provider.
 	if len(csi.Providers) == 0 {
 		log.Error(
 			err,
@@ -106,7 +107,43 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		return
 	}
 
+	storageClassConfigsByProviderName := map[string][]v1alpha1.StorageClassConfig{}
 	for _, provider := range csi.Providers {
+
+		storageClassConfigsByProviderName[provider.Name] = provider.StorageClassConfig
+	}
+	if configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]; !ok {
+		log.Error(
+			err,
+			"The default Storage provider name must be the name of a chosen default provider.",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage("The default Storage provider name must be the name of a chosen provider")
+		return
+	} else {
+		defaultStorageClassConfigNameInProvider := false
+		for _, config := range configs {
+			if csi.DefaultStorage.StorageClassConfigName == config.Name {
+				defaultStorageClassConfigNameInProvider = true
+				break
+			}
+		}
+		if !defaultStorageClassConfigNameInProvider {
+			log.Error(
+				err,
+				"The default Storage StrorageClassConfig name must be the name of a StrorageClassConfig of the default provider.",
+			)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(
+				"The default Storage StrorageClassConfig name must be the name of a StrorageClassConfig of the default provider.",
+			)
+			return
+		}
+	}
+
+	// There's a 1:N mapping of infra to CSI providers. The user chooses the providers.
+	for _, provider := range csi.Providers {
+		// This is defensive, because the API validation requires at least provider.
 		if len(provider.StorageClassConfig) == 0 {
 			log.Error(
 				err,
@@ -121,29 +158,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			)
 			return
 		}
-	}
 
-	if csi.DefaultStorage == nil {
-		if len(csi.Providers) > 1 {
-			log.Error(
-				err,
-				"A CSI configuration with two or more providers must configure the default storage.",
-			)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				"CSI configuration with two or more providers must configure the default storage",
-			)
-			return
-		}
-		// When there is one provider, we can derive the default storage configuration.
-		csi.DefaultStorage = &v1alpha1.DefaultStorage{
-			ProviderName:           csi.Providers[0].Name,
-			StorageClassConfigName: csi.Providers[0].StorageClassConfig[0].Name,
-		}
-	}
-
-	// There's a 1:N mapping of infra to CSI providers. The user chooses the provider.
-	for _, provider := range csi.Providers {
 		handler, ok := c.ProviderHandler[provider.Name]
 		if !ok {
 			log.Error(

@@ -124,8 +124,8 @@ type CSI struct {
 	// +kubebuilder:validation:Required
 	Providers []CSIProvider `json:"providers"`
 
-	// +kubebuilder:validation:Optional
-	DefaultStorage *DefaultStorage `json:"defaultStorage,omitempty"`
+	// +kubebuilder:validation:Required
+	DefaultStorage DefaultStorage `json:"defaultStorage"`
 }
 
 type CSIProvider struct {

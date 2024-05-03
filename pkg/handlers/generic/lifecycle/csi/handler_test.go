@@ -22,7 +22,7 @@ type fakeCSIProvider struct{}
 func (n *fakeCSIProvider) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
-	defaultStorageConfig *v1alpha1.DefaultStorage,
+	defaultStorageConfig v1alpha1.DefaultStorage,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	log logr.Logger,
 ) error {
@@ -72,91 +72,87 @@ func Test_AfterControlPlaneInitialized(t *testing.T) {
 			wantStatus: runtimehooksv1.ResponseStatusSuccess,
 		},
 		{
-			name: "if csi variable set, must specify one or more providers",
+			name: "if csi variable set, must set at least one provider",
 			csi: &v1alpha1.CSI{
 				Providers: []v1alpha1.CSIProvider{},
-			},
-			wantStatus: runtimehooksv1.ResponseStatusFailure,
-		},
-		{
-			name: "if csi variable set, a provider must have a storage class config",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name:               "test1",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{},
-					},
-				},
-			},
-			wantStatus: runtimehooksv1.ResponseStatusFailure,
-		},
-		{
-			name: "if csi variable set with one provider, we derive the default storage",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name: "test1",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "example",
-							},
-						},
-					},
-				},
-			},
-			wantStatus: runtimehooksv1.ResponseStatusSuccess,
-		},
-		{
-			name: "if csi variable set with two or more providers, user must set default storage",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name: "test1",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "example",
-							},
-						},
-					},
-					{
-						Name: "test2",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "example",
-							},
-						},
-					},
-				},
-			},
-			wantStatus: runtimehooksv1.ResponseStatusFailure,
-		},
-		{
-			name: "if csi variable set with two providers and default storage",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name: "test1",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "example",
-							},
-						},
-					},
-					{
-						Name: "test2",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "example",
-							},
-						},
-					},
-				},
-				DefaultStorage: &v1alpha1.DefaultStorage{
-					ProviderName:           "test1",
+				DefaultStorage: v1alpha1.DefaultStorage{
+					ProviderName:           "example",
 					StorageClassConfigName: "example",
 				},
 			},
-			wantStatus: runtimehooksv1.ResponseStatusSuccess,
+			wantStatus: runtimehooksv1.ResponseStatusFailure,
+		},
+		{
+			name: "any set provider must have at least one storage class config",
+			csi: &v1alpha1.CSI{
+				Providers: []v1alpha1.CSIProvider{
+					{
+						Name: "test1",
+						StorageClassConfig: []v1alpha1.StorageClassConfig{
+							{
+								Name: "test1",
+							},
+						},
+					},
+					{
+						Name:               "test2",
+						StorageClassConfig: []v1alpha1.StorageClassConfig{},
+					},
+				},
+				DefaultStorage: v1alpha1.DefaultStorage{
+					ProviderName:           "test1",
+					StorageClassConfigName: "test1",
+				},
+			},
+			wantStatus: runtimehooksv1.ResponseStatusFailure,
+		},
+		{
+			name: "default storage Provider name must be the name of a set provider",
+			csi: &v1alpha1.CSI{
+				Providers: []v1alpha1.CSIProvider{
+					{
+						Name: "test1",
+						StorageClassConfig: []v1alpha1.StorageClassConfig{
+							{
+								Name: "test1",
+							},
+						},
+					},
+				},
+				DefaultStorage: v1alpha1.DefaultStorage{
+					ProviderName:           "not-test1",
+					StorageClassConfigName: "test1",
+				},
+			},
+			wantStatus: runtimehooksv1.ResponseStatusFailure,
+		},
+		{
+			name: "default storage StorageClassConfig name must be the name of a StorageClassConfig of the default provider",
+			csi: &v1alpha1.CSI{
+				Providers: []v1alpha1.CSIProvider{
+					{
+						Name: "test1",
+						StorageClassConfig: []v1alpha1.StorageClassConfig{
+							{
+								Name: "test1",
+							},
+						},
+					},
+					{
+						Name: "test2",
+						StorageClassConfig: []v1alpha1.StorageClassConfig{
+							{
+								Name: "test2",
+							},
+						},
+					},
+				},
+				DefaultStorage: v1alpha1.DefaultStorage{
+					ProviderName:           "test1",
+					StorageClassConfigName: "test2",
+				},
+			},
+			wantStatus: runtimehooksv1.ResponseStatusFailure,
 		},
 		{
 			name: "csi provider is unknown",
@@ -166,13 +162,45 @@ func Test_AfterControlPlaneInitialized(t *testing.T) {
 						Name: "not-test1-or-test2",
 						StorageClassConfig: []v1alpha1.StorageClassConfig{
 							{
-								Name: "example",
+								Name: "not-test1-or-test2",
 							},
 						},
 					},
 				},
+				DefaultStorage: v1alpha1.DefaultStorage{
+					ProviderName:           "not-test1-or-test2",
+					StorageClassConfigName: "not-test1-or-test2",
+				},
 			},
 			wantStatus: runtimehooksv1.ResponseStatusFailure,
+		},
+		{
+			name: "valid csi configuration",
+			csi: &v1alpha1.CSI{
+				Providers: []v1alpha1.CSIProvider{
+					{
+						Name: "test1",
+						StorageClassConfig: []v1alpha1.StorageClassConfig{
+							{
+								Name: "test1",
+							},
+						},
+					},
+					{
+						Name: "test2",
+						StorageClassConfig: []v1alpha1.StorageClassConfig{
+							{
+								Name: "test2",
+							},
+						},
+					},
+				},
+				DefaultStorage: v1alpha1.DefaultStorage{
+					ProviderName:           "test2",
+					StorageClassConfigName: "test2",
+				},
+			},
+			wantStatus: runtimehooksv1.ResponseStatusSuccess,
 		},
 	}
 	for _, tt := range tests {
@@ -189,7 +217,11 @@ func Test_AfterControlPlaneInitialized(t *testing.T) {
 
 			handler.AfterControlPlaneInitialized(ctx, req, resp)
 			if diff := cmp.Diff(tt.wantStatus, resp.Status); diff != "" {
-				t.Errorf("response Status mismatch (-want +got):\n%s. Message: %s", diff, resp.Message)
+				t.Errorf(
+					"response Status mismatch (-want +got):\n%s. Message: %s",
+					diff,
+					resp.Message,
+				)
 			}
 		})
 	}

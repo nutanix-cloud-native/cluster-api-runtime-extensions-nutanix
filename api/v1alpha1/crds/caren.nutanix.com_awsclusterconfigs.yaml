@@ -194,6 +194,7 @@ spec:
                         minItems: 1
                         type: array
                     required:
+                    - defaultStorage
                     - providers
                     type: object
                   nfd:

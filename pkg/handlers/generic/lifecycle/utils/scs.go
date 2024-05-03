@@ -63,7 +63,7 @@ func CreateStorageClassOnRemote(
 	cl ctrlclient.Client,
 	configs []v1alpha1.StorageClassConfig,
 	cluster *clusterv1.Cluster,
-	defaultStorageConfig *v1alpha1.DefaultStorage,
+	defaultStorageConfig v1alpha1.DefaultStorage,
 	csiProvider string,
 	provisioner v1alpha1.StorageProvisioner,
 	defaultParameters map[string]string,
