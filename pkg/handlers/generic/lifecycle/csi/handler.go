@@ -96,7 +96,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		return
 	}
 
-	// This is defensive, because the API validation requires at least provider.
+	// This is defensive, because the API validation requires at least one provider.
 	if len(csi.Providers) == 0 {
 		log.Error(
 			err,
@@ -109,7 +109,6 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 
 	storageClassConfigsByProviderName := map[string][]v1alpha1.StorageClassConfig{}
 	for _, provider := range csi.Providers {
-
 		storageClassConfigsByProviderName[provider.Name] = provider.StorageClassConfig
 	}
 	if configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]; !ok {
