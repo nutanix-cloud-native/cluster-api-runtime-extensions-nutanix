@@ -239,6 +239,23 @@ spec:
                 type: object
               docker:
                 type: object
+              encryption:
+                description: |-
+                  Encryption defines the configuration to enable encryption at REST
+                  This configuration is used by API server to encrypt data before storing it in ETCD.
+                  Currently the encryption only enabled for secrets and configmaps.
+                properties:
+                  providers:
+                    default: aescbc
+                    description: Encryption providers
+                    enum:
+                    - aescbc
+                    - aesgcm
+                    items:
+                      type: string
+                    type: array
+                    uniqueItems: true
+                type: object
               etcd:
                 properties:
                   image:
