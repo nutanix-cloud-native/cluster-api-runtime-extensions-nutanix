@@ -200,6 +200,9 @@ type GenericClusterConfigSpec struct {
 
 	// +kubebuilder:validation:Optional
 	Users []User `json:"users,omitempty"`
+
+	// +optional
+	Encryption *Encryption `json:"encryption,omitempty"`
 }
 
 type Image struct {
@@ -277,6 +280,18 @@ type User struct {
 	// An empty string is not marshalled, because it is not a valid value.
 	// +kubebuilder:validation:Optional
 	Sudo string `json:"sudo,omitempty"`
+}
+
+// Encryption defines the configuration to enable encryption at REST
+// This configuration is used by API server to encrypt data before storing it in ETCD.
+// Currently the encryption only enabled for secrets and configmaps.
+type Encryption struct {
+	// Encryption providers
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:Enum=aescbc;aesgcm
+	// +kubebuilder:default=aescbc
+	// +optional
+	Providers []string `json:"providers"`
 }
 
 func init() {
