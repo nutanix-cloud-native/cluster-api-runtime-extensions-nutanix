@@ -228,3 +228,46 @@ spec:
         type: name
         name: project-name
 ```
+
+### (Optional) Add a GPU to a machine deployment
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+    - name: workerConfig
+      value:
+        nutanix:
+          machineDetails:
+            gpus:
+            - type: name
+              name: "Ampere 40"
+    workers:
+      - class: nutanix-quick-start-worker
+        metadata:
+          annotations:
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "1"
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "1"
+        name: gpu-0
+```
+
+Applying this configuration will result in the following value being set:
+
+- control-plane `NutanixMachineTemplate`:
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixMachineTemplate
+metadata:
+  name: nutanix-quick-start-gpu-nmt
+spec:
+  template:
+    spec:
+      gpus:
+      - type: name
+        name: "Ampere 40"
+```
