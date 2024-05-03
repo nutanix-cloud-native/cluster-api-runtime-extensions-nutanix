@@ -72,7 +72,7 @@ type Addons struct {
 	// +kubebuilder:validation:Optional
 	CSIProviders *CSI `json:"csi,omitempty"`
 
-	// +optional
+	// +kubebuilder:validation:Optional
 	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
 }
 
