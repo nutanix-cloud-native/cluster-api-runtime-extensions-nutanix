@@ -30,6 +30,14 @@ patches:
     - op: "remove"
       path: "/spec/variables"
 
+# Change the machineDeployments Class to match the other examples.
+- target:
+    kind: ClusterClass
+  patch: |-
+    - op: "replace"
+      path: "/spec/workers/machineDeployments/0/class"
+      value: default-worker
+
 # Delete the certSANs from the template
 # They will be added by the handler.
 - target:

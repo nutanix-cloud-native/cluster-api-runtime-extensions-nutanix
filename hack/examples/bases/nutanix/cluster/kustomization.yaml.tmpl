@@ -66,3 +66,11 @@ patches:
 - target:
     kind: Cluster
   path: ../../../patches/dockerhub-image-registry.yaml
+
+# Change the machineDeployments Class to match the other examples.
+- target:
+    kind: Cluster
+  patch: |-
+    - op: "replace"
+      path: "/spec/topology/workers/machineDeployments/0/class"
+      value: default-worker
