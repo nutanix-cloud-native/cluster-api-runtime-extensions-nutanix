@@ -14,7 +14,7 @@ spec:
       cidrBlocks:
       - ${SERVICE_CIDR:-10.128.0.0/12}
   topology:
-    class: docker-quick-start
+    class: docker
     controlPlane:
       metadata: {}
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}

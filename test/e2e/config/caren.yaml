@@ -80,7 +80,7 @@ providers:
     files:
     - sourcePath: "../data/shared/v1beta1/metadata.yaml"
     - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/docker-cluster-class.yaml"
-      targetName: clusterclass-docker-quick-start.yaml
+      targetName: clusterclass-docker.yaml
     - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-cilium-helm-addon.yaml
     - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-crs.yaml"

@@ -13,8 +13,6 @@ configurations:
 sortOptions:
   order: fifo
 
-namePrefix: docker-
-
 labels:
 - includeSelectors: false
   pairs:
@@ -47,3 +45,46 @@ patches:
   patch: |-
     - op: "remove"
       path: "/spec/workers/machinePools"
+# Rename all resources
+- target:
+    kind: ClusterClass
+    name: .*
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: docker
+- target:
+    kind: DockerClusterTemplate
+    name: .*
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: docker
+- target:
+    kind: KubeadmControlPlaneTemplate
+    name: .*
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: docker
+- target:
+    kind: DockerMachineTemplate
+    name: quick-start-control-plane
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: docker-control-plane
+- target:
+    kind: DockerMachineTemplate
+    name: quick-start-default-worker-machinetemplate
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: docker-worker
+- target:
+    kind: KubeadmConfigTemplate
+    name: .*
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: docker
