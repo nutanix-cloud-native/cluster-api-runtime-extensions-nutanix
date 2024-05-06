@@ -60,6 +60,10 @@ type NutanixMachineDetails struct {
 	// The project must already be present in the Prism Central.
 	// +kubebuilder:validation:Optional
 	Project *NutanixResourceIdentifier `json:"project,omitempty"`
+
+	// List of GPU devices that need to be added to the machines.
+	// +kubebuilder:validation:Optional
+	GPUs []capxv1.NutanixGPU `json:"gpus,omitempty"`
 }
 
 // NutanixIdentifierType is an enumeration of different resource identifier types.

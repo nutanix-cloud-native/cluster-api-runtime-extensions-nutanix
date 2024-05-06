@@ -8,6 +8,7 @@
 package v1alpha1
 
 import (
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -934,6 +935,13 @@ func (in *NutanixMachineDetails) DeepCopyInto(out *NutanixMachineDetails) {
 		in, out := &in.Project, &out.Project
 		*out = new(NutanixResourceIdentifier)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.GPUs != nil {
+		in, out := &in.GPUs, &out.GPUs
+		*out = make([]v1beta1.NutanixGPU, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 }
 

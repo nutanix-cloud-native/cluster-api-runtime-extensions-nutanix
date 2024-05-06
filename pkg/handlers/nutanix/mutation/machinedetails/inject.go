@@ -122,7 +122,11 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 					capxv1.NutanixResourceIdentifier(*nutanixMachineDetailsVar.Project),
 				)
 			}
-
+			spec.GPUs = make(
+				[]capxv1.NutanixGPU,
+				len(nutanixMachineDetailsVar.GPUs),
+			)
+			copy(spec.GPUs, nutanixMachineDetailsVar.GPUs)
 			obj.Spec.Template.Spec = spec
 			return nil
 		},
