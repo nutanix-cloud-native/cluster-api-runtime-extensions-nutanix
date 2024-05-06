@@ -35,7 +35,7 @@ export CONTROL_PLANE_ENDPOINT_IP=<value> \
        NUTANIX_PRISM_ELEMENT_CLUSTER_NAME=<value> \
        NUTANIX_STORAGE_CONTAINER_NAME=<value> \
        NUTANIX_SUBNET_NAME=<value> \
-       NUTANIX_USER
+       NUTANIX_USER=<value>
 ```
 
 And create your cluster:
