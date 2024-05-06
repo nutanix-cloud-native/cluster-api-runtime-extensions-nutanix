@@ -140,7 +140,7 @@ spec:
     version: ${KUBERNETES_VERSION}
     workers:
       machineDeployments:
-      - class: nutanix-quick-start-worker
+      - class: default-worker
         metadata:
           annotations:
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"

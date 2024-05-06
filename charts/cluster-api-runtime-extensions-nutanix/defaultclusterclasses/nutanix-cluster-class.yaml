@@ -75,7 +75,7 @@ spec:
     name: worker-config
   workers:
     machineDeployments:
-    - class: nutanix-quick-start-worker
+    - class: default-worker
       machineHealthCheck:
         maxUnhealthy: 40%
         nodeStartupTimeout: 10m
