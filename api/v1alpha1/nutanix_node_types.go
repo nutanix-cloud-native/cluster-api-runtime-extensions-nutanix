@@ -69,7 +69,6 @@ type NutanixMachineDetails struct {
 type NutanixGPU struct {
 	// Type is the identifier type to use for this resource.
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum:=deviceID;name
 	Type NutanixGPUIdentifierType `json:"type"`
 
 	// DeviceID is the id of the GPU entity.
