@@ -103,9 +103,6 @@ spec:
                             type:
                               description: Type is the identifier type to use for
                                 this resource.
-                              enum:
-                              - deviceID
-                              - name
                               type: string
                           required:
                           - type
