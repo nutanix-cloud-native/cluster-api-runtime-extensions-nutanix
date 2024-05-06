@@ -69,12 +69,20 @@ func (c *ServiceLoadBalancerHandler) AfterControlPlaneInitialized(
 	)
 
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
-
 	slb, err := variables.Get[v1alpha1.ServiceLoadBalancer](
 		varMap,
 		c.variableName,
 		c.variablePath...)
 	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.
+				Info(
+					"Skipping ServiceLoadBalancer, field is not specified",
+					"error",
+					err,
+				)
+			return
+		}
 		log.Error(
 			err,
 			"failed to read ServiceLoadBalancer provider from cluster definition",
