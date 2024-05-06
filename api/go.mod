@@ -12,7 +12,7 @@ replace github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/c
 require (
 	github.com/aws/aws-sdk-go v1.52.2
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
-	github.com/nutanix-cloud-native/prism-go-client v0.3.4
+	github.com/nutanix-cloud-native/prism-go-client v0.4.0
 	github.com/onsi/gomega v1.33.1
 	k8s.io/api v0.29.3
 	k8s.io/apiextensions-apiserver v0.29.3
