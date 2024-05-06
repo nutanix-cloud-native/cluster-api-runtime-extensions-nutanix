@@ -70,7 +70,7 @@ type NutanixGPU struct {
 	// Type is the identifier type to use for this resource.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum:=deviceID;name
-	Type string `json:"type"`
+	Type NutanixGPUIdentifierType `json:"type"`
 
 	// DeviceID is the id of the GPU entity.
 	// +optional
@@ -90,3 +90,5 @@ type NutanixBootType capxv1.NutanixBootType
 type NutanixResourceIdentifier capxv1.NutanixResourceIdentifier
 
 type NutanixCategoryIdentifier capxv1.NutanixCategoryIdentifier
+
+type NutanixGPUIdentifierType capxv1.NutanixGPUIdentifierType
