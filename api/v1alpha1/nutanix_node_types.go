@@ -63,21 +63,7 @@ type NutanixMachineDetails struct {
 
 	// List of GPU devices that need to be added to the machines.
 	// +kubebuilder:validation:Optional
-	GPUs []NutanixGPU `json:"gpus,omitempty"`
-}
-
-type NutanixGPU struct {
-	// Type is the identifier type to use for this resource.
-	// +kubebuilder:validation:Required
-	Type NutanixGPUIdentifierType `json:"type"`
-
-	// DeviceID is the id of the GPU entity.
-	// +kubebuilder:validation:Optional
-	DeviceID *int64 `json:"deviceID,omitempty"`
-
-	// Name is the GPU name
-	// +kubebuilder:validation:Optional
-	Name *string `json:"name,omitempty"`
+	GPUs []capxv1.NutanixGPU `json:"gpus,omitempty"`
 }
 
 // NutanixIdentifierType is an enumeration of different resource identifier types.
@@ -89,5 +75,3 @@ type NutanixBootType capxv1.NutanixBootType
 type NutanixResourceIdentifier capxv1.NutanixResourceIdentifier
 
 type NutanixCategoryIdentifier capxv1.NutanixCategoryIdentifier
-
-type NutanixGPUIdentifierType capxv1.NutanixGPUIdentifierType

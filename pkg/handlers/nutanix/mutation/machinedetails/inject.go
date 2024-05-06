@@ -122,25 +122,11 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 					capxv1.NutanixResourceIdentifier(*nutanixMachineDetailsVar.Project),
 				)
 			}
-			if nutanixMachineDetailsVar.GPUs != nil {
-				spec.GPUs = make(
-					[]capxv1.NutanixGPU,
-					len(nutanixMachineDetailsVar.GPUs),
-				)
-
-				for i, gpu := range nutanixMachineDetailsVar.GPUs {
-					gpuType := capxv1.NutanixGPUIdentifierType(gpu.Type)
-					spec.GPUs[i] = capxv1.NutanixGPU{
-						Type: gpuType,
-					}
-					if gpuType == capxv1.NutanixGPUIdentifierName {
-						spec.GPUs[i].Name = gpu.Name
-						continue
-					}
-					spec.GPUs[i].DeviceID = gpu.DeviceID
-				}
-			}
-
+			spec.GPUs = make(
+				[]capxv1.NutanixGPU,
+				len(nutanixMachineDetailsVar.GPUs),
+			)
+			copy(spec.GPUs, nutanixMachineDetailsVar.GPUs)
 			obj.Spec.Template.Spec = spec
 			return nil
 		},

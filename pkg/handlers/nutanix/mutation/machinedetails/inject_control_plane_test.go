@@ -55,7 +55,7 @@ var (
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-project"),
 		}),
-		GPUs: []v1alpha1.NutanixGPU{
+		GPUs: []capxv1.NutanixGPU{
 			{
 				Type: "name",
 				Name: ptr.To("gpu1"),
