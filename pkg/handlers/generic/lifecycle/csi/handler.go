@@ -107,19 +107,25 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		return
 	}
 
-	storageClassConfigsByProviderName := map[string][]v1alpha1.StorageClassConfig{}
-	for _, provider := range csi.Providers {
-		storageClassConfigsByProviderName[provider.Name] = provider.StorageClassConfig
-	}
-	if configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]; !ok {
-		log.Error(
-			err,
-			"The default Storage provider name must be the name of a chosen default provider.",
-		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage("The default Storage provider name must be the name of a chosen provider")
-		return
-	} else {
+	// Verify that the default storage references a defined provider, and one of the
+	// storage class configs for that provider.
+	{
+		storageClassConfigsByProviderName := map[string][]v1alpha1.StorageClassConfig{}
+		for _, provider := range csi.Providers {
+			storageClassConfigsByProviderName[provider.Name] = provider.StorageClassConfig
+		}
+		configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]
+		if !ok {
+			log.Error(
+				err,
+				"The default Storage provider name must be the name of a chosen default provider.",
+			)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(
+				"The default Storage provider name must be the name of a chosen provider",
+			)
+			return
+		}
 		defaultStorageClassConfigNameInProvider := false
 		for _, config := range configs {
 			if csi.DefaultStorage.StorageClassConfigName == config.Name {
@@ -142,22 +148,6 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 
 	// There's a 1:N mapping of infra to CSI providers. The user chooses the providers.
 	for _, provider := range csi.Providers {
-		// This is defensive, because the API validation requires at least provider.
-		if len(provider.StorageClassConfig) == 0 {
-			log.Error(
-				err,
-				"The CSI provider must configure at least one storage class.",
-				"name",
-				provider.Name,
-			)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				fmt.Sprintf("the CSI provider %q must configure at least one storage class",
-					provider.Name),
-			)
-			return
-		}
-
 		handler, ok := c.ProviderHandler[provider.Name]
 		if !ok {
 			log.Error(

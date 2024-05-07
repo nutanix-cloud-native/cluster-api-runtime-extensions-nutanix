@@ -89,30 +89,6 @@ func Test_AfterControlPlaneInitialized(t *testing.T) {
 			wantStatus: runtimehooksv1.ResponseStatusFailure,
 		},
 		{
-			name: "any set provider must have at least one storage class config",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name: "test1",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "test1",
-							},
-						},
-					},
-					{
-						Name:               "test2",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{},
-					},
-				},
-				DefaultStorage: v1alpha1.DefaultStorage{
-					ProviderName:           "test1",
-					StorageClassConfigName: "test1",
-				},
-			},
-			wantStatus: runtimehooksv1.ResponseStatusFailure,
-		},
-		{
 			name: "default storage Provider name must be the name of a set provider",
 			csi: &v1alpha1.CSI{
 				Providers: []v1alpha1.CSIProvider{

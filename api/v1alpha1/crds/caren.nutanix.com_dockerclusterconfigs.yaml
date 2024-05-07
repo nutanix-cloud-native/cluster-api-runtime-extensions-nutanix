@@ -140,6 +140,8 @@ spec:
                               - nutanix
                               type: string
                             storageClassConfig:
+                              description: StorageClassConfig is a list of storage
+                                class configurations for this CSI provider.
                               items:
                                 properties:
                                   allowExpansion:
@@ -178,7 +180,6 @@ spec:
                                 required:
                                 - name
                                 type: object
-                              minItems: 1
                               type: array
                             strategy:
                               description: Addon strategy used to deploy the CSI provider
@@ -189,7 +190,6 @@ spec:
                               type: string
                           required:
                           - name
-                          - storageClassConfig
                           - strategy
                           type: object
                         minItems: 1

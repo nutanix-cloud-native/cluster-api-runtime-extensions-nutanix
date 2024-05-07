@@ -134,8 +134,8 @@ type CSIProvider struct {
 	// +kubebuilder:validation:Enum=aws-ebs;nutanix
 	Name string `json:"name"`
 
-	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:Required
+	// StorageClassConfig is a list of storage class configurations for this CSI provider.
+	// +kubebuilder:validation:Optional
 	StorageClassConfig []StorageClassConfig `json:"storageClassConfig"`
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
