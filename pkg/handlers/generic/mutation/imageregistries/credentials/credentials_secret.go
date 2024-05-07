@@ -13,9 +13,9 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 const (
@@ -76,7 +76,7 @@ func generateCredentialsSecret(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      credentialSecretName(clusterName),
 			Namespace: namespace,
-			Labels:    newLabels(withMove(), withClusterName(clusterName)),
+			Labels:    utils.NewLabels(utils.WithMove(), utils.WithClusterName(clusterName)),
 		},
 		StringData: secretData,
 		Type:       corev1.SecretTypeOpaque,
@@ -115,26 +115,4 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 
 func credentialSecretName(clusterName string) string {
 	return fmt.Sprintf("%s-registry-creds", clusterName)
-}
-
-type labelFn func(labels map[string]string)
-
-func newLabels(fs ...labelFn) map[string]string {
-	labels := map[string]string{}
-	for _, f := range fs {
-		f(labels)
-	}
-	return labels
-}
-
-func withClusterName(clusterName string) labelFn {
-	return func(labels map[string]string) {
-		labels[clusterv1.ClusterNameLabel] = clusterName
-	}
-}
-
-func withMove() labelFn {
-	return func(labels map[string]string) {
-		labels[clusterctlv1.ClusterctlMoveLabel] = ""
-	}
 }
