@@ -99,36 +99,11 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		return
 	}
 
-	// Verify that the default storage references a defined provider, and one of the
-	// storage class configs for that provider.
-	{
-		storageClassConfigsByProviderName := map[string][]v1alpha1.StorageClassConfig{}
-		for _, provider := range csi.Providers {
-			storageClassConfigsByProviderName[provider.Name] = provider.StorageClassConfig
-		}
-		configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]
-		if !ok {
-			msg := "The default Storage provider name must be the name of a chosen default provider"
-			log.Error(nil, msg)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(msg)
-			return
-		}
-		defaultStorageClassConfigNameInProvider := false
-		for _, config := range configs {
-			if csi.DefaultStorage.StorageClassConfigName == config.Name {
-				defaultStorageClassConfigNameInProvider = true
-				break
-			}
-		}
-		if !defaultStorageClassConfigNameInProvider {
-			//nolint:lll // Long message.
-			msg := "The name of the default StrorageClassConfig must be the name of a StorageClassConfig of the default provider."
-			log.Error(nil, msg)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(msg)
-			return
-		}
+	if err := validateDefaultStorage(csi); err != nil {
+		log.Error(err, "")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+		return
 	}
 
 	// There's a 1:N mapping of infra to CSI providers. The user chooses the providers.
@@ -172,4 +147,31 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			)
 		}
 	}
+}
+
+func validateDefaultStorage(csi v1alpha1.CSI) error {
+	// Verify that the default storage references a defined provider, and one of the
+	// storage class configs for that provider.
+	{
+		storageClassConfigsByProviderName := map[string][]v1alpha1.StorageClassConfig{}
+		for _, provider := range csi.Providers {
+			storageClassConfigsByProviderName[provider.Name] = provider.StorageClassConfig
+		}
+		configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]
+		if !ok {
+			return fmt.Errorf("the DefaultStorage Provider name must be the name of a configured provider")
+		}
+		defaultStorageClassConfigNameInProvider := false
+		for _, config := range configs {
+			if csi.DefaultStorage.StorageClassConfigName == config.Name {
+				defaultStorageClassConfigNameInProvider = true
+				break
+			}
+		}
+		if !defaultStorageClassConfigNameInProvider {
+			//nolint:lll // Long message.
+			return fmt.Errorf("the DefaultStorage StorageClassConfig name must be the name of a StorageClassConfig for the default provider")
+		}
+	}
+	return nil
 }
