@@ -83,27 +83,19 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			log.Info("Skipping CSI handler, the cluster does not define the CSI variable")
 			return
 		}
-		log.Error(
-			err,
-			"failed to read the CSI variable from the cluster",
-		)
+		msg := "failed to read the CSI variable from the cluster"
+		log.Error(err, msg)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("failed to read the CSI variable from the cluster: %v",
-				err,
-			),
-		)
+		resp.SetMessage(fmt.Sprintf("%s: %v", msg, err))
 		return
 	}
 
 	// This is defensive, because the API validation requires at least one provider.
 	if len(csi.Providers) == 0 {
-		log.Error(
-			err,
-			"The list of CSI providers must include at least one provider.",
-		)
+		msg := "The list of CSI providers must include at least one provider"
+		log.Error(nil, msg)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage("the list of CSI providers must include at least one provider")
+		resp.SetMessage(msg)
 		return
 	}
 
@@ -116,14 +108,10 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		}
 		configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]
 		if !ok {
-			log.Error(
-				err,
-				"The default Storage provider name must be the name of a chosen default provider.",
-			)
+			msg := "The default Storage provider name must be the name of a chosen default provider"
+			log.Error(nil, msg)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				"The default Storage provider name must be the name of a chosen provider",
-			)
+			resp.SetMessage(msg)
 			return
 		}
 		defaultStorageClassConfigNameInProvider := false
@@ -134,14 +122,11 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			}
 		}
 		if !defaultStorageClassConfigNameInProvider {
-			log.Error(
-				err,
-				"The default Storage StrorageClassConfig name must be the name of a StrorageClassConfig of the default provider.",
-			)
+			//nolint:lll // Long message.
+			msg := "The name of the default StrorageClassConfig must be the name of a StorageClassConfig of the default provider."
+			log.Error(nil, msg)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				"The default Storage StrorageClassConfig name must be the name of a StrorageClassConfig of the default provider.",
-			)
+			resp.SetMessage(msg)
 			return
 		}
 	}
@@ -151,7 +136,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		handler, ok := c.ProviderHandler[provider.Name]
 		if !ok {
 			log.Error(
-				err,
+				nil,
 				"CSI provider is unknown",
 				"name",
 				provider.Name,
