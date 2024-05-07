@@ -12,6 +12,11 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
+const (
+	AESCBC    EncryptionProvider = "aescbc"
+	SecretBox EncryptionProvider = "secretbox"
+)
+
 var (
 	DefaultDockerCertSANs = []string{
 		"localhost",
