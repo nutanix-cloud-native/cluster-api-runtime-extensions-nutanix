@@ -29,12 +29,12 @@
 
           setup-envtest = buildGo122Module rec {
             name = "setup-envtest";
-            version = "0.17.3";
+            version = "0.18.2";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "controller-runtime";
               rev = "v${version}";
-              hash = "sha256-MSuo7m2WDg+z9Si0M9YbqhqryI6Fa4BHxLGlnON2zmA=";
+              hash = "sha256-fQgWwndxzBIi3zsNMYvFDXjetnaQF0NNK+qW8j4Wn/M=";
             } + "/tools/setup-envtest";
             doCheck = false;
             subPackages = [ "." ];
@@ -59,26 +59,26 @@
 
           clusterawsadm = buildGo122Module rec {
             name = "clusterawsadm";
-            version = "2.4.2";
+            version = "2.5.0";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-ZGIUn6blXVMHeTbUK/FIfSO68W/ieJjk5bUq7b1z05M=";
+              hash = "sha256-iR+r8UaaYIWeFuiGikOdMnCJZuNTQeOKhg2cjTZzs+A=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
-            vendorHash = "sha256-USmydddJ0wJwGECxpg6W9Arm17aFRr07SeeqwsbBGTY=";
-            ldflags = [
+            vendorHash = "sha256-mbOnD4idQmN2xcDcD0Li7HrJ5ip1se3mNx6ET2znRFI=";
+            ldflags = let t = "sigs.k8s.io/cluster-api-provider-aws/v2/version"; in [
               "-s"
               "-w"
-              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitVersion=v${version}"
-              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitCommit=v${version}"
-              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitReleaseCommit=v${version}"
-              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitMajor=${lib.versions.major version}"
-              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitMinor=${lib.versions.minor version}"
-              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.buildDate=19700101-00:00:00"
-              "-X" "sigs.k8s.io/cluster-api-provider-aws/v2/version.gitTreeState=clean"
+              "-X" "${t}.gitVersion=v${version}"
+              "-X" "${t}.gitCommit=v${version}"
+              "-X" "${t}.gitReleaseCommit=v${version}"
+              "-X" "${t}.gitMajor=${lib.versions.major version}"
+              "-X" "${t}.gitMinor=${lib.versions.minor version}"
+              "-X" "${t}.buildDate=19700101-00:00:00"
+              "-X" "${t}.gitTreeState=clean"
             ];
           };
 
@@ -97,16 +97,16 @@
 
           controller-gen = buildGo122Module rec {
             name = "controller-gen";
-            version = "0.0.1-dev";
+            version = "0.15.0";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "controller-tools";
-              rev = "8cc57e3c0607f984b4a595a7cc048ed5c54a6a0d";
-              hash = "sha256-vB85JQuvCdCe4qeFiS2SU7NM2ZoKQf7usvY9VUKtGUw=";
+              rev = "v${version}";
+              hash = "sha256-TRJW2//UYQMZM19D74O4SA0GnKPAUI2n+dNKIUzqRuw=";
             };
             doCheck = false;
             subPackages = [ "./cmd/controller-gen" ];
-            vendorHash = "sha256-Fu883lUmlG5PrGdJ9TpvGwvewxP+Riq/gvPxZeq1cy4=";
+            vendorHash = "sha256-6he/zYznnmhmFU2YPRTnWBTLG2nEOZZu9Iks6orMVMs=";
             ldflags = [ "-s" "-w" ];
           };
 
