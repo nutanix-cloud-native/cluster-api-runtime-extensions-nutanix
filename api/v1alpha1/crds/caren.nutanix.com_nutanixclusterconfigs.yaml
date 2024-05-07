@@ -421,9 +421,9 @@ spec:
                     description: Encryption providers
                     enum:
                     - aescbc
-                    - aesgcm
                     items:
                       type: string
+                    maxItems: 1
                     type: array
                     uniqueItems: true
                 type: object

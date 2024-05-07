@@ -662,7 +662,7 @@ func (in *Encryption) DeepCopyInto(out *Encryption) {
 	*out = *in
 	if in.Providers != nil {
 		in, out := &in.Providers, &out.Providers
-		*out = make([]string, len(*in))
+		*out = make([]EncryptionProvider, len(*in))
 		copy(*out, *in)
 	}
 }
