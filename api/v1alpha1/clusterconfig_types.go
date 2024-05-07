@@ -288,11 +288,14 @@ type User struct {
 type Encryption struct {
 	// Encryption providers
 	// +kubebuilder:validation:UniqueItems=true
-	// +kubebuilder:validation:Enum=aescbc;aesgcm
+	// +kubebuilder:validation:MaxItems=1
+	// +kubebuilder:validation:Enum=aescbc
 	// +kubebuilder:default=aescbc
 	// +optional
-	Providers []string `json:"providers"`
+	Providers []EncryptionProvider `json:"providers"`
 }
+
+type EncryptionProvider string
 
 func init() {
 	SchemeBuilder.Register(
