@@ -58,7 +58,7 @@ func New(
 func (a *AWSEBS) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
-	defaultStorageConfig *v1alpha1.DefaultStorage,
+	defaultStorageConfig v1alpha1.DefaultStorage,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	_ logr.Logger,
 ) error {

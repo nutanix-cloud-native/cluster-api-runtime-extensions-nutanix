@@ -27,7 +27,7 @@ type CSIProvider interface {
 	Apply(
 		context.Context,
 		v1alpha1.CSIProvider,
-		*v1alpha1.DefaultStorage,
+		v1alpha1.DefaultStorage,
 		*runtimehooksv1.AfterControlPlaneInitializedRequest,
 		logr.Logger,
 	) error
@@ -74,60 +74,59 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 	)
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-	csiProviders, err := variables.Get[v1alpha1.CSI](
+	csi, err := variables.Get[v1alpha1.CSI](
 		varMap,
 		c.variableName,
 		c.variablePath...)
 	if err != nil {
-		if variables.IsNotFoundError(err) ||
-			csiProviders.Providers == nil ||
-			len(csiProviders.Providers) == 0 {
-			log.V(4).Info(
-				fmt.Sprintf(
-					"Skipping CSI handler, no providers given in %v",
-					csiProviders,
-				),
-			)
+		if variables.IsNotFoundError(err) {
+			log.Info("Skipping CSI handler, the cluster does not define the CSI variable")
 			return
 		}
-		log.Error(
-			err,
-			"failed to read CSI provider from cluster definition",
-		)
+		msg := "failed to read the CSI variable from the cluster"
+		log.Error(err, msg)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("failed to read CSI provider from cluster definition: %v",
-				err,
-			),
-		)
+		resp.SetMessage(fmt.Sprintf("%s: %v", msg, err))
 		return
 	}
-	if len(csiProviders.Providers) == 1 &&
-		len(csiProviders.Providers[0].StorageClassConfig) == 1 &&
-		csiProviders.DefaultStorage == nil {
-		csiProviders.DefaultStorage = &v1alpha1.DefaultStorage{
-			ProviderName:           csiProviders.Providers[0].Name,
-			StorageClassConfigName: csiProviders.Providers[0].StorageClassConfig[0].Name,
-		}
+
+	// This is defensive, because the API validation requires at least one provider.
+	if len(csi.Providers) == 0 {
+		msg := "The list of CSI providers must include at least one provider"
+		log.Error(nil, msg)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(msg)
+		return
 	}
 
-	// There's a 1:N mapping of infra to CSI providers. The user chooses the provider.
-	for _, provider := range csiProviders.Providers {
+	if err := validateDefaultStorage(csi); err != nil {
+		log.Error(err, "")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+		return
+	}
+
+	// There's a 1:N mapping of infra to CSI providers. The user chooses the providers.
+	for _, provider := range csi.Providers {
 		handler, ok := c.ProviderHandler[provider.Name]
 		if !ok {
-			log.V(4).Info(
-				fmt.Sprintf(
-					"Skipping CSI handler, for provider given in %s. Provider handler not given.",
-					provider.Name,
-				),
+			log.Error(
+				nil,
+				"CSI provider is unknown",
+				"name",
+				provider.Name,
 			)
-			continue
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(
+				fmt.Sprintf("CSI provider %q is unknown", provider.Name),
+			)
+			return
 		}
 		log.Info(fmt.Sprintf("Creating CSI provider %s", provider.Name))
 		err = handler.Apply(
 			ctx,
 			provider,
-			csiProviders.DefaultStorage,
+			csi.DefaultStorage,
 			req,
 			log,
 		)
@@ -135,7 +134,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			log.Error(
 				err,
 				fmt.Sprintf(
-					"failed to delpoy %s CSI driver",
+					"failed to deploy %s CSI driver",
 					provider.Name,
 				),
 			)
@@ -148,4 +147,31 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			)
 		}
 	}
+}
+
+func validateDefaultStorage(csi v1alpha1.CSI) error {
+	// Verify that the default storage references a defined provider, and one of the
+	// storage class configs for that provider.
+	{
+		storageClassConfigsByProviderName := map[string][]v1alpha1.StorageClassConfig{}
+		for _, provider := range csi.Providers {
+			storageClassConfigsByProviderName[provider.Name] = provider.StorageClassConfig
+		}
+		configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]
+		if !ok {
+			return fmt.Errorf("the DefaultStorage Provider name must be the name of a configured provider")
+		}
+		defaultStorageClassConfigNameInProvider := false
+		for _, config := range configs {
+			if csi.DefaultStorage.StorageClassConfigName == config.Name {
+				defaultStorageClassConfigNameInProvider = true
+				break
+			}
+		}
+		if !defaultStorageClassConfigNameInProvider {
+			//nolint:lll // Long message.
+			return fmt.Errorf("the DefaultStorage StorageClassConfig name must be the name of a StorageClassConfig for the default provider")
+		}
+	}
+	return nil
 }

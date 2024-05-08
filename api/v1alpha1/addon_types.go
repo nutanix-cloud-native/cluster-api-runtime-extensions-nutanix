@@ -120,11 +120,12 @@ type DefaultStorage struct {
 }
 
 type CSI struct {
-	// +kubebuilder:validation:Optional
-	Providers []CSIProvider `json:"providers,omitempty"`
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:Required
+	Providers []CSIProvider `json:"providers"`
 
-	// +kubebuilder:validation:Optional
-	DefaultStorage *DefaultStorage `json:"defaultStorage,omitempty"`
+	// +kubebuilder:validation:Required
+	DefaultStorage DefaultStorage `json:"defaultStorage"`
 }
 
 type CSIProvider struct {
@@ -133,8 +134,9 @@ type CSIProvider struct {
 	// +kubebuilder:validation:Enum=aws-ebs;nutanix
 	Name string `json:"name"`
 
+	// StorageClassConfig is a list of storage class configurations for this CSI provider.
 	// +kubebuilder:validation:Optional
-	StorageClassConfig []StorageClassConfig `json:"storageClassConfig,omitempty"`
+	StorageClassConfig []StorageClassConfig `json:"storageClassConfig"`
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
 	// +kubebuilder:validation:Required
