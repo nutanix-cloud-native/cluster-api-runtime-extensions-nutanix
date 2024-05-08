@@ -1,4 +1,4 @@
-# Copyright 2023 D2iQ, Inc. All rights reserved.
+# Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 export CAPI_VERSION := $(shell go list -m -f '{{ .Version }}' sigs.k8s.io/cluster-api)

@@ -1,6 +1,6 @@
 //go:build e2e
 
-// Copyright 2024 D2iQ, Inc. All rights reserved.
+// Copyright 2024 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package e2e

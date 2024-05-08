@@ -1,4 +1,4 @@
-// Copyright 2024 D2iQ, Inc. All rights reserved.
+// Copyright 2024 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 // Package helpers provides a set of utilities for testing controllers.
