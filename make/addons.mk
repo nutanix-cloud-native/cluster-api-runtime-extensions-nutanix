@@ -63,7 +63,7 @@ update-addon.kube-vip: ; $(info $(M) updating kube-vip manifests)
 	./hack/addons/update-kube-vip-manifests.sh
 
 .PHONY: generate-helm-configmap
-generate-helm-configmap:
+generate-helm-configmap: ; $(info $(M) genrating helm configmap)
 	go run hack/tools/helm-cm/main.go -kustomize-directory="./hack/addons/kustomize" -output-file="./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
 	./hack/addons/add-warning-helm-configmap.sh
 
@@ -71,3 +71,7 @@ generate-helm-configmap:
 .PHONY: configure-csi-providers
 configure-csi-providers: ; $(info $(M) configuring supported csi providers)
 	./hack/addons/configure-supported-csi-providers.sh
+
+.PHONY: generate-mindthegap-repofile
+generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating helm repofile for mindthgap)
+	./hack/addons/generate-mindthegap-repofile.sh

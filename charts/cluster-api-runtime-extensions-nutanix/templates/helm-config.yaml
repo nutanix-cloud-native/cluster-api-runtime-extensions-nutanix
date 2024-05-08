@@ -25,7 +25,7 @@ data:
     RepositoryURL: https://metallb.github.io/metallb
   nfd: |
     ChartName: node-feature-discovery
-    ChartVersion: 0.15.2
+    ChartVersion: v0.15.2
     RepositoryURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
@@ -33,7 +33,7 @@ data:
     RepositoryURL: https://nutanix.github.io/helm/
   nutanix-snapshot-csi: |
     ChartName: nutanix-csi-snapshot
-    ChartVersion: v6.3.2
+    ChartVersion: 6.3.2
     RepositoryURL: https://nutanix.github.io/helm/
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
