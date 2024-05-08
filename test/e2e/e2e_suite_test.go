@@ -32,7 +32,7 @@ import (
 	clusterctltemp "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/clusterctl"
 )
 
-func init() { //nolint:gochecknoinits // Idiomatically used to set up flags.
+func init() {
 	flag.StringVar(&configPath, "e2e.config", "", "path to the e2e config file")
 	flag.StringVar(
 		&artifactFolder,
