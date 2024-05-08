@@ -159,7 +159,9 @@ func validateDefaultStorage(csi v1alpha1.CSI) error {
 		}
 		configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]
 		if !ok {
-			return fmt.Errorf("the DefaultStorage Provider name must be the name of a configured provider")
+			return fmt.Errorf(
+				"the DefaultStorage Provider name must be the name of a configured provider",
+			)
 		}
 		defaultStorageClassConfigNameInProvider := false
 		for _, config := range configs {
@@ -169,8 +171,9 @@ func validateDefaultStorage(csi v1alpha1.CSI) error {
 			}
 		}
 		if !defaultStorageClassConfigNameInProvider {
-			//nolint:lll // Long message.
-			return fmt.Errorf("the DefaultStorage StorageClassConfig name must be the name of a StorageClassConfig for the default provider")
+			return fmt.Errorf(
+				"the DefaultStorage StorageClassConfig name must be the name of a StorageClassConfig for the default provider",
+			)
 		}
 	}
 	return nil
