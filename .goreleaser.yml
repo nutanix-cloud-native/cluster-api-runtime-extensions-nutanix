@@ -91,6 +91,15 @@ archives:
     builds:
       - cluster-api-runtime-extensions-nutanix
 
+dockers:
+  - id: helm-registry-container
+    use: buildx
+    dockerfile: ./hack/addons/mindthegap-helm-registry/Dockerfile
+    extra_files:
+      - hack/addons/mindthegap-helm-registry/repos.yaml
+    image_templates:
+      -  'ghcr.io/nutanix-cloud-native/caren-helm-reg:{{ .Tag }}'
+
 kos:
   - id: cluster-api-runtime-extensions-nutanix
     build: cluster-api-runtime-extensions-nutanix

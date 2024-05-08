@@ -3,12 +3,12 @@
 
 export CALICO_VERSION := v3.26.4
 export CILIUM_VERSION := 1.15.0
-export NODE_FEATURE_DISCOVERY_VERSION := 0.15.2
+export NODE_FEATURE_DISCOVERY_VERSION := v0.15.2
 export CLUSTER_AUTOSCALER_VERSION := 9.35.0
 export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.3
 export AWS_EBS_CSI_CHART_VERSION := v2.28.1
 export NUTANIX_STORAGE_CSI_CHART_VERSION := v3.0.0-beta.1912
-export NUTANIX_SNAPSHOT_CSI_CHART_VERSION := v6.3.2
+export NUTANIX_SNAPSHOT_CSI_CHART_VERSION := 6.3.2
 # a map of AWS CCM versions
 export AWS_CCM_VERSION_127 := v1.27.1
 export AWS_CCM_CHART_VERSION_127 := 0.0.8
@@ -55,6 +55,10 @@ update-addon.kube-vip: ; $(info $(M) updating kube-vip manifests)
 	./hack/addons/update-kube-vip-manifests.sh
 
 .PHONY: generate-helm-configmap
-generate-helm-configmap:
+generate-helm-configmap: ; $(info $(M) genrating helm configmap)
 	go run hack/tools/helm-cm/main.go -kustomize-directory="./hack/addons/kustomize" -output-file="./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
 	./hack/addons/add-warning-helm-configmap.sh
+
+.PHONY: generate-mindthegap-repofile
+generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating helm repofile for mindthgap)
+	./hack/addons/generate-mindthegap-repofile.sh
