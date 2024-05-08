@@ -25,11 +25,13 @@ func ServerSideApply(
 	obj ctrlclient.Object,
 	opts ...ctrlclient.PatchOption,
 ) error {
+	options := []ctrlclient.PatchOption{ctrlclient.FieldOwner(FieldOwner)}
+	options = append(options, opts...)
 	err := c.Patch(
 		ctx,
 		obj,
 		ctrlclient.Apply,
-		ctrlclient.FieldOwner(FieldOwner),
+		options...,
 	)
 	if err != nil {
 		return fmt.Errorf("server-side apply failed: %w", err)
