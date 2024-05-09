@@ -244,11 +244,13 @@ spec:
                     description: Encryption providers
                     enum:
                     - aescbc
-                    items:
-                      type: string
-                    maxItems: 1
-                    type: array
-                    uniqueItems: true
+                    - secretbox
+                    properties:
+                      aescbc:
+                        type: object
+                      secretbox:
+                        type: object
+                    type: object
                 type: object
               etcd:
                 properties:

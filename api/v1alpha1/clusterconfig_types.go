@@ -12,11 +12,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
-const (
-	AESCBC    EncryptionProvider = "aescbc"
-	SecretBox EncryptionProvider = "secretbox"
-)
-
 var (
 	DefaultDockerCertSANs = []string{
 		"localhost",
@@ -292,15 +287,22 @@ type User struct {
 // Currently the encryption only enabled for secrets and configmaps.
 type Encryption struct {
 	// Encryption providers
-	// +kubebuilder:validation:UniqueItems=true
-	// +kubebuilder:validation:MaxItems=1
-	// +kubebuilder:validation:Enum=aescbc
+	// +kubebuilder:validation:Enum=aescbc;secretbox
 	// +kubebuilder:default=aescbc
-	// +optional
-	Providers []EncryptionProvider `json:"providers"`
+	// +kubebuilder:validation:Optional
+	Providers *EncryptionProviders `json:"providers"`
 }
 
-type EncryptionProvider string
+type EncryptionProviders struct {
+	// +kubebuilder:validation:Optional
+	AESCBC *AESConfiguration `json:"aescbc"`
+	// +kubebuilder:validation:Optional
+	Secretbox *SecretboxConfiguration `json:"secretbox"`
+}
+
+type AESConfiguration struct{}
+
+type SecretboxConfiguration struct{}
 
 func init() {
 	SchemeBuilder.Register(
