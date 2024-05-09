@@ -13,7 +13,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/go-logr/logr v1.4.1
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api v0.0.0-00010101000000-000000000000
-	github.com/onsi/ginkgo/v2 v2.17.2
+	github.com/onsi/ginkgo/v2 v2.17.3
 	github.com/onsi/gomega v1.33.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
