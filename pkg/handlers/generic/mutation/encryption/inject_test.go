@@ -69,9 +69,9 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 				capitest.VariableWithValue(
 					clusterconfig.MetaVariableName,
 					carenv1.Encryption{
-						Providers: []carenv1.EncryptionProvider{
-							carenv1.AESCBC,
-							carenv1.SecretBox,
+						Providers: &carenv1.EncryptionProviders{
+							AESCBC:    &carenv1.AESConfiguration{},
+							Secretbox: &carenv1.SecretboxConfiguration{},
 						},
 					},
 					VariableName,
