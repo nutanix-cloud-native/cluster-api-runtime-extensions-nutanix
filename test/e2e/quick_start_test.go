@@ -165,6 +165,18 @@ var _ = Describe("Quick start", Serial, func() {
 											),
 										},
 									)
+
+									WaitForCoreDNSToBeReadyInWorkloadCluster(
+										ctx,
+										WaitForCoreDNSToBeReadyInWorkloadClusterInput{
+											WorkloadCluster: workloadCluster,
+											ClusterProxy:    proxy,
+											DeploymentIntervals: testE2EConfig.GetIntervals(
+												flavour,
+												"wait-deployment",
+											),
+										},
+									)
 								},
 							}
 						})

@@ -100,6 +100,18 @@ var _ = Describe("Self-hosted", Serial, func() {
 										),
 									},
 								)
+
+								WaitForCoreDNSToBeReadyInWorkloadCluster(
+									ctx,
+									WaitForCoreDNSToBeReadyInWorkloadClusterInput{
+										WorkloadCluster: workloadCluster,
+										ClusterProxy:    proxy,
+										DeploymentIntervals: e2eConfig.GetIntervals(
+											flavour,
+											"wait-deployment",
+										),
+									},
+								)
 							},
 						}
 					})
