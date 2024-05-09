@@ -41,10 +41,10 @@
   "shell": {
     "scripts": {
       "preview-docs": [
-        "cd docs && hugo server --buildFuture --buildDrafts"
+        "make preview-docs"
       ],
       "build-docs": [
-        "cd docs && hugo --minify --baseURL \"${BASE_URL}\""
+        "make build-docs"
       ]
     }
   }
