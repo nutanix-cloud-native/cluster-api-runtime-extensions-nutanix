@@ -287,8 +287,7 @@ type User struct {
 // Currently the encryption only enabled for secrets and configmaps.
 type Encryption struct {
 	// Encryption providers
-	// +kubebuilder:validation:Enum=aescbc;secretbox
-	// +kubebuilder:default=aescbc
+	// +kubebuilder:default={aescbc:{}}
 	// +kubebuilder:validation:Optional
 	Providers *EncryptionProviders `json:"providers"`
 }

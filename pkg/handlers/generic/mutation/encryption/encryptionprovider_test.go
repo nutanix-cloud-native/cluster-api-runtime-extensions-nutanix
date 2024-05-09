@@ -5,7 +5,6 @@ package encryption
 
 import (
 	"encoding/base64"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,14 +16,17 @@ import (
 func Test_encryptionConfigForSecretsAndConfigMaps(t *testing.T) {
 	testcases := []struct {
 		name      string
-		providers []carenv1.EncryptionProvider
+		providers *carenv1.EncryptionProviders
 		wantErr   error
 		want      *apiserverv1.ResourceConfiguration
 	}{
 		{
-			name:      "encryption configuration using aescbc and secretbox providers",
-			providers: []carenv1.EncryptionProvider{carenv1.AESCBC, carenv1.SecretBox},
-			wantErr:   nil,
+			name: "encryption configuration using all providers",
+			providers: &carenv1.EncryptionProviders{
+				AESCBC:    &carenv1.AESConfiguration{},
+				Secretbox: &carenv1.SecretboxConfiguration{},
+			},
+			wantErr: nil,
 			want: &apiserverv1.ResourceConfiguration{
 				Resources: []string{"secrets", "configmaps"},
 				Providers: []apiserverv1.ProviderConfiguration{
@@ -50,10 +52,26 @@ func Test_encryptionConfigForSecretsAndConfigMaps(t *testing.T) {
 			},
 		},
 		{
-			name:      "unsupported encryption provider",
-			providers: []carenv1.EncryptionProvider{carenv1.EncryptionProvider("kmsv2")},
-			wantErr:   errors.New("unknown encryption provider: kmsv2"),
-			want:      nil,
+			name: "encryption configuration using single provider",
+			providers: &carenv1.EncryptionProviders{
+				AESCBC: &carenv1.AESConfiguration{},
+			},
+			wantErr: nil,
+			want: &apiserverv1.ResourceConfiguration{
+				Resources: []string{"secrets", "configmaps"},
+				Providers: []apiserverv1.ProviderConfiguration{
+					{
+						AESCBC: &apiserverv1.AESConfiguration{
+							Keys: []apiserverv1.Key{
+								{
+									Name:   "key1",
+									Secret: base64.StdEncoding.EncodeToString([]byte(testToken)),
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 

@@ -329,11 +329,9 @@ spec:
                   Currently the encryption only enabled for secrets and configmaps.
                 properties:
                   providers:
-                    default: aescbc
+                    default:
+                      aescbc: {}
                     description: Encryption providers
-                    enum:
-                    - aescbc
-                    - secretbox
                     properties:
                       aescbc:
                         type: object

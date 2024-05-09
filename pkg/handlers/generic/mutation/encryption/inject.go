@@ -150,7 +150,7 @@ func generateEncryptionCredentialsFile(secretName string) cabpkv1.File {
 }
 
 func (h *encryptionPatchHandler) generateEncryptionConfiguration(
-	providers []carenv1.EncryptionProvider,
+	providers *carenv1.EncryptionProviders,
 ) (*apiserverv1.EncryptionConfiguration, error) {
 	// We only support encryption for "secrets" and "configmaps" using "aescbc" provider.
 	resourceConfig, err := encryptionConfigForSecretsAndConfigMaps(
@@ -182,7 +182,6 @@ func (h *encryptionPatchHandler) CreateEncryptionConfigurationSecret(
 	}
 
 	secretData := map[string]string{
-		// creating a Secret with newlines at the end fails
 		SecretKeyForEtcdEncryption: strings.TrimSpace(string(dataYaml)),
 	}
 	secretName := defaultEncryptionSecretName(clusterKey.Name)
@@ -201,59 +200,53 @@ func (h *encryptionPatchHandler) CreateEncryptionConfigurationSecret(
 	}
 
 	// We only support creating encryption config in BeforeClusterCreate hook and ensure that the keys are immutable.
-	// Rotation of the keys can be implemented by cloning existing secret and adding new rotation key.
 	if err := client.Create(ctx, h.config.Client, encryptionConfigSecret); err != nil {
-		return "", fmt.Errorf("failed to create Encryption Configuration Secret: %w", err)
+		return "", fmt.Errorf("failed to create encryption configuration secret: %w", err)
 	}
 	return secretName, nil
 }
 
 // We only support encryption for "secrets" and "configmaps".
 func encryptionConfigForSecretsAndConfigMaps(
-	providers []carenv1.EncryptionProvider,
+	providers *carenv1.EncryptionProviders,
 	secretGenerator TokenGenerator,
 ) (*apiserverv1.ResourceConfiguration, error) {
 	providerConfig := apiserverv1.ProviderConfiguration{}
-	for _, providerType := range providers {
-		// We only support "aescbc", "secretbox" for now.
-		// "aesgcm" is another AESConfiguration. "aesgcm" requires secret key rotation before 200k write calls.
-		// It should not be supported until secret key's rotation is implemented.
-		switch providerType {
-		case carenv1.AESCBC:
-			token, err := secretGenerator()
-			if err != nil {
-				return nil, fmt.Errorf(
-					"could not create random encryption token for aescbc provider: %w",
-					err,
-				)
-			}
-			providerConfig.AESCBC = &apiserverv1.AESConfiguration{
-				Keys: []apiserverv1.Key{
-					{
-						Name:   "key1", // we only support one key during cluster creation.
-						Secret: base64.StdEncoding.EncodeToString(token),
-					},
+	// We only support "aescbc", "secretbox" for now.
+	// "aesgcm" is another AESConfiguration. "aesgcm" requires secret key rotation before 200k write calls.
+	// "aesgcm" should not be supported until secret key's rotation is implemented.
+	if providers.AESCBC != nil {
+		token, err := secretGenerator()
+		if err != nil {
+			return nil, fmt.Errorf(
+				"could not create random encryption token for aescbc provider: %w",
+				err,
+			)
+		}
+		providerConfig.AESCBC = &apiserverv1.AESConfiguration{
+			Keys: []apiserverv1.Key{
+				{
+					Name:   "key1", // we only support one key during cluster creation.
+					Secret: base64.StdEncoding.EncodeToString(token),
 				},
-			}
-		case carenv1.SecretBox:
-			token, err := secretGenerator()
-			if err != nil {
-				return nil, fmt.Errorf(
-					"could not create random encryption token for secretbox provider: %w",
-					err,
-				)
-			}
-			providerConfig.Secretbox = &apiserverv1.SecretboxConfiguration{
-				Keys: []apiserverv1.Key{
-					{
-						Name:   "key1", // we only support one key during cluster creation.
-						Secret: base64.StdEncoding.EncodeToString(token),
-					},
+			},
+		}
+	}
+	if providers.Secretbox != nil {
+		token, err := secretGenerator()
+		if err != nil {
+			return nil, fmt.Errorf(
+				"could not create random encryption token for secretbox provider: %w",
+				err,
+			)
+		}
+		providerConfig.Secretbox = &apiserverv1.SecretboxConfiguration{
+			Keys: []apiserverv1.Key{
+				{
+					Name:   "key1", // we only support one key during cluster creation.
+					Secret: base64.StdEncoding.EncodeToString(token),
 				},
-			}
-		default:
-			// Schema validation should fail earlier upon providing name outside defined Enum
-			return nil, fmt.Errorf("unknown encryption provider: %s", providerType)
+			},
 		}
 	}
 
