@@ -24,10 +24,7 @@ const (
 	defaultRegistryMirrorConfigPathOnRemote = "/etc/containerd/certs.d/_default/hosts.toml"
 	secretKeyForMirrorCACert                = "ca.crt"
 
-	tomlMergeImage                              = "ghcr.io/mesosphere/toml-merge:v0.2.0"
-	containerdPatchesDirOnRemote                = "/etc/containerd/cre.d"
-	containerdApplyPatchesScriptOnRemote        = "/etc/containerd/apply-patches.sh"
-	containerdApplyPatchesScriptOnRemoteCommand = "/bin/bash " + containerdApplyPatchesScriptOnRemote
+	containerdPatchesDirOnRemote = "/etc/containerd/cre.d"
 )
 
 var (
@@ -44,9 +41,6 @@ var (
 		containerdPatchesDirOnRemote,
 		"registry-config.toml",
 	)
-
-	//go:embed templates/containerd-apply-patches.sh.gotmpl
-	containerdApplyConfigPatchesScript []byte
 )
 
 type mirrorConfig struct {
@@ -190,33 +184,4 @@ func generateContainerdRegistryConfigDropInFile() []cabpkv1.File {
 			Permissions: "0600",
 		},
 	}
-}
-
-func generateContainerdApplyPatchesScript() ([]cabpkv1.File, string, error) {
-	t, err := template.New("").Parse(string(containerdApplyConfigPatchesScript))
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to parse go template: %w", err)
-	}
-
-	templateInput := struct {
-		TOMLMergeImage string
-		PatchDir       string
-	}{
-		TOMLMergeImage: tomlMergeImage,
-		PatchDir:       containerdPatchesDirOnRemote,
-	}
-
-	var b bytes.Buffer
-	err = t.Execute(&b, templateInput)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed executing template: %w", err)
-	}
-
-	return []cabpkv1.File{
-		{
-			Path:        containerdApplyPatchesScriptOnRemote,
-			Content:     b.String(),
-			Permissions: "0700",
-		},
-	}, containerdApplyPatchesScriptOnRemoteCommand, nil
 }
