@@ -75,7 +75,7 @@ func (mgp metaGeneratePatches) CreateClusterGetter(
 			err = mgp.cl.Get(ctx, clusterKey, &cluster)
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch cluster %w", err)
+			return nil, fmt.Errorf("failed to fetch cluster: %w", err)
 		}
 		return &cluster, nil
 	}

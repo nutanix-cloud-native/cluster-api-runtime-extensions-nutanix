@@ -64,7 +64,7 @@ func (a *AWSCCM) Apply(
 	log.Info("Creating AWS CCM ConfigMap for Cluster")
 	version, err := semver.ParseTolerant(cluster.Spec.Topology.Version)
 	if err != nil {
-		return fmt.Errorf("failed to parse version from cluster %w", err)
+		return fmt.Errorf("failed to parse version from cluster: %w", err)
 	}
 	minorVersion := fmt.Sprintf("%d.%d", version.Major, version.Minor)
 	configMapForMinorVersion := a.config.kubernetesMinorVersionToCCMConfigMapNames[minorVersion]

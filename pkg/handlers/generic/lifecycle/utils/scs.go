@@ -87,7 +87,7 @@ func CreateStorageClassOnRemote(
 	for _, sc := range allStorageClasses {
 		err = client.ServerSideApply(ctx, remoteClient, sc, client.ForceOwnership)
 		if err != nil {
-			return fmt.Errorf("error creating storage class %v on remote cluster %w", sc, err)
+			return fmt.Errorf("error creating storage class %v on remote cluster: %w", sc, err)
 		}
 	}
 	return nil
