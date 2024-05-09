@@ -81,7 +81,7 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 	if !path.IsAbs(fullPath) {
 		wd, err := os.Getwd()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get wd %w", err)
+			return nil, fmt.Errorf("failed to get wd: %w", err)
 		}
 		fullPath = path.Join(wd, kustomizeDir)
 	}

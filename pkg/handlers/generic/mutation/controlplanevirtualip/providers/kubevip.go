@@ -150,7 +150,7 @@ func getTemplateFromConfigMap(
 func needHackCommands(cluster *clusterv1.Cluster) (bool, error) {
 	version, err := semver.ParseTolerant(cluster.Spec.Topology.Version)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse version from cluster %w", err)
+		return false, fmt.Errorf("failed to parse version from cluster: %w", err)
 	}
 
 	return version.Minor >= 29, nil

@@ -119,7 +119,7 @@ func (p *provider) Apply(
 
 	helmChart, err := p.helmChartInfoGetter.For(ctx, log, config.NutanixCCM)
 	if err != nil {
-		return fmt.Errorf("failed to get values for nutanix-ccm-config %w", err)
+		return fmt.Errorf("failed to get values for nutanix-ccm-config: %w", err)
 	}
 
 	// The configMap will contain the Helm values, but templated with fields that need to be filled in.
