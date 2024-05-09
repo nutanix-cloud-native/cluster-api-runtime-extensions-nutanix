@@ -32,6 +32,8 @@ var (
 	awsClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_nutanixclusterconfigs.yaml
 	nutanixClusterConfigCRDDefinition []byte
+	//go:embed crds/caren.nutanix.com_genericclusterconfigs.yaml
+	genericClusterConfigCRDDefinition []byte
 
 	dockerClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		dockerClusterConfigCRDDefinition,
@@ -41,6 +43,9 @@ var (
 	)
 	nutanixClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		nutanixClusterConfigCRDDefinition,
+	)
+	genericClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		genericClusterConfigCRDDefinition,
 	)
 )
 
@@ -103,7 +108,7 @@ type DockerClusterConfigSpec struct {
 	ControlPlane *DockerNodeConfigSpec `json:"controlPlane,omitempty"`
 
 	// Extra Subject Alternative Names for the API Server signing cert.
-	// For the Nutanix provider, the following default SANs will always be added:
+	// For the Docker provider, the following default SANs will always be added:
 	// - localhost
 	// - 127.0.0.1
 	// - 0.0.0.0
@@ -148,6 +153,27 @@ type NutanixClusterConfigSpec struct {
 	// +kubebuilder:validation:UniqueItems=true
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// GenericClusterConfig is the Schema for the genericclusterconfigs API.
+type GenericClusterConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +optional
+	Spec GenericClusterConfigSpec `json:"spec,omitempty"`
+
+	// Extra Subject Alternative Names for the API Server signing cert.
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +optional
+	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
+}
+
+func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return genericClusterConfigVariableSchema
 }
 
 // GenericClusterConfigSpec defines the desired state of GenericClusterConfig.

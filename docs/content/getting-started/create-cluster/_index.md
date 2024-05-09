@@ -1,5 +1,5 @@
 +++
-title = "Creating clusters"
+title = "Creating clusters from example ClusterClasses"
 icon = "fa-solid fa-industry"
 weight = 2
 +++

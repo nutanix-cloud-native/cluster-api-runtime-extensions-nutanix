@@ -12,7 +12,7 @@ import (
 
 const (
 	// FieldOwner is the field manager name used for server-side apply.
-	FieldOwner = "d2iq-cluster-api-runtime-extensions-nutanix"
+	FieldOwner = "cluster-api-runtime-extensions-nutanix"
 )
 
 // ForceOwnership is an convenience alias of the same option in the controller-runtime client.
