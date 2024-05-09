@@ -22,12 +22,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
-	"sigs.k8s.io/cluster-api/test/framework"
+	capie2eframework "sigs.k8s.io/cluster-api/test/framework"
 	capibootstrap "sigs.k8s.io/cluster-api/test/framework/bootstrap"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/bootstrap"
 	clusterctltemp "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/clusterctl"
 )
@@ -147,11 +148,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	os.Unsetenv(capie2e.KubernetesVersionUpgradeTo)
 
 	kubeconfigPath := parts[3]
-	bootstrapClusterProxy = framework.NewClusterProxy(
+	bootstrapClusterProxy = capie2eframework.NewClusterProxy(
 		"bootstrap",
 		kubeconfigPath,
 		initScheme(),
-		framework.WithMachineLogCollector(framework.DockerLogCollector{}),
+		capie2eframework.WithMachineLogCollector(capie2eframework.DockerLogCollector{}),
 	)
 })
 
@@ -204,7 +205,7 @@ func createClusterctlLocalRepository(config *clusterctl.E2EConfig, repositoryFol
 
 func initScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
-	framework.TryAddDefaultSchemes(scheme)
+	capie2eframework.TryAddDefaultSchemes(scheme)
 	Expect(helmaddonsv1.AddToScheme(scheme)).To(Succeed())
 	return scheme
 }
@@ -213,7 +214,7 @@ func setupBootstrapCluster(
 	config *clusterctl.E2EConfig,
 	scheme *runtime.Scheme,
 	useExistingCluster bool,
-) (capibootstrap.ClusterProvider, framework.ClusterProxy) {
+) (capibootstrap.ClusterProvider, capie2eframework.ClusterProxy) {
 	var clusterProvider capibootstrap.ClusterProvider
 	kubeconfigPath := ""
 	if !useExistingCluster {
@@ -245,13 +246,13 @@ func setupBootstrapCluster(
 		Expect(err).To(BeNil(), "Failed to load images to the bootstrap cluster: %s", err)
 	}
 
-	clusterProxy := framework.NewClusterProxy("bootstrap", kubeconfigPath, scheme)
+	clusterProxy := capie2eframework.NewClusterProxy("bootstrap", kubeconfigPath, scheme)
 	Expect(clusterProxy).NotTo(BeNil(), "Failed to get a bootstrap cluster proxy")
 	return clusterProvider, clusterProxy
 }
 
 func initBootstrapCluster(
-	bootstrapClusterProxy framework.ClusterProxy,
+	bootstrapClusterProxy capie2eframework.ClusterProxy,
 	config *clusterctl.E2EConfig,
 	clusterctlConfig, artifactFolder string,
 ) {
@@ -260,6 +261,18 @@ func initBootstrapCluster(
 		clusterctl.InitManagementClusterAndWatchControllerLogsInput{
 			ClusterProxy:         bootstrapClusterProxy,
 			ClusterctlConfigPath: clusterctlConfig,
+			CoreProvider: config.GetProviderLatestVersionsByContract(
+				"*",
+				framework.CoreProvider(config),
+			)[0],
+			BootstrapProviders: config.GetProviderLatestVersionsByContract(
+				"*",
+				framework.BootstrapProviders(config)...,
+			),
+			ControlPlaneProviders: config.GetProviderLatestVersionsByContract(
+				"*",
+				framework.ControlPlaneProviders(config)...,
+			),
 			InfrastructureProviders: config.GetProviderLatestVersionsByContract(
 				"*",
 				config.InfrastructureProviders()...),
@@ -280,7 +293,7 @@ func initBootstrapCluster(
 
 func tearDown(
 	bootstrapClusterProvider capibootstrap.ClusterProvider,
-	bootstrapClusterProxy framework.ClusterProxy,
+	bootstrapClusterProxy capie2eframework.ClusterProxy,
 ) {
 	if bootstrapClusterProxy != nil {
 		bootstrapClusterProxy.Dispose(context.TODO())
