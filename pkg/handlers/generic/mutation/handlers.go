@@ -34,10 +34,7 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		calico.NewPatch(),
 		users.NewPatch(),
 		containerdmetrics.NewPatch(),
-		encryption.NewPatch(&encryption.Config{
-			Client:                mgr.GetClient(),
-			AESSecretKeyGenerator: encryption.RandomTokenGenerator,
-		}),
+		encryption.NewPatch(mgr.GetClient(), encryption.RandomTokenGenerator),
 
 		// Some patches may have changed containerd configuration.
 		// We write the configuration changes to disk, and must run a command
