@@ -38,7 +38,7 @@ repos:
     name: addons-repo-yaml
     entry: make generate-mindthegap-repofile
     language: system
-    files: "^hack/addons/mindthegap-helm-registry/repos.yaml$"
+    files: "hack/addons/mindthegap-helm-registry/repos.yaml"
     pass_filenames: false
   - id: check-devbox-lock
     name: check-devbox-lock
