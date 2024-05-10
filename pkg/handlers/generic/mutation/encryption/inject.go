@@ -11,14 +11,17 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/config/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -27,7 +30,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	k8sClientUtil "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
@@ -40,33 +43,19 @@ const (
 	apiServerEncryptionConfigArg        = "encryption-provider-config"
 )
 
-type Config struct {
-	Client                ctrlclient.Client
-	AESSecretKeyGenerator TokenGenerator
-}
-
 type encryptionPatchHandler struct {
-	config            *Config
+	client            ctrlclient.Client
+	keyGenerator      TokenGenerator
 	variableName      string
 	variableFieldPath []string
 }
 
-func NewPatch(config *Config) *encryptionPatchHandler {
-	return newEncryptionPatchHandler(
-		config,
-		clusterconfig.MetaVariableName,
-		VariableName)
-}
-
-func newEncryptionPatchHandler(
-	config *Config,
-	variableName string,
-	variableFieldPath ...string,
-) *encryptionPatchHandler {
+func NewPatch(client ctrlclient.Client, keyGenerator TokenGenerator) *encryptionPatchHandler {
 	return &encryptionPatchHandler{
-		config:            config,
-		variableName:      variableName,
-		variableFieldPath: variableFieldPath,
+		client:            client,
+		keyGenerator:      keyGenerator,
+		variableName:      clusterconfig.MetaVariableName,
+		variableFieldPath: []string{VariableName},
 	}
 }
 
@@ -76,7 +65,7 @@ func (h *encryptionPatchHandler) Mutate(
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	clusterKey ctrlclient.ObjectKey,
-	_ mutation.ClusterGetter,
+	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
 
@@ -102,25 +91,49 @@ func (h *encryptionPatchHandler) Mutate(
 		encryptionVariable,
 	)
 
+	cluster, err := clusterGetter(ctx)
+	if err != nil {
+		log.Error(err, "failed to get cluster from encryption mutation handler")
+		return err
+	}
+
+	found, err := h.DefaultEncryptionSecretExists(ctx, cluster)
+	if err != nil {
+		log.WithValues(
+			"defaultEncryptionSecret", defaultEncryptionSecretName(cluster.Name),
+		).Error(err, "failed to find default encryption configuration secret")
+		return err
+	}
+	// we do not rotate or override the secret keys for encryption configuration
+	if found {
+		log.V(5).WithValues(
+			"defaultEncryptionSecret", defaultEncryptionSecretName(cluster.Name),
+		).Info(
+			"skip generating encryption configuration. Default encryption configuration secret exists",
+			defaultEncryptionSecretName(cluster.Name))
+		return nil
+	}
+
 	return patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("setting encryption in control plane kubeadm config template")
+			).Info("adding encryption configuration files and API server extra args in control plane kubeadm config spec")
 			encConfig, err := h.generateEncryptionConfiguration(encryptionVariable.Providers)
 			if err != nil {
 				return err
 			}
-			secretName, err := h.CreateEncryptionConfigurationSecret(ctx, encConfig, clusterKey)
-			if err != nil {
+
+			if err := h.CreateEncryptionConfigurationSecret(ctx, encConfig, cluster); err != nil {
 				return err
 			}
+
 			// Create kubadm config file for encryption config
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				generateEncryptionCredentialsFile(secretName))
+				generateEncryptionCredentialsFile(cluster))
 
 			// set APIServer args for encryption config
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
@@ -136,7 +149,8 @@ func (h *encryptionPatchHandler) Mutate(
 		})
 }
 
-func generateEncryptionCredentialsFile(secretName string) cabpkv1.File {
+func generateEncryptionCredentialsFile(cluster *clusterv1.Cluster) cabpkv1.File {
+	secretName := defaultEncryptionSecretName(cluster.Name)
 	return cabpkv1.File{
 		Path: encryptionConfigurationOnRemote,
 		ContentFrom: &cabpkv1.FileSource{
@@ -155,7 +169,7 @@ func (h *encryptionPatchHandler) generateEncryptionConfiguration(
 	// We only support encryption for "secrets" and "configmaps" using "aescbc" provider.
 	resourceConfig, err := encryptionConfigForSecretsAndConfigMaps(
 		providers,
-		h.config.AESSecretKeyGenerator,
+		h.keyGenerator,
 	)
 	if err != nil {
 		return nil, err
@@ -171,39 +185,71 @@ func (h *encryptionPatchHandler) generateEncryptionConfiguration(
 	}, nil
 }
 
+func (h *encryptionPatchHandler) DefaultEncryptionSecretExists(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+) (bool, error) {
+	secretName := defaultEncryptionSecretName(cluster.Name)
+	existingSecret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: cluster.Namespace,
+		},
+	}
+	err := h.client.Get(ctx, ctrlclient.ObjectKeyFromObject(existingSecret), existingSecret)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 func (h *encryptionPatchHandler) CreateEncryptionConfigurationSecret(
 	ctx context.Context,
 	encryptionConfig *apiserverv1.EncryptionConfiguration,
-	clusterKey ctrlclient.ObjectKey,
-) (string, error) {
+	cluster *clusterv1.Cluster,
+) error {
 	dataYaml, err := yaml.Marshal(encryptionConfig)
 	if err != nil {
-		return "", fmt.Errorf("unable to marshal encryption configuration to YAML: %w", err)
+		return fmt.Errorf("unable to marshal encryption configuration to YAML: %w", err)
 	}
 
 	secretData := map[string]string{
 		SecretKeyForEtcdEncryption: strings.TrimSpace(string(dataYaml)),
 	}
-	secretName := defaultEncryptionSecretName(clusterKey.Name)
+	secretName := defaultEncryptionSecretName(cluster.Name)
 	encryptionConfigSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
-			Namespace: clusterKey.Namespace,
-			Labels:    utils.NewLabels(utils.WithMove(), utils.WithClusterName(clusterKey.Name)),
+			Namespace: cluster.Namespace,
+			Labels:    utils.NewLabels(utils.WithMove(), utils.WithClusterName(cluster.Name)),
 		},
 		StringData: secretData,
 		Type:       corev1.SecretTypeOpaque,
 	}
 
-	// We only support creating encryption config in BeforeClusterCreate hook and ensure that the keys are immutable.
-	if err := client.Create(ctx, h.config.Client, encryptionConfigSecret); err != nil {
-		return "", fmt.Errorf("failed to create encryption configuration secret: %w", err)
+	if err = controllerutil.SetOwnerReference(cluster, encryptionConfigSecret, h.client.Scheme()); err != nil {
+		return fmt.Errorf(
+			"failed to set owner reference on encryption configuration secret: %w",
+			err,
+		)
 	}
-	return secretName, nil
+
+	// We only support creating encryption config in BeforeClusterCreate hook and ensure that the keys are immutable.
+	if err := k8sClientUtil.Create(ctx, h.client, encryptionConfigSecret); err != nil {
+		return fmt.Errorf("failed to create encryption configuration secret: %w", err)
+	}
+	return nil
 }
 
 // We only support encryption for "secrets" and "configmaps".
