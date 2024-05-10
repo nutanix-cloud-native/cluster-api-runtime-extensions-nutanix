@@ -100,7 +100,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
-					Namespace: metav1.NamespaceDefault,
+					Namespace: request.Namespace,
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
@@ -171,7 +171,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
-					Namespace: metav1.NamespaceDefault,
+					Namespace: request.Namespace,
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{

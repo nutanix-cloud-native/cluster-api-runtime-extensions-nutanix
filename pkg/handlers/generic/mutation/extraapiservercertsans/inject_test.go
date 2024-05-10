@@ -77,7 +77,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 			cluster: clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
-					Namespace: metav1.NamespaceDefault,
+					Namespace: request.Namespace,
 					Labels: map[string]string{
 						clusterv1.ProviderNameLabel: "aws",
 					},
@@ -119,7 +119,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 			cluster: clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
-					Namespace: metav1.NamespaceDefault,
+					Namespace: request.Namespace,
 					Labels: map[string]string{
 						clusterv1.ProviderNameLabel: "docker",
 					},
@@ -160,7 +160,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 			cluster: clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
-					Namespace: metav1.NamespaceDefault,
+					Namespace: request.Namespace,
 					Labels: map[string]string{
 						clusterv1.ProviderNameLabel: "nutanix",
 					},
