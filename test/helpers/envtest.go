@@ -204,7 +204,13 @@ func getModulePath(moduleDir, moduleName string) string {
 	if err != nil {
 		// We include the combined output because the error is usually
 		// an exit code, which does not explain why the command failed.
-		panic(fmt.Sprintf("err=%q, output=%q", err, out))
+		panic(
+			fmt.Sprintf("cmd.Dir=%q, cmd.Args=%q, err=%q, output=%q",
+				cmd.Dir,
+				cmd.Args,
+				err,
+				out),
+		)
 	}
 	return strings.TrimSpace(string(out))
 }
