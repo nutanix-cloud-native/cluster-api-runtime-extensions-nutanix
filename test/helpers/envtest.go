@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	goruntime "runtime"
@@ -200,7 +201,7 @@ func getFilePathsToCAPICRDs() []string {
 func getModulePath(moduleDir, moduleName string) string {
 	cmd := exec.Command("go", "list", "-m", "-f", "{{ .Dir }}", moduleName)
 	cmd.Dir = moduleDir
-	cmd.Env = append(cmd.Env, "GOWORK=off")
+	cmd.Env = append(os.Environ(), "GOWORK=off")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		// We include the combined output because the error is usually
