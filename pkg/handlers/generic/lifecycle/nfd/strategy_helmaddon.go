@@ -68,7 +68,7 @@ func (s helmAddonStrategy) apply(
 
 	values += fmt.Sprintf(`
 image:
-  tag: v%s-minimal
+  tag: %s-minimal
 `, s.helmChart.Version)
 
 	hcp := &caaphv1.HelmChartProxy{
