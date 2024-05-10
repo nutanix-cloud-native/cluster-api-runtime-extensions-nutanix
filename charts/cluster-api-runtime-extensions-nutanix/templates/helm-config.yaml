@@ -10,35 +10,35 @@ data:
   cilium: |
     ChartName: cilium
     ChartVersion: 1.15.0
-    RepositoryURL: https://helm.cilium.io/
+    RepositoryURL: registry.{{ .Release.Namespace }}.svc
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
     ChartVersion: 9.35.0
-    RepositoryURL: https://kubernetes.github.io/autoscaler
+    RepositoryURL: registry.{{ .Release.Namespace }}.svc
   metallb: |
     ChartName: metallb
     ChartVersion: v0.14.5
-    RepositoryURL: https://metallb.github.io/metallb
+    RepositoryURL: registry.{{ .Release.Namespace }}.svc
   nfd: |
     ChartName: node-feature-discovery
     ChartVersion: v0.15.2
-    RepositoryURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+    RepositoryURL: registry.{{ .Release.Namespace }}.svc
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
     ChartVersion: 0.3.3
-    RepositoryURL: https://nutanix.github.io/helm/
+    RepositoryURL: registry.{{ .Release.Namespace }}.svc
   nutanix-snapshot-csi: |
     ChartName: nutanix-csi-snapshot
     ChartVersion: 6.3.2
-    RepositoryURL: https://nutanix.github.io/helm/
+    RepositoryURL: registry.{{ .Release.Namespace }}.svc
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
     ChartVersion: v3.0.0-beta.1912
-    RepositoryURL: https://nutanix.github.io/helm-releases/
+    RepositoryURL: registry.{{ .Release.Namespace }}.svc
   tigera-operator: |
     ChartName: tigera-operator
     ChartVersion: v3.26.4
-    RepositoryURL: https://docs.tigera.io/calico/charts
+    RepositoryURL: registry.{{ .Release.Namespace }}.svc
 kind: ConfigMap
 metadata:
   creationTimestamp: null

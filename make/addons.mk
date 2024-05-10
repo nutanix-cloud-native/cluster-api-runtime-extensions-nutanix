@@ -54,7 +54,7 @@ update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)
 update-addon.kube-vip: ; $(info $(M) updating kube-vip manifests)
 	./hack/addons/update-kube-vip-manifests.sh
 
-.PHONY: generate-helm-configmap
+.PHONY: generate-helm-configmap ## this file is now used by generate-mindthegap-repofile
 generate-helm-configmap: ; $(info $(M) genrating helm configmap)
 	go run hack/tools/helm-cm/main.go -kustomize-directory="./hack/addons/kustomize" -output-file="./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
 	./hack/addons/add-warning-helm-configmap.sh
@@ -62,3 +62,7 @@ generate-helm-configmap: ; $(info $(M) genrating helm configmap)
 .PHONY: generate-mindthegap-repofile
 generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating helm repofile for mindthgap)
 	./hack/addons/generate-mindthegap-repofile.sh
+
+.PHONY: replace-with-mindthegap ## this is used by gorealeaser to set the helm value to this.
+replace-with-mindthegap:
+	sed -i 's/RepositoryURL:.*/RepositoryURL: registry.{{ .Release.Namespace }}.svc/g' "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
