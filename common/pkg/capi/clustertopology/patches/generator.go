@@ -59,6 +59,10 @@ func MutateIfApplicable[T runtime.Object](
 
 	// Apply the mutation.
 	if err := mutFn(typed); err != nil {
+		log.WithValues(
+			"objKind", obj.GetObjectKind().GroupVersionKind(),
+			"objName", obj.GetName(),
+		).Error(err, "failed to apply mutation")
 		return fmt.Errorf("failed to apply mutation: %w", err)
 	}
 
