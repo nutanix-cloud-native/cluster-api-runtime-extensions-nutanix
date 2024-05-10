@@ -78,4 +78,4 @@ generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating h
 
 .PHONY: replace-with-mindthegap ## this is used by gorealeaser to set the helm value to this.
 replace-with-mindthegap: generate-mindthegap-repofile
-	sed -i 's/RepositoryURL:.*/RepositoryURL: registry.{{ .Release.Namespace }}.svc/g' "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
+	sed -i 's/RepositoryURL:.*/RepositoryURL: oci:\/\/mindthegap.{{ .Release.Namespace }}.svc/g' "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"

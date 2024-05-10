@@ -69,6 +69,6 @@ spec:
   selector:
     app: mindthegap
   ports:
-  - port: 80
+  - port: 443
     targetPort: 5000
-  type: NodePort
+  type: ClusterIP

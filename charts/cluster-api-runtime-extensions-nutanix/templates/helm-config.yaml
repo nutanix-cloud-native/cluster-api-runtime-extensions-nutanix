@@ -10,11 +10,11 @@ data:
   cilium: |
     ChartName: cilium
     ChartVersion: 1.15.0
-    RepositoryURL: registry.{{ .Release.Namespace }}.svc
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
     ChartVersion: 9.37.0
-    RepositoryURL: registry.{{ .Release.Namespace }}.svc
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
     ChartVersion: v0.0.29
@@ -22,32 +22,27 @@ data:
   metallb: |
     ChartName: metallb
     ChartVersion: v0.14.5
-    RepositoryURL: registry.{{ .Release.Namespace }}.svc
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc
   nfd: |
     ChartName: node-feature-discovery
     ChartVersion: v0.15.2
-    RepositoryURL: registry.{{ .Release.Namespace }}.svc
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
     ChartVersion: 0.3.3
-    RepositoryURL: registry.{{ .Release.Namespace }}.svc
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc
   nutanix-snapshot-csi: |
     ChartName: nutanix-csi-snapshot
     ChartVersion: 6.3.2
-    RepositoryURL: registry.{{ .Release.Namespace }}.svc
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
     ChartVersion: v3.0.0-beta.1912
-    RepositoryURL: registry.{{ .Release.Namespace }}.svc
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc
   tigera-operator: |
     ChartName: tigera-operator
-<<<<<<< HEAD
     ChartVersion: v3.28.0
-    RepositoryURL: https://docs.tigera.io/calico/charts
-=======
-    ChartVersion: v3.26.4
-    RepositoryURL: registry.{{ .Release.Namespace }}.svc
->>>>>>> 3c3c0d8 (feat: self host helm charts with mindthegap)
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc
 kind: ConfigMap
 metadata:
   creationTimestamp: null
