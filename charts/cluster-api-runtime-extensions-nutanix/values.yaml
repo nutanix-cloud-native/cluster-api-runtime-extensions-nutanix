@@ -94,6 +94,11 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
+mindthegapImage:
+  repository: ghcr.io/nutanix-cloud-native/caren-helm-reg
+  tag: ""
+  pullPolicy: IfNotPresent
+
 # -- Optional secrets used for pulling the container image
 imagePullSecrets: []
 # - name: Secret with Registry credentials
