@@ -41,7 +41,6 @@ data:
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}
   tigera-operator: |
     ChartName: tigera-operator
-<<<<<<< HEAD
     ChartVersion: v3.28.0
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}
 kind: ConfigMap
