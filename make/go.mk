@@ -137,9 +137,9 @@ endif
 .PHONY: lint.%
 lint.%: ## Runs golangci-lint for a specific module
 lint.%: ; $(info $(M) linting $* module)
-	$(if $(filter-out root,$*),cd $* && )golines -w $$(go list -tags e2e ./... | grep -v external | sed "s|^$$(go list -m)|.|")
+	$(if $(filter-out root,$*),cd $* && )golines -w $$(GOWORK=off go list -tags e2e ./... | grep -v external | sed "s|^$$(GOWORK=off go list -m)|.|")
 	$(if $(filter-out root,$*),cd $* && )golangci-lint run --fix --config=$(GOLANGCI_CONFIG_FILE)
-	$(if $(filter-out root,$*),cd $* && )golines -w $$(go list -tags e2e ./... | grep -v external | sed "s|^$$(go list -m)|.|")
+	$(if $(filter-out root,$*),cd $* && )golines -w $$(GOWORK=off go list -tags e2e ./... | grep -v external | sed "s|^$$(GOWORK=off go list -m)|.|")
 
 .PHONY: mod-tidy
 mod-tidy: ## Run go mod tidy for all modules
