@@ -8,9 +8,14 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -47,101 +52,182 @@ func testTokenGenerator() ([]byte, error) {
 
 func TestEncryptionConfigurationPatch(t *testing.T) {
 	RegisterFailHandler(Fail)
+	format.TruncatedDiff = false
 	RunSpecs(t, "Encryption configuration mutator suite")
 }
 
 var _ = Describe("Generate Encryption configuration patches", func() {
+	clientScheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
 	patchGenerator := func() mutation.GeneratePatches {
-		config := &Config{
-			Client:                helpers.TestEnv.Client,
-			AESSecretKeyGenerator: testTokenGenerator,
-		}
+		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		Expect(err).To(BeNil())
 		return mutation.NewMetaGeneratePatchesHandler(
 			"",
-			helpers.TestEnv.Client,
-			NewPatch(config)).(mutation.GeneratePatches)
+			client,
+			NewPatch(client, testTokenGenerator)).(mutation.GeneratePatches)
 	}
 
-	testDefs := []capitest.PatchTestDef{
+	encryptionVar := []runtimehooksv1.Variable{
+		capitest.VariableWithValue(
+			clusterconfig.MetaVariableName,
+			carenv1.Encryption{
+				Providers: &carenv1.EncryptionProviders{
+					AESCBC:    &carenv1.AESConfiguration{},
+					Secretbox: &carenv1.SecretboxConfiguration{},
+				},
+			},
+			VariableName,
+		),
+	}
+	encryptionMatchers := []capitest.JSONPatchMatcher{
 		{
-			Name: "files added in KubeadmControlPlaneTemplate for Encryption Configuration",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
-					carenv1.Encryption{
-						Providers: &carenv1.EncryptionProviders{
-							AESCBC:    &carenv1.AESConfiguration{},
-							Secretbox: &carenv1.SecretboxConfiguration{},
-						},
-					},
-					VariableName,
-				),
-			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-					ValueMatcher: ContainElements(
-						SatisfyAll(
-							HaveKeyWithValue(
-								"path", "/etc/kubernetes/encryptionconfig.yaml",
-							),
-							HaveKeyWithValue(
-								"permissions", "0600",
-							),
-							HaveKeyWithValue(
-								"contentFrom",
-								map[string]interface{}{
-									"secret": map[string]interface{}{
-										"key":  "config",
-										"name": defaultEncryptionSecretName(request.ClusterName),
-									},
-								},
-							),
-						),
+			Operation: "add",
+			Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+			ValueMatcher: ContainElements(
+				SatisfyAll(
+					HaveKeyWithValue(
+						"path", "/etc/kubernetes/encryptionconfig.yaml",
 					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
-					ValueMatcher: HaveKeyWithValue(
-						"apiServer",
-						HaveKeyWithValue(
-							"extraArgs",
-							map[string]interface{}{
-								"encryption-provider-config": "/etc/kubernetes/encryptionconfig.yaml",
+					HaveKeyWithValue(
+						"permissions", "0600",
+					),
+					HaveKeyWithValue(
+						"contentFrom",
+						map[string]interface{}{
+							"secret": map[string]interface{}{
+								"key":  "config",
+								"name": defaultEncryptionSecretName(request.ClusterName),
 							},
-						),
+						},
 					),
-				},
-			},
+				),
+			),
+		},
+		{
+			Operation: "add",
+			Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
+			ValueMatcher: HaveKeyWithValue(
+				"apiServer",
+				HaveKeyWithValue(
+					"extraArgs",
+					map[string]interface{}{
+						"encryption-provider-config": "/etc/kubernetes/encryptionconfig.yaml",
+					},
+				),
+			),
 		},
 	}
-	// create test node for each case
-	for testIdx := range testDefs {
-		tt := testDefs[testIdx]
-		It(tt.Name, func(ctx SpecContext) {
-			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt)
+
+	// Create cluster before each test
+	BeforeEach(func(ctx SpecContext) {
+		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		Expect(err).To(BeNil())
+
+		Expect(client.Create(
+			ctx,
+			&clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: metav1.NamespaceDefault,
+				},
+			},
+		)).To(BeNil())
+	})
+
+	// Delete cluster after each test
+	AfterEach(func(ctx SpecContext) {
+		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		Expect(err).To(BeNil())
+
+		Expect(client.Delete(
+			ctx,
+			&clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: metav1.NamespaceDefault,
+				},
+			},
+		)).To(BeNil())
+	})
+
+	// Test that encryption secret patch is skipped if it is already applied.
+	// noOpEncryptionConfigDef := capitest.PatchTestDef{
+	// 	Name:        "skip patching encryption config if default encryption config secret exists",
+	// 	Vars:        encryptionVar,
+	// 	RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+	// 	ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+	// 		{
+	// 			Operation:    "",
+	// 			Path:         "",
+	// 			ValueMatcher: Equal(nil),
+	// 		},
+	// 	},
+	// 	UnexpectedPatchMatchers: encryptionMatchers,
+	// }
+
+	// Context("Default encryption provider secret already exists", func() {
+	// 	// encryption secret was created earlier
+	// 	BeforeEach(func(ctx SpecContext) {
+	// 		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+	// 		Expect(err).To(BeNil())
+
+	// 		Expect(client.Create(
+	// 			ctx,
+	// 			testEncryptionSecretObj(),
+	// 		)).To(BeNil())
+	// 	})
+	// 	// delete encryption configuration after the test
+	// 	AfterEach(func(ctx SpecContext) {
+	// 		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+	// 		Expect(err).To(BeNil())
+
+	// 		Expect(client.Delete(
+	// 			ctx,
+	// 			testEncryptionSecretObj(),
+	// 		)).To(BeNil())
+	// 	})
+	// 	It(noOpEncryptionConfigDef.Name, func(ctx SpecContext) {
+	// 		capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &noOpEncryptionConfigDef)
+	// 	})
+	// })
+
+	// Test that encryption configuration secret is generated and patched on kubeadmconfig spec.
+	patchEncryptionConfigDef := capitest.PatchTestDef{
+		Name:                  "files added in KubeadmControlPlaneTemplate for Encryption Configuration",
+		Vars:                  encryptionVar,
+		RequestItem:           request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		ExpectedPatchMatchers: encryptionMatchers,
+	}
+
+	Context("Default encryption configuration secret is created by the patch", func() {
+		It(patchEncryptionConfigDef.Name, func(ctx SpecContext) {
+			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &patchEncryptionConfigDef)
 
 			// assert secret containing Encryption configuration is generated
-			gotSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      defaultEncryptionSecretName(request.ClusterName),
-					Namespace: request.Namespace,
-				},
-			}
-			objName := ctrlclient.ObjectKeyFromObject(gotSecret)
-			client, err := helpers.TestEnv.GetK8sClient()
+			client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 			Expect(err).To(BeNil())
 
-			err = client.Get(ctx, objName, gotSecret)
+			gotSecret := testEncryptionSecretObj()
+			err = client.Get(
+				ctx,
+				ctrlclient.ObjectKeyFromObject(gotSecret),
+				gotSecret)
 			Expect(err).To(BeNil())
-			GinkgoWriter.Println(string(gotSecret.Data[SecretKeyForEtcdEncryption]))
 			assert.Equal(
 				GinkgoT(),
 				testEncryptionConfigSecretData,
 				string(gotSecret.Data[SecretKeyForEtcdEncryption]))
 		})
-	}
+	})
 })
+
+func testEncryptionSecretObj() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaultEncryptionSecretName(request.ClusterName),
+			Namespace: request.Namespace,
+		},
+	}
+}
