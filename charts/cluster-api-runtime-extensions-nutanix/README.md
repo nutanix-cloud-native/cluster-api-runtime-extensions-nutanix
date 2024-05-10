@@ -73,6 +73,9 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | image.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` | Optional secrets used for pulling the container image |
+| mindthegapImage.pullPolicy | string | `"IfNotPresent"` |  |
+| mindthegapImage.repository | string | `"ghcr.io/nutanix-cloud-native/caren-helm-reg"` |  |
+| mindthegapImage.tag | string | `""` |  |
 | nodeSelector | object | `{}` |  |
 | priorityClassName | string | `"system-cluster-critical"` | Priority class to be used for the pod. |
 | resources.limits.cpu | string | `"100m"` |  |
