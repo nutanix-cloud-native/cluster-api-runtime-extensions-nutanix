@@ -70,7 +70,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/cre.d/registry-config.toml",
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
 						),
 					),
 				},
@@ -105,7 +105,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/certs/mirror.pem",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/cre.d/registry-config.toml",
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
 						),
 					),
 				},
@@ -140,7 +140,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/cre.d/registry-config.toml",
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
 						),
 					),
 				},
@@ -183,7 +183,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/certs/mirror.pem",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/cre.d/registry-config.toml",
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
 						),
 					),
 				},

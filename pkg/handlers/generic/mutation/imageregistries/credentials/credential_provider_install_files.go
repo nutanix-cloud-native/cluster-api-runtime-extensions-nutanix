@@ -14,7 +14,7 @@ import (
 
 const (
 	//nolint:gosec // Does not contain hard coded credentials.
-	installKubeletCredentialProvidersScriptOnRemote = "/etc/cre/install-kubelet-credential-providers.sh"
+	installKubeletCredentialProvidersScriptOnRemote = "/etc/caren/install-kubelet-credential-providers.sh"
 
 	installKubeletCredentialProvidersScriptOnRemoteCommand = "/bin/bash " + installKubeletCredentialProvidersScriptOnRemote
 

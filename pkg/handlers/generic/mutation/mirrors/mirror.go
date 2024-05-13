@@ -17,14 +17,13 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdapplypatchesandrestart"
 )
 
 const (
 	mirrorCACertPathOnRemote                = "/etc/certs/mirror.pem"
 	defaultRegistryMirrorConfigPathOnRemote = "/etc/containerd/certs.d/_default/hosts.toml"
 	secretKeyForMirrorCACert                = "ca.crt"
-
-	containerdPatchesDirOnRemote = "/etc/containerd/cre.d"
 )
 
 var (
@@ -38,7 +37,7 @@ var (
 	//go:embed templates/containerd-registry-config-drop-in.toml
 	containerdRegistryConfigDropIn             []byte
 	containerdRegistryConfigDropInFileOnRemote = path.Join(
-		containerdPatchesDirOnRemote,
+		containerdapplypatchesandrestart.ContainerdPatchesDirOnRemote,
 		"registry-config.toml",
 	)
 )

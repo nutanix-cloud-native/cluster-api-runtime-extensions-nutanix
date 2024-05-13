@@ -11,7 +11,7 @@ import (
 
 const (
 	// TODO Factor out this constant to a common package.
-	containerdPatchesDirOnRemote = "/etc/containerd/cre.d"
+	containerdPatchesDirOnRemote = "/etc/caren/containerd"
 )
 
 var (

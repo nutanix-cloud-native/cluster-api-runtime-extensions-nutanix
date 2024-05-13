@@ -3,25 +3,47 @@
 package containerdapplypatchesandrestart
 
 import (
+	"bytes"
 	_ "embed"
+	"fmt"
+	"text/template"
 
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 )
 
 const (
-	ContainerdRestartScriptOnRemote        = "/etc/containerd/restart.sh"
-	ContainerdRestartScriptOnRemoteCommand = "/bin/bash " + ContainerdRestartScriptOnRemote
+	tomlMergeImage                              = "ghcr.io/mesosphere/toml-merge:v0.2.0"
+	ContainerdPatchesDirOnRemote                = "/etc/caren/containerd/patches"
+	containerdApplyPatchesScriptOnRemote        = "/etc/caren/containerd/apply-patches.sh"
+	containerdApplyPatchesScriptOnRemoteCommand = "/bin/bash " + containerdApplyPatchesScriptOnRemote
 )
 
-//go:embed templates/containerd-restart.sh
-var containerdRestartScript []byte
+//go:embed templates/containerd-apply-patches.sh.gotmpl
+var containerdApplyConfigPatchesScript []byte
 
-//nolint:gocritic // no need for named return values
-func generateContainerdRestartScript() (bootstrapv1.File, string) {
+func generateContainerdApplyPatchesScript() (bootstrapv1.File, string, error) {
+	t, err := template.New("").Parse(string(containerdApplyConfigPatchesScript))
+	if err != nil {
+		return bootstrapv1.File{}, "", fmt.Errorf("failed to parse go template: %w", err)
+	}
+
+	templateInput := struct {
+		TOMLMergeImage string
+		PatchDir       string
+	}{
+		TOMLMergeImage: tomlMergeImage,
+		PatchDir:       ContainerdPatchesDirOnRemote,
+	}
+
+	var b bytes.Buffer
+	err = t.Execute(&b, templateInput)
+	if err != nil {
+		return bootstrapv1.File{}, "", fmt.Errorf("failed executing template: %w", err)
+	}
+
 	return bootstrapv1.File{
-			Path:        ContainerdRestartScriptOnRemote,
-			Content:     string(containerdRestartScript),
-			Permissions: "0700",
-		},
-		ContainerdRestartScriptOnRemoteCommand
+		Path:        containerdApplyPatchesScriptOnRemote,
+		Content:     b.String(),
+		Permissions: "0700",
+	}, containerdApplyPatchesScriptOnRemoteCommand, nil
 }
