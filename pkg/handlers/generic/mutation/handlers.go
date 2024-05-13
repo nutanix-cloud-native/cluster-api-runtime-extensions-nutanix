@@ -35,7 +35,9 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		containerdmetrics.NewPatch(),
 
 		// Some patches may have changed containerd configuration.
-		// We must restart containerd for the configuration to take effect.
+		// We write the configuration changes to disk, and must run a command
+		// to apply the changes to the actual containerd configuration.
+		// We then must restart containerd for the configuration to take effect.
 		// Therefore, we must apply this patch last.
 		//
 		// Containerd restart and readiness altogether could take ~5s.
