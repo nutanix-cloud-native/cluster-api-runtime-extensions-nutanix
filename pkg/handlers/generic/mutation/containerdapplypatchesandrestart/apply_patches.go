@@ -9,12 +9,18 @@ import (
 	"text/template"
 
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
 
 const (
-	tomlMergeImage                              = "ghcr.io/mesosphere/toml-merge:v0.2.0"
-	ContainerdPatchesDirOnRemote                = "/etc/caren/containerd/patches"
-	containerdApplyPatchesScriptOnRemote        = "/etc/caren/containerd/apply-patches.sh"
+	tomlMergeImage = "ghcr.io/mesosphere/toml-merge:v0.2.0"
+)
+
+var (
+	containerdApplyPatchesScriptOnRemote = common.ContainerdScriptPathOnRemote(
+		"apply-patches.sh",
+	)
 	containerdApplyPatchesScriptOnRemoteCommand = "/bin/bash " + containerdApplyPatchesScriptOnRemote
 )
 
@@ -32,7 +38,7 @@ func generateContainerdApplyPatchesScript() (bootstrapv1.File, string, error) {
 		PatchDir       string
 	}{
 		TOMLMergeImage: tomlMergeImage,
-		PatchDir:       ContainerdPatchesDirOnRemote,
+		PatchDir:       common.ContainerdPatchDirOnRemote,
 	}
 
 	var b bytes.Buffer

@@ -17,7 +17,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdapplypatchesandrestart"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
 
 const (
@@ -36,8 +36,7 @@ var (
 
 	//go:embed templates/containerd-registry-config-drop-in.toml
 	containerdRegistryConfigDropIn             []byte
-	containerdRegistryConfigDropInFileOnRemote = path.Join(
-		containerdapplypatchesandrestart.ContainerdPatchesDirOnRemote,
+	containerdRegistryConfigDropInFileOnRemote = common.ContainerdPatchPathOnRemote(
 		"registry-config.toml",
 	)
 )

@@ -42,7 +42,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 							"path", containerdApplyPatchesScriptOnRemote,
 						),
 						gomega.HaveKeyWithValue(
-							"path", ContainerdRestartScriptOnRemote,
+							"path", containerdRestartScriptOnRemote,
 						),
 					),
 				},
@@ -51,7 +51,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 					ValueMatcher: gomega.HaveExactElements(
 						containerdApplyPatchesScriptOnRemoteCommand,
-						ContainerdRestartScriptOnRemoteCommand,
+						containerdRestartScriptOnRemoteCommand,
 					),
 				},
 			},
@@ -78,7 +78,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 							"path", containerdApplyPatchesScriptOnRemote,
 						),
 						gomega.HaveKeyWithValue(
-							"path", ContainerdRestartScriptOnRemote,
+							"path", containerdRestartScriptOnRemote,
 						),
 					),
 				},
@@ -87,7 +87,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 					Path:      "/spec/template/spec/preKubeadmCommands",
 					ValueMatcher: gomega.HaveExactElements(
 						containerdApplyPatchesScriptOnRemoteCommand,
-						ContainerdRestartScriptOnRemoteCommand,
+						containerdRestartScriptOnRemoteCommand,
 					),
 				},
 			},

@@ -6,11 +6,13 @@ import (
 	_ "embed"
 
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
 
-const (
-	ContainerdRestartScriptOnRemote        = "/etc/containerd/restart.sh"
-	ContainerdRestartScriptOnRemoteCommand = "/bin/bash " + ContainerdRestartScriptOnRemote
+var (
+	containerdRestartScriptOnRemote        = common.ContainerdScriptPathOnRemote("restart.sh")
+	containerdRestartScriptOnRemoteCommand = "/bin/bash " + containerdRestartScriptOnRemote
 )
 
 //go:embed templates/containerd-restart.sh
@@ -19,9 +21,9 @@ var containerdRestartScript []byte
 //nolint:gocritic // no need for named return values
 func generateContainerdRestartScript() (bootstrapv1.File, string) {
 	return bootstrapv1.File{
-			Path:        ContainerdRestartScriptOnRemote,
+			Path:        containerdRestartScriptOnRemote,
 			Content:     string(containerdRestartScript),
 			Permissions: "0700",
 		},
-		ContainerdRestartScriptOnRemoteCommand
+		containerdRestartScriptOnRemoteCommand
 }

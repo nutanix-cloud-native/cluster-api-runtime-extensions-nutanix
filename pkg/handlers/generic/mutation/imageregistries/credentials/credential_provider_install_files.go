@@ -10,14 +10,18 @@ import (
 	"text/template"
 
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
+)
+
+var (
+	installKubeletCredentialProvidersScriptOnRemote = common.ConfigFilePathOnRemote(
+		"install-kubelet-credential-providers.sh")
+
+	installKubeletCredentialProvidersScriptOnRemoteCommand = "/bin/bash " + installKubeletCredentialProvidersScriptOnRemote
 )
 
 const (
-	//nolint:gosec // Does not contain hard coded credentials.
-	installKubeletCredentialProvidersScriptOnRemote = "/etc/caren/install-kubelet-credential-providers.sh"
-
-	installKubeletCredentialProvidersScriptOnRemoteCommand = "/bin/bash " + installKubeletCredentialProvidersScriptOnRemote
-
 	//nolint:gosec // Does not contain hard coded credentials.
 	dynamicCredentialProviderImage = "ghcr.io/mesosphere/dynamic-credential-provider:v0.5.0"
 
