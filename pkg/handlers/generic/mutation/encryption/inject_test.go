@@ -72,10 +72,12 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 	encryptionVar := []runtimehooksv1.Variable{
 		capitest.VariableWithValue(
 			clusterconfig.MetaVariableName,
-			carenv1.Encryption{
-				Providers: &carenv1.EncryptionProviders{
-					AESCBC:    &carenv1.AESConfiguration{},
-					Secretbox: &carenv1.SecretboxConfiguration{},
+			carenv1.EncryptionAtRest{
+				Providers: []carenv1.EncryptionProviders{
+					{
+						AESCBC:    &carenv1.AESConfiguration{},
+						Secretbox: &carenv1.SecretboxConfiguration{},
+					},
 				},
 			},
 			VariableName,
@@ -88,10 +90,10 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 			ValueMatcher: ContainElements(
 				SatisfyAll(
 					HaveKeyWithValue(
-						"path", "/etc/kubernetes/encryptionconfig.yaml",
+						"path", "/etc/kubernetes/pki/encryptionconfig.yaml",
 					),
 					HaveKeyWithValue(
-						"permissions", "0600",
+						"permissions", "0640",
 					),
 					HaveKeyWithValue(
 						"contentFrom",
@@ -113,7 +115,7 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 				HaveKeyWithValue(
 					"extraArgs",
 					map[string]interface{}{
-						"encryption-provider-config": "/etc/kubernetes/encryptionconfig.yaml",
+						"encryption-provider-config": "/etc/kubernetes/pki/encryptionconfig.yaml",
 					},
 				),
 			),
@@ -152,46 +154,40 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 		)).To(BeNil())
 	})
 
-	// Test that encryption secret patch is skipped if it is already applied.
-	// noOpEncryptionConfigDef := capitest.PatchTestDef{
-	// 	Name:        "skip patching encryption config if default encryption config secret exists",
-	// 	Vars:        encryptionVar,
-	// 	RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
-	// 	ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
-	// 		{
-	// 			Operation:    "",
-	// 			Path:         "",
-	// 			ValueMatcher: Equal(nil),
-	// 		},
-	// 	},
-	// 	UnexpectedPatchMatchers: encryptionMatchers,
-	// }
+	// Test that encryption config patch is generated without recreating the default encryption secret.
+	// The Mutate function must be ideompotent and always generate patch in success cases.
+	noOpEncryptionConfigDef := capitest.PatchTestDef{
+		Name:                  "skip creating default encryption config secret if it already exists",
+		Vars:                  encryptionVar,
+		RequestItem:           request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		ExpectedPatchMatchers: encryptionMatchers,
+	}
 
-	// Context("Default encryption provider secret already exists", func() {
-	// 	// encryption secret was created earlier
-	// 	BeforeEach(func(ctx SpecContext) {
-	// 		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
-	// 		Expect(err).To(BeNil())
+	Context("Default encryption provider secret already exists", func() {
+		// encryption secret was created earlier
+		BeforeEach(func(ctx SpecContext) {
+			client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+			Expect(err).To(BeNil())
 
-	// 		Expect(client.Create(
-	// 			ctx,
-	// 			testEncryptionSecretObj(),
-	// 		)).To(BeNil())
-	// 	})
-	// 	// delete encryption configuration after the test
-	// 	AfterEach(func(ctx SpecContext) {
-	// 		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
-	// 		Expect(err).To(BeNil())
+			Expect(client.Create(
+				ctx,
+				testEncryptionSecretObj(),
+			)).To(BeNil())
+		})
+		// delete encryption configuration after the test
+		AfterEach(func(ctx SpecContext) {
+			client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+			Expect(err).To(BeNil())
 
-	// 		Expect(client.Delete(
-	// 			ctx,
-	// 			testEncryptionSecretObj(),
-	// 		)).To(BeNil())
-	// 	})
-	// 	It(noOpEncryptionConfigDef.Name, func(ctx SpecContext) {
-	// 		capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &noOpEncryptionConfigDef)
-	// 	})
-	// })
+			Expect(client.Delete(
+				ctx,
+				testEncryptionSecretObj(),
+			)).To(BeNil())
+		})
+		It(noOpEncryptionConfigDef.Name, func(ctx SpecContext) {
+			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &noOpEncryptionConfigDef)
+		})
+	})
 
 	// Test that encryption configuration secret is generated and patched on kubeadmconfig spec.
 	patchEncryptionConfigDef := capitest.PatchTestDef{

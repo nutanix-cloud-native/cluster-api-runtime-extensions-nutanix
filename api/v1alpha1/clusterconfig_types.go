@@ -202,7 +202,7 @@ type GenericClusterConfigSpec struct {
 	Users []User `json:"users,omitempty"`
 
 	// +optional
-	Encryption *Encryption `json:"encryption,omitempty"`
+	EncryptionAtRest *EncryptionAtRest `json:"encryptionAtRest,omitempty"`
 }
 
 type Image struct {
@@ -282,14 +282,15 @@ type User struct {
 	Sudo string `json:"sudo,omitempty"`
 }
 
-// Encryption defines the configuration to enable encryption at REST
+// EncryptionAtRest defines the configuration to enable encryption at REST
 // This configuration is used by API server to encrypt data before storing it in ETCD.
 // Currently the encryption only enabled for secrets and configmaps.
-type Encryption struct {
+type EncryptionAtRest struct {
 	// Encryption providers
-	// +kubebuilder:default={aescbc:{}}
+	// +kubebuilder:default={{aescbc:{}}}
+	// +kubebuilder:validation:MaxItems=1
 	// +kubebuilder:validation:Optional
-	Providers *EncryptionProviders `json:"providers"`
+	Providers []EncryptionProviders `json:"providers"`
 }
 
 type EncryptionProviders struct {
