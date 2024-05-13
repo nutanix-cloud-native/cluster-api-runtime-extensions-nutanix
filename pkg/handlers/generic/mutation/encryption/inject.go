@@ -36,10 +36,10 @@ import (
 
 const (
 	// VariableName is the external patch variable name.
-	VariableName                        = "encryption"
+	VariableName                        = "encryptionAtRest"
 	SecretKeyForEtcdEncryption          = "config"
 	defaultEncryptionSecretNameTemplate = "%s-encryption-config" //nolint:gosec // Does not contain hard coded credentials.
-	encryptionConfigurationOnRemote     = "/etc/kubernetes/encryptionconfig.yaml"
+	encryptionConfigurationOnRemote     = "/etc/kubernetes/pki/encryptionconfig.yaml"
 	apiServerEncryptionConfigArg        = "encryption-provider-config"
 )
 
@@ -69,7 +69,7 @@ func (h *encryptionPatchHandler) Mutate(
 ) error {
 	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
 
-	encryptionVariable, err := variables.Get[carenv1.Encryption](
+	encryptionVariable, err := variables.Get[carenv1.EncryptionAtRest](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -91,44 +91,38 @@ func (h *encryptionPatchHandler) Mutate(
 		encryptionVariable,
 	)
 
-	cluster, err := clusterGetter(ctx)
-	if err != nil {
-		log.Error(err, "failed to get cluster from encryption mutation handler")
-		return err
-	}
-
-	found, err := h.DefaultEncryptionSecretExists(ctx, cluster)
-	if err != nil {
-		log.WithValues(
-			"defaultEncryptionSecret", defaultEncryptionSecretName(cluster.Name),
-		).Error(err, "failed to find default encryption configuration secret")
-		return err
-	}
-	// we do not rotate or override the secret keys for encryption configuration
-	if found {
-		log.V(5).WithValues(
-			"defaultEncryptionSecret", defaultEncryptionSecretName(cluster.Name),
-		).Info(
-			"skip generating encryption configuration. Default encryption configuration secret exists",
-			defaultEncryptionSecretName(cluster.Name))
-		return nil
-	}
-
 	return patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+			cluster, err := clusterGetter(ctx)
+			if err != nil {
+				log.Error(err, "failed to get cluster from encryption mutation handler")
+				return err
+			}
+
+			found, err := h.DefaultEncryptionSecretExists(ctx, cluster)
+			if err != nil {
+				log.WithValues(
+					"defaultEncryptionSecret", defaultEncryptionSecretName(cluster.Name),
+				).Error(err, "failed to find default encryption configuration secret")
+				return err
+			}
+
+			// we do not rotate or override the secret keys for encryption configuration
+			if !found {
+				encConfig, err := h.generateEncryptionConfiguration(encryptionVariable.Providers)
+				if err != nil {
+					return err
+				}
+				if err := h.CreateEncryptionConfigurationSecret(ctx, encConfig, cluster); err != nil {
+					return err
+				}
+			}
+
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding encryption configuration files and API server extra args in control plane kubeadm config spec")
-			encConfig, err := h.generateEncryptionConfiguration(encryptionVariable.Providers)
-			if err != nil {
-				return err
-			}
-
-			if err := h.CreateEncryptionConfigurationSecret(ctx, encConfig, cluster); err != nil {
-				return err
-			}
 
 			// Create kubadm config file for encryption config
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
@@ -159,29 +153,33 @@ func generateEncryptionCredentialsFile(cluster *clusterv1.Cluster) cabpkv1.File 
 				Key:  SecretKeyForEtcdEncryption,
 			},
 		},
-		Permissions: "0600",
+		Permissions: "0640",
 	}
 }
 
 func (h *encryptionPatchHandler) generateEncryptionConfiguration(
-	providers *carenv1.EncryptionProviders,
+	providers []carenv1.EncryptionProviders,
 ) (*apiserverv1.EncryptionConfiguration, error) {
-	// We only support encryption for "secrets" and "configmaps" using "aescbc" provider.
-	resourceConfig, err := encryptionConfigForSecretsAndConfigMaps(
-		providers,
-		h.keyGenerator,
-	)
-	if err != nil {
-		return nil, err
+	resourceConfigs := []apiserverv1.ResourceConfiguration{}
+	for _, encProvider := range providers {
+		provider := encProvider
+		resourceConfig, err := encryptionConfigForSecretsAndConfigMaps(
+			&provider,
+			h.keyGenerator,
+		)
+		if err != nil {
+			return nil, err
+		}
+		resourceConfigs = append(resourceConfigs, *resourceConfig)
 	}
+	// We only support encryption for "secrets" and "configmaps" using "aescbc" provider.
+
 	return &apiserverv1.EncryptionConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: apiserverv1.SchemeGroupVersion.String(),
 			Kind:       "EncryptionConfiguration",
 		},
-		Resources: []apiserverv1.ResourceConfiguration{
-			*resourceConfig,
-		},
+		Resources: resourceConfigs,
 	}, nil
 }
 
