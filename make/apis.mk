@@ -51,7 +51,7 @@ api.sync.%: ; $(info $(M) syncing external API: $(PROVIDER_MODULE_$*)/$(PROVIDER
 	  --exclude='*webhook*.go' \
 	  --exclude='*test.go'     \
 	  --exclude='s3bucket.go'  \
-	  $$(cd $(PROVIDER_MODULE_DIR) && go list -m -f '{{ .Dir }}' $(PROVIDER_MODULE_$*))/$(PROVIDER_API_PATH_$*)/$(PROVIDER_API_VERSION_$*)/*.go \
+	  $$(cd $(PROVIDER_MODULE_DIR) && GOWORK=off go list -m -f '{{ .Dir }}' $(PROVIDER_MODULE_$*))/$(PROVIDER_API_PATH_$*)/$(PROVIDER_API_VERSION_$*)/*.go \
 	  $(PROVIDER_API_DIR)
 	find $(PROVIDER_API_DIR) -type d -exec chmod 0755 {} \;
 	find $(PROVIDER_API_DIR) -type f -exec chmod 0644 {} \;
