@@ -3,47 +3,27 @@
 package containerdapplypatchesandrestart
 
 import (
-	"bytes"
 	_ "embed"
-	"fmt"
-	"text/template"
 
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
 
-const (
-	tomlMergeImage                              = "ghcr.io/mesosphere/toml-merge:v0.2.0"
-	containerdPatchesDirOnRemote                = "/etc/containerd/cre.d"
-	containerdApplyPatchesScriptOnRemote        = "/etc/containerd/apply-patches.sh"
-	containerdApplyPatchesScriptOnRemoteCommand = "/bin/bash " + containerdApplyPatchesScriptOnRemote
+var (
+	containerdRestartScriptOnRemote        = common.ContainerdScriptPathOnRemote("restart.sh")
+	containerdRestartScriptOnRemoteCommand = "/bin/bash " + containerdRestartScriptOnRemote
 )
 
-//go:embed templates/containerd-apply-patches.sh.gotmpl
-var containerdApplyConfigPatchesScript []byte
+//go:embed templates/containerd-restart.sh
+var containerdRestartScript []byte
 
-func generateContainerdApplyPatchesScript() (bootstrapv1.File, string, error) {
-	t, err := template.New("").Parse(string(containerdApplyConfigPatchesScript))
-	if err != nil {
-		return bootstrapv1.File{}, "", fmt.Errorf("failed to parse go template: %w", err)
-	}
-
-	templateInput := struct {
-		TOMLMergeImage string
-		PatchDir       string
-	}{
-		TOMLMergeImage: tomlMergeImage,
-		PatchDir:       containerdPatchesDirOnRemote,
-	}
-
-	var b bytes.Buffer
-	err = t.Execute(&b, templateInput)
-	if err != nil {
-		return bootstrapv1.File{}, "", fmt.Errorf("failed executing template: %w", err)
-	}
-
+//nolint:gocritic // no need for named return values
+func generateContainerdRestartScript() (bootstrapv1.File, string) {
 	return bootstrapv1.File{
-		Path:        containerdApplyPatchesScriptOnRemote,
-		Content:     b.String(),
-		Permissions: "0700",
-	}, containerdApplyPatchesScriptOnRemoteCommand, nil
+			Path:        containerdRestartScriptOnRemote,
+			Content:     string(containerdRestartScript),
+			Permissions: "0700",
+		},
+		containerdRestartScriptOnRemoteCommand
 }

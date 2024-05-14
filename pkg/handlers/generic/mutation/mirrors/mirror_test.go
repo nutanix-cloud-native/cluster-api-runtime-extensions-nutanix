@@ -161,7 +161,7 @@ func Test_generateMirrorCACertFile(t *testing.T) {
 func Test_generateContainerdRegistryConfigDropInFile(t *testing.T) {
 	want := []cabpkv1.File{
 		{
-			Path:        "/etc/containerd/cre.d/registry-config.toml",
+			Path:        "/etc/caren/containerd/patches/registry-config.toml",
 			Owner:       "",
 			Permissions: "0600",
 			Encoding:    "",

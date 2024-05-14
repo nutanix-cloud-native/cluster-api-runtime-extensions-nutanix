@@ -4,23 +4,16 @@ package containerdmetrics
 
 import (
 	_ "embed"
-	"path"
 
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-)
 
-const (
-	// TODO Factor out this constant to a common package.
-	containerdPatchesDirOnRemote = "/etc/containerd/cre.d"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
 
 var (
 	//go:embed files/metrics-config.toml
 	metricsConfigDropIn             []byte
-	metricsConfigDropInFileOnRemote = path.Join(
-		containerdPatchesDirOnRemote,
-		"metrics-config.toml",
-	)
+	metricsConfigDropInFileOnRemote = common.ContainerdPatchPathOnRemote("metrics-config.toml")
 )
 
 func generateMetricsConfigDropIn() cabpkv1.File {

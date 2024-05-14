@@ -42,7 +42,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 							"path", containerdApplyPatchesScriptOnRemote,
 						),
 						gomega.HaveKeyWithValue(
-							"path", ContainerdRestartScriptOnRemote,
+							"path", containerdRestartScriptOnRemote,
 						),
 					),
 				},
@@ -51,7 +51,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 					ValueMatcher: gomega.HaveExactElements(
 						containerdApplyPatchesScriptOnRemoteCommand,
-						ContainerdRestartScriptOnRemoteCommand,
+						containerdRestartScriptOnRemoteCommand,
 					),
 				},
 			},
@@ -78,7 +78,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 							"path", containerdApplyPatchesScriptOnRemote,
 						),
 						gomega.HaveKeyWithValue(
-							"path", ContainerdRestartScriptOnRemote,
+							"path", containerdRestartScriptOnRemote,
 						),
 					),
 				},
@@ -87,7 +87,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 					Path:      "/spec/template/spec/preKubeadmCommands",
 					ValueMatcher: gomega.HaveExactElements(
 						containerdApplyPatchesScriptOnRemoteCommand,
-						ContainerdRestartScriptOnRemoteCommand,
+						containerdRestartScriptOnRemoteCommand,
 					),
 				},
 			},
@@ -109,7 +109,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 
 func Test_generateContainerdApplyPatchesScript(t *testing.T) {
 	wantFile := bootstrapv1.File{
-		Path:        "/etc/containerd/apply-patches.sh",
+		Path:        "/etc/caren/containerd/apply-patches.sh",
 		Owner:       "",
 		Permissions: "0700",
 		Encoding:    "",
@@ -126,7 +126,7 @@ IFS=$'\n\t'
 # using -e does not work with globs.
 # See https://github.com/koalaman/shellcheck/wiki/SC2144 for an explanation of the following loop.
 patches_exist=false
-for file in "/etc/containerd/cre.d"/*.toml; do
+for file in "/etc/caren/containerd/patches"/*.toml; do
   if [ -e "${file}" ]; then
     patches_exist=true
   fi
@@ -135,7 +135,7 @@ for file in "/etc/containerd/cre.d"/*.toml; do
 done
 
 if [ "${patches_exist}" = false ]; then
-  echo "No TOML files found in the patch directory: /etc/containerd/cre.d - nothing to do"
+  echo "No TOML files found in the patch directory: /etc/caren/containerd/patches - nothing to do"
   exit 0
 fi
 
@@ -158,10 +158,10 @@ readonly tmp_ctr_mount_dir="$(mktemp -d)"
 
 # Mount the toml-merge image filesystem and run the toml-merge binary to merge the TOML files.
 ctr --namespace k8s.io images mount "${TOML_MERGE_IMAGE}" "${tmp_ctr_mount_dir}"
-"${tmp_ctr_mount_dir}/usr/local/bin/toml-merge" -i --patch-file "/etc/containerd/cre.d/*.toml" /etc/containerd/config.toml
+"${tmp_ctr_mount_dir}/usr/local/bin/toml-merge" -i --patch-file "/etc/caren/containerd/patches/*.toml" /etc/containerd/config.toml
 `,
 	}
-	wantCmd := "/bin/bash /etc/containerd/apply-patches.sh"
+	wantCmd := "/bin/bash /etc/caren/containerd/apply-patches.sh"
 	file, cmd, _ := generateContainerdApplyPatchesScript()
 	assert.Equal(t, wantFile, file)
 	assert.Equal(t, wantCmd, cmd)
