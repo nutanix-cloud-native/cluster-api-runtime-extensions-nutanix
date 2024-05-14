@@ -29,6 +29,9 @@ spec:
             strategy: ClusterResourceSet
           nfd:
             strategy: ClusterResourceSet
+        encryptionAtRest:
+          providers:
+          - aescbc: {}
     - name: workerConfig
       value: {}
     version: ${KUBERNETES_VERSION}

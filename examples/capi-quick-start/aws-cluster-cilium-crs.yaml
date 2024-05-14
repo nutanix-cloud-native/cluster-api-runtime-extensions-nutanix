@@ -47,6 +47,9 @@ spec:
                 baseOS: ${AMI_LOOKUP_BASEOS}
                 format: ${AMI_LOOKUP_FORMAT}
                 org: "${AMI_LOOKUP_ORG}"
+        encryptionAtRest:
+          providers:
+          - aescbc: {}
     - name: workerConfig
       value:
         aws:
