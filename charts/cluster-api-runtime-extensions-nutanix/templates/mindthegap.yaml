@@ -1,23 +1,35 @@
 # Copyright 2023 D2iQ, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-
+#
+# This file contains the manifests to run a mindthegap deployment which contains helm charts for our addons.
+# The pod is built via goreleaser with configuration from hack/addons.
+#
+# NOTE: We use a hard code namespace here because trust-manager
+# need to set app.trust.namespace to be able to read secrets
+# from this namespace. We then distribute the certificates
+# to CAAPH system, which is the primary user of this service.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mindthegap
+---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: mindthegap-selfsigned
-  namespace: {{ .Release.Namespace }}
+  namespace: mindthegap
 spec:
   selfSigned: {}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: mindthegap-example-tls
-  namespace: {{ .Release.Namespace }}
+  name: mindthegap-tls
+  namespace: mindthegap
 spec:
   dnsNames:
-  - mindthegap.default.svc
-  - mindthegap.default.svc.cluster.local
+  - mindthegap.mindthegap.svc
+  - mindthegap.mindthegap.svc.cluster.local
   issuerRef:
     name: mindthegap-selfsigned
     kind: Issuer
@@ -27,7 +39,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mindthegap
-  namespace: {{ .Release.Namespace }}
+  namespace: mindthegap
   labels:
     app: mindthegap
 spec:
@@ -64,7 +76,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mindthegap
-  namespace: {{ .Release.Namespace }}
+  namespace: mindthegap
 spec:
   selector:
     app: mindthegap

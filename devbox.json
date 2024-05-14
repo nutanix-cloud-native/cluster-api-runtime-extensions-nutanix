@@ -29,6 +29,7 @@
     "shfmt@latest",
     "yamale@latest",
     "yamllint@latest",
+    "yq@latest",
     "path:./hack/flakes#clusterawsadm",
     "path:./hack/flakes#clusterctl",
     "path:./hack/flakes#controller-gen",

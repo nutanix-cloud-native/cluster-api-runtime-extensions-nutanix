@@ -25,7 +25,7 @@ repositories:
     repoURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
     charts:
       node-feature-discovery:
-      - v0.15.2
+      - 0.15.2
   nutanix-cloud-provider:
     repoURL: https://nutanix.github.io/helm/
     charts:

@@ -3,7 +3,7 @@
 
 export CALICO_VERSION := v3.26.4
 export CILIUM_VERSION := 1.15.0
-export NODE_FEATURE_DISCOVERY_VERSION := v0.15.2
+export NODE_FEATURE_DISCOVERY_VERSION := 0.15.2
 export CLUSTER_AUTOSCALER_VERSION := 9.35.0
 export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.3
 export AWS_EBS_CSI_CHART_VERSION := v2.28.1
@@ -54,8 +54,8 @@ update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)
 update-addon.kube-vip: ; $(info $(M) updating kube-vip manifests)
 	./hack/addons/update-kube-vip-manifests.sh
 
-.PHONY: generate-helm-configmap ## this file is now used by generate-mindthegap-repofile
-generate-helm-configmap: ; $(info $(M) genrating helm configmap)
+.PHONY: generate-helm-configmap
+generate-helm-configmap: ; $(info $(M) genrating helm configmap) ## this file is now used by generate-mindthegap-repofile
 	go run hack/tools/helm-cm/main.go -kustomize-directory="./hack/addons/kustomize" -output-file="./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
 	./hack/addons/add-warning-helm-configmap.sh
 
@@ -63,6 +63,6 @@ generate-helm-configmap: ; $(info $(M) genrating helm configmap)
 generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating helm repofile for mindthgap)
 	./hack/addons/generate-mindthegap-repofile.sh
 
-.PHONY: replace-with-mindthegap ## this is used by gorealeaser to set the helm value to this.
-replace-with-mindthegap: generate-mindthegap-repofile
-	sed -i 's/RepositoryURL:.*/RepositoryURL: oci:\/\/mindthegap.{{ .Release.Namespace }}.svc/g' "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
+.PHONY: replace-with-mindthegap
+replace-with-mindthegap: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
+	sed -i 's/RepositoryURL:.*/RepositoryURL: oci:\/\/mindthegap.mindthegap.svc\/charts/g' "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
