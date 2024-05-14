@@ -12,7 +12,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdapplypatchesandrestart"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdmetrics"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdunprivilegedports"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/encryption"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/encryptionatrest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/etcd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/extraapiservercertsans"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/httpproxy"
@@ -36,11 +36,7 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		users.NewPatch(),
 		containerdmetrics.NewPatch(),
 		containerdunprivilegedports.NewPatch(),
-		encryption.NewPatch(&encryption.Config{
-			Client:                mgr.GetClient(),
-			AESSecretKeyGenerator: encryption.RandomTokenGenerator,
-		}),
-		encryption.NewPatch(mgr.GetClient(), encryption.RandomTokenGenerator),
+		encryptionatrest.NewPatch(mgr.GetClient(), encryptionatrest.RandomTokenGenerator),
 
 		// Some patches may have changed containerd configuration.
 		// We write the configuration changes to disk, and must run a command

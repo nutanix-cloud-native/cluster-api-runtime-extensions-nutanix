@@ -1,7 +1,7 @@
 // Copyright 2024 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package encryption
+package encryptionatrest
 
 import (
 	"context"
@@ -100,7 +100,7 @@ func (h *encryptionPatchHandler) Mutate(
 				return err
 			}
 
-			found, err := h.DefaultEncryptionSecretExists(ctx, cluster)
+			found, err := h.defaultEncryptionSecretExists(ctx, cluster)
 			if err != nil {
 				log.WithValues(
 					"defaultEncryptionSecret", defaultEncryptionSecretName(cluster.Name),
@@ -110,11 +110,13 @@ func (h *encryptionPatchHandler) Mutate(
 
 			// we do not rotate or override the secret keys for encryption configuration
 			if !found {
-				encConfig, err := h.generateEncryptionConfiguration(encryptionVariable.Providers)
+				encryptionConfig, err := h.generateEncryptionConfiguration(
+					encryptionVariable.Providers,
+				)
 				if err != nil {
 					return err
 				}
-				if err := h.CreateEncryptionConfigurationSecret(ctx, encConfig, cluster); err != nil {
+				if err := h.createEncryptionConfigurationSecret(ctx, encryptionConfig, cluster); err != nil {
 					return err
 				}
 			}
@@ -163,7 +165,7 @@ func (h *encryptionPatchHandler) generateEncryptionConfiguration(
 	resourceConfigs := []apiserverv1.ResourceConfiguration{}
 	for _, encProvider := range providers {
 		provider := encProvider
-		resourceConfig, err := encryptionConfigForSecretsAndConfigMaps(
+		resourceConfig, err := defaultEncryptionConfiguration(
 			&provider,
 			h.keyGenerator,
 		)
@@ -183,7 +185,7 @@ func (h *encryptionPatchHandler) generateEncryptionConfiguration(
 	}, nil
 }
 
-func (h *encryptionPatchHandler) DefaultEncryptionSecretExists(
+func (h *encryptionPatchHandler) defaultEncryptionSecretExists(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 ) (bool, error) {
@@ -208,7 +210,7 @@ func (h *encryptionPatchHandler) DefaultEncryptionSecretExists(
 	return true, nil
 }
 
-func (h *encryptionPatchHandler) CreateEncryptionConfigurationSecret(
+func (h *encryptionPatchHandler) createEncryptionConfigurationSecret(
 	ctx context.Context,
 	encryptionConfig *apiserverv1.EncryptionConfiguration,
 	cluster *clusterv1.Cluster,
@@ -251,7 +253,7 @@ func (h *encryptionPatchHandler) CreateEncryptionConfigurationSecret(
 }
 
 // We only support encryption for "secrets" and "configmaps".
-func encryptionConfigForSecretsAndConfigMaps(
+func defaultEncryptionConfiguration(
 	providers *carenv1.EncryptionProviders,
 	secretGenerator TokenGenerator,
 ) (*apiserverv1.ResourceConfiguration, error) {

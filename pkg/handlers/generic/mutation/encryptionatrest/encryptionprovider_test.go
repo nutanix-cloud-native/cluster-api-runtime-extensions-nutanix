@@ -1,7 +1,7 @@
 // Copyright 2024 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package encryption
+package encryptionatrest
 
 import (
 	"encoding/base64"
@@ -77,7 +77,7 @@ func Test_encryptionConfigForSecretsAndConfigMaps(t *testing.T) {
 
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
-			got, gErr := encryptionConfigForSecretsAndConfigMaps(
+			got, gErr := defaultEncryptionConfiguration(
 				tt.providers,
 				testTokenGenerator)
 			assert.Equal(t, tt.wantErr, gErr)
