@@ -29,6 +29,9 @@ spec:
             strategy: HelmAddon
           nfd:
             strategy: HelmAddon
+        encryptionAtRest:
+          providers:
+          - aescbc: {}
     - name: workerConfig
       value: {}
     version: ${KUBERNETES_VERSION}

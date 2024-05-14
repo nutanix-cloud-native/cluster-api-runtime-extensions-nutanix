@@ -105,6 +105,9 @@ spec:
               systemDiskSize: 40Gi
               vcpuSockets: 2
               vcpusPerSocket: 1
+        encryptionAtRest:
+          providers:
+          - aescbc: {}
         imageRegistries:
         - credentials:
             secretRef:
