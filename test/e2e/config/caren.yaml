@@ -184,15 +184,15 @@ variables:
   AMI_LOOKUP_ORG: "999867407951"
   # To run Nutanix provider tests, set following variables here or as an env var
   # # IP/FQDN of Prism Central.
-  NUTANIX_ENDPOINT: ""
+  # NUTANIX_ENDPOINT: ""
   # # Port of Prism Central. Default: 9440
   # NUTANIX_PORT: 9440
   # # Disable Prism Central certificate checking. Default: false
   # NUTANIX_INSECURE: false
   # # Prism Central user
-  NUTANIX_USER: ""
+  # NUTANIX_USER: ""
   # # Prism Central password
-  NUTANIX_PASSWORD: ""
+  # NUTANIX_PASSWORD: ""
   # # Host IP to be assigned to the CAPX Kubernetes cluster.
   # CONTROL_PLANE_ENDPOINT_IP: ""
   # # Port of the CAPX Kubernetes cluster. Default: 6443
