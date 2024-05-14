@@ -68,7 +68,7 @@ func (s crsStrategy) apply(
 
 	cluster := &req.Cluster
 
-	data := templateData(defaultCM.Data, cluster.Name, cluster.Namespace)
+	data := templateData(cluster, defaultCM.Data)
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),

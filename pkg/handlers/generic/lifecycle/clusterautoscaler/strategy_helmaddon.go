@@ -73,6 +73,14 @@ func (s helmAddonStrategy) apply(
 		return err
 	}
 
+	// Cannot rely directly on Cluster.metadata.Name and Cluster.metadata.Namespace values
+	// because the selected Cluster will always be the management cluster.
+	// By templating the values, we will have unique Deployment name for each cluster.
+	values, err = templateValues(&req.Cluster, values)
+	if err != nil {
+		return fmt.Errorf("failed to template Helm values read from ConfigMap: %w", err)
+	}
+
 	hcp := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: caaphv1.GroupVersion.String(),
