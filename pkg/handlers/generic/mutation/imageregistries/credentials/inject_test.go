@@ -11,7 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -126,15 +130,13 @@ func TestImageRegistriesPatch(t *testing.T) {
 }
 
 var _ = Describe("Generate Image registry patches", func() {
+	clientScheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+
 	patchGenerator := func() mutation.GeneratePatches {
-		// Always initialize the testEnv variable in the closure.
-		// This will allow ginkgo to initialize testEnv variable during test execution time.
-		testEnv := helpers.TestEnv
-		// use direct client instead of controller client. This will allow the patch handler to read k8s object
-		// that are written by the tests.
-		// Test cases writes credentials secret that the mutator handler reads.
-		// Using direct client will enable reading it immediately.
-		client, err := testEnv.GetK8sClient()
+		// Use direct client to allow patch handler to read objects created by tests.
+		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		gomega.Expect(err).To(gomega.BeNil())
 		return mutation.NewMetaGeneratePatchesHandler("", client, NewPatch(client)).(mutation.GeneratePatches)
 	}
@@ -392,21 +394,43 @@ var _ = Describe("Generate Image registry patches", func() {
 
 	// Create credentials secret before each test
 	BeforeEach(func(ctx SpecContext) {
-		client, err := helpers.TestEnv.GetK8sClient()
+		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		gomega.Expect(err).To(gomega.BeNil())
+
 		gomega.Expect(client.Create(
 			ctx,
 			newRegistryCredentialsSecret(validSecretName, request.Namespace),
+		)).To(gomega.BeNil())
+
+		gomega.Expect(client.Create(
+			ctx,
+			&clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: request.Namespace,
+				},
+			},
 		)).To(gomega.BeNil())
 	})
 
 	// Delete credentials secret after each test
 	AfterEach(func(ctx SpecContext) {
-		client, err := helpers.TestEnv.GetK8sClient()
+		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		gomega.Expect(err).To(gomega.BeNil())
+
 		gomega.Expect(client.Delete(
 			ctx,
 			newRegistryCredentialsSecret(validSecretName, request.Namespace),
+		)).To(gomega.BeNil())
+
+		gomega.Expect(client.Delete(
+			ctx,
+			&clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: request.Namespace,
+				},
+			},
 		)).To(gomega.BeNil())
 	})
 	// create test node for each case

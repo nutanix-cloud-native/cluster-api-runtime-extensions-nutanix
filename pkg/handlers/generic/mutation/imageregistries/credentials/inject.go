@@ -12,11 +12,13 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -69,7 +71,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	clusterKey ctrlclient.ObjectKey,
-	_ mutation.ClusterGetter,
+	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
@@ -172,7 +174,16 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				commands...,
 			)
 
-			generateErr = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, clusterKey)
+			cluster, err := clusterGetter(ctx)
+			if err != nil {
+				log.Error(
+					err,
+					"failed to get cluster from Image Registry Credentials mutation handler",
+				)
+				return err
+			}
+
+			generateErr = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
 			if generateErr != nil {
 				return generateErr
 			}
@@ -216,7 +227,16 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			).Info("adding PreKubeadmCommands to worker node kubeadm config template")
 			obj.Spec.Template.Spec.PreKubeadmCommands = append(obj.Spec.Template.Spec.PreKubeadmCommands, commands...)
 
-			generateErr := createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, clusterKey)
+			cluster, err := clusterGetter(ctx)
+			if err != nil {
+				log.Error(
+					err,
+					"failed to get cluster from Image Registry Credentials mutation handler",
+				)
+				return err
+			}
+
+			generateErr := createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
 			if generateErr != nil {
 				return generateErr
 			}
@@ -335,12 +355,12 @@ func createSecretIfNeeded(
 	ctx context.Context,
 	c ctrlclient.Client,
 	registriesWithOptionalCredentials []providerConfig,
-	clusterKey ctrlclient.ObjectKey,
+	cluster *clusterv1.Cluster,
 ) error {
 	credentialsSecret, err := generateCredentialsSecret(
 		registriesWithOptionalCredentials,
-		clusterKey.Name,
-		clusterKey.Namespace,
+		cluster.Name,
+		cluster.Namespace,
 	)
 	if err != nil {
 		return fmt.Errorf(
@@ -351,6 +371,13 @@ func createSecretIfNeeded(
 	if credentialsSecret != nil {
 		if err := client.ServerSideApply(ctx, c, credentialsSecret, client.ForceOwnership); err != nil {
 			return fmt.Errorf("failed to apply Image Registry Credentials Secret: %w", err)
+		}
+
+		if err = controllerutil.SetOwnerReference(cluster, credentialsSecret, c.Scheme()); err != nil {
+			return fmt.Errorf(
+				"failed to set owner reference on Image Registry Credentials Secret: %w",
+				err,
+			)
 		}
 	}
 
