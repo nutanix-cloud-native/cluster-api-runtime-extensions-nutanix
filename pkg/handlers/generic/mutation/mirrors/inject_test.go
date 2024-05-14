@@ -72,16 +72,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/cre.d/registry-config.toml",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/apply-patches.sh",
-						),
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElements(
-						"/bin/bash /etc/containerd/apply-patches.sh",
 					),
 				},
 			},
@@ -117,16 +107,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/cre.d/registry-config.toml",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/apply-patches.sh",
-						),
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElements(
-						"/bin/bash /etc/containerd/apply-patches.sh",
 					),
 				},
 			},
@@ -162,16 +142,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/cre.d/registry-config.toml",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/apply-patches.sh",
-						),
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElements(
-						"/bin/bash /etc/containerd/apply-patches.sh",
 					),
 				},
 			},
@@ -215,16 +185,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/cre.d/registry-config.toml",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/apply-patches.sh",
-						),
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElements(
-						"/bin/bash /etc/containerd/apply-patches.sh",
 					),
 				},
 			},

@@ -9,8 +9,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/cni/calico"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/auditpolicy"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdapplypatchesandrestart"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdmetrics"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdrestart"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/etcd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/extraapiservercertsans"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/httpproxy"
@@ -35,12 +35,14 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		containerdmetrics.NewPatch(),
 
 		// Some patches may have changed containerd configuration.
-		// We must restart containerd for the configuration to take effect.
+		// We write the configuration changes to disk, and must run a command
+		// to apply the changes to the actual containerd configuration.
+		// We then must restart containerd for the configuration to take effect.
 		// Therefore, we must apply this patch last.
 		//
 		// Containerd restart and readiness altogether could take ~5s.
 		// We want to keep patch independent of each other and not share any state.
 		// Therefore, We must always apply this patch regardless any other patch modified containerd configuration.
-		containerdrestart.NewPatch(),
+		containerdapplypatchesandrestart.NewPatch(),
 	}
 }

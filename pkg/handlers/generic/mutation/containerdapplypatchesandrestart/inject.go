@@ -1,9 +1,10 @@
 // Copyright 2023 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
-package containerdrestart
+package containerdapplypatchesandrestart
 
 import (
 	"context"
+	_ "embed"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,13 +19,13 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 )
 
-type containerdRestartPatchHandler struct{}
+type containerdApplyPatchesAndRestartPatchHandler struct{}
 
-func NewPatch() *containerdRestartPatchHandler {
-	return &containerdRestartPatchHandler{}
+func NewPatch() *containerdApplyPatchesAndRestartPatchHandler {
+	return &containerdApplyPatchesAndRestartPatchHandler{}
 }
 
-func (h *containerdRestartPatchHandler) Mutate(
+func (h *containerdApplyPatchesAndRestartPatchHandler) Mutate(
 	ctx context.Context,
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
@@ -36,7 +37,12 @@ func (h *containerdRestartPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	file, command := generateContainerdRestartScript()
+	restartFile, restartCommand := generateContainerdRestartScript()
+
+	applyPatchesFile, applyPatchesCommand, err := generateContainerdApplyPatchesScript()
+	if err != nil {
+		return err
+	}
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
@@ -44,19 +50,21 @@ func (h *containerdRestartPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding containerd restart script to control plane kubeadm config spec")
+			).Info("adding containerd apply patches and restart scripts to control plane kubeadm config spec")
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				file,
+				applyPatchesFile,
+				restartFile,
 			)
 
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding containerd restart command to control plane kubeadm config spec")
+			).Info("adding containerd apply patches and restart commands to control plane kubeadm config spec")
 			obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
-				command,
+				applyPatchesCommand,
+				restartCommand,
 			)
 
 			return nil
@@ -70,14 +78,22 @@ func (h *containerdRestartPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding containerd restart script to worker node kubeadm config template")
-			obj.Spec.Template.Spec.Files = append(obj.Spec.Template.Spec.Files, file)
+			).Info("adding containerd apply patches and restart scripts to worker node kubeadm config template")
+			obj.Spec.Template.Spec.Files = append(
+				obj.Spec.Template.Spec.Files,
+				applyPatchesFile,
+				restartFile,
+			)
 
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding containerd restart command to worker node kubeadm config template")
-			obj.Spec.Template.Spec.PreKubeadmCommands = append(obj.Spec.Template.Spec.PreKubeadmCommands, command)
+			).Info("adding containerd apply patches and restart commands to worker node kubeadm config template")
+			obj.Spec.Template.Spec.PreKubeadmCommands = append(
+				obj.Spec.Template.Spec.PreKubeadmCommands,
+				applyPatchesCommand,
+				restartCommand,
+			)
 
 			return nil
 		}); err != nil {
