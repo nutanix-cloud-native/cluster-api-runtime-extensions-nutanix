@@ -198,7 +198,7 @@ jobs:
         name: Run chart-testing (lint)
         run: |
           devbox run -- \
-            ct lint --config charts/ct-config.yaml
+            ct lint --namespace=caren-system --config charts/ct-config.yaml
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Create kind cluster
