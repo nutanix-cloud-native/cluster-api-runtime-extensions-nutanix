@@ -200,6 +200,9 @@ type GenericClusterConfigSpec struct {
 
 	// +kubebuilder:validation:Optional
 	Users []User `json:"users,omitempty"`
+
+	// +optional
+	EncryptionAtRest *EncryptionAtRest `json:"encryptionAtRest,omitempty"`
 }
 
 type Image struct {
@@ -278,6 +281,28 @@ type User struct {
 	// +kubebuilder:validation:Optional
 	Sudo string `json:"sudo,omitempty"`
 }
+
+// EncryptionAtRest defines the configuration to enable encryption at REST
+// This configuration is used by API server to encrypt data before storing it in ETCD.
+// Currently the encryption only enabled for secrets and configmaps.
+type EncryptionAtRest struct {
+	// Encryption providers
+	// +kubebuilder:default={{aescbc:{}}}
+	// +kubebuilder:validation:MaxItems=1
+	// +kubebuilder:validation:Optional
+	Providers []EncryptionProviders `json:"providers,omitempty"`
+}
+
+type EncryptionProviders struct {
+	// +kubebuilder:validation:Optional
+	AESCBC *AESConfiguration `json:"aescbc,omitempty"`
+	// +kubebuilder:validation:Optional
+	Secretbox *SecretboxConfiguration `json:"secretbox,omitempty"`
+}
+
+type AESConfiguration struct{}
+
+type SecretboxConfiguration struct{}
 
 func init() {
 	SchemeBuilder.Register(

@@ -239,6 +239,26 @@ spec:
                 type: object
               docker:
                 type: object
+              encryptionAtRest:
+                description: |-
+                  EncryptionAtRest defines the configuration to enable encryption at REST
+                  This configuration is used by API server to encrypt data before storing it in ETCD.
+                  Currently the encryption only enabled for secrets and configmaps.
+                properties:
+                  providers:
+                    default:
+                    - aescbc: {}
+                    description: Encryption providers
+                    items:
+                      properties:
+                        aescbc:
+                          type: object
+                        secretbox:
+                          type: object
+                      type: object
+                    maxItems: 1
+                    type: array
+                type: object
               etcd:
                 properties:
                   image:
