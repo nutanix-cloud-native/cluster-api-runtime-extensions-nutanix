@@ -76,7 +76,10 @@ func init() {
 func TestE2E(t *testing.T) {
 	ctrl.SetLogger(klog.Background())
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "caren-e2e")
+	suiteConfig, reporterConfig := GinkgoConfiguration()
+	suiteConfig.LabelFilter = "provider:Docker && cni:Cilium && addonStrategy:ClusterResourceSet"
+	suiteConfig.FocusStrings = []string{"Quick start"}
+	RunSpecs(t, "caren-e2e", suiteConfig, reporterConfig)
 }
 
 // Using a SynchronizedBeforeSuite for controlling how to create resources shared across ParallelNodes (~ginkgo

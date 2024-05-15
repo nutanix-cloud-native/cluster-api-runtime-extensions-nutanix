@@ -24,5 +24,6 @@
                 "url": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
             },
         ],
+        "ginkgotestexplorer.buildTags": "e2e",
     },
 }

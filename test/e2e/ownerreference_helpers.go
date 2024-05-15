@@ -40,7 +40,8 @@ const (
 	helmChartProxyKind   = "HelmChartProxy"
 	helmReleaseProxyKind = "HelmReleaseProxy"
 
-	secretKind = "Secret"
+	secretKind    = "Secret"
+	configMapKind = "ConfigMap"
 )
 
 var (
@@ -158,10 +159,21 @@ var (
 			// NutanixClusterTemplate must be owned by a ClusterClass.
 			return framework.HasExactOwners(owners, clusterClassOwner)
 		},
+	}
+
+	// KubernetesReferenceAssertions maps Kubernetes types to functions which return an error if the passed OwnerReferences
+	// aren't as expected.
+	// Note: These relationships are documented in
+	// https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
+	KubernetesReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
 		secretKind: func(owners []metav1.OwnerReference) error {
 			// TODO:deepakm-ntnx Currently pc-creds, pc-creds-for-csi, dockerhub-credentials
 			// and registry-creds have unexpected owners which needs more investigation
 			return nil
+		},
+		configMapKind: func(owners []metav1.OwnerReference) error {
+			// The only configMaps considered here are those owned by a ClusterResourceSet.
+			return framework.HasExactOwners(owners, clusterResourceSetOwner)
 		},
 	}
 )
