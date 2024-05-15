@@ -45,7 +45,13 @@ type NutanixPrismCentralEndpointSpec struct {
 
 	// A reference to the Secret for credential information for the target Prism Central instance.
 	// +kubebuilder:validation:Required
-	Credentials LocalObjectReference `json:"credentials"`
+	Credentials NutanixPrismCentralEndpointCredentials `json:"credentials"`
+}
+
+type NutanixPrismCentralEndpointCredentials struct {
+	// A reference to the Secret containing the Prism Central credentials.
+	// +kubebuilder:validation:Required
+	SecretRef LocalObjectReference `json:"secretRef"`
 }
 
 //nolint:gocritic // No need for named return values

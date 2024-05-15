@@ -45,7 +45,10 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	var b bytes.Buffer
 	err = clusterAutoscalerTemplate.Execute(&b, templateInput)
 	if err != nil {
-		return "", fmt.Errorf("failed setting target Cluster name and namespace in template: %w", err)
+		return "", fmt.Errorf(
+			"failed setting target Cluster name and namespace in template: %w",
+			err,
+		)
 	}
 
 	return b.String(), nil

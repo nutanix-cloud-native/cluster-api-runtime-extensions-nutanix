@@ -38,8 +38,10 @@ func TestVariableValidation(t *testing.T) {
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL: testPrismCentralURL,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 				},
@@ -56,8 +58,10 @@ func TestVariableValidation(t *testing.T) {
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL: testPrismCentralURL,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 				},
@@ -75,8 +79,10 @@ func TestVariableValidation(t *testing.T) {
 					// PrismCentralEndpoint is a required field and must always be set
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL: testPrismCentralURL,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 				},

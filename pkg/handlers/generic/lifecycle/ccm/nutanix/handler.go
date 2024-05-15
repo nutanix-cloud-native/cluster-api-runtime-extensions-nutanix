@@ -105,7 +105,7 @@ func (p *provider) Apply(
 		err = lifecycleutils.CopySecretToRemoteCluster(
 			ctx,
 			p.client,
-			clusterConfig.Addons.CCM.Credentials.Name,
+			clusterConfig.Addons.CCM.Credentials.SecretRef.Name,
 			key,
 			cluster,
 		)
