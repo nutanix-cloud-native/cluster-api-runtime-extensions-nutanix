@@ -21,7 +21,8 @@ spec:
           nutanix:
             prismCentralEndpoint:
               credentials:
-                name: secret-name
+                secretRef:
+                  name: secret-name
               url: https://x.x.x.x:9440
               insecure: false
 ```

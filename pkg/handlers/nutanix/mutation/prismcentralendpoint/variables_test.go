@@ -32,8 +32,10 @@ func TestVariableValidation(t *testing.T) {
 							v1alpha1.DefaultPrismCentralPort,
 						),
 						Insecure: false,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 					// ControlPlaneEndpoint is a required field and must always be set
@@ -54,8 +56,10 @@ func TestVariableValidation(t *testing.T) {
 							v1alpha1.DefaultPrismCentralPort,
 						),
 						Insecure: false,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 					// ControlPlaneEndpoint is a required field and must always be set
@@ -73,8 +77,10 @@ func TestVariableValidation(t *testing.T) {
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com",
 						Insecure: false,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 					// ControlPlaneEndpoint is a required field and must always be set
@@ -91,8 +97,10 @@ func TestVariableValidation(t *testing.T) {
 				Nutanix: &v1alpha1.NutanixSpec{
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						Insecure: false,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 					// ControlPlaneEndpoint is a required field and must always be set
@@ -111,8 +119,10 @@ func TestVariableValidation(t *testing.T) {
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "http://prism-central.nutanix.com",
 						Insecure: false,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 					// ControlPlaneEndpoint is a required field and must always be set
@@ -131,8 +141,10 @@ func TestVariableValidation(t *testing.T) {
 					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "not-a-valid-url",
 						Insecure: false,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 					// ControlPlaneEndpoint is a required field and must always be set

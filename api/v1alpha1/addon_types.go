@@ -145,7 +145,7 @@ type CSIProvider struct {
 
 	// The reference to any secret used by the CSI Provider.
 	// +kubebuilder:validation:Optional
-	Credentials *LocalObjectReference `json:"credentials,omitempty"`
+	Credentials *CSICredentials `json:"credentials,omitempty"`
 }
 
 type StorageClassConfig struct {
@@ -174,11 +174,23 @@ type StorageClassConfig struct {
 	AllowExpansion bool `json:"allowExpansion,omitempty"`
 }
 
+type CSICredentials struct {
+	// A reference to the Secret containing the credentials used by the CSI provider.
+	// +kubebuilder:validation:Required
+	SecretRef LocalObjectReference `json:"secretRef"`
+}
+
 // CCM tells us to enable or disable the cloud provider interface.
 type CCM struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
 	// +kubebuilder:validation:Optional
-	Credentials *LocalObjectReference `json:"credentials,omitempty"`
+	Credentials *CCMCredentials `json:"credentials,omitempty"`
+}
+
+type CCMCredentials struct {
+	// A reference to the Secret containing the credentials used by the CCM provider.
+	// +kubebuilder:validation:Required
+	SecretRef LocalObjectReference `json:"secretRef"`
 }
 
 type ServiceLoadBalancer struct {

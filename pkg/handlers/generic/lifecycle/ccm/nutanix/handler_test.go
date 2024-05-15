@@ -70,8 +70,10 @@ func Test_templateValues(t *testing.T) {
 				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
 					Addons: &v1alpha1.Addons{
 						CCM: &v1alpha1.CCM{
-							Credentials: &v1alpha1.LocalObjectReference{
-								Name: "creds",
+							Credentials: &v1alpha1.CCMCredentials{
+								SecretRef: v1alpha1.LocalObjectReference{
+									Name: "creds",
+								},
 							},
 						},
 					},
@@ -95,8 +97,10 @@ func Test_templateValues(t *testing.T) {
 				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
 					Addons: &v1alpha1.Addons{
 						CCM: &v1alpha1.CCM{
-							Credentials: &v1alpha1.LocalObjectReference{
-								Name: "creds",
+							Credentials: &v1alpha1.CCMCredentials{
+								SecretRef: v1alpha1.LocalObjectReference{
+									Name: "creds",
+								},
 							},
 						},
 					},

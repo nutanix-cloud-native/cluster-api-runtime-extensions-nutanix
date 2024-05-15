@@ -45,8 +45,10 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 					nutanixclusterconfig.NutanixVariableName,
@@ -79,8 +81,10 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com",
 						Insecure: true,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 					},
 					nutanixclusterconfig.NutanixVariableName,
@@ -116,8 +120,10 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
-						Credentials: v1alpha1.LocalObjectReference{
-							Name: "credentials",
+						Credentials: v1alpha1.NutanixPrismCentralEndpointCredentials{
+							SecretRef: v1alpha1.LocalObjectReference{
+								Name: "credentials",
+							},
 						},
 						AdditionalTrustBundle: testCertBundle,
 					},

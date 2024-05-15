@@ -104,7 +104,7 @@ func (n *NutanixCSI) Apply(
 		err := lifecycleutils.CopySecretToRemoteCluster(
 			ctx,
 			n.client,
-			provider.Credentials.Name,
+			provider.Credentials.SecretRef.Name,
 			key,
 			&req.Cluster,
 		)

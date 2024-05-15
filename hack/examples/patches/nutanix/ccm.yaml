@@ -5,4 +5,5 @@
   path: "/spec/topology/variables/0/value/addons/ccm"
   value:
     credentials:
-      name: ${CLUSTER_NAME}-pc-creds
+      secretRef:
+        name: ${CLUSTER_NAME}-pc-creds

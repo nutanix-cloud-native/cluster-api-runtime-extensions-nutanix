@@ -52,14 +52,21 @@ spec:
                         description: A reference to the Secret for credential information
                           for the target Prism Central instance
                         properties:
-                          name:
-                            description: |-
-                              Name of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            minLength: 1
-                            type: string
+                          secretRef:
+                            description: A reference to the Secret containing the
+                              credentials used by the CCM provider.
+                            properties:
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            type: object
                         required:
-                        - name
+                        - secretRef
                         type: object
                     type: object
                   clusterAutoscaler:
@@ -124,14 +131,21 @@ spec:
                               description: The reference to any secret used by the
                                 CSI Provider.
                               properties:
-                                name:
-                                  description: |-
-                                    Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  minLength: 1
-                                  type: string
+                                secretRef:
+                                  description: A reference to the Secret containing
+                                    the credentials used by the CSI provider.
+                                  properties:
+                                    name:
+                                      description: |-
+                                        Name of the referent.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      minLength: 1
+                                      type: string
+                                  required:
+                                  - name
+                                  type: object
                               required:
-                              - name
+                              - secretRef
                               type: object
                             name:
                               description: Name of the CSI Provider.
@@ -571,14 +585,21 @@ spec:
                         description: A reference to the Secret for credential information
                           for the target Prism Central instance.
                         properties:
-                          name:
-                            description: |-
-                              Name of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            minLength: 1
-                            type: string
+                          secretRef:
+                            description: A reference to the Secret containing the
+                              Prism Central credentials.
+                            properties:
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            type: object
                         required:
-                        - name
+                        - secretRef
                         type: object
                       insecure:
                         description: use insecure connection to Prism Central endpoint

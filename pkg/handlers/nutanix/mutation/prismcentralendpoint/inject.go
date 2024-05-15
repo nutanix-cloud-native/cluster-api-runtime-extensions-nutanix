@@ -111,7 +111,7 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 				Insecure: prismCentralEndpointVar.Insecure,
 				CredentialRef: &credentials.NutanixCredentialReference{
 					Kind: credentials.SecretKind,
-					Name: prismCentralEndpointVar.Credentials.Name,
+					Name: prismCentralEndpointVar.Credentials.SecretRef.Name,
 					// Assume the secret is in the same namespace as Cluster
 					Namespace: clusterKey.Namespace,
 				},
