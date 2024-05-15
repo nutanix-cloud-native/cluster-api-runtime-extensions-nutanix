@@ -3,6 +3,8 @@
 
 chart-dirs:
   - charts
+chart-repos:
+  - jetstack=https://charts.jetstack.io
 target-branch: main
 chart-yaml-schema: charts/chart_schema.yaml
 lint-conf: charts/lintconf.yaml
