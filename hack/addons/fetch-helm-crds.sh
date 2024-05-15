@@ -18,6 +18,7 @@ mkdir -p "${CRD_PATH}"
 echo "${RAW_URL}/${VERSION}/${CRD_URL_PATH}"
 CRD_FILE="${CRD_PATH}/crd-trust.cert-manager.io_bundles.yaml"
 curl -l -o "${CRD_FILE}" "${RAW_URL}/${VERSION}/${CRD_URL_PATH}"
+#shellcheck disable=SC1083 # this is supposed to be literal values
 sed -i s/{{\.*}}//g "${CRD_FILE}"
 yq -Y '.metadata.annotations["meta.helm.sh/release-name"] = "cluster-api-runtime-extensions-nutanix" |
     .metadata.annotations["meta.helm.sh/release-namespace"] = "default" |

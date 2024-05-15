@@ -14,4 +14,5 @@ lint-and-install-chart:
 
 .PHONY: helm-fetch-crds
 helm-fetch-crds:
+helm-fetch-crds:
 	./hack/addons/fetch-helm-crds.sh
