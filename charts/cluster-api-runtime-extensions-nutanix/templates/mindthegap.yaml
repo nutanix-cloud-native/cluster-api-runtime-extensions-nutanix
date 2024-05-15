@@ -1,9 +1,5 @@
 # Copyright 2024 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2023 D2iQ, Inc. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
 # This file contains the manifests to run a mindthegap deployment which contains helm charts for our addons.
 # The pod is built via goreleaser with configuration from hack/addons.
 #

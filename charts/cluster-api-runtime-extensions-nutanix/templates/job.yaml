@@ -1,17 +1,10 @@
 # Copyright 2024 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2023 D2iQ, Inc. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: update-trust-manager-namespace
   namespace: caaph-system
-  annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   template:
     spec:
