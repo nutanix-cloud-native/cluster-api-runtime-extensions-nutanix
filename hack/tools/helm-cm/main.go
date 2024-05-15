@@ -134,7 +134,8 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 
 	finalCM := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "placeholder",
+			Name:      "placeholder",
+			Namespace: "caren-system",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),

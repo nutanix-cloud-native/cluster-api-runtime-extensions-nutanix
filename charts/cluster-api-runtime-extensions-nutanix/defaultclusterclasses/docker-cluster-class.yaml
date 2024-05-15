@@ -4,6 +4,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: docker
   name: docker-quick-start
+  namespace: caren-system
 spec:
   controlPlane:
     machineInfrastructure:
@@ -50,6 +51,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: docker
   name: docker-quick-start-cluster
+  namespace: caren-system
 spec:
   template:
     spec: {}
@@ -60,6 +62,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: docker
   name: docker-quick-start-control-plane
+  namespace: caren-system
 spec:
   template:
     spec:
@@ -76,6 +79,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: docker
   name: docker-quick-start-control-plane
+  namespace: caren-system
 spec:
   template:
     spec:
@@ -89,6 +93,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: docker
   name: docker-quick-start-default-worker-machinetemplate
+  namespace: caren-system
 spec:
   template:
     spec:
@@ -102,6 +107,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: docker
   name: docker-quick-start-default-worker-bootstraptemplate
+  namespace: caren-system
 spec:
   template:
     spec:

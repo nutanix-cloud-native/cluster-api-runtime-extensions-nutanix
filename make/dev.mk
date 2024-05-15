@@ -13,13 +13,15 @@ endif
 		ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
 		ghcr.io/nutanix-cloud-native/caren-helm-reg:$$(gojq -r .version dist/metadata.json)
+	kubectl create namespace caren-system || true
 	helm upgrade --install cluster-api-runtime-extensions-nutanix ./charts/cluster-api-runtime-extensions-nutanix \
+		--namespace caren-system \
 		--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
 		--set-string image.tag=$$(gojq -r .version dist/metadata.json) \
 		--set-string mindthegapImage.tag=$$(gojq -r .version dist/metadata.json) \
 		--wait --wait-for-jobs
-	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
-	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix
+	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix -n caren-system
+	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix -n caren-system
 
 .PHONY: dev.update-webhook-image-on-kind
 dev.update-webhook-image-on-kind: export KUBECONFIG := $(KIND_KUBECONFIG)
@@ -29,9 +31,9 @@ ifndef SKIP_BUILD
 endif
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
 		ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
-	kubectl set image deployment cluster-api-runtime-extensions-nutanix webhook=ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
-	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
-	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix
+	kubectl set image deployment -n caren-system cluster-api-runtime-extensions-nutanix webhook=ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
+	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix -n caren-system
+	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix -n caren-system
 
 
 .PHONY: dev.update-bootstrap-credentials-aws

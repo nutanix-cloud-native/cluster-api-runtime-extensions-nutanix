@@ -4,8 +4,7 @@
 trust-manager:
   app:
     trust:
-      namespace: mindthegap
-
+      namespace: caren-system
 hooks:
   cni:
     calico:

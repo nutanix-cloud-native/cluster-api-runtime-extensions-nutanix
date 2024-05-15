@@ -20,8 +20,9 @@ CRD_FILE="${CRD_PATH}/crd-trust.cert-manager.io_bundles.yaml"
 curl -l -o "${CRD_FILE}" "${RAW_URL}/${VERSION}/${CRD_URL_PATH}"
 #shellcheck disable=SC1083 # this is supposed to be literal values
 sed -i s/{{\.*}}//g "${CRD_FILE}"
+sed -i '/helm.sh\/resource-policy: keep/d' "${CRD_FILE}"
 yq -Y '.metadata.annotations["meta.helm.sh/release-name"] = "cluster-api-runtime-extensions-nutanix" |
-    .metadata.annotations["meta.helm.sh/release-namespace"] = "default" |
+    .metadata.annotations["meta.helm.sh/release-namespace"] = "caren-system" |
     .metadata.labels["app.kubernetes.io/managed-by"] = "Helm"' <./charts/cluster-api-runtime-extensions-nutanix/crds/crd-trust.cert-manager.io_bundles.yaml >>tmp.yaml
 
 mv tmp.yaml "${CRD_FILE}"

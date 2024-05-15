@@ -4,6 +4,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
   name: nutanix-quick-start-kcfg-0
+  namespace: caren-system
 spec:
   template:
     spec:
@@ -26,6 +27,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
   name: nutanix-quick-start
+  namespace: caren-system
 spec:
   controlPlane:
     machineHealthCheck:
@@ -116,6 +118,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
   name: nutanix-quick-start-kcpt
+  namespace: caren-system
 spec:
   template:
     spec:
@@ -164,6 +167,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
   name: nutanix-quick-start-nct
+  namespace: caren-system
 spec:
   template:
     spec:
@@ -185,6 +189,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
   name: nutanix-quick-start-cp-nmt
+  namespace: caren-system
 spec:
   template:
     spec:
@@ -210,6 +215,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
   name: nutanix-quick-start-md-nmt
+  namespace: caren-system
 spec:
   template:
     spec:
