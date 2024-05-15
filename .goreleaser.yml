@@ -36,9 +36,9 @@ before:
       apiVersion: v1
       kind: Namespace
       metadata:
-        name: {{ .ProjectName }}-system
+        name: caren-system
       $(helm template {{ .ProjectName }} ./charts/{{ .ProjectName }} \
-        --namespace {{ .ProjectName }}-system \
+        --namespace caren-system \
         --set-string image.tag=v{{ trimprefix .Version "v" }} \
         {{ if .IsSnapshot }}--set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
