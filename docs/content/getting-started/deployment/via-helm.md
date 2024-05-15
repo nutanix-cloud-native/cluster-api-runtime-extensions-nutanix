@@ -26,7 +26,7 @@ Add the CAREN Helm repo:
 helm repo add caren https://nutanix-cloud-native.github.io/cluster-api-runtime-extensions-nutanix/helm
 helm repo update caren
 helm upgrade --install caren caren/cluster-api-runtime-extensions-nutanix \
-  --namespace cluster-api-runtime-extensions-nutanix-system \
+  --namespace caren-system \
   --create-namespace \
   --wait \
   --wait-for-jobs
