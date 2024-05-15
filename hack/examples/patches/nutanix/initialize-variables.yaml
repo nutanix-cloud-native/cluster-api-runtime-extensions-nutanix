@@ -17,7 +17,8 @@
       url: https://${NUTANIX_ENDPOINT}:9440
       insecure: ${NUTANIX_INSECURE}
       credentials:
-        name: ${CLUSTER_NAME}-pc-creds
+        secretRef:
+          name: ${CLUSTER_NAME}-pc-creds
 - op: "add"
   path: "/spec/topology/variables/0/value/controlPlane"
   value:
