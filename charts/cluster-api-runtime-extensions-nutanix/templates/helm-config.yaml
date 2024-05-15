@@ -33,7 +33,7 @@ data:
     RepositoryURL: oci://mindthegap.mindthegap.svc/charts
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
-    ChartVersion: v3.0.0-beta.1912
+    ChartVersion: 3.0.0-beta.1912
     RepositoryURL: oci://mindthegap.mindthegap.svc/charts
   tigera-operator: |
     ChartName: tigera-operator

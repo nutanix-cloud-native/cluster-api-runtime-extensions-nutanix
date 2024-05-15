@@ -40,7 +40,7 @@ repositories:
     repoURL: https://nutanix.github.io/helm-releases/
     charts:
       nutanix-csi-storage:
-      - v3.0.0-beta.1912
+      - 3.0.0-beta.1912
   tigera-operator:
     repoURL: https://docs.tigera.io/calico/charts
     charts:
