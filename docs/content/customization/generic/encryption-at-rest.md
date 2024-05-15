@@ -3,10 +3,10 @@ title = "Encryption At REST"
 +++
 
 `encryptionAtRest` variable enables encrypting kubernetes resources at REST using provided encryption provider.
-When this variable is set, kuberntetes secrets and configmaps are encrypted before writing them at `etcd`.
+When this variable is set, kuberntetes `secrets` and `configmap`s are encrypted before writing them at `etcd`.
 
 If the `encryptionAtRest` property is not specified, then
-the customization will be skipped. The secrets and configmaps will not be stored as encrypted in `etcd`.
+the customization will be skipped. The `secrets` and `configmaps` will not be stored as encrypted in `etcd`.
 
 We support following encryption providers
 
@@ -18,7 +18,7 @@ More information about encryption at REST: [Encrypting Confidential Data at Rest
 
 ## Example
 
-To encrypt configmaps and secrets for using `aescbc` and `secretbox` encryption providers:
+To encrypt `configmaps` and `secrets` kubernetes resources using `aescbc` encryption provider:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -33,17 +33,23 @@ spec:
           encryptionAtRest:
             providers:
               - aescbc: {}
-              - secretbox: {}
 ```
 
 Applying this configuration will result in
 
-1. `<CLUSTER_NAME>-encryption-config` secret generated
-1. following value being set:
+1. `<CLUSTER_NAME>-encryption-config` secret generated.
+
+  A secret key for the encryption provider is generated and stored in `<CLUSTER_NAME>-encryption-config` secret.
+  The APIServer will be configured to use the secret key to encrypt `secrets` and
+   `configmaps` kubernetes resources before writing them to etcd.
+  When reading resources from `etcd`, encryption provider that matches the stored data attempts in order to decrypt the data.
+  We currently do not rotate the key once it generated.
+
+1. Configure APIServer with encryption configuration:
 
 - `KubeadmControlPlaneTemplate`:
 
-  - ```yaml
+  ```yaml
     spec:
       kubeadmConfigSpec:
         clusterConfiguration:
@@ -54,7 +60,7 @@ Applying this configuration will result in
         - contentFrom:
             secret:
               key: config
-              name: my-cluster-encryption-config
+              name: <CLUSTER_NAME>-encryption-config
           path: /etc/kubernetes/pki/encryptionconfig.yaml
           permissions: "0640"
-    ```
+  ```
