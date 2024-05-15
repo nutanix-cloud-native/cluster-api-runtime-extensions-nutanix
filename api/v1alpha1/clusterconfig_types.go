@@ -290,14 +290,14 @@ type EncryptionAtRest struct {
 	// +kubebuilder:default={{aescbc:{}}}
 	// +kubebuilder:validation:MaxItems=1
 	// +kubebuilder:validation:Optional
-	Providers []EncryptionProviders `json:"providers"`
+	Providers []EncryptionProviders `json:"providers,omitempty"`
 }
 
 type EncryptionProviders struct {
 	// +kubebuilder:validation:Optional
-	AESCBC *AESConfiguration `json:"aescbc"`
+	AESCBC *AESConfiguration `json:"aescbc,omitempty"`
 	// +kubebuilder:validation:Optional
-	Secretbox *SecretboxConfiguration `json:"secretbox"`
+	Secretbox *SecretboxConfiguration `json:"secretbox,omitempty"`
 }
 
 type AESConfiguration struct{}
