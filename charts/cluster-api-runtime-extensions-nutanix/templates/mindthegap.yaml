@@ -1,6 +1,8 @@
-# Copyright 2023 D2iQ, Inc. All rights reserved.
+# Copyright 2024 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-
+# This file contains the manifests to run a mindthegap deployment which contains helm charts for our addons.
+# The pod is built via goreleaser with configuration from hack/addons.
+#
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -12,12 +14,12 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: mindthegap-example-tls
+  name: mindthegap-tls
   namespace: {{ .Release.Namespace }}
 spec:
   dnsNames:
-  - mindthegap.default.svc
-  - mindthegap.default.svc.cluster.local
+  - mindthegap.{{ .Release.Namespace }}.svc
+  - mindthegap.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
     name: mindthegap-selfsigned
     kind: Issuer
