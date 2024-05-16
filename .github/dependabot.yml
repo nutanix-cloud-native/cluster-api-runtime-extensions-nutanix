@@ -9,34 +9,23 @@
 version: 2
 updates:
   - package-ecosystem: "gomod"
-    directory: "/"
+    directories:
+      - "/"
+      - "/common"
+      - "/api"
     schedule:
       interval: "weekly"
     groups:
-      k8s:
-        patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
-
-  - package-ecosystem: "gomod"
-    directory: "/common"
-    schedule:
-      interval: "weekly"
-    groups:
-      k8s:
-        patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
-
-  - package-ecosystem: "gomod"
-    directory: "/api"
-    schedule:
-      interval: "weekly"
-    groups:
-      k8s:
-        patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
+      all-go-mod-patch-and-minor:
+        patterns: [ "*" ]
+        update-types: [ "patch", "minor" ]
+    ignore:
+    # Ignore controller-runtime major and minor as it's upgraded together with sigs.k8s.io/cluster-api.
+    - dependency-name: "sigs.k8s.io/controller-runtime"
+      update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
+      # Ignore k8s modules major and minor as they are upgraded together with controller-runtime.
+    - dependency-name: "k8s.io/*"
+      update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
 
   - package-ecosystem: "gomod"
     directory: "/hack/third-party/capa"
