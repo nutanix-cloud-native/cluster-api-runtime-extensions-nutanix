@@ -21,12 +21,6 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 
 * <https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix>
 
-## Requirements
-
-| Repository | Name | Version |
-|------------|------|---------|
-| https://charts.jetstack.io | trust-manager | v0.10.0 |
-
 ## Values
 
 | Key | Type | Default | Description |
@@ -90,4 +84,3 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | service.port | int | `443` |  |
 | service.type | string | `"ClusterIP"` |  |
 | tolerations | list | `[{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","operator":"Equal"},{"effect":"NoSchedule","key":"node-role.kubernetes.io/control-plane","operator":"Equal"}]` | Kubernetes pod tolerations |
-| trust-manager.app.trust.namespace | string | `"caren-system"` |  |

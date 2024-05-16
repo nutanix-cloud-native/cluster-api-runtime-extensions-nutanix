@@ -51,7 +51,6 @@ export KUBERNETES_VERSION=v1.28.7
 clusterctl generate cluster ${CLUSTER_NAME} \
   --from ${CLUSTER_FILE} \
   --kubernetes-version ${KUBERNETES_VERSION} \
-  -n caren-system \
   --worker-machine-count 1 | \
   kubectl apply --server-side -f -
 ```

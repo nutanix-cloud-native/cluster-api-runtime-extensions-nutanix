@@ -11,8 +11,3 @@ lint-and-install-chart: ## Lints and installs helm chart
 lint-and-install-chart:
 	ct lint-and-install --config charts/ct-config.yaml
 	ct lint-and-install --config charts/ct-config.yaml --upgrade
-
-.PHONY: helm-fetch-crds
-helm-fetch-crds:
-helm-fetch-crds:
-	./hack/addons/fetch-helm-crds.sh

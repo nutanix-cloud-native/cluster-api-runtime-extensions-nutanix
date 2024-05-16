@@ -14,10 +14,6 @@ maintainers:
   url: https://eng.d2iq.com
 sources:
 - https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
-dependencies:
-  - name: trust-manager
-    version: v0.10.0
-    repository: https://charts.jetstack.io
 
 appVersion: v0.0.0-dev
 version: v0.0.0-dev

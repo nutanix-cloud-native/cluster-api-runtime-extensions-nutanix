@@ -10,37 +10,36 @@ data:
   cilium: |
     ChartName: cilium
     ChartVersion: 1.15.0
-    RepositoryURL: oci://mindthegap.caren-system.svc/charts
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc/charts
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
     ChartVersion: 9.35.0
-    RepositoryURL: oci://mindthegap.caren-system.svc/charts
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc/charts
   metallb: |
     ChartName: metallb
     ChartVersion: v0.14.5
-    RepositoryURL: oci://mindthegap.caren-system.svc/charts
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc/charts
   nfd: |
     ChartName: node-feature-discovery
     ChartVersion: 0.15.2
-    RepositoryURL: oci://mindthegap.caren-system.svc/charts
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc/charts
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
     ChartVersion: 0.3.3
-    RepositoryURL: oci://mindthegap.caren-system.svc/charts
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc/charts
   nutanix-snapshot-csi: |
     ChartName: nutanix-csi-snapshot
     ChartVersion: 6.3.2
-    RepositoryURL: oci://mindthegap.caren-system.svc/charts
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc/charts
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
     ChartVersion: 3.0.0-beta.1912
-    RepositoryURL: oci://mindthegap.caren-system.svc/charts
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc/charts
   tigera-operator: |
     ChartName: tigera-operator
     ChartVersion: v3.26.4
-    RepositoryURL: oci://mindthegap.caren-system.svc/charts
+    RepositoryURL: oci://mindthegap.{{ .Release.Namespace }}.svc/charts
 kind: ConfigMap
 metadata:
   creationTimestamp: null
   name: {{ .Values.helmAddonsConfigMap }}
-  namespace: caren-system

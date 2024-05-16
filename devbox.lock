@@ -580,26 +580,6 @@
           "store_path": "/nix/store/6bak83f1ib271wfl5ybw4m7vw5qr34kk-python3.11-yamllint-1.35.1"
         }
       }
-    },
-    "yq@latest": {
-      "last_modified": "2024-05-03T15:42:32Z",
-      "resolved": "github:NixOS/nixpkgs/5fd8536a9a5932d4ae8de52b7dc08d92041237fc#yq",
-      "source": "devbox-search",
-      "version": "3.4.3",
-      "systems": {
-        "aarch64-darwin": {
-          "store_path": "/nix/store/a2fl3r5yz6sn3y76hp297v9vxg6rsxvm-python3.11-yq-3.4.3"
-        },
-        "aarch64-linux": {
-          "store_path": "/nix/store/fjq379l09b2mpjfd6nfq2m061fvipasw-python3.11-yq-3.4.3"
-        },
-        "x86_64-darwin": {
-          "store_path": "/nix/store/w84j63jqij1adzwd7667nr9rakb27364-python3.11-yq-3.4.3"
-        },
-        "x86_64-linux": {
-          "store_path": "/nix/store/k58r09rfyaspq2ba32ng0irw09cpf8nh-python3.11-yq-3.4.3"
-        }
-      }
     }
   }
 }
