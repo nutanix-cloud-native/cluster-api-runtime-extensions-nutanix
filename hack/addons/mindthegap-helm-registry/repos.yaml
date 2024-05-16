@@ -1,4 +1,4 @@
-# Copyright 2023 D2iQ, Inc. All rights reserved.
+# Copyright 2024 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 #=================================================================
@@ -25,7 +25,7 @@ repositories:
     repoURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
     charts:
       node-feature-discovery:
-      - v0.15.2
+      - 0.15.2
   nutanix-cloud-provider:
     repoURL: https://nutanix.github.io/helm/
     charts:
@@ -40,7 +40,7 @@ repositories:
     repoURL: https://nutanix.github.io/helm-releases/
     charts:
       nutanix-csi-storage:
-      - v3.0.0-beta.1912
+      - 3.0.0-beta.1912
   tigera-operator:
     repoURL: https://docs.tigera.io/calico/charts
     charts:

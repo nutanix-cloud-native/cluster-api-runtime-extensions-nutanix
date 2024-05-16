@@ -7,8 +7,8 @@ export NODE_FEATURE_DISCOVERY_VERSION := 0.15.2
 export CLUSTER_AUTOSCALER_VERSION := 9.37.0
 export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.3
 export AWS_EBS_CSI_CHART_VERSION := v2.28.1
-export NUTANIX_STORAGE_CSI_CHART_VERSION := v3.0.0-beta.1912
-export NUTANIX_SNAPSHOT_CSI_CHART_VERSION := v6.3.2
+export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.0.0-beta.1912
+export NUTANIX_SNAPSHOT_CSI_CHART_VERSION := 6.3.2
 export LOCAL_PATH_CSI_CHART_VERSION := v0.0.29
 # a map of AWS CCM versions
 export AWS_CCM_VERSION_127 := v1.27.1
@@ -62,8 +62,8 @@ update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)
 update-addon.kube-vip: ; $(info $(M) updating kube-vip manifests)
 	./hack/addons/update-kube-vip-manifests.sh
 
-.PHONY: generate-helm-configmap ## this file is now used by generate-mindthegap-repofile
-generate-helm-configmap: ; $(info $(M) genrating helm configmap)
+.PHONY: generate-helm-configmap
+generate-helm-configmap: ; $(info $(M) genrating helm configmap) ## this file is now used by generate-mindthegap-repofile
 	go run hack/tools/helm-cm/main.go -kustomize-directory="./hack/addons/kustomize" -output-file="./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
 	./hack/addons/add-warning-helm-configmap.sh
 
@@ -76,6 +76,6 @@ configure-csi-providers: ; $(info $(M) configuring supported csi providers)
 generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating helm repofile for mindthgap)
 	./hack/addons/generate-mindthegap-repofile.sh
 
-.PHONY: replace-with-mindthegap ## this is used by gorealeaser to set the helm value to this.
-replace-with-mindthegap: generate-mindthegap-repofile
-	sed -i 's/RepositoryURL:.*/RepositoryURL: oci:\/\/mindthegap.{{ .Release.Namespace }}.svc/g' "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
+.PHONY: replace-with-mindthegap
+replace-with-mindthegap: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
+	sed -i 's/RepositoryURL:.*/RepositoryURL: oci:\/\/mindthegap.{{ .Release.Namespace }}.svc\/charts/g' "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
