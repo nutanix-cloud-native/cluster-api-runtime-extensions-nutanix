@@ -3,6 +3,7 @@
 # This file contains the manifests to run a mindthegap deployment which contains helm charts for our addons.
 # The pod is built via goreleaser with configuration from hack/addons.
 #
+{{ if .Values.selfHostedRegistry }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -74,3 +75,4 @@ spec:
   - port: 443
     targetPort: 5000
   type: ClusterIP
+{{ end }}
