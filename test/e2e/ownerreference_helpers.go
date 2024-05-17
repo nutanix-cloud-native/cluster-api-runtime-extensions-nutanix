@@ -11,6 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 
@@ -25,6 +27,8 @@ const (
 	machineKind                   = "Machine"
 	clusterResourceSetKind        = "ClusterResourceSet"
 	clusterResourceSetBindingKind = "ClusterResourceSetBinding"
+	kubeadmControlPlaneKind       = "KubeadmControlPlane"
+	kubeadmConfigKind             = "KubeadmConfig"
 
 	awsMachineKind                   = "AWSMachine"
 	awsMachineTemplateKind           = "AWSMachineTemplate"
@@ -72,6 +76,18 @@ var (
 	helmChartProxyOwner = metav1.OwnerReference{
 		Kind:       helmChartProxyKind,
 		APIVersion: caaphv1.GroupVersion.String(),
+		Controller: ptr.To(true),
+	}
+	kubeadmControlPlaneGroupVersion = controlplanev1.GroupVersion.String()
+	kubeadmControlPlaneController   = metav1.OwnerReference{
+		Kind:       kubeadmControlPlaneKind,
+		APIVersion: kubeadmControlPlaneGroupVersion,
+		Controller: ptr.To(true),
+	}
+	kubeadmConfigGroupVersion = bootstrapv1.GroupVersion.String()
+	kubeadmConfigController   = metav1.OwnerReference{
+		Kind:       kubeadmConfigKind,
+		APIVersion: kubeadmConfigGroupVersion,
 		Controller: ptr.To(true),
 	}
 
@@ -167,9 +183,15 @@ var (
 	// https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
 	KubernetesReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
 		secretKind: func(owners []metav1.OwnerReference) error {
-			// TODO:deepakm-ntnx Currently pc-creds, pc-creds-for-csi, dockerhub-credentials,
-			// registry-creds, and encryption config secrets have unexpected owners which needs more investigation.
-			return nil
+			// Secrets for cluster certificates must be owned and controlled by the KubeadmControlPlane.
+			// The bootstrap secret should be owned and controlled by a KubeadmControlPlane.
+			// Other resources can be owned by the Cluster to ensure correct GC.
+			return framework.HasOneOfExactOwners(
+				owners,
+				[]metav1.OwnerReference{kubeadmControlPlaneController},
+				[]metav1.OwnerReference{kubeadmConfigController},
+				[]metav1.OwnerReference{clusterOwner},
+			)
 		},
 		configMapKind: func(owners []metav1.OwnerReference) error {
 			// The only configMaps considered here are those owned by a ClusterResourceSet.
