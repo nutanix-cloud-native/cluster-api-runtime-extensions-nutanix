@@ -167,8 +167,8 @@ var (
 	// https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
 	KubernetesReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
 		secretKind: func(owners []metav1.OwnerReference) error {
-			// TODO:deepakm-ntnx Currently pc-creds, pc-creds-for-csi, dockerhub-credentials
-			// and registry-creds have unexpected owners which needs more investigation
+			// TODO:deepakm-ntnx Currently pc-creds, pc-creds-for-csi, dockerhub-credentials,
+			// registry-creds, and encryption config secrets have unexpected owners which needs more investigation.
 			return nil
 		},
 		configMapKind: func(owners []metav1.OwnerReference) error {
