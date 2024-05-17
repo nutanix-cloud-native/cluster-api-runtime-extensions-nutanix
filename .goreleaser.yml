@@ -51,7 +51,7 @@ before:
       sh -ec 'gojq --yaml-input --yaml-output \
         ".releaseSeries |= (. + [{contract: \"v1beta1\", major: {{ .Major }}, minor: {{ .Minor }}}] | unique)" \
         metadata.yaml >release-metadata.yaml'
-    - make replace-with-mindthegap
+    - make template-mindthegap
 
 
 builds:

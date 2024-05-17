@@ -76,6 +76,6 @@ configure-csi-providers: ; $(info $(M) configuring supported csi providers)
 generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating helm repofile for mindthgap)
 	./hack/addons/generate-mindthegap-repofile.sh
 
-.PHONY: replace-with-mindthegap
-replace-with-mindthegap: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
-	sed -i 's/RepositoryURL:.*/RepositoryURL: oci:\/\/mindthegap.{{ .Release.Namespace }}.svc\/charts/g' "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
+.PHONY: template-mindthegap
+template-mindthegap: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
+	sed -i '/RepositoryURL:/s#\(RepositoryURL: *\)\(.*\)#\1{{ if .Values.selfHostedRegistry }}{{ .Values.selfHostedRegistryURI }}{{ else }}\2{{ end }}#'  "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
