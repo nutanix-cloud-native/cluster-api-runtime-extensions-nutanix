@@ -93,7 +93,7 @@ var _ = Describe("Quick start", Serial, func() {
 										framework.DockerInfraOwnerReferenceAssertions,
 										framework.KubeadmBootstrapOwnerReferenceAssertions,
 										framework.KubeadmControlPlaneOwnerReferenceAssertions,
-										framework.KubernetesReferenceAssertions,
+										AWSInfraOwnerReferenceAssertions,
 										NutanixInfraOwnerReferenceAssertions,
 										AddonReferenceAssertions,
 										KubernetesReferenceAssertions,
