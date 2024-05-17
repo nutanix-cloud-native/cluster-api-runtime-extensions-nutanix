@@ -74,7 +74,9 @@ bench.%: ## Runs go benchmarks for a specific module
 bench.%: ; $(info $(M) running benchmarks$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
 	$(if $(filter-out root,$*),cd $* && )go test $(if $(GOTEST_RUN),-run "$(GOTEST_RUN)") -race -cover -v ./...
 
-E2E_PARALLEL_NODES ?= $(shell nproc --ignore=1)
+E2E_DRYRUN ?= false
+E2E_VERBOSE ?= $(filter $(E2E_DRYRUN)$(CI),true) # If dry-run or CI, enable verbosity
+E2E_PARALLEL_NODES ?= $(if $(filter $(E2E_DRYRUN),true),1,$(shell nproc --ignore=1)) # Ginkgo cannot dry-run in parallel
 E2E_FLAKE_ATTEMPTS ?= 1
 E2E_CONF_FILE ?= $(REPO_ROOT)/test/e2e/config/caren.yaml
 E2E_CONF_FILE_ENVSUBST ?= $(basename $(E2E_CONF_FILE))-envsubst.yaml
@@ -88,7 +90,7 @@ e2e-test:
 ifneq ($(SKIP_BUILD),true)
 	$(MAKE) GORELEASER_FLAGS=$$'--config=<(env GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) gojq --yaml-input --yaml-output \'del(.builds[0].goarch) | del(.builds[0].goos) | .builds[0].targets|=(["linux_amd64","linux_arm64",env.GOOS+"_"+env.GOARCH] | unique | map(. | sub("_amd64";"_amd64_v1")))\' .goreleaser.yml)' release-snapshot
 endif
-	$(info $(M) running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
+	$(info $(M) $(if $(E2E_DRYRUN),dry-,)running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
 	env E2E_IMAGE_TAG="$$(gojq --raw-output '.version' $(REPO_ROOT)/dist/metadata.json)" \
 	  envsubst -no-unset -no-empty -i '$(E2E_CONF_FILE)' -o '$(E2E_CONF_FILE_ENVSUBST)'
 	env AWS_B64ENCODED_CREDENTIALS="$$(clusterawsadm bootstrap credentials encode-as-profile 2>/dev/null)" \
@@ -100,11 +102,12 @@ endif
 	    --randomize-suites \
 	    --fail-on-pending \
 	    --keep-going \
-	    $(if $(filter $(CI),true),-v) \
+	    $(if $(filter $(E2E_VERBOSE),true),--vv) \
 	    --covermode=atomic \
 	    --coverprofile coverage-e2e.out \
-	    --procs=$(E2E_PARALLEL_NODES) \
-	    --compilers=$(E2E_PARALLEL_NODES) \
+		$(if $(filter $(E2E_DRYRUN), true),--dry-run) \
+		--procs=$(E2E_PARALLEL_NODES) \
+		--compilers=$(E2E_PARALLEL_NODES) \
 	    --flake-attempts=$(E2E_FLAKE_ATTEMPTS) \
 	    $(if $(E2E_FOCUS),--focus="$(E2E_FOCUS)") \
 	    $(if $(E2E_SKIP),--skip="$(E2E_SKIP)") \
