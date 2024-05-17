@@ -1,8 +1,8 @@
 +++
-title = "Encryption At REST"
+title = "Encryption At Rest"
 +++
 
-`encryptionAtRest` variable enables encrypting kubernetes resources at REST using provided encryption provider.
+`encryptionAtRest` variable enables encrypting kubernetes resources at rest using provided encryption provider.
 When this variable is set, kuberntetes `secrets` and `configmap`s are encrypted before writing them at `etcd`.
 
 If the `encryptionAtRest` property is not specified, then
@@ -13,7 +13,7 @@ We support following encryption providers
 - aescbc
 - secretbox
 
-More information about encryption at REST: [Encrypting Confidential Data at Rest
+More information about encryption at-rest: [Encrypting Confidential Data at Rest
 ](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
 
 ## Example
@@ -43,7 +43,7 @@ Applying this configuration will result in
   The APIServer will be configured to use the secret key to encrypt `secrets` and
    `configmaps` kubernetes resources before writing them to etcd.
   When reading resources from `etcd`, encryption provider that matches the stored data attempts in order to decrypt the data.
-  We currently do not rotate the key once it generated.
+  CAREN currently does not rotate the key once it generated.
 
 1. Configure APIServer with encryption configuration:
 
