@@ -12,7 +12,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -33,13 +32,13 @@ var _ = Describe("Generate SecurityGroup patches for ControlPlane", func() {
 			Name: "SecurityGroups for controlplane set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AdditionalSecurityGroup{
 						{ID: "sg-1"},
 						{ID: "sg-2"},
 						{ID: "sg-3"},
 					},
-					clusterconfig.MetaControlPlaneConfigName,
+					v1alpha1.ControlPlaneConfigVariableName,
 					v1alpha1.AWSVariableName,
 					VariableName,
 				),

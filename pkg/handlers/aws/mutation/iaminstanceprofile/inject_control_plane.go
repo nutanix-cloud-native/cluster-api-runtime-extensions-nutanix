@@ -18,7 +18,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 const (
@@ -33,8 +32,8 @@ type awsIAMInstanceProfileControlPlanePatchHandler struct {
 
 func NewControlPlanePatch() *awsIAMInstanceProfileControlPlanePatchHandler {
 	return newAWSIAMInstanceProfileControlPlanePatchHandler(
-		clusterconfig.MetaVariableName,
-		clusterconfig.MetaControlPlaneConfigName,
+		v1alpha1.ClusterConfigVariableName,
+		v1alpha1.ControlPlaneConfigVariableName,
 		v1alpha1.AWSVariableName,
 		VariableName,
 	)

@@ -13,7 +13,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -27,7 +26,7 @@ var _ = Describe("Generate AMI patches for Worker", func() {
 			Name: "AMI set for workers",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					workerconfig.MetaVariableName,
+					v1alpha1.WorkerConfigVariableName,
 					v1alpha1.AMISpec{ID: "ami-controlplane"},
 					v1alpha1.AWSVariableName,
 					VariableName,
@@ -52,7 +51,7 @@ var _ = Describe("Generate AMI patches for Worker", func() {
 			Name: "AMI lookup format set for worker",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					workerconfig.MetaVariableName,
+					v1alpha1.WorkerConfigVariableName,
 					v1alpha1.AMISpec{
 						Lookup: &v1alpha1.AMILookup{
 							Format: "test-{{.kubernetesVersion}}-format",

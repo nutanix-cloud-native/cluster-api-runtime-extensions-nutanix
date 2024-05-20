@@ -12,7 +12,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 )
 
 var (
@@ -41,7 +40,7 @@ func (h *awsWorkerConfigVariableHandler) DiscoverVariables(
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     workerconfig.MetaVariableName,
+		Name:     v1alpha1.WorkerConfigVariableName,
 		Required: false,
 		Schema:   v1alpha1.AWSWorkerNodeConfig{}.VariableSchema(),
 	})

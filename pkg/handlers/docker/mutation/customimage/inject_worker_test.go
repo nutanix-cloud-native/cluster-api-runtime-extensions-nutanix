@@ -9,11 +9,10 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	dockerworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -46,9 +45,9 @@ var _ = Describe("Docker CustomImage patches for workers", func() {
 			Name: "image set for workers",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					workerconfig.MetaVariableName,
+					v1alpha1.WorkerConfigVariableName,
 					"a-specific-image",
-					dockerworkerconfig.DockerVariableName,
+					v1alpha1.DockerVariableName,
 					VariableName,
 				),
 				capitest.VariableWithValue(

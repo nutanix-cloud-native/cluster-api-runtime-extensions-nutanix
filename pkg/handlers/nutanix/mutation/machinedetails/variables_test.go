@@ -12,7 +12,6 @@ import (
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
@@ -59,7 +58,7 @@ func TestVariableValidation(t *testing.T) {
 
 	capitest.ValidateDiscoverVariables(
 		t,
-		clusterconfig.MetaVariableName,
+		v1alpha1.ClusterConfigVariableName,
 		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		nutanixclusterconfig.NewVariable,

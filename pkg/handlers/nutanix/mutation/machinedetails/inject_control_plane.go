@@ -6,14 +6,13 @@ package machinedetails
 import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 func NewControlPlanePatch() *nutanixMachineDetailsPatchHandler {
 	return newNutanixMachineDetailsPatchHandler(
-		clusterconfig.MetaVariableName,
+		v1alpha1.ClusterConfigVariableName,
 		[]string{
-			clusterconfig.MetaControlPlaneConfigName,
+			v1alpha1.ControlPlaneConfigVariableName,
 			v1alpha1.NutanixVariableName,
 			VariableName,
 		},

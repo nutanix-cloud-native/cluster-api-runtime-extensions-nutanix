@@ -24,14 +24,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
-	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	k8sClientUtil "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 const (
@@ -54,7 +53,7 @@ func NewPatch(client ctrlclient.Client, keyGenerator TokenGenerator) *encryption
 	return &encryptionPatchHandler{
 		client:            client,
 		keyGenerator:      keyGenerator,
-		variableName:      clusterconfig.MetaVariableName,
+		variableName:      v1alpha1.ClusterConfigVariableName,
 		variableFieldPath: []string{VariableName},
 	}
 }
@@ -69,7 +68,7 @@ func (h *encryptionPatchHandler) Mutate(
 ) error {
 	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
 
-	encryptionVariable, err := variables.Get[carenv1.EncryptionAtRest](
+	encryptionVariable, err := variables.Get[v1alpha1.EncryptionAtRest](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -160,7 +159,7 @@ func generateEncryptionCredentialsFile(cluster *clusterv1.Cluster) cabpkv1.File 
 }
 
 func (h *encryptionPatchHandler) generateEncryptionConfiguration(
-	providers []carenv1.EncryptionProviders,
+	providers []v1alpha1.EncryptionProviders,
 ) (*apiserverv1.EncryptionConfiguration, error) {
 	resourceConfigs := []apiserverv1.ResourceConfiguration{}
 	for _, encProvider := range providers {
@@ -254,7 +253,7 @@ func (h *encryptionPatchHandler) createEncryptionConfigurationSecret(
 
 // We only support encryption for "secrets" and "configmaps".
 func defaultEncryptionConfiguration(
-	providers *carenv1.EncryptionProviders,
+	providers *v1alpha1.EncryptionProviders,
 	secretGenerator TokenGenerator,
 ) (*apiserverv1.ResourceConfiguration, error) {
 	providerConfig := apiserverv1.ProviderConfiguration{}

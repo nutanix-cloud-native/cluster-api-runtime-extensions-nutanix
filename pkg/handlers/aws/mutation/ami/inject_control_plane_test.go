@@ -12,7 +12,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -29,9 +28,9 @@ var _ = Describe("Generate AMI patches for ControlPlane", func() {
 			Name: "AMI set for control plane",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AMISpec{ID: "ami-controlplane"},
-					clusterconfig.MetaControlPlaneConfigName,
+					v1alpha1.ControlPlaneConfigVariableName,
 					v1alpha1.AWSVariableName,
 					VariableName,
 				),
@@ -49,7 +48,7 @@ var _ = Describe("Generate AMI patches for ControlPlane", func() {
 			Name: "AMI lookup format set for control plane",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AMISpec{
 						Lookup: &v1alpha1.AMILookup{
 							Format: "test-{{.kubernetesVersion}}-format",
@@ -57,7 +56,7 @@ var _ = Describe("Generate AMI patches for ControlPlane", func() {
 							BaseOS: "testOS",
 						},
 					},
-					clusterconfig.MetaControlPlaneConfigName,
+					v1alpha1.ControlPlaneConfigVariableName,
 					v1alpha1.AWSVariableName,
 					VariableName,
 				),

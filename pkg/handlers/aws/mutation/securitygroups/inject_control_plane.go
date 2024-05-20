@@ -7,14 +7,13 @@ import (
 	capav1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 func NewControlPlanePatch() *awsSecurityGroupSpecPatchHandler {
 	return newAWSSecurityGroupSpecPatchHandler(
-		clusterconfig.MetaVariableName,
+		v1alpha1.ClusterConfigVariableName,
 		[]string{
-			clusterconfig.MetaControlPlaneConfigName,
+			v1alpha1.ControlPlaneConfigVariableName,
 			v1alpha1.AWSVariableName,
 			VariableName,
 		},

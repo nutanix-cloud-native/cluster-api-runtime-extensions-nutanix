@@ -22,7 +22,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
@@ -149,7 +148,7 @@ var _ = Describe("Generate Image registry patches", func() {
 			Name: "files added in KubeadmControlPlaneTemplate for ECR without a Secret",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					[]v1alpha1.ImageRegistry{{
 						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 					}},
@@ -202,7 +201,7 @@ var _ = Describe("Generate Image registry patches", func() {
 			Name: "files added in KubeadmControlPlaneTemplate for registry with a Secret",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					[]v1alpha1.ImageRegistry{{
 						URL: "https://registry.example.com",
 						Credentials: &v1alpha1.RegistryCredentials{
@@ -266,7 +265,7 @@ var _ = Describe("Generate Image registry patches", func() {
 			Name: "files added in KubeadmConfigTemplate for ECR without a Secret",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					[]v1alpha1.ImageRegistry{{
 						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 					}},
@@ -319,7 +318,7 @@ var _ = Describe("Generate Image registry patches", func() {
 			Name: "files added in KubeadmConfigTemplate for registry with a Secret",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					[]v1alpha1.ImageRegistry{{
 						URL: "https://registry.example.com",
 						Credentials: &v1alpha1.RegistryCredentials{
@@ -380,7 +379,7 @@ var _ = Describe("Generate Image registry patches", func() {
 			Name: "error for a registry with no credentials",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					[]v1alpha1.ImageRegistry{{
 						URL: "https://registry.example.com",
 					}},

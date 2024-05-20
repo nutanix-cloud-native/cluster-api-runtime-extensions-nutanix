@@ -8,11 +8,10 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
-	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -29,9 +28,9 @@ var _ = Describe("Generate Nutanix Machine Details patches for Worker", func() {
 			Name: "all fields set for workers",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					workerconfig.MetaVariableName,
+					v1alpha1.WorkerConfigVariableName,
 					variableWithAllFieldsSet,
-					nutanixclusterconfig.NutanixVariableName,
+					v1alpha1.NutanixVariableName,
 					VariableName,
 				),
 				capitest.VariableWithValue(

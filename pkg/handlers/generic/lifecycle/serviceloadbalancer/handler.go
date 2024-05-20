@@ -17,7 +17,6 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 type ServiceLoadBalancerProvider interface {
@@ -46,7 +45,7 @@ func New(
 ) *ServiceLoadBalancerHandler {
 	return &ServiceLoadBalancerHandler{
 		client:          c,
-		variableName:    clusterconfig.MetaVariableName,
+		variableName:    v1alpha1.ClusterConfigVariableName,
 		variablePath:    []string{"addons", v1alpha1.ServiceLoadBalancerVariableName},
 		ProviderHandler: handlers,
 	}

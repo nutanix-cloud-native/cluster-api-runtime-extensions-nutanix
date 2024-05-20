@@ -22,7 +22,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 const (
@@ -36,7 +35,7 @@ type extraAPIServerCertSANsPatchHandler struct {
 }
 
 func NewPatch() *extraAPIServerCertSANsPatchHandler {
-	return newExtraAPIServerCertSANsPatchHandler(clusterconfig.MetaVariableName, VariableName)
+	return newExtraAPIServerCertSANsPatchHandler(v1alpha1.ClusterConfigVariableName, VariableName)
 }
 
 func newExtraAPIServerCertSANsPatchHandler(

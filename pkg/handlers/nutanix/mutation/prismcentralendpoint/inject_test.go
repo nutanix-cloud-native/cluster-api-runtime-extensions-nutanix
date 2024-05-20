@@ -14,8 +14,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
-	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -41,7 +39,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 			Name: "all required fields set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
@@ -51,7 +49,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 							},
 						},
 					},
-					nutanixclusterconfig.NutanixVariableName,
+					v1alpha1.NutanixVariableName,
 					VariableName,
 				),
 			},
@@ -77,7 +75,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 			Name: "all required fields set without port",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com",
 						Insecure: true,
@@ -87,7 +85,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 							},
 						},
 					},
-					nutanixclusterconfig.NutanixVariableName,
+					v1alpha1.NutanixVariableName,
 					VariableName,
 				),
 			},
@@ -116,7 +114,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 			Name: "additional trust bundle is set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.NutanixPrismCentralEndpointSpec{
 						URL:      "https://prism-central.nutanix.com:9441",
 						Insecure: true,
@@ -127,7 +125,7 @@ var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 						},
 						AdditionalTrustBundle: testCertBundle,
 					},
-					nutanixclusterconfig.NutanixVariableName,
+					v1alpha1.NutanixVariableName,
 					VariableName,
 				),
 			},

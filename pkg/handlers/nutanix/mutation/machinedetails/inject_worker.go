@@ -6,12 +6,11 @@ package machinedetails
 import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 )
 
 func NewWorkerPatch() *nutanixMachineDetailsPatchHandler {
 	return newNutanixMachineDetailsPatchHandler(
-		workerconfig.MetaVariableName,
+		v1alpha1.WorkerConfigVariableName,
 		[]string{
 			v1alpha1.NutanixVariableName,
 			VariableName,

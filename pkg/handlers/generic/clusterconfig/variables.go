@@ -13,12 +13,6 @@ import (
 )
 
 const (
-	// MetaVariableName is the meta cluster config patch variable name.
-	MetaVariableName = "clusterConfig"
-
-	// MetaControlPlaneConfigName is the meta control-plane config patch variable name.
-	MetaControlPlaneConfigName = "controlPlane"
-
 	// HandlerNameVariable is the name of the variable handler.
 	HandlerNameVariable = "GenericClusterConfigVars"
 )
@@ -39,7 +33,7 @@ func (h *genericClusterConfigVariableHandler) DiscoverVariables(
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
-		Name:     MetaVariableName,
+		Name:     v1alpha1.ClusterConfigVariableName,
 		Required: true,
 		Schema:   v1alpha1.GenericClusterConfig{}.VariableSchema(),
 	})

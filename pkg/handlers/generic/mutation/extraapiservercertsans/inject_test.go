@@ -20,7 +20,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -50,7 +49,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 				Name: "extra API server cert SANs set with AWS",
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
-						clusterconfig.MetaVariableName,
+						v1alpha1.ClusterConfigVariableName,
 						v1alpha1.AWSClusterConfigSpec{
 							ExtraAPIServerCertSANs: []string{
 								"a.b.c.example.com",
@@ -89,7 +88,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 				Name: "extra API server cert SANs set with Docker",
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
-						clusterconfig.MetaVariableName,
+						v1alpha1.ClusterConfigVariableName,
 						v1alpha1.DockerClusterConfigSpec{
 							ExtraAPIServerCertSANs: []string{
 								"a.b.c.example.com",
@@ -131,7 +130,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 				Name: "extra API server cert SANs set with Nutanix",
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
-						clusterconfig.MetaVariableName,
+						v1alpha1.ClusterConfigVariableName,
 						v1alpha1.NutanixClusterConfigSpec{
 							ExtraAPIServerCertSANs: []string{
 								"a.b.c.example.com",

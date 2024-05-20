@@ -15,7 +15,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -37,7 +36,7 @@ var _ = Describe("Generate AWS ControlPlane LoadBalancer patches", func() {
 			Name: "ControlPlaneLoadBalancer scheme set to internet-facing",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSLoadBalancerSpec{
 						Scheme: &capav1.ELBSchemeInternetFacing,
 					},
@@ -58,7 +57,7 @@ var _ = Describe("Generate AWS ControlPlane LoadBalancer patches", func() {
 			Name: "ControlPlaneLoadBalancer scheme set to internal",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSLoadBalancerSpec{
 						Scheme: &capav1.ELBSchemeInternal,
 					},

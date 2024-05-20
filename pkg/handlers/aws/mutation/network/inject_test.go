@@ -14,7 +14,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -36,7 +35,7 @@ var _ = Describe("Generate AWS Network patches", func() {
 			Name: "VPC ID set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSNetwork{
 						VPC: &v1alpha1.VPC{
 							ID: "vpc-1234",
@@ -57,7 +56,7 @@ var _ = Describe("Generate AWS Network patches", func() {
 			Name: "Subnet IDs set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSNetwork{
 						Subnets: v1alpha1.Subnets{
 							{ID: "subnet-1"},
@@ -80,7 +79,7 @@ var _ = Describe("Generate AWS Network patches", func() {
 			Name: "both VPC ID and Subnet IDs set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSNetwork{
 						VPC: &v1alpha1.VPC{
 							ID: "vpc-1234",

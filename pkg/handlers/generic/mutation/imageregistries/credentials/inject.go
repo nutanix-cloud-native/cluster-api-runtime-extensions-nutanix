@@ -26,7 +26,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/mirrors"
 )
@@ -45,7 +44,7 @@ func NewPatch(
 ) *imageRegistriesPatchHandler {
 	return newImageRegistriesPatchHandler(
 		cl,
-		clusterconfig.MetaVariableName,
+		v1alpha1.ClusterConfigVariableName,
 		imageregistries.VariableName,
 	)
 }

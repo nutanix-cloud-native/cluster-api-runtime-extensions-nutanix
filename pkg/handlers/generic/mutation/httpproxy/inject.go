@@ -19,7 +19,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 const (
@@ -37,7 +36,7 @@ type httpProxyPatchHandler struct {
 func NewPatch(
 	cl ctrlclient.Reader,
 ) *httpProxyPatchHandler {
-	return newHTTPProxyPatchHandler(cl, clusterconfig.MetaVariableName, VariableName)
+	return newHTTPProxyPatchHandler(cl, v1alpha1.ClusterConfigVariableName, VariableName)
 }
 
 func newHTTPProxyPatchHandler(

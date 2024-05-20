@@ -14,7 +14,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -36,7 +35,7 @@ var _ = Describe("Generate etcd patches", func() {
 			Name: "etcd imageRepository and imageTag set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.Etcd{
 						Image: &v1alpha1.Image{
 							Repository: "my-registry.io/my-org/my-repo",
@@ -67,7 +66,7 @@ var _ = Describe("Generate etcd patches", func() {
 			Name: "etcd imageRepository set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.Etcd{
 						Image: &v1alpha1.Image{
 							Repository: "my-registry.io/my-org/my-repo",
@@ -96,7 +95,7 @@ var _ = Describe("Generate etcd patches", func() {
 			Name: "etcd imageTag set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.Etcd{
 						Image: &v1alpha1.Image{
 							Tag: "v3.5.99_custom.0",

@@ -21,7 +21,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -54,7 +53,7 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 			Name: "http proxy set for KubeadmConfigTemplate generic worker",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.HTTPProxy{
 						HTTP:         "http://example.com",
 						HTTPS:        "https://example.com",
@@ -89,7 +88,7 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 			Name: "http proxy set for KubeadmControlPlaneTemplate",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.HTTPProxy{
 						HTTP:         "http://example.com",
 						HTTPS:        "https://example.com",

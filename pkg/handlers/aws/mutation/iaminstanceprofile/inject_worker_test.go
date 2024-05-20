@@ -13,7 +13,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -30,7 +29,7 @@ var _ = Describe("Generate IAMInstanceProfile patches for Worker", func() {
 			Name: "iamInstanceProfile for worker set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					workerconfig.MetaVariableName,
+					v1alpha1.WorkerConfigVariableName,
 					"nodes.cluster-api-provider-aws.sigs.k8s.io",
 					v1alpha1.AWSVariableName,
 					VariableName,

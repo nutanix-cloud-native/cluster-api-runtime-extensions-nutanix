@@ -12,7 +12,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -33,9 +32,9 @@ var _ = Describe("Generate IAMInstanceProfile patches for ControlPlane", func() 
 			Name: "iamInstanceProfile for control plane set",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					"control-plane.cluster-api-provider-aws.sigs.k8s.io",
-					clusterconfig.MetaControlPlaneConfigName,
+					v1alpha1.ControlPlaneConfigVariableName,
 					v1alpha1.AWSVariableName,
 					VariableName,
 				),

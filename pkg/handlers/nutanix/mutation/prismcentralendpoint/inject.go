@@ -22,7 +22,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 )
 
 const (
@@ -37,7 +36,7 @@ type nutanixPrismCentralEndpoint struct {
 
 func NewPatch() *nutanixPrismCentralEndpoint {
 	return newNutanixPrismCentralEndpoint(
-		clusterconfig.MetaVariableName,
+		v1alpha1.ClusterConfigVariableName,
 		v1alpha1.NutanixVariableName,
 		VariableName,
 	)

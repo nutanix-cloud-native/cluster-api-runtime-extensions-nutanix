@@ -15,7 +15,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -37,7 +36,7 @@ var _ = Describe("Generate AWS Calico CNI ingress patches", func() {
 			Name: "provider set with AWSClusterTemplate",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.CNI{
 						Provider: v1alpha1.CNIProviderCalico,
 					},
@@ -105,7 +104,7 @@ var _ = Describe("Generate AWS Calico CNI ingress patches", func() {
 			Name: "provider set with AWSClusterTemplate pre-existing rules",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.CNI{
 						Provider: v1alpha1.CNIProviderCalico,
 					},
@@ -198,7 +197,7 @@ var _ = Describe("Generate AWS Calico CNI ingress patches", func() {
 			Name: "provider set with AWSClusterTemplate conflicting pre-existing rules",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.CNI{
 						Provider: v1alpha1.CNIProviderCalico,
 					},

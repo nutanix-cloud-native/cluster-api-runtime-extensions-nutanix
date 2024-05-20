@@ -12,14 +12,13 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
 func TestVariableValidation_AWS(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		clusterconfig.MetaVariableName,
+		v1alpha1.ClusterConfigVariableName,
 		ptr.To(v1alpha1.AWSClusterConfig{}.VariableSchema()),
 		true,
 		awsclusterconfig.NewVariable,
@@ -50,7 +49,7 @@ func TestVariableValidation_AWS(t *testing.T) {
 func TestVariableValidation_Docker(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		clusterconfig.MetaVariableName,
+		v1alpha1.ClusterConfigVariableName,
 		ptr.To(v1alpha1.DockerClusterConfig{}.VariableSchema()),
 		true,
 		dockerclusterconfig.NewVariable,
@@ -81,7 +80,7 @@ func TestVariableValidation_Docker(t *testing.T) {
 func TestVariableValidation_Nutanix(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
-		clusterconfig.MetaVariableName,
+		v1alpha1.ClusterConfigVariableName,
 		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		nutanixclusterconfig.NewVariable,

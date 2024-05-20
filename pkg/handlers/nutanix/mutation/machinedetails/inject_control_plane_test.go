@@ -15,8 +15,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
-	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -174,10 +172,10 @@ var _ = Describe("Generate Nutanix Machine Details patches for ControlPlane", fu
 			Name: "all fields set for control-plane",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					clusterconfig.MetaVariableName,
+					v1alpha1.ClusterConfigVariableName,
 					variableWithAllFieldsSet,
-					clusterconfig.MetaControlPlaneConfigName,
-					nutanixclusterconfig.NutanixVariableName,
+					v1alpha1.ControlPlaneConfigVariableName,
+					v1alpha1.NutanixVariableName,
 					VariableName,
 				),
 			},
