@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
 type fakeCSIProvider struct {
@@ -41,7 +41,7 @@ var testProviderHandlers = map[string]CSIProvider{
 }
 
 func testReq(csi *v1alpha1.CSI) (*runtimehooksv1.AfterControlPlaneInitializedRequest, error) {
-	cv, err := variables.MarshalToClusterVariable(
+	cv, err := apivariables.MarshalToClusterVariable(
 		"clusterConfig",
 		&v1alpha1.GenericClusterConfigSpec{
 			Addons: &v1alpha1.Addons{
