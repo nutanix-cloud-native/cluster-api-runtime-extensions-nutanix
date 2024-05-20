@@ -32,5 +32,6 @@ data:
         bgp: Enabled
       nodeMetricsPort: 9091
       typhaMetricsPort: 9093
+      registry: quay.io/
 {{- end -}}
 {{- end -}}
