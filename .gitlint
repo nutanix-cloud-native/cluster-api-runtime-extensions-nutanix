@@ -17,8 +17,8 @@ line-length=120
 regex=https?://
 
 [ignore-by-author-name]
-regex=(.*)dependabot(.*) #
-ignore=T1,body-min-length
+regex=(.*)dependabot(.*)
+ignore=all
 
 [contrib-title-conventional-commits]
 # Specify allowed commit types. For details see: https://www.conventionalcommits.org/
