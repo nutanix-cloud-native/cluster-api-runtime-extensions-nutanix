@@ -105,9 +105,9 @@ endif
 	    $(if $(filter $(E2E_VERBOSE),true),--vv) \
 	    --covermode=atomic \
 	    --coverprofile coverage-e2e.out \
-		$(if $(filter $(E2E_DRYRUN), true),--dry-run) \
-		--procs=$(E2E_PARALLEL_NODES) \
-		--compilers=$(E2E_PARALLEL_NODES) \
+	    $(if $(filter $(E2E_DRYRUN), true),--dry-run) \
+	    --procs=$(E2E_PARALLEL_NODES) \
+	    --compilers=$(E2E_PARALLEL_NODES) \
 	    --flake-attempts=$(E2E_FLAKE_ATTEMPTS) \
 	    $(if $(E2E_FOCUS),--focus="$(E2E_FOCUS)") \
 	    $(if $(E2E_SKIP),--skip="$(E2E_SKIP)") \
