@@ -228,7 +228,7 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 		)
 
 		By("Initializing the workload cluster")
-		// watchesCtx is used in log streaming to be able to get canceld via cancelWatches after ending the test suite.
+		// watchesCtx is used in log streaming to be able to get cancelled via cancelWatches after ending the test suite.
 		watchesCtx, cancelWatches := context.WithCancel(ctx)
 		defer cancelWatches()
 		clusterctl.InitManagementClusterAndWatchControllerLogs(

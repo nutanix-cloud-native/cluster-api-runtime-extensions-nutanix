@@ -21,7 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
-var _ = Describe("Quick start", Serial, func() {
+var _ = Describe("Quick start", func() {
 	for _, provider := range []string{"Docker", "AWS", "Nutanix"} {
 		lowercaseProvider := strings.ToLower(provider)
 		for _, cniProvider := range []string{"Cilium", "Calico"} {
