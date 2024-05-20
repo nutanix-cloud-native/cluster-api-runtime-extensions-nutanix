@@ -267,7 +267,7 @@ credentialProviders:
 kind: DynamicCredentialProviderConfig
 mirror:
   endpoint: 98765432.dkr.ecr.us-east-1.amazonaws.com
-  credentialsStrategy: MirrorCredentialsOnly
+  credentialsStrategy: MirrorCredentialsFirst
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
 credentialProviders:
   apiVersion: kubelet.config.k8s.io/v1
@@ -315,7 +315,7 @@ credentialProviders:
 kind: DynamicCredentialProviderConfig
 mirror:
   endpoint: mymirror.com
-  credentialsStrategy: MirrorCredentialsOnly
+  credentialsStrategy: MirrorCredentialsFirst
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
 credentialProviders:
   apiVersion: kubelet.config.k8s.io/v1
