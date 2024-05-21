@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -88,7 +87,7 @@ func (n *NutanixCSI) Apply(
 	strategy := provider.Strategy
 	switch strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
-		err := n.handleHelmAddonApply(ctx, req, log)
+		err := n.handleHelmAddonApply(ctx, cluster, log)
 		if err != nil {
 			return err
 		}
@@ -119,7 +118,7 @@ func (n *NutanixCSI) Apply(
 			n.client,
 			provider.Credentials.SecretRef.Name,
 			key,
-			&req.Cluster,
+			cluster,
 		)
 		if err != nil {
 			return fmt.Errorf(
@@ -147,7 +146,7 @@ func (n *NutanixCSI) Apply(
 
 func (n *NutanixCSI) handleHelmAddonApply(
 	ctx context.Context,
-	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
 	log.Info("Retrieving Nutanix CSI installation values template for cluster")
@@ -180,14 +179,14 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			Kind:       "HelmChartProxy",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: req.Cluster.Namespace,
-			Name:      "nutanix-csi-" + req.Cluster.Name,
+			Namespace: cluster.Namespace,
+			Name:      "nutanix-csi-" + cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   storageChart.Repository,
 			ChartName: storageChart.Name,
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
+				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},
 			ReleaseNamespace: defaultStorageHelmReleaseNamespace,
 			ReleaseName:      defaultStorageHelmReleaseName,
@@ -202,14 +201,14 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			Kind:       "HelmChartProxy",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: req.Cluster.Namespace,
-			Name:      "nutanix-csi-snapshot-" + req.Cluster.Name,
+			Namespace: cluster.Namespace,
+			Name:      "nutanix-csi-snapshot-" + cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   snapshotChart.Repository,
 			ChartName: snapshotChart.Name,
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
+				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},
 			ReleaseNamespace: defaultSnapshotHelmReleaseNamespace,
 			ReleaseName:      defaultSnapshotHelmReleaseName,
@@ -219,7 +218,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(snapshotChartProxy)
 	// We use a slice of pointers to satisfy the gocritic linter rangeValCopy check.
 	for _, cp := range []*caaphv1.HelmChartProxy{storageChartProxy, snapshotChartProxy} {
-		if err = controllerutil.SetOwnerReference(&req.Cluster, cp, n.client.Scheme()); err != nil {
+		if err = controllerutil.SetOwnerReference(cluster, cp, n.client.Scheme()); err != nil {
 			return fmt.Errorf(
 				"failed to set owner reference on HelmChartProxy %q: %w",
 				cp.Name,

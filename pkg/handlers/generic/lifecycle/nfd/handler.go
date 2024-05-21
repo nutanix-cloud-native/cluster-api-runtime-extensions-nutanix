@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +25,7 @@ import (
 type addonStrategy interface {
 	apply(
 		context.Context,
-		*runtimehooksv1.AfterControlPlaneInitializedRequest,
+		*clusterv1.Cluster,
 		string,
 		logr.Logger,
 	) error
@@ -54,6 +55,7 @@ type DefaultNFD struct {
 var (
 	_ commonhandlers.Named                   = &DefaultNFD{}
 	_ lifecycle.AfterControlPlaneInitialized = &DefaultNFD{}
+	_ lifecycle.BeforeClusterUpgrade         = &DefaultNFD{}
 )
 
 func New(
@@ -79,14 +81,41 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	clusterKey := ctrlclient.ObjectKeyFromObject(&req.Cluster)
+	commonResponse := &runtimehooksv1.CommonResponse{}
+	n.apply(ctx, &req.Cluster, commonResponse)
+	resp.Status = commonResponse.GetStatus()
+	resp.Message = commonResponse.GetMessage()
+	return
+}
+
+func (n *DefaultNFD) BeforeClusterUpgrade(
+	ctx context.Context,
+	req *runtimehooksv1.BeforeClusterUpgradeRequest,
+	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
+) {
+	commonResponse := &runtimehooksv1.CommonResponse{}
+	n.apply(ctx, &req.Cluster, commonResponse)
+	resp.Status = commonResponse.GetStatus()
+	resp.Message = commonResponse.GetMessage()
+	if resp.Status == runtimehooksv1.ResponseStatusFailure {
+		resp.SetRetryAfterSeconds(lifecycle.LifecycleRetryAfterSeconds)
+	}
+	return
+}
+
+func (n *DefaultNFD) apply(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	resp *runtimehooksv1.CommonResponse,
+) {
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		clusterKey,
 	)
 
-	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 
 	cniVar, err := variables.Get[v1alpha1.NFD](varMap, n.variableName, n.variablePath...)
 	if err != nil {
@@ -141,7 +170,7 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 		return
 	}
 
-	if err := strategy.apply(ctx, req, n.config.DefaultsNamespace(), log); err != nil {
+	if err := strategy.apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return

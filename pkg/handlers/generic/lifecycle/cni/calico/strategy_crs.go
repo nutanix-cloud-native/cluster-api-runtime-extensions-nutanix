@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -58,24 +57,24 @@ type crsStrategy struct {
 
 func (s crsStrategy) apply(
 	ctx context.Context,
-	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {
-	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
+	infraKind := cluster.Spec.InfrastructureRef.Kind
 	defaultInstallationConfigMapName, ok := s.config.defaultProviderInstallationConfigMapNames[infraKind]
 	if !ok {
 		log.Info(
 			fmt.Sprintf(
 				"Skipping Calico CNI handler, no default installation ConfigMap configured for infrastructure provider %q",
-				req.Cluster.Spec.InfrastructureRef.Kind,
+				cluster.Spec.InfrastructureRef.Kind,
 			),
 		)
 		return nil
 	}
 
 	log.Info("Ensuring Tigera manifests ConfigMap exist in cluster namespace")
-	tigeraCM, err := s.ensureTigeraOperatorConfigMap(ctx, &req.Cluster, defaultsNamespace)
+	tigeraCM, err := s.ensureTigeraOperatorConfigMap(ctx, cluster, defaultsNamespace)
 	if err != nil {
 		log.Error(
 			err,
@@ -90,7 +89,7 @@ func (s crsStrategy) apply(
 	log.Info("Ensuring Calico installation CRS and ConfigMap exist for cluster")
 	if err := s.ensureCNICRSForCluster(
 		ctx,
-		&req.Cluster,
+		cluster,
 		defaultsNamespace,
 		defaultInstallationConfigMapName,
 		tigeraCM,

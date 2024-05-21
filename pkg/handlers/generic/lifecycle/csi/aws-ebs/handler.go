@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -66,7 +65,7 @@ func (a *AWSEBS) Apply(
 	strategy := provider.Strategy
 	switch strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		err := a.handleCRSApply(ctx, req)
+		err := a.handleCRSApply(ctx, cluster)
 		if err != nil {
 			return err
 		}
@@ -91,7 +90,7 @@ func (a *AWSEBS) Apply(
 }
 
 func (a *AWSEBS) handleCRSApply(ctx context.Context,
-	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	cluster *clusterv1.Cluster,
 ) error {
 	awsEBSCSIConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -110,8 +109,7 @@ func (a *AWSEBS) handleCRSApply(ctx context.Context,
 			err,
 		)
 	}
-	cluster := req.Cluster
-	cm := generateAWSEBSCSIConfigMap(awsEBSCSIConfigMap, &cluster)
+	cm := generateAWSEBSCSIConfigMap(awsEBSCSIConfigMap, cluster)
 	if err := client.ServerSideApply(ctx, a.client, cm, client.ForceOwnership); err != nil {
 		return fmt.Errorf(
 			"failed to apply AWS EBS CSI manifests ConfigMap: %w",
@@ -122,7 +120,7 @@ func (a *AWSEBS) handleCRSApply(ctx context.Context,
 		ctx,
 		cm.Name,
 		a.client,
-		&req.Cluster,
+		cluster,
 		cm,
 	)
 	if err != nil {
