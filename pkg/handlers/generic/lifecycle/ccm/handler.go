@@ -72,7 +72,6 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 	c.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
-	return
 }
 
 func (c *CCMHandler) BeforeClusterUpgrade(
@@ -87,7 +86,6 @@ func (c *CCMHandler) BeforeClusterUpgrade(
 	if resp.Status == runtimehooksv1.ResponseStatusFailure {
 		resp.SetRetryAfterSeconds(lifecycle.LifecycleRetryAfterSeconds)
 	}
-	return
 }
 
 func (c *CCMHandler) apply(

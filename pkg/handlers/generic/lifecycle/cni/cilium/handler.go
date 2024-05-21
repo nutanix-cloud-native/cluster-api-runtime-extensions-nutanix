@@ -85,7 +85,6 @@ func (c *CiliumCNI) AfterControlPlaneInitialized(
 	c.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
-	return
 }
 
 func (c *CiliumCNI) BeforeClusterUpgrade(
@@ -100,7 +99,6 @@ func (c *CiliumCNI) BeforeClusterUpgrade(
 	if resp.Status == runtimehooksv1.ResponseStatusFailure {
 		resp.SetRetryAfterSeconds(lifecycle.LifecycleRetryAfterSeconds)
 	}
-	return
 }
 
 func (c *CiliumCNI) apply(

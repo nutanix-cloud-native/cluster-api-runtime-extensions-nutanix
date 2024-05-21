@@ -85,7 +85,6 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 	n.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
-	return
 }
 
 func (n *DefaultNFD) BeforeClusterUpgrade(
@@ -100,7 +99,6 @@ func (n *DefaultNFD) BeforeClusterUpgrade(
 	if resp.Status == runtimehooksv1.ResponseStatusFailure {
 		resp.SetRetryAfterSeconds(lifecycle.LifecycleRetryAfterSeconds)
 	}
-	return
 }
 
 func (n *DefaultNFD) apply(

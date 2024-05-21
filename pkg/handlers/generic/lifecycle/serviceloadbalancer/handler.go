@@ -51,7 +51,7 @@ func New(
 	}
 }
 
-func (c *ServiceLoadBalancerHandler) Name() string {
+func (s *ServiceLoadBalancerHandler) Name() string {
 	return "ServiceLoadBalancerHandler"
 }
 
@@ -64,7 +64,6 @@ func (s *ServiceLoadBalancerHandler) AfterControlPlaneInitialized(
 	s.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
-	return
 }
 
 func (s *ServiceLoadBalancerHandler) BeforeClusterUpgrade(
@@ -79,7 +78,6 @@ func (s *ServiceLoadBalancerHandler) BeforeClusterUpgrade(
 	if resp.Status == runtimehooksv1.ResponseStatusFailure {
 		resp.SetRetryAfterSeconds(lifecycle.LifecycleRetryAfterSeconds)
 	}
-	return
 }
 
 func (s *ServiceLoadBalancerHandler) apply(
