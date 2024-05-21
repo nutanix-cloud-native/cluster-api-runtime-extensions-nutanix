@@ -13,7 +13,9 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -53,14 +55,24 @@ func WaitForClusterAutoscalerToBeReadyInWorkloadCluster(
 
 	switch input.ClusterAutoscaler.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		waitForClusterResourceSetToApplyResourcesInCluster(
+		crs := &addonsv1.ClusterResourceSet{}
+		Expect(input.ClusterProxy.GetClient().Get(
 			ctx,
-			waitForClusterResourceSetToApplyResourcesInClusterInput{
-				name:         clusterAutoscalerPrefix + input.WorkloadCluster.Name,
-				clusterProxy: input.ClusterProxy,
-				cluster:      input.WorkloadCluster,
-				intervals:    input.ClusterResourceSetIntervals,
+			types.NamespacedName{
+				Name:      clusterAutoscalerPrefix + input.WorkloadCluster.Name,
+				Namespace: input.WorkloadCluster.Namespace,
 			},
+			crs,
+		)).To(Succeed())
+
+		framework.WaitForClusterResourceSetToApplyResources(
+			ctx,
+			framework.WaitForClusterResourceSetToApplyResourcesInput{
+				ClusterResourceSet: crs,
+				ClusterProxy:       input.ClusterProxy,
+				Cluster:            input.WorkloadCluster,
+			},
+			input.ClusterResourceSetIntervals...,
 		)
 	case v1alpha1.AddonStrategyHelmAddon:
 		WaitForHelmReleaseProxyReadyForCluster(

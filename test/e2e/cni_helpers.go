@@ -10,9 +10,12 @@ import (
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -89,14 +92,24 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 ) {
 	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		waitForClusterResourceSetToApplyResourcesInCluster(
+		crs := &addonsv1.ClusterResourceSet{}
+		Expect(input.clusterProxy.GetClient().Get(
 			ctx,
-			waitForClusterResourceSetToApplyResourcesInClusterInput{
-				name:         "calico-cni-installation-" + input.workloadCluster.Name,
-				clusterProxy: input.clusterProxy,
-				cluster:      input.workloadCluster,
-				intervals:    input.clusterResourceSetIntervals,
+			types.NamespacedName{
+				Name:      "calico-cni-installation-" + input.workloadCluster.Name,
+				Namespace: input.workloadCluster.Namespace,
 			},
+			crs,
+		)).To(Succeed())
+
+		framework.WaitForClusterResourceSetToApplyResources(
+			ctx,
+			framework.WaitForClusterResourceSetToApplyResourcesInput{
+				ClusterResourceSet: crs,
+				ClusterProxy:       input.clusterProxy,
+				Cluster:            input.workloadCluster,
+			},
+			input.clusterResourceSetIntervals...,
 		)
 	case v1alpha1.AddonStrategyHelmAddon:
 		WaitForHelmReleaseProxyReadyForCluster(
@@ -193,14 +206,24 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 ) {
 	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		waitForClusterResourceSetToApplyResourcesInCluster(
+		crs := &addonsv1.ClusterResourceSet{}
+		Expect(input.clusterProxy.GetClient().Get(
 			ctx,
-			waitForClusterResourceSetToApplyResourcesInClusterInput{
-				name:         "cilium-cni-installation-" + input.workloadCluster.Name,
-				clusterProxy: input.clusterProxy,
-				cluster:      input.workloadCluster,
-				intervals:    input.clusterResourceSetIntervals,
+			types.NamespacedName{
+				Name:      "cilium-cni-installation-" + input.workloadCluster.Name,
+				Namespace: input.workloadCluster.Namespace,
 			},
+			crs,
+		)).To(Succeed())
+
+		framework.WaitForClusterResourceSetToApplyResources(
+			ctx,
+			framework.WaitForClusterResourceSetToApplyResourcesInput{
+				ClusterResourceSet: crs,
+				ClusterProxy:       input.clusterProxy,
+				Cluster:            input.workloadCluster,
+			},
+			input.clusterResourceSetIntervals...,
 		)
 	case v1alpha1.AddonStrategyHelmAddon:
 		WaitForHelmReleaseProxyReadyForCluster(
