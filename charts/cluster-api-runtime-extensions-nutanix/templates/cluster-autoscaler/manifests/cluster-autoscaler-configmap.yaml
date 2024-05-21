@@ -15,8 +15,7 @@ data:
         app.kubernetes.io/instance: cluster-autoscaler-tmpl-clustername-tmpl
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
-        app.kubernetes.io/version: 1.29.0
-        helm.sh/chart: cluster-autoscaler-9.35.0
+        helm.sh/chart: cluster-autoscaler-9.37.0
       name: cluster-autoscaler-tmpl-clustername-tmpl
       namespace: tmpl-clusternamespace-tmpl
     spec:
@@ -34,8 +33,7 @@ data:
         app.kubernetes.io/instance: cluster-autoscaler-tmpl-clustername-tmpl
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
-        app.kubernetes.io/version: 1.29.0
-        helm.sh/chart: cluster-autoscaler-9.35.0
+        helm.sh/chart: cluster-autoscaler-9.37.0
       name: cluster-autoscaler-tmpl-clustername-tmpl
       namespace: tmpl-clusternamespace-tmpl
     ---
@@ -46,8 +44,7 @@ data:
         app.kubernetes.io/instance: cluster-autoscaler-tmpl-clustername-tmpl
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
-        app.kubernetes.io/version: 1.29.0
-        helm.sh/chart: cluster-autoscaler-9.35.0
+        helm.sh/chart: cluster-autoscaler-9.37.0
       name: cluster-autoscaler-tmpl-clustername-tmpl
       namespace: tmpl-clusternamespace-tmpl
     rules:
@@ -111,8 +108,7 @@ data:
         app.kubernetes.io/instance: cluster-autoscaler-tmpl-clustername-tmpl
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
-        app.kubernetes.io/version: 1.29.0
-        helm.sh/chart: cluster-autoscaler-9.35.0
+        helm.sh/chart: cluster-autoscaler-9.37.0
       name: cluster-autoscaler-tmpl-clustername-tmpl
       namespace: tmpl-clusternamespace-tmpl
     roleRef:
@@ -131,8 +127,7 @@ data:
         app.kubernetes.io/instance: cluster-autoscaler-tmpl-clustername-tmpl
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
-        app.kubernetes.io/version: 1.29.0
-        helm.sh/chart: cluster-autoscaler-9.35.0
+        helm.sh/chart: cluster-autoscaler-9.37.0
       name: cluster-autoscaler-tmpl-clustername-tmpl
       namespace: tmpl-clusternamespace-tmpl
     spec:
@@ -153,8 +148,7 @@ data:
         app.kubernetes.io/instance: cluster-autoscaler-tmpl-clustername-tmpl
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
-        app.kubernetes.io/version: 1.29.0
-        helm.sh/chart: cluster-autoscaler-9.35.0
+        helm.sh/chart: cluster-autoscaler-9.37.0
       name: cluster-autoscaler-tmpl-clustername-tmpl
       namespace: tmpl-clusternamespace-tmpl
     spec:
@@ -191,7 +185,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.serviceAccountName
-            image: registry.k8s.io/autoscaling/cluster-autoscaler:v1.29.0
+            image: registry.k8s.io/autoscaling/cluster-autoscaler:v1.30.0
             imagePullPolicy: IfNotPresent
             livenessProbe:
               httpGet:
