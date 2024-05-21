@@ -90,7 +90,7 @@ e2e-test:
 ifneq ($(SKIP_BUILD),true)
 	$(MAKE) GORELEASER_FLAGS=$$'--config=<(env GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) gojq --yaml-input --yaml-output \'del(.builds[0].goarch) | del(.builds[0].goos) | .builds[0].targets|=(["linux_amd64","linux_arm64",env.GOOS+"_"+env.GOARCH] | unique | map(. | sub("_amd64";"_amd64_v1")))\' .goreleaser.yml)' release-snapshot
 endif
-	$(info $(M) $(if $(E2E_DRYRUN),dry-,)running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
+	$(info $(M) $(if $(filter $(E2E_DRYRUN), true),dry-,)running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
 	env E2E_IMAGE_TAG="$$(gojq --raw-output '.version' $(REPO_ROOT)/dist/metadata.json)" \
 	  envsubst -no-unset -no-empty -i '$(E2E_CONF_FILE)' -o '$(E2E_CONF_FILE_ENVSUBST)'
 	env AWS_B64ENCODED_CREDENTIALS="$$(clusterawsadm bootstrap credentials encode-as-profile 2>/dev/null)" \
