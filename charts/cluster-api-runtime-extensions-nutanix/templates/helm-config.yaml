@@ -13,7 +13,7 @@ data:
     RepositoryURL: https://helm.cilium.io/
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
-    ChartVersion: 9.35.0
+    ChartVersion: 9.37.0
     RepositoryURL: https://kubernetes.github.io/autoscaler
   metallb: |
     ChartName: metallb
