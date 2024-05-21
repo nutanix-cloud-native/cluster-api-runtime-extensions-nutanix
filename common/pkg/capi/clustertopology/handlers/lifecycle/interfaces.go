@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	// LifecycleRetryAfterSeconds is used for BeforeClusterUpgrade hooks in case of failure.
-	LifecycleRetryAfterSeconds = 30
+	// BeforeClusterUpgradeRetryAfterSeconds is used for BeforeClusterUpgrade hooks in case of failure.
+	BeforeClusterUpgradeRetryAfterSeconds = 30
 )
 
 type BeforeClusterCreate interface {
