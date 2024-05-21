@@ -24,14 +24,18 @@ Export the required variables and any optional variables that you may want to se
 
 ```shell
 clusterctl generate cluster my-cluster \
-  --from https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/v{{< param "version" >}}/docker-cluster-cilium-helm-addon.yaml | kubectl apply --server-side -f -
+  --from https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/v{{< param "version" >}}/docker-cluster-cilium-helm-addon.yaml \
+  --kubernetes-version={{< param "defaultKubernetesVersion" >}} \
+  --worker-machine-count=1 \
+  | kubectl apply --server-side -f -
 ```
 
 To customize your cluster configuration prior to creation, generate the cluster definition to a file and edit it before applying:
 
 ```shell
 clusterctl generate cluster my-cluster \
-  --from https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/v{{< param "version" >}}/docker-cluster-cilium-helm-addon.yaml >mycluster.yaml
+  --from https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/v{{< param "version" >}}/docker-cluster-cilium-helm-addon.yaml \
+  --kubernetes-version={{< param "defaultKubernetesVersion" >}} >mycluster.yaml
 
 # EDIT mycluster.yaml
 
