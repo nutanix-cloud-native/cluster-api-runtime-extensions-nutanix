@@ -13,15 +13,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-func MustMarshal(val any) *apiextensionsv1.JSON {
-	marshaled, err := json.Marshal(val)
-	if err != nil {
-		panic(fmt.Errorf("failed to marshal enum value: %w", err))
-	}
-
-	return &apiextensionsv1.JSON{Raw: marshaled}
-}
-
 func MarshalToClusterVariable[T any](name string, obj T) (*clusterv1.ClusterVariable, error) {
 	marshaled, err := json.Marshal(obj)
 	if err != nil {
@@ -33,7 +24,9 @@ func MarshalToClusterVariable[T any](name string, obj T) (*clusterv1.ClusterVari
 	}, nil
 }
 
-func UnmarshalClusterConfigVariable(clusterVariables []clusterv1.ClusterVariable) (*ClusterConfigSpec, error) {
+func UnmarshalClusterConfigVariable(
+	clusterVariables []clusterv1.ClusterVariable,
+) (*ClusterConfigSpec, error) {
 	variableName := v1alpha1.ClusterConfigVariableName
 	clusterConfig := GetClusterVariableByName(variableName, clusterVariables)
 	if clusterConfig == nil {
@@ -48,7 +41,9 @@ func UnmarshalClusterConfigVariable(clusterVariables []clusterv1.ClusterVariable
 	return spec, nil
 }
 
-func UnmarshalWorkerConfigVariable(clusterVariables []clusterv1.ClusterVariable) (*WorkerNodeConfigSpec, error) {
+func UnmarshalWorkerConfigVariable(
+	clusterVariables []clusterv1.ClusterVariable,
+) (*WorkerNodeConfigSpec, error) {
 	variableName := v1alpha1.WorkerConfigVariableName
 	workerConfig := GetClusterVariableByName(variableName, clusterVariables)
 	if workerConfig == nil {
@@ -72,7 +67,10 @@ func UnmarshalClusterVariable[T any](clusterVariable *clusterv1.ClusterVariable,
 	return nil
 }
 
-func GetClusterVariableByName(name string, clusterVariables []clusterv1.ClusterVariable) *clusterv1.ClusterVariable {
+func GetClusterVariableByName(
+	name string,
+	clusterVariables []clusterv1.ClusterVariable,
+) *clusterv1.ClusterVariable {
 	for _, clusterVar := range clusterVariables {
 		if clusterVar.Name == name {
 			return &clusterVar
