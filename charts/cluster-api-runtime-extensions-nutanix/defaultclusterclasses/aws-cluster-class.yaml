@@ -22,11 +22,11 @@ spec:
       name: aws-quick-start
   patches:
   - external:
-      discoverVariablesExtension: awsclusterconfigvars.cluster-api-runtime-extensions-nutanix
+      discoverVariablesExtension: awsclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
       generateExtension: awsclusterconfigpatch.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
-      discoverVariablesExtension: awsworkerconfigvars.cluster-api-runtime-extensions-nutanix
+      discoverVariablesExtension: awsworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
       generateExtension: awsworkerconfigpatch.cluster-api-runtime-extensions-nutanix
     name: worker-config
   - definitions:
