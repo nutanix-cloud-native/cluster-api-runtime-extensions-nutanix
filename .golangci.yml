@@ -101,10 +101,6 @@ issues:
     - source: "// \\+kubebuilder:"
       linters:
         - lll
-    # Temporary workaround until https://github.com/golangci/golangci-lint/pull/4698 is
-    # available in released version of golangci-lint
-    - path: "(test/e2e/e2e_suite_test.go|v1alpha1)"
-      text: "don't use `init` function"
     # Idiomatic to use pass holderRef by value
     - text: "hugeParam: holderRef is heavy"
       linters:

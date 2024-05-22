@@ -102,6 +102,7 @@ type NutanixNodeConfigSpec struct {
 	Nutanix *NutanixNodeSpec `json:"nutanix,omitempty"`
 }
 
+//nolint:gochecknoinits // Idiomatic to use init functions to register APIs with scheme.
 func init() {
 	SchemeBuilder.Register(&AWSWorkerNodeConfig{}, &DockerNodeConfig{}, &NutanixNodeConfig{})
 }
