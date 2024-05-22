@@ -12,7 +12,7 @@ key from this block below:
 ```yaml
 providers:
   - name: "caren"
-    url: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/latest/runtime-extension-components.yaml"
+    url: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/v{{< param "version" >}}/runtime-extension-components.yaml"
     type: "RuntimeExtensionProvider"
 ```
 
@@ -28,7 +28,7 @@ env CLUSTER_TOPOLOGY=true \
     clusterctl init \
       --infrastructure docker,nutanix:v1.4.0-alpha.2,aws \
       --addon helm \
-      --runtime-extension caren \
+      --runtime-extension caren:v{{< param "version" >}} \
       --wait-providers
 ```
 
