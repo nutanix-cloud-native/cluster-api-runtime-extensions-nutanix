@@ -37,7 +37,7 @@ data:
     RepositoryURL: https://nutanix.github.io/helm-releases/
   tigera-operator: |
     ChartName: tigera-operator
-    ChartVersion: v3.26.4
+    ChartVersion: v3.28.0
     RepositoryURL: https://docs.tigera.io/calico/charts
 kind: ConfigMap
 metadata:
