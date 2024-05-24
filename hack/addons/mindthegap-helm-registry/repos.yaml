@@ -15,7 +15,7 @@ repositories:
     repoURL: https://kubernetes.github.io/autoscaler
     charts:
       cluster-autoscaler:
-      - 9.35.0
+      - 9.37.0
   metallb:
     repoURL: https://metallb.github.io/metallb
     charts:
