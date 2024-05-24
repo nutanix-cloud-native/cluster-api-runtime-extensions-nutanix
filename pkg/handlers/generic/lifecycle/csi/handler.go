@@ -83,9 +83,6 @@ func (c *CSIHandler) BeforeClusterUpgrade(
 	c.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
-	if resp.Status == runtimehooksv1.ResponseStatusFailure {
-		resp.SetRetryAfterSeconds(lifecycle.BeforeClusterUpgradeRetryAfterSeconds)
-	}
 }
 
 func (c *CSIHandler) apply(

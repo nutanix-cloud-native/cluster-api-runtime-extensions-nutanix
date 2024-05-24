@@ -9,11 +9,6 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 )
 
-const (
-	// BeforeClusterUpgradeRetryAfterSeconds is used for BeforeClusterUpgrade hooks in case of failure.
-	BeforeClusterUpgradeRetryAfterSeconds = 30
-)
-
 type BeforeClusterCreate interface {
 	BeforeClusterCreate(
 		context.Context,

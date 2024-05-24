@@ -75,9 +75,6 @@ func (s *ServiceLoadBalancerHandler) BeforeClusterUpgrade(
 	s.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
-	if resp.Status == runtimehooksv1.ResponseStatusFailure {
-		resp.SetRetryAfterSeconds(lifecycle.BeforeClusterUpgradeRetryAfterSeconds)
-	}
 }
 
 func (s *ServiceLoadBalancerHandler) apply(
