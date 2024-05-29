@@ -8,3 +8,11 @@ hubble:
   enabled: false
 ipam:
   mode: kubernetes
+image:
+  useDigest: false
+operator:
+  image:
+    useDigest: false
+certgen:
+  image:
+    useDigest: false

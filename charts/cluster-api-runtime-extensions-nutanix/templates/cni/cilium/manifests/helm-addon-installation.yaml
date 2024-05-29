@@ -19,4 +19,12 @@ data:
           schedule: "0 0 1 * *"       # schedule on the 1st day regeneration of each month
     ipam:
       mode: kubernetes
+    image:
+      useDigest: false
+    operator:
+      image:
+        useDigest: false
+    certgen:
+      image:
+        useDigest: false
 {{- end -}}
