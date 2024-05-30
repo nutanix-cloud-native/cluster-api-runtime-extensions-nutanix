@@ -91,7 +91,7 @@ func (c *CalicoCNI) AfterControlPlaneInitialized(
 	cniVar, err := variables.Get[v1alpha1.CNI](varMap, c.variableName, c.variablePath...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.
+			log.V(5).
 				Info(
 					"Skipping Calico CNI handler, cluster does not specify request CNI addon deployment",
 				)
@@ -110,7 +110,7 @@ func (c *CalicoCNI) AfterControlPlaneInitialized(
 		return
 	}
 	if cniVar.Provider != v1alpha1.CNIProviderCalico {
-		log.Info(
+		log.V(5).Info(
 			fmt.Sprintf(
 				"Skipping Calico CNI handler, cluster does not specify %q as value of CNI provider variable",
 				v1alpha1.CNIProviderCalico,

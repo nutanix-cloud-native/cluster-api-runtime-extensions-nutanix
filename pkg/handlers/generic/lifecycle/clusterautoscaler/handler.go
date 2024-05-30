@@ -94,7 +94,7 @@ func (n *DefaultClusterAutoscaler) AfterControlPlaneInitialized(
 		n.variablePath...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.Info(
+			log.V(5).Info(
 				"Skipping cluster-autoscaler handler, cluster does not specify request cluster-autoscaler addon deployment",
 			)
 			return

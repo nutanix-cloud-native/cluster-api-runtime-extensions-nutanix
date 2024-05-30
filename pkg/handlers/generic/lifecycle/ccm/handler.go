@@ -79,7 +79,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 	_, err := variables.Get[v1alpha1.CCM](varMap, c.variableName, c.variablePath...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.V(4).Info("Skipping CCM handler.")
+			log.V(5).Info("Skipping CCM handler.")
 			return
 		}
 		log.Error(
