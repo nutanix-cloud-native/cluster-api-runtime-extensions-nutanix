@@ -1,0 +1,14 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables/0/value/addons/csi"
+  value:
+    defaultStorage:
+      providerName: local-path
+      storageClassConfigName: local-path
+    providers:
+      - name: local-path
+        storageClassConfig:
+        - name: local-path
+        strategy: HelmAddon

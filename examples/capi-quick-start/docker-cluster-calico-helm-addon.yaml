@@ -27,6 +27,15 @@ spec:
           cni:
             provider: Calico
             strategy: HelmAddon
+          csi:
+            defaultStorage:
+              providerName: local-path
+              storageClassConfigName: local-path
+            providers:
+            - name: local-path
+              storageClassConfig:
+              - name: local-path
+              strategy: HelmAddon
           nfd:
             strategy: HelmAddon
         encryptionAtRest:
