@@ -14,7 +14,7 @@ spec:
     ref:
       apiVersion: controlplane.cluster.x-k8s.io/v1beta1
       kind: KubeadmControlPlaneTemplate
-      name: aws-quick-start-control-plane
+      name: aws-quick-start
   infrastructure:
     ref:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
@@ -51,12 +51,12 @@ spec:
           ref:
             apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
             kind: KubeadmConfigTemplate
-            name: aws-quick-start-worker-bootstraptemplate
+            name: aws-quick-start-worker
         infrastructure:
           ref:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: AWSMachineTemplate
-            name: aws-quick-start-worker-machinetemplate
+            name: aws-quick-start-worker
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: AWSClusterTemplate
@@ -73,7 +73,7 @@ kind: KubeadmControlPlaneTemplate
 metadata:
   labels:
     cluster.x-k8s.io/provider: aws
-  name: aws-quick-start-control-plane
+  name: aws-quick-start
 spec:
   template:
     spec:
@@ -113,7 +113,7 @@ kind: AWSMachineTemplate
 metadata:
   labels:
     cluster.x-k8s.io/provider: aws
-  name: aws-quick-start-worker-machinetemplate
+  name: aws-quick-start-worker
 spec:
   template:
     spec:
@@ -125,7 +125,7 @@ kind: KubeadmConfigTemplate
 metadata:
   labels:
     cluster.x-k8s.io/provider: aws
-  name: aws-quick-start-worker-bootstraptemplate
+  name: aws-quick-start-worker
 spec:
   template:
     spec:
