@@ -19,8 +19,9 @@ const (
 	CNIProviderCalico = "Calico"
 	CNIProviderCilium = "Cilium"
 
-	CSIProviderAWSEBS  = "aws-ebs"
-	CSIProviderNutanix = "nutanix"
+	CSIProviderAWSEBS    = "aws-ebs"
+	CSIProviderNutanix   = "nutanix"
+	CSIProviderLocalPath = "local-path"
 
 	VirtualIPProviderKubeVIP = "KubeVIP"
 
@@ -45,8 +46,9 @@ const (
 type StorageProvisioner string
 
 const (
-	AWSEBSProvisioner  StorageProvisioner = "ebs.csi.aws.com"
-	NutanixProvisioner StorageProvisioner = "csi.nutanix.com"
+	AWSEBSProvisioner    StorageProvisioner = "ebs.csi.aws.com"
+	NutanixProvisioner   StorageProvisioner = "csi.nutanix.com"
+	LocalPathProvisioner StorageProvisioner = "rancher.io/local-path"
 )
 
 // FIXME: Remove the CCM providers from the API. Users do not provider this
@@ -110,7 +112,7 @@ type ClusterAutoscaler struct {
 type DefaultStorage struct {
 	// Name of the CSI Provider for the default storage class.
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=aws-ebs;nutanix
+	// +kubebuilder:validation:Enum=aws-ebs;nutanix;local-path
 	ProviderName string `json:"providerName"`
 
 	// Name of storage class config in any of the provider objects.
@@ -131,7 +133,7 @@ type CSI struct {
 type CSIProvider struct {
 	// Name of the CSI Provider.
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=aws-ebs;nutanix
+	// +kubebuilder:validation:Enum=aws-ebs;nutanix;local-path
 	Name string `json:"name"`
 
 	// StorageClassConfig is a list of storage class configurations for this CSI provider.

@@ -114,6 +114,7 @@ spec:
                             enum:
                             - aws-ebs
                             - nutanix
+                            - local-path
                             type: string
                           storageClassConfigName:
                             description: Name of storage class config in any of the
@@ -152,6 +153,7 @@ spec:
                               enum:
                               - aws-ebs
                               - nutanix
+                              - local-path
                               type: string
                             storageClassConfig:
                               description: StorageClassConfig is a list of storage

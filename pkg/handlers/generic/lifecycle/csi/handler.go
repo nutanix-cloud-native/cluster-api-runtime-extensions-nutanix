@@ -79,7 +79,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 		c.variablePath...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.Info("Skipping CSI handler, the cluster does not define the CSI variable")
+			log.V(5).Info("Skipping CSI handler, the cluster does not define the CSI variable")
 			return
 		}
 		msg := "failed to read the CSI variable from the cluster"
