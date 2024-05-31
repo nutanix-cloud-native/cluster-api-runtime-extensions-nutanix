@@ -3,7 +3,7 @@ kind: KubeadmConfigTemplate
 metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
-  name: nutanix-quick-start-kcfg-0
+  name: nutanix-quick-start
 spec:
   template:
     spec:
@@ -54,16 +54,16 @@ spec:
       ref:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: NutanixMachineTemplate
-        name: nutanix-quick-start-cp-nmt
+        name: nutanix-quick-start-control-plane
     ref:
       apiVersion: controlplane.cluster.x-k8s.io/v1beta1
       kind: KubeadmControlPlaneTemplate
-      name: nutanix-quick-start-kcpt
+      name: nutanix-quick-start
   infrastructure:
     ref:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       kind: NutanixClusterTemplate
-      name: nutanix-quick-start-nct
+      name: nutanix-quick-start
   patches:
   - external:
       discoverVariablesExtension: nutanixclusterconfigvars.cluster-api-runtime-extensions-nutanix
@@ -103,19 +103,19 @@ spec:
           ref:
             apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
             kind: KubeadmConfigTemplate
-            name: nutanix-quick-start-kcfg-0
+            name: nutanix-quick-start-worker
         infrastructure:
           ref:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
             kind: NutanixMachineTemplate
-            name: nutanix-quick-start-md-nmt
+            name: nutanix-quick-start-worker
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlaneTemplate
 metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
-  name: nutanix-quick-start-kcpt
+  name: nutanix-quick-start
 spec:
   template:
     spec:
@@ -163,7 +163,7 @@ kind: NutanixClusterTemplate
 metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
-  name: nutanix-quick-start-nct
+  name: nutanix-quick-start
 spec:
   template:
     spec:
@@ -184,7 +184,7 @@ kind: NutanixMachineTemplate
 metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
-  name: nutanix-quick-start-cp-nmt
+  name: nutanix-quick-start-control-plane
 spec:
   template:
     spec:
@@ -209,7 +209,7 @@ kind: NutanixMachineTemplate
 metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
-  name: nutanix-quick-start-md-nmt
+  name: nutanix-quick-start-control-plane
 spec:
   template:
     spec:
