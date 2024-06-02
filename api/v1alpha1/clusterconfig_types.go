@@ -73,6 +73,9 @@ type AWSClusterConfigSpec struct {
 	GenericClusterConfigSpec `json:",inline"`
 
 	// +kubebuilder:validation:Optional
+	Addons *AWSAddons `json:"addons,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	ControlPlane *AWSControlPlaneNodeConfigSpec `json:"controlPlane,omitempty"`
 
 	// Extra Subject Alternative Names for the API Server signing cert.
@@ -103,6 +106,9 @@ type DockerClusterConfigSpec struct {
 	Docker *DockerSpec `json:"docker,omitempty"`
 
 	GenericClusterConfigSpec `json:",inline"`
+
+	// +kubebuilder:validation:Optional
+	Addons *DockerAddons `json:"addons,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ControlPlane *DockerNodeConfigSpec `json:"controlPlane,omitempty"`
@@ -140,6 +146,9 @@ type NutanixClusterConfigSpec struct {
 	Nutanix *NutanixSpec `json:"nutanix,omitempty"`
 
 	GenericClusterConfigSpec `json:",inline"`
+
+	// +kubebuilder:validation:Optional
+	Addons *NutanixAddons `json:"addons,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ControlPlane *NutanixNodeConfigSpec `json:"controlPlane,omitempty"`
@@ -194,9 +203,6 @@ type GenericClusterConfigSpec struct {
 
 	// +kubebuilder:validation:Optional
 	GlobalImageRegistryMirror *GlobalImageRegistryMirror `json:"globalImageRegistryMirror,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	Addons *Addons `json:"addons,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Users []User `json:"users,omitempty"`

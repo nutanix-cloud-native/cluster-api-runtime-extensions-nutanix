@@ -22,6 +22,8 @@ type ClusterConfigSpec struct {
 
 	carenv1.GenericClusterConfigSpec `json:",inline"`
 
+	Addons *Addons `json:"addons,omitempty"`
+
 	ControlPlane *ControlPlaneNodeConfigSpec `json:"controlPlane,omitempty"`
 
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
@@ -41,4 +43,16 @@ type WorkerNodeConfigSpec struct {
 	Docker *carenv1.DockerNodeSpec `json:"docker,omitempty"`
 
 	Nutanix *carenv1.NutanixNodeSpec `json:"nutanix,omitempty"`
+}
+
+type Addons struct {
+	carenv1.GenericAddons `json:",inline"`
+
+	CSI *CSI `json:"csi,omitempty"`
+}
+
+type CSI struct {
+	carenv1.GenericCSI `json:",inline"`
+
+	Providers map[string]carenv1.CSIProvider `json:"providers"`
 }

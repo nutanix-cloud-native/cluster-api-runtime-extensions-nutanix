@@ -60,7 +60,7 @@ var (
 	}
 )
 
-func Test_EnsureOwnerRefForSecret(t *testing.T) {
+func Test_EnsureOwnerReferenceForSecret(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {

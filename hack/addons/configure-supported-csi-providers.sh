@@ -25,7 +25,7 @@ for provider in "${!CSI_PROVIDERS[@]}"; do
 $(cat "${GIT_REPO_ROOT}/hack/license-header.yaml.txt")
 ---
 $(gojq --yaml-input --yaml-output \
-    "(${CSI_JSONPATH}.providers.items.properties.name.enum, ${CSI_JSONPATH}.defaultStorage.properties.providerName.enum) |= ${CSI_PROVIDERS[${provider}]}" \
+    "(${CSI_JSONPATH}.defaultStorage.properties.provider.enum) |= ${CSI_PROVIDERS[${provider}]}" \
     "${custerconfig_file}")
 EOF
 

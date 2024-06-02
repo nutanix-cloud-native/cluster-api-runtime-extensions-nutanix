@@ -67,8 +67,8 @@ func Test_templateValues(t *testing.T) {
 		{
 			name: "With AdditionalTrustBundle set",
 			clusterConfig: &apivariables.ClusterConfigSpec{
-				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
-					Addons: &v1alpha1.Addons{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
 						CCM: &v1alpha1.CCM{
 							Credentials: &v1alpha1.CCMCredentials{
 								SecretRef: v1alpha1.LocalObjectReference{
@@ -94,8 +94,8 @@ func Test_templateValues(t *testing.T) {
 		{
 			name: "Without an AdditionalTrustBundle set",
 			clusterConfig: &apivariables.ClusterConfigSpec{
-				GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
-					Addons: &v1alpha1.Addons{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
 						CCM: &v1alpha1.CCM{
 							Credentials: &v1alpha1.CCMCredentials{
 								SecretRef: v1alpha1.LocalObjectReference{

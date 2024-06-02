@@ -16,6 +16,7 @@ import (
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
 )
@@ -70,7 +71,7 @@ var _ = Describe("Self-hosted", Serial, func() {
 								clusterVars := variables.ClusterVariablesToVariablesMap(
 									workloadCluster.Spec.Topology.Variables,
 								)
-								addonsConfig, err := variables.Get[v1alpha1.Addons](
+								addonsConfig, err := variables.Get[apivariables.Addons](
 									clusterVars,
 									v1alpha1.ClusterConfigVariableName,
 									"addons",

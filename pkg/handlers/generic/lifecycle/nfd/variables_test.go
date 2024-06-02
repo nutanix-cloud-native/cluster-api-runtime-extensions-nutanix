@@ -9,6 +9,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
@@ -17,28 +18,34 @@ import (
 
 var testDefs = []capitest.VariableTestDef{{
 	Name: "ClusterResourceSet strategy",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		Addons: &v1alpha1.Addons{
-			NFD: &v1alpha1.NFD{
-				Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			GenericAddons: v1alpha1.GenericAddons{
+				NFD: &v1alpha1.NFD{
+					Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+				},
 			},
 		},
 	},
 }, {
 	Name: "HelmAddon strategy",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		Addons: &v1alpha1.Addons{
-			NFD: &v1alpha1.NFD{
-				Strategy: v1alpha1.AddonStrategyHelmAddon,
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			GenericAddons: v1alpha1.GenericAddons{
+				NFD: &v1alpha1.NFD{
+					Strategy: v1alpha1.AddonStrategyHelmAddon,
+				},
 			},
 		},
 	},
 }, {
 	Name: "invalid strategy",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		Addons: &v1alpha1.Addons{
-			NFD: &v1alpha1.NFD{
-				Strategy: "invalid-strategy",
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			GenericAddons: v1alpha1.GenericAddons{
+				NFD: &v1alpha1.NFD{
+					Strategy: "invalid-strategy",
+				},
 			},
 		},
 	},

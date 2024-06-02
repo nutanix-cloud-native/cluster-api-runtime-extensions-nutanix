@@ -17,6 +17,7 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -58,7 +59,7 @@ func New(
 func (a *AWSEBS) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
-	defaultStorageConfig v1alpha1.DefaultStorage,
+	defaultStorage v1alpha1.DefaultStorage,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	_ logr.Logger,
 ) error {
@@ -73,12 +74,12 @@ func (a *AWSEBS) Apply(
 	default:
 		return fmt.Errorf("stategy %s not implemented", strategy)
 	}
-	err := handlersutils.CreateStorageClassOnRemote(
+	err := csiutils.CreateStorageClassOnRemote(
 		ctx,
 		a.client,
-		provider.StorageClassConfig,
+		provider.StorageClassConfigs,
 		&req.Cluster,
-		defaultStorageConfig,
+		defaultStorage,
 		v1alpha1.CSIProviderAWSEBS,
 		v1alpha1.AWSEBSProvisioner,
 		defaultStorageClassParameters,

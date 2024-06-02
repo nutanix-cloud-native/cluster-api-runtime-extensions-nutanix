@@ -29,13 +29,13 @@ spec:
             strategy: ClusterResourceSet
           csi:
             defaultStorage:
-              providerName: local-path
-              storageClassConfigName: local-path
+              provider: local-path
+              storageClassConfig: default
             providers:
-            - name: local-path
-              storageClassConfig:
-              - name: local-path
-              strategy: HelmAddon
+              local-path:
+                storageClassConfigs:
+                  default: {}
+                strategy: HelmAddon
           nfd:
             strategy: ClusterResourceSet
         encryptionAtRest:

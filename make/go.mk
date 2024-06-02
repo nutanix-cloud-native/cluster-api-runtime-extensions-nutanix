@@ -86,7 +86,7 @@ ARTIFACTS ?= ${REPO_ROOT}/_artifacts
 .PHONY: e2e-test
 e2e-test: ## Runs e2e tests
 ifneq ($(wildcard test/e2e/*),)
-e2e-test:
+e2e-test: examples.sync
 ifneq ($(SKIP_BUILD),true)
 	$(MAKE) GORELEASER_FLAGS=$$'--config=<(env GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) gojq --yaml-input --yaml-output \'del(.builds[0].goarch) | del(.builds[0].goos) | .builds[0].targets|=(["linux_amd64","linux_arm64",env.GOOS+"_"+env.GOARCH] | unique | map(. | sub("_amd64";"_amd64_v1")))\' .goreleaser.yml)' release-snapshot
 endif

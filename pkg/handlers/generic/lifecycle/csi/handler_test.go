@@ -25,7 +25,7 @@ type fakeCSIProvider struct {
 func (p *fakeCSIProvider) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
-	defaultStorageConfig v1alpha1.DefaultStorage,
+	defaultStorage v1alpha1.DefaultStorage,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	log logr.Logger,
 ) error {
@@ -40,12 +40,12 @@ var testProviderHandlers = map[string]CSIProvider{
 	},
 }
 
-func testReq(csi *v1alpha1.CSI) (*runtimehooksv1.AfterControlPlaneInitializedRequest, error) {
+func testReq(csi *apivariables.CSI) (*runtimehooksv1.AfterControlPlaneInitializedRequest, error) {
 	cv, err := apivariables.MarshalToClusterVariable(
 		"clusterConfig",
-		&v1alpha1.GenericClusterConfigSpec{
-			Addons: &v1alpha1.Addons{
-				CSIProviders: csi,
+		&apivariables.ClusterConfigSpec{
+			Addons: &apivariables.Addons{
+				CSI: csi,
 			},
 		},
 	)
@@ -69,7 +69,7 @@ func testReq(csi *v1alpha1.CSI) (*runtimehooksv1.AfterControlPlaneInitializedReq
 func Test_AfterControlPlaneInitialized(t *testing.T) {
 	tests := []struct {
 		name       string
-		csi        *v1alpha1.CSI
+		csi        *apivariables.CSI
 		wantStatus runtimehooksv1.ResponseStatus
 	}{
 		{
@@ -79,130 +79,78 @@ func Test_AfterControlPlaneInitialized(t *testing.T) {
 		},
 		{
 			name: "if csi variable set, must set at least one provider",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{},
-				DefaultStorage: v1alpha1.DefaultStorage{
-					ProviderName:           "example",
-					StorageClassConfigName: "example",
+			csi: &apivariables.CSI{
+				Providers: map[string]v1alpha1.CSIProvider{},
+				GenericCSI: v1alpha1.GenericCSI{
+					DefaultStorage: v1alpha1.DefaultStorage{
+						Provider:           "test-provider",
+						StorageClassConfig: "test-sc",
+					},
 				},
 			},
 			wantStatus: runtimehooksv1.ResponseStatusFailure,
 		},
 		{
-			name: "default storage Provider name must be the name of a set provider",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name: "test1",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "test1",
-							},
+			name: "default storage Provider must be the name of a configured storage class",
+			csi: &apivariables.CSI{
+				Providers: map[string]v1alpha1.CSIProvider{
+					"test1": {
+						StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
+							"test1": {},
 						},
 					},
 				},
-				DefaultStorage: v1alpha1.DefaultStorage{
-					ProviderName:           "not-test1",
-					StorageClassConfigName: "test1",
-				},
-			},
-			wantStatus: runtimehooksv1.ResponseStatusFailure,
-		},
-		{
-			name: "default storage StorageClassConfig name must be the name of a StorageClassConfig of the default provider",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name: "test1",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "test1",
-							},
-						},
+				GenericCSI: v1alpha1.GenericCSI{
+					DefaultStorage: v1alpha1.DefaultStorage{
+						Provider:           "test1",
+						StorageClassConfig: "test2",
 					},
-					{
-						Name: "test2",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "test2",
-							},
-						},
-					},
-				},
-				DefaultStorage: v1alpha1.DefaultStorage{
-					ProviderName:           "test1",
-					StorageClassConfigName: "test2",
 				},
 			},
 			wantStatus: runtimehooksv1.ResponseStatusFailure,
 		},
 		{
 			name: "csi provider is unknown",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name: "not-test1-or-test2",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "not-test1-or-test2",
-							},
+			csi: &apivariables.CSI{
+				Providers: map[string]v1alpha1.CSIProvider{
+					"not-test1-or-test2": {
+						StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
+							"not-test1-or-test2": {},
 						},
 					},
 				},
-				DefaultStorage: v1alpha1.DefaultStorage{
-					ProviderName:           "not-test1-or-test2",
-					StorageClassConfigName: "not-test1-or-test2",
+				GenericCSI: v1alpha1.GenericCSI{
+					DefaultStorage: v1alpha1.DefaultStorage{
+						Provider:           "not-test1-or-test2",
+						StorageClassConfig: "not-test1-or-test2",
+					},
 				},
 			},
 			wantStatus: runtimehooksv1.ResponseStatusFailure,
 		},
 		{
 			name: "valid csi configuration",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name: "test1",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "test1",
-							},
+			csi: &apivariables.CSI{
+				Providers: map[string]v1alpha1.CSIProvider{
+					"test1": {
+						StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
+							"test1": {},
 						},
 					},
-					{
-						Name: "test2",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "test2",
-							},
+					"test2": {
+						StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
+							"test2": {},
 						},
 					},
 				},
-				DefaultStorage: v1alpha1.DefaultStorage{
-					ProviderName:           "test2",
-					StorageClassConfigName: "test2",
+				GenericCSI: v1alpha1.GenericCSI{
+					DefaultStorage: v1alpha1.DefaultStorage{
+						Provider:           "test2",
+						StorageClassConfig: "test2",
+					},
 				},
 			},
 			wantStatus: runtimehooksv1.ResponseStatusSuccess,
-		},
-		{
-			name: "csi handler fails to apply",
-			csi: &v1alpha1.CSI{
-				Providers: []v1alpha1.CSIProvider{
-					{
-						Name: "broken",
-						StorageClassConfig: []v1alpha1.StorageClassConfig{
-							{
-								Name: "broken",
-							},
-						},
-					},
-				},
-				DefaultStorage: v1alpha1.DefaultStorage{
-					ProviderName:           "broken",
-					StorageClassConfigName: "broken",
-				},
-			},
-			wantStatus: runtimehooksv1.ResponseStatusFailure,
 		},
 	}
 	for _, tt := range tests {

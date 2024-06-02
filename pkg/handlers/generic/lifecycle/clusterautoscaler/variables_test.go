@@ -9,6 +9,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
@@ -24,30 +25,36 @@ func TestVariableValidation_AWS(t *testing.T) {
 		awsclusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "ClusterResourceSet strategy",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Addons: &v1alpha1.Addons{
-					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-						Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+			Vals: apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
+							Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+						},
 					},
 				},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "HelmAddon strategy",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Addons: &v1alpha1.Addons{
-					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-						Strategy: v1alpha1.AddonStrategyHelmAddon,
+			Vals: apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
+							Strategy: v1alpha1.AddonStrategyHelmAddon,
+						},
 					},
 				},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "invalid strategy",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Addons: &v1alpha1.Addons{
-					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-						Strategy: "invalid-strategy",
+			Vals: apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
+							Strategy: "invalid-strategy",
+						},
 					},
 				},
 			},
@@ -65,30 +72,36 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 		nutanixclusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "ClusterResourceSet strategy",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Addons: &v1alpha1.Addons{
-					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-						Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+			Vals: apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
+							Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+						},
 					},
 				},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "HelmAddon strategy",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Addons: &v1alpha1.Addons{
-					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-						Strategy: v1alpha1.AddonStrategyHelmAddon,
+			Vals: apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
+							Strategy: v1alpha1.AddonStrategyHelmAddon,
+						},
 					},
 				},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "invalid strategy",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Addons: &v1alpha1.Addons{
-					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-						Strategy: "invalid-strategy",
+			Vals: apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
+							Strategy: "invalid-strategy",
+						},
 					},
 				},
 			},
@@ -106,30 +119,36 @@ func TestVariableValidation_Docker(t *testing.T) {
 		dockerclusterconfig.NewVariable,
 		capitest.VariableTestDef{
 			Name: "ClusterResourceSet strategy",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Addons: &v1alpha1.Addons{
-					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-						Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+			Vals: apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
+							Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+						},
 					},
 				},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "HelmAddon strategy",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Addons: &v1alpha1.Addons{
-					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-						Strategy: v1alpha1.AddonStrategyHelmAddon,
+			Vals: apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
+							Strategy: v1alpha1.AddonStrategyHelmAddon,
+						},
 					},
 				},
 			},
 		},
 		capitest.VariableTestDef{
 			Name: "invalid strategy",
-			Vals: v1alpha1.GenericClusterConfigSpec{
-				Addons: &v1alpha1.Addons{
-					ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-						Strategy: "invalid-strategy",
+			Vals: apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
+							Strategy: "invalid-strategy",
+						},
 					},
 				},
 			},

@@ -5,10 +5,10 @@
   path: "/spec/topology/variables/0/value/addons/csi"
   value:
     defaultStorage:
-      providerName: local-path
-      storageClassConfigName: local-path
+      provider: local-path
+      storageClassConfig: default
     providers:
-      - name: local-path
-        storageClassConfig:
-        - name: local-path
+      local-path:
         strategy: HelmAddon
+        storageClassConfigs:
+          default: {}
