@@ -24,6 +24,10 @@ export KUBE_VIP_VERSION := v0.8.0
 
 export METALLB_CHART_VERSION := v0.14.5
 
+CSI_PROVIDERS_aws := ["aws-ebs"]
+CSI_PROVIDERS_nutanix := ["nutanix"]
+CSI_PROVIDERS_docker := ["local-path"]
+
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler aws-ebs-csi aws-ccm.127 aws-ccm.128 aws-ccm.129 kube-vip)
 
@@ -59,3 +63,13 @@ update-addon.kube-vip: ; $(info $(M) updating kube-vip manifests)
 generate-helm-configmap:
 	go run hack/tools/helm-cm/main.go -kustomize-directory="./hack/addons/kustomize" -output-file="./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
 	./hack/addons/add-warning-helm-configmap.sh
+
+# Set only the supported CSI providers for each provider.
+.PHONY: configure-csi-providers.%
+configure-csi-providers.%: CSI_JSONPATH := .spec.versions[].schema.openAPIV3Schema.properties.spec.properties.addons.properties.csi.properties
+configure-csi-providers.%: ; $(info $(M) configuring csi providers for $*clusterconfigs)
+	gojq --yaml-input --yaml-output \
+	  '($(CSI_JSONPATH).providers.items.properties.name.enum, $(CSI_JSONPATH).defaultStorage.properties.providerName.enum) |= $(CSI_PROVIDERS_$(*))' \
+	  api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml > api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml.tmp
+	cat hack/license-header.yaml.txt <(echo ---) api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml.tmp > api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml
+	rm api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml.tmp

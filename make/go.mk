@@ -201,6 +201,7 @@ go-generate: ; $(info $(M) running go generate)
 	  object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/dev/null \
 	  crd:headerFile=hack/license-header.yaml.txt output:crd:artifacts:config=./api/v1alpha1/crds
 	#$(MAKE) go-fix
+	$(MAKE) $(addprefix configure-csi-providers.,aws nutanix docker)
 
 .PHONY: go-mod-upgrade
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades
