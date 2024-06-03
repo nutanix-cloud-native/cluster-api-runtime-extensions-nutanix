@@ -20,26 +20,26 @@ import (
 
 var (
 	variableWithAllFieldsSet = v1alpha1.NutanixMachineDetails{
-		BootType:       v1alpha1.NutanixBootType(capxv1.NutanixBootTypeLegacy),
+		BootType:       capxv1.NutanixBootTypeLegacy,
 		VCPUSockets:    2,
 		VCPUsPerSocket: 1,
-		Image: v1alpha1.NutanixResourceIdentifier{
+		Image: capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-image"),
 		},
-		Cluster: v1alpha1.NutanixResourceIdentifier{
+		Cluster: capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-pe-cluster"),
 		},
 		MemorySize:     resource.MustParse("8Gi"),
 		SystemDiskSize: resource.MustParse("40Gi"),
-		Subnets: []v1alpha1.NutanixResourceIdentifier{
+		Subnets: []capxv1.NutanixResourceIdentifier{
 			{
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("fake-subnet"),
 			},
 		},
-		AdditionalCategories: []v1alpha1.NutanixCategoryIdentifier{
+		AdditionalCategories: []capxv1.NutanixCategoryIdentifier{
 			{
 				Key:   "fake-key",
 				Value: "fake-value",
@@ -49,7 +49,7 @@ var (
 				Value: "fake-value2",
 			},
 		},
-		Project: ptr.To(v1alpha1.NutanixResourceIdentifier{
+		Project: ptr.To(capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-project"),
 		}),
