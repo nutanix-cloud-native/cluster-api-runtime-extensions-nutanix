@@ -74,7 +74,7 @@ func (c *ServiceLoadBalancerHandler) AfterControlPlaneInitialized(
 		c.variablePath...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.
+			log.V(5).
 				Info(
 					"Skipping ServiceLoadBalancer, field is not specified",
 					"error",

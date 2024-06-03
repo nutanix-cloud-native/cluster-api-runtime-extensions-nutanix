@@ -65,7 +65,7 @@ func (s crsStrategy) apply(
 	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
 	defaultInstallationConfigMapName, ok := s.config.defaultProviderInstallationConfigMapNames[infraKind]
 	if !ok {
-		log.V(4).Info(
+		log.Info(
 			fmt.Sprintf(
 				"Skipping Calico CNI handler, no default installation ConfigMap configured for infrastructure provider %q",
 				req.Cluster.Spec.InfrastructureRef.Kind,

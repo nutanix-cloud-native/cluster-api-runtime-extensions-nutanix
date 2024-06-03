@@ -91,7 +91,8 @@ func (n *DefaultNFD) AfterControlPlaneInitialized(
 	cniVar, err := variables.Get[v1alpha1.NFD](varMap, n.variableName, n.variablePath...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.Info("Skipping NFD handler, cluster does not specify request NFDaddon deployment")
+			log.V(5).
+				Info("Skipping NFD handler, cluster does not specify request NFDaddon deployment")
 			return
 		}
 		log.Error(
