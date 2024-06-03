@@ -24,6 +24,9 @@ export KUBE_VIP_VERSION := v0.8.0
 
 export METALLB_CHART_VERSION := v0.14.5
 
+# Below are the lists of CSI Providers allowed for a specific infrastructure.
+# - When we support a new infrastructure, we need to a create a new list using the same convention.
+# - When we support a new CSI Provider, we need to add it to one or more of these lists
 CSI_PROVIDERS_aws := ["aws-ebs"]
 CSI_PROVIDERS_nutanix := ["nutanix"]
 CSI_PROVIDERS_docker := ["local-path"]
