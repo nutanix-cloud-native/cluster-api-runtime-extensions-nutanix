@@ -134,12 +134,14 @@ func (h *ControlPlaneVirtualIP) Mutate(
 		selectors.ControlPlane(),
 		log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-			virtualIPProviderFile, getFileErr := virtualIPProvider.GetFile(
-				ctx,
-				controlPlaneEndpointVar,
-			)
-			if getFileErr != nil {
-				return getFileErr
+			virtualIPProviderFiles, preKubeadmCommands, postKubeadmCommands, generateErr :=
+				virtualIPProvider.GenerateFilesAndCommands(
+					ctx,
+					controlPlaneEndpointVar,
+					cluster,
+				)
+			if generateErr != nil {
+				return generateErr
 			}
 
 			log.WithValues(
@@ -151,15 +153,8 @@ func (h *ControlPlaneVirtualIP) Mutate(
 			))
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				*virtualIPProviderFile,
+				virtualIPProviderFiles...,
 			)
-
-			preKubeadmCommands, postKubeadmCommands, getCommandsErr := virtualIPProvider.GetCommands(
-				cluster,
-			)
-			if getCommandsErr != nil {
-				return getCommandsErr
-			}
 
 			if len(preKubeadmCommands) > 0 {
 				log.WithValues(

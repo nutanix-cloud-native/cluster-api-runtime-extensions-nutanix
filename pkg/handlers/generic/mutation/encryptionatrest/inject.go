@@ -125,7 +125,7 @@ func (h *encryptionPatchHandler) Mutate(
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding encryption configuration files and API server extra args in control plane kubeadm config spec")
 
-			// Create kubadm config file for encryption config
+			// Create kubeadm config file for encryption config
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
 				generateEncryptionCredentialsFile(cluster))

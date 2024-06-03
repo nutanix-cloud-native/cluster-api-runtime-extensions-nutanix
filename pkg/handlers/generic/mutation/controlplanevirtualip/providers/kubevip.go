@@ -5,6 +5,7 @@ package providers
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 
 	"github.com/blang/semver/v4"
@@ -14,17 +15,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
+)
+
+const (
+	kubeVIPFileOwner       = "root:root"
+	kubeVIPFilePath        = "/etc/kubernetes/manifests/kube-vip.yaml"
+	kubeVIPFilePermissions = "0600"
+
+	configureKubeVIPScriptPermissions = "0700"
 )
 
 var (
-	//nolint:lll // for readability prefer to keep the long line
-	KubeVIPPreKubeadmCommands = []string{`if [ -f /run/kubeadm/kubeadm.yaml ]; then
-  sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
-fi`}
-	//nolint:lll // for readability prefer to keep the long line
-	KubeVIPPostKubeadmCommands = []string{`if [ -f /run/kubeadm/kubeadm.yaml ]; then
-  sed -i 's#path: /etc/kubernetes/super-admin.conf#path: /etc/kubernetes/admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
-fi`}
+	configureKubeVIPScriptOnRemote = common.ConfigFilePathOnRemote(
+		"configure-kube-vip.sh")
+
+	configureKubeVIPScriptOnRemotePreKubeadmCommand  = "/bin/bash " + configureKubeVIPScriptOnRemote + " use-super-admin.conf"
+	configureKubeVIPScriptOnRemotePostKubeadmCommand = "/bin/bash " + configureKubeVIPScriptOnRemote + " use-admin.conf"
+)
+
+var (
+	//go:embed templates/configure-kube-vip.sh
+	configureKubeVIPScript []byte
 )
 
 type kubeVIPFromConfigMapProvider struct {
@@ -50,35 +62,34 @@ func (p *kubeVIPFromConfigMapProvider) Name() string {
 	return "kube-vip"
 }
 
-// GetFile reads the kube-vip template from the ConfigMap
-// and returns the content a File, templating the required variables.
-func (p *kubeVIPFromConfigMapProvider) GetFile(
+// GenerateFilesAndCommands returns files and pre/post kubeadm commands for kube-vip.
+// It reads kube-vip template from a ConfigMap and returns the content a File, templating the required variables.
+// If required, it also returns a script file and pre/post kubeadm commands to change the kube-vip Pod to use the new
+// super-admin.conf file.
+func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
 	ctx context.Context,
 	spec v1alpha1.ControlPlaneEndpointSpec,
-) (*bootstrapv1.File, error) {
+	cluster *clusterv1.Cluster,
+) ([]bootstrapv1.File, []string, []string, error) {
 	data, err := getTemplateFromConfigMap(ctx, p.client, p.configMapKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed getting template data: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed getting template data: %w", err)
 	}
 
 	kubeVIPStaticPod, err := templateValues(spec, data)
 	if err != nil {
-		return nil, fmt.Errorf("failed templating static Pod: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed templating static Pod: %w", err)
 	}
 
-	return &bootstrapv1.File{
-		Content:     kubeVIPStaticPod,
-		Owner:       kubeVIPFileOwner,
-		Path:        kubeVIPFilePath,
-		Permissions: kubeVIPFilePermissions,
-	}, nil
-}
+	files := []bootstrapv1.File{
+		{
+			Content:     kubeVIPStaticPod,
+			Owner:       kubeVIPFileOwner,
+			Path:        kubeVIPFilePath,
+			Permissions: kubeVIPFilePermissions,
+		},
+	}
 
-//
-//nolint:gocritic // No need for named return values
-func (p *kubeVIPFromConfigMapProvider) GetCommands(
-	cluster *clusterv1.Cluster,
-) ([]string, []string, error) {
 	// The kube-vip static Pod uses admin.conf on the host to connect to the API server.
 	// But, starting with Kubernetes 1.29, admin.conf first gets created with no RBAC permissions.
 	// At the same time, 'kubeadm init' command waits for the API server to be reachable on the kube-vip IP.
@@ -91,13 +102,24 @@ func (p *kubeVIPFromConfigMapProvider) GetCommands(
 	// See https://github.com/kube-vip/kube-vip/issues/684
 	needCommands, err := needHackCommands(cluster)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to determine if kube-vip commands are needed: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to determine if kube-vip commands are needed: %w", err)
 	}
 	if !needCommands {
-		return nil, nil, nil
+		return files, nil, nil, nil
 	}
 
-	return KubeVIPPreKubeadmCommands, KubeVIPPostKubeadmCommands, nil
+	files = append(
+		files,
+		bootstrapv1.File{
+			Content:     string(configureKubeVIPScript),
+			Path:        configureKubeVIPScriptOnRemote,
+			Permissions: configureKubeVIPScriptPermissions,
+		},
+	)
+	preKubeadmCommands := []string{configureKubeVIPScriptOnRemotePreKubeadmCommand}
+	postKubeadmCommands := []string{configureKubeVIPScriptOnRemotePostKubeadmCommand}
+
+	return files, preKubeadmCommands, postKubeadmCommands, nil
 }
 
 type multipleKeysError struct {
