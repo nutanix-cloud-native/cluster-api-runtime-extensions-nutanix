@@ -195,6 +195,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 		},
 	}
 
+	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(storageChartProxy)
 	snapshotChartProxy := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: caaphv1.GroupVersion.String(),
@@ -215,7 +216,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			Version:          snapshotChart.Version,
 		},
 	}
-
+	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(snapshotChartProxy)
 	// We use a slice of pointers to satisfy the gocritic linter rangeValCopy check.
 	for _, cp := range []*caaphv1.HelmChartProxy{storageChartProxy, snapshotChartProxy} {
 		if err = controllerutil.SetOwnerReference(&req.Cluster, cp, n.client.Scheme()); err != nil {

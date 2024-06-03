@@ -10,7 +10,7 @@ repositories:
     repoURL: https://helm.cilium.io/
     charts:
       cilium:
-      - 1.15.0
+      - 1.15.5
   cluster-autoscaler:
     repoURL: https://kubernetes.github.io/autoscaler
     charts:
@@ -45,4 +45,4 @@ repositories:
     repoURL: https://docs.tigera.io/calico/charts
     charts:
       tigera-operator:
-      - v3.26.4
+      - v3.28.0

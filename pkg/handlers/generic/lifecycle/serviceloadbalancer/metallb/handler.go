@@ -140,6 +140,7 @@ func (n *MetalLB) Apply(
 		},
 	}
 
+	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
 	if err = controllerutil.SetOwnerReference(cluster, hcp, n.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on MetalLB installation HelmChartProxy: %w",

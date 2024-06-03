@@ -84,8 +84,7 @@ hooks:
 
 helmAddonsConfigMap: default-helm-addons-config
 
-selfHostedRegistry: false
-selfHostedRegistryURI: oci://mindthegap.{{ .Release.Namespace }}.svc/charts
+selfHostedRegistry: true
 
 
 deployDefaultClusterClasses: true
