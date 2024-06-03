@@ -20,7 +20,7 @@ func TestVariableValidation(t *testing.T) {
 
 	withAdditionalCategories := minimumClusterConfigSpec()
 	//nolint:lll // gofumpt formats is this way
-	withAdditionalCategories.ControlPlane.Nutanix.MachineDetails.AdditionalCategories = []v1alpha1.NutanixCategoryIdentifier{
+	withAdditionalCategories.ControlPlane.Nutanix.MachineDetails.AdditionalCategories = []capxv1.NutanixCategoryIdentifier{
 		{
 			Key:   "fake-key",
 			Value: "fake-value1",
@@ -33,7 +33,7 @@ func TestVariableValidation(t *testing.T) {
 
 	withProject := minimumClusterConfigSpec()
 	withProject.ControlPlane.Nutanix.MachineDetails.Project = ptr.To(
-		v1alpha1.NutanixResourceIdentifier{
+		capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-project"),
 		},
@@ -50,7 +50,7 @@ func TestVariableValidation(t *testing.T) {
 
 	invalidProjectType := minimumClusterConfigSpec()
 	invalidProjectType.ControlPlane.Nutanix.MachineDetails.Project = ptr.To(
-		v1alpha1.NutanixResourceIdentifier{
+		capxv1.NutanixResourceIdentifier{
 			Type: "invalid-project-type",
 			Name: ptr.To("fake-project"),
 		},
@@ -102,20 +102,20 @@ func minimumClusterConfigSpec() v1alpha1.NutanixClusterConfigSpec {
 		ControlPlane: &v1alpha1.NutanixNodeConfigSpec{
 			Nutanix: &v1alpha1.NutanixNodeSpec{
 				MachineDetails: v1alpha1.NutanixMachineDetails{
-					BootType:       v1alpha1.NutanixBootType(capxv1.NutanixBootTypeLegacy),
+					BootType:       capxv1.NutanixBootTypeLegacy,
 					VCPUSockets:    2,
 					VCPUsPerSocket: 1,
-					Image: v1alpha1.NutanixResourceIdentifier{
+					Image: capxv1.NutanixResourceIdentifier{
 						Type: capxv1.NutanixIdentifierName,
 						Name: ptr.To("fake-image"),
 					},
-					Cluster: v1alpha1.NutanixResourceIdentifier{
+					Cluster: capxv1.NutanixResourceIdentifier{
 						Type: capxv1.NutanixIdentifierName,
 						Name: ptr.To("fake-pe-cluster"),
 					},
 					MemorySize:     resource.MustParse("8Gi"),
 					SystemDiskSize: resource.MustParse("40Gi"),
-					Subnets:        []v1alpha1.NutanixResourceIdentifier{},
+					Subnets:        []capxv1.NutanixResourceIdentifier{},
 				},
 			},
 		},
