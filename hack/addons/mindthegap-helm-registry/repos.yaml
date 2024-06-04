@@ -16,6 +16,11 @@ repositories:
     charts:
       cluster-autoscaler:
       - 9.37.0
+  local-path-provisioner:
+    repoURL: https://charts.containeroo.ch
+    charts:
+      local-path-provisioner:
+      - v0.0.29
   metallb:
     repoURL: https://metallb.github.io/metallb
     charts:
