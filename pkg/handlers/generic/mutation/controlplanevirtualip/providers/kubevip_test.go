@@ -62,16 +62,16 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 					Permissions: kubeVIPFilePermissions,
 				},
 				{
-					Content:     string(configureKubeVIPScript),
-					Path:        configureKubeVIPScriptOnRemote,
-					Permissions: configureKubeVIPScriptPermissions,
+					Content:     string(configureForKubeVIPScript),
+					Path:        configureForKubeVIPScriptOnRemote,
+					Permissions: configureForKubeVIPScriptPermissions,
 				},
 			},
 			expectedPreKubeadmCommands: []string{
-				configureKubeVIPScriptOnRemotePreKubeadmCommand,
+				setHostAliasesScriptOnRemoteCommand, configureForKubeVIPScriptOnRemotePreKubeadmCommand,
 			},
 			expectedPostKubeadmCommands: []string{
-				configureKubeVIPScriptOnRemotePostKubeadmCommand,
+				configureForKubeVIPScriptOnRemotePostKubeadmCommand,
 			},
 		},
 		{

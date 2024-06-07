@@ -22,9 +22,13 @@ function use_admin_conf() {
   fi
 }
 
+function set_host_aliases() {
+  echo "127.0.0.1   kubernetes" >>/etc/hosts
+}
+
 function print_usage {
   cat >&2 <<EOF
-  Usage: ${SCRIPT_NAME} [use-super-admin.conf|use-admin.conf]
+  Usage: ${SCRIPT_NAME} [use-super-admin.conf|use-admin.conf|set-host-aliases]
 EOF
 }
 
@@ -38,6 +42,11 @@ function run_cmd() {
       ;;
     use-admin.conf)
       use_admin_conf
+      shift
+      break
+      ;;
+    set-host-aliases)
+      set_host_aliases
       shift
       break
       ;;

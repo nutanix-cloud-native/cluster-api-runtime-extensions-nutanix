@@ -23,20 +23,22 @@ const (
 	kubeVIPFilePath        = "/etc/kubernetes/manifests/kube-vip.yaml"
 	kubeVIPFilePermissions = "0600"
 
-	configureKubeVIPScriptPermissions = "0700"
+	configureForKubeVIPScriptPermissions = "0700"
 )
 
 var (
-	configureKubeVIPScriptOnRemote = common.ConfigFilePathOnRemote(
-		"configure-kube-vip.sh")
+	configureForKubeVIPScriptOnRemote = common.ConfigFilePathOnRemote(
+		"configure-for-kube-vip.sh")
 
-	configureKubeVIPScriptOnRemotePreKubeadmCommand  = "/bin/bash " + configureKubeVIPScriptOnRemote + " use-super-admin.conf"
-	configureKubeVIPScriptOnRemotePostKubeadmCommand = "/bin/bash " + configureKubeVIPScriptOnRemote + " use-admin.conf"
+	configureForKubeVIPScriptOnRemotePreKubeadmCommand  = "/bin/bash " + configureForKubeVIPScriptOnRemote + " use-super-admin.conf"
+	configureForKubeVIPScriptOnRemotePostKubeadmCommand = "/bin/bash " + configureForKubeVIPScriptOnRemote + " use-admin.conf"
+
+	setHostAliasesScriptOnRemoteCommand = "/bin/bash " + configureForKubeVIPScriptOnRemote + " set-host-aliases"
 )
 
 var (
-	//go:embed templates/configure-kube-vip.sh
-	configureKubeVIPScript []byte
+	//go:embed templates/configure-for-kube-vip.sh
+	configureForKubeVIPScript []byte
 )
 
 type kubeVIPFromConfigMapProvider struct {
@@ -100,6 +102,16 @@ func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
 	// after kubeadm has assigned it the necessary RBAC permissions.
 	//
 	// See https://github.com/kube-vip/kube-vip/issues/684
+	//
+	// There is also another issue introduced in Kubernetes 1.29.
+	// If a cloud provider did not yet initialise the node's .status.addresses,
+	// the code for creating the /etc/hosts file including the hostAliases does not get run.
+	// The kube-vip static Pod runs before the cloud provider and will not be able to resolve the kubernetes DNS name.
+	// To work around this:
+	// 1. return a preKubeadmCommand to add kubernetes DNS name to /etc/hosts.
+	//
+	// See https://github.com/kube-vip/kube-vip/issues/692
+	// See https://github.com/kubernetes/kubernetes/issues/122420#issuecomment-1864609518
 	needCommands, err := needHackCommands(cluster)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to determine if kube-vip commands are needed: %w", err)
@@ -111,13 +123,17 @@ func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
 	files = append(
 		files,
 		bootstrapv1.File{
-			Content:     string(configureKubeVIPScript),
-			Path:        configureKubeVIPScriptOnRemote,
-			Permissions: configureKubeVIPScriptPermissions,
+			Content:     string(configureForKubeVIPScript),
+			Path:        configureForKubeVIPScriptOnRemote,
+			Permissions: configureForKubeVIPScriptPermissions,
 		},
 	)
-	preKubeadmCommands := []string{configureKubeVIPScriptOnRemotePreKubeadmCommand}
-	postKubeadmCommands := []string{configureKubeVIPScriptOnRemotePostKubeadmCommand}
+
+	preKubeadmCommands := []string{
+		setHostAliasesScriptOnRemoteCommand,
+		configureForKubeVIPScriptOnRemotePreKubeadmCommand,
+	}
+	postKubeadmCommands := []string{configureForKubeVIPScriptOnRemotePostKubeadmCommand}
 
 	return files, preKubeadmCommands, postKubeadmCommands, nil
 }

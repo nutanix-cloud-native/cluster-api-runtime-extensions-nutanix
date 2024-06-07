@@ -153,7 +153,6 @@ spec:
         - hostnamectl set-hostname "{{ ds.meta_data.hostname }}"
         - echo "::1         ipv6-localhost ipv6-loopback" >/etc/hosts
         - echo "127.0.0.1   localhost" >>/etc/hosts
-        - echo "127.0.0.1   kubernetes" >>/etc/hosts
         - echo "127.0.0.1   {{ ds.meta_data.hostname }}" >> /etc/hosts
         useExperimentalRetryJoin: true
         verbosity: 10
