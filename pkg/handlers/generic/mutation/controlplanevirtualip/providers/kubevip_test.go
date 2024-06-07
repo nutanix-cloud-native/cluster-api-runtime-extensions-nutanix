@@ -118,12 +118,11 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				configMapKey: client.ObjectKeyFromObject(tt.configMap),
 			}
 
-			files, preKubeadmCommands, postKubeadmCommands, err :=
-				provider.GenerateFilesAndCommands(
-					context.TODO(),
-					tt.controlPlaneEndpointSpec,
-					tt.cluster,
-				)
+			files, preKubeadmCommands, postKubeadmCommands, err := provider.GenerateFilesAndCommands(
+				context.TODO(),
+				tt.controlPlaneEndpointSpec,
+				tt.cluster,
+			)
 			require.Equal(t, tt.expectedErr, err)
 			assert.Equal(t, tt.expectedFiles, files)
 			assert.Equal(t, tt.expectedPreKubeadmCommands, preKubeadmCommands)

@@ -30,16 +30,16 @@ var (
 	configureForKubeVIPScriptOnRemote = common.ConfigFilePathOnRemote(
 		"configure-for-kube-vip.sh")
 
-	configureForKubeVIPScriptOnRemotePreKubeadmCommand  = "/bin/bash " + configureForKubeVIPScriptOnRemote + " use-super-admin.conf"
-	configureForKubeVIPScriptOnRemotePostKubeadmCommand = "/bin/bash " + configureForKubeVIPScriptOnRemote + " use-admin.conf"
+	configureForKubeVIPScriptOnRemotePreKubeadmCommand = "/bin/bash " +
+		configureForKubeVIPScriptOnRemote + " use-super-admin.conf"
+	configureForKubeVIPScriptOnRemotePostKubeadmCommand = "/bin/bash " +
+		configureForKubeVIPScriptOnRemote + " use-admin.conf"
 
 	setHostAliasesScriptOnRemoteCommand = "/bin/bash " + configureForKubeVIPScriptOnRemote + " set-host-aliases"
 )
 
-var (
-	//go:embed templates/configure-for-kube-vip.sh
-	configureForKubeVIPScript []byte
-)
+//go:embed templates/configure-for-kube-vip.sh
+var configureForKubeVIPScript []byte
 
 type kubeVIPFromConfigMapProvider struct {
 	client client.Reader
@@ -72,7 +72,7 @@ func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
 	ctx context.Context,
 	spec v1alpha1.ControlPlaneEndpointSpec,
 	cluster *clusterv1.Cluster,
-) ([]bootstrapv1.File, []string, []string, error) {
+) (files []bootstrapv1.File, preKubeadmCommands, postKubeadmCommands []string, err error) {
 	data, err := getTemplateFromConfigMap(ctx, p.client, p.configMapKey)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed getting template data: %w", err)
@@ -83,7 +83,7 @@ func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
 		return nil, nil, nil, fmt.Errorf("failed templating static Pod: %w", err)
 	}
 
-	files := []bootstrapv1.File{
+	files = []bootstrapv1.File{
 		{
 			Content:     kubeVIPStaticPod,
 			Owner:       kubeVIPFileOwner,
@@ -114,7 +114,10 @@ func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
 	// See https://github.com/kubernetes/kubernetes/issues/122420#issuecomment-1864609518
 	needCommands, err := needHackCommands(cluster)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to determine if kube-vip commands are needed: %w", err)
+		return nil, nil, nil, fmt.Errorf(
+			"failed to determine if kube-vip commands are needed: %w",
+			err,
+		)
 	}
 	if !needCommands {
 		return files, nil, nil, nil
@@ -129,11 +132,11 @@ func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
 		},
 	)
 
-	preKubeadmCommands := []string{
+	preKubeadmCommands = []string{
 		setHostAliasesScriptOnRemoteCommand,
 		configureForKubeVIPScriptOnRemotePreKubeadmCommand,
 	}
-	postKubeadmCommands := []string{configureForKubeVIPScriptOnRemotePostKubeadmCommand}
+	postKubeadmCommands = []string{configureForKubeVIPScriptOnRemotePostKubeadmCommand}
 
 	return files, preKubeadmCommands, postKubeadmCommands, nil
 }
