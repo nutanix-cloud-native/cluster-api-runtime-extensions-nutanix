@@ -114,5 +114,5 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 }
 
 func credentialSecretName(clusterName string) string {
-	return fmt.Sprintf("%s-registry-creds", clusterName)
+	return fmt.Sprintf("%s-credential-provider-response", clusterName)
 }
