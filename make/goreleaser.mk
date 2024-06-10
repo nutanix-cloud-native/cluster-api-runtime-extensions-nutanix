@@ -11,7 +11,7 @@ endif
 .PHONY: build-snapshot
 build-snapshot: ## Builds a snapshot with goreleaser
 build-snapshot: go-generate ; $(info $(M) building snapshot $*)
-	goreleaser --debug=$(GORELEASER_DEBUG) \
+	goreleaser --verbose=$(GORELEASER_VERBOSE) \
 		build \
 		--snapshot \
 		--clean \
@@ -21,7 +21,7 @@ build-snapshot: go-generate ; $(info $(M) building snapshot $*)
 .PHONY: release
 release: ## Builds a release with goreleaser
 release: go-generate ; $(info $(M) building release $*)
-	goreleaser --debug=$(GORELEASER_DEBUG) \
+	goreleaser --verbose=$(GORELEASER_DEBUG) \
 		release \
 		--clean \
 		--parallelism=$(GORELEASER_PARALLELISM) \
@@ -31,7 +31,7 @@ release: go-generate ; $(info $(M) building release $*)
 .PHONY: release-snapshot
 release-snapshot: ## Builds a snapshot release with goreleaser
 release-snapshot: go-generate ; $(info $(M) building snapshot release $*)
-	goreleaser --debug=$(GORELEASER_DEBUG) \
+	goreleaser --verbose=$(GORELEASER_DEBUG) \
 		release \
 		--snapshot \
 		--clean \

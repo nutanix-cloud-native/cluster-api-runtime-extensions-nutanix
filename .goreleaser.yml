@@ -1,6 +1,8 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+version: 2
+
 project_name: cluster-api-runtime-extensions-nutanix
 
 changelog:
@@ -87,7 +89,6 @@ builds:
 
 archives:
   - name_template: '{{ .ProjectName }}_v{{ trimprefix .Version "v" }}_{{ .Os }}_{{ .Arch }}'
-    rlcp: true
     builds:
       - cluster-api-runtime-extensions-nutanix
 
