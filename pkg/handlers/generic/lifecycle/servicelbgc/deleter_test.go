@@ -103,7 +103,7 @@ func Test_shouldDeleteServicesWithLoadBalancer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			shouldDelete, err := shouldDeleteServicesWithLoadBalancer(tt.cluster)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.shouldDelete, shouldDelete)
 		})
 	}

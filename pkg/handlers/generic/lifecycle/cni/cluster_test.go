@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -69,7 +70,7 @@ func Test_PodCIDR(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			cidr, err := PodCIDR(tt.cluster)
-			assert.ErrorIs(t, err, tt.wantErr)
+			require.ErrorIs(t, err, tt.wantErr)
 			assert.Equal(t, tt.wantCIDR, cidr)
 		})
 	}
