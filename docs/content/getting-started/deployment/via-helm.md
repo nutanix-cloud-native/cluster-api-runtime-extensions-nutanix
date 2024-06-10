@@ -14,7 +14,7 @@ env CLUSTER_TOPOLOGY=true \
     NUTANIX_ENDPOINT= NUTANIX_PASSWORD= NUTANIX_USER=  \
     AWS_B64ENCODED_CREDENTIALS=  \
     clusterctl init \
-      --infrastructure docker,nutanix:v1.4.0-alpha.2,aws \
+      --infrastructure docker,nutanix:v1.4.0,aws \
       --addon helm \
       --wait-providers
 ```
