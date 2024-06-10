@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
@@ -90,7 +91,7 @@ func Test_templateValues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := templateValues(tt.cluster, tt.text)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}
