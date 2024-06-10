@@ -121,7 +121,9 @@ jobs:
           golangci_lint_version: v${{ steps.versions.outputs.golangci-lint }}
           go_version: v${{ steps.versions.outputs.golang }}
           workdir: ${{ matrix.module }}
-          golangci_lint_flags: "--config=${{ github.workspace }}/.golangci.yml"
+          golangci_lint_flags: "--config=${{ github.workspace }}/.golangci.yml --out-format=checkstyle"
+          reviewdog_flags: "-f=checkstyle"
+          filter_mode: nofilter
 
   lint-gha:
     runs-on: ubuntu-22.04
