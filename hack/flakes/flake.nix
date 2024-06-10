@@ -29,16 +29,16 @@
 
           setup-envtest = buildGo122Module rec {
             name = "setup-envtest";
-            version = "0.18.2";
+            version = "0.18.4";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "controller-runtime";
               rev = "v${version}";
-              hash = "sha256-fQgWwndxzBIi3zsNMYvFDXjetnaQF0NNK+qW8j4Wn/M=";
+              hash = "sha256-Yl2pcu09Dyk0Y2v5RtEJwOSyBJ6Avj5d7Bh25bxnkvU=";
             } + "/tools/setup-envtest";
             doCheck = false;
             subPackages = [ "." ];
-            vendorHash = "sha256-Xr5b/CRz/DMmoc4bvrEyAZcNufLIZOY5OGQ6yw4/W9k=";
+            vendorHash = "sha256-tFWXROKZ+5rrHdiY3dFHAo5g5TKYfc8HgLSouD7bI+s=";
             ldflags = [ "-s" "-w" ];
           };
 
@@ -84,14 +84,14 @@
 
           release-please = buildNpmPackage rec {
             pname = "release-please";
-            version = "16.10.2";
+            version = "16.12.0";
             src = fetchFromGitHub {
               owner = "googleapis";
               repo = "release-please";
               rev = "v${version}";
-              hash = "sha256-5EST9dNB59wZ9NSHx7V8pAZsws0Py3Q73R6MxvS7zFA=";
+              hash = "sha256-M4wsk0Vpkl6JAOM2BdSu8Uud7XA+iRHAaQOxHLux+VE=";
             };
-            npmDepsHash = "sha256-HZAjBF4dH8JTgJrDrXtxJLyAfKKGn9P5fGBSILx00b8=";
+            npmDepsHash = "sha256-UXWzBUrZCIklITav3VShL+whiWmvLkFw+/i/k0s13k0=";
             dontNpmBuild = true;
           };
 

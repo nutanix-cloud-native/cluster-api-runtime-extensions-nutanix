@@ -81,7 +81,7 @@ repos:
     stages: [commit]
     exclude: ^charts/cluster-api-runtime-extensions-nutanix/README.md$
 - repo: https://github.com/rhysd/actionlint
-  rev: v1.7.0
+  rev: v1.7.1
   hooks:
   - id: actionlint-system
     stages: [commit]
@@ -106,7 +106,7 @@ repos:
     stages: [commit]
     args: ["-e", "SC2211", "-x"]
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.40.0
+  rev: v0.41.0
   hooks:
   - id: markdownlint
     stages: [commit]
