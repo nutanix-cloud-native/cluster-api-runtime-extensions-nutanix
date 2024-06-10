@@ -5,10 +5,10 @@ package machinedetails
 
 import (
 	"context"
+	"slices"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -92,41 +92,24 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 
 			spec := obj.Spec.Template.Spec
 
-			spec.BootType = capxv1.NutanixBootType(nutanixMachineDetailsVar.BootType)
-			spec.Cluster = capxv1.NutanixResourceIdentifier(nutanixMachineDetailsVar.Cluster)
-			spec.Image = capxv1.NutanixResourceIdentifier(nutanixMachineDetailsVar.Image)
+			spec.BootType = nutanixMachineDetailsVar.BootType
+			spec.Cluster = nutanixMachineDetailsVar.Cluster
+			spec.Image = nutanixMachineDetailsVar.Image
 
 			spec.VCPUSockets = nutanixMachineDetailsVar.VCPUSockets
 			spec.VCPUsPerSocket = nutanixMachineDetailsVar.VCPUsPerSocket
 			spec.MemorySize = nutanixMachineDetailsVar.MemorySize
 			spec.SystemDiskSize = nutanixMachineDetailsVar.SystemDiskSize
 
-			spec.Subnets = make(
-				[]capxv1.NutanixResourceIdentifier,
-				len(nutanixMachineDetailsVar.Subnets),
-			)
-			for i, subnet := range nutanixMachineDetailsVar.Subnets {
-				spec.Subnets[i] = capxv1.NutanixResourceIdentifier(subnet)
-			}
+			spec.Subnets = slices.Clone(nutanixMachineDetailsVar.Subnets)
 
-			spec.AdditionalCategories = make(
-				[]capxv1.NutanixCategoryIdentifier,
-				len(nutanixMachineDetailsVar.AdditionalCategories),
-			)
-			for i, category := range nutanixMachineDetailsVar.AdditionalCategories {
-				spec.AdditionalCategories[i] = capxv1.NutanixCategoryIdentifier(category)
-			}
+			spec.AdditionalCategories = slices.Clone(nutanixMachineDetailsVar.AdditionalCategories)
 
 			if nutanixMachineDetailsVar.Project != nil {
-				spec.Project = ptr.To(
-					capxv1.NutanixResourceIdentifier(*nutanixMachineDetailsVar.Project),
-				)
+				spec.Project = nutanixMachineDetailsVar.Project
 			}
-			spec.GPUs = make(
-				[]capxv1.NutanixGPU,
-				len(nutanixMachineDetailsVar.GPUs),
-			)
-			copy(spec.GPUs, nutanixMachineDetailsVar.GPUs)
+			spec.GPUs = slices.Clone(nutanixMachineDetailsVar.GPUs)
+
 			obj.Spec.Template.Spec = spec
 			return nil
 		},
