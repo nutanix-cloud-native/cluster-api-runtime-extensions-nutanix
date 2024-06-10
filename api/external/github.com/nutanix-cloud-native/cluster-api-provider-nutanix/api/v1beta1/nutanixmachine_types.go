@@ -35,6 +35,16 @@ const (
 	// resources associated with NutanixMachine before removing it from the
 	// API Server.
 	NutanixMachineFinalizer = "nutanixmachine.infrastructure.cluster.x-k8s.io"
+
+	// NutanixMachineBootstrapRefKindSecret represents the Kind of Secret
+	// referenced by NutanixMachine's BootstrapRef.
+	NutanixMachineBootstrapRefKindSecret = "Secret"
+
+	// NutanixMachineBootstrapRefKindImage represents the Kind of Image
+	// referenced by NutanixMachine's BootstrapRef. If the BootstrapRef.Kind is set
+	// to Image, the NutanixMachine will be created with the image mounted
+	// as a CD-ROM.
+	NutanixMachineBootstrapRefKindImage = "Image"
 )
 
 // NutanixMachineSpec defines the desired state of NutanixMachine
@@ -42,7 +52,9 @@ type NutanixMachineSpec struct {
 	// SPEC FIELDS - desired state of NutanixMachine
 	// Important: Run "make" to regenerate code after modifying this file
 
-	ProviderID string `json:"providerID"`
+	// ProviderID is the unique identifier as specified by the cloud provider.
+	// +optional
+	ProviderID string `json:"providerID,omitempty"`
 	// vcpusPerSocket is the number of vCPUs per socket of the VM
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=1

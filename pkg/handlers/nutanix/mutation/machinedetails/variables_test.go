@@ -19,7 +19,7 @@ func TestVariableValidation(t *testing.T) {
 	requiredFields := minimumClusterConfigSpec()
 
 	withAdditionalCategories := minimumClusterConfigSpec()
-	//nolint:lll // gofumpt formats is this way
+
 	withAdditionalCategories.ControlPlane.Nutanix.MachineDetails.AdditionalCategories = []capxv1.NutanixCategoryIdentifier{
 		{
 			Key:   "fake-key",

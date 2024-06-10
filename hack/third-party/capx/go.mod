@@ -7,7 +7,7 @@ go 1.22.1
 
 toolchain go1.22.2
 
-require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.4.0-alpha.2
+require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.4.0
 
 require (
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
@@ -24,7 +24,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/nutanix-cloud-native/prism-go-client v0.3.4 // indirect
+	github.com/nutanix-cloud-native/prism-go-client v0.4.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

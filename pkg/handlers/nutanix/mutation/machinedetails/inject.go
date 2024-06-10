@@ -92,9 +92,9 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 
 			spec := obj.Spec.Template.Spec
 
-			spec.BootType = capxv1.NutanixBootType(nutanixMachineDetailsVar.BootType)
-			spec.Cluster = capxv1.NutanixResourceIdentifier(nutanixMachineDetailsVar.Cluster)
-			spec.Image = capxv1.NutanixResourceIdentifier(nutanixMachineDetailsVar.Image)
+			spec.BootType = nutanixMachineDetailsVar.BootType
+			spec.Cluster = nutanixMachineDetailsVar.Cluster
+			spec.Image = nutanixMachineDetailsVar.Image
 
 			spec.VCPUSockets = nutanixMachineDetailsVar.VCPUSockets
 			spec.VCPUsPerSocket = nutanixMachineDetailsVar.VCPUsPerSocket
@@ -105,21 +105,19 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 				[]capxv1.NutanixResourceIdentifier,
 				len(nutanixMachineDetailsVar.Subnets),
 			)
-			for i, subnet := range nutanixMachineDetailsVar.Subnets {
-				spec.Subnets[i] = capxv1.NutanixResourceIdentifier(subnet)
-			}
+
+			copy(spec.Subnets, nutanixMachineDetailsVar.Subnets)
 
 			spec.AdditionalCategories = make(
 				[]capxv1.NutanixCategoryIdentifier,
 				len(nutanixMachineDetailsVar.AdditionalCategories),
 			)
-			for i, category := range nutanixMachineDetailsVar.AdditionalCategories {
-				spec.AdditionalCategories[i] = capxv1.NutanixCategoryIdentifier(category)
-			}
+
+			copy(spec.AdditionalCategories, nutanixMachineDetailsVar.AdditionalCategories)
 
 			if nutanixMachineDetailsVar.Project != nil {
 				spec.Project = ptr.To(
-					capxv1.NutanixResourceIdentifier(*nutanixMachineDetailsVar.Project),
+					*nutanixMachineDetailsVar.Project,
 				)
 			}
 			spec.GPUs = make(
