@@ -97,11 +97,23 @@ func (n *NutanixCSI) Apply(
 	}
 
 	if provider.Credentials != nil {
+		err := lifecycleutils.EnsureOwnerRefForSecret(
+			ctx,
+			n.client,
+			provider.Credentials.SecretRef.Name,
+			&req.Cluster,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"error updating owner references on Nutanix CSI driver source Secret: %w",
+				err,
+			)
+		}
 		key := ctrlclient.ObjectKey{
 			Name:      defaultCredentialsSecretName,
 			Namespace: defaultStorageHelmReleaseNamespace,
 		}
-		err := lifecycleutils.CopySecretToRemoteCluster(
+		err = lifecycleutils.CopySecretToRemoteCluster(
 			ctx,
 			n.client,
 			provider.Credentials.SecretRef.Name,
