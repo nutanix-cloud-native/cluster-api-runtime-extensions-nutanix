@@ -68,11 +68,6 @@ generate-helm-configmap:
 	./hack/addons/add-warning-helm-configmap.sh
 
 # Set only the supported CSI providers for each provider.
-.PHONY: configure-csi-providers.%
-configure-csi-providers.%: CSI_JSONPATH := .spec.versions[].schema.openAPIV3Schema.properties.spec.properties.addons.properties.csi.properties
-configure-csi-providers.%: ; $(info $(M) configuring csi providers for $*clusterconfigs)
-	gojq --yaml-input --yaml-output \
-	  '($(CSI_JSONPATH).providers.items.properties.name.enum, $(CSI_JSONPATH).defaultStorage.properties.providerName.enum) |= $(CSI_PROVIDERS_$(*))' \
-	  api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml > api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml.tmp
-	cat hack/license-header.yaml.txt <(echo ---) api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml.tmp > api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml
-	rm api/v1alpha1/crds/caren.nutanix.com_$(*)clusterconfigs.yaml.tmp
+.PHONY: configure-csi-providers
+configure-csi-providers: ; $(info $(M) configuring supported csi providers)
+	./hack/addons/configure-supported-csi-providers.sh
