@@ -28,27 +28,21 @@ function set_host_aliases() {
 
 function print_usage {
   cat >&2 <<EOF
-  Usage: ${SCRIPT_NAME} [use-super-admin.conf|use-admin.conf|set-host-aliases]
+Usage: ${SCRIPT_NAME} [set-host-aliases|use-super-admin.conf|use-admin.conf]
 EOF
 }
 
 function run_cmd() {
-  while [ -n "$1" ]; do
+  while [ $# -gt 0 ]; do
     case $1 in
     use-super-admin.conf)
       use_super_admin_conf
-      shift
-      break
       ;;
     use-admin.conf)
       use_admin_conf
-      shift
-      break
       ;;
     set-host-aliases)
       set_host_aliases
-      shift
-      break
       ;;
     -h | --help)
       print_usage
@@ -59,7 +53,6 @@ function run_cmd() {
       exit 1
       ;;
     esac
-    echo "$1"
     shift
   done
 }

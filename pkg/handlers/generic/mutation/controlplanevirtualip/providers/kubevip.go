@@ -31,11 +31,9 @@ var (
 		"configure-for-kube-vip.sh")
 
 	configureForKubeVIPScriptOnRemotePreKubeadmCommand = "/bin/bash " +
-		configureForKubeVIPScriptOnRemote + " use-super-admin.conf"
+		configureForKubeVIPScriptOnRemote + " set-host-aliases use-super-admin.conf"
 	configureForKubeVIPScriptOnRemotePostKubeadmCommand = "/bin/bash " +
 		configureForKubeVIPScriptOnRemote + " use-admin.conf"
-
-	setHostAliasesScriptOnRemoteCommand = "/bin/bash " + configureForKubeVIPScriptOnRemote + " set-host-aliases"
 )
 
 //go:embed templates/configure-for-kube-vip.sh
@@ -132,10 +130,7 @@ func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
 		},
 	)
 
-	preKubeadmCommands = []string{
-		setHostAliasesScriptOnRemoteCommand,
-		configureForKubeVIPScriptOnRemotePreKubeadmCommand,
-	}
+	preKubeadmCommands = []string{configureForKubeVIPScriptOnRemotePreKubeadmCommand}
 	postKubeadmCommands = []string{configureForKubeVIPScriptOnRemotePostKubeadmCommand}
 
 	return files, preKubeadmCommands, postKubeadmCommands, nil

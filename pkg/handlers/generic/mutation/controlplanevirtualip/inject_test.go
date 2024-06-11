@@ -82,8 +82,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							"/bin/bash /etc/caren/configure-for-kube-vip.sh set-host-aliases",
-							"/bin/bash /etc/caren/configure-for-kube-vip.sh use-super-admin.conf",
+							"/bin/bash /etc/caren/configure-for-kube-vip.sh set-host-aliases use-super-admin.conf",
 						),
 					},
 					{
@@ -162,8 +161,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							"/bin/bash /etc/caren/configure-for-kube-vip.sh set-host-aliases",
-							"/bin/bash /etc/caren/configure-for-kube-vip.sh use-super-admin.conf",
+							"/bin/bash /etc/caren/configure-for-kube-vip.sh set-host-aliases use-super-admin.conf",
 						),
 					},
 					{

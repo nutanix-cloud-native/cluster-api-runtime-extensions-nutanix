@@ -68,7 +68,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				},
 			},
 			expectedPreKubeadmCommands: []string{
-				setHostAliasesScriptOnRemoteCommand, configureForKubeVIPScriptOnRemotePreKubeadmCommand,
+				configureForKubeVIPScriptOnRemotePreKubeadmCommand,
 			},
 			expectedPostKubeadmCommands: []string{
 				configureForKubeVIPScriptOnRemotePostKubeadmCommand,
