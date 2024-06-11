@@ -20,13 +20,17 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/namespacesync"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic"
@@ -95,6 +99,8 @@ func main() {
 	// It allows to specify configuration under a single variable.
 	genericMetaHandlers := generic.New()
 
+	namespacesyncOptions := namespacesync.Options{}
+
 	// Initialize and parse command line flags.
 	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())
 	logsv1.AddFlags(logOptions, pflag.CommandLine)
@@ -104,6 +110,7 @@ func main() {
 	awsMetaHandlers.AddFlags(pflag.CommandLine)
 	dockerMetaHandlers.AddFlags(pflag.CommandLine)
 	nutanixMetaHandlers.AddFlags(pflag.CommandLine)
+	namespacesyncOptions.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
@@ -138,6 +145,32 @@ func main() {
 
 	if err := mgr.Add(runtimeWebhookServer); err != nil {
 		setupLog.Error(err, "unable to add runtime webhook server runnable to controller manager")
+		os.Exit(1)
+	}
+
+	unstructuredCachingClient, err := client.New(mgr.GetConfig(), client.Options{
+		HTTPClient: mgr.GetHTTPClient(),
+		Cache: &client.CacheOptions{
+			Reader:       mgr.GetCache(),
+			Unstructured: true,
+		},
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to create unstructured caching client")
+		os.Exit(1)
+	}
+
+	if err := (&namespacesync.Reconciler{
+		Client:                      mgr.GetClient(),
+		UnstructuredCachingClient:   unstructuredCachingClient,
+		SourceClusterClassNamespace: namespacesyncOptions.SourceNamespace,
+		TargetNamespaceFilter:       namespacesync.NamespaceHasLabelKey(v1alpha1.NamespaceSyncLabelKey),
+	}).SetupWithManager(
+		signalCtx,
+		mgr,
+		controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},
+	); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "namespacesync.Reconciler")
 		os.Exit(1)
 	}
 
