@@ -5,10 +5,10 @@ package machinedetails
 
 import (
 	"context"
+	"slices"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -101,30 +101,12 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			spec.MemorySize = nutanixMachineDetailsVar.MemorySize
 			spec.SystemDiskSize = nutanixMachineDetailsVar.SystemDiskSize
 
-			spec.Subnets = make(
-				[]capxv1.NutanixResourceIdentifier,
-				len(nutanixMachineDetailsVar.Subnets),
-			)
+			spec.Subnets = slices.Clone(nutanixMachineDetailsVar.Subnets)
+			spec.AdditionalCategories = slices.Clone(nutanixMachineDetailsVar.AdditionalCategories)
+			spec.GPUs = slices.Clone(nutanixMachineDetailsVar.GPUs)
 
-			copy(spec.Subnets, nutanixMachineDetailsVar.Subnets)
+			spec.Project = nutanixMachineDetailsVar.Project.DeepCopy()
 
-			spec.AdditionalCategories = make(
-				[]capxv1.NutanixCategoryIdentifier,
-				len(nutanixMachineDetailsVar.AdditionalCategories),
-			)
-
-			copy(spec.AdditionalCategories, nutanixMachineDetailsVar.AdditionalCategories)
-
-			if nutanixMachineDetailsVar.Project != nil {
-				spec.Project = ptr.To(
-					*nutanixMachineDetailsVar.Project,
-				)
-			}
-			spec.GPUs = make(
-				[]capxv1.NutanixGPU,
-				len(nutanixMachineDetailsVar.GPUs),
-			)
-			copy(spec.GPUs, nutanixMachineDetailsVar.GPUs)
 			obj.Spec.Template.Spec = spec
 			return nil
 		},
