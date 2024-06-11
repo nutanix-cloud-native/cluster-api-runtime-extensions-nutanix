@@ -104,7 +104,12 @@ func Test_EnsureOwnerRefForSecret(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := EnsureOwnerRefForSecret(context.Background(), tt.client, tt.secretName, tt.cluster)
+			err := EnsureOwnerRefForSecret(
+				context.Background(),
+				tt.client,
+				tt.secretName,
+				tt.cluster,
+			)
 			require.Equal(t, tt.wantErr, err)
 			if tt.wantErr != nil {
 				return
@@ -116,7 +121,7 @@ func Test_EnsureOwnerRefForSecret(t *testing.T) {
 				client.ObjectKey{Namespace: tt.cluster.Namespace, Name: tt.secretName},
 				secret,
 			)
-			assert.NoError(t, err, "failed to get updated secret")
+			require.NoError(t, err, "failed to get updated secret")
 			assert.Len(t, secret.OwnerReferences, tt.wantOwnerRefs)
 		})
 	}
