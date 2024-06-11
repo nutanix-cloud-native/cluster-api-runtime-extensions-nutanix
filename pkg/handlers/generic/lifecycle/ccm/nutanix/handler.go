@@ -98,6 +98,18 @@ func (p *provider) Apply(
 	// However, that would leave the credentials visible in the HelmChartProxy.
 	// Instead, we'll create the Secret on the remote cluster and reference it in the Helm values.
 	if clusterConfig.Addons.CCM.Credentials != nil {
+		err = lifecycleutils.EnsureOwnerRefForSecret(
+			ctx,
+			p.client,
+			clusterConfig.Addons.CCM.Credentials.SecretRef.Name,
+			cluster,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"error updating owner references on Nutanix CCM source Secret: %w",
+				err,
+			)
+		}
 		key := ctrlclient.ObjectKey{
 			Name:      defaultCredentialsSecretName,
 			Namespace: defaultHelmReleaseNamespace,
