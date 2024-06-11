@@ -11,8 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
-	"sigs.k8s.io/cluster-api/util"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
@@ -75,15 +75,10 @@ func EnsureOwnerRefForSecret(
 		return err
 	}
 
-	secret.OwnerReferences = util.EnsureOwnerRef(
-		secret.OwnerReferences,
-		metav1.OwnerReference{
-			APIVersion: clusterv1.GroupVersion.String(),
-			Kind:       cluster.Kind,
-			UID:        cluster.UID,
-			Name:       cluster.Name,
-		},
-	)
+	err = controllerutil.SetOwnerReference(cluster, secret, cl.Scheme())
+	if err != nil {
+		return fmt.Errorf("failed to set owner reference on Secret: %w", err)
+	}
 
 	err = cl.Update(ctx, secret)
 	if err != nil {
