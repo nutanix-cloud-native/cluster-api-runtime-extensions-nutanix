@@ -28,8 +28,7 @@ import (
 )
 
 const (
-	validSecretName                       = "myregistry-credentials"
-	registryStaticCredentialsSecretSuffix = "registry-creds"
+	validSecretName = "myregistry-credentials"
 )
 
 func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
