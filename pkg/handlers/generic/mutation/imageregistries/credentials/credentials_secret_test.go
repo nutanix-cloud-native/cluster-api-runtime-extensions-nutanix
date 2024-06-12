@@ -51,7 +51,7 @@ func Test_generateCredentialsSecretFile(t *testing.T) {
 				Permissions: "0600",
 				ContentFrom: &cabpkv1.FileSource{
 					Secret: cabpkv1.SecretFileSource{
-						Name: "test-cluster-credential-provider-response",
+						Name: "test-cluster-static-credential-provider-response",
 						Key:  "static-credential-provider",
 					},
 				},
@@ -113,7 +113,7 @@ func Test_generateCredentialsSecret(t *testing.T) {
 					Kind:       "Secret",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-cluster-credential-provider-response",
+					Name:      "test-cluster-static-credential-provider-response",
 					Namespace: "test-namespace",
 					Labels: map[string]string{
 						"cluster.x-k8s.io/cluster-name":    "test-cluster",

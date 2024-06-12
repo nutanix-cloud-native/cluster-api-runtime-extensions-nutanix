@@ -156,5 +156,5 @@ func configsRequireStaticCredentials(configs []providerConfig) bool {
 }
 
 func credentialSecretName(clusterName string) string {
-	return fmt.Sprintf("%s-credential-provider-response", clusterName)
+	return fmt.Sprintf("%s-static-credential-provider-response", clusterName)
 }
