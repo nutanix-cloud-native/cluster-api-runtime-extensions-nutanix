@@ -4,6 +4,7 @@
 package credentials
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -18,6 +19,8 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -30,6 +33,68 @@ import (
 const (
 	validSecretName = "myregistry-credentials"
 )
+
+var testCluster = &clusterv1.Cluster{
+	TypeMeta: metav1.TypeMeta{
+		APIVersion: clusterv1.GroupVersion.String(),
+		Kind:       "Cluster",
+	},
+	ObjectMeta: metav1.ObjectMeta{
+		Name: "test-cluster",
+	},
+}
+
+func Test_createSecretIfNeeded(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name          string
+		client        ctrlclient.Client
+		configs       []providerConfig
+		cluster       *clusterv1.Cluster
+		expectSecrets corev1.SecretList
+	}{
+		{
+			name:    "empty config, no Secrets",
+			cluster: testCluster,
+		},
+		{
+			name:    "expect a Secret",
+			cluster: testCluster,
+			client: buildFakeClient(
+				t,
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-cluster-credential-provider-response",
+					},
+				},
+			),
+			configs: []providerConfig{{
+				URL:      "https://myregistry.com",
+				Username: "myuser",
+				Password: "mypassword",
+			}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := createSecretIfNeeded(
+				context.Background(),
+				tt.client,
+				tt.configs,
+				tt.cluster,
+			)
+			require.NoError(t, err)
+
+			secrets := &corev1.SecretList{}
+			err = tt.client.List(context.Background(), secrets)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectSecrets.Items, secrets.Items)
+		})
+	}
+}
 
 func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 	t.Parallel()
@@ -440,6 +505,56 @@ var _ = Describe("Generate Image registry patches", func() {
 		})
 	}
 })
+
+var _ = DescribeTable("Verify a credentials Secret is created",
+	func(configs []providerConfig, expectedSecrets *corev1.SecretList) {
+		clientScheme := runtime.NewScheme()
+		utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+		utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+
+		// Use direct client to allow patch handler to read objects created by tests.
+		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		gomega.Expect(err).To(gomega.BeNil())
+
+		testCluster := &clusterv1.Cluster{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: clusterv1.GroupVersion.String(),
+				Kind:       "Cluster",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-cluster",
+			},
+		}
+
+		err = createSecretIfNeeded(context.Background(), client, configs, testCluster)
+		gomega.Expect(err).To(gomega.BeNil())
+
+		// Verify the Secret was created
+		secrets := &corev1.SecretList{}
+		err = client.List(context.Background(), secrets)
+		gomega.Expect(err).To(gomega.BeNil())
+		gomega.Expect(secrets.Items).To(gomega.BeEquivalentTo(expectedSecrets.Items))
+	},
+	// Entry("empty config, expect no Secrets to be created", nil, &corev1.SecretList{}),
+	Entry("expect a Secret",
+		[]providerConfig{
+			{
+				URL:      "https://myregistry.com",
+				Username: "myuser",
+				Password: "mypassword",
+			},
+		},
+		&corev1.SecretList{},
+	),
+)
+
+func buildFakeClient(t *testing.T, objs ...ctrlclient.Object) ctrlclient.Client {
+	t.Helper()
+	clientScheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	return fake.NewClientBuilder().WithScheme(clientScheme).WithObjects(objs...).Build()
+}
 
 func newRegistryCredentialsSecret(name, namespace string) *corev1.Secret {
 	secretData := map[string][]byte{
