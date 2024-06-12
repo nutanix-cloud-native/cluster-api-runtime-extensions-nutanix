@@ -80,8 +80,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | resources.requests.cpu | string | `"100m"` |  |
 | resources.requests.memory | string | `"128Mi"` |  |
 | securityContext.runAsUser | int | `65532` |  |
-| selfHostedRegistry | bool | `false` |  |
-| selfHostedRegistryURI | string | `"oci://mindthegap.{{ .Release.Namespace }}.svc/charts"` |  |
+| selfHostedRegistry | bool | `true` |  |
 | service.annotations | object | `{}` |  |
 | service.port | int | `443` |  |
 | service.type | string | `"ClusterIP"` |  |
