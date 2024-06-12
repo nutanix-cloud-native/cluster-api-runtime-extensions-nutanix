@@ -11,7 +11,7 @@ endif
 .PHONY: build-snapshot
 build-snapshot: ## Builds a snapshot with goreleaser
 build-snapshot: go-generate ; $(info $(M) building snapshot $*)
-	goreleaser --verbose=$(GORELEASER_VERBOSE) \
+	goreleaser --verbose=$(GORELEASER_DEBUG) \
 		build \
 		--snapshot \
 		--clean \
