@@ -11,22 +11,69 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-func Test_GetFile(t *testing.T) {
+func Test_GenerateFilesAndCommands(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name                     string
-		controlPlaneEndpointSpec v1alpha1.ControlPlaneEndpointSpec
-		configMap                *corev1.ConfigMap
-		expectedContent          string
-		expectedErr              error
+		name                        string
+		controlPlaneEndpointSpec    v1alpha1.ControlPlaneEndpointSpec
+		cluster                     *clusterv1.Cluster
+		configMap                   *corev1.ConfigMap
+		expectedFiles               []bootstrapv1.File
+		expectedPreKubeadmCommands  []string
+		expectedPostKubeadmCommands []string
+		expectedErr                 error
 	}{
+		{
+			name: "should return templated data with both host and port and pre/post kubeadm hack commands",
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "10.20.100.10",
+				Port: 6443,
+			},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data": validKubeVIPTemplate,
+				},
+			},
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "v1.29.0",
+					},
+				},
+			},
+			expectedFiles: []bootstrapv1.File{
+				{
+					Content:     expectedKubeVIPPod,
+					Owner:       kubeVIPFileOwner,
+					Path:        kubeVIPFilePath,
+					Permissions: kubeVIPFilePermissions,
+				},
+				{
+					Content:     string(configureForKubeVIPScript),
+					Path:        configureForKubeVIPScriptOnRemote,
+					Permissions: configureForKubeVIPScriptPermissions,
+				},
+			},
+			expectedPreKubeadmCommands: []string{
+				configureForKubeVIPScriptOnRemotePreKubeadmCommand,
+			},
+			expectedPostKubeadmCommands: []string{
+				configureForKubeVIPScriptOnRemotePostKubeadmCommand,
+			},
+		},
 		{
 			name: "should return templated data with both host and port",
 			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
@@ -42,7 +89,21 @@ func Test_GetFile(t *testing.T) {
 					"data": validKubeVIPTemplate,
 				},
 			},
-			expectedContent: expectedKubeVIPPod,
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "v1.28.0",
+					},
+				},
+			},
+			expectedFiles: []bootstrapv1.File{
+				{
+					Content:     expectedKubeVIPPod,
+					Owner:       kubeVIPFileOwner,
+					Path:        kubeVIPFilePath,
+					Permissions: kubeVIPFilePermissions,
+				},
+			},
 		},
 	}
 
@@ -57,12 +118,15 @@ func Test_GetFile(t *testing.T) {
 				configMapKey: client.ObjectKeyFromObject(tt.configMap),
 			}
 
-			file, err := provider.GetFile(context.TODO(), tt.controlPlaneEndpointSpec)
+			files, preKubeadmCommands, postKubeadmCommands, err := provider.GenerateFilesAndCommands(
+				context.TODO(),
+				tt.controlPlaneEndpointSpec,
+				tt.cluster,
+			)
 			require.Equal(t, tt.expectedErr, err)
-			assert.Equal(t, tt.expectedContent, file.Content)
-			assert.NotEmpty(t, file.Path)
-			assert.NotEmpty(t, file.Owner)
-			assert.NotEmpty(t, file.Permissions)
+			assert.Equal(t, tt.expectedFiles, files)
+			assert.Equal(t, tt.expectedPreKubeadmCommands, preKubeadmCommands)
+			assert.Equal(t, tt.expectedPostKubeadmCommands, postKubeadmCommands)
 		})
 	}
 }

@@ -63,8 +63,12 @@ patches:
 - target:
     kind: KubeadmControlPlaneTemplate
   patch: |-
+    # deletes 'echo "127.0.0.1   kubernetes" >>/etc/hosts'
     - op: "remove"
-      path: "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/6"
+      path: "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/4"
+    # deletes 'sed -i 's#path: /etc/kubernetes/admin.conf#path: ...'
+    - op: "remove"
+      path: "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/5"
     - op: "remove"
       path: "/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands/1"
 

@@ -21,7 +21,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	virtuialipproviders "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/controlplanevirtualip/providers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
@@ -83,14 +82,14 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							virtuialipproviders.KubeVIPPreKubeadmCommands,
+							"/bin/bash /etc/caren/configure-for-kube-vip.sh set-host-aliases use-super-admin.conf",
 						),
 					},
 					{
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							virtuialipproviders.KubeVIPPostKubeadmCommands,
+							"/bin/bash /etc/caren/configure-for-kube-vip.sh use-admin.conf",
 						),
 					},
 				},
@@ -148,20 +147,28 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 								),
 								gomega.HaveKey("permissions"),
 							),
+							gomega.SatisfyAll(
+								gomega.HaveKey("content"),
+								gomega.HaveKeyWithValue(
+									"path",
+									gomega.ContainSubstring("configure-for-kube-vip.sh"),
+								),
+								gomega.HaveKey("permissions"),
+							),
 						),
 					},
 					{
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							virtuialipproviders.KubeVIPPreKubeadmCommands,
+							"/bin/bash /etc/caren/configure-for-kube-vip.sh set-host-aliases use-super-admin.conf",
 						),
 					},
 					{
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands",
 						ValueMatcher: gomega.ContainElements(
-							virtuialipproviders.KubeVIPPostKubeadmCommands,
+							"/bin/bash /etc/caren/configure-for-kube-vip.sh use-admin.conf",
 						),
 					},
 				},

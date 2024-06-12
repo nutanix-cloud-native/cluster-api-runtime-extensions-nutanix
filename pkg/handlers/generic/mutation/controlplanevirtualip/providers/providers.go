@@ -15,24 +15,21 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-const (
-	kubeVIPFileOwner       = "root:root"
-	kubeVIPFilePath        = "/etc/kubernetes/manifests/kube-vip.yaml"
-	kubeVIPFilePermissions = "0600"
-)
-
-// Provider is an interface for getting the kube-vip static Pod as a file.
+// Provider is an interface for getting the virtual IP provider static Pod as a file.
 type Provider interface {
 	Name() string
-	GetFile(ctx context.Context, spec v1alpha1.ControlPlaneEndpointSpec) (*bootstrapv1.File, error)
-	GetCommands(cluster *clusterv1.Cluster) ([]string, []string, error)
+	GenerateFilesAndCommands(
+		ctx context.Context,
+		spec v1alpha1.ControlPlaneEndpointSpec,
+		cluster *clusterv1.Cluster,
+	) ([]bootstrapv1.File, []string, []string, error)
 }
 
 func templateValues(
 	controlPlaneEndpoint v1alpha1.ControlPlaneEndpointSpec,
 	text string,
 ) (string, error) {
-	kubeVIPTemplate, err := template.New("").Parse(text)
+	virtualIPTemplate, err := template.New("").Parse(text)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
@@ -46,7 +43,7 @@ func templateValues(
 	}
 
 	var b bytes.Buffer
-	err = kubeVIPTemplate.Execute(&b, templateInput)
+	err = virtualIPTemplate.Execute(&b, templateInput)
 	if err != nil {
 		return "", fmt.Errorf("failed setting API endpoint configuration in template: %w", err)
 	}
