@@ -31,21 +31,19 @@ var (
 	)
 )
 
-func generateCredentialsSecretFile(configs []providerConfig, clusterName string) []cabpkv1.File {
+func generateCredentialsSecretFile(configs []providerConfig, clusterName string) *cabpkv1.File {
 	if len(configs) == 0 {
 		return nil
 	}
-	return []cabpkv1.File{
-		{
-			Path: kubeletStaticCredentialProviderCredentialsOnRemote,
-			ContentFrom: &cabpkv1.FileSource{
-				Secret: cabpkv1.SecretFileSource{
-					Name: credentialSecretName(clusterName),
-					Key:  secretKeyForStaticCredentialProviderConfig,
-				},
+	return &cabpkv1.File{
+		Path: kubeletStaticCredentialProviderCredentialsOnRemote,
+		ContentFrom: &cabpkv1.FileSource{
+			Secret: cabpkv1.SecretFileSource{
+				Name: credentialSecretName(clusterName),
+				Key:  secretKeyForStaticCredentialProviderConfig,
 			},
-			Permissions: "0600",
 		},
+		Permissions: "0600",
 	}
 }
 
