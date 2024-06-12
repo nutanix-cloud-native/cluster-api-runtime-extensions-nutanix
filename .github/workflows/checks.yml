@@ -225,6 +225,14 @@ jobs:
               "ko.local/cluster-api-runtime-extensions-nutanix:$(devbox run -- gojq -r .version dist/metadata.json)"
 
       - if: steps.list-changed.outputs.changed == 'true'
+        name: Sideload docker image caren-helm
+        run: |
+          devbox run -- \
+            kind load docker-image \
+            --name chart-testing \
+            "ghcr.io/nutanix-cloud-native/caren-helm-reg:$(devbox run -- gojq -r .version dist/metadata.json)"
+
+      - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
         run: |
           devbox run -- \
