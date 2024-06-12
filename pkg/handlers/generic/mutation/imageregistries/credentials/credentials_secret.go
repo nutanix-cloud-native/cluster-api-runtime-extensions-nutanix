@@ -86,10 +86,9 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 		RegistryHost string
 		Username     string
 		Password     string
-		Separator    string
 	}
 
-	inputs := make([]templateInput, 0)
+	var inputs []templateInput //nolint:prealloc // We don't know the size of the slice yet.
 	for _, config := range configs {
 		requiresStaticCredentials, err := config.requiresStaticCredentials()
 		if err != nil {
@@ -107,12 +106,10 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 			return "", fmt.Errorf("failed parsing registry URL: %w", err)
 		}
 
-		separator := ","
 		inputs = append(inputs, templateInput{
 			RegistryHost: registryURL.Host,
 			Username:     config.Username,
 			Password:     config.Password,
-			Separator:    separator,
 		})
 
 		// Preserve special handling of "registry-1.docker.io" and add "docker.io" as an alias.
@@ -121,7 +118,6 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 				RegistryHost: "docker.io",
 				Username:     config.Username,
 				Password:     config.Password,
-				Separator:    separator,
 			})
 		}
 	}
@@ -129,9 +125,6 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 	if len(inputs) == 0 {
 		return "", nil
 	}
-
-	// The template is a JSON array, so we need a "," between each entry except the last one.
-	inputs[len(inputs)-1].Separator = ""
 
 	var b bytes.Buffer
 	err := staticCredentialProviderConfigPatchTemplate.Execute(&b, inputs)
