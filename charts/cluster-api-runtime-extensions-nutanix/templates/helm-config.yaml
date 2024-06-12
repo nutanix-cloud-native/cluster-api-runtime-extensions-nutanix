@@ -17,7 +17,7 @@ data:
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
-    ChartVersion: v0.0.29
+    ChartVersion: 0.0.29
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://charts.containeroo.ch{{ end }}
   metallb: |
     ChartName: metallb
