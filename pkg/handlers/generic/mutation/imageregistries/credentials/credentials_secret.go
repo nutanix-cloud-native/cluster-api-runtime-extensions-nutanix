@@ -32,7 +32,7 @@ var (
 )
 
 func generateCredentialsSecretFile(configs []providerConfig, clusterName string) *cabpkv1.File {
-	if len(configs) == 0 {
+	if !configsRequireStaticCredentials(configs) {
 		return nil
 	}
 	return &cabpkv1.File{
@@ -52,7 +52,7 @@ func generateCredentialsSecretFile(configs []providerConfig, clusterName string)
 func generateCredentialsSecret(
 	configs []providerConfig, clusterName, namespace string,
 ) (*corev1.Secret, error) {
-	if len(configs) == 0 {
+	if !configsRequireStaticCredentials(configs) {
 		return nil, nil
 	}
 
@@ -86,21 +86,52 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 		RegistryHost string
 		Username     string
 		Password     string
+		Separator    string
 	}
 
-	inputs := make([]templateInput, 0, len(configs))
+	inputs := make([]templateInput, 0)
 	for _, config := range configs {
+		requiresStaticCredentials, err := config.requiresStaticCredentials()
+		if err != nil {
+			return "", fmt.Errorf(
+				"error determining if Image Registry is a supported provider: %w",
+				err,
+			)
+		}
+		if !requiresStaticCredentials {
+			continue
+		}
+
 		registryURL, err := url.ParseRequestURI(config.URL)
 		if err != nil {
 			return "", fmt.Errorf("failed parsing registry URL: %w", err)
 		}
 
+		separator := ","
 		inputs = append(inputs, templateInput{
 			RegistryHost: registryURL.Host,
 			Username:     config.Username,
 			Password:     config.Password,
+			Separator:    separator,
 		})
+
+		// Preserve special handling of "registry-1.docker.io" and add "docker.io" as an alias.
+		if registryURL.Host == "registry-1.docker.io" {
+			inputs = append(inputs, templateInput{
+				RegistryHost: "docker.io",
+				Username:     config.Username,
+				Password:     config.Password,
+				Separator:    separator,
+			})
+		}
 	}
+
+	if len(inputs) == 0 {
+		return "", nil
+	}
+
+	// The template is a JSON array, so we need a "," between each entry except the last one.
+	inputs[len(inputs)-1].Separator = ""
 
 	var b bytes.Buffer
 	err := staticCredentialProviderConfigPatchTemplate.Execute(&b, inputs)
@@ -109,6 +140,19 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 	}
 
 	return strings.TrimSpace(b.String()), nil
+}
+
+func configsRequireStaticCredentials(configs []providerConfig) bool {
+	for _, config := range configs {
+		requiresStaticCredentials, err := config.requiresStaticCredentials()
+		if err != nil {
+			return false
+		}
+		if requiresStaticCredentials {
+			return true
+		}
+	}
+	return false
 }
 
 func credentialSecretName(clusterName string) string {
