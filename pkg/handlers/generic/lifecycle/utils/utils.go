@@ -6,6 +6,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -224,11 +225,16 @@ func CreateConfigMapForCRS(configMapName, configMapNamespace string,
 }
 
 func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
+	// this is set as an environment variable from the downward API on deployment
+	deploymentNS := os.Getenv("POD_NAMESPACE")
+	if deploymentNS == "" {
+		deploymentNS = v1alpha1.CarenNamespace
+	}
 	if strings.Contains(hcp.Spec.RepoURL, "mindthegap") {
 		hcp.Spec.TLSConfig = &caaphv1.TLSConfig{
 			CASecretRef: &corev1.SecretReference{
 				Name:      "mindthegap-tls",
-				Namespace: v1alpha1.CarenNamespace,
+				Namespace: deploymentNS,
 			},
 		}
 	}

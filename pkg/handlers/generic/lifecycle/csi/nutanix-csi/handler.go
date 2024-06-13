@@ -194,7 +194,6 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			ValuesTemplate:   values,
 		},
 	}
-
 	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(storageChartProxy)
 	snapshotChartProxy := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
