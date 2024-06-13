@@ -12,13 +12,14 @@ endif
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
 		ghcr.io/nutanix-cloud-native/caren-helm-reg:$$(gojq -r .version dist/metadata.json)
 	helm upgrade --install cluster-api-runtime-extensions-nutanix ./charts/cluster-api-runtime-extensions-nutanix \
+		--create-namespace \
 		--namespace caren-system \
 		--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
 		--set-string image.tag=$$(gojq -r .version dist/metadata.json) \
 		--set-string mindthegapImage.tag=$$(gojq -r .version dist/metadata.json) \
 		--wait --wait-for-jobs
-	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
-	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix
+	kubectl rollout restart deployment -n caren-system cluster-api-runtime-extensions-nutanix
+	kubectl rollout status deployment  -n caren-system cluster-api-runtime-extensions-nutanix
 
 .PHONY: dev.update-webhook-image-on-kind
 dev.update-webhook-image-on-kind: export KUBECONFIG := $(KIND_KUBECONFIG)
