@@ -31,21 +31,19 @@ var (
 	)
 )
 
-func generateCredentialsSecretFile(configs []providerConfig, clusterName string) []cabpkv1.File {
-	if len(configs) == 0 {
+func generateCredentialsSecretFile(configs []providerConfig, clusterName string) *cabpkv1.File {
+	if !configsRequireStaticCredentials(configs) {
 		return nil
 	}
-	return []cabpkv1.File{
-		{
-			Path: kubeletStaticCredentialProviderCredentialsOnRemote,
-			ContentFrom: &cabpkv1.FileSource{
-				Secret: cabpkv1.SecretFileSource{
-					Name: credentialSecretName(clusterName),
-					Key:  secretKeyForStaticCredentialProviderConfig,
-				},
+	return &cabpkv1.File{
+		Path: kubeletStaticCredentialProviderCredentialsOnRemote,
+		ContentFrom: &cabpkv1.FileSource{
+			Secret: cabpkv1.SecretFileSource{
+				Name: credentialSecretName(clusterName),
+				Key:  secretKeyForStaticCredentialProviderConfig,
 			},
-			Permissions: "0600",
 		},
+		Permissions: "0600",
 	}
 }
 
@@ -54,7 +52,7 @@ func generateCredentialsSecretFile(configs []providerConfig, clusterName string)
 func generateCredentialsSecret(
 	configs []providerConfig, clusterName, namespace string,
 ) (*corev1.Secret, error) {
-	if len(configs) == 0 {
+	if !configsRequireStaticCredentials(configs) {
 		return nil, nil
 	}
 
@@ -90,8 +88,19 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 		Password     string
 	}
 
-	inputs := make([]templateInput, 0, len(configs))
+	var inputs []templateInput //nolint:prealloc // We don't know the size of the slice yet.
 	for _, config := range configs {
+		requiresStaticCredentials, err := config.requiresStaticCredentials()
+		if err != nil {
+			return "", fmt.Errorf(
+				"error determining if Image Registry is a supported provider: %w",
+				err,
+			)
+		}
+		if !requiresStaticCredentials {
+			continue
+		}
+
 		registryURL, err := url.ParseRequestURI(config.URL)
 		if err != nil {
 			return "", fmt.Errorf("failed parsing registry URL: %w", err)
@@ -102,6 +111,19 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 			Username:     config.Username,
 			Password:     config.Password,
 		})
+
+		// Preserve special handling of "registry-1.docker.io" and add "docker.io" as an alias.
+		if registryURL.Host == "registry-1.docker.io" {
+			inputs = append(inputs, templateInput{
+				RegistryHost: "docker.io",
+				Username:     config.Username,
+				Password:     config.Password,
+			})
+		}
+	}
+
+	if len(inputs) == 0 {
+		return "", nil
 	}
 
 	var b bytes.Buffer
@@ -113,6 +135,19 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 	return strings.TrimSpace(b.String()), nil
 }
 
+func configsRequireStaticCredentials(configs []providerConfig) bool {
+	for _, config := range configs {
+		requiresStaticCredentials, err := config.requiresStaticCredentials()
+		if err != nil {
+			return false
+		}
+		if requiresStaticCredentials {
+			return true
+		}
+	}
+	return false
+}
+
 func credentialSecretName(clusterName string) string {
-	return fmt.Sprintf("%s-credential-provider-response", clusterName)
+	return fmt.Sprintf("%s-static-credential-provider-response", clusterName)
 }

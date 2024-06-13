@@ -344,9 +344,15 @@ func generateFilesAndCommands(
 		)
 	}
 	files = append(files, imageCredentialProviderConfigFiles...)
-	files = append(
-		files,
-		generateCredentialsSecretFile(registriesWithOptionalCredentials, clusterName)...)
+
+	credentialSecretFile := generateCredentialsSecretFile(
+		registriesWithOptionalCredentials,
+		clusterName,
+	)
+	if credentialSecretFile != nil {
+		files = append(files, *credentialSecretFile)
+	}
+
 	return files, commands, err
 }
 
