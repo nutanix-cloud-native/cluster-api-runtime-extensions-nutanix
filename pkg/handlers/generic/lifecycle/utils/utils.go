@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
@@ -226,7 +227,8 @@ func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
 	if strings.Contains(hcp.Spec.RepoURL, "mindthegap") {
 		hcp.Spec.TLSConfig = &caaphv1.TLSConfig{
 			CASecretRef: &corev1.SecretReference{
-				Name: "mindthegap-tls",
+				Name:      "mindthegap-tls",
+				Namespace: v1alpha1.CarenNamespace,
 			},
 		}
 	}
