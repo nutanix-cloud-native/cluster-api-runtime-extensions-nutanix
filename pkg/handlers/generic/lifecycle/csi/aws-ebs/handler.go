@@ -17,8 +17,8 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
-	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 var defaultStorageClassParameters = map[string]string{
@@ -73,7 +73,7 @@ func (a *AWSEBS) Apply(
 	default:
 		return fmt.Errorf("stategy %s not implemented", strategy)
 	}
-	err := lifecycleutils.CreateStorageClassOnRemote(
+	err := handlersutils.CreateStorageClassOnRemote(
 		ctx,
 		a.client,
 		provider.StorageClassConfig,
@@ -117,7 +117,7 @@ func (a *AWSEBS) handleCRSApply(ctx context.Context,
 			err,
 		)
 	}
-	err = lifecycleutils.EnsureCRSForClusterFromObjects(
+	err = handlersutils.EnsureCRSForClusterFromObjects(
 		ctx,
 		cm.Name,
 		a.client,

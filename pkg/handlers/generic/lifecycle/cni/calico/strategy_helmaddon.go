@@ -18,7 +18,7 @@ import (
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
-	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -68,7 +68,7 @@ func (s helmAddonStrategy) apply(
 	}
 
 	log.Info("Retrieving Calico installation values template for cluster")
-	values, err := lifecycleutils.RetrieveValuesTemplate(
+	values, err := handlersutils.RetrieveValuesTemplate(
 		ctx,
 		s.client,
 		defaultInstallationConfigMapName,
@@ -102,7 +102,7 @@ func (s helmAddonStrategy) apply(
 			ValuesTemplate:   values,
 		},
 	}
-	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
+	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
 	if err := controllerutil.SetOwnerReference(&req.Cluster, hcp, s.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on Calico CNI installation HelmChartProxy: %w",
