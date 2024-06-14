@@ -129,7 +129,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		if secretName := secretNameForImageRegistryCredentials(imageRegistry.Credentials); secretName != "" {
 			// Ensure the Secret is owned by the Cluster so it is correctly moved and deleted with the Cluster.
 			// This code assumes that Secret exists and that was validated before calling this function.
-			err := handlersutils.EnsureOwnerRefForSecret(
+			err := handlersutils.EnsureOwnerReferenceForSecret(
 				ctx,
 				h.client,
 				secretName,
@@ -162,7 +162,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		if secretName := secretNameForImageRegistryCredentials(globalMirror.Credentials); secretName != "" {
 			// Ensure the Secret is owned by the Cluster so it is correctly moved and deleted with the Cluster.
 			// This code assumes that Secret exists and that was validated before calling this function.
-			err := handlersutils.EnsureOwnerRefForSecret(
+			err := handlersutils.EnsureOwnerReferenceForSecret(
 				ctx,
 				h.client,
 				secretName,

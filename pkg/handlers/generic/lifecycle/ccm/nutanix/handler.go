@@ -98,7 +98,7 @@ func (p *provider) Apply(
 	// However, that would leave the credentials visible in the HelmChartProxy.
 	// Instead, we'll create the Secret on the remote cluster and reference it in the Helm values.
 	if clusterConfig.Addons.CCM.Credentials != nil {
-		err = handlersutils.EnsureOwnerRefForSecret(
+		err = handlersutils.EnsureOwnerReferenceForSecret(
 			ctx,
 			p.client,
 			clusterConfig.Addons.CCM.Credentials.SecretRef.Name,

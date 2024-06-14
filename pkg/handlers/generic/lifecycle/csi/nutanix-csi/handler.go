@@ -97,7 +97,7 @@ func (n *NutanixCSI) Apply(
 	}
 
 	if provider.Credentials != nil {
-		err := handlersutils.EnsureOwnerRefForSecret(
+		err := handlersutils.EnsureOwnerReferenceForSecret(
 			ctx,
 			n.client,
 			provider.Credentials.SecretRef.Name,

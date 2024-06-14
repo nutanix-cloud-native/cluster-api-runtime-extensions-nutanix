@@ -104,7 +104,7 @@ func Test_EnsureOwnerRefForSecret(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := EnsureOwnerRefForSecret(
+			err := EnsureOwnerReferenceForSecret(
 				context.Background(),
 				tt.client,
 				tt.secretName,
