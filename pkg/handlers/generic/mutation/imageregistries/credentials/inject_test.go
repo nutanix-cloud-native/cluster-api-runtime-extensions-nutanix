@@ -144,7 +144,7 @@ var _ = Describe("Generate Image registry patches", func() {
 
 	testDefs := []struct {
 		capitest.PatchTestDef
-		expectOwnerReferenceOnSecret bool
+		expectOwnerReferenceOnSecrets bool
 	}{
 		{
 			PatchTestDef: capitest.PatchTestDef{
@@ -271,7 +271,7 @@ var _ = Describe("Generate Image registry patches", func() {
 					},
 				},
 			},
-			expectOwnerReferenceOnSecret: true,
+			expectOwnerReferenceOnSecrets: true,
 		},
 		{
 			PatchTestDef: capitest.PatchTestDef{
@@ -390,7 +390,7 @@ var _ = Describe("Generate Image registry patches", func() {
 					},
 				},
 			},
-			expectOwnerReferenceOnSecret: true,
+			expectOwnerReferenceOnSecrets: true,
 		},
 		{
 			PatchTestDef: capitest.PatchTestDef{
@@ -457,18 +457,24 @@ var _ = Describe("Generate Image registry patches", func() {
 		It(tt.Name, func() {
 			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt.PatchTestDef)
 
-			// validate an OwnerReference was added to the Secret
-			if tt.expectOwnerReferenceOnSecret {
+			// validate an OwnerReference was added to the user provided and generated Secrets
+			if tt.expectOwnerReferenceOnSecrets {
 				client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 				gomega.Expect(err).To(gomega.BeNil())
 
-				secret := newRegistryCredentialsSecret(validSecretName, request.Namespace)
-				gomega.Expect(client.Get(
-					context.Background(),
-					ctrlclient.ObjectKeyFromObject(secret),
-					secret,
-				)).To(gomega.BeNil())
-				gomega.Expect(secret.OwnerReferences).ToNot(gomega.BeEmpty())
+				for _, name := range []string{validSecretName, credentialSecretName(request.ClusterName)} {
+					key := ctrlclient.ObjectKey{
+						Namespace: request.Namespace,
+						Name:      name,
+					}
+					secret := &corev1.Secret{}
+					gomega.Expect(client.Get(
+						context.Background(),
+						key,
+						secret,
+					)).To(gomega.BeNil())
+					gomega.Expect(secret.OwnerReferences).ToNot(gomega.BeEmpty())
+				}
 			}
 		})
 	}
