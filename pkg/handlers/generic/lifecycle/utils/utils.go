@@ -6,6 +6,8 @@ package utils
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +19,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
@@ -218,4 +221,20 @@ func CreateConfigMapForCRS(configMapName, configMapNamespace string,
 	}
 	cm.Data[defaultCRSConfigMapKey] = string(utilyaml.JoinYaml(l...))
 	return cm, nil
+}
+
+func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
+	// this is set as an environment variable from the downward API on deployment
+	deploymentNS := os.Getenv("POD_NAMESPACE")
+	if deploymentNS == "" {
+		deploymentNS = metav1.NamespaceDefault
+	}
+	if strings.Contains(hcp.Spec.RepoURL, "helm-repository") {
+		hcp.Spec.TLSConfig = &caaphv1.TLSConfig{
+			CASecretRef: &corev1.SecretReference{
+				Name:      "helm-repository-tls",
+				Namespace: deploymentNS,
+			},
+		}
+	}
 }

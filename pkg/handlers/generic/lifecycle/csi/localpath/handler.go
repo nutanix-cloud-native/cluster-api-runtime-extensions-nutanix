@@ -118,7 +118,7 @@ helperImage:
 			ValuesTemplate:   valuesTemplate,
 		},
 	}
-
+	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(chartProxy)
 	if err = controllerutil.SetOwnerReference(&req.Cluster, chartProxy, l.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on HelmChartProxy %q: %w",

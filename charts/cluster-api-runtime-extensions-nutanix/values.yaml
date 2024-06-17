@@ -84,6 +84,9 @@ hooks:
 
 helmAddonsConfigMap: default-helm-addons-config
 
+selfHostedRegistry: true
+
+
 deployDefaultClusterClasses: true
 
 deployment:
@@ -91,6 +94,11 @@ deployment:
 
 image:
   repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
+  tag: ""
+  pullPolicy: IfNotPresent
+
+helmRepositoryImage:
+  repository: ghcr.io/nutanix-cloud-native/caren-helm-reg
   tag: ""
   pullPolicy: IfNotPresent
 

@@ -161,7 +161,7 @@ func (p *provider) Apply(
 			ValuesTemplate:   values,
 		},
 	}
-
+	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
 	if err = controllerutil.SetOwnerReference(cluster, hcp, p.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on nutanix-ccm installation HelmChartProxy: %w",

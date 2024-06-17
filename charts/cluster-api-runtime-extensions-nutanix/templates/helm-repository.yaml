@@ -1,0 +1,78 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# This file contains the manifests to run a helmRepository deployment which contains helm charts for our addons.
+# The pod is built via goreleaser with configuration from hack/addons.
+#
+{{ if .Values.selfHostedRegistry }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: helm-repository-selfsigned
+  namespace: {{ .Release.Namespace }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: helm-repository-tls
+  namespace: {{ .Release.Namespace }}
+spec:
+  dnsNames:
+  - helm-repository.{{ .Release.Namespace }}.svc
+  - helm-repository.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    name: helm-repository-selfsigned
+    kind: Issuer
+  secretName: helm-repository-tls
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helm-repository
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: helm-repository
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: helm-repository   # deployment will track pods it generates because of this
+  template:
+    metadata:
+      labels:
+        app: helm-repository  # pods have this label, and Service and Deployment depend on it
+    spec:
+      containers:
+      - name: helm-repository
+        ports:
+          - name: serve
+            protocol: TCP
+            containerPort: 5000
+        image: "{{ .Values.helmRepositoryImage.repository }}:{{ .Values.helmRepositoryImage.tag | default $.Chart.AppVersion }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        volumeMounts:
+        - name: certs-vol
+          mountPath: "/certs"
+          readOnly: true
+        env:
+      volumes:
+      - name: certs-vol
+        secret:
+          secretName: helm-repository-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: helm-repository
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: helm-repository
+  ports:
+  - port: 443
+    targetPort: 5000
+  type: ClusterIP
+{{ end }}

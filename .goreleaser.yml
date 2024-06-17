@@ -42,6 +42,7 @@ before:
       $(helm template {{ .ProjectName }} ./charts/{{ .ProjectName }} \
         --namespace caren-system \
         --set-string image.tag=v{{ trimprefix .Version "v" }} \
+        --set-string helmRepositoryImage.tag=v{{ trimprefix .Version "v" }} \
         {{ if .IsSnapshot }}--set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
       EOF'
@@ -50,6 +51,8 @@ before:
       sh -ec 'gojq --yaml-input --yaml-output \
         ".releaseSeries |= (. + [{contract: \"v1beta1\", major: {{ .Major }}, minor: {{ .Minor }}}] | unique)" \
         metadata.yaml >release-metadata.yaml'
+    - make template-helm-repository
+
 
 builds:
   - id: cluster-api-runtime-extensions-nutanix
@@ -91,6 +94,15 @@ archives:
   - name_template: '{{ .ProjectName }}_v{{ trimprefix .Version "v" }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - cluster-api-runtime-extensions-nutanix
+
+dockers:
+  - id: helm-registry-container
+    use: buildx
+    dockerfile: ./hack/addons/mindthegap-helm-registry/Dockerfile
+    extra_files:
+      - hack/addons/mindthegap-helm-registry/repos.yaml
+    image_templates:
+      -  'ghcr.io/nutanix-cloud-native/caren-helm-reg:{{ .Version }}'
 
 kos:
   - id: cluster-api-runtime-extensions-nutanix
