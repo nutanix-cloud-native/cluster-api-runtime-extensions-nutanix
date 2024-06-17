@@ -100,15 +100,6 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		return globalMirrorErr
 	}
 
-	cluster, err := clusterGetter(ctx)
-	if err != nil {
-		log.Error(
-			err,
-			"failed to get cluster from Image Registry Credentials mutation handler",
-		)
-		return err
-	}
-
 	registriesWithOptionalCredentials := make([]providerConfig, 0, len(imageRegistries))
 	for _, imageRegistry := range imageRegistries {
 		registryWithOptionalCredentials, generateErr := registryWithOptionalCredentialsFromImageRegistryCredentials(
@@ -125,23 +116,6 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			registriesWithOptionalCredentials,
 			registryWithOptionalCredentials,
 		)
-
-		if secretName := secretNameForImageRegistryCredentials(imageRegistry.Credentials); secretName != "" {
-			// Ensure the Secret is owned by the Cluster so it is correctly moved and deleted with the Cluster.
-			// This code assumes that Secret exists and that was validated before calling this function.
-			err := handlersutils.EnsureOwnerReferenceForSecret(
-				ctx,
-				h.client,
-				secretName,
-				cluster,
-			)
-			if err != nil {
-				return fmt.Errorf(
-					"error updating owner references on image registry Secret: %w",
-					err,
-				)
-			}
-		}
 	}
 
 	if globalMirrorErr == nil {
@@ -158,23 +132,6 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			registriesWithOptionalCredentials,
 			mirrorCredentials,
 		)
-
-		if secretName := secretNameForImageRegistryCredentials(globalMirror.Credentials); secretName != "" {
-			// Ensure the Secret is owned by the Cluster so it is correctly moved and deleted with the Cluster.
-			// This code assumes that Secret exists and that was validated before calling this function.
-			err := handlersutils.EnsureOwnerReferenceForSecret(
-				ctx,
-				h.client,
-				secretName,
-				cluster,
-			)
-			if err != nil {
-				return fmt.Errorf(
-					"error updating owner references on global mirror Secret: %w",
-					err,
-				)
-			}
-		}
 	}
 
 	needCredentials, err := needImageRegistryCredentialsConfiguration(
@@ -217,9 +174,23 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				commands...,
 			)
 
-			generateErr = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
-			if generateErr != nil {
-				return generateErr
+			cluster, err := clusterGetter(ctx)
+			if err != nil {
+				log.Error(
+					err,
+					"failed to get cluster from Image Registry Credentials mutation handler",
+				)
+				return err
+			}
+
+			err = ensureOwnerReferenceOnCredentialsSecrets(ctx, h.client, imageRegistries, globalMirror, cluster)
+			if err != nil {
+				return err
+			}
+
+			err = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
+			if err != nil {
+				return err
 			}
 
 			initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
@@ -261,9 +232,23 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			).Info("adding PreKubeadmCommands to worker node kubeadm config template")
 			obj.Spec.Template.Spec.PreKubeadmCommands = append(obj.Spec.Template.Spec.PreKubeadmCommands, commands...)
 
-			generateErr := createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
-			if generateErr != nil {
-				return generateErr
+			cluster, err := clusterGetter(ctx)
+			if err != nil {
+				log.Error(
+					err,
+					"failed to get cluster from Image Registry Credentials mutation handler",
+				)
+				return err
+			}
+
+			err = ensureOwnerReferenceOnCredentialsSecrets(ctx, h.client, imageRegistries, globalMirror, cluster)
+			if err != nil {
+				return err
+			}
+
+			err = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
+			if err != nil {
+				return err
 			}
 
 			joinConfiguration := obj.Spec.Template.Spec.JoinConfiguration
@@ -279,6 +264,45 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			return nil
 		}); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func ensureOwnerReferenceOnCredentialsSecrets(
+	ctx context.Context,
+	c ctrlclient.Client,
+	imageRegistries []v1alpha1.ImageRegistry,
+	globalMirror v1alpha1.GlobalImageRegistryMirror,
+	cluster *clusterv1.Cluster,
+) error {
+	var credentials []*v1alpha1.RegistryCredentials
+	for _, imageRegistry := range imageRegistries {
+		if imageRegistry.Credentials != nil {
+			credentials = append(credentials, imageRegistry.Credentials)
+		}
+	}
+	if globalMirror.Credentials != nil {
+		credentials = append(credentials, globalMirror.Credentials)
+	}
+
+	for _, credential := range credentials {
+		if secretName := secretNameForImageRegistryCredentials(credential); secretName != "" {
+			// Ensure the Secret is owned by the Cluster so it is correctly moved and deleted with the Cluster.
+			// This code assumes that Secret exists and that was validated before calling this function.
+			err := handlersutils.EnsureOwnerReferenceForSecret(
+				ctx,
+				c,
+				secretName,
+				cluster,
+			)
+			if err != nil {
+				return fmt.Errorf(
+					"error updating owner references on image registry Secret: %w",
+					err,
+				)
+			}
+		}
 	}
 
 	return nil
