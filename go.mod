@@ -24,14 +24,14 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.29.5
-	k8s.io/apiextensions-apiserver v0.29.5
-	k8s.io/apimachinery v0.29.5
-	k8s.io/apiserver v0.29.5
-	k8s.io/client-go v0.29.5
-	k8s.io/component-base v0.29.5
+	k8s.io/api v0.29.6
+	k8s.io/apiextensions-apiserver v0.29.6
+	k8s.io/apimachinery v0.29.6
+	k8s.io/apiserver v0.29.6
+	k8s.io/client-go v0.29.6
+	k8s.io/component-base v0.29.6
 	k8s.io/klog/v2 v2.120.1
-	k8s.io/kubelet v0.29.5
+	k8s.io/kubelet v0.29.6
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
 	sigs.k8s.io/cluster-api v1.7.3
 	sigs.k8s.io/cluster-api/test v1.7.3
@@ -51,7 +51,7 @@ require (
 	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 // indirect
-	github.com/aws/aws-sdk-go v1.53.19 // indirect
+	github.com/aws/aws-sdk-go v1.54.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
