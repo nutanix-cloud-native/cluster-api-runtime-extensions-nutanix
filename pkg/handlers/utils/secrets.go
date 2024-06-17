@@ -63,8 +63,8 @@ func CopySecretToRemoteCluster(
 	return nil
 }
 
-// EnsureOwnerRefForSecret will ensure that the secretName Secret has an OwnerReference of the cluster.
-func EnsureOwnerRefForSecret(
+// EnsureOwnerReferenceForSecret will ensure that the secretName Secret has an OwnerReference of the cluster.
+func EnsureOwnerReferenceForSecret(
 	ctx context.Context,
 	cl ctrlclient.Client,
 	secretName string,

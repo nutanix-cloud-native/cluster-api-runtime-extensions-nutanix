@@ -17,8 +17,8 @@ import (
 
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
-	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 type AWSCCMConfig struct {
@@ -96,7 +96,7 @@ func (a *AWSCCM) Apply(
 		)
 	}
 
-	err = lifecycleutils.EnsureCRSForClusterFromObjects(
+	err = handlersutils.EnsureCRSForClusterFromObjects(
 		ctx,
 		ccmConfigMap.Name,
 		a.client,

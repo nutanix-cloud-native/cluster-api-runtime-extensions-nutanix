@@ -18,8 +18,8 @@ import (
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
-	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -75,7 +75,7 @@ func (n *MetalLB) Apply(
 ) error {
 	log.Info("Applying MetalLB installation")
 
-	values, err := lifecycleutils.RetrieveValuesTemplate(
+	values, err := handlersutils.RetrieveValuesTemplate(
 		ctx,
 		n.client,
 		n.config.defaultValuesTemplateConfigMapName,
@@ -98,7 +98,7 @@ func (n *MetalLB) Apply(
 		return fmt.Errorf("error creating remote cluster client: %w", err)
 	}
 
-	err = lifecycleutils.EnsureNamespaceWithMetadata(
+	err = handlersutils.EnsureNamespaceWithMetadata(
 		ctx,
 		remoteClient,
 		defaultHelmReleaseNamespace,
@@ -140,7 +140,7 @@ func (n *MetalLB) Apply(
 		},
 	}
 
-	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
+	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
 	if err = controllerutil.SetOwnerReference(cluster, hcp, n.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on MetalLB installation HelmChartProxy: %w",

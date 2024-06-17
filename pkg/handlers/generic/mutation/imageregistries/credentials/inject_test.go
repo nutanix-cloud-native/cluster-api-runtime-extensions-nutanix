@@ -4,6 +4,7 @@
 package credentials
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -18,6 +19,8 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"sigs.k8s.io/cluster-api/util"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -140,254 +143,271 @@ var _ = Describe("Generate Image registry patches", func() {
 		return mutation.NewMetaGeneratePatchesHandler("", client, NewPatch(client)).(mutation.GeneratePatches)
 	}
 
-	testDefs := []capitest.PatchTestDef{
+	testDefs := []struct {
+		capitest.PatchTestDef
+		expectOwnerReferenceOnSecrets bool
+	}{
 		{
-			Name: "unset variable",
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "unset variable",
+			},
 		},
 		{
-			Name: "files added in KubeadmControlPlaneTemplate for ECR without a Secret",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					v1alpha1.ClusterConfigVariableName,
-					[]v1alpha1.ImageRegistry{{
-						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
-					}},
-					imageregistries.VariableName,
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "files added in KubeadmControlPlaneTemplate for ECR without a Secret",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						[]v1alpha1.ImageRegistry{{
+							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+						}},
+						imageregistries.VariableName,
+					),
+				},
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+						ValueMatcher: gomega.ContainElements(
+							gomega.HaveKeyWithValue(
+								"path", "/etc/caren/install-kubelet-credential-providers.sh",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+							),
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+						ValueMatcher: gomega.ContainElement(
+							"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs",
+						ValueMatcher: gomega.HaveKeyWithValue(
+							"image-credential-provider-bin-dir",
+							"/etc/kubernetes/image-credential-provider/",
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
+						ValueMatcher: gomega.HaveKeyWithValue(
+							"image-credential-provider-config",
+							"/etc/kubernetes/image-credential-provider-config.yaml",
+						),
+					},
+				},
+			},
+		},
+		{
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "files added in KubeadmControlPlaneTemplate for registry with a Secret",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						[]v1alpha1.ImageRegistry{{
+							URL: "https://registry.example.com",
+							Credentials: &v1alpha1.RegistryCredentials{
+								SecretRef: &v1alpha1.LocalObjectReference{
+									Name: validSecretName,
+								},
+							},
+						}},
+						imageregistries.VariableName,
+					),
+				},
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequest(
+					"",
+					"test-kubeadmconfigtemplate",
 				),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+						ValueMatcher: gomega.ContainElements(
+							gomega.HaveKeyWithValue(
+								"path", "/etc/caren/install-kubelet-credential-providers.sh",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/static-image-credentials.json",
+							),
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+						ValueMatcher: gomega.ContainElement(
+							"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs",
+						ValueMatcher: gomega.HaveKeyWithValue(
+							"image-credential-provider-bin-dir",
+							"/etc/kubernetes/image-credential-provider/",
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
+						ValueMatcher: gomega.HaveKeyWithValue(
+							"image-credential-provider-config",
+							"/etc/kubernetes/image-credential-provider-config.yaml",
+						),
+					},
+				},
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-					ValueMatcher: gomega.ContainElements(
-						gomega.HaveKeyWithValue(
-							"path", "/etc/caren/install-kubelet-credential-providers.sh",
-						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/image-credential-provider-config.yaml",
-						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-						),
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElement(
-						"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs",
-					ValueMatcher: gomega.HaveKeyWithValue(
-						"image-credential-provider-bin-dir",
-						"/etc/kubernetes/image-credential-provider/",
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
-					ValueMatcher: gomega.HaveKeyWithValue(
-						"image-credential-provider-config",
-						"/etc/kubernetes/image-credential-provider-config.yaml",
-					),
-				},
-			},
+			expectOwnerReferenceOnSecrets: true,
 		},
 		{
-			Name: "files added in KubeadmControlPlaneTemplate for registry with a Secret",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					v1alpha1.ClusterConfigVariableName,
-					[]v1alpha1.ImageRegistry{{
-						URL: "https://registry.example.com",
-						Credentials: &v1alpha1.RegistryCredentials{
-							SecretRef: &v1alpha1.LocalObjectReference{
-								Name: validSecretName,
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "files added in KubeadmConfigTemplate for ECR without a Secret",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						[]v1alpha1.ImageRegistry{{
+							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+						}},
+						imageregistries.VariableName,
+					),
+					capitest.VariableWithValue(
+						"builtin",
+						map[string]any{
+							"machineDeployment": map[string]any{
+								"class": names.SimpleNameGenerator.GenerateName("worker-"),
 							},
 						},
-					}},
-					imageregistries.VariableName,
-				),
-			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequest(
-				"",
-				"test-kubeadmconfigtemplate",
-			),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-					ValueMatcher: gomega.ContainElements(
-						gomega.HaveKeyWithValue(
-							"path", "/etc/caren/install-kubelet-credential-providers.sh",
-						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/image-credential-provider-config.yaml",
-						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/static-image-credentials.json",
-						),
 					),
 				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElement(
-						"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs",
-					ValueMatcher: gomega.HaveKeyWithValue(
-						"image-credential-provider-bin-dir",
-						"/etc/kubernetes/image-credential-provider/",
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
-					ValueMatcher: gomega.HaveKeyWithValue(
-						"image-credential-provider-config",
-						"/etc/kubernetes/image-credential-provider-config.yaml",
-					),
-				},
-			},
-		},
-		{
-			Name: "files added in KubeadmConfigTemplate for ECR without a Secret",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					v1alpha1.ClusterConfigVariableName,
-					[]v1alpha1.ImageRegistry{{
-						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
-					}},
-					imageregistries.VariableName,
-				),
-				capitest.VariableWithValue(
-					"builtin",
-					map[string]any{
-						"machineDeployment": map[string]any{
-							"class": names.SimpleNameGenerator.GenerateName("worker-"),
-						},
+				RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/files",
+						ValueMatcher: gomega.ContainElements(
+							gomega.HaveKeyWithValue(
+								"path", "/etc/caren/install-kubelet-credential-providers.sh",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+							),
+						),
 					},
-				),
-			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/files",
-					ValueMatcher: gomega.ContainElements(
-						gomega.HaveKeyWithValue(
-							"path", "/etc/caren/install-kubelet-credential-providers.sh",
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/preKubeadmCommands",
+						ValueMatcher: gomega.ContainElement(
+							"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
+						ValueMatcher: gomega.HaveKeyWithValue(
+							"image-credential-provider-bin-dir",
+							"/etc/kubernetes/image-credential-provider/",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-						),
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElement(
-						"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
-					ValueMatcher: gomega.HaveKeyWithValue(
-						"image-credential-provider-bin-dir",
-						"/etc/kubernetes/image-credential-provider/",
-					),
+					},
 				},
 			},
 		},
 		{
-			Name: "files added in KubeadmConfigTemplate for registry with a Secret",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					v1alpha1.ClusterConfigVariableName,
-					[]v1alpha1.ImageRegistry{{
-						URL: "https://registry.example.com",
-						Credentials: &v1alpha1.RegistryCredentials{
-							SecretRef: &v1alpha1.LocalObjectReference{
-								Name: validSecretName,
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "files added in KubeadmConfigTemplate for registry with a Secret",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						[]v1alpha1.ImageRegistry{{
+							URL: "https://registry.example.com",
+							Credentials: &v1alpha1.RegistryCredentials{
+								SecretRef: &v1alpha1.LocalObjectReference{
+									Name: validSecretName,
+								},
+							},
+						}},
+						imageregistries.VariableName,
+					),
+					capitest.VariableWithValue(
+						"builtin",
+						map[string]any{
+							"machineDeployment": map[string]any{
+								"class": names.SimpleNameGenerator.GenerateName("worker-"),
 							},
 						},
-					}},
-					imageregistries.VariableName,
-				),
-				capitest.VariableWithValue(
-					"builtin",
-					map[string]any{
-						"machineDeployment": map[string]any{
-							"class": names.SimpleNameGenerator.GenerateName("worker-"),
-						},
+					),
+				},
+				RequestItem: request.NewKubeadmConfigTemplateRequest("", "test-kubeadmconfigtemplate"),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/files",
+						ValueMatcher: gomega.ContainElements(
+							gomega.HaveKeyWithValue(
+								"path", "/etc/caren/install-kubelet-credential-providers.sh",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/static-image-credentials.json",
+							),
+						),
 					},
-				),
-			},
-			RequestItem: request.NewKubeadmConfigTemplateRequest("", "test-kubeadmconfigtemplate"),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/files",
-					ValueMatcher: gomega.ContainElements(
-						gomega.HaveKeyWithValue(
-							"path", "/etc/caren/install-kubelet-credential-providers.sh",
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/preKubeadmCommands",
+						ValueMatcher: gomega.ContainElement(
+							"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
+						ValueMatcher: gomega.HaveKeyWithValue(
+							"image-credential-provider-bin-dir",
+							"/etc/kubernetes/image-credential-provider/",
 						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-						),
-						gomega.HaveKeyWithValue(
-							"path", "/etc/kubernetes/static-image-credentials.json",
-						),
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/preKubeadmCommands",
-					ValueMatcher: gomega.ContainElement(
-						"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
-					),
-				},
-				{
-					Operation: "add",
-					Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
-					ValueMatcher: gomega.HaveKeyWithValue(
-						"image-credential-provider-bin-dir",
-						"/etc/kubernetes/image-credential-provider/",
-					),
+					},
 				},
 			},
+			expectOwnerReferenceOnSecrets: true,
 		},
 		{
-			Name: "error for a registry with no credentials",
-			Vars: []runtimehooksv1.Variable{
-				capitest.VariableWithValue(
-					v1alpha1.ClusterConfigVariableName,
-					[]v1alpha1.ImageRegistry{{
-						URL: "https://registry.example.com",
-					}},
-					imageregistries.VariableName,
-				),
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "error for a registry with no credentials",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						[]v1alpha1.ImageRegistry{{
+							URL: "https://registry.example.com",
+						}},
+						imageregistries.VariableName,
+					),
+				},
+				RequestItem:     request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				ExpectedFailure: true,
 			},
-			RequestItem:     request.NewKubeadmControlPlaneTemplateRequestItem(""),
-			ExpectedFailure: true,
 		},
 	}
 
@@ -436,7 +456,47 @@ var _ = Describe("Generate Image registry patches", func() {
 	for testIdx := range testDefs {
 		tt := testDefs[testIdx]
 		It(tt.Name, func() {
-			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt)
+			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt.PatchTestDef)
+
+			// validate an OwnerReference was added to the user provided and generated Secrets
+			if tt.expectOwnerReferenceOnSecrets {
+				client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+				gomega.Expect(err).To(gomega.BeNil())
+
+				// get the Cluster to use for the owner reference assertion
+				clusterKey := ctrlclient.ObjectKey{
+					Namespace: request.Namespace,
+					Name:      request.ClusterName,
+				}
+				cluster := &clusterv1.Cluster{}
+				gomega.Expect(client.Get(
+					context.Background(),
+					clusterKey,
+					cluster,
+				)).To(gomega.BeNil())
+				for _, name := range []string{validSecretName, credentialSecretName(request.ClusterName)} {
+					key := ctrlclient.ObjectKey{
+						Namespace: request.Namespace,
+						Name:      name,
+					}
+					secret := &corev1.Secret{}
+					gomega.Expect(client.Get(
+						context.Background(),
+						key,
+						secret,
+					)).To(gomega.BeNil())
+
+					// assert the owner reference with the Cluster was added to the Secret
+					gomega.Expect(secret.OwnerReferences).ToNot(gomega.BeEmpty())
+					ownerRef := metav1.OwnerReference{
+						APIVersion: clusterv1.GroupVersion.String(),
+						Kind:       cluster.Kind,
+						UID:        cluster.UID,
+						Name:       cluster.Name,
+					}
+					util.HasOwnerRef(secret.OwnerReferences, ownerRef)
+				}
+			}
 		})
 	}
 })

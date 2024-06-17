@@ -19,8 +19,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
-	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -97,7 +97,7 @@ func (n *NutanixCSI) Apply(
 	}
 
 	if provider.Credentials != nil {
-		err := lifecycleutils.EnsureOwnerRefForSecret(
+		err := handlersutils.EnsureOwnerReferenceForSecret(
 			ctx,
 			n.client,
 			provider.Credentials.SecretRef.Name,
@@ -113,7 +113,7 @@ func (n *NutanixCSI) Apply(
 			Name:      defaultCredentialsSecretName,
 			Namespace: defaultStorageHelmReleaseNamespace,
 		}
-		err = lifecycleutils.CopySecretToRemoteCluster(
+		err = handlersutils.CopySecretToRemoteCluster(
 			ctx,
 			n.client,
 			provider.Credentials.SecretRef.Name,
@@ -128,7 +128,7 @@ func (n *NutanixCSI) Apply(
 		}
 	}
 
-	err := lifecycleutils.CreateStorageClassOnRemote(
+	err := handlersutils.CreateStorageClassOnRemote(
 		ctx,
 		n.client,
 		provider.StorageClassConfig,
@@ -150,7 +150,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 	log logr.Logger,
 ) error {
 	log.Info("Retrieving Nutanix CSI installation values template for cluster")
-	values, err := lifecycleutils.RetrieveValuesTemplate(
+	values, err := handlersutils.RetrieveValuesTemplate(
 		ctx,
 		n.client,
 		n.config.defaultValuesTemplateConfigMapName,
@@ -194,7 +194,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			ValuesTemplate:   values,
 		},
 	}
-	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(storageChartProxy)
+	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(storageChartProxy)
 	snapshotChartProxy := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: caaphv1.GroupVersion.String(),
@@ -215,7 +215,7 @@ func (n *NutanixCSI) handleHelmAddonApply(
 			Version:          snapshotChart.Version,
 		},
 	}
-	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(snapshotChartProxy)
+	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(snapshotChartProxy)
 	// We use a slice of pointers to satisfy the gocritic linter rangeValCopy check.
 	for _, cp := range []*caaphv1.HelmChartProxy{storageChartProxy, snapshotChartProxy} {
 		if err = controllerutil.SetOwnerReference(&req.Cluster, cp, n.client.Scheme()); err != nil {

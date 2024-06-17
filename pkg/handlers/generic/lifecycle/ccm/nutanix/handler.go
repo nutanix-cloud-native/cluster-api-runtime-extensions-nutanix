@@ -21,8 +21,8 @@ import (
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
-	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -81,7 +81,7 @@ func (p *provider) Apply(
 	}
 
 	log.Info("Retrieving Nutanix CCM installation values template for cluster")
-	values, err := lifecycleutils.RetrieveValuesTemplate(
+	values, err := handlersutils.RetrieveValuesTemplate(
 		ctx,
 		p.client,
 		p.config.defaultValuesTemplateConfigMapName,
@@ -98,7 +98,7 @@ func (p *provider) Apply(
 	// However, that would leave the credentials visible in the HelmChartProxy.
 	// Instead, we'll create the Secret on the remote cluster and reference it in the Helm values.
 	if clusterConfig.Addons.CCM.Credentials != nil {
-		err = lifecycleutils.EnsureOwnerRefForSecret(
+		err = handlersutils.EnsureOwnerReferenceForSecret(
 			ctx,
 			p.client,
 			clusterConfig.Addons.CCM.Credentials.SecretRef.Name,
@@ -114,7 +114,7 @@ func (p *provider) Apply(
 			Name:      defaultCredentialsSecretName,
 			Namespace: defaultHelmReleaseNamespace,
 		}
-		err = lifecycleutils.CopySecretToRemoteCluster(
+		err = handlersutils.CopySecretToRemoteCluster(
 			ctx,
 			p.client,
 			clusterConfig.Addons.CCM.Credentials.SecretRef.Name,
@@ -161,7 +161,7 @@ func (p *provider) Apply(
 			ValuesTemplate:   values,
 		},
 	}
-	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
+	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
 	if err = controllerutil.SetOwnerReference(cluster, hcp, p.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on nutanix-ccm installation HelmChartProxy: %w",

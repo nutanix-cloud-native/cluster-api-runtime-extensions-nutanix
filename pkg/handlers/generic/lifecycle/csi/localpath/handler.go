@@ -18,7 +18,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
-	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/utils"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -60,7 +60,7 @@ func (l *LocalPathProvisionerCSI) Apply(
 		return fmt.Errorf("strategy %s not implemented", strategy)
 	}
 
-	err := lifecycleutils.CreateStorageClassOnRemote(
+	err := handlersutils.CreateStorageClassOnRemote(
 		ctx,
 		l.client,
 		provider.StorageClassConfig,
@@ -118,7 +118,7 @@ helperImage:
 			ValuesTemplate:   valuesTemplate,
 		},
 	}
-	lifecycleutils.SetTLSConfigForHelmChartProxyIfNeeded(chartProxy)
+	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(chartProxy)
 	if err = controllerutil.SetOwnerReference(&req.Cluster, chartProxy, l.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on HelmChartProxy %q: %w",

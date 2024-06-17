@@ -28,6 +28,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/mirrors"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 type imageRegistriesPatchHandler struct {
@@ -182,9 +183,14 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				return err
 			}
 
-			generateErr = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
-			if generateErr != nil {
-				return generateErr
+			err = ensureOwnerReferenceOnCredentialsSecrets(ctx, h.client, imageRegistries, globalMirror, cluster)
+			if err != nil {
+				return err
+			}
+
+			err = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
+			if err != nil {
+				return err
 			}
 
 			initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
@@ -235,9 +241,14 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				return err
 			}
 
-			generateErr := createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
-			if generateErr != nil {
-				return generateErr
+			err = ensureOwnerReferenceOnCredentialsSecrets(ctx, h.client, imageRegistries, globalMirror, cluster)
+			if err != nil {
+				return err
+			}
+
+			err = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
+			if err != nil {
+				return err
 			}
 
 			joinConfiguration := obj.Spec.Template.Spec.JoinConfiguration
@@ -253,6 +264,45 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			return nil
 		}); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func ensureOwnerReferenceOnCredentialsSecrets(
+	ctx context.Context,
+	c ctrlclient.Client,
+	imageRegistries []v1alpha1.ImageRegistry,
+	globalMirror v1alpha1.GlobalImageRegistryMirror,
+	cluster *clusterv1.Cluster,
+) error {
+	var credentials []*v1alpha1.RegistryCredentials
+	for _, imageRegistry := range imageRegistries {
+		if imageRegistry.Credentials != nil {
+			credentials = append(credentials, imageRegistry.Credentials)
+		}
+	}
+	if globalMirror.Credentials != nil {
+		credentials = append(credentials, globalMirror.Credentials)
+	}
+
+	for _, credential := range credentials {
+		if secretName := secretNameForImageRegistryCredentials(credential); secretName != "" {
+			// Ensure the Secret is owned by the Cluster so it is correctly moved and deleted with the Cluster.
+			// This code assumes that Secret exists and that was validated before calling this function.
+			err := handlersutils.EnsureOwnerReferenceForSecret(
+				ctx,
+				c,
+				secretName,
+				cluster,
+			)
+			if err != nil {
+				return fmt.Errorf(
+					"error updating owner references on image registry Secret: %w",
+					err,
+				)
+			}
+		}
 	}
 
 	return nil
@@ -396,12 +446,13 @@ func secretForImageRegistryCredentials(
 	credentials *v1alpha1.RegistryCredentials,
 	objectNamespace string,
 ) (*corev1.Secret, error) {
-	if credentials == nil || credentials.SecretRef == nil {
+	name := secretNameForImageRegistryCredentials(credentials)
+	if name == "" {
 		return nil, nil
 	}
 
 	key := ctrlclient.ObjectKey{
-		Name:      credentials.SecretRef.Name,
+		Name:      name,
 		Namespace: objectNamespace,
 	}
 	secret := &corev1.Secret{}
@@ -439,4 +490,13 @@ func needImageRegistryCredentialsConfiguration(configs []providerConfig) (bool, 
 	}
 
 	return true, nil
+}
+
+// secretForImageRegistryCredentials returns the name of the Secret for the given RegistryCredentials.
+// Returns an empty string if the credentials or secret field is empty.
+func secretNameForImageRegistryCredentials(credentials *v1alpha1.RegistryCredentials) string {
+	if credentials == nil || credentials.SecretRef == nil || credentials.SecretRef.Name == "" {
+		return ""
+	}
+	return credentials.SecretRef.Name
 }
