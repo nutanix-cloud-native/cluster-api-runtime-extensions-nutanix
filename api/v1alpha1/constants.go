@@ -27,6 +27,4 @@ const (
 	ClusterAutoscalerVariableName = "clusterAutoscaler"
 	// ServiceLoadBalancerVariableName is the Service LoadBalancer config patch variable name.
 	ServiceLoadBalancerVariableName = "serviceLoadBalancer"
-	// CarenNamespace is the namespace that caren is deployed in.
-	CarenNamespace = "caren-system"
 )
