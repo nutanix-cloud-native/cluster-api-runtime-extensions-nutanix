@@ -14,7 +14,7 @@ endif
 	helm upgrade --install cluster-api-runtime-extensions-nutanix ./charts/cluster-api-runtime-extensions-nutanix \
 		--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
 		--set-string image.tag=$$(gojq -r .version dist/metadata.json) \
-		--set-string mindthegapImage.tag=$$(gojq -r .version dist/metadata.json) \
+		--set-string helmRepositoryImage.tag=$$(gojq -r .version dist/metadata.json) \
 		--wait --wait-for-jobs
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
 	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix

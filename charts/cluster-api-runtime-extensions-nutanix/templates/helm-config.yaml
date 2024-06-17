@@ -10,39 +10,39 @@ data:
   cilium: |
     ChartName: cilium
     ChartVersion: 1.15.5
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
     ChartVersion: 9.37.0
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
     ChartVersion: 0.0.29
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://charts.containeroo.ch{{ end }}
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://charts.containeroo.ch{{ end }}
   metallb: |
     ChartName: metallb
-    ChartVersion: v0.14.5
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://metallb.github.io/metallb{{ end }}
+    ChartVersion: 0.14.5
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://metallb.github.io/metallb{{ end }}
   nfd: |
     ChartName: node-feature-discovery
     ChartVersion: 0.15.2
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/node-feature-discovery/charts{{ end }}
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/node-feature-discovery/charts{{ end }}
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
     ChartVersion: 0.3.3
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}
   nutanix-snapshot-csi: |
     ChartName: nutanix-csi-snapshot
     ChartVersion: 6.3.2
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
     ChartVersion: 3.0.0-beta.1912
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}
   tigera-operator: |
     ChartName: tigera-operator
     ChartVersion: v3.28.0
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}
 kind: ConfigMap
 metadata:
   creationTimestamp: null

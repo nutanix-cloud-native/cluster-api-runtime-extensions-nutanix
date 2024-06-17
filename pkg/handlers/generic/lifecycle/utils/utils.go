@@ -230,10 +230,10 @@ func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
 	if deploymentNS == "" {
 		deploymentNS = v1alpha1.CarenNamespace
 	}
-	if strings.Contains(hcp.Spec.RepoURL, "mindthegap") {
+	if strings.Contains(hcp.Spec.RepoURL, "helm-repository") {
 		hcp.Spec.TLSConfig = &caaphv1.TLSConfig{
 			CASecretRef: &corev1.SecretReference{
-				Name:      "mindthegap-tls",
+				Name:      "helm-repository-tls",
 				Namespace: deploymentNS,
 			},
 		}

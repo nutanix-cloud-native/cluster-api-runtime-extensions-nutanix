@@ -22,7 +22,7 @@ export NUTANIX_CCM_CHART_VERSION := 0.3.3
 
 export KUBE_VIP_VERSION := v0.8.0
 
-export METALLB_CHART_VERSION := v0.14.5
+export METALLB_CHART_VERSION := 0.14.5
 
 # Below are the lists of CSI Providers allowed for a specific infrastructure.
 # - When we support a new infrastructure, we need to a create a new list using the same convention.
@@ -76,6 +76,6 @@ configure-csi-providers: ; $(info $(M) configuring supported csi providers)
 generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating helm repofile for mindthgap)
 	./hack/addons/generate-mindthegap-repofile.sh
 
-.PHONY: template-mindthegap
-template-mindthegap: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
-	sed -i '/RepositoryURL:/s#\(RepositoryURL: *\)\(.*\)#\1{{ if .Values.selfHostedRegistry }}oci://mindthegap.{{ .Release.Namespace }}.svc/charts{{ else }}\2{{ end }}#'  "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
+.PHONY: template-helm-repository
+template-helm-repository: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
+	sed -i '/RepositoryURL:/s#\(RepositoryURL: *\)\(.*\)#\1{{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}\2{{ end }}#'  "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"

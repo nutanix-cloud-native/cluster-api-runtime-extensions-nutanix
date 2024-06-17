@@ -42,7 +42,7 @@ before:
       $(helm template {{ .ProjectName }} ./charts/{{ .ProjectName }} \
         --namespace caren-system \
         --set-string image.tag=v{{ trimprefix .Version "v" }} \
-        --set-string mindthgapImage.tag=v{{ trimprefix .Version "v" }} \
+        --set-string helmRepositoryImage.tag=v{{ trimprefix .Version "v" }} \
         {{ if .IsSnapshot }}--set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
       EOF'
@@ -51,7 +51,7 @@ before:
       sh -ec 'gojq --yaml-input --yaml-output \
         ".releaseSeries |= (. + [{contract: \"v1beta1\", major: {{ .Major }}, minor: {{ .Minor }}}] | unique)" \
         metadata.yaml >release-metadata.yaml'
-    - make template-mindthegap
+    - make template-helm-repository
 
 
 builds:
