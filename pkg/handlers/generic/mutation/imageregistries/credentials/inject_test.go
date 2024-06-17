@@ -19,6 +19,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"sigs.k8s.io/cluster-api/util"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -462,6 +463,17 @@ var _ = Describe("Generate Image registry patches", func() {
 				client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 				gomega.Expect(err).To(gomega.BeNil())
 
+				// get the Cluster to use for the owner reference assertion
+				clusterKey := ctrlclient.ObjectKey{
+					Namespace: request.Namespace,
+					Name:      request.ClusterName,
+				}
+				cluster := &clusterv1.Cluster{}
+				gomega.Expect(client.Get(
+					context.Background(),
+					clusterKey,
+					cluster,
+				)).To(gomega.BeNil())
 				for _, name := range []string{validSecretName, credentialSecretName(request.ClusterName)} {
 					key := ctrlclient.ObjectKey{
 						Namespace: request.Namespace,
@@ -473,7 +485,16 @@ var _ = Describe("Generate Image registry patches", func() {
 						key,
 						secret,
 					)).To(gomega.BeNil())
+
+					// assert the owner reference with the Cluster was added to the Secret
 					gomega.Expect(secret.OwnerReferences).ToNot(gomega.BeEmpty())
+					ownerRef := metav1.OwnerReference{
+						APIVersion: clusterv1.GroupVersion.String(),
+						Kind:       cluster.Kind,
+						UID:        cluster.UID,
+						Name:       cluster.Name,
+					}
+					util.HasOwnerRef(secret.OwnerReferences, ownerRef)
 				}
 			}
 		})
