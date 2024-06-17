@@ -20,7 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
@@ -228,7 +227,7 @@ func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
 	// this is set as an environment variable from the downward API on deployment
 	deploymentNS := os.Getenv("POD_NAMESPACE")
 	if deploymentNS == "" {
-		deploymentNS = v1alpha1.CarenNamespace
+		deploymentNS = metav1.NamespaceDefault
 	}
 	if strings.Contains(hcp.Spec.RepoURL, "helm-repository") {
 		hcp.Spec.TLSConfig = &caaphv1.TLSConfig{
