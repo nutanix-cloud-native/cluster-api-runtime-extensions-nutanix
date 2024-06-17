@@ -32,6 +32,9 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
 | helmAddonsConfigMap | string | `"default-helm-addons-config"` |  |
+| helmRepositoryImage.pullPolicy | string | `"IfNotPresent"` |  |
+| helmRepositoryImage.repository | string | `"ghcr.io/nutanix-cloud-native/caren-helm-reg"` |  |
+| helmRepositoryImage.tag | string | `""` |  |
 | hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-ccm-helm-values-template"` |  |
 | hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name | string | `"cluster-autoscaler"` |  |
@@ -70,9 +73,6 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | image.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` | Optional secrets used for pulling the container image |
-| mindthegapImage.pullPolicy | string | `"IfNotPresent"` |  |
-| mindthegapImage.repository | string | `"ghcr.io/nutanix-cloud-native/caren-helm-reg"` |  |
-| mindthegapImage.tag | string | `""` |  |
 | nodeSelector | object | `{}` |  |
 | priorityClassName | string | `"system-cluster-critical"` | Priority class to be used for the pod. |
 | resources.limits.cpu | string | `"100m"` |  |
