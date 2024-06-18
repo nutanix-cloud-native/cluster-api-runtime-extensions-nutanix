@@ -401,6 +401,20 @@
         "imagePullSecrets": {
             "type": "array"
         },
+        "namespaceSync": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "sourceNamespace": {
+                    "type": "string"
+                },
+                "targetNamespaceLabelKey": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "nodeSelector": {
             "properties": {},
             "type": "object"

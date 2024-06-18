@@ -89,6 +89,16 @@ selfHostedRegistry: true
 
 deployDefaultClusterClasses: true
 
+# The ClusterClass and the Templates it references must be in the same namespace
+# as the Cluster. To enable cluster creation in user-defined namespaces, CAREN
+# will copy all ClusterClasses and Templates from the source namespace to every
+# target namespace, i.e., every namespace that has a label with a matching key.
+namespaceSync:
+  enabled: true
+  targetNamespaceLabelKey: caren.nutanix.com/namespace-sync
+  # By default, sourceNamespace is the helm release namespace.
+  sourceNamespace: ""
+
 deployment:
   replicas: 1
 
