@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -51,17 +50,17 @@ type helmAddonStrategy struct {
 
 func (s helmAddonStrategy) apply(
 	ctx context.Context,
-	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {
-	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
+	infraKind := cluster.Spec.InfrastructureRef.Kind
 	defaultInstallationConfigMapName, ok := s.config.defaultProviderInstallationValuesTemplatesConfigMapNames[infraKind]
 	if !ok {
 		log.Info(
 			fmt.Sprintf(
 				"Skipping Calico CNI handler, no default installation values ConfigMap configured for infrastructure provider %q",
-				req.Cluster.Spec.InfrastructureRef.Kind,
+				cluster.Spec.InfrastructureRef.Kind,
 			),
 		)
 		return nil
@@ -87,14 +86,14 @@ func (s helmAddonStrategy) apply(
 			Kind:       "HelmChartProxy",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: req.Cluster.Namespace,
-			Name:      "calico-cni-installation-" + req.Cluster.Name,
+			Namespace: cluster.Namespace,
+			Name:      "calico-cni-installation-" + cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   s.helmChart.Repository,
 			ChartName: s.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
+				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},
 			ReleaseNamespace: defaultTigerOperatorNamespace,
 			ReleaseName:      defaultTigeraOperatorReleaseName,
@@ -103,7 +102,7 @@ func (s helmAddonStrategy) apply(
 		},
 	}
 	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
-	if err := controllerutil.SetOwnerReference(&req.Cluster, hcp, s.client.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(cluster, hcp, s.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on Calico CNI installation HelmChartProxy: %w",
 			err,

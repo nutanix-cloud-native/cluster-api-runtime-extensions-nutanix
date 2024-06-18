@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -47,7 +46,7 @@ type helmAddonStrategy struct {
 
 func (s helmAddonStrategy) apply(
 	ctx context.Context,
-	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {
@@ -71,14 +70,14 @@ func (s helmAddonStrategy) apply(
 			Kind:       "HelmChartProxy",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: req.Cluster.Namespace,
-			Name:      "cilium-cni-installation-" + req.Cluster.Name,
+			Namespace: cluster.Namespace,
+			Name:      "cilium-cni-installation-" + cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   s.helmChart.Repository,
 			ChartName: s.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: req.Cluster.Name},
+				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},
 			ReleaseNamespace: defaultCiliumNamespace,
 			ReleaseName:      defaultCiliumReleaseName,
@@ -88,7 +87,7 @@ func (s helmAddonStrategy) apply(
 	}
 
 	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
-	if err := controllerutil.SetOwnerReference(&req.Cluster, hcp, s.client.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(cluster, hcp, s.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on Cilium CNI installation HelmChartProxy: %w",
 			err,

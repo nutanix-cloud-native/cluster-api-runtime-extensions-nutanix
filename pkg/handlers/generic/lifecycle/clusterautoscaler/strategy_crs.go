@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -40,7 +40,7 @@ type crsStrategy struct {
 
 func (s crsStrategy) apply(
 	ctx context.Context,
-	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {
@@ -65,8 +65,6 @@ func (s crsStrategy) apply(
 	}
 
 	log.Info("Ensuring cluster-autoscaler ConfigMap exists for cluster")
-
-	cluster := &req.Cluster
 
 	data := templateData(cluster, defaultCM.Data)
 	cm := &corev1.ConfigMap{

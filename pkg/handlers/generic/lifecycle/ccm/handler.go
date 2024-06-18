@@ -44,6 +44,7 @@ type CCMHandler struct {
 var (
 	_ commonhandlers.Named                   = &CCMHandler{}
 	_ lifecycle.AfterControlPlaneInitialized = &CCMHandler{}
+	_ lifecycle.BeforeClusterUpgrade         = &CCMHandler{}
 )
 
 func New(
@@ -67,14 +68,36 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	clusterKey := ctrlclient.ObjectKeyFromObject(&req.Cluster)
+	commonResponse := &runtimehooksv1.CommonResponse{}
+	c.apply(ctx, &req.Cluster, commonResponse)
+	resp.Status = commonResponse.GetStatus()
+	resp.Message = commonResponse.GetMessage()
+}
+
+func (c *CCMHandler) BeforeClusterUpgrade(
+	ctx context.Context,
+	req *runtimehooksv1.BeforeClusterUpgradeRequest,
+	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
+) {
+	commonResponse := &runtimehooksv1.CommonResponse{}
+	c.apply(ctx, &req.Cluster, commonResponse)
+	resp.Status = commonResponse.GetStatus()
+	resp.Message = commonResponse.GetMessage()
+}
+
+func (c *CCMHandler) apply(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	resp *runtimehooksv1.CommonResponse,
+) {
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		clusterKey,
 	)
 
-	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 
 	_, err := variables.Get[v1alpha1.CCM](varMap, c.variableName, c.variablePath...)
 	if err != nil {
@@ -114,7 +137,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 	}
 
 	// There's a 1:1 mapping of infra to CCM provider. We derive the CCM provider from the infra.
-	infraKind := req.Cluster.Spec.InfrastructureRef.Kind
+	infraKind := cluster.Spec.InfrastructureRef.Kind
 	log.Info(fmt.Sprintf("finding CCM handler for %s", infraKind))
 	var handler CCMProvider
 	switch {
@@ -127,7 +150,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 		return
 	}
 
-	err = handler.Apply(ctx, &req.Cluster, &clusterConfigVar, log)
+	err = handler.Apply(ctx, cluster, &clusterConfigVar, log)
 	if err != nil {
 		log.Error(
 			err,

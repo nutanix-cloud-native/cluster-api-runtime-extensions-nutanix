@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,7 +29,7 @@ type CSIProvider interface {
 		context.Context,
 		v1alpha1.CSIProvider,
 		v1alpha1.DefaultStorage,
-		*runtimehooksv1.AfterControlPlaneInitializedRequest,
+		*clusterv1.Cluster,
 		logr.Logger,
 	) error
 }
@@ -43,6 +44,7 @@ type CSIHandler struct {
 var (
 	_ commonhandlers.Named                   = &CSIHandler{}
 	_ lifecycle.AfterControlPlaneInitialized = &CSIHandler{}
+	_ lifecycle.BeforeClusterUpgrade         = &CSIHandler{}
 )
 
 func New(
@@ -66,13 +68,35 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	clusterKey := ctrlclient.ObjectKeyFromObject(&req.Cluster)
+	commonResponse := &runtimehooksv1.CommonResponse{}
+	c.apply(ctx, &req.Cluster, commonResponse)
+	resp.Status = commonResponse.GetStatus()
+	resp.Message = commonResponse.GetMessage()
+}
+
+func (c *CSIHandler) BeforeClusterUpgrade(
+	ctx context.Context,
+	req *runtimehooksv1.BeforeClusterUpgradeRequest,
+	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
+) {
+	commonResponse := &runtimehooksv1.CommonResponse{}
+	c.apply(ctx, &req.Cluster, commonResponse)
+	resp.Status = commonResponse.GetStatus()
+	resp.Message = commonResponse.GetMessage()
+}
+
+func (c *CSIHandler) apply(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	resp *runtimehooksv1.CommonResponse,
+) {
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		clusterKey,
 	)
-	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	csi, err := variables.Get[apivariables.CSI](
 		varMap,
@@ -127,7 +151,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 			ctx,
 			provider,
 			csi.DefaultStorage,
-			req,
+			cluster,
 			log,
 		)
 		if err != nil {

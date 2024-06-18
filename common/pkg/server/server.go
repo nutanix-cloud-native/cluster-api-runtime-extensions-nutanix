@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/pflag"
 	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	"sigs.k8s.io/cluster-api/exp/runtime/server"
+	runtimeserver "sigs.k8s.io/cluster-api/exp/runtime/server"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
@@ -69,7 +69,7 @@ func (s *Server) Start(ctx context.Context) error {
 	setupLog := ctrl.Log.WithName("runtimehooks")
 
 	// Create a http server for serving runtime extensions
-	webhookServer, err := server.New(server.Options{
+	webhookServer, err := runtimeserver.New(runtimeserver.Options{
 		Catalog: s.catalog,
 		Port:    s.opts.webhookPort,
 		CertDir: s.opts.webhookCertDir,
@@ -83,9 +83,9 @@ func (s *Server) Start(ctx context.Context) error {
 		h := s.hooks[idx]
 
 		if t, ok := h.(lifecycle.BeforeClusterCreate); ok {
-			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterCreate,
-				Name:        strings.ToLower(h.Name()),
+				Name:        strings.ToLower(h.Name()) + "-bcc",
 				HandlerFunc: t.BeforeClusterCreate,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -94,9 +94,9 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 
 		if t, ok := h.(lifecycle.AfterControlPlaneInitialized); ok {
-			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.AfterControlPlaneInitialized,
-				Name:        strings.ToLower(h.Name()),
+				Name:        strings.ToLower(h.Name()) + "-acpi",
 				HandlerFunc: t.AfterControlPlaneInitialized,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -105,9 +105,9 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 
 		if t, ok := h.(lifecycle.BeforeClusterUpgrade); ok {
-			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterUpgrade,
-				Name:        strings.ToLower(h.Name()),
+				Name:        strings.ToLower(h.Name()) + "-bcu",
 				HandlerFunc: t.BeforeClusterUpgrade,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -116,9 +116,9 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 
 		if t, ok := h.(lifecycle.AfterControlPlaneUpgrade); ok {
-			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.AfterControlPlaneUpgrade,
-				Name:        h.Name(),
+				Name:        h.Name() + "-acpu",
 				HandlerFunc: t.AfterControlPlaneUpgrade,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -127,9 +127,9 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 
 		if t, ok := h.(lifecycle.BeforeClusterDelete); ok {
-			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterDelete,
-				Name:        strings.ToLower(h.Name()),
+				Name:        strings.ToLower(h.Name()) + "-bcd",
 				HandlerFunc: t.BeforeClusterDelete,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -138,9 +138,9 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 
 		if t, ok := h.(mutation.DiscoverVariables); ok {
-			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.DiscoverVariables,
-				Name:        strings.ToLower(h.Name()),
+				Name:        strings.ToLower(h.Name()) + "-dv",
 				HandlerFunc: t.DiscoverVariables,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -149,9 +149,9 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 
 		if t, ok := h.(mutation.GeneratePatches); ok {
-			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.GeneratePatches,
-				Name:        strings.ToLower(h.Name()),
+				Name:        strings.ToLower(h.Name()) + "-gp",
 				HandlerFunc: t.GeneratePatches,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
@@ -160,9 +160,9 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 
 		if t, ok := h.(mutation.ValidateTopology); ok {
-			if err := webhookServer.AddExtensionHandler(server.ExtensionHandler{
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.ValidateTopology,
-				Name:        strings.ToLower(h.Name()),
+				Name:        strings.ToLower(h.Name()) + "-vt",
 				HandlerFunc: t.ValidateTopology,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")

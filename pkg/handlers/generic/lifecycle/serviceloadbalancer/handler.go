@@ -51,27 +51,49 @@ func New(
 	}
 }
 
-func (c *ServiceLoadBalancerHandler) Name() string {
+func (s *ServiceLoadBalancerHandler) Name() string {
 	return "ServiceLoadBalancerHandler"
 }
 
-func (c *ServiceLoadBalancerHandler) AfterControlPlaneInitialized(
+func (s *ServiceLoadBalancerHandler) AfterControlPlaneInitialized(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	clusterKey := ctrlclient.ObjectKeyFromObject(&req.Cluster)
+	commonResponse := &runtimehooksv1.CommonResponse{}
+	s.apply(ctx, &req.Cluster, commonResponse)
+	resp.Status = commonResponse.GetStatus()
+	resp.Message = commonResponse.GetMessage()
+}
+
+func (s *ServiceLoadBalancerHandler) BeforeClusterUpgrade(
+	ctx context.Context,
+	req *runtimehooksv1.BeforeClusterUpgradeRequest,
+	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
+) {
+	commonResponse := &runtimehooksv1.CommonResponse{}
+	s.apply(ctx, &req.Cluster, commonResponse)
+	resp.Status = commonResponse.GetStatus()
+	resp.Message = commonResponse.GetMessage()
+}
+
+func (s *ServiceLoadBalancerHandler) apply(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	resp *runtimehooksv1.CommonResponse,
+) {
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		clusterKey,
 	)
 
-	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 	slb, err := variables.Get[v1alpha1.ServiceLoadBalancer](
 		varMap,
-		c.variableName,
-		c.variablePath...)
+		s.variableName,
+		s.variablePath...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).
@@ -95,7 +117,7 @@ func (c *ServiceLoadBalancerHandler) AfterControlPlaneInitialized(
 		return
 	}
 
-	handler, ok := c.ProviderHandler[slb.Provider]
+	handler, ok := s.ProviderHandler[slb.Provider]
 	if !ok {
 		err = fmt.Errorf("unknown ServiceLoadBalancer Provider")
 		log.Error(err, "provider", slb.Provider)
@@ -109,7 +131,7 @@ func (c *ServiceLoadBalancerHandler) AfterControlPlaneInitialized(
 	log.Info(fmt.Sprintf("Deploying ServiceLoadBalancer provider %s", slb.Provider))
 	err = handler.Apply(
 		ctx,
-		&req.Cluster,
+		cluster,
 		log,
 	)
 	if err != nil {

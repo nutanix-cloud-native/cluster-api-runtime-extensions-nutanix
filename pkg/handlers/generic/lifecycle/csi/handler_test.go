@@ -26,7 +26,7 @@ func (p *fakeCSIProvider) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
 	defaultStorage v1alpha1.DefaultStorage,
-	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
 	return p.returnedErr
