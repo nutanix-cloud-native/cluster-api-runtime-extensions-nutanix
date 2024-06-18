@@ -4,6 +4,11 @@
 repos:
 - repo: local
   hooks:
+  - id: schema-chart
+    name: schema-chart
+    entry: make schema-chart
+    language: system
+    files: "^charts/cluster-api-runtime-extensions-nutanix/values.yaml$"
   - id: golangci-lint
     name: golangci-lint
     entry: make go-generate lint
