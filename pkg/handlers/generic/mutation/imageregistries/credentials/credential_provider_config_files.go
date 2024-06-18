@@ -100,7 +100,7 @@ func templateFilesForImageCredentialProviderConfigs(
 ) ([]cabpkv1.File, error) {
 	var files []cabpkv1.File
 
-	kubeletCredentialProviderConfigFile, err := templateKubeletCredentialProviderConfig()
+	kubeletCredentialProviderConfigFile, err := templateKubeletCredentialProviderConfig(configs)
 	if err != nil {
 		return nil, err
 	}
@@ -108,9 +108,7 @@ func templateFilesForImageCredentialProviderConfigs(
 		files = append(files, *kubeletCredentialProviderConfigFile)
 	}
 
-	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(
-		configs,
-	)
+	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(configs)
 	if err != nil {
 		return nil, err
 	}
@@ -121,14 +119,31 @@ func templateFilesForImageCredentialProviderConfigs(
 	return files, nil
 }
 
-func templateKubeletCredentialProviderConfig() (*cabpkv1.File, error) {
+func templateKubeletCredentialProviderConfig(
+	configs []providerConfig,
+) (*cabpkv1.File, error) {
 	providerBinary, providerArgs, providerAPIVersion := kubeletCredentialProvider()
 
+	// In addition to the globs already defined in the template, also include the user provided registries.
+	//
+	// This is needed to match registries with a port and/or a URL path.
+	// From https://kubernetes.io/docs/tasks/administer-cluster/kubelet-credential-provider/#configure-image-matching
+	registryHosts := make([]string, 0, len(configs))
+	for _, config := range configs {
+		registryHostWithPath, err := config.registryHostWithPath()
+		if err != nil {
+			return nil, err
+		}
+		registryHosts = append(registryHosts, registryHostWithPath)
+	}
+
 	templateInput := struct {
+		RegistryHosts      []string
 		ProviderBinary     string
 		ProviderArgs       []string
 		ProviderAPIVersion string
 	}{
+		RegistryHosts:      registryHosts,
 		ProviderBinary:     providerBinary,
 		ProviderArgs:       providerArgs,
 		ProviderAPIVersion: providerAPIVersion,

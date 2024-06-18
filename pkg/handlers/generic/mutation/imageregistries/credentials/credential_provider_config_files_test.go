@@ -15,12 +15,16 @@ func Test_templateKubeletCredentialProviderConfig(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		want    *cabpkv1.File
-		wantErr error
+		name        string
+		credentials []providerConfig
+		want        *cabpkv1.File
+		wantErr     error
 	}{
 		{
 			name: "ECR image registry",
+			credentials: []providerConfig{
+				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+			},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
 				Owner:       "",
@@ -36,6 +40,7 @@ providers:
   - -c
   - /etc/kubernetes/dynamic-credential-provider-config.yaml
   matchImages:
+  - "123456789.dkr.ecr.us-east-1.amazonaws.com"
   - "*"
   - "*.*"
   - "*.*.*"
@@ -49,6 +54,11 @@ providers:
 		},
 		{
 			name: "image registry with static config",
+			credentials: []providerConfig{{
+				URL:      "https://myregistry.com:5000/myproject",
+				Username: "myuser",
+				Password: "mypassword",
+			}},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
 				Owner:       "",
@@ -64,6 +74,42 @@ providers:
   - -c
   - /etc/kubernetes/dynamic-credential-provider-config.yaml
   matchImages:
+  - "myregistry.com:5000/myproject"
+  - "*"
+  - "*.*"
+  - "*.*.*"
+  - "*.*.*.*"
+  - "*.*.*.*.*"
+  - "*.*.*.*.*.*"
+  defaultCacheDuration: "0s"
+  apiVersion: credentialprovider.kubelet.k8s.io/v1
+`,
+			},
+		},
+		{
+			name: "docker.io registry with static credentials",
+			credentials: []providerConfig{{
+				URL:      "https://registry-1.docker.io",
+				Username: "myuser",
+				Password: "mypassword",
+			}},
+			want: &cabpkv1.File{
+				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
+				Owner:       "",
+				Permissions: "0600",
+				Encoding:    "",
+				Append:      false,
+				Content: `apiVersion: kubelet.config.k8s.io/v1
+kind: CredentialProviderConfig
+providers:
+- name: dynamic-credential-provider
+  args:
+  - get-credentials
+  - -c
+  - /etc/kubernetes/dynamic-credential-provider-config.yaml
+  matchImages:
+  - "registry-1.docker.io"
+  - "docker.io"
   - "*"
   - "*.*"
   - "*.*.*"
@@ -80,7 +126,7 @@ providers:
 		tt := tests[idx]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			file, err := templateKubeletCredentialProviderConfig()
+			file, err := templateKubeletCredentialProviderConfig(tt.credentials)
 			require.ErrorIs(t, err, tt.wantErr)
 			assert.Equal(t, tt.want, file)
 		})
@@ -127,7 +173,7 @@ credentialProviders:
 		{
 			name: "image registry with static credentials",
 			credentials: []providerConfig{{
-				URL:      "https://myregistry.com",
+				URL:      "https://myregistry.com:5000/myproject",
 				Username: "myuser",
 				Password: "mypassword",
 			}},
@@ -148,7 +194,7 @@ credentialProviders:
     args:
     - /etc/kubernetes/static-image-credentials.json
     matchImages:
-    - "myregistry.com"
+    - "myregistry.com:5000/myproject"
     defaultCacheDuration: "0s"
     apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
