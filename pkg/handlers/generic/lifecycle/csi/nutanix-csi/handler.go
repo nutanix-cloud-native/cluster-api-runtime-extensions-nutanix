@@ -81,7 +81,7 @@ func (n *NutanixCSI) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
 	defaultStorage v1alpha1.DefaultStorage,
-	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
 	strategy := provider.Strategy
@@ -101,7 +101,7 @@ func (n *NutanixCSI) Apply(
 			ctx,
 			n.client,
 			provider.Credentials.SecretRef.Name,
-			&req.Cluster,
+			cluster,
 		)
 		if err != nil {
 			return fmt.Errorf(
@@ -132,7 +132,7 @@ func (n *NutanixCSI) Apply(
 		ctx,
 		n.client,
 		provider.StorageClassConfigs,
-		&req.Cluster,
+		cluster,
 		defaultStorage,
 		v1alpha1.CSIProviderNutanix,
 		v1alpha1.NutanixProvisioner,

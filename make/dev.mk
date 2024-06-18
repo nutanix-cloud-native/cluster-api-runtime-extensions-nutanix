@@ -27,7 +27,7 @@ ifndef SKIP_BUILD
 endif
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
 		ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
-	kubectl set image deployment -n caren-system cluster-api-runtime-extensions-nutanix webhook=ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
+	kubectl set image deployment cluster-api-runtime-extensions-nutanix webhook=ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
 	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix
 

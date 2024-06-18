@@ -87,7 +87,7 @@ func (s helmAddonStrategy) apply(
 	}
 
 	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
-	if err := controllerutil.SetOwnerReference(&req.Cluster, hcp, s.client.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(cluster, hcp, s.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on Cilium CNI installation HelmChartProxy: %w",
 			err,

@@ -59,7 +59,7 @@ func (a *AWSEBS) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
 	defaultStorage v1alpha1.DefaultStorage,
-	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
+	cluster *clusterv1.Cluster,
 	_ logr.Logger,
 ) error {
 	strategy := provider.Strategy
@@ -77,7 +77,7 @@ func (a *AWSEBS) Apply(
 		ctx,
 		a.client,
 		provider.StorageClassConfigs,
-		&req.Cluster,
+		cluster,
 		defaultStorage,
 		v1alpha1.CSIProviderAWSEBS,
 		v1alpha1.AWSEBSProvisioner,

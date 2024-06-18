@@ -354,7 +354,10 @@ var _ = Describe("Generate Image registry patches", func() {
 						},
 					),
 				},
-				RequestItem: request.NewKubeadmConfigTemplateRequest("", "test-kubeadmconfigtemplate"),
+				RequestItem: request.NewKubeadmConfigTemplateRequest(
+					"",
+					"test-kubeadmconfigtemplate",
+				),
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 					{
 						Operation: "add",

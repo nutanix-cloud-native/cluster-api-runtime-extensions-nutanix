@@ -191,13 +191,3 @@ func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
 		}
 	}
 }
-
-func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
-	if strings.Contains(hcp.Spec.RepoURL, "mindthegap") {
-		hcp.Spec.TLSConfig = &caaphv1.TLSConfig{
-			CASecretRef: &corev1.SecretReference{
-				Name: "mindthegap-tls",
-			},
-		}
-	}
-}
