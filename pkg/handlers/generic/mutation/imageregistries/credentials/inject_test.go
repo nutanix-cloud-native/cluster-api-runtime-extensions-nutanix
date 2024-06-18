@@ -26,7 +26,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -161,7 +160,7 @@ var _ = Describe("Generate Image registry patches", func() {
 						[]v1alpha1.ImageRegistry{{
 							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 						}},
-						imageregistries.VariableName,
+						v1alpha1.ImageRegistriesVariableName,
 					),
 				},
 				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -221,7 +220,7 @@ var _ = Describe("Generate Image registry patches", func() {
 								},
 							},
 						}},
-						imageregistries.VariableName,
+						v1alpha1.ImageRegistriesVariableName,
 					),
 				},
 				RequestItem: request.NewKubeadmControlPlaneTemplateRequest(
@@ -283,7 +282,7 @@ var _ = Describe("Generate Image registry patches", func() {
 						[]v1alpha1.ImageRegistry{{
 							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 						}},
-						imageregistries.VariableName,
+						v1alpha1.ImageRegistriesVariableName,
 					),
 					capitest.VariableWithValue(
 						"builtin",
@@ -343,7 +342,7 @@ var _ = Describe("Generate Image registry patches", func() {
 								},
 							},
 						}},
-						imageregistries.VariableName,
+						v1alpha1.ImageRegistriesVariableName,
 					),
 					capitest.VariableWithValue(
 						"builtin",
@@ -405,7 +404,7 @@ var _ = Describe("Generate Image registry patches", func() {
 						[]v1alpha1.ImageRegistry{{
 							URL: "https://registry.example.com",
 						}},
-						imageregistries.VariableName,
+						v1alpha1.ImageRegistriesVariableName,
 					),
 				},
 				RequestItem:     request.NewKubeadmControlPlaneTemplateRequestItem(""),

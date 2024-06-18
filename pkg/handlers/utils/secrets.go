@@ -14,6 +14,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
@@ -104,4 +105,35 @@ func getSecretForCluster(
 		},
 	}
 	return secret, c.Get(ctx, ctrlclient.ObjectKeyFromObject(secret), secret)
+}
+
+// SecretForImageRegistryCredentials returns the Secret for the given ImageRegistryCredentials.
+// Returns nil if the secret field is empty.
+func SecretForImageRegistryCredentials(
+	ctx context.Context,
+	c ctrlclient.Reader,
+	credentials *v1alpha1.RegistryCredentials,
+	objectNamespace string,
+) (*corev1.Secret, error) {
+	name := SecretNameForImageRegistryCredentials(credentials)
+	if name == "" {
+		return nil, nil
+	}
+
+	key := ctrlclient.ObjectKey{
+		Name:      name,
+		Namespace: objectNamespace,
+	}
+	secret := &corev1.Secret{}
+	err := c.Get(ctx, key, secret)
+	return secret, err
+}
+
+// SecretNameForImageRegistryCredentials returns the name of the Secret for the given RegistryCredentials.
+// Returns an empty string if the credentials or secret field is empty.
+func SecretNameForImageRegistryCredentials(credentials *v1alpha1.RegistryCredentials) string {
+	if credentials == nil || credentials.SecretRef == nil || credentials.SecretRef.Name == "" {
+		return ""
+	}
+	return credentials.SecretRef.Name
 }

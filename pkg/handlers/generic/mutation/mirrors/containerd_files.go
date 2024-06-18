@@ -5,33 +5,30 @@ package mirrors
 
 import (
 	"bytes"
-	"context"
 	_ "embed"
 	"fmt"
 	"net/url"
 	"path"
+	"regexp"
+	"strings"
 	"text/template"
 
-	corev1 "k8s.io/api/core/v1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
 
 const (
-	mirrorCACertPathOnRemote                = "/etc/certs/mirror.pem"
-	defaultRegistryMirrorConfigPathOnRemote = "/etc/containerd/certs.d/_default/hosts.toml"
-	secretKeyForMirrorCACert                = "ca.crt"
+	containerdHostsConfigurationOnRemote = "/etc/containerd/certs.d/_default/hosts.toml"
+	secretKeyForMirrorCACert             = "ca.crt"
 )
 
 var (
 	//go:embed templates/hosts.toml.gotmpl
-	defaultRegistryMirrorPatch []byte
+	containerdHostsConfiguration []byte
 
-	defaultRegistryMirrorPatchTemplate = template.Must(
-		template.New("").Parse(string(defaultRegistryMirrorPatch)),
+	containerdHostsConfigurationTemplate = template.Must(
+		template.New("").Parse(string(containerdHostsConfiguration)),
 	)
 
 	//go:embed templates/containerd-registry-config-drop-in.toml
@@ -39,120 +36,144 @@ var (
 	containerdRegistryConfigDropInFileOnRemote = common.ContainerdPatchPathOnRemote(
 		"registry-config.toml",
 	)
+
+	mirrorCACertPathOnRemoteFmt = "/etc/certs/%s.pem"
 )
 
-type mirrorConfig struct {
-	URL    string
-	CACert string
+type containerdConfig struct {
+	URL          string
+	CASecretName string
+	CACert       string
+	Mirror       bool
 }
 
-func mirrorConfigForGlobalMirror(
-	ctx context.Context,
-	c ctrlclient.Client,
-	globalMirror v1alpha1.GlobalImageRegistryMirror,
-	obj ctrlclient.Object,
-) (*mirrorConfig, error) {
-	mirrorWithOptionalCACert := &mirrorConfig{
-		URL: globalMirror.URL,
-	}
-	secret, err := secretForMirrorCACert(
-		ctx,
-		c,
-		globalMirror,
-		obj.GetNamespace(),
-	)
+// fileNameFromURL returns a file name for a registry URL.
+// Follows a convention of replacing all non-alphanumeric characters with "-".
+func (c containerdConfig) filePathFromURL() (string, error) {
+	registryURL, err := url.ParseRequestURI(c.URL)
 	if err != nil {
-		return &mirrorConfig{}, fmt.Errorf(
-			"error getting secret %s/%s from Global Image Registry Mirror variable: %w",
-			obj.GetNamespace(),
-			globalMirror.Credentials.SecretRef.Name,
-			err,
-		)
+		return "", fmt.Errorf("failed parsing registry URL: %w", err)
 	}
 
-	if secret != nil {
-		mirrorWithOptionalCACert.CACert = string(secret.Data[secretKeyForMirrorCACert])
+	registryHostWithPath := registryURL.Host
+	if registryURL.Path != "" {
+		registryHostWithPath = path.Join(registryURL.Host, registryURL.Path)
 	}
 
-	return mirrorWithOptionalCACert, nil
+	// replace all non-alphanumeric characters with "-"
+	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+	replaced := re.ReplaceAllString(registryHostWithPath, "-")
+
+	return fmt.Sprintf(mirrorCACertPathOnRemoteFmt, replaced), nil
 }
 
-// secretForMirrorCACert returns the Secret for the given mirror's CA certificate.
-// Returns nil if the secret field is empty.
-func secretForMirrorCACert(
-	ctx context.Context,
-	c ctrlclient.Reader,
-	globalMirror v1alpha1.GlobalImageRegistryMirror,
-	objectNamespace string,
-) (*corev1.Secret, error) {
-	if globalMirror.Credentials == nil || globalMirror.Credentials.SecretRef == nil {
+// Return true if configuration is a mirror or has a CA certificate.
+func (c containerdConfig) needContainerdConfiguration() bool {
+	return c.CACert != "" || c.Mirror
+}
+
+// Containerd registry configuration created at /etc/containerd/certs.d/_default/hosts.toml for:
+//
+//  1. Set the default mirror for all registries.
+//     The upstream registry will be automatically used after all defined mirrors have been tried.
+//     https://github.com/containerd/containerd/blob/main/docs/hosts.md#setup-default-mirror-for-all-registries
+//
+//  2. Setting CA certificate for global image registry mirror and image registries.
+func generateContainerdHostsFile(
+	configs []containerdConfig,
+) (*cabpkv1.File, error) {
+	if len(configs) == 0 {
 		return nil, nil
 	}
 
-	key := ctrlclient.ObjectKey{
-		Name:      globalMirror.Credentials.SecretRef.Name,
-		Namespace: objectNamespace,
-	}
-	secret := &corev1.Secret{}
-	err := c.Get(ctx, key, secret)
-	return secret, err
-}
-
-// Default Mirror for all registries.
-// Containerd configuration for global mirror will be created at /etc/containerd/certs.d/_default/hosts.toml
-// The upstream registry will be automatically used after all defined mirrors have been tried.
-// reference: https://github.com/containerd/containerd/blob/main/docs/hosts.md#setup-default-mirror-for-all-registries
-func generateGlobalRegistryMirrorFile(mirror *mirrorConfig) ([]cabpkv1.File, error) {
-	if mirror == nil {
-		return nil, nil
-	}
-	formattedURL, err := formatURLForContainerd(mirror.URL)
-	if err != nil {
-		return nil, fmt.Errorf("failed formatting registry mirror URL for Containerd: %w", err)
-	}
-	templateInput := struct {
+	type templateInput struct {
 		URL        string
 		CACertPath string
-	}{
-		URL: formattedURL,
+		Mirror     bool
 	}
-	// CA cert is optional for mirror registry.
-	// i.e. registry is using signed certificates. Insecure registry will not be allowed.
-	if mirror.CACert != "" {
-		templateInput.CACertPath = mirrorCACertPathOnRemote
+
+	inputs := make([]templateInput, 0, len(configs))
+
+	for _, config := range configs {
+		if !config.needContainerdConfiguration() {
+			continue
+		}
+
+		formattedURL, err := formatURLForContainerd(config.URL)
+		if err != nil {
+			return nil, fmt.Errorf("failed formatting image registry URL for Containerd: %w", err)
+		}
+
+		input := templateInput{
+			URL:    formattedURL,
+			Mirror: config.Mirror,
+		}
+		// CA cert is optional for mirror registry.
+		// i.e. registry is using signed certificates. Insecure registry will not be allowed.
+		if config.CACert != "" {
+			var registryCACertPathOnRemote string
+			registryCACertPathOnRemote, err = config.filePathFromURL()
+			if err != nil {
+				return nil, fmt.Errorf("failed generating CA certificate file path from URL: %w", err)
+			}
+			input.CACertPath = registryCACertPathOnRemote
+		}
+
+		inputs = append(inputs, input)
 	}
 
 	var b bytes.Buffer
-	err = defaultRegistryMirrorPatchTemplate.Execute(&b, templateInput)
+	err := containerdHostsConfigurationTemplate.Execute(&b, inputs)
 	if err != nil {
-		return nil, fmt.Errorf("failed executing template for registry mirror: %w", err)
+		return nil, fmt.Errorf("failed executing template for Containerd hosts.toml file: %w", err)
 	}
-	return []cabpkv1.File{
-		{
-			Path:        defaultRegistryMirrorConfigPathOnRemote,
-			Content:     b.String(),
-			Permissions: "0600",
-		},
+	return &cabpkv1.File{
+		Path: containerdHostsConfigurationOnRemote,
+		// Trimming the leading and trailing whitespaces in the template did not work as expected with multiple configs.
+		Content:     fmt.Sprintf("%s\n", strings.TrimSpace(b.String())),
+		Permissions: "0600",
 	}, nil
 }
 
-func generateMirrorCACertFile(
-	mirror *mirrorConfig,
-	globalMirror v1alpha1.GlobalImageRegistryMirror,
-) []cabpkv1.File {
-	if mirror == nil || mirror.CACert == "" {
-		return nil
+func generateRegistryCACertFiles(
+	configs []containerdConfig,
+) ([]cabpkv1.File, error) {
+	if len(configs) == 0 {
+		return nil, nil
 	}
-	return []cabpkv1.File{
-		{
-			Path:        mirrorCACertPathOnRemote,
+
+	var files []cabpkv1.File //nolint:prealloc // We don't know the size of the slice yet.
+
+	for _, config := range configs {
+		if config.CASecretName == "" {
+			continue
+		}
+
+		registryCACertPathOnRemote, err := config.filePathFromURL()
+		if err != nil {
+			return nil, fmt.Errorf("failed generating CA certificate file path from URL: %w", err)
+		}
+		files = append(files, cabpkv1.File{
+			Path:        registryCACertPathOnRemote,
 			Permissions: "0600",
 			ContentFrom: &cabpkv1.FileSource{
 				Secret: cabpkv1.SecretFileSource{
-					Name: globalMirror.Credentials.SecretRef.Name,
+					Name: config.CASecretName,
 					Key:  secretKeyForMirrorCACert,
 				},
 			},
+		})
+	}
+
+	return files, nil
+}
+
+func generateContainerdRegistryConfigDropInFile() []cabpkv1.File {
+	return []cabpkv1.File{
+		{
+			Path:        containerdRegistryConfigDropInFileOnRemote,
+			Content:     string(containerdRegistryConfigDropIn),
+			Permissions: "0600",
 		},
 	}
 }
@@ -172,14 +193,4 @@ func formatURLForContainerd(uri string) (string, error) {
 	}
 	// using path.Join on all elements incorrectly drops a "/" from "https://"
 	return fmt.Sprintf("%s/%s", mirror, mirrorPath), nil
-}
-
-func generateContainerdRegistryConfigDropInFile() []cabpkv1.File {
-	return []cabpkv1.File{
-		{
-			Path:        containerdRegistryConfigDropInFileOnRemote,
-			Content:     string(containerdRegistryConfigDropIn),
-			Permissions: "0600",
-		},
-	}
 }
