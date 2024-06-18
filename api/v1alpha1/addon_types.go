@@ -58,7 +58,28 @@ const (
 	CCMProviderNutanix = "nutanix"
 )
 
-type Addons struct {
+type AWSAddons struct {
+	GenericAddons `json:",inline"`
+
+	// +kubebuilder:validation:Optional
+	CSI *AWSCSI `json:"csi,omitempty"`
+}
+
+type DockerAddons struct {
+	GenericAddons `json:",inline"`
+
+	// +kubebuilder:validation:Optional
+	CSI *DockerCSI `json:"csi,omitempty"`
+}
+
+type NutanixAddons struct {
+	GenericAddons `json:",inline"`
+
+	// +kubebuilder:validation:Optional
+	CSI *NutanixCSI `json:"csi,omitempty"`
+}
+
+type GenericAddons struct {
 	// +kubebuilder:validation:Optional
 	CNI *CNI `json:"cni,omitempty"`
 
@@ -70,9 +91,6 @@ type Addons struct {
 
 	// +kubebuilder:validation:Optional
 	CCM *CCM `json:"ccm,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	CSIProviders *CSI `json:"csi,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
@@ -109,36 +127,63 @@ type ClusterAutoscaler struct {
 	Strategy AddonStrategy `json:"strategy"`
 }
 
-type DefaultStorage struct {
-	// Name of the CSI Provider for the default storage class.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=aws-ebs;nutanix;local-path
-	ProviderName string `json:"providerName"`
-
-	// Name of storage class config in any of the provider objects.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
-	StorageClassConfigName string `json:"storageClassConfigName"`
-}
-
-type CSI struct {
-	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:Required
-	Providers []CSIProvider `json:"providers"`
-
+type GenericCSI struct {
 	// +kubebuilder:validation:Required
 	DefaultStorage DefaultStorage `json:"defaultStorage"`
 }
 
-type CSIProvider struct {
-	// Name of the CSI Provider.
+type DefaultStorage struct {
+	// Name of the CSI Provider for the default storage class.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=aws-ebs;nutanix;local-path
-	Name string `json:"name"`
+	Provider string `json:"provider"`
 
-	// StorageClassConfig is a list of storage class configurations for this CSI provider.
-	// +kubebuilder:validation:Optional
-	StorageClassConfig []StorageClassConfig `json:"storageClassConfig"`
+	// Name of the default storage class config the specified default provider.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	StorageClassConfig string `json:"storageClassConfig"`
+}
+
+type AWSCSI struct {
+	GenericCSI `json:",inline"`
+
+	// +kubebuilder:validation:Required
+	Providers AWSCSIProviders `json:"providers"`
+}
+
+type AWSCSIProviders struct {
+	// +kubebuilder:validation:Required
+	AWSEBSCSI CSIProvider `json:"aws-ebs"`
+}
+
+type DockerCSI struct {
+	GenericCSI `json:",inline"`
+
+	// +kubebuilder:validation:Required
+	Providers DockerCSIProviders `json:"providers"`
+}
+
+type DockerCSIProviders struct {
+	// +kubebuilder:validation:Required
+	LocalPathCSI CSIProvider `json:"local-path"`
+}
+
+type NutanixCSI struct {
+	GenericCSI `json:",inline"`
+
+	// +kubebuilder:validation:Required
+	Providers NutanixCSIProviders `json:"providers"`
+}
+
+type NutanixCSIProviders struct {
+	// +kubebuilder:validation:Required
+	NutanixCSI CSIProvider `json:"nutanix"`
+}
+
+type CSIProvider struct {
+	// StorageClassConfigs is a map of storage class configurations for this CSI provider.
+	// +kubebuilder:validation:Required
+	StorageClassConfigs map[string]StorageClassConfig `json:"storageClassConfigs"`
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
 	// +kubebuilder:validation:Required
@@ -151,11 +196,6 @@ type CSIProvider struct {
 }
 
 type StorageClassConfig struct {
-	// Name of storage class config.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
-	Name string `json:"name"`
-
 	// Parameters passed into the storage class object.
 	// +kubebuilder:validation:Optional
 	Parameters map[string]string `json:"parameters,omitempty"`

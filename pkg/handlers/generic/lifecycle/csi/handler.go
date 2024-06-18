@@ -13,6 +13,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
@@ -73,7 +74,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 	)
 	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-	csi, err := variables.Get[v1alpha1.CSI](
+	csi, err := variables.Get[apivariables.CSI](
 		varMap,
 		c.variableName,
 		c.variablePath...)
@@ -106,22 +107,22 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 	}
 
 	// There's a 1:N mapping of infra to CSI providers. The user chooses the providers.
-	for _, provider := range csi.Providers {
-		handler, ok := c.ProviderHandler[provider.Name]
+	for providerName, provider := range csi.Providers {
+		handler, ok := c.ProviderHandler[providerName]
 		if !ok {
 			log.Error(
 				nil,
 				"CSI provider is unknown",
 				"name",
-				provider.Name,
+				providerName,
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 			resp.SetMessage(
-				fmt.Sprintf("CSI provider %q is unknown", provider.Name),
+				fmt.Sprintf("CSI provider %q is unknown", providerName),
 			)
 			return
 		}
-		log.Info(fmt.Sprintf("Creating CSI provider %s", provider.Name))
+		log.Info(fmt.Sprintf("Creating CSI provider %s", providerName))
 		err = handler.Apply(
 			ctx,
 			provider,
@@ -134,7 +135,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 				err,
 				fmt.Sprintf(
 					"failed to deploy %s CSI driver",
-					provider.Name,
+					providerName,
 				),
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -148,32 +149,16 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 	}
 }
 
-func validateDefaultStorage(csi v1alpha1.CSI) error {
-	// Verify that the default storage references a defined provider, and one of the
-	// storage class configs for that provider.
-	{
-		storageClassConfigsByProviderName := map[string][]v1alpha1.StorageClassConfig{}
-		for _, provider := range csi.Providers {
-			storageClassConfigsByProviderName[provider.Name] = provider.StorageClassConfig
-		}
-		configs, ok := storageClassConfigsByProviderName[csi.DefaultStorage.ProviderName]
-		if !ok {
-			return fmt.Errorf(
-				"the DefaultStorage Provider name must be the name of a configured provider",
-			)
-		}
-		defaultStorageClassConfigNameInProvider := false
-		for _, config := range configs {
-			if csi.DefaultStorage.StorageClassConfigName == config.Name {
-				defaultStorageClassConfigNameInProvider = true
-				break
-			}
-		}
-		if !defaultStorageClassConfigNameInProvider {
-			return fmt.Errorf(
-				"the DefaultStorage StorageClassConfig name must be the name of a StorageClassConfig for the default provider",
-			)
+// Verify that the default storage references a defined storage class config.
+func validateDefaultStorage(csi apivariables.CSI) error {
+	if provider, providerFound := csi.Providers[csi.DefaultStorage.Provider]; providerFound {
+		_, scFound := provider.StorageClassConfigs[csi.DefaultStorage.StorageClassConfig]
+		if scFound {
+			return nil
 		}
 	}
-	return nil
+
+	return fmt.Errorf(
+		"the DefaultStorage StorageClassConfig name must match a configured StorageClassConfig",
+	)
 }

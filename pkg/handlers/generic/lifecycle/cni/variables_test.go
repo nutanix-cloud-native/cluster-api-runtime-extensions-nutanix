@@ -9,6 +9,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
@@ -17,42 +18,50 @@ import (
 
 var testDefs = []capitest.VariableTestDef{{
 	Name: "set with valid provider using ClusterResourceSet strategy",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		Addons: &v1alpha1.Addons{
-			CNI: &v1alpha1.CNI{
-				Provider: v1alpha1.CNIProviderCalico,
-				Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			GenericAddons: v1alpha1.GenericAddons{
+				CNI: &v1alpha1.CNI{
+					Provider: v1alpha1.CNIProviderCalico,
+					Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+				},
 			},
 		},
 	},
 }, {
 	Name: "set with valid provider using HelmAddon strategy",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		Addons: &v1alpha1.Addons{
-			CNI: &v1alpha1.CNI{
-				Provider: v1alpha1.CNIProviderCalico,
-				Strategy: v1alpha1.AddonStrategyHelmAddon,
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			GenericAddons: v1alpha1.GenericAddons{
+				CNI: &v1alpha1.CNI{
+					Provider: v1alpha1.CNIProviderCalico,
+					Strategy: v1alpha1.AddonStrategyHelmAddon,
+				},
 			},
 		},
 	},
 }, {
 	Name: "set with invalid provider",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		Addons: &v1alpha1.Addons{
-			CNI: &v1alpha1.CNI{
-				Provider: "invalid-provider",
-				Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			GenericAddons: v1alpha1.GenericAddons{
+				CNI: &v1alpha1.CNI{
+					Provider: "invalid-provider",
+					Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+				},
 			},
 		},
 	},
 	ExpectError: true,
 }, {
 	Name: "set with invalid strategy",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		Addons: &v1alpha1.Addons{
-			CNI: &v1alpha1.CNI{
-				Provider: v1alpha1.CNIProviderCalico,
-				Strategy: "invalid-strategy",
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			GenericAddons: v1alpha1.GenericAddons{
+				CNI: &v1alpha1.CNI{
+					Provider: v1alpha1.CNIProviderCalico,
+					Strategy: "invalid-strategy",
+				},
 			},
 		},
 	},

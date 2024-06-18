@@ -43,6 +43,11 @@ var (
 )
 
 func TestCreateStorageClass(t *testing.T) {
+	const (
+		testProviderName = "test-provider"
+		testSCName       = "test-sc"
+	)
+
 	tests := []struct {
 		name                 string
 		storageConfig        v1alpha1.StorageClassConfig
@@ -54,7 +59,6 @@ func TestCreateStorageClass(t *testing.T) {
 		{
 			name: "with only default parameters",
 			storageConfig: v1alpha1.StorageClassConfig{
-				Name:              "aws-ebs",
 				ReclaimPolicy:     ptr.To(v1alpha1.VolumeReclaimDelete),
 				VolumeBindingMode: ptr.To(v1alpha1.VolumeBindingWaitForFirstConsumer),
 				Parameters:        nil,
@@ -64,11 +68,11 @@ func TestCreateStorageClass(t *testing.T) {
 			defaultParameters: defaultParameters,
 			expectedStorageClass: &storagev1.StorageClass{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       kindStorageClass,
+					Kind:       KindStorageClass,
 					APIVersion: storagev1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "aws-ebs",
+					Name: testProviderName + "-" + testSCName,
 				},
 				Parameters:           defaultParameters,
 				ReclaimPolicy:        ptr.To(corev1.PersistentVolumeReclaimDelete),
@@ -80,7 +84,6 @@ func TestCreateStorageClass(t *testing.T) {
 		{
 			name: "with only user provided parameters",
 			storageConfig: v1alpha1.StorageClassConfig{
-				Name:              "nutanix-volumes",
 				ReclaimPolicy:     ptr.To(v1alpha1.VolumeReclaimDelete),
 				VolumeBindingMode: ptr.To(v1alpha1.VolumeBindingWaitForFirstConsumer),
 				Parameters:        userProviderParameters,
@@ -88,11 +91,11 @@ func TestCreateStorageClass(t *testing.T) {
 			provisioner: v1alpha1.NutanixProvisioner,
 			expectedStorageClass: &storagev1.StorageClass{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       kindStorageClass,
+					Kind:       KindStorageClass,
 					APIVersion: storagev1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "nutanix-volumes",
+					Name: testProviderName + "-" + testSCName,
 				},
 				Parameters:           userProviderParameters,
 				ReclaimPolicy:        ptr.To(corev1.PersistentVolumeReclaimDelete),
@@ -104,7 +107,6 @@ func TestCreateStorageClass(t *testing.T) {
 		{
 			name: "with both default and user provided parameters",
 			storageConfig: v1alpha1.StorageClassConfig{
-				Name:              "aws-ebs",
 				ReclaimPolicy:     ptr.To(v1alpha1.VolumeReclaimDelete),
 				VolumeBindingMode: ptr.To(v1alpha1.VolumeBindingWaitForFirstConsumer),
 				Parameters:        userProviderParameters,
@@ -114,11 +116,11 @@ func TestCreateStorageClass(t *testing.T) {
 			defaultParameters: defaultParameters,
 			expectedStorageClass: &storagev1.StorageClass{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       kindStorageClass,
+					Kind:       KindStorageClass,
 					APIVersion: storagev1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "aws-ebs",
+					Name: testProviderName + "-" + testSCName,
 				},
 				Parameters:           combinedParameters,
 				ReclaimPolicy:        ptr.To(corev1.PersistentVolumeReclaimDelete),
@@ -131,6 +133,8 @@ func TestCreateStorageClass(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sc := CreateStorageClass(
+				testProviderName,
+				testSCName,
 				tt.storageConfig,
 				tt.provisioner,
 				tt.setAsDefault,

@@ -74,18 +74,18 @@ spec:
             strategy: HelmAddon
           csi:
             defaultStorage:
-              providerName: nutanix
-              storageClassConfigName: nutanix-volume
+              provider: nutanix
+              storageClassConfig: volume
             providers:
-            - credentials:
-                secretRef:
-                  name: ${CLUSTER_NAME}-pc-creds-for-csi
-              name: nutanix
-              storageClassConfig:
-              - name: nutanix-volume
-                parameters:
-                  storageContainer: ${NUTANIX_STORAGE_CONTAINER_NAME}
-              strategy: HelmAddon
+              nutanix:
+                credentials:
+                  secretRef:
+                    name: ${CLUSTER_NAME}-pc-creds-for-csi
+                storageClassConfigs:
+                  volume:
+                    parameters:
+                      storageContainer: ${NUTANIX_STORAGE_CONTAINER_NAME}
+                strategy: HelmAddon
           nfd:
             strategy: HelmAddon
         controlPlane:

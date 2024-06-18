@@ -11,11 +11,11 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
 type WaitForAddonsToBeReadyInWorkloadClusterInput struct {
-	AddonsConfig                v1alpha1.Addons
+	AddonsConfig                apivariables.Addons
 	WorkloadCluster             *clusterv1.Cluster
 	ClusterProxy                framework.ClusterProxy
 	DeploymentIntervals         []interface{}

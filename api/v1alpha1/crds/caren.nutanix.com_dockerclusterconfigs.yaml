@@ -102,93 +102,84 @@ spec:
                       properties:
                         defaultStorage:
                           properties:
-                            providerName:
+                            provider:
                               description: Name of the CSI Provider for the default storage class.
                               enum:
                                 - local-path
                               type: string
-                            storageClassConfigName:
-                              description: Name of storage class config in any of the provider objects.
+                            storageClassConfig:
+                              description: Name of the default storage class config the specified default provider.
                               minLength: 1
                               type: string
                           required:
-                            - providerName
-                            - storageClassConfigName
+                            - provider
+                            - storageClassConfig
                           type: object
                         providers:
-                          items:
-                            properties:
-                              credentials:
-                                description: The reference to any secret used by the CSI Provider.
-                                properties:
-                                  secretRef:
-                                    description: A reference to the Secret containing the credentials used by the CSI provider.
-                                    properties:
-                                      name:
-                                        description: |-
-                                          Name of the referent.
-                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        minLength: 1
-                                        type: string
-                                    required:
-                                      - name
-                                    type: object
-                                required:
-                                  - secretRef
-                                type: object
-                              name:
-                                description: Name of the CSI Provider.
-                                enum:
-                                  - local-path
-                                type: string
-                              storageClassConfig:
-                                description: StorageClassConfig is a list of storage class configurations for this CSI provider.
-                                items:
+                          properties:
+                            local-path:
+                              properties:
+                                credentials:
+                                  description: The reference to any secret used by the CSI Provider.
                                   properties:
-                                    allowExpansion:
-                                      default: false
-                                      description: If the storage class should allow volume expanding
-                                      type: boolean
-                                    name:
-                                      description: Name of storage class config.
-                                      minLength: 1
-                                      type: string
-                                    parameters:
-                                      additionalProperties:
-                                        type: string
-                                      description: Parameters passed into the storage class object.
+                                    secretRef:
+                                      description: A reference to the Secret containing the credentials used by the CSI provider.
+                                      properties:
+                                        name:
+                                          description: |-
+                                            Name of the referent.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          minLength: 1
+                                          type: string
+                                      required:
+                                        - name
                                       type: object
-                                    reclaimPolicy:
-                                      default: Delete
-                                      description: PersistentVolumeReclaimPolicy describes a policy for end-of-life maintenance of persistent volumes.
-                                      enum:
-                                        - Delete
-                                        - Retain
-                                        - Recycle
-                                      type: string
-                                    volumeBindingMode:
-                                      default: WaitForFirstConsumer
-                                      description: VolumeBindingMode indicates how PersistentVolumeClaims should be bound.
-                                      enum:
-                                        - Immediate
-                                        - WaitForFirstConsumer
-                                      type: string
                                   required:
-                                    - name
+                                    - secretRef
                                   type: object
-                                type: array
-                              strategy:
-                                description: Addon strategy used to deploy the CSI provider to the workload cluster.
-                                enum:
-                                  - ClusterResourceSet
-                                  - HelmAddon
-                                type: string
-                            required:
-                              - name
-                              - strategy
-                            type: object
-                          minItems: 1
-                          type: array
+                                storageClassConfigs:
+                                  additionalProperties:
+                                    properties:
+                                      allowExpansion:
+                                        default: false
+                                        description: If the storage class should allow volume expanding
+                                        type: boolean
+                                      parameters:
+                                        additionalProperties:
+                                          type: string
+                                        description: Parameters passed into the storage class object.
+                                        type: object
+                                      reclaimPolicy:
+                                        default: Delete
+                                        description: PersistentVolumeReclaimPolicy describes a policy for end-of-life maintenance of persistent volumes.
+                                        enum:
+                                          - Delete
+                                          - Retain
+                                          - Recycle
+                                        type: string
+                                      volumeBindingMode:
+                                        default: WaitForFirstConsumer
+                                        description: VolumeBindingMode indicates how PersistentVolumeClaims should be bound.
+                                        enum:
+                                          - Immediate
+                                          - WaitForFirstConsumer
+                                        type: string
+                                    type: object
+                                  description: StorageClassConfigs is a map of storage class configurations for this CSI provider.
+                                  type: object
+                                strategy:
+                                  description: Addon strategy used to deploy the CSI provider to the workload cluster.
+                                  enum:
+                                    - ClusterResourceSet
+                                    - HelmAddon
+                                  type: string
+                              required:
+                                - storageClassConfigs
+                                - strategy
+                              type: object
+                          required:
+                            - local-path
+                          type: object
                       required:
                         - defaultStorage
                         - providers

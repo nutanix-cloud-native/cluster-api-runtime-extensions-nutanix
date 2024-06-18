@@ -11,27 +11,14 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
-	utilyaml "sigs.k8s.io/cluster-api/util/yaml"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
-)
-
-const (
-	defaultCRSConfigMapKey = "custom-resources.yaml"
-)
-
-var (
-	defaultStorageClassKey = "storageclass.kubernetes.io/is-default-class"
-	defaultStorageClassMap = map[string]string{
-		defaultStorageClassKey: "true",
-	}
 )
 
 func EnsureCRSForClusterFromObjects(
@@ -187,40 +174,6 @@ func RetrieveValuesTemplate(
 		return "", err
 	}
 	return configMap.Data["values.yaml"], nil
-}
-
-func CreateConfigMapForCRS(configMapName, configMapNamespace string,
-	objs ...runtime.Object,
-) (*corev1.ConfigMap, error) {
-	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      configMapName,
-			Namespace: configMapNamespace,
-		},
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "ConfigMap",
-		},
-		Data: make(map[string]string),
-	}
-	l := make([][]byte, 0, len(objs))
-	for _, v := range objs {
-		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(v)
-		if err != nil {
-			return nil, err
-		}
-		objYaml, err := utilyaml.FromUnstructured([]unstructured.Unstructured{
-			{
-				Object: obj,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		l = append(l, objYaml)
-	}
-	cm.Data[defaultCRSConfigMapKey] = string(utilyaml.JoinYaml(l...))
-	return cm, nil
 }
 
 func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {

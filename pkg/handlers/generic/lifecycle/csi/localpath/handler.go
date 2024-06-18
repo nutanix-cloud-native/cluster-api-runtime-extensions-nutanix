@@ -18,6 +18,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
+	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/utils"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
@@ -44,7 +45,7 @@ func New(
 func (l *LocalPathProvisionerCSI) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
-	defaultStorageConfig v1alpha1.DefaultStorage,
+	defaultStorage v1alpha1.DefaultStorage,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	log logr.Logger,
 ) error {
@@ -60,12 +61,12 @@ func (l *LocalPathProvisionerCSI) Apply(
 		return fmt.Errorf("strategy %s not implemented", strategy)
 	}
 
-	err := handlersutils.CreateStorageClassOnRemote(
+	err := csiutils.CreateStorageClassOnRemote(
 		ctx,
 		l.client,
-		provider.StorageClassConfig,
+		provider.StorageClassConfigs,
 		&req.Cluster,
-		defaultStorageConfig,
+		defaultStorage,
 		v1alpha1.CSIProviderLocalPath,
 		v1alpha1.LocalPathProvisioner,
 		nil,

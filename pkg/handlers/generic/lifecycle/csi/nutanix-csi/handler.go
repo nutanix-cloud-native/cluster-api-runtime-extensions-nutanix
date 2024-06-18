@@ -19,6 +19,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
+	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -80,7 +81,7 @@ func New(
 func (n *NutanixCSI) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
-	defaultStorageConfig v1alpha1.DefaultStorage,
+	defaultStorage v1alpha1.DefaultStorage,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	log logr.Logger,
 ) error {
@@ -128,12 +129,12 @@ func (n *NutanixCSI) Apply(
 		}
 	}
 
-	err := handlersutils.CreateStorageClassOnRemote(
+	err := csiutils.CreateStorageClassOnRemote(
 		ctx,
 		n.client,
-		provider.StorageClassConfig,
+		provider.StorageClassConfigs,
 		&req.Cluster,
-		defaultStorageConfig,
+		defaultStorage,
 		v1alpha1.CSIProviderNutanix,
 		v1alpha1.NutanixProvisioner,
 		defaultStorageClassParameters,
