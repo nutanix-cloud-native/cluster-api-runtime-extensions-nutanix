@@ -9,8 +9,9 @@ import (
 )
 
 type Options struct {
-	Concurrency     int
-	SourceNamespace string
+	Concurrency             int
+	SourceNamespace         string
+	TargetNamespaceLabelKey string
 }
 
 func (o *Options) AddFlags(flags *pflag.FlagSet) {
@@ -24,6 +25,14 @@ func (o *Options) AddFlags(flags *pflag.FlagSet) {
 	pflag.CommandLine.StringVar(
 		&o.SourceNamespace,
 		"namespacesync-source-namespace",
-		corev1.NamespaceDefault, "Namespace from which ClusterClasses and Templates are copied.",
+		corev1.NamespaceDefault,
+		"Namespace from which ClusterClasses and Templates are copied.",
+	)
+
+	pflag.CommandLine.StringVar(
+		&o.TargetNamespaceLabelKey,
+		"namespacesync-target-namespace-label-key",
+		"",
+		"Label key to determine if a namespace is a target. If a namespace has a label with this key, copy ClusterClasses and Templates to it from the source namespace.", //nolint:lll // Output will be wrapped.
 	)
 }

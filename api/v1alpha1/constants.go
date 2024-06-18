@@ -32,10 +32,4 @@ const (
 	GlobalMirrorVariableName = "globalImageRegistryMirror"
 	// ImageRegistriesVariableName is the image registries patch variable name.
 	ImageRegistriesVariableName = "imageRegistries"
-
-	// NamespaceSyncLabelKey is a label that can be applied to a namespace.
-	//
-	// When a namespace has a label with this key, ClusterClasses and their Templates are
-	// copied to the namespace from a source namespace. The copies are not updated or deleted.
-	NamespaceSyncLabelKey = "caren.nutanix.com/namespace-sync"
 )

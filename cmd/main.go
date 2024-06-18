@@ -27,7 +27,6 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/namespacesync"
@@ -164,7 +163,7 @@ func main() {
 		Client:                      mgr.GetClient(),
 		UnstructuredCachingClient:   unstructuredCachingClient,
 		SourceClusterClassNamespace: namespacesyncOptions.SourceNamespace,
-		TargetNamespaceFilter:       namespacesync.NamespaceHasLabelKey(v1alpha1.NamespaceSyncLabelKey),
+		TargetNamespaceFilter:       namespacesync.NamespaceHasLabelKey(namespacesyncOptions.TargetNamespaceLabelKey),
 	}).SetupWithManager(
 		signalCtx,
 		mgr,
