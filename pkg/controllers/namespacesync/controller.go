@@ -150,6 +150,12 @@ func (r *Reconciler) listSourceClusterClasses(
 	[]clusterv1.ClusterClass,
 	error,
 ) {
+	// Handle the empty string explicitly, because listing resources with an empty
+	// string namespace returns resources in all namespaces.
+	if r.SourceClusterClassNamespace == "" {
+		return nil, nil
+	}
+
 	ccl := &clusterv1.ClusterClassList{}
 	err := r.Client.List(ctx, ccl, client.InNamespace(r.SourceClusterClassNamespace))
 	if err != nil {
