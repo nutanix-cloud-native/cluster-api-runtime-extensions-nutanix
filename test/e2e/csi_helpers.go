@@ -8,6 +8,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"maps"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -25,6 +26,7 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/awsebs"
 )
 
 type WaitForCSIToBeReadyInWorkloadClusterInput struct {
@@ -45,6 +47,8 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 		return
 	}
 
+	defaultStorageClassParameters := make(map[string]map[string]string, len(input.CSI.Providers))
+
 	for providerName, providerConfig := range input.CSI.Providers {
 		switch providerName {
 		case v1alpha1.CSIProviderLocalPath:
@@ -59,6 +63,21 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 					clusterResourceSetIntervals: input.ClusterResourceSetIntervals,
 				},
 			)
+			defaultStorageClassParameters[providerName] = map[string]string{}
+		case v1alpha1.CSIProviderAWSEBS:
+			waitForAWSEBSCSIToBeReadyInWorkloadCluster(
+				ctx,
+				waitForAWSEBSCSIToBeReadyInWorkloadClusterInput{
+					strategy:                    providerConfig.Strategy,
+					workloadCluster:             input.WorkloadCluster,
+					clusterProxy:                input.ClusterProxy,
+					deploymentIntervals:         input.DeploymentIntervals,
+					daemonSetIntervals:          input.DaemonSetIntervals,
+					helmReleaseIntervals:        input.HelmReleaseIntervals,
+					clusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+				},
+			)
+			defaultStorageClassParameters[providerName] = awsebs.DefaultStorageClassParameters
 		default:
 			Fail(
 				fmt.Sprintf(
@@ -71,11 +90,12 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 		waitForStorageClassesToExistInWorkloadCluster(
 			ctx,
 			waitForStorageClassesToExistInWorkloadClusterInput{
-				storageClasses:  providerConfig.StorageClassConfigs,
-				workloadCluster: input.WorkloadCluster,
-				clusterProxy:    input.ClusterProxy,
-				providerName:    providerName,
-				defaultStorage:  input.CSI.DefaultStorage,
+				storageClasses:                providerConfig.StorageClassConfigs,
+				workloadCluster:               input.WorkloadCluster,
+				clusterProxy:                  input.ClusterProxy,
+				providerName:                  providerName,
+				defaultStorage:                input.CSI.DefaultStorage,
+				defaultStorageClassParameters: defaultStorageClassParameters[providerName],
 			},
 		)
 	}
@@ -149,12 +169,92 @@ func waitForLocalPathCSIToBeReadyInWorkloadCluster(
 	}, input.deploymentIntervals...)
 }
 
+type waitForAWSEBSCSIToBeReadyInWorkloadClusterInput struct {
+	strategy                    v1alpha1.AddonStrategy
+	workloadCluster             *clusterv1.Cluster
+	clusterProxy                framework.ClusterProxy
+	deploymentIntervals         []interface{}
+	daemonSetIntervals          []interface{}
+	helmReleaseIntervals        []interface{}
+	clusterResourceSetIntervals []interface{}
+}
+
+func waitForAWSEBSCSIToBeReadyInWorkloadCluster(
+	ctx context.Context,
+	input waitForAWSEBSCSIToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
+) {
+	switch input.strategy {
+	case v1alpha1.AddonStrategyClusterResourceSet:
+		crs := &addonsv1.ClusterResourceSet{}
+		Expect(input.clusterProxy.GetClient().Get(
+			ctx,
+			types.NamespacedName{
+				Name:      "aws-ebs-csi-" + input.workloadCluster.Name,
+				Namespace: input.workloadCluster.Namespace,
+			},
+			crs,
+		)).To(Succeed())
+
+		framework.WaitForClusterResourceSetToApplyResources(
+			ctx,
+			framework.WaitForClusterResourceSetToApplyResourcesInput{
+				ClusterResourceSet: crs,
+				ClusterProxy:       input.clusterProxy,
+				Cluster:            input.workloadCluster,
+			},
+			input.clusterResourceSetIntervals...,
+		)
+	case v1alpha1.AddonStrategyHelmAddon:
+		WaitForHelmReleaseProxyReadyForCluster(
+			ctx,
+			WaitForHelmReleaseProxyReadyForClusterInput{
+				GetLister:          input.clusterProxy.GetClient(),
+				Cluster:            input.workloadCluster,
+				HelmChartProxyName: "aws-ebs-csi-" + input.workloadCluster.Name,
+			},
+			input.helmReleaseIntervals...,
+		)
+	default:
+		Fail(
+			fmt.Sprintf(
+				"Do not know how to wait for local-path-provisioner CSI using strategy %s to be ready",
+				input.strategy,
+			),
+		)
+	}
+
+	workloadClusterClient := input.clusterProxy.GetWorkloadCluster(
+		ctx, input.workloadCluster.Namespace, input.workloadCluster.Name,
+	).GetClient()
+
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ebs-csi-controller",
+				Namespace: metav1.NamespaceSystem,
+			},
+		},
+	}, input.deploymentIntervals...)
+
+	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
+		Getter: workloadClusterClient,
+		DaemonSet: &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ebs-csi-node",
+				Namespace: metav1.NamespaceSystem,
+			},
+		},
+	}, input.deploymentIntervals...)
+}
+
 type waitForStorageClassesToExistInWorkloadClusterInput struct {
-	providerName    string
-	storageClasses  map[string]v1alpha1.StorageClassConfig
-	defaultStorage  v1alpha1.DefaultStorage
-	workloadCluster *clusterv1.Cluster
-	clusterProxy    framework.ClusterProxy
+	providerName                  string
+	storageClasses                map[string]v1alpha1.StorageClassConfig
+	defaultStorage                v1alpha1.DefaultStorage
+	workloadCluster               *clusterv1.Cluster
+	clusterProxy                  framework.ClusterProxy
+	defaultStorageClassParameters map[string]string
 }
 
 func waitForStorageClassesToExistInWorkloadCluster(
@@ -169,6 +269,8 @@ func waitForStorageClassesToExistInWorkloadCluster(
 	switch input.providerName {
 	case v1alpha1.CSIProviderLocalPath:
 		provisioner = string(v1alpha1.LocalPathProvisioner)
+	case v1alpha1.CSIProviderAWSEBS:
+		provisioner = string(v1alpha1.AWSEBSProvisioner)
 	default:
 		Fail(
 			fmt.Sprintf(
@@ -181,6 +283,9 @@ func waitForStorageClassesToExistInWorkloadCluster(
 	for storageClassName, storageClassConfig := range input.storageClasses {
 		isDefault := input.providerName == input.defaultStorage.Provider &&
 			storageClassName == input.defaultStorage.StorageClassConfig
+		storageClassParametersWithDefaults := maps.Clone(input.defaultStorageClassParameters)
+		maps.Copy(storageClassParametersWithDefaults, storageClassConfig.Parameters)
+		storageClassConfig.Parameters = storageClassParametersWithDefaults
 
 		waitForStorageClassToExistInWorkloadCluster(
 			ctx,
@@ -217,7 +322,11 @@ func waitForStorageClassToExistInWorkloadCluster(
 	}, intervals...).Should(BeTrue())
 
 	Expect(gotSC.Provisioner).To(Equal(provisioner))
-	Expect(gotSC.Parameters).To(Equal(scConfig.Parameters))
+	if len(scConfig.Parameters) == 0 {
+		Expect(gotSC.Parameters).To(SatisfyAny(BeNil(), BeEmpty()))
+	} else {
+		Expect(gotSC.Parameters).To(Equal(scConfig.Parameters))
+	}
 	if scConfig.ReclaimPolicy != nil {
 		Expect(gotSC.ReclaimPolicy).To(Equal(scConfig.ReclaimPolicy))
 	} else {
@@ -230,7 +339,9 @@ func waitForStorageClassToExistInWorkloadCluster(
 	}
 	Expect(gotSC.AllowVolumeExpansion).To(HaveValue(Equal(scConfig.AllowExpansion)))
 	if isDefault {
-		Expect(gotSC.Annotations).To(HaveKeyWithValue("storageclass.kubernetes.io/is-default-class", "true"))
+		Expect(
+			gotSC.Annotations,
+		).To(HaveKeyWithValue("storageclass.kubernetes.io/is-default-class", "true"))
 	} else {
 		Expect(gotSC.Annotations).ToNot(HaveKeyWithValue("storageclass.kubernetes.io/is-default-class", "true"))
 	}

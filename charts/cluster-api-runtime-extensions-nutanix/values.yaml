@@ -49,6 +49,11 @@ hooks:
         defaultValueTemplateConfigMap:
           create: true
           name: default-nutanix-csi-helm-values-template
+    aws-ebs:
+      helmAddonStrategy:
+        defaultValueTemplateConfigMap:
+          create: true
+          name: default-aws-ebs-csi-helm-values-template
     local-path:
       helmAddonStrategy:
         defaultValueTemplateConfigMap:

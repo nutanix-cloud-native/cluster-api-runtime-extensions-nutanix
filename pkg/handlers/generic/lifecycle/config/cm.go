@@ -26,6 +26,7 @@ const (
 	NutanixCCM              Component = "nutanix-ccm"
 	MetalLB                 Component = "metallb"
 	LocalPathProvisionerCSI Component = "local-path-provisioner-csi"
+	AWSEBSCSI               Component = "aws-ebs-csi"
 )
 
 type HelmChartGetter struct {
