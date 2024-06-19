@@ -85,7 +85,7 @@ func Test_generateContainerdHostsFile(t *testing.T) {
 				Append:      false,
 				Content: `[host."https://mymirror.com/v2"]
   capabilities = ["pull", "resolve"]
-  ca = "/etc/certs/mymirror-com.pem"
+  ca = "/etc/certs/mymirror.com.pem"
   # don't rely on Containerd to add the v2/ suffix
   # there is a bug where it is added incorrectly for mirrors with a path
   override_path = true
@@ -105,6 +105,10 @@ func Test_generateContainerdHostsFile(t *testing.T) {
 					URL:    "https://myregistry.com",
 					CACert: "myregistrycert",
 				},
+				{
+					URL:    "https://172.100.0.10:5000/myproject",
+					CACert: "myregistrycert",
+				},
 			},
 			want: &cabpkv1.File{
 				Path:        "/etc/containerd/certs.d/_default/hosts.toml",
@@ -114,12 +118,14 @@ func Test_generateContainerdHostsFile(t *testing.T) {
 				Append:      false,
 				Content: `[host."https://mymirror.com/v2"]
   capabilities = ["pull", "resolve"]
-  ca = "/etc/certs/mymirror-com.pem"
+  ca = "/etc/certs/mymirror.com.pem"
   # don't rely on Containerd to add the v2/ suffix
   # there is a bug where it is added incorrectly for mirrors with a path
   override_path = true
 [host."https://myregistry.com/v2"]
-  ca = "/etc/certs/myregistry-com.pem"
+  ca = "/etc/certs/myregistry.com.pem"
+[host."https://172.100.0.10:5000/v2/myproject"]
+  ca = "/etc/certs/172.100.0.10:5000-myproject.pem"
 `,
 			},
 			wantErr: nil,
@@ -139,7 +145,7 @@ func Test_generateContainerdHostsFile(t *testing.T) {
 				Encoding:    "",
 				Append:      false,
 				Content: `[host."https://myregistry.com/v2"]
-  ca = "/etc/certs/myregistry-com.pem"
+  ca = "/etc/certs/myregistry.com.pem"
 `,
 			},
 			wantErr: nil,
@@ -184,7 +190,7 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 			},
 			want: []cabpkv1.File{
 				{
-					Path:        "/etc/certs/registry-example-com.pem",
+					Path:        "/etc/certs/registry.example.com.pem",
 					Owner:       "",
 					Permissions: "0600",
 					Encoding:    "",

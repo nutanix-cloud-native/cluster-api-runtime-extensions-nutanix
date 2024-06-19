@@ -102,7 +102,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/certs/registry-example-com.pem",
+							"path", "/etc/certs/registry.example.com.pem",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
@@ -180,7 +180,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/certs/registry-example-com.pem",
+							"path", "/etc/certs/registry.example.com.pem",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",

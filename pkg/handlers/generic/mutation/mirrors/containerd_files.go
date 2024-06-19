@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/url"
 	"path"
-	"regexp"
 	"strings"
 	"text/template"
 
@@ -60,9 +59,7 @@ func (c containerdConfig) filePathFromURL() (string, error) {
 		registryHostWithPath = path.Join(registryURL.Host, registryURL.Path)
 	}
 
-	// replace all non-alphanumeric characters with "-"
-	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
-	replaced := re.ReplaceAllString(registryHostWithPath, "-")
+	replaced := strings.ReplaceAll(registryHostWithPath, "/", "-")
 
 	return fmt.Sprintf(mirrorCACertPathOnRemoteFmt, replaced), nil
 }
@@ -114,7 +111,10 @@ func generateContainerdHostsFile(
 			var registryCACertPathOnRemote string
 			registryCACertPathOnRemote, err = config.filePathFromURL()
 			if err != nil {
-				return nil, fmt.Errorf("failed generating CA certificate file path from URL: %w", err)
+				return nil, fmt.Errorf(
+					"failed generating CA certificate file path from URL: %w",
+					err,
+				)
 			}
 			input.CACertPath = registryCACertPathOnRemote
 		}
