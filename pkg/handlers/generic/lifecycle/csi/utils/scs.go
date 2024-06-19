@@ -65,7 +65,7 @@ func CreateStorageClass(
 	return &sc
 }
 
-func CreateStorageClassOnRemote(
+func CreateStorageClassesOnRemote(
 	ctx context.Context,
 	cl ctrlclient.Client,
 	configs map[string]v1alpha1.StorageClassConfig,

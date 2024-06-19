@@ -19,6 +19,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
@@ -209,6 +210,7 @@ func initScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
 	capie2eframework.TryAddDefaultSchemes(scheme)
 	Expect(helmaddonsv1.AddToScheme(scheme)).To(Succeed())
+	Expect(storagev1.AddToScheme(scheme)).To(Succeed())
 	return scheme
 }
 

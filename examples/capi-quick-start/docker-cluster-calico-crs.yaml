@@ -35,7 +35,7 @@ spec:
               local-path:
                 storageClassConfigs:
                   default: {}
-                strategy: HelmAddon
+                strategy: ClusterResourceSet
           nfd:
             strategy: ClusterResourceSet
         encryptionAtRest:
