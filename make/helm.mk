@@ -1,6 +1,11 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+.PHONY: chart-docs
+chart-docs: ## Update helm chart docs
+chart-docs:
+	helm-docs --chart-search-root=charts
+
 .PHONY: lint-chart
 lint-chart: ## Lints helm chart
 lint-chart:
