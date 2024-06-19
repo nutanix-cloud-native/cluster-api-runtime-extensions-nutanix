@@ -38,6 +38,7 @@ type Handlers struct {
 	awsccmConfig            *awsccm.AWSCCMConfig
 	nutanixCCMConfig        *nutanixccm.Config
 	metalLBConfig           *metallb.Config
+	localPathCSIConfig      *localpath.Config
 }
 
 func New(
@@ -56,6 +57,7 @@ func New(
 		nutanixCSIConfig:        &nutanixcsi.NutanixCSIConfig{GlobalOptions: globalOptions},
 		nutanixCCMConfig:        &nutanixccm.Config{GlobalOptions: globalOptions},
 		metalLBConfig:           &metallb.Config{GlobalOptions: globalOptions},
+		localPathCSIConfig:      &localpath.Config{GlobalOptions: globalOptions},
 	}
 }
 
@@ -72,7 +74,11 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 			h.nutanixCSIConfig,
 			helmChartInfoGetter,
 		),
-		v1alpha1.CSIProviderLocalPath: localpath.New(mgr.GetClient(), helmChartInfoGetter),
+		v1alpha1.CSIProviderLocalPath: localpath.New(
+			mgr.GetClient(),
+			h.localPathCSIConfig,
+			helmChartInfoGetter,
+		),
 	}
 	ccmHandlers := map[string]ccm.CCMProvider{
 		v1alpha1.CCMProviderAWS: awsccm.New(mgr.GetClient(), h.awsccmConfig),
@@ -111,4 +117,5 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.nutanixCSIConfig.AddFlags("nutanixcsi", flagSet)
 	h.nutanixCCMConfig.AddFlags("nutanixccm", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
+	h.localPathCSIConfig.AddFlags("csi.local-path", flagSet)
 }

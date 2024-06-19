@@ -66,4 +66,17 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 			ClusterResourceSetIntervals: input.ClusterResourceSetIntervals,
 		},
 	)
+
+	WaitForCSIToBeReadyInWorkloadCluster(
+		ctx,
+		WaitForCSIToBeReadyInWorkloadClusterInput{
+			CSI:                         input.AddonsConfig.CSI,
+			WorkloadCluster:             input.WorkloadCluster,
+			ClusterProxy:                input.ClusterProxy,
+			DeploymentIntervals:         input.DeploymentIntervals,
+			DaemonSetIntervals:          input.DaemonSetIntervals,
+			HelmReleaseIntervals:        input.HelmReleaseIntervals,
+			ClusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+		},
+	)
 }

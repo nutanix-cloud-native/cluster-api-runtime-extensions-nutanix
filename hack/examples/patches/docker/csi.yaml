@@ -9,6 +9,5 @@
       storageClassConfig: default
     providers:
       local-path:
-        strategy: HelmAddon
         storageClassConfigs:
           default: {}

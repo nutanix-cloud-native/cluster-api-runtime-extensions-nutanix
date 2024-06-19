@@ -33,6 +33,7 @@ spec:
         - --helm-addons-configmap={{ .Values.helmAddonsConfigMap }}
         - --cni.cilium.helm-addon.default-values-template-configmap-name={{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --nfd.helm-addon.default-values-template-configmap-name={{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
+        - --csi.local-path.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "local-path").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}

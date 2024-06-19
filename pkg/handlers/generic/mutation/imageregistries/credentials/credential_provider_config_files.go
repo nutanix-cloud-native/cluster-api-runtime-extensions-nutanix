@@ -108,7 +108,9 @@ func templateFilesForImageCredentialProviderConfigs(
 		files = append(files, *kubeletCredentialProviderConfigFile)
 	}
 
-	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(configs)
+	kubeletDynamicCredentialProviderConfigFile, err := templateDynamicCredentialProviderConfig(
+		configs,
+	)
 	if err != nil {
 		return nil, err
 	}
