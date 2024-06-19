@@ -129,6 +129,44 @@
               "-X ${t}.gitVersion=v${version}"
             ];
           };
+
+          helm-schema = buildGo122Module rec {
+            pname = "helm-schema";
+            version = "1.4.1";
+
+            src = fetchFromGitHub {
+              owner = "losisin";
+              repo = "helm-values-schema-json";
+              rev = "v${version}";
+              hash = "sha256-pi/Xp4t8UFgdFvU2De2Uo/gVsVltan4iSw2XGEtynuw=";
+            };
+            doCheck = false;
+            vendorHash = "sha256-F2mT36aYkLjUZbV5GQH8mNMZjGi/70dTENU2rRhAJq4=";
+            ldflags = let t = "main"; in [
+              "-s"
+              "-w"
+              "-X ${t}.BuildDate=19700101-00:00:00"
+              "-X ${t}.GitCommit=v${version}"
+              "-X ${t}.Version=v${version}"
+            ];
+
+            postPatch = ''
+              sed -i '/^hooks:/,+2 d' plugin.yaml
+              sed -i 's#command: "$HELM_PLUGIN_DIR/schema"#command: "$HELM_PLUGIN_DIR/helm-values-schema-json"#' plugin.yaml
+            '';
+
+            postInstall = ''
+              install -dm755 $out/${pname}
+              mv $out/bin/* $out/${pname}/
+              install -m644 -Dt $out/${pname} plugin.yaml
+            '';
+          };
+
+          helm-with-plugins = wrapHelm kubernetes-helm {
+            plugins = [
+              helm-schema
+            ];
+          };
         };
 
         formatter = alejandra;
