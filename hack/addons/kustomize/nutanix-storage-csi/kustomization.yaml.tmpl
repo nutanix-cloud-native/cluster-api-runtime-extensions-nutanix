@@ -14,7 +14,6 @@ helmCharts:
   repo: https://nutanix.github.io/helm-releases/
   releaseName: nutanix-csi-storage
   version: ${NUTANIX_STORAGE_CSI_CHART_VERSION}
-  valuesFile: helm-values.yaml
   includeCRDs: true
   skipTests: true
-  namespace: nutanix-system
+  namespace: kube-system

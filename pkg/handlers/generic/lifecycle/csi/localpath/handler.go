@@ -87,7 +87,7 @@ func (l *LocalPathProvisionerCSI) Apply(
 			client: l.client,
 		}
 	default:
-		return fmt.Errorf("strategy %s not implemented", strategy)
+		return fmt.Errorf("strategy %s not implemented", provider.Strategy)
 	}
 
 	if err := strategy.apply(ctx, cluster, l.config.DefaultsNamespace(), log); err != nil {
