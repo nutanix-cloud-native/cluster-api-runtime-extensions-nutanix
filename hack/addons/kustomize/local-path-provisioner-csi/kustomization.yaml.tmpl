@@ -12,7 +12,7 @@ namespace: kube-system
 helmCharts:
 - name: local-path-provisioner
   repo: https://charts.containeroo.ch
-  releaseName: local-path-provisioner
+  releaseName: local-path-provisioner-csi
   version: ${LOCAL_PATH_CSI_CHART_VERSION}
   valuesFile: helm-values.yaml
   includeCRDs: true

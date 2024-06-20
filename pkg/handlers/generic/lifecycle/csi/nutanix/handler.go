@@ -13,6 +13,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -20,52 +21,54 @@ import (
 )
 
 const (
-	defaultStorageHelmReleaseName      = "nutanix-csi"
-	defaultStorageHelmReleaseNamespace = "ntnx-system"
+	defaultHelmReleaseName      = "nutanix-csi"
+	defaultHelmReleaseNamespace = "ntnx-system"
 
 	//nolint:gosec // Does not contain hard coded credentials.
 	defaultCredentialsSecretName = "nutanix-csi-credentials"
 )
 
-type addonStrategy interface {
-	apply(
-		context.Context,
-		*clusterv1.Cluster,
-		string,
-		logr.Logger,
-	) error
-}
-
 var DefaultStorageClassParameters = map[string]string{
 	"storageType":                                           "NutanixVolumes",
 	"csi.storage.k8s.io/fstype":                             "xfs",
 	"csi.storage.k8s.io/provisioner-secret-name":            defaultCredentialsSecretName,
-	"csi.storage.k8s.io/provisioner-secret-namespace":       defaultStorageHelmReleaseNamespace,
+	"csi.storage.k8s.io/provisioner-secret-namespace":       defaultHelmReleaseNamespace,
 	"csi.storage.k8s.io/node-publish-secret-name":           defaultCredentialsSecretName,
-	"csi.storage.k8s.io/node-publish-secret-namespace":      defaultStorageHelmReleaseNamespace,
+	"csi.storage.k8s.io/node-publish-secret-namespace":      defaultHelmReleaseNamespace,
 	"csi.storage.k8s.io/controller-expand-secret-name":      defaultCredentialsSecretName,
-	"csi.storage.k8s.io/controller-expand-secret-namespace": defaultStorageHelmReleaseNamespace,
+	"csi.storage.k8s.io/controller-expand-secret-namespace": defaultHelmReleaseNamespace,
 }
 
-type NutanixCSIConfig struct {
+type Config struct {
 	*options.GlobalOptions
 
-	helmAddonConfig helmAddonConfig
+	helmAddonConfig *addons.HelmAddonConfig
 }
 
-func (n *NutanixCSIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	n.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
+func NewConfig(globalOptions *options.GlobalOptions) *Config {
+	return &Config{
+		GlobalOptions: globalOptions,
+		helmAddonConfig: addons.NewHelmAddonConfig(
+			"default-nutanix-csi-helm-values-template",
+			defaultHelmReleaseNamespace,
+			defaultHelmReleaseName,
+		),
+	}
+}
+
+func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
+	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
 type NutanixCSI struct {
 	client              ctrlclient.Client
-	config              *NutanixCSIConfig
+	config              *Config
 	helmChartInfoGetter *config.HelmChartGetter
 }
 
 func New(
 	c ctrlclient.Client,
-	cfg *NutanixCSIConfig,
+	cfg *Config,
 	helmChartInfoGetter *config.HelmChartGetter,
 ) *NutanixCSI {
 	return &NutanixCSI{
@@ -82,7 +85,7 @@ func (n *NutanixCSI) Apply(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
-	var strategy addonStrategy
+	var strategy addons.Applier
 	switch provider.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixStorageCSI)
@@ -92,11 +95,11 @@ func (n *NutanixCSI) Apply(
 				err,
 			)
 		}
-		strategy = helmAddonStrategy{
-			config:    n.config.helmAddonConfig,
-			client:    n.client,
-			helmChart: helmChart,
-		}
+		strategy = addons.NewHelmAddonApplier(
+			n.config.helmAddonConfig,
+			n.client,
+			helmChart,
+		)
 	default:
 		return fmt.Errorf("strategy %s not implemented", provider.Strategy)
 	}
@@ -116,7 +119,7 @@ func (n *NutanixCSI) Apply(
 		}
 		key := ctrlclient.ObjectKey{
 			Name:      defaultCredentialsSecretName,
-			Namespace: defaultStorageHelmReleaseNamespace,
+			Namespace: defaultHelmReleaseNamespace,
 		}
 		err = handlersutils.CopySecretToRemoteCluster(
 			ctx,
@@ -133,7 +136,7 @@ func (n *NutanixCSI) Apply(
 		}
 	}
 
-	if err := strategy.apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
+	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply nutanix CSI addon: %w", err)
 	}
 

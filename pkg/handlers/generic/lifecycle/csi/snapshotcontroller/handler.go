@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -18,6 +17,7 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
@@ -27,20 +27,23 @@ const (
 	defaultHelmReleaseNamespace = "kube-system"
 )
 
-type addonStrategy interface {
-	apply(
-		context.Context,
-		*clusterv1.Cluster,
-		string,
-		logr.Logger,
-	) error
-}
-
 type Config struct {
 	*options.GlobalOptions
 
 	crsConfig       crsConfig
-	helmAddonConfig helmAddonConfig
+	helmAddonConfig *addons.HelmAddonConfig
+}
+
+func NewConfig(globalOptions *options.GlobalOptions) *Config {
+	return &Config{
+		GlobalOptions: globalOptions,
+		crsConfig:     crsConfig{},
+		helmAddonConfig: addons.NewHelmAddonConfig(
+			"default-snapshot-controller-helm-values-template",
+			defaultHelmReleaseNamespace,
+			defaultHelmReleaseName,
+		),
+	}
 }
 
 func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
@@ -132,7 +135,7 @@ func (s *SnapshotControllerHandler) apply(
 		return
 	}
 
-	var strategy addonStrategy
+	var strategy addons.Applier
 	switch snapshotControllerVar.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := s.helmChartInfoGetter.For(ctx, log, config.SnapshotController)
@@ -143,11 +146,11 @@ func (s *SnapshotControllerHandler) apply(
 			resp.SetMessage(fmt.Sprintf("%s: %v", msg, err))
 			return
 		}
-		strategy = helmAddonStrategy{
-			config:    s.config.helmAddonConfig,
-			client:    s.client,
-			helmChart: helmChart,
-		}
+		strategy = addons.NewHelmAddonApplier(
+			s.config.helmAddonConfig,
+			s.client,
+			helmChart,
+		)
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
 			config: s.config.crsConfig,
@@ -163,7 +166,8 @@ func (s *SnapshotControllerHandler) apply(
 		)
 	}
 
-	if err := strategy.apply(ctx, cluster, s.config.DefaultsNamespace(), log); err != nil {
+	if err := strategy.Apply(ctx, cluster, s.config.DefaultsNamespace(), log); err != nil {
+		err = fmt.Errorf("failed to apply snapshot-controller addon: %w", err)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return

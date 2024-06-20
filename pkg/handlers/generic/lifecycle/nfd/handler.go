@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -18,24 +17,32 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
-type addonStrategy interface {
-	apply(
-		context.Context,
-		*clusterv1.Cluster,
-		string,
-		logr.Logger,
-	) error
-}
+const (
+	defaultHelmReleaseName      = "node-feature-discovery"
+	defaultHelmReleaseNamespace = "node-feature-discovery"
+)
 
 type Config struct {
 	*options.GlobalOptions
 
 	crsConfig       crsConfig
-	helmAddonConfig helmAddonConfig
+	helmAddonConfig *addons.HelmAddonConfig
+}
+
+func NewConfig(globalOptions *options.GlobalOptions) *Config {
+	return &Config{
+		GlobalOptions: globalOptions,
+		helmAddonConfig: addons.NewHelmAddonConfig(
+			"default-nfd-helm-values-template",
+			defaultHelmReleaseNamespace,
+			defaultHelmReleaseName,
+		),
+	}
 }
 
 func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
@@ -132,7 +139,7 @@ func (n *DefaultNFD) apply(
 		return
 	}
 
-	var strategy addonStrategy
+	var strategy addons.Applier
 	switch cniVar.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
@@ -148,24 +155,25 @@ func (n *DefaultNFD) apply(
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 			resp.SetMessage(
-				fmt.Sprintf("failed to get configration to create helm addon: %v",
+				fmt.Sprintf("failed to get configuration to create helm addon: %v",
 					err,
 				),
 			)
 			return
 		}
-		strategy = helmAddonStrategy{
-			config:    n.config.helmAddonConfig,
-			client:    n.client,
-			helmChart: helmChart,
-		}
+		strategy = addons.NewHelmAddonApplier(
+			n.config.helmAddonConfig,
+			n.client,
+			helmChart,
+		)
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(fmt.Sprintf("unknown NFD addon deployment strategy %q", cniVar.Strategy))
 		return
 	}
 
-	if err := strategy.apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
+	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
+		err = fmt.Errorf("failed to apply NFD addon: %w", err)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return

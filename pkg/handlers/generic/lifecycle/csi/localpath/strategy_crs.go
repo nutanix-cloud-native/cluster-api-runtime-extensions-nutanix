@@ -25,7 +25,7 @@ type crsConfig struct {
 func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		&c.defaultLocalPathCSIConfigMapName,
-		prefix+".default-local-path-csi-configmap-name",
+		prefix+".default-local-path-provisioner-csi-configmap-name",
 		"local-path-provisioner-csi",
 		"name of the ConfigMap used to deploy local-path CSI",
 	)
@@ -37,7 +37,7 @@ type crsStrategy struct {
 	client ctrlclient.Client
 }
 
-func (s crsStrategy) apply(
+func (s crsStrategy) Apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	defaultsNamespace string,

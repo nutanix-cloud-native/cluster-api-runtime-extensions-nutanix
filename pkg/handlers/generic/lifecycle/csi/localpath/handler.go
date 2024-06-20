@@ -13,30 +13,34 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
 const (
-	defaultHelmReleaseName      = "local-path-provisioner"
+	defaultHelmReleaseName      = "local-path-provisioner-csi"
 	defaultHelmReleaseNamespace = "kube-system"
 )
-
-type addonStrategy interface {
-	apply(
-		context.Context,
-		*clusterv1.Cluster,
-		string,
-		logr.Logger,
-	) error
-}
 
 type Config struct {
 	*options.GlobalOptions
 
 	crsConfig       crsConfig
-	helmAddonConfig helmAddonConfig
+	helmAddonConfig *addons.HelmAddonConfig
+}
+
+func NewConfig(globalOptions *options.GlobalOptions) *Config {
+	return &Config{
+		GlobalOptions: globalOptions,
+		crsConfig:     crsConfig{},
+		helmAddonConfig: addons.NewHelmAddonConfig(
+			"default-local-path-provisioner-csi-helm-values-template",
+			defaultHelmReleaseNamespace,
+			defaultHelmReleaseName,
+		),
+	}
 }
 
 type LocalPathProvisionerCSI struct {
@@ -69,18 +73,18 @@ func (l *LocalPathProvisionerCSI) Apply(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
-	var strategy addonStrategy
+	var strategy addons.Applier
 	switch provider.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := l.helmChartInfoGetter.For(ctx, log, config.LocalPathProvisionerCSI)
 		if err != nil {
 			return fmt.Errorf("failed to get configuration to create helm addon: %w", err)
 		}
-		strategy = helmAddonStrategy{
-			config:    l.config.helmAddonConfig,
-			client:    l.client,
-			helmChart: helmChart,
-		}
+		strategy = addons.NewHelmAddonApplier(
+			l.config.helmAddonConfig,
+			l.client,
+			helmChart,
+		)
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
 			config: l.config.crsConfig,
@@ -90,7 +94,7 @@ func (l *LocalPathProvisionerCSI) Apply(
 		return fmt.Errorf("strategy %s not implemented", provider.Strategy)
 	}
 
-	if err := strategy.apply(ctx, cluster, l.config.DefaultsNamespace(), log); err != nil {
+	if err := strategy.Apply(ctx, cluster, l.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply local-path CSI addon: %w", err)
 	}
 
