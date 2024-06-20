@@ -16,3 +16,10 @@ lint-and-install-chart: ## Lints and installs helm chart
 lint-and-install-chart:
 	ct lint-and-install --config charts/ct-config.yaml
 	ct lint-and-install --config charts/ct-config.yaml --upgrade
+
+.PHONY: schema-chart
+schema-chart: ## Updates helm values JSON schema
+schema-chart:
+	helm schema \
+	  --input charts/cluster-api-runtime-extensions-nutanix/values.yaml \
+	  --output charts/cluster-api-runtime-extensions-nutanix/values.schema.json

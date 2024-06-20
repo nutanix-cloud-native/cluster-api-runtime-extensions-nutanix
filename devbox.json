@@ -22,7 +22,6 @@
     "ko@latest",
     "kubebuilder@latest",
     "kubectl@latest",
-    "kubernetes-helm@latest",
     "kustomize@latest",
     "pre-commit@latest",
     "rsync@latest",
@@ -35,6 +34,7 @@
     "path:./hack/flakes#go-mod-upgrade",
     "path:./hack/flakes#golangci-lint",
     "path:./hack/flakes#goprintconst",
+    "path:./hack/flakes#helm-with-plugins",
     "path:./hack/flakes#release-please",
     "path:./hack/flakes#setup-envtest"
   ],

@@ -1,166 +1,483 @@
 {
-  "$schema": "http://json-schema.org/schema#",
-  "type": "object",
-  "properties": {
-    "certificates": {
-      "type": "object",
-      "properties": {
-        "issuer": {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": ["Issuer", "ClusterIssuer"],
-              "default": "Issuer"
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "properties": {
+        "certificates": {
+            "properties": {
+                "issuer": {
+                    "properties": {
+                        "kind": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "selfSigned": {
+                            "type": "boolean"
+                        }
+                    },
+                    "type": "object"
+                }
             },
-            "name": {
-              "type": "string"
+            "type": "object"
+        },
+        "deployDefaultClusterClasses": {
+            "type": "boolean"
+        },
+        "deployment": {
+            "properties": {
+                "replicas": {
+                    "type": "integer"
+                }
             },
-            "selfSigned": {
-              "type": "boolean"
-            }
-          }
-        }
-      }
-    },
-    "controllers": {
-      "type": "object",
-      "properties": {
-        "enableLeaderElection": {
-          "type": "boolean",
-          "default": true
-        }
-      }
-    },
-    "deployDefaultClusterClasses": {
-      "type": "boolean",
-      "default": true
-    },
-    "deployment": {
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "type": "integer",
-          "minimum": 0
-        }
-      }
-    },
-    "env": {
-      "type": "object",
-      "additionalProperties": { "type": "string" }
-    },
-    "image": {
-      "type": "object",
-      "properties": {
-        "pullPolicy": {
-          "type": "string",
-          "default": "IfNotPresent",
-          "enum": ["IfNotPresent", "Always", "Never"]
+            "type": "object"
         },
-        "repository": {
-          "type": "string"
+        "env": {
+            "properties": {},
+            "type": "object"
         },
-        "tag": {
-          "type": "string"
-        }
-      }
-    },
-    "imagePullSecrets": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": {
+        "helmAddonsConfigMap": {
             "type": "string"
-          }
         },
-        "required": ["name"]
-      }
-    },
-    "nodeSelector": {
-      "type": "object",
-      "additionalProperties": { "type": "string" }
-    },
-    "priorityClassName": {
-      "type": "string"
-    },
-    "resources": {
-      "type": "object",
-      "properties": {
-        "limits": {
-          "type": "object",
-          "properties": {
-            "cpu": {
-              "type": "string"
+        "helmRepositoryImage": {
+            "properties": {
+                "pullPolicy": {
+                    "type": "string"
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                }
             },
-            "memory": {
-              "type": "string"
-            }
-          }
+            "type": "object"
         },
-        "requests": {
-          "type": "object",
-          "properties": {
-            "cpu": {
-              "type": "string"
+        "hooks": {
+            "properties": {
+                "ccm": {
+                    "properties": {
+                        "nutanix": {
+                            "properties": {
+                                "helmAddonStrategy": {
+                                    "properties": {
+                                        "defaultValueTemplateConfigMap": {
+                                            "properties": {
+                                                "create": {
+                                                    "type": "boolean"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
+                "clusterAutoscaler": {
+                    "properties": {
+                        "crsStrategy": {
+                            "properties": {
+                                "defaultInstallationConfigMap": {
+                                    "properties": {
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "helmAddonStrategy": {
+                            "properties": {
+                                "defaultValueTemplateConfigMap": {
+                                    "properties": {
+                                        "create": {
+                                            "type": "boolean"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
+                "cni": {
+                    "properties": {
+                        "calico": {
+                            "properties": {
+                                "crsStrategy": {
+                                    "properties": {
+                                        "defaultInstallationConfigMaps": {
+                                            "properties": {
+                                                "AWSCluster": {
+                                                    "properties": {
+                                                        "configMap": {
+                                                            "properties": {
+                                                                "content": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "create": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "DockerCluster": {
+                                                    "properties": {
+                                                        "configMap": {
+                                                            "properties": {
+                                                                "content": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "create": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "NutanixCluster": {
+                                                    "properties": {
+                                                        "configMap": {
+                                                            "properties": {
+                                                                "content": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "create": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "defaultTigeraOperatorConfigMap": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "defaultPodSubnet": {
+                                    "type": "string"
+                                },
+                                "helmAddonStrategy": {
+                                    "properties": {
+                                        "defaultValueTemplatesConfigMaps": {
+                                            "properties": {
+                                                "AWSCluster": {
+                                                    "properties": {
+                                                        "create": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "DockerCluster": {
+                                                    "properties": {
+                                                        "create": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "NutanixCluster": {
+                                                    "properties": {
+                                                        "create": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "cilium": {
+                            "properties": {
+                                "crsStrategy": {
+                                    "properties": {
+                                        "defaultCiliumConfigMap": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "helmAddonStrategy": {
+                                    "properties": {
+                                        "defaultValueTemplateConfigMap": {
+                                            "properties": {
+                                                "create": {
+                                                    "type": "boolean"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
+                "csi": {
+                    "properties": {
+                        "nutanix": {
+                            "properties": {
+                                "helmAddonStrategy": {
+                                    "properties": {
+                                        "defaultValueTemplateConfigMap": {
+                                            "properties": {
+                                                "create": {
+                                                    "type": "boolean"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
+                "nfd": {
+                    "properties": {
+                        "crsStrategy": {
+                            "properties": {
+                                "defaultInstallationConfigMap": {
+                                    "properties": {
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "helmAddonStrategy": {
+                            "properties": {
+                                "defaultValueTemplateConfigMap": {
+                                    "properties": {
+                                        "create": {
+                                            "type": "boolean"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
+                "serviceLoadBalancer": {
+                    "properties": {
+                        "metalLB": {
+                            "properties": {
+                                "defaultValueTemplateConfigMap": {
+                                    "properties": {
+                                        "create": {
+                                            "type": "boolean"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
+                "virtualIP": {
+                    "properties": {
+                        "kubeVip": {
+                            "properties": {
+                                "defaultTemplateConfigMap": {
+                                    "properties": {
+                                        "create": {
+                                            "type": "boolean"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                }
             },
-            "memory": {
-              "type": "string"
-            }
-          }
-        }
-      }
-    },
-    "securityContext": {
-      "type": "object",
-      "properties": {
-        "runAsUser": {
-          "type": "integer"
-        }
-      }
-    },
-    "service": {
-      "type": "object",
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": { "type": "string" }
+            "type": "object"
         },
-        "port": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 65535
+        "image": {
+            "properties": {
+                "pullPolicy": {
+                    "type": "string"
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
         },
-        "type": {
-          "type": "string"
-        }
-      }
-    },
-    "tolerations": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "effect": {
-            "type": "string",
-            "enum": ["NoSchedule", "PreferNoSchedule", "NoExecute"]
-          },
-          "key": {
+        "imagePullSecrets": {
+            "type": "array"
+        },
+        "nodeSelector": {
+            "properties": {},
+            "type": "object"
+        },
+        "priorityClassName": {
             "type": "string"
-          },
-          "operator": {
-            "type": "string",
-            "enum": ["Exists", "Equal"]
-          },
-          "tolerationSeconds": {
-            "type": "integer"
-          },
-          "value": {
-            "type": "string"
-          }
         },
-        "required": ["effect", "key", "operator"]
-      }
-    }
-  }
+        "resources": {
+            "properties": {
+                "limits": {
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "requests": {
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "securityContext": {
+            "properties": {
+                "runAsUser": {
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
+        "selfHostedRegistry": {
+            "type": "boolean"
+        },
+        "service": {
+            "properties": {
+                "annotations": {
+                    "properties": {},
+                    "type": "object"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "tolerations": {
+            "items": {
+                "properties": {
+                    "effect": {
+                        "type": "string"
+                    },
+                    "key": {
+                        "type": "string"
+                    },
+                    "operator": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "type": "array"
+        }
+    },
+    "type": "object"
 }
