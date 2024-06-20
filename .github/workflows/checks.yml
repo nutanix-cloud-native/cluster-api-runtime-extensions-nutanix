@@ -195,6 +195,12 @@ jobs:
           fi
 
       - if: steps.list-changed.outputs.changed == 'true'
+        uses: docker/setup-qemu-action@v3
+
+      - if: steps.list-changed.outputs.changed == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (lint)
         run: |
           devbox run -- \

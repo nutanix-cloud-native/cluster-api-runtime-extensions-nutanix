@@ -96,13 +96,54 @@ archives:
       - cluster-api-runtime-extensions-nutanix
 
 dockers:
-  - id: helm-registry-container
+  - image_templates:
+      # Specify the image tag including `-amd64` suffix if the build is not a snapshot build or is not being built on
+      # amd64 machine. This allows for using the snapshot image build without the architecture specific suffix
+      # consistently on local machines, i.e. can always use `ghcr.io/nutanix-cloud-native/caren-helm-reg:v<VERSION>` on the machine the snapshot
+      # is built on.
+      #
+      # For a release build the `-amd64` suffix will always be included and the `docker_manifests` specification below
+      # will create the final multiplatform manifest to be pushed to the registry.
+      - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}{{ if or (not .IsSnapshot) (not (eq .Runtime.Goarch "amd64")) }}-amd64{{ end }}'
     use: buildx
     dockerfile: ./hack/addons/mindthegap-helm-registry/Dockerfile
     extra_files:
       - hack/addons/mindthegap-helm-registry/repos.yaml
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.CommitDate}}"
+      - "--label=org.opencontainers.image.title=caren-helm-reg"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+  - image_templates:
+      # Specify the image tag including `-arm64` suffix if the build is not a snapshot build or is not being built on
+      # arm64 machine. This allows for using the snapshot image build without the architecture specific suffix
+      # consistently on local machines, i.e. can always use `ghcr.io/nutanix-cloud-native/caren-helm-reg:v<VERSION>` on the machine the snapshot
+      # is built on.
+      #
+      # For a release build the `-arm64` suffix will always be included and the `docker_manifests` specification below
+      # will create the final multiplatform manifest to be pushed to the registry.
+      - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}{{ if or (not .IsSnapshot) (not (eq .Runtime.Goarch "arm64")) }}-arm64{{ end }}'
+    use: buildx
+    dockerfile: ./hack/addons/mindthegap-helm-registry/Dockerfile
+    extra_files:
+      - hack/addons/mindthegap-helm-registry/repos.yaml
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.CommitDate}}"
+      - "--label=org.opencontainers.image.title=caren-helm-reg"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+
+docker_manifests:
+  - name_template: ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}
     image_templates:
-      -  'ghcr.io/nutanix-cloud-native/caren-helm-reg:{{ .Version }}'
+      - ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-amd64
+      - ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-arm64
 
 kos:
   - id: cluster-api-runtime-extensions-nutanix
@@ -121,7 +162,7 @@ kos:
       org.opencontainers.image.created: "{{ .CommitDate }}"
       org.opencontainers.image.title: "{{ .ProjectName }}"
       org.opencontainers.image.revision: "{{ .FullCommit }}"
-      org.opencontainers.image.version: v{{ .Version }}
+      org.opencontainers.image.version: v{{ trimprefix .Version "v" }}
       org.opencontainers.image.source: "{{ .GitURL }}"
     platforms:
       - linux/amd64
