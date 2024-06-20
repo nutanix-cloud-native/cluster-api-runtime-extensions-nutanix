@@ -21,10 +21,10 @@ import (
 
 const (
 	defaultStorageHelmReleaseName      = "nutanix-csi"
-	defaultStorageHelmReleaseNamespace = "kube-system"
+	defaultStorageHelmReleaseNamespace = "ntnx-system"
 
 	defaultSnapshotHelmReleaseName      = "nutanix-csi-snapshot"
-	defaultSnapshotHelmReleaseNamespace = "kube-system"
+	defaultSnapshotHelmReleaseNamespace = "ntnx-system"
 
 	//nolint:gosec // Does not contain hard coded credentials.
 	defaultCredentialsSecretName = "nutanix-csi-credentials"
