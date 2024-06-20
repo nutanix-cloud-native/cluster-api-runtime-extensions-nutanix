@@ -5,16 +5,23 @@ package namespacesync
 
 import (
 	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
 )
 
 type Options struct {
+	Enabled                 bool
 	Concurrency             int
 	SourceNamespace         string
 	TargetNamespaceLabelKey string
 }
 
 func (o *Options) AddFlags(flags *pflag.FlagSet) {
+	pflag.CommandLine.BoolVar(
+		&o.Enabled,
+		"namespacesync-enabled",
+		false,
+		"Enable copying of ClusterClasses and Templates from a source namespace to one or more target namespaces.",
+	)
+
 	pflag.CommandLine.IntVar(
 		&o.Concurrency,
 		"namespacesync-concurrency",

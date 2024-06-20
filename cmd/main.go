@@ -147,30 +147,41 @@ func main() {
 		os.Exit(1)
 	}
 
-	unstructuredCachingClient, err := client.New(mgr.GetConfig(), client.Options{
-		HTTPClient: mgr.GetHTTPClient(),
-		Cache: &client.CacheOptions{
-			Reader:       mgr.GetCache(),
-			Unstructured: true,
-		},
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to create unstructured caching client")
-		os.Exit(1)
-	}
+	if namespacesyncOptions.Enabled {
+		if namespacesyncOptions.SourceNamespace == "" ||
+			namespacesyncOptions.TargetNamespaceLabelKey == "" {
+			setupLog.Error(
+				nil,
+				"Namespace Sync is enabled, but source namespace and/or target namespace label key are not configured.",
+			)
+			os.Exit(1)
+		}
 
-	if err := (&namespacesync.Reconciler{
-		Client:                      mgr.GetClient(),
-		UnstructuredCachingClient:   unstructuredCachingClient,
-		SourceClusterClassNamespace: namespacesyncOptions.SourceNamespace,
-		TargetNamespaceFilter:       namespacesync.NamespaceHasLabelKey(namespacesyncOptions.TargetNamespaceLabelKey),
-	}).SetupWithManager(
-		signalCtx,
-		mgr,
-		controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},
-	); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "namespacesync.Reconciler")
-		os.Exit(1)
+		unstructuredCachingClient, err := client.New(mgr.GetConfig(), client.Options{
+			HTTPClient: mgr.GetHTTPClient(),
+			Cache: &client.CacheOptions{
+				Reader:       mgr.GetCache(),
+				Unstructured: true,
+			},
+		})
+		if err != nil {
+			setupLog.Error(err, "unable to create unstructured caching client")
+			os.Exit(1)
+		}
+
+		if err := (&namespacesync.Reconciler{
+			Client:                      mgr.GetClient(),
+			UnstructuredCachingClient:   unstructuredCachingClient,
+			SourceClusterClassNamespace: namespacesyncOptions.SourceNamespace,
+			TargetNamespaceFilter:       namespacesync.NamespaceHasLabelKey(namespacesyncOptions.TargetNamespaceLabelKey),
+		}).SetupWithManager(
+			signalCtx,
+			mgr,
+			controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},
+		); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "namespacesync.Reconciler")
+			os.Exit(1)
+		}
 	}
 
 	if err := mgr.Start(signalCtx); err != nil {
