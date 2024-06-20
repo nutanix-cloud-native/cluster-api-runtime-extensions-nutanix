@@ -32,7 +32,7 @@ func (o *Options) AddFlags(flags *pflag.FlagSet) {
 	pflag.CommandLine.StringVar(
 		&o.SourceNamespace,
 		"namespacesync-source-namespace",
-		corev1.NamespaceDefault,
+		"",
 		"Namespace from which ClusterClasses and Templates are copied.",
 	)
 
