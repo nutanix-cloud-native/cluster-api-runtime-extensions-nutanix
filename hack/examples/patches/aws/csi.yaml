@@ -11,3 +11,4 @@
       aws-ebs:
         storageClassConfigs:
           default: {}
+    snapshotController: {}

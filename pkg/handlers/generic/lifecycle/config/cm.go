@@ -22,7 +22,7 @@ const (
 	Cilium                  Component = "cilium"
 	NFD                     Component = "nfd"
 	NutanixStorageCSI       Component = "nutanix-storage-csi"
-	NutanixSnapshotCSI      Component = "nutanix-snapshot-csi"
+	SnapshotController      Component = "snapshot-controller"
 	NutanixCCM              Component = "nutanix-ccm"
 	MetalLB                 Component = "metallb"
 	LocalPathProvisionerCSI Component = "local-path-provisioner-csi"

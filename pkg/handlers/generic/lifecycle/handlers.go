@@ -20,6 +20,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/awsebs"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/localpath"
 	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/snapshotcontroller"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/servicelbgc"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer"
@@ -28,17 +29,18 @@ import (
 )
 
 type Handlers struct {
-	globalOptions           *options.GlobalOptions
-	calicoCNIConfig         *calico.CNIConfig
-	ciliumCNIConfig         *cilium.CNIConfig
-	nfdConfig               *nfd.Config
-	clusterAutoscalerConfig *clusterautoscaler.Config
-	ebsConfig               *awsebs.AWSEBSConfig
-	nutanixCSIConfig        *nutanixcsi.NutanixCSIConfig
-	awsccmConfig            *awsccm.AWSCCMConfig
-	nutanixCCMConfig        *nutanixccm.Config
-	metalLBConfig           *metallb.Config
-	localPathCSIConfig      *localpath.Config
+	globalOptions            *options.GlobalOptions
+	calicoCNIConfig          *calico.CNIConfig
+	ciliumCNIConfig          *cilium.CNIConfig
+	nfdConfig                *nfd.Config
+	clusterAutoscalerConfig  *clusterautoscaler.Config
+	ebsConfig                *awsebs.AWSEBSConfig
+	nutanixCSIConfig         *nutanixcsi.NutanixCSIConfig
+	awsccmConfig             *awsccm.AWSCCMConfig
+	nutanixCCMConfig         *nutanixccm.Config
+	metalLBConfig            *metallb.Config
+	localPathCSIConfig       *localpath.Config
+	snapshotControllerConfig *snapshotcontroller.Config
 }
 
 func New(
@@ -49,15 +51,16 @@ func New(
 		calicoCNIConfig: &calico.CNIConfig{
 			GlobalOptions: globalOptions,
 		},
-		ciliumCNIConfig:         &cilium.CNIConfig{GlobalOptions: globalOptions},
-		nfdConfig:               &nfd.Config{GlobalOptions: globalOptions},
-		clusterAutoscalerConfig: &clusterautoscaler.Config{GlobalOptions: globalOptions},
-		ebsConfig:               &awsebs.AWSEBSConfig{GlobalOptions: globalOptions},
-		awsccmConfig:            &awsccm.AWSCCMConfig{GlobalOptions: globalOptions},
-		nutanixCSIConfig:        &nutanixcsi.NutanixCSIConfig{GlobalOptions: globalOptions},
-		nutanixCCMConfig:        &nutanixccm.Config{GlobalOptions: globalOptions},
-		metalLBConfig:           &metallb.Config{GlobalOptions: globalOptions},
-		localPathCSIConfig:      &localpath.Config{GlobalOptions: globalOptions},
+		ciliumCNIConfig:          &cilium.CNIConfig{GlobalOptions: globalOptions},
+		nfdConfig:                &nfd.Config{GlobalOptions: globalOptions},
+		clusterAutoscalerConfig:  &clusterautoscaler.Config{GlobalOptions: globalOptions},
+		ebsConfig:                &awsebs.AWSEBSConfig{GlobalOptions: globalOptions},
+		awsccmConfig:             &awsccm.AWSCCMConfig{GlobalOptions: globalOptions},
+		nutanixCSIConfig:         &nutanixcsi.NutanixCSIConfig{GlobalOptions: globalOptions},
+		nutanixCCMConfig:         &nutanixccm.Config{GlobalOptions: globalOptions},
+		metalLBConfig:            &metallb.Config{GlobalOptions: globalOptions},
+		localPathCSIConfig:       &localpath.Config{GlobalOptions: globalOptions},
+		snapshotControllerConfig: &snapshotcontroller.Config{GlobalOptions: globalOptions},
 	}
 }
 
@@ -108,6 +111,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		csi.New(mgr.GetClient(), csiHandlers),
 		ccm.New(mgr.GetClient(), ccmHandlers),
 		serviceloadbalancer.New(mgr.GetClient(), serviceLoadBalancerHandlers),
+		snapshotcontroller.New(mgr.GetClient(), h.snapshotControllerConfig, helmChartInfoGetter),
 	}
 }
 
@@ -122,4 +126,5 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.nutanixCCMConfig.AddFlags("nutanixccm", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
 	h.localPathCSIConfig.AddFlags("csi.local-path", flagSet)
+	h.snapshotControllerConfig.AddFlags("csi.snapshot-controller", flagSet)
 }

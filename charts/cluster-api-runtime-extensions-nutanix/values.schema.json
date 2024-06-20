@@ -343,6 +343,27 @@
                                 }
                             },
                             "type": "object"
+                        },
+                        "snapshot-controller": {
+                            "properties": {
+                                "helmAddonStrategy": {
+                                    "properties": {
+                                        "defaultValueTemplateConfigMap": {
+                                            "properties": {
+                                                "create": {
+                                                    "type": "boolean"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
                         }
                     },
                     "type": "object"

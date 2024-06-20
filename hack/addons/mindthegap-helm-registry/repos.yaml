@@ -41,16 +41,16 @@ repositories:
     charts:
       nutanix-cloud-provider:
       - 0.3.3
-  nutanix-csi-snapshot:
-    repoURL: https://nutanix.github.io/helm/
-    charts:
-      nutanix-csi-snapshot:
-      - 6.3.2
   nutanix-csi-storage:
     repoURL: https://nutanix.github.io/helm-releases/
     charts:
       nutanix-csi-storage:
       - 3.0.0-beta.1912
+  snapshot-controller:
+    repoURL: https://piraeus.io/helm-charts/
+    charts:
+      snapshot-controller:
+      - 3.0.5
   tigera-operator:
     repoURL: https://docs.tigera.io/calico/charts
     charts:

@@ -130,6 +130,17 @@ type ClusterAutoscaler struct {
 type GenericCSI struct {
 	// +kubebuilder:validation:Required
 	DefaultStorage DefaultStorage `json:"defaultStorage"`
+
+	// Deploy the CSI snapshot controller and associated CRDs.
+	// +kubebuilder:validation:Optional
+	SnapshotController *SnapshotController `json:"snapshotController,omitempty"`
+}
+
+type SnapshotController struct {
+	// Addon strategy used to deploy the snapshot controller to the workload cluster.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	Strategy AddonStrategy `json:"strategy"`
 }
 
 type DefaultStorage struct {

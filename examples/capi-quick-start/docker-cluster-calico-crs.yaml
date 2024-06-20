@@ -36,6 +36,8 @@ spec:
                 storageClassConfigs:
                   default: {}
                 strategy: ClusterResourceSet
+            snapshotController:
+              strategy: ClusterResourceSet
           nfd:
             strategy: ClusterResourceSet
         encryptionAtRest:

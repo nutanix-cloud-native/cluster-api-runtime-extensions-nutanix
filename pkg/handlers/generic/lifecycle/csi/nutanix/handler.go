@@ -23,9 +23,6 @@ const (
 	defaultStorageHelmReleaseName      = "nutanix-csi"
 	defaultStorageHelmReleaseNamespace = "ntnx-system"
 
-	defaultSnapshotHelmReleaseName      = "nutanix-csi-snapshot"
-	defaultSnapshotHelmReleaseNamespace = "ntnx-system"
-
 	//nolint:gosec // Does not contain hard coded credentials.
 	defaultCredentialsSecretName = "nutanix-csi-credentials"
 )
@@ -90,17 +87,15 @@ func (n *NutanixCSI) Apply(
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixStorageCSI)
 		if err != nil {
-			return fmt.Errorf("failed to get configuration for Nutanix storage chart to create helm addon: %w", err)
-		}
-		snapshotHelmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixSnapshotCSI)
-		if err != nil {
-			return fmt.Errorf("failed to get configuration for Nutanix snapshot chart to create helm addon: %w", err)
+			return fmt.Errorf(
+				"failed to get configuration for Nutanix storage chart to create helm addon: %w",
+				err,
+			)
 		}
 		strategy = helmAddonStrategy{
-			config:            n.config.helmAddonConfig,
-			client:            n.client,
-			helmChart:         helmChart,
-			snapshotHelmChart: snapshotHelmChart,
+			config:    n.config.helmAddonConfig,
+			client:    n.client,
+			helmChart: helmChart,
 		}
 	default:
 		return fmt.Errorf("strategy %s not implemented", provider.Strategy)

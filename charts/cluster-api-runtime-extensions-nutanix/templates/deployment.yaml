@@ -39,6 +39,7 @@ spec:
         - --csi.aws-ebs.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "aws-ebs").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --csi.nutanix.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "nutanix").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --csi.local-path.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "local-path").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
+        - --csi.snapshot-controller.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "snapshot-controller").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}

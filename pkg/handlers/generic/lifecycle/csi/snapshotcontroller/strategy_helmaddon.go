@@ -1,7 +1,7 @@
-// Copyright 2024 Nutanix. All rights reserved.
+// Copyright 2023 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package nutanix
+package snapshotcontroller
 
 import (
 	"context"
@@ -28,7 +28,7 @@ func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		&c.defaultValuesTemplateConfigMapName,
 		prefix+".default-values-template-configmap-name",
-		"default-nutanix-csi-helm-values-template",
+		"default-snapshot-controller-helm-values-template",
 		"default values ConfigMap name",
 	)
 }
@@ -45,8 +45,8 @@ func (s helmAddonStrategy) apply(
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {
-	log.Info("Retrieving Nutanix CSI installation values template for cluster")
-	storageChartValues, err := handlersutils.RetrieveValuesTemplate(
+	log.Info("Retrieving snapshot-controller installation values template for cluster")
+	values, err := handlersutils.RetrieveValuesTemplate(
 		ctx,
 		s.client,
 		s.config.defaultValuesTemplateConfigMapName,
@@ -54,19 +54,19 @@ func (s helmAddonStrategy) apply(
 	)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to retrieve nutanix csi installation values template ConfigMap for cluster: %w",
+			"failed to retrieve snapshot-controller installation values template for cluster: %w",
 			err,
 		)
 	}
 
-	storageChartProxy := &caaphv1.HelmChartProxy{
+	chartProxy := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: caaphv1.GroupVersion.String(),
 			Kind:       "HelmChartProxy",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      "nutanix-csi-" + cluster.Name,
+			Name:      "snapshot-controller-" + cluster.Name,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   s.helmChart.Repository,
@@ -74,24 +74,23 @@ func (s helmAddonStrategy) apply(
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},
-			ReleaseNamespace: defaultStorageHelmReleaseNamespace,
-			ReleaseName:      defaultStorageHelmReleaseName,
+			ReleaseNamespace: defaultHelmReleaseNamespace,
+			ReleaseName:      defaultHelmReleaseName,
 			Version:          s.helmChart.Version,
-			ValuesTemplate:   storageChartValues,
+			ValuesTemplate:   values,
 		},
 	}
-	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(storageChartProxy)
-
-	if err = controllerutil.SetOwnerReference(cluster, storageChartProxy, s.client.Scheme()); err != nil {
+	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(chartProxy)
+	if err = controllerutil.SetOwnerReference(cluster, chartProxy, s.client.Scheme()); err != nil {
 		return fmt.Errorf(
 			"failed to set owner reference on HelmChartProxy %q: %w",
-			storageChartProxy.Name,
+			chartProxy.Name,
 			err,
 		)
 	}
 
-	if err = client.ServerSideApply(ctx, s.client, storageChartProxy, client.ForceOwnership); err != nil {
-		return fmt.Errorf("failed to apply HelmChartProxy %q: %w", storageChartProxy.Name, err)
+	if err = client.ServerSideApply(ctx, s.client, chartProxy, client.ForceOwnership); err != nil {
+		return fmt.Errorf("failed to apply HelmChartProxy %q: %w", chartProxy.Name, err)
 	}
 
 	return nil

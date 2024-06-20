@@ -180,6 +180,18 @@ spec:
                           required:
                             - local-path
                           type: object
+                        snapshotController:
+                          description: Deploy the CSI snapshot controller and associated CRDs.
+                          properties:
+                            strategy:
+                              description: Addon strategy used to deploy the snapshot controller to the workload cluster.
+                              enum:
+                                - ClusterResourceSet
+                                - HelmAddon
+                              type: string
+                          required:
+                            - strategy
+                          type: object
                       required:
                         - defaultStorage
                         - providers

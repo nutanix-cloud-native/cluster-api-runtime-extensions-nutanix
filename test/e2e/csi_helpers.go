@@ -113,6 +113,20 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 			},
 		)
 	}
+
+	if input.CSI.SnapshotController != nil {
+		waitForSnapshotControllerToBeReadyInWorkloadCluster(
+			ctx,
+			waitForSnapshotControllerToBeReadyInWorkloadClusterInput{
+				strategy:                    input.CSI.SnapshotController.Strategy,
+				workloadCluster:             input.WorkloadCluster,
+				clusterProxy:                input.ClusterProxy,
+				deploymentIntervals:         input.DeploymentIntervals,
+				helmReleaseIntervals:        input.HelmReleaseIntervals,
+				clusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+			},
+		)
+	}
 }
 
 type waitForLocalPathCSIToBeReadyInWorkloadClusterInput struct {
@@ -419,4 +433,72 @@ func waitForStorageClassToExistInWorkloadCluster(
 	}
 
 	Logf("StorageClass %v now exists, took %v", scKey, time.Since(start))
+}
+
+type waitForSnapshotControllerToBeReadyInWorkloadClusterInput struct {
+	strategy                    v1alpha1.AddonStrategy
+	workloadCluster             *clusterv1.Cluster
+	clusterProxy                framework.ClusterProxy
+	deploymentIntervals         []interface{}
+	helmReleaseIntervals        []interface{}
+	clusterResourceSetIntervals []interface{}
+}
+
+func waitForSnapshotControllerToBeReadyInWorkloadCluster(
+	ctx context.Context,
+	input waitForSnapshotControllerToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
+) {
+	switch input.strategy {
+	case v1alpha1.AddonStrategyClusterResourceSet:
+		crs := &addonsv1.ClusterResourceSet{}
+		Expect(input.clusterProxy.GetClient().Get(
+			ctx,
+			types.NamespacedName{
+				Name:      "snapshot-controller-" + input.workloadCluster.Name,
+				Namespace: input.workloadCluster.Namespace,
+			},
+			crs,
+		)).To(Succeed())
+
+		framework.WaitForClusterResourceSetToApplyResources(
+			ctx,
+			framework.WaitForClusterResourceSetToApplyResourcesInput{
+				ClusterResourceSet: crs,
+				ClusterProxy:       input.clusterProxy,
+				Cluster:            input.workloadCluster,
+			},
+			input.clusterResourceSetIntervals...,
+		)
+	case v1alpha1.AddonStrategyHelmAddon:
+		WaitForHelmReleaseProxyReadyForCluster(
+			ctx,
+			WaitForHelmReleaseProxyReadyForClusterInput{
+				GetLister:          input.clusterProxy.GetClient(),
+				Cluster:            input.workloadCluster,
+				HelmChartProxyName: "snapshot-controller-" + input.workloadCluster.Name,
+			},
+			input.helmReleaseIntervals...,
+		)
+	default:
+		Fail(
+			fmt.Sprintf(
+				"Do not know how to wait for snapshot-controller using strategy %s to be ready",
+				input.strategy,
+			),
+		)
+	}
+
+	workloadClusterClient := input.clusterProxy.GetWorkloadCluster(
+		ctx, input.workloadCluster.Namespace, input.workloadCluster.Name,
+	).GetClient()
+
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "snapshot-controller",
+				Namespace: metav1.NamespaceSystem,
+			},
+		},
+	}, input.deploymentIntervals...)
 }

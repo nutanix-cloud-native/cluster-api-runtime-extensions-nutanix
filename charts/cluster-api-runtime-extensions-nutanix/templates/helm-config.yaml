@@ -35,14 +35,14 @@ data:
     ChartName: nutanix-cloud-provider
     ChartVersion: 0.3.3
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}
-  nutanix-snapshot-csi: |
-    ChartName: nutanix-csi-snapshot
-    ChartVersion: 6.3.2
-    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
     ChartVersion: 3.0.0-beta.1912
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}
+  snapshot-controller: |
+    ChartName: snapshot-controller
+    ChartVersion: 3.0.5
+    RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://piraeus.io/helm-charts/{{ end }}
   tigera-operator: |
     ChartName: tigera-operator
     ChartVersion: v3.28.0
