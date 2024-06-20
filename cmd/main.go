@@ -179,7 +179,12 @@ func main() {
 			mgr,
 			controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},
 		); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "namespacesync.Reconciler")
+			setupLog.Error(
+				err,
+				"unable to create controller",
+				"controller",
+				"namespacesync.Reconciler",
+			)
 			os.Exit(1)
 		}
 	}
