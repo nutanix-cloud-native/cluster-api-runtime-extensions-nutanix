@@ -25,7 +25,7 @@ build-snapshot: go-generate ; $(info $(M) building snapshot $*)
 
 .PHONY: release
 release: ## Builds a release with goreleaser
-release: go-generate ; $(info $(M) building release $*)
+release: docker-buildx go-generate ; $(info $(M) building release $*)
 	goreleaser --verbose=$(GORELEASER_VERBOSE) \
 		release \
 		--clean \
