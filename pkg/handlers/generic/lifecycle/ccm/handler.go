@@ -68,10 +68,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	commonResponse := &runtimehooksv1.CommonResponse{}
-	c.apply(ctx, &req.Cluster, commonResponse)
-	resp.Status = commonResponse.GetStatus()
-	resp.Message = commonResponse.GetMessage()
+	c.handle(ctx, &req.Cluster, &resp.CommonResponse)
 }
 
 func (c *CCMHandler) BeforeClusterUpgrade(
@@ -79,17 +76,37 @@ func (c *CCMHandler) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
-	commonResponse := &runtimehooksv1.CommonResponse{}
-	c.apply(ctx, &req.Cluster, commonResponse)
-	resp.Status = commonResponse.GetStatus()
-	resp.Message = commonResponse.GetMessage()
+	c.handle(ctx, &req.Cluster, &resp.CommonResponse)
+}
+
+func (c *CCMHandler) OnClusterSpecUpdated(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+) error {
+	if err := c.apply(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to apply CCM: %w", err)
+	}
+
+	return nil
+}
+
+func (c *CCMHandler) handle(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	resp *runtimehooksv1.CommonResponse,
+) {
+	if err := c.apply(ctx, cluster); err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+	}
+
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
 
 func (c *CCMHandler) apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
-	resp *runtimehooksv1.CommonResponse,
-) {
+) error {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(
@@ -103,19 +120,9 @@ func (c *CCMHandler) apply(
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).Info("Skipping CCM handler.")
-			return
+			return nil
 		}
-		log.Error(
-			err,
-			"failed to read CCM from cluster definition",
-		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("failed to read CCM from cluster definition: %v",
-				err,
-			),
-		)
-		return
+		return fmt.Errorf("failed to read CCM from cluster definition: %w", err)
 	}
 
 	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
@@ -123,17 +130,7 @@ func (c *CCMHandler) apply(
 		v1alpha1.ClusterConfigVariableName,
 	)
 	if err != nil {
-		log.Error(
-			err,
-			"failed to read clusterConfig variable from cluster definition",
-		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("failed to read clusterConfig variable from cluster definition: %v",
-				err,
-			),
-		)
-		return
+		return fmt.Errorf("failed to read clusterConfig variable from cluster definition: %w", err)
 	}
 
 	// There's a 1:1 mapping of infra to CCM provider. We derive the CCM provider from the infra.
@@ -147,21 +144,13 @@ func (c *CCMHandler) apply(
 		handler = c.ProviderHandler[v1alpha1.CCMProviderNutanix]
 	default:
 		log.Info(fmt.Sprintf("No CCM handler provided for infra kind %s", infraKind))
-		return
+		return nil
 	}
 
 	err = handler.Apply(ctx, cluster, &clusterConfigVar, log)
 	if err != nil {
-		log.Error(
-			err,
-			"failed to deploy CCM for cluster",
-		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("failed to deploy CCM for cluster: %v",
-				err,
-			),
-		)
-		return
+		return fmt.Errorf("failed to deploy CCM for cluster: %w", err)
 	}
+
+	return nil
 }

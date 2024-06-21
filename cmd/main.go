@@ -30,6 +30,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/namespacesync"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker"
@@ -100,6 +101,7 @@ func main() {
 	genericMetaHandlers := generic.New()
 
 	namespacesyncOptions := namespacesync.Options{}
+	addonsOptions := addons.Options{}
 
 	// Initialize and parse command line flags.
 	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())
@@ -111,6 +113,7 @@ func main() {
 	dockerMetaHandlers.AddFlags(pflag.CommandLine)
 	nutanixMetaHandlers.AddFlags(pflag.CommandLine)
 	namespacesyncOptions.AddFlags(pflag.CommandLine)
+	addonsOptions.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
@@ -134,8 +137,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	lifecycleHandlers := genericLifecycleHandlers.AllHandlers(mgr)
 	var allHandlers []handlers.Named
-	allHandlers = append(allHandlers, genericLifecycleHandlers.AllHandlers(mgr)...)
+	allHandlers = append(allHandlers, lifecycleHandlers...)
 	allHandlers = append(allHandlers, awsMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, dockerMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, nutanixMetaHandlers.AllHandlers(mgr)...)
@@ -171,6 +175,15 @@ func main() {
 		controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},
 	); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "namespacesync.Reconciler")
+		os.Exit(1)
+	}
+
+	if err := addons.NewController(mgr.GetClient(), lifecycleHandlers).SetupWithManager(
+		signalCtx,
+		mgr,
+		controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},
+	); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "addons.Reconciler")
 		os.Exit(1)
 	}
 

@@ -5,6 +5,7 @@ package csi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -68,10 +69,7 @@ func (c *CSIHandler) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	commonResponse := &runtimehooksv1.CommonResponse{}
-	c.apply(ctx, &req.Cluster, commonResponse)
-	resp.Status = commonResponse.GetStatus()
-	resp.Message = commonResponse.GetMessage()
+	c.handle(ctx, &req.Cluster, &resp.CommonResponse)
 }
 
 func (c *CSIHandler) BeforeClusterUpgrade(
@@ -79,17 +77,37 @@ func (c *CSIHandler) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
-	commonResponse := &runtimehooksv1.CommonResponse{}
-	c.apply(ctx, &req.Cluster, commonResponse)
-	resp.Status = commonResponse.GetStatus()
-	resp.Message = commonResponse.GetMessage()
+	c.handle(ctx, &req.Cluster, &resp.CommonResponse)
+}
+
+func (c *CSIHandler) OnClusterSpecUpdated(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+) error {
+	if err := c.apply(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to apply CSI: %w", err)
+	}
+
+	return nil
+}
+
+func (c *CSIHandler) handle(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	resp *runtimehooksv1.CommonResponse,
+) {
+	if err := c.apply(ctx, cluster); err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+	}
+
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
 
 func (c *CSIHandler) apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
-	resp *runtimehooksv1.CommonResponse,
-) {
+) error {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(
@@ -97,7 +115,6 @@ func (c *CSIHandler) apply(
 		clusterKey,
 	)
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	csi, err := variables.Get[apivariables.CSI](
 		varMap,
 		c.variableName,
@@ -105,46 +122,25 @@ func (c *CSIHandler) apply(
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).Info("Skipping CSI handler, the cluster does not define the CSI variable")
-			return
+			return nil
 		}
-		msg := "failed to read the CSI variable from the cluster"
-		log.Error(err, msg)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("%s: %v", msg, err))
-		return
+		return fmt.Errorf("failed to read the CSI variable from the cluster: %w", err)
 	}
 
 	// This is defensive, because the API validation requires at least one provider.
 	if len(csi.Providers) == 0 {
-		msg := "The list of CSI providers must include at least one provider"
-		log.Error(nil, msg)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(msg)
-		return
+		return errors.New("the list of CSI providers must include at least one provider")
 	}
 
 	if err := validateDefaultStorage(csi); err != nil {
-		log.Error(err, "")
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(err.Error())
-		return
+		return fmt.Errorf("failed to validate default: %w", err)
 	}
 
 	// There's a 1:N mapping of infra to CSI providers. The user chooses the providers.
 	for providerName, provider := range csi.Providers {
 		handler, ok := c.ProviderHandler[providerName]
 		if !ok {
-			log.Error(
-				nil,
-				"CSI provider is unknown",
-				"name",
-				providerName,
-			)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				fmt.Sprintf("CSI provider %q is unknown", providerName),
-			)
-			return
+			return fmt.Errorf("CSI provider %q is unknown", providerName)
 		}
 		log.Info(fmt.Sprintf("Creating CSI provider %s", providerName))
 		err = handler.Apply(
@@ -155,22 +151,11 @@ func (c *CSIHandler) apply(
 			log,
 		)
 		if err != nil {
-			log.Error(
-				err,
-				fmt.Sprintf(
-					"failed to deploy %s CSI driver",
-					providerName,
-				),
-			)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				fmt.Sprintf(
-					"failed to deploy CSI driver: %v",
-					err,
-				),
-			)
+			return fmt.Errorf("failed to deploy %q CSI driver: %w", providerName, err)
 		}
 	}
+
+	return nil
 }
 
 // Verify that the default storage references a defined storage class config.
