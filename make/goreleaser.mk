@@ -11,7 +11,7 @@ endif
 .PHONY: docker-buildx
 docker-buildx: ## Creates buildx builder container that supports multiple platforms.
 docker-buildx:
-	 docker buildx create --use --name=caren --platform=linux/arm64,linux/amd64 || true
+	 docker buildx create --name=caren --platform=linux/arm64,linux/amd64 || true
 
 .PHONY: build-snapshot
 build-snapshot: ## Builds a snapshot with goreleaser
