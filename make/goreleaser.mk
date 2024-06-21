@@ -9,7 +9,7 @@ export GORELEASER_CURRENT_TAG=$(GIT_TAG)
 endif
 
 .PHONY: docker-buildx
-docker-buildx:
+docker-buildx: ## Creates buildx builder container that supports multiple platforms.
 docker-buildx:
 	 docker buildx create --use --name=caren --platform=linux/arm64,linux/amd64 || true
 
