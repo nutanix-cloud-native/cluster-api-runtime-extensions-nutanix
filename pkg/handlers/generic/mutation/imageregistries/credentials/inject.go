@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,8 +25,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/mirrors"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
@@ -46,7 +43,7 @@ func NewPatch(
 	return newImageRegistriesPatchHandler(
 		cl,
 		v1alpha1.ClusterConfigVariableName,
-		imageregistries.VariableName,
+		v1alpha1.ImageRegistriesVariableName,
 	)
 }
 
@@ -87,12 +84,12 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	globalMirror, globalMirrorErr := variables.Get[v1alpha1.GlobalImageRegistryMirror](
 		vars,
 		h.variableName,
-		mirrors.GlobalMirrorVariableName,
+		v1alpha1.GlobalMirrorVariableName,
 	)
 
 	switch {
 	case variables.IsNotFoundError(imageRegistriesErr) && variables.IsNotFoundError(globalMirrorErr):
-		log.V(5).Info("Image Registry Credentials variable not defined")
+		log.V(5).Info("Image Registry Credentials and Global Registry Mirror variable not defined")
 		return nil
 	case imageRegistriesErr != nil && !variables.IsNotFoundError(imageRegistriesErr):
 		return imageRegistriesErr
@@ -287,7 +284,7 @@ func ensureOwnerReferenceOnCredentialsSecrets(
 	}
 
 	for _, credential := range credentials {
-		if secretName := secretNameForImageRegistryCredentials(credential); secretName != "" {
+		if secretName := handlersutils.SecretNameForImageRegistryCredentials(credential); secretName != "" {
 			// Ensure the Secret is owned by the Cluster so it is correctly moved and deleted with the Cluster.
 			// This code assumes that Secret exists and that was validated before calling this function.
 			err := handlersutils.EnsureOwnerReferenceForSecret(
@@ -317,7 +314,7 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	registryWithOptionalCredentials := providerConfig{
 		URL: imageRegistry.URL,
 	}
-	secret, err := secretForImageRegistryCredentials(
+	secret, err := handlersutils.SecretForImageRegistryCredentials(
 		ctx,
 		c,
 		imageRegistry.Credentials,
@@ -350,7 +347,7 @@ func mirrorConfigFromGlobalImageRegistryMirror(
 		URL:    mirror.URL,
 		Mirror: true,
 	}
-	secret, err := secretForImageRegistryCredentials(
+	secret, err := handlersutils.SecretForImageRegistryCredentials(
 		ctx,
 		c,
 		mirror.Credentials,
@@ -438,28 +435,6 @@ func createSecretIfNeeded(
 	return nil
 }
 
-// secretForImageRegistryCredentials returns the Secret for the given ImageRegistryCredentials.
-// Returns nil if the secret field is empty.
-func secretForImageRegistryCredentials(
-	ctx context.Context,
-	c ctrlclient.Reader,
-	credentials *v1alpha1.RegistryCredentials,
-	objectNamespace string,
-) (*corev1.Secret, error) {
-	name := secretNameForImageRegistryCredentials(credentials)
-	if name == "" {
-		return nil, nil
-	}
-
-	key := ctrlclient.ObjectKey{
-		Name:      name,
-		Namespace: objectNamespace,
-	}
-	secret := &corev1.Secret{}
-	err := c.Get(ctx, key, secret)
-	return secret, err
-}
-
 // This handler reads input from two user provided variables: globalImageRegistryMirror and imageRegistries.
 // We expect if imageRegistries is set it will either have static credentials
 // or be for a registry where the credential plugin returns the credentials, ie ECR, GCR, ACR, etc,
@@ -490,13 +465,4 @@ func needImageRegistryCredentialsConfiguration(configs []providerConfig) (bool, 
 	}
 
 	return true, nil
-}
-
-// secretForImageRegistryCredentials returns the name of the Secret for the given RegistryCredentials.
-// Returns an empty string if the credentials or secret field is empty.
-func secretNameForImageRegistryCredentials(credentials *v1alpha1.RegistryCredentials) string {
-	if credentials == nil || credentials.SecretRef == nil || credentials.SecretRef.Name == "" {
-		return ""
-	}
-	return credentials.SecretRef.Name
 }

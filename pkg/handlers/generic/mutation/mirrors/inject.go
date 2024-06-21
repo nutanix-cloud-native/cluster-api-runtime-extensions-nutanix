@@ -5,6 +5,7 @@ package mirrors
 
 import (
 	"context"
+	"fmt"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -20,6 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 type globalMirrorPatchHandler struct {
@@ -35,7 +37,7 @@ func NewPatch(
 	return newGlobalMirrorPatchHandler(
 		cl,
 		v1alpha1.ClusterConfigVariableName,
-		GlobalMirrorVariableName,
+		v1alpha1.GlobalMirrorVariableName,
 	)
 }
 
@@ -66,47 +68,75 @@ func (h *globalMirrorPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	globalMirror, err := variables.Get[v1alpha1.GlobalImageRegistryMirror](
+	globalMirror, globalMirrorErr := variables.Get[v1alpha1.GlobalImageRegistryMirror](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
-	if err != nil {
-		if variables.IsNotFoundError(err) {
-			log.V(5).Info("Global registry mirror variable not defined")
-			return nil
-		}
-		return err
+
+	// add CA certificate for image registries
+	imageRegistries, imageRegistriesErr := variables.Get[[]v1alpha1.ImageRegistry](
+		vars,
+		h.variableName,
+		v1alpha1.ImageRegistriesVariableName,
+	)
+
+	switch {
+	case variables.IsNotFoundError(imageRegistriesErr) && variables.IsNotFoundError(globalMirrorErr):
+		log.V(5).Info("Image Registry Credentials and Global Registry Mirror variable not defined")
+		return nil
+	case imageRegistriesErr != nil && !variables.IsNotFoundError(imageRegistriesErr):
+		return imageRegistriesErr
+	case globalMirrorErr != nil && !variables.IsNotFoundError(globalMirrorErr):
+		return globalMirrorErr
 	}
 
-	log = log.WithValues(
-		"variableName",
-		h.variableName,
-		"variableFieldPath",
-		h.variableFieldPath,
-		"variableValue",
-		globalMirror,
+	var registriesWithOptionalCA []containerdConfig //nolint:prealloc // We don't know the size of the slice yet.
+	if globalMirrorErr == nil {
+		registryConfig, err := containerdConfigFromGlobalMirror(
+			ctx,
+			h.client,
+			globalMirror,
+			obj,
+		)
+		if err != nil {
+			return err
+		}
+		registriesWithOptionalCA = append(registriesWithOptionalCA, registryConfig)
+	}
+	for _, imageRegistry := range imageRegistries {
+		registryWithOptionalCredentials, generateErr := containerdConfigFromImageRegistry(
+			ctx,
+			h.client,
+			imageRegistry,
+			obj,
+		)
+		if generateErr != nil {
+			return generateErr
+		}
+
+		registriesWithOptionalCA = append(
+			registriesWithOptionalCA,
+			registryWithOptionalCredentials,
+		)
+	}
+
+	needConfiguration := needContainerdConfiguration(
+		registriesWithOptionalCA,
 	)
+	if !needConfiguration {
+		log.V(5).Info("Only Image Registry Configuration is defined but without CA certificates")
+		return nil
+	}
+
+	files, err := generateFiles(registriesWithOptionalCA)
+	if err != nil {
+		return err
+	}
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-			mirrorConfig, err := mirrorConfigForGlobalMirror(
-				ctx,
-				h.client,
-				globalMirror,
-				obj,
-			)
-			if err != nil {
-				return err
-			}
-			files, generateErr := generateFilesAndCommands(
-				mirrorConfig,
-				globalMirror)
-			if generateErr != nil {
-				return generateErr
-			}
-
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -124,22 +154,6 @@ func (h *globalMirrorPatchHandler) Mutate(
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
 		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
-			mirrorConfig, err := mirrorConfigForGlobalMirror(
-				ctx,
-				h.client,
-				globalMirror,
-				obj,
-			)
-			if err != nil {
-				return err
-			}
-			files, generateErr := generateFilesAndCommands(
-				mirrorConfig,
-				globalMirror)
-			if generateErr != nil {
-				return generateErr
-			}
-
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -154,21 +168,106 @@ func (h *globalMirrorPatchHandler) Mutate(
 	return nil
 }
 
-func generateFilesAndCommands(
-	mirrorConfig *mirrorConfig,
+func containerdConfigFromGlobalMirror(
+	ctx context.Context,
+	c ctrlclient.Client,
 	globalMirror v1alpha1.GlobalImageRegistryMirror,
+	obj ctrlclient.Object,
+) (containerdConfig, error) {
+	configWithOptionalCACert := containerdConfig{
+		URL:    globalMirror.URL,
+		Mirror: true,
+	}
+	secret, err := handlersutils.SecretForImageRegistryCredentials(
+		ctx,
+		c,
+		globalMirror.Credentials,
+		obj.GetNamespace(),
+	)
+	if err != nil {
+		return containerdConfig{}, fmt.Errorf(
+			"error getting secret %s/%s from Global Image Registry Mirror variable: %w",
+			obj.GetNamespace(),
+			globalMirror.Credentials.SecretRef.Name,
+			err,
+		)
+	}
+
+	if secret != nil {
+		configWithOptionalCACert.CASecretName = secret.Name
+		configWithOptionalCACert.CACert = string(secret.Data[secretKeyForMirrorCACert])
+	}
+
+	return configWithOptionalCACert, nil
+}
+
+func containerdConfigFromImageRegistry(
+	ctx context.Context,
+	c ctrlclient.Client,
+	imageRegistry v1alpha1.ImageRegistry,
+	obj ctrlclient.Object,
+) (containerdConfig, error) {
+	configWithOptionalCACert := containerdConfig{
+		URL: imageRegistry.URL,
+	}
+	secret, err := handlersutils.SecretForImageRegistryCredentials(
+		ctx,
+		c,
+		imageRegistry.Credentials,
+		obj.GetNamespace(),
+	)
+	if err != nil {
+		return containerdConfig{}, fmt.Errorf(
+			"error getting secret %s/%s from Image Registry variable: %w",
+			obj.GetNamespace(),
+			imageRegistry.Credentials.SecretRef.Name,
+			err,
+		)
+	}
+
+	if secret != nil {
+		configWithOptionalCACert.CASecretName = secret.Name
+		configWithOptionalCACert.CACert = string(secret.Data[secretKeyForMirrorCACert])
+	}
+
+	return configWithOptionalCACert, nil
+}
+
+func generateFiles(
+	registriesWithOptionalCA []containerdConfig,
 ) ([]bootstrapv1.File, error) {
+	var files []bootstrapv1.File
 	// generate default registry mirror file
-	files, err := generateGlobalRegistryMirrorFile(mirrorConfig)
+	containerdHostsFile, err := generateContainerdHostsFile(registriesWithOptionalCA)
 	if err != nil {
 		return nil, err
 	}
+	if containerdHostsFile != nil {
+		files = append(files, *containerdHostsFile)
+	}
+
 	// generate CA certificate file for registry mirror
-	mirrorCAFile := generateMirrorCACertFile(mirrorConfig, globalMirror)
-	files = append(files, mirrorCAFile...)
+	mirrorCAFiles, err := generateRegistryCACertFiles(registriesWithOptionalCA)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, mirrorCAFiles...)
+
 	// generate Containerd registry config drop-in file
 	registryConfigDropIn := generateContainerdRegistryConfigDropInFile()
 	files = append(files, registryConfigDropIn...)
 
 	return files, err
+}
+
+// This handler reads input from two user provided variables: globalImageRegistryMirror and imageRegistries.
+// The handler will be used to either add configuration for a global mirror or CA certificates for image registries.
+func needContainerdConfiguration(configs []containerdConfig) bool {
+	for _, config := range configs {
+		if config.needContainerdConfiguration() {
+			return true
+		}
+	}
+
+	return false
 }

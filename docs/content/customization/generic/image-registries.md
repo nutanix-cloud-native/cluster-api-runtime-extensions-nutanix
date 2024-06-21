@@ -20,7 +20,24 @@ kubectl create secret generic my-registry-credentials \
   --from-literal username=${REGISTRY_USERNAME} --from-literal password=${REGISTRY_PASSWORD}
 ```
 
-To add image registry credentials, specify the following configuration:
+If your registry requires a private or self-signed CA certificate,
+create a Kubernetes Secret with the `ca.crt` key populated with the CA certificate in PEM format:
+
+```shell
+kubectl create secret generic my-mirror-ca-cert \
+  --from-file=ca.crt=registry-ca.crt
+```
+
+To set both image registry credentials and CA certificate,
+create a Kubernetes Secret with keys for `username`, `password`, and `ca.crt`:
+
+```shell
+kubectl create secret generic my-registry-credentials \
+  --from-literal username=${REGISTRY_USERNAME} --from-literal password=${REGISTRY_PASSWORD} \
+  --from-file=ca.crt=registry-ca.crt
+```
+
+To add image registry credentials and/or CA certificate, specify the following configuration:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1

@@ -8,6 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/storage/names"
@@ -56,7 +57,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					v1alpha1.GlobalImageRegistryMirror{
 						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 					},
-					GlobalMirrorVariableName,
+					v1alpha1.GlobalMirrorVariableName,
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -88,7 +89,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							},
 						},
 					},
-					GlobalMirrorVariableName,
+					v1alpha1.GlobalMirrorVariableName,
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequest("", cpRegistryAsMirrorCreds),
@@ -101,7 +102,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/certs/mirror.pem",
+							"path", "/etc/certs/registry.example.com.pem",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
@@ -118,7 +119,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					v1alpha1.GlobalImageRegistryMirror{
 						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
 					},
-					GlobalMirrorVariableName,
+					v1alpha1.GlobalMirrorVariableName,
 				),
 				capitest.VariableWithValue(
 					"builtin",
@@ -158,7 +159,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							},
 						},
 					},
-					GlobalMirrorVariableName,
+					v1alpha1.GlobalMirrorVariableName,
 				),
 				capitest.VariableWithValue(
 					"builtin",
@@ -179,7 +180,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/certs/mirror.pem",
+							"path", "/etc/certs/registry.example.com.pem",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
@@ -234,5 +235,81 @@ func newMirrorSecret(name, namespace string) *corev1.Secret {
 		},
 		Data: secretData,
 		Type: corev1.SecretTypeOpaque,
+	}
+}
+
+func Test_needContainerdConfiguration(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		configs []containerdConfig
+		want    bool
+	}{
+		{
+			name: "ECR mirror image registry with no CA certificate",
+			configs: []containerdConfig{
+				{
+					URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+					Mirror: true,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "ECR mirror image registry with a path and no CA certificate",
+			configs: []containerdConfig{
+				{
+					URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com/myproject",
+					Mirror: true,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Mirror image registry with a CA and an image registry with no CA certificate",
+			configs: []containerdConfig{
+				{
+					URL:    "https://mymirror.com",
+					CACert: "mymirrorcert",
+					Mirror: true,
+				},
+				{
+					URL: "https://myregistry.com",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Mirror image registry with a CA and an image registry with a CA",
+			configs: []containerdConfig{
+				{
+					URL:    "https://mymirror.com",
+					CACert: "mymirrorcert",
+					Mirror: true,
+				},
+				{
+					URL:    "https://myregistry.com",
+					CACert: "myregistrycert",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Image registry with no CA certificate",
+			configs: []containerdConfig{
+				{
+					URL: "https://myregistry.com",
+				},
+			},
+			want: false,
+		},
+	}
+	for idx := range tests {
+		tt := tests[idx]
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := needContainerdConfiguration(tt.configs)
+			assert.Equal(t, tt.want, got)
+		})
 	}
 }
