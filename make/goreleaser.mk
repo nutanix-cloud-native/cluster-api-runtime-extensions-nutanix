@@ -8,11 +8,6 @@ ifndef GORELEASER_CURRENT_TAG
 export GORELEASER_CURRENT_TAG=$(GIT_TAG)
 endif
 
-.PHONY: docker-buildx
-docker-buildx: ## Creates buildx builder container that supports multiple platforms.
-docker-buildx:
-	 docker buildx create --name=caren --platform=linux/arm64,linux/amd64 || true
-
 .PHONY: build-snapshot
 build-snapshot: ## Builds a snapshot with goreleaser
 build-snapshot: go-generate ; $(info $(M) building snapshot $*)
@@ -25,7 +20,7 @@ build-snapshot: go-generate ; $(info $(M) building snapshot $*)
 
 .PHONY: release
 release: ## Builds a release with goreleaser
-release: docker-buildx go-generate ; $(info $(M) building release $*)
+release: go-generate ; $(info $(M) building release $*)
 	goreleaser --verbose=$(GORELEASER_VERBOSE) \
 		release \
 		--clean \
@@ -35,7 +30,7 @@ release: docker-buildx go-generate ; $(info $(M) building release $*)
 
 .PHONY: release-snapshot
 release-snapshot: ## Builds a snapshot release with goreleaser
-release-snapshot: docker-buildx go-generate ; $(info $(M) building snapshot release $*)
+release-snapshot: go-generate ; $(info $(M) building snapshot release $*)
 	goreleaser --verbose=$(GORELEASER_VERBOSE) \
 		release \
 		--snapshot \

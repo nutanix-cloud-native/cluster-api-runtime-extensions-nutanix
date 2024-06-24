@@ -52,13 +52,13 @@ test.%: go-generate ; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(G
 
 .PHONY: integration-test
 integration-test: ## Runs integration tests for all modules in repository
-integration-test:
-	$(MAKE) GOTEST_RUN=Integration test
+integration-test: GOTEST_RUN := Integration
+integration-test: test
 
 .PHONY: integration-test.%
 integration-test.%: ## Runs integration tests for a specific module
-integration-test.%:
-	$(MAKE) GOTEST_RUN=Integration test.$*
+integration-test.%: GOTEST_RUN := Integration
+integration-test.%: test.$*
 
 .PHONY: bench
 bench: ## Runs go benchmarks for all modules in repository
