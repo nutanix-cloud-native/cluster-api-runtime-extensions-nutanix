@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.10.0 (2024-06-24)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Upgrade to Cilium v1.15.5 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/689
+* feat: Upgrade to Calico v3.28.0 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/688
+* feat: bumps caaph to v0.2.3 by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/691
+* feat: Add local-path-provisioner CSI by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/693
+* feat: cluster-api v1.7.3 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/714
+* feat: bumps caaph to 0.2.4 by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/718
+* feat: Controller that copies ClusterClasses to namespaces by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/715
+* feat: adds a mindthegap container and deployment  by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/637
+* feat: implements BeforeClusterUpgrade hook by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/682
+### Fixes 🔧
+* fix: use external Nutanix API types directly by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/698
+* fix: Post-process clusterconfig CRDs for supported CSI providers by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/695
+* fix: nutanix credentials Secrets owner refs by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/711
+* fix: credential provider response secret ownership by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/709
+* fix: static credentials Secret generation by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/717
+* fix: set ownerReference on imageRegistry and globalMirror Secrets by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/720
+* fix: Allow Nutanix CSI snapshot controller & webhook to run on CP nodes by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/723
+* refactor: Use maps for CSI providers and storage classes by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/696
+* fix: CredentialProviderConfig matchImages to support registries with port by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/724
+* fix: Allow Node Feature Discovery garbage collector to run on control-plane nodes by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/722
+* fix: RBAC role for namespace-sync controller to watch,list namespaces by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/738
+* fix: image registries not handling CA certificates by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/729
+* fix: adds a docker buildx step before release-snapshot by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/741
+### Other Changes
+* docs: Add released version to helm and clusterctl install by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/683
+* revert: Temporary lint config fix until next golangci-lint release (#629) by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/686
+* refactor: Delete unused code by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/687
+* refactor: Reduce log verbosity for skipped handlers by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/692
+* build: update Go to 1.22.4 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/700
+* build(deps): Upgrade CAPX version to v1.4.0 by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/707
+* build: Move CSI supported provider logic to script by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/703
+* build: Add testifylint linter by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/706
+* build: Update all tools by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/704
+* refactor: rename credential provider response secret by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/710
+* refactor: Simplify code by using slices.Clone by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/712
+* refactor: consistently use the same SetOwnerReference function by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/713
+* refactor: kube-vip commands by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/699
+* build: Fix an incorrect make variable passed to goreleaser by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/716
+* build: Add 'chart-docs' make target by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/727
+* build: Make CAREN mindthegap reg multiarch by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/730
+* Add helm values schema plugin by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/728
+* test(e2e): Use mesosphere fork with CRSBinding fix by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/736
+
+## New Contributors
+* @thunderboltsid made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/707
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.9.0...v0.10.0
+
 ## 0.9.0 (2024-05-21)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
