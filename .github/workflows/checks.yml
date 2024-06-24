@@ -223,7 +223,7 @@ jobs:
             kind load docker-image \
               --name chart-testing \
               "ko.local/cluster-api-runtime-extensions-nutanix:$(devbox run -- gojq -r .version dist/metadata.json)" \
-              "ghcr.io/nutanix-cloud-native/caren-helm-reg:$(devbox run -- gojq -r .version dist/metadata.json)"
+              "ghcr.io/nutanix-cloud-native/caren-helm-reg:$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)"
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
