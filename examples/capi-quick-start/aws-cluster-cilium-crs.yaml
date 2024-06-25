@@ -21,7 +21,8 @@ spec:
     - name: clusterConfig
       value:
         addons:
-          ccm: {}
+          ccm:
+            strategy: ClusterResourceSet
           clusterAutoscaler:
             strategy: ClusterResourceSet
           cni:

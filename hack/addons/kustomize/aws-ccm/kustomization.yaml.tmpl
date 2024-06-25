@@ -12,18 +12,9 @@ helmCharts:
   repo: https://kubernetes.github.io/cloud-provider-aws
   releaseName: aws-cloud-controller-manager
   version: ${AWS_CCM_CHART_VERSION}
-  valuesFile: helm-values.yaml
   includeCRDs: true
   skipTests: true
-
-patches:
-- patch: |-
-    - op: add
-      path: /spec/template/spec/containers/0/args/-
-      value: --configure-cloud-routes=false
-  target:
-    kind: DaemonSet
-
-images:
-- name: registry.k8s.io/provider-aws/cloud-controller-manager
-  newTag: ${AWS_CCM_VERSION}
+  valuesFile: helm-values.yaml
+  valuesInline:
+    image:
+      tag: ${AWS_CCM_VERSION}

@@ -175,9 +175,10 @@ var _ = Describe("Quick start", Serial, func() {
 									WaitForAddonsToBeReadyInWorkloadCluster(
 										ctx,
 										WaitForAddonsToBeReadyInWorkloadClusterInput{
-											AddonsConfig:    addonsConfig,
-											ClusterProxy:    proxy,
-											WorkloadCluster: workloadCluster,
+											AddonsConfig:           addonsConfig,
+											ClusterProxy:           proxy,
+											WorkloadCluster:        workloadCluster,
+											InfrastructureProvider: lowercaseProvider,
 											DeploymentIntervals: testE2EConfig.GetIntervals(
 												flavour,
 												"wait-deployment",

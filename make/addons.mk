@@ -10,13 +10,14 @@ export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.0.0-beta.1912
 export NUTANIX_SNAPSHOT_CSI_CHART_VERSION := 6.3.2
 export LOCAL_PATH_CSI_CHART_VERSION := 0.0.29
 export SNAPSHOT_CONTROLLER_CHART_VERSION := 3.0.5
-# a map of AWS CCM versions
-export AWS_CCM_VERSION_127 := v1.27.1
-export AWS_CCM_CHART_VERSION_127 := 0.0.8
-export AWS_CCM_VERSION_128 := v1.28.1
-export AWS_CCM_CHART_VERSION_128 := 0.0.8
-export AWS_CCM_VERSION_129 := v1.29.2
-export AWS_CCM_CHART_VERSION_129 := 0.0.8
+# AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
+# be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
+export AWS_CCM_CHART_VERSION := 0.0.8
+# A map of AWS CCM versions.
+export AWS_CCM_VERSION_127 := v1.27.7
+export AWS_CCM_VERSION_128 := v1.28.6
+export AWS_CCM_VERSION_129 := v1.29.3
+export AWS_CCM_VERSION_130 := v1.30.1
 
 export NUTANIX_CCM_CHART_VERSION := 0.3.3
 
@@ -25,7 +26,7 @@ export KUBE_VIP_VERSION := v0.8.0
 export METALLB_CHART_VERSION := 0.14.5
 
 .PHONY: addons.sync
-addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi aws-ccm.127 aws-ccm.128 aws-ccm.129 kube-vip)
+addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi aws-ccm.127 aws-ccm.128 aws-ccm.129 aws-ccm.130 kube-vip)
 
 .PHONY: update-addon.calico
 update-addon.calico: ; $(info $(M) updating calico manifests)
@@ -57,7 +58,7 @@ update-addon.snapshot-controller: ; $(info $(M) updating snapshot-controller man
 
 .PHONY: update-addon.aws-ccm.%
 update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)
-	./hack/addons/update-aws-ccm.sh $(AWS_CCM_VERSION_$*) $(AWS_CCM_CHART_VERSION_$*)
+	./hack/addons/update-aws-ccm.sh $(AWS_CCM_VERSION_$*) $(AWS_CCM_CHART_VERSION)
 
 .PHONY: update-addon.kube-vip
 update-addon.kube-vip: ; $(info $(M) updating kube-vip manifests)

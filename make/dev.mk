@@ -17,7 +17,9 @@ dev.run-on-kind:
 		--set-string helmRepositoryImage.tag=$$(gojq -r .version dist/metadata.json)-$(GOARCH) \
 		--wait --wait-for-jobs
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
+	kubectl rollout restart deployment helm-repository
 	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix
+	kubectl rollout status deployment helm-repository
 
 .PHONY: dev.update-webhook-image-on-kind
 dev.update-webhook-image-on-kind: export KUBECONFIG := $(KIND_KUBECONFIG)

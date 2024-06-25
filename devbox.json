@@ -3,6 +3,7 @@
     "actionlint@latest",
     "chart-testing@latest",
     "coreutils@latest",
+    "crane@latest",
     "envsubst@latest",
     "findutils@latest",
     "gh@latest",

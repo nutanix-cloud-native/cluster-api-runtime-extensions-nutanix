@@ -91,44 +91,47 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 		if err != nil {
 			return err
 		}
-		if strings.Contains(filepath, "kustomization.yaml.tmpl") && !isIgnored(filepath) {
-			f, err := os.Open(path.Join(fullPath, filepath))
-			if err != nil {
-				return fmt.Errorf("failed to open file: %w", err)
-			}
-			defer f.Close()
-			obj := make(map[string]interface{})
-			err = yaml.NewYAMLOrJSONDecoder(f, 1024).Decode(&obj)
-			if err != nil {
-				return err
-			}
-			charts, ok := obj["helmCharts"]
-			if !ok {
-				log.Info("obj %v does not have field helmCharts. skipping \n", obj)
-				return nil
-			}
-			parsedCharts, ok := charts.([]interface{})
-			if !ok {
-				return fmt.Errorf("charts obj %v is not of type []interface", charts)
-			}
-			info, ok := parsedCharts[0].(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("info obj %v is not of type map[string]interface", parsedCharts)
-			}
-			repo := info["repo"].(string)
-			name := info["name"].(string)
-			dirName := strings.Split(filepath, "/")[0]
-			i := configMapInfo{
-				configMapFieldName: dirName,
-				RepositoryURL:      repo,
-				ChartName:          name,
-			}
-			versionEnvVar := info["version"].(string)
-			version := os.ExpandEnv(versionEnvVar)
-			i.ChartVersion = version
-			results = append(results, i)
+
+		if d.Name() != "kustomization.yaml.tmpl" {
 			return nil
 		}
+
+		f, err := os.Open(path.Join(fullPath, filepath))
+		if err != nil {
+			return fmt.Errorf("failed to open file: %w", err)
+		}
+		defer f.Close()
+		obj := make(map[string]interface{})
+		err = yaml.NewYAMLOrJSONDecoder(f, 1024).Decode(&obj)
+		if err != nil {
+			return err
+		}
+		charts, ok := obj["helmCharts"]
+		if !ok {
+			log.Info("obj %v does not have field helmCharts. skipping \n", obj)
+			return nil
+		}
+		parsedCharts, ok := charts.([]interface{})
+		if !ok {
+			return fmt.Errorf("charts obj %v is not of type []interface", charts)
+		}
+		info, ok := parsedCharts[0].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("info obj %v is not of type map[string]interface", parsedCharts)
+		}
+		repo := info["repo"].(string)
+		name := info["name"].(string)
+		dirName := strings.Split(filepath, "/")[0]
+		i := configMapInfo{
+			configMapFieldName: dirName,
+			RepositoryURL:      repo,
+			ChartName:          name,
+		}
+		versionEnvVar := info["version"].(string)
+		version := os.ExpandEnv(versionEnvVar)
+		i.ChartVersion = version
+		results = append(results, i)
+
 		return nil
 	})
 
@@ -150,17 +153,4 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 		finalCM.Data[res.configMapFieldName] = string(d)
 	}
 	return &finalCM, err
-}
-
-var ignored = []string{
-	"aws-ccm",
-}
-
-func isIgnored(filepath string) bool {
-	for _, i := range ignored {
-		if strings.Contains(filepath, i) {
-			return true
-		}
-	}
-	return false
 }

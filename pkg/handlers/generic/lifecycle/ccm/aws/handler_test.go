@@ -53,7 +53,7 @@ spec:
         - --cloud-provider=aws
         - --configure-cloud-routes=false
         env: []
-        image: registry.k8s.io/provider-aws/cloud-controller-manager:v1.27.1
+        image: registry.k8s.io/provider-aws/cloud-controller-manager:v1.27.7
         name: aws-cloud-controller-manager
         resources:
           requests:
@@ -87,11 +87,11 @@ func Test_generateCCMConfigMapForCluster(t *testing.T) {
 			name: "Can set cluster name in arguments",
 			startConfigMap: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "aws-ccm-v1.27.1",
+					Name:      "aws-ccm-v1.27.7",
 					Namespace: "default",
 				},
 				Data: map[string]string{
-					"aws-ccm-v1.27.1.yaml": startAWSCCMConfigMap,
+					"aws-ccm-v1.27.7.yaml": startAWSCCMConfigMap,
 				},
 			},
 			cluster: &clusterv1.Cluster{
@@ -109,8 +109,7 @@ func Test_generateCCMConfigMapForCluster(t *testing.T) {
 				test.cluster,
 			)
 			ccmConfigMapExpectedName := fmt.Sprintf(
-				"%s-%s",
-				test.startConfigMap.Name,
+				"aws-ccm-%s",
 				test.cluster.Name,
 			)
 			if cm.Name != ccmConfigMapExpectedName {
