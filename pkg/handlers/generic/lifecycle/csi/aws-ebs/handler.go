@@ -73,7 +73,7 @@ func (a *AWSEBS) Apply(
 	default:
 		return fmt.Errorf("stategy %s not implemented", strategy)
 	}
-	err := csiutils.CreateStorageClassOnRemote(
+	err := csiutils.CreateStorageClassesOnRemote(
 		ctx,
 		a.client,
 		provider.StorageClassConfigs,

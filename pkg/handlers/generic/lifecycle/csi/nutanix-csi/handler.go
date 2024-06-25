@@ -128,7 +128,7 @@ func (n *NutanixCSI) Apply(
 		}
 	}
 
-	err := csiutils.CreateStorageClassOnRemote(
+	err := csiutils.CreateStorageClassesOnRemote(
 		ctx,
 		n.client,
 		provider.StorageClassConfigs,

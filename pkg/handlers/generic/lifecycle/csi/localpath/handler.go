@@ -8,17 +8,14 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/spf13/pflag"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/utils"
-	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
 const (
@@ -26,17 +23,41 @@ const (
 	defaultHelmReleaseNamespace = "kube-system"
 )
 
+type addonStrategy interface {
+	apply(
+		context.Context,
+		*clusterv1.Cluster,
+		string,
+		logr.Logger,
+	) error
+}
+
+type Config struct {
+	*options.GlobalOptions
+
+	crsConfig       crsConfig
+	helmAddonConfig helmAddonConfig
+}
+
 type LocalPathProvisionerCSI struct {
 	client              ctrlclient.Client
 	helmChartInfoGetter *config.HelmChartGetter
+	config              *Config
+}
+
+func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
+	c.crsConfig.AddFlags(prefix+".crs", flags)
+	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
 func New(
 	c ctrlclient.Client,
+	cfg *Config,
 	helmChartInfoGetter *config.HelmChartGetter,
 ) *LocalPathProvisionerCSI {
 	return &LocalPathProvisionerCSI{
 		client:              c,
+		config:              cfg,
 		helmChartInfoGetter: helmChartInfoGetter,
 	}
 }
@@ -48,19 +69,32 @@ func (l *LocalPathProvisionerCSI) Apply(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
-	strategy := provider.Strategy
-	switch strategy {
+	var strategy addonStrategy
+	switch provider.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
-		err := l.handleHelmAddonApply(ctx, cluster, log)
+		helmChart, err := l.helmChartInfoGetter.For(ctx, log, config.LocalPathProvisionerCSI)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get configuration to create helm addon: %w", err)
+		}
+		strategy = helmAddonStrategy{
+			config:    l.config.helmAddonConfig,
+			client:    l.client,
+			helmChart: helmChart,
 		}
 	case v1alpha1.AddonStrategyClusterResourceSet:
+		strategy = crsStrategy{
+			config: l.config.crsConfig,
+			client: l.client,
+		}
 	default:
 		return fmt.Errorf("strategy %s not implemented", strategy)
 	}
 
-	err := csiutils.CreateStorageClassOnRemote(
+	if err := strategy.apply(ctx, cluster, l.config.DefaultsNamespace(), log); err != nil {
+		return fmt.Errorf("failed to apply local-path CSI addon: %w", err)
+	}
+
+	err := csiutils.CreateStorageClassesOnRemote(
 		ctx,
 		l.client,
 		provider.StorageClassConfigs,
@@ -72,64 +106,9 @@ func (l *LocalPathProvisionerCSI) Apply(
 	)
 	if err != nil {
 		return fmt.Errorf(
-			"error creating StorageClasses for the local-path-provisioner CSI driver: %w",
+			"error creating StorageClasses for the local-path CSI driver: %w",
 			err,
 		)
 	}
-	return nil
-}
-
-func (l *LocalPathProvisionerCSI) handleHelmAddonApply(
-	ctx context.Context,
-	cluster *clusterv1.Cluster,
-	log logr.Logger,
-) error {
-	chart, err := l.helmChartInfoGetter.For(ctx, log, config.LocalPathProvisionerCSI)
-	if err != nil {
-		return fmt.Errorf("failed to get helm chart %q: %w", config.LocalPathProvisionerCSI, err)
-	}
-
-	valuesTemplate := `
-storageClass:
-  create: false
-  provisionerName: rancher.io/local-path
-helperImage:
-  tag: 1.36.1
-`
-
-	chartProxy := &caaphv1.HelmChartProxy{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: caaphv1.GroupVersion.String(),
-			Kind:       "HelmChartProxy",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Namespace,
-			Name:      "local-path-provisioner-csi-" + cluster.Name,
-		},
-		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   chart.Repository,
-			ChartName: chart.Name,
-			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
-			},
-			ReleaseNamespace: defaultHelmReleaseNamespace,
-			ReleaseName:      defaultHelmReleaseName,
-			Version:          chart.Version,
-			ValuesTemplate:   valuesTemplate,
-		},
-	}
-	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(chartProxy)
-	if err = controllerutil.SetOwnerReference(cluster, chartProxy, l.client.Scheme()); err != nil {
-		return fmt.Errorf(
-			"failed to set owner reference on HelmChartProxy %q: %w",
-			chartProxy.Name,
-			err,
-		)
-	}
-
-	if err = client.ServerSideApply(ctx, l.client, chartProxy, client.ForceOwnership); err != nil {
-		return fmt.Errorf("failed to apply HelmChartProxy %q: %w", chartProxy.Name, err)
-	}
-
 	return nil
 }

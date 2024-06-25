@@ -47,6 +47,10 @@ update-addon.cluster-autoscaler: ; $(info $(M) updating cluster-autoscaler manif
 update-addon.aws-ebs-csi: ; $(info $(M) updating aws ebs csi manifests)
 	./hack/addons/update-aws-ebs-csi.sh
 
+.PHONY: update-addon.local-path-provisioner-csi
+update-addon.local-path-provisioner-csi: ; $(info $(M) updating local-path-provisioner csi manifests)
+	./hack/addons/update-local-path-provisioner-csi.sh
+
 .PHONY: update-addon.aws-ccm.%
 update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)
 	./hack/addons/update-aws-ccm.sh $(AWS_CCM_VERSION_$*) $(AWS_CCM_CHART_VERSION_$*)
