@@ -73,6 +73,29 @@ func TestReconcileNewClusterClass(t *testing.T) {
 	}
 }
 
+func TestSourceClusterClassNamespaceEmpty(t *testing.T) {
+	g := NewWithT(t)
+
+	_, cleanup, err := createUniqueClusterClassAndTemplates(
+		sourceClusterClassNamespace,
+	)
+	g.Expect(err).ToNot(HaveOccurred())
+	defer func() {
+		g.Expect(cleanup()).To(Succeed())
+	}()
+
+	// This test initializes its own reconciler, instead of using the one created
+	// in suite_test.go, in order to configure the source namespace.
+	r := Reconciler{
+		Client:                      env.Client,
+		SourceClusterClassNamespace: "",
+	}
+
+	ns, err := r.listSourceClusterClasses(ctx)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(ns).To(BeEmpty())
+}
+
 func verifyClusterClassAndTemplates(
 	cli client.Reader,
 	name,

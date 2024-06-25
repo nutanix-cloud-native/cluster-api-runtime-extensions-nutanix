@@ -32,13 +32,6 @@ type Reconciler struct {
 	TargetNamespaceFilter func(ns *corev1.Namespace) bool
 }
 
-var NamespaceHasLabelKey = func(key string) func(ns *corev1.Namespace) bool {
-	return func(ns *corev1.Namespace) bool {
-		_, ok := ns.GetLabels()[key]
-		return ok
-	}
-}
-
 func (r *Reconciler) SetupWithManager(
 	ctx context.Context,
 	mgr ctrl.Manager,
@@ -157,6 +150,12 @@ func (r *Reconciler) listSourceClusterClasses(
 	[]clusterv1.ClusterClass,
 	error,
 ) {
+	// Handle the empty string explicitly, because listing resources with an empty
+	// string namespace returns resources in all namespaces.
+	if r.SourceClusterClassNamespace == "" {
+		return nil, nil
+	}
+
 	ccl := &clusterv1.ClusterClassList{}
 	err := r.Client.List(ctx, ccl, client.InNamespace(r.SourceClusterClassNamespace))
 	if err != nil {
