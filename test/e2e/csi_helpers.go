@@ -27,6 +27,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/awsebs"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix"
 )
 
 type WaitForCSIToBeReadyInWorkloadClusterInput struct {
@@ -78,6 +79,19 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 				},
 			)
 			defaultStorageClassParameters[providerName] = awsebs.DefaultStorageClassParameters
+		case v1alpha1.CSIProviderNutanix:
+			waitForNutanixCSIToBeReadyInWorkloadCluster(
+				ctx,
+				waitForNutanixCSIToBeReadyInWorkloadClusterInput{
+					strategy:             providerConfig.Strategy,
+					workloadCluster:      input.WorkloadCluster,
+					clusterProxy:         input.ClusterProxy,
+					deploymentIntervals:  input.DeploymentIntervals,
+					daemonSetIntervals:   input.DaemonSetIntervals,
+					helmReleaseIntervals: input.HelmReleaseIntervals,
+				},
+			)
+			defaultStorageClassParameters[providerName] = nutanix.DefaultStorageClassParameters
 		default:
 			Fail(
 				fmt.Sprintf(
@@ -245,7 +259,65 @@ func waitForAWSEBSCSIToBeReadyInWorkloadCluster(
 				Namespace: metav1.NamespaceSystem,
 			},
 		},
+	}, input.daemonSetIntervals...)
+}
+
+type waitForNutanixCSIToBeReadyInWorkloadClusterInput struct {
+	strategy             v1alpha1.AddonStrategy
+	workloadCluster      *clusterv1.Cluster
+	clusterProxy         framework.ClusterProxy
+	deploymentIntervals  []interface{}
+	daemonSetIntervals   []interface{}
+	helmReleaseIntervals []interface{}
+}
+
+func waitForNutanixCSIToBeReadyInWorkloadCluster(
+	ctx context.Context,
+	input waitForNutanixCSIToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
+) {
+	switch input.strategy {
+	case v1alpha1.AddonStrategyHelmAddon:
+		WaitForHelmReleaseProxyReadyForCluster(
+			ctx,
+			WaitForHelmReleaseProxyReadyForClusterInput{
+				GetLister:          input.clusterProxy.GetClient(),
+				Cluster:            input.workloadCluster,
+				HelmChartProxyName: "nutanix-csi-" + input.workloadCluster.Name,
+			},
+			input.helmReleaseIntervals...,
+		)
+	default:
+		Fail(
+			fmt.Sprintf(
+				"Do not know how to wait for nutanix CSI using strategy %s to be ready",
+				input.strategy,
+			),
+		)
+	}
+
+	workloadClusterClient := input.clusterProxy.GetWorkloadCluster(
+		ctx, input.workloadCluster.Namespace, input.workloadCluster.Name,
+	).GetClient()
+
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nutanix-csi-controller",
+				Namespace: metav1.NamespaceSystem,
+			},
+		},
 	}, input.deploymentIntervals...)
+
+	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
+		Getter: workloadClusterClient,
+		DaemonSet: &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nutanix-csi-node",
+				Namespace: metav1.NamespaceSystem,
+			},
+		},
+	}, input.daemonSetIntervals...)
 }
 
 type waitForStorageClassesToExistInWorkloadClusterInput struct {

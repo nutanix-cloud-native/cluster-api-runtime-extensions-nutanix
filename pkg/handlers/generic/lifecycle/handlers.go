@@ -19,7 +19,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/awsebs"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/localpath"
-	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix-csi"
+	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/servicelbgc"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer"
@@ -118,7 +118,7 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
 	h.ebsConfig.AddFlags("csi.aws-ebs", pflag.CommandLine)
 	h.awsccmConfig.AddFlags("awsccm", pflag.CommandLine)
-	h.nutanixCSIConfig.AddFlags("nutanixcsi", flagSet)
+	h.nutanixCSIConfig.AddFlags("csi.nutanix", flagSet)
 	h.nutanixCCMConfig.AddFlags("nutanixccm", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
 	h.localPathCSIConfig.AddFlags("csi.local-path", flagSet)

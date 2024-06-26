@@ -92,7 +92,7 @@ func (a *AWSEBS) Apply(
 			client: a.client,
 		}
 	default:
-		return fmt.Errorf("strategy %s not implemented", strategy)
+		return fmt.Errorf("strategy %s not implemented", provider.Strategy)
 	}
 
 	if err := strategy.apply(ctx, cluster, a.config.DefaultsNamespace(), log); err != nil {
