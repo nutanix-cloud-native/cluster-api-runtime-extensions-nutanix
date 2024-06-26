@@ -25,13 +25,13 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: webhook
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default $.Chart.AppVersion }}"
+        image: "{{ .Values.image.repository }}:{{ default $.Chart.AppVersion .Values.image.tag }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         args:
         - --webhook-cert-dir=/runtimehooks-certs/
         - --defaults-namespace=$(POD_NAMESPACE)
         - --namespacesync-enabled={{ .Values.namespaceSync.enabled }}
-        - --namespacesync-source-namespace={{ .Values.namespaceSync.sourceNamespace | default .Release.Namespace }}
+        - --namespacesync-source-namespace={{ default .Release.Namespace .Values.namespaceSync.sourceNamespace }}
         - --namespacesync-target-namespace-label-key={{ .Values.namespaceSync.targetNamespaceLabelKey }}
         - --helm-addons-configmap={{ .Values.helmAddonsConfigMap }}
         - --cni.cilium.helm-addon.default-values-template-configmap-name={{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
