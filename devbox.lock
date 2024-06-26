@@ -297,6 +297,54 @@
         }
       }
     },
+    "fping@latest": {
+      "last_modified": "2024-06-12T20:55:33Z",
+      "resolved": "github:NixOS/nixpkgs/a9858885e197f984d92d7fe64e9fff6b2e488d40#fping",
+      "source": "devbox-search",
+      "version": "5.2",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/clxfp6jl0d2fs1bp2d1278534n2gixbj-fping-5.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/clxfp6jl0d2fs1bp2d1278534n2gixbj-fping-5.2"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ilzq042wih0h5vdzxcpf6sd826h37g6w-fping-5.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/ilzq042wih0h5vdzxcpf6sd826h37g6w-fping-5.2"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/hrh3202f2njx3skj3xn33fish5az5691-fping-5.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/hrh3202f2njx3skj3xn33fish5az5691-fping-5.2"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/2nr99jpa9g7b5z8pwj85awzh4qbhas28-fping-5.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/2nr99jpa9g7b5z8pwj85awzh4qbhas28-fping-5.2"
+        }
+      }
+    },
     "gh@latest": {
       "last_modified": "2024-05-30T12:09:21Z",
       "resolved": "github:NixOS/nixpkgs/aa61b27554a5fc282758bf0324781e3464ef2cde#gh",

@@ -5,6 +5,7 @@
     "coreutils@latest",
     "envsubst@latest",
     "findutils@latest",
+    "fping@latest",
     "gh@latest",
     "ginkgo@latest",
     "git@latest",
