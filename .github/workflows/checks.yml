@@ -59,14 +59,15 @@ jobs:
       matrix:
         provider:
           - Docker
+          - Nutanix
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - AWS
-          # - Nutanix
       fail-fast: false
     uses: ./.github/workflows/e2e.yml
     with:
       provider: ${{ matrix.provider }}
       focus: Quick start
+      runs-on: ${{ matrix.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-22.04' }}
     secrets: inherit
     permissions:
       contents: read
@@ -77,14 +78,15 @@ jobs:
       matrix:
         provider:
           - Docker
+          - Nutanix
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - AWS
-          # - Nutanix
       fail-fast: false
     uses: ./.github/workflows/e2e.yml
     with:
       provider: ${{ matrix.provider }}
       focus: Self-hosted
+      runs-on: ${{ matrix.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-22.04' }}
     secrets: inherit
     permissions:
       contents: read
