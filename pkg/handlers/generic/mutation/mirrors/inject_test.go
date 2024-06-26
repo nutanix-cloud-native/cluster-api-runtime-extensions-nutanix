@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	validMirrorCASecretName = "myregistry-mirror-cacert"
+	validMirrorCASecretName   = "myregistry-mirror-cacert"
+	validMirrorNoCASecretName = "myregistry-mirror-no-cacert"
 	//nolint:gosec // Does not contain hard coded credentials.
 	cpRegistryAsMirrorCreds = "kubeadmControlPlaneRegistryAsMirrorCreds"
 	//nolint:gosec // Does not contain hard coded credentials.
@@ -50,7 +51,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 
 	testDefs := []capitest.PatchTestDef{
 		{
-			Name: "files added in KubeadmControlPlaneTemplate for registry with mirror without CA Certificate",
+			Name: "files added in KubeadmControlPlaneTemplate for registry with mirror without CA Certificate secret",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -65,7 +66,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 				{
 					Operation: "add",
 					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-					ValueMatcher: gomega.ContainElements(
+					ValueMatcher: gomega.HaveExactElements(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
@@ -97,7 +98,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 				{
 					Operation: "add",
 					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-					ValueMatcher: gomega.ContainElements(
+					ValueMatcher: gomega.HaveExactElements(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
@@ -112,7 +113,39 @@ var _ = Describe("Generate Global mirror patches", func() {
 			},
 		},
 		{
-			Name: "files added in KubeadmConfigTemplate for registry mirror wihthout CA certificate",
+			Name: "files added in KubeadmControlPlaneTemplate for registry mirror with secret but missing CA certificate key",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.GlobalImageRegistryMirror{
+						URL: "https://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
+							SecretRef: &v1alpha1.LocalObjectReference{
+								Name: validMirrorNoCASecretName,
+							},
+						},
+					},
+					v1alpha1.GlobalMirrorVariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequest("", cpRegistryAsMirrorCreds),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+					ValueMatcher: gomega.HaveExactElements(
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
+						),
+					),
+				},
+			},
+		},
+		{
+			Name: "files added in KubeadmConfigTemplate for registry mirror wihthout CA certificate secret",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -135,7 +168,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 				{
 					Operation: "add",
 					Path:      "/spec/template/spec/files",
-					ValueMatcher: gomega.ContainElements(
+					ValueMatcher: gomega.HaveExactElements(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
@@ -175,12 +208,52 @@ var _ = Describe("Generate Global mirror patches", func() {
 				{
 					Operation: "add",
 					Path:      "/spec/template/spec/files",
-					ValueMatcher: gomega.ContainElements(
+					ValueMatcher: gomega.HaveExactElements(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/certs/registry.example.com.pem",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
+						),
+					),
+				},
+			},
+		},
+		{
+			Name: "files added in KubeadmConfigTemplate for registry mirror with secret but missing CA certificate key",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.GlobalImageRegistryMirror{
+						URL: "https://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
+							SecretRef: &v1alpha1.LocalObjectReference{
+								Name: validMirrorNoCASecretName,
+							},
+						},
+					},
+					v1alpha1.GlobalMirrorVariableName,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					map[string]any{
+						"machineDeployment": map[string]any{
+							"class": names.SimpleNameGenerator.GenerateName("worker-"),
+						},
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmConfigTemplateRequest("", workerRegistryAsMirrorCreds),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/files",
+					ValueMatcher: gomega.HaveExactElements(
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
@@ -197,7 +270,11 @@ var _ = Describe("Generate Global mirror patches", func() {
 		gomega.Expect(err).To(gomega.BeNil())
 		gomega.Expect(client.Create(
 			ctx,
-			newMirrorSecret(validMirrorCASecretName, request.Namespace),
+			newMirrorSecretWithCA(validMirrorCASecretName, request.Namespace),
+		)).To(gomega.BeNil())
+		gomega.Expect(client.Create(
+			ctx,
+			newMirrorSecretWithoutCA(validMirrorNoCASecretName, request.Namespace),
 		)).To(gomega.BeNil())
 	})
 
@@ -207,7 +284,11 @@ var _ = Describe("Generate Global mirror patches", func() {
 		gomega.Expect(err).To(gomega.BeNil())
 		gomega.Expect(client.Delete(
 			ctx,
-			newMirrorSecret(validMirrorCASecretName, request.Namespace),
+			newMirrorSecretWithCA(validMirrorCASecretName, request.Namespace),
+		)).To(gomega.BeNil())
+		gomega.Expect(client.Delete(
+			ctx,
+			newMirrorSecretWithoutCA(validMirrorNoCASecretName, request.Namespace),
 		)).To(gomega.BeNil())
 	})
 
@@ -220,9 +301,28 @@ var _ = Describe("Generate Global mirror patches", func() {
 	}
 })
 
-func newMirrorSecret(name, namespace string) *corev1.Secret {
+func newMirrorSecretWithCA(name, namespace string) *corev1.Secret {
 	secretData := map[string][]byte{
 		"ca.crt": []byte("myCACert"),
+	}
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: secretData,
+		Type: corev1.SecretTypeOpaque,
+	}
+}
+
+func newMirrorSecretWithoutCA(name, namespace string) *corev1.Secret {
+	secretData := map[string][]byte{
+		"username": []byte("user"),
+		"password": []byte("pass"),
 	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
