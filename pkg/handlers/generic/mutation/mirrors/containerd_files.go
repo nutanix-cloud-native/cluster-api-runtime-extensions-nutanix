@@ -19,7 +19,7 @@ import (
 
 const (
 	containerdHostsConfigurationOnRemote = "/etc/containerd/certs.d/_default/hosts.toml"
-	secretKeyForMirrorCACert             = "ca.crt"
+	secretKeyForCACert                   = "ca.crt"
 )
 
 var (
@@ -159,7 +159,7 @@ func generateRegistryCACertFiles(
 			ContentFrom: &cabpkv1.FileSource{
 				Secret: cabpkv1.SecretFileSource{
 					Name: config.CASecretName,
-					Key:  secretKeyForMirrorCACert,
+					Key:  secretKeyForCACert,
 				},
 			},
 		})

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -193,9 +194,9 @@ func containerdConfigFromGlobalMirror(
 		)
 	}
 
-	if secret != nil {
+	if secretHasCACert(secret) {
 		configWithOptionalCACert.CASecretName = secret.Name
-		configWithOptionalCACert.CACert = string(secret.Data[secretKeyForMirrorCACert])
+		configWithOptionalCACert.CACert = string(secret.Data[secretKeyForCACert])
 	}
 
 	return configWithOptionalCACert, nil
@@ -225,9 +226,9 @@ func containerdConfigFromImageRegistry(
 		)
 	}
 
-	if secret != nil {
+	if secretHasCACert(secret) {
 		configWithOptionalCACert.CASecretName = secret.Name
-		configWithOptionalCACert.CACert = string(secret.Data[secretKeyForMirrorCACert])
+		configWithOptionalCACert.CACert = string(secret.Data[secretKeyForCACert])
 	}
 
 	return configWithOptionalCACert, nil
@@ -270,4 +271,13 @@ func needContainerdConfiguration(configs []containerdConfig) bool {
 	}
 
 	return false
+}
+
+func secretHasCACert(secret *corev1.Secret) bool {
+	if secret == nil {
+		return false
+	}
+
+	_, ok := secret.Data[secretKeyForCACert]
+	return ok
 }
