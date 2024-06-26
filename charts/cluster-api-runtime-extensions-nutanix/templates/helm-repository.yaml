@@ -51,7 +51,7 @@ spec:
           - name: serve
             protocol: TCP
             containerPort: 5000
-        image: "{{ .Values.helmRepositoryImage.repository }}:{{ .Values.helmRepositoryImage.tag | default $.Chart.AppVersion }}"
+        image: "{{ .Values.helmRepositoryImage.repository }}:{{ default $.Chart.AppVersion .Values.helmRepositoryImage.tag }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         volumeMounts:
         - name: certs-vol
