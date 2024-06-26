@@ -9,6 +9,5 @@
       storageClassConfig: default
     providers:
       aws-ebs:
-        strategy: ClusterResourceSet
         storageClassConfigs:
           default: {}

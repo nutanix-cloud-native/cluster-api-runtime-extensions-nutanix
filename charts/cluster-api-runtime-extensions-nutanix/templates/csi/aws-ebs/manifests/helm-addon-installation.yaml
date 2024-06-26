@@ -1,0 +1,36 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if (index .Values.hooks.csi "aws-ebs").helmAddonStrategy.defaultValueTemplateConfigMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ (index .Values.hooks.csi "aws-ebs").helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
+data:
+  values.yaml: |-
+    controller:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+          tolerationSeconds: 300
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    node:
+      priorityClassName: system-node-critical
+    sidecars:
+      snapshotter:
+        forceEnable: true
+{{- end -}}

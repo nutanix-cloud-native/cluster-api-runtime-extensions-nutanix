@@ -35,7 +35,7 @@ spec:
               aws-ebs:
                 storageClassConfigs:
                   default: {}
-                strategy: ClusterResourceSet
+                strategy: HelmAddon
           nfd:
             strategy: HelmAddon
         aws:

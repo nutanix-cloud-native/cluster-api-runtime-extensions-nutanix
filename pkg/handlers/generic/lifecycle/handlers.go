@@ -17,7 +17,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/cilium"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi"
-	awsebs "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/aws-ebs"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/awsebs"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/localpath"
 	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix-csi"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
@@ -68,7 +68,11 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		mgr.GetClient(),
 	)
 	csiHandlers := map[string]csi.CSIProvider{
-		v1alpha1.CSIProviderAWSEBS: awsebs.New(mgr.GetClient(), h.ebsConfig),
+		v1alpha1.CSIProviderAWSEBS: awsebs.New(
+			mgr.GetClient(),
+			h.ebsConfig,
+			helmChartInfoGetter,
+		),
 		v1alpha1.CSIProviderNutanix: nutanixcsi.New(
 			mgr.GetClient(),
 			h.nutanixCSIConfig,
@@ -112,7 +116,7 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.clusterAutoscalerConfig.AddFlags("cluster-autoscaler", flagSet)
 	h.calicoCNIConfig.AddFlags("cni.calico", flagSet)
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
-	h.ebsConfig.AddFlags("awsebs", pflag.CommandLine)
+	h.ebsConfig.AddFlags("csi.aws-ebs", pflag.CommandLine)
 	h.awsccmConfig.AddFlags("awsccm", pflag.CommandLine)
 	h.nutanixCSIConfig.AddFlags("nutanixcsi", flagSet)
 	h.nutanixCCMConfig.AddFlags("nutanixccm", flagSet)
