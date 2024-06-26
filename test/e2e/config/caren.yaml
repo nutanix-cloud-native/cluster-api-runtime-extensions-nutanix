@@ -8,6 +8,14 @@ images:
     loadBehavior: mustLoad
   - name: ghcr.io/nutanix-cloud-native/caren-helm-reg:${E2E_IMAGE_TAG}-${GOARCH}
     loadBehavior: mustLoad
+  - name: docker.io/mesosphere/cluster-api-controller:${CAPI_VERSION}-d2iq.0
+    loadBehavior: mustLoad
+  - name: docker.io/mesosphere/kubeadm-bootstrap-controller:${CAPI_VERSION}-d2iq.0
+    loadBehavior: mustLoad
+  - name: docker.io/mesosphere/kubeadm-control-plane-controller:${CAPI_VERSION}-d2iq.0
+    loadBehavior: mustLoad
+  - name: docker.io/mesosphere/capd-manager:${CAPD_VERSION}-d2iq.0
+    loadBehavior: mustLoad
 
 providers:
 - name: cluster-api
@@ -188,15 +196,15 @@ variables:
   # IP/FQDN of Prism Central.
   # NOTE: This has to be overridden by specifying the env var NUTANIX_ENDPOINT when running the e2e tests. It is
   # set as empty here to enable running the e2e tests for non-nutanix providers locally without setting the env var.
-  NUTANIX_ENDPOINT: ""
+  #  NUTANIX_ENDPOINT: ""
   # # Port of Prism Central. Default: 9440
   # NUTANIX_PORT: 9440
   # # Disable Prism Central certificate checking. Default: false
   # NUTANIX_INSECURE: false
   # # Prism Central user
-  NUTANIX_USER: ""
+  #  NUTANIX_USER: ""
   # # Prism Central password
-  NUTANIX_PASSWORD: ""
+  #  NUTANIX_PASSWORD: ""
   # # Host IP to be assigned to the CAPX Kubernetes cluster.
   # CONTROL_PLANE_ENDPOINT_IP: ""
   # # Port of the CAPX Kubernetes cluster. Default: 6443

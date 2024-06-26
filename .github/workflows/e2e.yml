@@ -14,10 +14,14 @@ on:
       focus:
         description: e2e tests to focus
         type: string
+      runs-on:
+        description: The runner to run the e2e tests on
+        type: string
+        required: true
 
 jobs:
   e2e-test:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ inputs.runs-on }}
     permissions:
       contents: read
       checks: write
@@ -27,11 +31,39 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: cachix/install-nix-action@V27
+        if: inputs.provider == 'Nutanix'
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.11.0
         with:
-          enable-cache: true
+          enable-cache: "true"
+          skip-nix-installation: ${{ inputs.provider == 'Nutanix' }}
 
+      # The default disk size of these runners is ~14GB, this is not enough to run the e2e tests.
+      # Cleanup the disk, see upstream discussion https://github.com/actions/runner-images/issues/2840.
+      - name: Cleanup Disk Space
+        if: inputs.runs-on != 'self-hosted-ncn-dind'
+        run: |
+          echo "Before removing files:"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+          echo "After removing files:"
+          df -h
+
+      - name:  Get Control Plane endpoint IP
+        id: get-control-plane-endpoint-ip
+        if: inputs.provider == 'Nutanix'
+        run: |
+          CONTROL_PLANE_ENDPOINT_RANGE_START="${{ vars.NUTANIX_CONTROL_PLANE_ENDPOINT_RANGE_START }}"
+          CONTROL_PLANE_ENDPOINT_RANGE_END="${{ vars.NUTANIX_CONTROL_PLANE_ENDPOINT_RANGE_END }}"
+          control_plane_endpoint_ip="$(devbox run -- fping -g -u "${CONTROL_PLANE_ENDPOINT_RANGE_START}" "${CONTROL_PLANE_ENDPOINT_RANGE_END}" 2>/dev/null | devbox run -- shuf --head-count=1)"
+          echo "control_plane_endpoint_ip=${control_plane_endpoint_ip}" >> "${GITHUB_OUTPUT}"
       - name: Go cache
         uses: actions/cache@v4
         with:
@@ -42,26 +74,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      # The default disk size of these runners is ~14GB, this is not enough to run the e2e tests.
-      # Cleanup the disk, see upstream discussion https://github.com/actions/runner-images/issues/2840.
-      - name: Cleanup Disk Space
-        run: |
-          echo "Before removing files:"
-          df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          echo "After removing files:"
-          df -h
-
       - name: Run e2e tests
-        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }}' E2E_SKIP='${{ inputs.skip }}' E2E_FOCUS='${{ inputs.focus }}'
+        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }} && cni:Cilium && addonStrategy:HelmAddon' E2E_SKIP='${{ inputs.skip }}' E2E_FOCUS='${{ inputs.focus }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+          DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
           NUTANIX_ENDPOINT: ${{ secrets.NUTANIX_ENDPOINT }}
-          NUTANIX_PASSWORD: ${{ secrets.NUTANIX_PASSWORD }}
           NUTANIX_USER: ${{ secrets.NUTANIX_USER }}
+          NUTANIX_PASSWORD: ${{ secrets.NUTANIX_PASSWORD }}
+          NUTANIX_PORT: ${{ vars.NUTANIX_PORT }}
+          NUTANIX_INSECURE: false
+          NUTANIX_PRISM_ELEMENT_CLUSTER_NAME: ${{ vars.NUTANIX_PRISM_ELEMENT_CLUSTER_NAME }}
+          NUTANIX_SUBNET_NAME: ${{ vars.NUTANIX_SUBNET_NAME }}
+          NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME: ${{ vars.NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME }}
+          NUTANIX_STORAGE_CONTAINER_NAME: ${{ vars.NUTANIX_STORAGE_CONTAINER_NAME }}
+          CONTROL_PLANE_ENDPOINT_IP: ${{ steps.get-control-plane-endpoint-ip.outputs.control_plane_endpoint_ip }}
+
+      - name: Redact secrets from artifacts
+        run: devbox run -- make redact-artifacts
 
       - if: success() || failure() # always run even if the previous step fails
         name: Publish e2e test report
@@ -71,3 +102,13 @@ jobs:
           check_name: 'e2e test report'
           detailed_summary: true
           require_passed_tests: true
+
+      - if: success() || failure() # always run even if the previous step fails
+        name: Upload e2e test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: warn
+          overwrite: false
+          name: ${{ inputs.provider }} ${{ inputs.focus }} e2e artifacts
+          path: |
+            _artifacts
