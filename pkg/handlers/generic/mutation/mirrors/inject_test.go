@@ -24,10 +24,6 @@ import (
 const (
 	validMirrorCASecretName   = "myregistry-mirror-cacert"
 	validMirrorNoCASecretName = "myregistry-mirror-no-cacert"
-	//nolint:gosec // Does not contain hard coded credentials.
-	cpRegistryAsMirrorCreds = "kubeadmControlPlaneRegistryAsMirrorCreds"
-	//nolint:gosec // Does not contain hard coded credentials.
-	workerRegistryAsMirrorCreds = "kubeadmConfigTemplateRegistryAsMirrorCreds"
 )
 
 func TestMirrorsPatch(t *testing.T) {
@@ -93,7 +89,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					v1alpha1.GlobalMirrorVariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequest("", cpRegistryAsMirrorCreds),
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -128,7 +124,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					v1alpha1.GlobalMirrorVariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequest("", cpRegistryAsMirrorCreds),
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -145,7 +141,42 @@ var _ = Describe("Generate Global mirror patches", func() {
 			},
 		},
 		{
-			Name: "files added in KubeadmConfigTemplate for registry mirror wihthout CA certificate secret",
+			Name: "files added in KubeadmControlPlaneTemplate for image registry with CA Certificate secret",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					[]v1alpha1.ImageRegistry{{
+						URL: "https://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
+							SecretRef: &v1alpha1.LocalObjectReference{
+								Name: validMirrorCASecretName,
+							},
+						},
+					}},
+					v1alpha1.ImageRegistriesVariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+					ValueMatcher: gomega.HaveExactElements(
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/certs/registry.example.com.pem",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
+						),
+					),
+				},
+			},
+		},
+		{
+			Name: "files added in KubeadmConfigTemplate for registry mirror without CA certificate secret",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -203,7 +234,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequest("", workerRegistryAsMirrorCreds),
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -246,7 +277,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequest("", workerRegistryAsMirrorCreds),
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -254,6 +285,49 @@ var _ = Describe("Generate Global mirror patches", func() {
 					ValueMatcher: gomega.HaveExactElements(
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
+						),
+					),
+				},
+			},
+		},
+		{
+			Name: "files added in KubeadmConfigTemplate for image registry with secret for CA certificate",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					[]v1alpha1.ImageRegistry{{
+						URL: "https://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
+							SecretRef: &v1alpha1.LocalObjectReference{
+								Name: validMirrorCASecretName,
+							},
+						},
+					}},
+					v1alpha1.ImageRegistriesVariableName,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					map[string]any{
+						"machineDeployment": map[string]any{
+							"class": names.SimpleNameGenerator.GenerateName("worker-"),
+						},
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/files",
+					ValueMatcher: gomega.HaveExactElements(
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/certs/registry.example.com.pem",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
