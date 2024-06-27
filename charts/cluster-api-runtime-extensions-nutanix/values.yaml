@@ -59,6 +59,11 @@ hooks:
         defaultValueTemplateConfigMap:
           create: true
           name: default-local-path-csi-helm-values-template
+    snapshot-controller:
+      helmAddonStrategy:
+        defaultValueTemplateConfigMap:
+          create: true
+          name: default-snapshot-controller-helm-values-template
   ccm:
     nutanix:
       helmAddonStrategy:

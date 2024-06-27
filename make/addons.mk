@@ -5,11 +5,11 @@ export CALICO_VERSION := v3.28.0
 export CILIUM_VERSION := 1.15.5
 export NODE_FEATURE_DISCOVERY_VERSION := 0.15.2
 export CLUSTER_AUTOSCALER_VERSION := 9.37.0
-export AWS_CSI_SNAPSHOT_CONTROLLER_VERSION := v6.3.3
 export AWS_EBS_CSI_CHART_VERSION := 2.28.1
 export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.0.0-beta.1912
 export NUTANIX_SNAPSHOT_CSI_CHART_VERSION := 6.3.2
 export LOCAL_PATH_CSI_CHART_VERSION := 0.0.29
+export SNAPSHOT_CONTROLLER_CHART_VERSION := 3.0.5
 # a map of AWS CCM versions
 export AWS_CCM_VERSION_127 := v1.27.1
 export AWS_CCM_CHART_VERSION_127 := 0.0.8
@@ -25,7 +25,7 @@ export KUBE_VIP_VERSION := v0.8.0
 export METALLB_CHART_VERSION := 0.14.5
 
 .PHONY: addons.sync
-addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler aws-ebs-csi aws-ccm.127 aws-ccm.128 aws-ccm.129 kube-vip)
+addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi aws-ccm.127 aws-ccm.128 aws-ccm.129 kube-vip)
 
 .PHONY: update-addon.calico
 update-addon.calico: ; $(info $(M) updating calico manifests)
@@ -50,6 +50,10 @@ update-addon.aws-ebs-csi: ; $(info $(M) updating aws ebs csi manifests)
 .PHONY: update-addon.local-path-provisioner-csi
 update-addon.local-path-provisioner-csi: ; $(info $(M) updating local-path-provisioner csi manifests)
 	./hack/addons/update-local-path-provisioner-csi.sh
+
+.PHONY: update-addon.snapshot-controller
+update-addon.snapshot-controller: ; $(info $(M) updating snapshot-controller manifests)
+	./hack/addons/update-snapshot-controller.sh
 
 .PHONY: update-addon.aws-ccm.%
 update-addon.aws-ccm.%: ; $(info $(M) updating aws ccm $* manifests)

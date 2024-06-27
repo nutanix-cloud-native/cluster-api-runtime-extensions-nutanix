@@ -12,10 +12,6 @@ if [ -z "${AWS_EBS_CSI_CHART_VERSION:-}" ]; then
   echo "Missing environment variable: AWS_EBS_CSI_CHART_VERSION"
   exit 1
 fi
-if [ -z "${AWS_CSI_SNAPSHOT_CONTROLLER_VERSION:-}" ]; then
-  echo "Missing environment variable: AWS_CSI_SNAPSHOT_CONTROLLER_VERSION"
-  exit 1
-fi
 
 ASSETS_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}")"
 readonly ASSETS_DIR
@@ -27,11 +23,6 @@ readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/aws-ebs-csi"
 mkdir -p "${ASSETS_DIR}/aws-ebs-csi"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/aws-ebs-csi/kustomization.yaml"
 cp -r "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}/aws-ebs-csi/"
-
-readonly EXTERNAL_SNAPSHOTTER_BASE_DIR="${SCRIPT_DIR}/kustomize/external-snapshotter"
-mkdir -p "${ASSETS_DIR}/external-snapshotter"
-envsubst -no-unset <"${EXTERNAL_SNAPSHOTTER_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/external-snapshotter/kustomization.yaml"
-cp -r "${EXTERNAL_SNAPSHOTTER_BASE_DIR}/overlays" "${ASSETS_DIR}/external-snapshotter/"
 
 kustomize build --enable-helm "${ASSETS_DIR}/aws-ebs-csi/" >"${ASSETS_DIR}/${FILE_NAME}"
 

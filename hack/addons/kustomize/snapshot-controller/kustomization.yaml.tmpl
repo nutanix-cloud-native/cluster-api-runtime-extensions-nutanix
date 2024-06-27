@@ -5,15 +5,15 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 metadata:
-  name: aws-ebs-csi-kustomize
+  name: snapshot-controller-kustomize
 
 namespace: kube-system
 
 helmCharts:
-- name: aws-ebs-csi-driver
-  repo: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
-  releaseName: aws-ebs-csi-driver
-  version: ${AWS_EBS_CSI_CHART_VERSION}
+- name: snapshot-controller
+  repo: https://piraeus.io/helm-charts/
+  releaseName: snapshot-controller
+  version: ${SNAPSHOT_CONTROLLER_CHART_VERSION}
   valuesFile: helm-values.yaml
   includeCRDs: true
   skipTests: true

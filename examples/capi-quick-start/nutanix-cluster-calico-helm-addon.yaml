@@ -86,6 +86,8 @@ spec:
                     parameters:
                       storageContainer: ${NUTANIX_STORAGE_CONTAINER_NAME}
                 strategy: HelmAddon
+            snapshotController:
+              strategy: HelmAddon
           nfd:
             strategy: HelmAddon
         controlPlane:

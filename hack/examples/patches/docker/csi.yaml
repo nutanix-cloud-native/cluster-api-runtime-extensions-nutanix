@@ -11,3 +11,4 @@
       local-path:
         storageClassConfigs:
           default: {}
+    snapshotController: {}

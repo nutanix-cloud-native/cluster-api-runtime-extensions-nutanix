@@ -4,3 +4,6 @@
 - op: "add"
   path: "/spec/topology/variables/0/value/addons/csi/providers/local-path/strategy"
   value: ClusterResourceSet
+- op: "add"
+  path: "/spec/topology/variables/0/value/addons/csi/snapshotController/strategy"
+  value: ClusterResourceSet

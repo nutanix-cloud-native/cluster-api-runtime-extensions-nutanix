@@ -17,3 +17,5 @@
         credentials:
           secretRef:
             name: ${CLUSTER_NAME}-pc-creds-for-csi
+    snapshotController:
+      strategy: HelmAddon

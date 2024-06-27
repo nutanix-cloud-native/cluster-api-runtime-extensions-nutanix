@@ -36,6 +36,8 @@ spec:
                 storageClassConfigs:
                   default: {}
                 strategy: HelmAddon
+            snapshotController:
+              strategy: HelmAddon
           nfd:
             strategy: HelmAddon
         aws:
