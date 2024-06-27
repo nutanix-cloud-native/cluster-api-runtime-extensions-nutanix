@@ -149,6 +149,7 @@ func (s *ServiceLoadBalancerHandler) apply(
 				err,
 			),
 		)
+		return
 	}
 
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
