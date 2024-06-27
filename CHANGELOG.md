@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.11.0 (2024-06-27)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Configure namespace sync in helm chart by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/726
+* feat: Support CRS for local-path provisioner and add CSI e2e by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/737
+* feat: Support HelmAddon strategy for AWS EBS by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/732
+* feat: Deploy snapshot-controller as separate addon by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/734
+* feat: Update AWS CCM versions and add HelmAddon strategy by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/748
+### Fixes 🔧
+* fix: Namespace Sync controller should list no resources when source namespace is empty string by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/725
+* fix: Temporarily hard-code supported PC version for Nutanix CSI by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/751
+* fix: skip kubeadm CA file when Secret doesn't have a CA  by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/752
+* fix: Correctly report failed deploy of ServiceLoadBalancer by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/759
+### Other Changes
+* build: Tidy up goreleaser config by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/745
+* ci: Fix up image loading for lint-test-helm by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/746
+* refactor: Tidy up Nutanix CSI with consistent apply strategy by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/733
+* test(e2e): Set empty env vars for Nutanix e2e vars by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/749
+* refactor: Use recommended "default" function syntax in helm templates by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/750
+* refactor: Reusable HelmAddon strategy by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/735
+* test(e2e): Various e2e tests fixes by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/754
+* test(e2e): Correct default helm release names for AWS CCM and EBS CSI by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/756
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.10.0...v0.11.0
+
 ## 0.10.0 (2024-06-24)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
