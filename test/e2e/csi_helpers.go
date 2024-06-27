@@ -318,7 +318,7 @@ func waitForNutanixCSIToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "nutanix-csi-controller",
-				Namespace: metav1.NamespaceSystem,
+				Namespace: "ntnx-system",
 			},
 		},
 	}, input.deploymentIntervals...)
@@ -328,7 +328,7 @@ func waitForNutanixCSIToBeReadyInWorkloadCluster(
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "nutanix-csi-node",
-				Namespace: metav1.NamespaceSystem,
+				Namespace: "ntnx-system",
 			},
 		},
 	}, input.daemonSetIntervals...)
@@ -357,6 +357,8 @@ func waitForStorageClassesToExistInWorkloadCluster(
 		provisioner = string(v1alpha1.LocalPathProvisioner)
 	case v1alpha1.CSIProviderAWSEBS:
 		provisioner = string(v1alpha1.AWSEBSProvisioner)
+	case v1alpha1.CSIProviderNutanix:
+		provisioner = string(v1alpha1.NutanixProvisioner)
 	default:
 		Fail(
 			fmt.Sprintf(

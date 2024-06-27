@@ -16,6 +16,7 @@ import (
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 )
 
@@ -89,6 +90,12 @@ var (
 		Kind:       kubeadmConfigKind,
 		APIVersion: kubeadmConfigGroupVersion,
 		Controller: ptr.To(true),
+	}
+
+	capxGroupVersion    = capxv1.GroupVersion.String()
+	nutanixClusterOwner = metav1.OwnerReference{
+		Kind:       nutanixClusterKind,
+		APIVersion: capxGroupVersion,
 	}
 
 	// AddonReferenceAssertions maps addontypes to functions which return an error if the passed OwnerReferences
@@ -191,6 +198,7 @@ var (
 				[]metav1.OwnerReference{kubeadmControlPlaneController},
 				[]metav1.OwnerReference{kubeadmConfigController},
 				[]metav1.OwnerReference{clusterOwner},
+				[]metav1.OwnerReference{clusterOwner, nutanixClusterOwner},
 			)
 		},
 		configMapKind: func(owners []metav1.OwnerReference) error {

@@ -44,7 +44,7 @@ For example, the following command will create a Docker cluster with Cilium CNI 
 ```shell
 export CLUSTER_NAME=docker-cluster-cilium-helm-addon
 export CLUSTER_FILE=examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml
-export KUBERNETES_VERSION=v1.29.4
+export KUBERNETES_VERSION=v1.29.5
 ```
 
 ```shell

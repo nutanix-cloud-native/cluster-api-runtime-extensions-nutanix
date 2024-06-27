@@ -70,7 +70,7 @@ func init() {
 	flag.StringVar(
 		&bootstrapKubernetesVersion,
 		"e2e.bootstrap-kind-version",
-		"v1.29.4",
+		"v1.29.5",
 		"the version of the image used in bootstrap cluster",
 	)
 }
