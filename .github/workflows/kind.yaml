@@ -1,0 +1,33 @@
+name: Kind debug Workflow
+
+on:
+  workflow_dispatch:
+  pull_request:
+jobs:
+  test:
+    runs-on:
+      - self-hosted-ncn-dind
+    strategy:
+      matrix:
+        instance: [1]
+    steps:
+      - name: install packges
+        run: sudo apt-get install -y iputils-ping curl wget dnsutils
+
+      - name: install kubectl
+        run: curl -LO "https://dl.k8s.io/release/v1.29.5/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+      - name: install kind
+        run: curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.22.0/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: docker info
+        run: docker info
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1
+
+      - name: sleep for a while
+        run: sleep 7200
