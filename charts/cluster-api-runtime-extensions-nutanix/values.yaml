@@ -58,7 +58,7 @@ hooks:
       helmAddonStrategy:
         defaultValueTemplateConfigMap:
           create: true
-          name: default-local-path-csi-helm-values-template
+          name: default-local-path-provisioner-csi-helm-values-template
     snapshot-controller:
       helmAddonStrategy:
         defaultValueTemplateConfigMap:

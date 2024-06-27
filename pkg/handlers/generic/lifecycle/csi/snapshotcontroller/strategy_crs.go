@@ -37,7 +37,7 @@ type crsStrategy struct {
 	client ctrlclient.Client
 }
 
-func (s crsStrategy) apply(
+func (s crsStrategy) Apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	defaultsNamespace string,

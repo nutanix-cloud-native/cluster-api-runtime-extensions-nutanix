@@ -63,7 +63,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.csi.aws-ebs.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.csi.aws-ebs.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-aws-ebs-csi-helm-values-template"` |  |
 | hooks.csi.local-path.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
-| hooks.csi.local-path.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-local-path-csi-helm-values-template"` |  |
+| hooks.csi.local-path.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-local-path-provisioner-csi-helm-values-template"` |  |
 | hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-csi-helm-values-template"` |  |
 | hooks.csi.snapshot-controller.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |

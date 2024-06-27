@@ -34,8 +34,8 @@ type Handlers struct {
 	ciliumCNIConfig          *cilium.CNIConfig
 	nfdConfig                *nfd.Config
 	clusterAutoscalerConfig  *clusterautoscaler.Config
-	ebsConfig                *awsebs.AWSEBSConfig
-	nutanixCSIConfig         *nutanixcsi.NutanixCSIConfig
+	ebsConfig                *awsebs.Config
+	nutanixCSIConfig         *nutanixcsi.Config
 	awsccmConfig             *awsccm.AWSCCMConfig
 	nutanixCCMConfig         *nutanixccm.Config
 	metalLBConfig            *metallb.Config
@@ -52,15 +52,15 @@ func New(
 			GlobalOptions: globalOptions,
 		},
 		ciliumCNIConfig:          &cilium.CNIConfig{GlobalOptions: globalOptions},
-		nfdConfig:                &nfd.Config{GlobalOptions: globalOptions},
+		nfdConfig:                nfd.NewConfig(globalOptions),
 		clusterAutoscalerConfig:  &clusterautoscaler.Config{GlobalOptions: globalOptions},
-		ebsConfig:                &awsebs.AWSEBSConfig{GlobalOptions: globalOptions},
+		ebsConfig:                awsebs.NewConfig(globalOptions),
 		awsccmConfig:             &awsccm.AWSCCMConfig{GlobalOptions: globalOptions},
-		nutanixCSIConfig:         &nutanixcsi.NutanixCSIConfig{GlobalOptions: globalOptions},
+		nutanixCSIConfig:         nutanixcsi.NewConfig(globalOptions),
 		nutanixCCMConfig:         &nutanixccm.Config{GlobalOptions: globalOptions},
 		metalLBConfig:            &metallb.Config{GlobalOptions: globalOptions},
-		localPathCSIConfig:       &localpath.Config{GlobalOptions: globalOptions},
-		snapshotControllerConfig: &snapshotcontroller.Config{GlobalOptions: globalOptions},
+		localPathCSIConfig:       localpath.NewConfig(globalOptions),
+		snapshotControllerConfig: snapshotcontroller.NewConfig(globalOptions),
 	}
 }
 

@@ -190,7 +190,7 @@ func waitForLocalPathCSIToBeReadyInWorkloadCluster(
 		Getter: workloadClusterClient,
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "local-path-provisioner",
+				Name:      "local-path-provisioner-csi",
 				Namespace: metav1.NamespaceSystem,
 			},
 		},
