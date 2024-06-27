@@ -8,11 +8,14 @@ package e2e
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/samber/lo"
 	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	clusterctlcluster "sigs.k8s.io/cluster-api/cmd/clusterctl/client/cluster"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
@@ -63,7 +66,7 @@ var _ = Describe("Quick start", Serial, func() {
 							// available that are not available in other providers.
 							// This version can be specified in `test/e2e/config/caren.yaml` with a variable named
 							// `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
-							// `KUBERNETES_VERSION_DOCKER: v1.29.4`.
+							// `KUBERNETES_VERSION_DOCKER: v1.29.5`.
 							testE2EConfig := e2eConfig.DeepCopy()
 							varName := capie2e.KubernetesVersion + "_" + strings.ToUpper(
 								lowercaseProvider,
@@ -99,6 +102,16 @@ var _ = Describe("Quick start", Serial, func() {
 										KubernetesReferenceAssertions,
 									)
 
+									workloadCluster := framework.GetClusterByName(
+										ctx,
+										framework.GetClusterByNameInput{
+											Namespace: namespace,
+											Name:      clusterName,
+											Getter:    proxy.GetClient(),
+										},
+									)
+									Expect(workloadCluster.Spec.Topology).ToNot(BeNil())
+
 									By("Waiting until nodes are ready")
 									workloadProxy := proxy.GetWorkloadCluster(
 										ctx,
@@ -106,6 +119,32 @@ var _ = Describe("Quick start", Serial, func() {
 										clusterName,
 									)
 									workloadClient := workloadProxy.GetClient()
+
+									nodeCount := int(
+										ptr.Deref(
+											workloadCluster.Spec.Topology.ControlPlane.Replicas,
+											0,
+										),
+									) +
+										lo.Reduce(
+											workloadCluster.Spec.Topology.Workers.MachineDeployments,
+											func(agg int, md clusterv1.MachineDeploymentTopology, _ int) int {
+												switch {
+												case md.Replicas != nil:
+													return agg + int(ptr.Deref(md.Replicas, 0))
+												case md.Metadata.Annotations["cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size"] != "":
+													minSize, err := strconv.Atoi(
+														md.Metadata.Annotations["cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size"],
+													)
+													Expect(err).ToNot(HaveOccurred())
+													return agg + minSize
+												default:
+													return agg
+												}
+											},
+											0,
+										)
+
 									framework.WaitForNodesReady(
 										ctx,
 										framework.WaitForNodesReadyInput{
@@ -113,7 +152,7 @@ var _ = Describe("Quick start", Serial, func() {
 											KubernetesVersion: testE2EConfig.GetVariable(
 												capie2e.KubernetesVersion,
 											),
-											Count: 2,
+											Count: nodeCount,
 											WaitForNodesReady: testE2EConfig.GetIntervals(
 												flavour,
 												"wait-nodes-ready",
@@ -124,15 +163,6 @@ var _ = Describe("Quick start", Serial, func() {
 									By(
 										"Waiting for all requested addons to be ready in workload cluster",
 									)
-									workloadCluster := framework.GetClusterByName(
-										ctx,
-										framework.GetClusterByNameInput{
-											Namespace: namespace,
-											Name:      clusterName,
-											Getter:    proxy.GetClient(),
-										},
-									)
-									Expect(workloadCluster.Spec.Topology).ToNot(BeNil())
 									clusterVars := variables.ClusterVariablesToVariablesMap(
 										workloadCluster.Spec.Topology.Variables,
 									)
