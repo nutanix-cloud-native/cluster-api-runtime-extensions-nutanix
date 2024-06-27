@@ -62,10 +62,6 @@ func WaitForCCMToBeReadyInWorkloadCluster(
 	}
 }
 
-const (
-	awsCCMPrefix = "aws-ccm-"
-)
-
 func WaitForAWSCCMToBeReadyInWorkloadCluster(
 	ctx context.Context,
 	workloadClusterClient client.Client,
@@ -77,7 +73,7 @@ func WaitForAWSCCMToBeReadyInWorkloadCluster(
 		Expect(input.ClusterProxy.GetClient().Get(
 			ctx,
 			types.NamespacedName{
-				Name:      awsCCMPrefix + input.WorkloadCluster.Name,
+				Name:      "aws-ccm-" + input.WorkloadCluster.Name,
 				Namespace: input.WorkloadCluster.Namespace,
 			},
 			crs,
@@ -98,7 +94,7 @@ func WaitForAWSCCMToBeReadyInWorkloadCluster(
 			WaitForHelmReleaseProxyReadyForClusterInput{
 				GetLister:          input.ClusterProxy.GetClient(),
 				Cluster:            input.WorkloadCluster,
-				HelmChartProxyName: awsCCMPrefix + input.WorkloadCluster.Name,
+				HelmChartProxyName: "aws-cloud-controller-manager-" + input.WorkloadCluster.Name,
 			},
 			input.HelmReleaseIntervals...,
 		)

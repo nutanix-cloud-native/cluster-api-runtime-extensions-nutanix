@@ -238,7 +238,7 @@ func waitForAWSEBSCSIToBeReadyInWorkloadCluster(
 			WaitForHelmReleaseProxyReadyForClusterInput{
 				GetLister:          input.clusterProxy.GetClient(),
 				Cluster:            input.workloadCluster,
-				HelmChartProxyName: "aws-ebs-csi-" + input.workloadCluster.Name,
+				HelmChartProxyName: "aws-ebs-csi-driver-" + input.workloadCluster.Name,
 			},
 			input.helmReleaseIntervals...,
 		)
