@@ -64,6 +64,14 @@ spec:
                           required:
                             - secretRef
                           type: object
+                        strategy:
+                          description: Addon strategy used to deploy the CCM to the workload cluster.
+                          enum:
+                            - ClusterResourceSet
+                            - HelmAddon
+                          type: string
+                      required:
+                        - strategy
                       type: object
                     clusterAutoscaler:
                       description: ClusterAutoscaler tells us to enable or disable the cluster-autoscaler addon.

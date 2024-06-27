@@ -10,3 +10,8 @@
 # Using hostNetworking allows the AWS CCM to start before the Calico Pods.
 # The upstream CAPA templates are also already using hostNetworking for the CCM Pods.
 hostNetworking: true
+
+args:
+  - --v=2
+  - --cloud-provider=aws
+  - --configure-cloud-routes=false

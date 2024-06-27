@@ -40,6 +40,10 @@ spec:
         - --csi.nutanix.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "nutanix").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --csi.local-path.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "local-path").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --csi.snapshot-controller.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "snapshot-controller").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
+        - --ccm.aws.helm-addon.default-values-template-configmap-name={{ .Values.hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
+        {{- range $k, $v := .Values.hooks.ccm.aws.k8sMinorVersionToCCMVersion }}
+        - --ccm.aws.aws-ccm-versions={{ $k }}={{ $v }}
+        {{- end }}
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}

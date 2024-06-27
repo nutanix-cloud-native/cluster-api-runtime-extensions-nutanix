@@ -238,6 +238,11 @@ type CCM struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
 	// +kubebuilder:validation:Optional
 	Credentials *CCMCredentials `json:"credentials,omitempty"`
+
+	// Addon strategy used to deploy the CCM to the workload cluster.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	Strategy AddonStrategy `json:"strategy"`
 }
 
 type CCMCredentials struct {
@@ -250,5 +255,6 @@ type ServiceLoadBalancer struct {
 	// The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
 	// the CCM acts as the provider.
 	// +kubebuilder:validation:Enum=MetalLB
+	// +kubebuilder:validation:Required
 	Provider string `json:"provider"`
 }

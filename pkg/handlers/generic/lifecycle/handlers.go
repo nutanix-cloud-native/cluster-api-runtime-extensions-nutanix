@@ -55,7 +55,7 @@ func New(
 		nfdConfig:                nfd.NewConfig(globalOptions),
 		clusterAutoscalerConfig:  &clusterautoscaler.Config{GlobalOptions: globalOptions},
 		ebsConfig:                awsebs.NewConfig(globalOptions),
-		awsccmConfig:             &awsccm.AWSCCMConfig{GlobalOptions: globalOptions},
+		awsccmConfig:             awsccm.NewConfig(globalOptions),
 		nutanixCSIConfig:         nutanixcsi.NewConfig(globalOptions),
 		nutanixCCMConfig:         &nutanixccm.Config{GlobalOptions: globalOptions},
 		metalLBConfig:            &metallb.Config{GlobalOptions: globalOptions},
@@ -88,7 +88,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		),
 	}
 	ccmHandlers := map[string]ccm.CCMProvider{
-		v1alpha1.CCMProviderAWS: awsccm.New(mgr.GetClient(), h.awsccmConfig),
+		v1alpha1.CCMProviderAWS: awsccm.New(mgr.GetClient(), h.awsccmConfig, helmChartInfoGetter),
 		v1alpha1.CCMProviderNutanix: nutanixccm.New(
 			mgr.GetClient(),
 			h.nutanixCCMConfig,
@@ -121,10 +121,10 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.calicoCNIConfig.AddFlags("cni.calico", flagSet)
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
 	h.ebsConfig.AddFlags("csi.aws-ebs", pflag.CommandLine)
-	h.awsccmConfig.AddFlags("awsccm", pflag.CommandLine)
 	h.nutanixCSIConfig.AddFlags("csi.nutanix", flagSet)
-	h.nutanixCCMConfig.AddFlags("nutanixccm", flagSet)
-	h.metalLBConfig.AddFlags("metallb", flagSet)
 	h.localPathCSIConfig.AddFlags("csi.local-path", flagSet)
 	h.snapshotControllerConfig.AddFlags("csi.snapshot-controller", flagSet)
+	h.awsccmConfig.AddFlags("ccm.aws", pflag.CommandLine)
+	h.nutanixCCMConfig.AddFlags("ccm.nutanix", flagSet)
+	h.metalLBConfig.AddFlags("metallb", flagSet)
 }

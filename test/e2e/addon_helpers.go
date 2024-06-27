@@ -17,6 +17,7 @@ import (
 type WaitForAddonsToBeReadyInWorkloadClusterInput struct {
 	AddonsConfig                apivariables.Addons
 	WorkloadCluster             *clusterv1.Cluster
+	InfrastructureProvider      string
 	ClusterProxy                framework.ClusterProxy
 	DeploymentIntervals         []interface{}
 	DaemonSetIntervals          []interface{}
@@ -58,6 +59,20 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 		ctx,
 		WaitForClusterAutoscalerToBeReadyInWorkloadClusterInput{
 			ClusterAutoscaler:           input.AddonsConfig.ClusterAutoscaler,
+			WorkloadCluster:             input.WorkloadCluster,
+			ClusterProxy:                input.ClusterProxy,
+			DeploymentIntervals:         input.DeploymentIntervals,
+			DaemonSetIntervals:          input.DaemonSetIntervals,
+			HelmReleaseIntervals:        input.HelmReleaseIntervals,
+			ClusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+		},
+	)
+
+	WaitForCCMToBeReadyInWorkloadCluster(
+		ctx,
+		WaitForCCMToBeReadyInWorkloadClusterInput{
+			CCM:                         input.AddonsConfig.CCM,
+			InfrastructureProvider:      input.InfrastructureProvider,
 			WorkloadCluster:             input.WorkloadCluster,
 			ClusterProxy:                input.ClusterProxy,
 			DeploymentIntervals:         input.DeploymentIntervals,

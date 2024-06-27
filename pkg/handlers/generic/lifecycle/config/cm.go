@@ -27,6 +27,7 @@ const (
 	MetalLB                 Component = "metallb"
 	LocalPathProvisionerCSI Component = "local-path-provisioner-csi"
 	AWSEBSCSI               Component = "aws-ebs-csi"
+	AWSCCM                  Component = "aws-ccm"
 )
 
 type HelmChartGetter struct {

@@ -8,13 +8,17 @@ readonly SCRIPT_DIR
 # shellcheck source=hack/common.sh
 source "${SCRIPT_DIR}/../common.sh"
 
-AWS_CCM_VERSION=$1
-export AWS_CCM_VERSION
-AWS_CCM_CHART_VERSION=$2
-export AWS_CCM_CHART_VERSION
+export AWS_CCM_VERSION="${1}"
+export AWS_CCM_CHART_VERSION="${2}"
 
 if [ -z "${AWS_CCM_VERSION:-}" ]; then
   echo "Missing argument: AWS_CCM_VERSION"
+  exit 1
+fi
+
+if ! crane manifest "registry.k8s.io/provider-aws/cloud-controller-manager:${AWS_CCM_VERSION}" &>/dev/null; then
+  echo "AWS CCM image registry.k8s.io/provider-aws/cloud-controller-manager:${AWS_CCM_VERSION} does not exist"
+  echo "Check the image specified image tag"
   exit 1
 fi
 
@@ -43,3 +47,14 @@ $(cat "${GIT_REPO_ROOT}/hack/license-header.yaml.txt")
 #=================================================================
 $(cat "${ASSETS_DIR}/aws-ccm-${AWS_CCM_VERSION}-configmap.yaml")
 EOF
+
+# Check that the versions specified in the helm chart have been updated too.
+# shellcheck disable=SC2001 # Requires sed.
+K8S_MINOR_VERSION="$(echo "${AWS_CCM_VERSION}" | sed -e 's/^v\([0-9]\+\.[0-9]\+\).\+$/\1/')"
+if gojq --yaml-input --exit-status \
+  ".hooks.ccm.aws.k8sMinorVersionToCCMVersion[\"${K8S_MINOR_VERSION}\"] != env.AWS_CCM_VERSION" \
+  "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/values.yaml" &>/dev/null; then
+  echo "The AWS CCM version for ${K8S_MINOR_VERSION} in the helm chart is not up to date."
+  echo "Please update the version in the helm chart for Kubernetes minor version ${K8S_MINOR_VERSION} to ${AWS_CCM_VERSION}"
+  exit 1
+fi

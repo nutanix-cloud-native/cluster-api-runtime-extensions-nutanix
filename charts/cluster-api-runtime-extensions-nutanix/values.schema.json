@@ -56,6 +56,44 @@
             "properties": {
                 "ccm": {
                     "properties": {
+                        "aws": {
+                            "properties": {
+                                "helmAddonStrategy": {
+                                    "properties": {
+                                        "defaultValueTemplateConfigMap": {
+                                            "properties": {
+                                                "create": {
+                                                    "type": "boolean"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "k8sMinorVersionToCCMVersion": {
+                                    "properties": {
+                                        "1.27": {
+                                            "type": "string"
+                                        },
+                                        "1.28": {
+                                            "type": "string"
+                                        },
+                                        "1.29": {
+                                            "type": "string"
+                                        },
+                                        "1.30": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        },
                         "nutanix": {
                             "properties": {
                                 "helmAddonStrategy": {
