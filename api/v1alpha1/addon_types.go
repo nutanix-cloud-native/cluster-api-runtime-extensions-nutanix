@@ -260,12 +260,13 @@ type ServiceLoadBalancer struct {
 
 	// Configuration for the chosen ServiceLoadBalancer provider.
 	// +kubebuilder:validation:Optional
-	Configuration *ServiceLoadBalancerConfiguration `json:"configuration"`
+	Configuration *ServiceLoadBalancerConfiguration `json:"configuration,omitempty"`
 }
 
 type ServiceLoadBalancerConfiguration struct {
 	// AddressRanges is a list of IPv4 or IPv6 address ranges from which
 	// the provider can choose a load balancer address.
+	// +kubebuilder:validation:MinItems=1
 	AddressRanges []AddressRange `json:"addressRanges"`
 }
 
