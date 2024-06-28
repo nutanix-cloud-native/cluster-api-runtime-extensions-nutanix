@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.1 (2024-06-28)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* build: bring back v prefix in releases by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/760
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.11.0...v0.11.1
+
 ## 0.11.0 (2024-06-27)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
