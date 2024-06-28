@@ -257,4 +257,28 @@ type ServiceLoadBalancer struct {
 	// +kubebuilder:validation:Enum=MetalLB
 	// +kubebuilder:validation:Required
 	Provider string `json:"provider"`
+
+	// Configuration for the chosen ServiceLoadBalancer provider.
+	// +kubebuilder:validation:Optional
+	Configuration *ServiceLoadBalancerConfiguration `json:"configuration"`
+}
+
+type ServiceLoadBalancerConfiguration struct {
+	// AddressRanges is a list of IPv4 or IPv6 address ranges from which
+	// the provider can choose a load balancer address.
+	AddressRanges []AddressRange `json:"addressRanges"`
+}
+
+// AddressRange defines an IPv4 or IPv6 range.
+type AddressRange struct {
+	// FIXME Both start and end should be of the same type (IPv4 or IPv6).
+	// Because the pattern accepts either type, start and end can be of different
+	// types.
+	// Source: https://github.com/metal3-io/ip-address-manager/blob/b4f7c2a/api/v1alpha1/common_types.go#L19
+
+	// +kubebuilder:validation:Pattern="((^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$)|(^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))$))"
+	Start string `json:"start"`
+
+	// +kubebuilder:validation:Pattern="((^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$)|(^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))$))"
+	End string `json:"end"`
 }
