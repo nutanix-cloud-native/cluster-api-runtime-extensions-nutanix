@@ -41,12 +41,12 @@ before:
         name: caren-system
       $(helm template {{ .ProjectName }} ./charts/{{ .ProjectName }} \
         --namespace caren-system \
-        --set-string image.tag={{ .Version }} \
-        --set-string helmRepositoryImage.tag={{ .Version }}{{ if .IsSnapshot }}-{{ .Env.GOARCH }} \
+        --set-string image.tag=v{{ trimprefix .Version "v" }} \
+        --set-string helmRepositoryImage.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Env.GOARCH }} \
         --set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
       EOF'
-    - sed -i -e 's/\${/$${/g' -e 's/v0.0.0-dev/{{ .Version }}/g' runtime-extension-components.yaml
+    - sed -i -e 's/\${/$${/g' -e 's/v0.0.0-dev/v{{ trimprefix .Version "v" }}/g' runtime-extension-components.yaml
     - |
       sh -ec 'gojq --yaml-input --yaml-output \
         ".releaseSeries |= (. + [{contract: \"v1beta1\", major: {{ .Major }}, minor: {{ .Minor }}}] | unique)" \
@@ -66,7 +66,7 @@ builds:
       - -X 'k8s.io/component-base/version.buildDate={{ .CommitDate }}'
       - -X 'k8s.io/component-base/version.gitCommit={{ .FullCommit }}'
       - -X 'k8s.io/component-base/version.gitTreeState={{ .Env.GIT_TREE_STATE }}'
-      - -X 'k8s.io/component-base/version.gitVersion={{ .Version }}'
+      - -X 'k8s.io/component-base/version.gitVersion=v{{ trimprefix .Version "v" }}'
       - -X 'k8s.io/component-base/version.major={{ .Major }}'
       - -X 'k8s.io/component-base/version.minor={{ .Minor }}'
       - -X 'k8s.io/component-base/version/verflag.programName={{ .ProjectName }}'
@@ -85,18 +85,18 @@ builds:
                 KO_DOCKER_REPO=ko.local/{{ .ProjectName }} \
                 ko build \
                   --bare \
-                  -t {{ .Version }} \
+                  -t v{{ trimprefix .Version "v" }} \
                   ./cmd
           fi'
 
 archives:
-  - name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+  - name_template: '{{ .ProjectName }}_v{{ trimprefix .Version "v" }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - cluster-api-runtime-extensions-nutanix
 
 dockers:
   - image_templates:
-      - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:{{ .Version }}-amd64'
+      - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-amd64'
     use: buildx
     dockerfile: ./hack/addons/mindthegap-helm-registry/Dockerfile
     extra_files:
@@ -107,11 +107,11 @@ dockers:
       - "--label=org.opencontainers.image.created={{.CommitDate}}"
       - "--label=org.opencontainers.image.title=caren-helm-reg"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - '--label=org.opencontainers.image.version={{ .Version }}'
+      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.source={{.GitURL}}"
     goarch: amd64
   - image_templates:
-      - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:{{ .Version }}-arm64'
+      - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-arm64'
     use: buildx
     dockerfile: ./hack/addons/mindthegap-helm-registry/Dockerfile
     extra_files:
@@ -122,15 +122,15 @@ dockers:
       - "--label=org.opencontainers.image.created={{.CommitDate}}"
       - "--label=org.opencontainers.image.title=caren-helm-reg"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - '--label=org.opencontainers.image.version={{ .Version }}'
+      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.source={{.GitURL}}"
     goarch: arm64
 
 docker_manifests:
-  - name_template: ghcr.io/nutanix-cloud-native/caren-helm-reg:{{ .Version }}
+  - name_template: ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}
     image_templates:
-      - ghcr.io/nutanix-cloud-native/caren-helm-reg:{{ .Version }}-amd64
-      - ghcr.io/nutanix-cloud-native/caren-helm-reg:{{ .Version }}-arm64
+      - ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-amd64
+      - ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-arm64
 
 kos:
   - id: cluster-api-runtime-extensions-nutanix
@@ -141,7 +141,7 @@ kos:
       - -X 'k8s.io/component-base/version.buildDate={{ .CommitDate }}'
       - -X 'k8s.io/component-base/version.gitCommit={{ .FullCommit }}'
       - -X 'k8s.io/component-base/version.gitTreeState={{ .Env.GIT_TREE_STATE }}'
-      - -X 'k8s.io/component-base/version.gitVersion={{ .Version }}'
+      - -X 'k8s.io/component-base/version.gitVersion=v{{ trimprefix .Version "v" }}'
       - -X 'k8s.io/component-base/version.major={{ .Major }}'
       - -X 'k8s.io/component-base/version.minor={{ .Minor }}'
       - -X 'k8s.io/component-base/version/verflag.programName={{ .ProjectName }}'
@@ -149,7 +149,7 @@ kos:
       org.opencontainers.image.created: "{{ .CommitDate }}"
       org.opencontainers.image.title: "{{ .ProjectName }}"
       org.opencontainers.image.revision: "{{ .FullCommit }}"
-      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.version: 'v{{ trimprefix .Version "v" }}'
       org.opencontainers.image.source: "{{ .GitURL }}"
     platforms:
       - linux/amd64
@@ -157,7 +157,7 @@ kos:
     repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
     bare: true
     tags:
-      - "{{ .Version }}"
+      - 'v{{ trimprefix .Version "v" }}'
 
 checksum:
   name_template: 'checksums.txt'
