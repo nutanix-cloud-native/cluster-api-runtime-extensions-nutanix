@@ -67,6 +67,7 @@ spec:
             credentials:
               secretRef:
                 name: ${CLUSTER_NAME}-pc-creds
+            strategy: HelmAddon
           clusterAutoscaler:
             strategy: HelmAddon
           cni:
