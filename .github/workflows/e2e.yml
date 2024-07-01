@@ -64,6 +64,14 @@ jobs:
           CONTROL_PLANE_ENDPOINT_RANGE_END="${{ vars.NUTANIX_CONTROL_PLANE_ENDPOINT_RANGE_END }}"
           control_plane_endpoint_ip="$(devbox run -- fping -g -u "${CONTROL_PLANE_ENDPOINT_RANGE_START}" "${CONTROL_PLANE_ENDPOINT_RANGE_END}" 2>/dev/null | devbox run -- shuf --head-count=1)"
           echo "control_plane_endpoint_ip=${control_plane_endpoint_ip}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check Control Plane endpoint IP
+        run: |
+          if [[ -z "${{ steps.get-control-plane-endpoint-ip.outputs.control_plane_endpoint_ip }}" ]]; then
+            echo "control_plane_endpoint_ip is empty; cannot proceed with e2e tests"
+            exit 1
+          fi
+
       - name: Go cache
         uses: actions/cache@v4
         with:
