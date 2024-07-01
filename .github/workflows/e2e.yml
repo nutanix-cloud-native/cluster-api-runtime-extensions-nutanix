@@ -8,6 +8,14 @@ on:
         description: Infrastructure provider to run e2e tests with
         type: string
         required: true
+      cni:
+        description: CNI to run e2e tests with
+        type: string
+        required: true
+      addon-strategy:
+        description: Addon strategy to run e2e tests with
+        type: string
+        required: true
       skip:
         description: e2e tests to skip
         type: string
@@ -42,6 +50,16 @@ jobs:
           enable-cache: "true"
           skip-nix-installation: ${{ inputs.provider == 'Nutanix' }}
 
+      - name: Go cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       # The default disk size of these runners is ~14GB, this is not enough to run the e2e tests.
       # Cleanup the disk, see upstream discussion https://github.com/actions/runner-images/issues/2840.
       - name: Cleanup Disk Space
@@ -56,7 +74,7 @@ jobs:
           echo "After removing files:"
           df -h
 
-      - name:  Get Control Plane endpoint IP
+      - name: Get Control Plane endpoint IP
         id: get-control-plane-endpoint-ip
         if: inputs.provider == 'Nutanix'
         run: |
@@ -73,18 +91,8 @@ jobs:
             exit 1
           fi
 
-      - name: Go cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Run e2e tests
-        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }}' E2E_SKIP='${{ inputs.skip }}' E2E_FOCUS='${{ inputs.focus }}'
+        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }} && cni:${{ inputs.cni }} && addonStrategy:${{ inputs.addon-strategy }}' E2E_SKIP='${{ inputs.skip }}' E2E_FOCUS='${{ inputs.focus }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
