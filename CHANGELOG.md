@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.3 (2024-07-01)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* build: Update release metadata.yaml by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/768
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.11.2...v0.11.3
+
 ## 0.11.2 (2024-07-01)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
