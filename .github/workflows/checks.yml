@@ -78,9 +78,9 @@ jobs:
       matrix:
         provider:
           - Docker
-          - Nutanix
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - AWS
+          # - Nutanix
       fail-fast: false
     uses: ./.github/workflows/e2e.yml
     with:
