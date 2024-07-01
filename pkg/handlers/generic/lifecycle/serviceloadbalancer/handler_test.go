@@ -25,6 +25,7 @@ type fakeServiceLoadBalancerProvider struct {
 
 func (p *fakeServiceLoadBalancerProvider) Apply(
 	ctx context.Context,
+	slb v1alpha1.ServiceLoadBalancer,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
