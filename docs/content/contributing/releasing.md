@@ -3,6 +3,8 @@ title = "Releasing"
 icon = "fa-solid fa-gift"
 +++
 
+## Creating a release PR
+
 This project uses [release-please] to automate changelog updates per release. Due to security restrictions[^1] in the
 `nutanix-cloud-native` GitHub organization, the release process is a little more complex than just using the
 [release-please-action].
@@ -18,8 +20,10 @@ This will create the branch and release PR. From this point on until a release i
 will keep the PR up to date (GHA workflows are only not allowed to create the original PR, they can keep the PR up to
 date).
 
-When a release is ready, the commits in the release PR will need to be signed (again, this is a security requirement).
-To do this, check out the PR branch locally:
+## Cutting a release
+
+When a release is ready, the commits in the release PR created above will need to be signed (again, this is a security
+requirement). To do this, check out the PR branch locally:
 
 ```shell
 gh pr checkout <RELEASE_PR_NUMBER>
@@ -30,6 +34,17 @@ Sign the previous commit:
 ```bash
 git commit --gpg-sign --amend --no-edit
 ```
+
+If you are releasing a new minor release, the update the `metadata.yaml`s so that the upcoming release version is used
+for e.g. local development and e2e tests:
+
+1. Add the new release to the root level `metadata.yaml` release series.
+1. Add the new release to the e2e configuration `test/e2e/data/shared/v1beta1-caren/metadata.yaml` release series.
+1. Add the next release to the e2e configuration `test/e2e/data/shared/v1beta1-caren/metadata.yaml` (e.g. if release
+   `v0.6.0` then add release series for `v0.7`).
+1. Update the `caren` provider configuration in `test/e2e/config/caren.yaml` with the new release (replacing the last
+   minor release with the new minor release version) and the next minor release configuration (replacing the `v0.x.99`
+   configuration).
 
 And force push:
 
