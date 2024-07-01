@@ -31,7 +31,6 @@ import (
 	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/bootstrap"
-	clusterctltemp "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/clusterctl"
 )
 
 //nolint:gochecknoinits // Idiomatically used to set up flags.
@@ -174,7 +173,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func loadE2EConfig(configPath string) *clusterctl.E2EConfig {
-	config := clusterctltemp.LoadE2EConfig(
+	config := clusterctl.LoadE2EConfig(
 		context.TODO(),
 		clusterctl.LoadE2EConfigInput{ConfigPath: configPath},
 	)
