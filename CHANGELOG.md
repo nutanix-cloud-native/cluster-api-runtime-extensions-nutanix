@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.2 (2024-07-01)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Add strategy to Nutanix CCM addon in examples by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/765
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.11.1...v0.11.2
+
 ## 0.11.1 (2024-06-28)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
