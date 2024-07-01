@@ -92,6 +92,7 @@ jobs:
           CONTROL_PLANE_ENDPOINT_IP: ${{ steps.get-control-plane-endpoint-ip.outputs.control_plane_endpoint_ip }}
 
       - name: Redact secrets from artifacts
+        if: success() || failure() # always run even if the previous step fails
         run: devbox run -- make redact-artifacts
 
       - if: success() || failure() # always run even if the previous step fails
