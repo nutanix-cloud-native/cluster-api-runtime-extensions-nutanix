@@ -84,7 +84,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Run e2e tests
-        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }} && cni:Cilium && addonStrategy:HelmAddon' E2E_SKIP='${{ inputs.skip }}' E2E_FOCUS='${{ inputs.focus }}'
+        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }}' E2E_SKIP='${{ inputs.skip }}' E2E_FOCUS='${{ inputs.focus }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}

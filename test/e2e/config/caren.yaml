@@ -196,7 +196,7 @@ variables:
   # IP/FQDN of Prism Central.
   # NOTE: This has to be overridden by specifying the env var NUTANIX_ENDPOINT when running the e2e tests. It is
   # set as empty here to enable running the e2e tests for non-nutanix providers locally without setting the env var.
-  #  NUTANIX_ENDPOINT: ""
+  NUTANIX_ENDPOINT: ""
   # # Port of Prism Central. Default: 9440
   # NUTANIX_PORT: 9440
   # # Disable Prism Central certificate checking. Default: false
