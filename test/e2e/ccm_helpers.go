@@ -52,6 +52,12 @@ func WaitForCCMToBeReadyInWorkloadCluster(
 			workloadClusterClient,
 			input,
 		)
+	case "nutanix":
+		WaitForNutanixCCMToBeReadyInWorkloadCluster(
+			ctx,
+			workloadClusterClient,
+			input,
+		)
 	default:
 		Fail(
 			fmt.Sprintf(
@@ -116,4 +122,40 @@ func WaitForAWSCCMToBeReadyInWorkloadCluster(
 			},
 		},
 	}, input.DaemonSetIntervals...)
+}
+
+func WaitForNutanixCCMToBeReadyInWorkloadCluster(
+	ctx context.Context,
+	workloadClusterClient client.Client,
+	input WaitForCCMToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
+) {
+	switch input.CCM.Strategy {
+	case v1alpha1.AddonStrategyHelmAddon:
+		WaitForHelmReleaseProxyReadyForCluster(
+			ctx,
+			WaitForHelmReleaseProxyReadyForClusterInput{
+				GetLister:          input.ClusterProxy.GetClient(),
+				Cluster:            input.WorkloadCluster,
+				HelmChartProxyName: "nutanix-ccm-" + input.WorkloadCluster.Name,
+			},
+			input.HelmReleaseIntervals...,
+		)
+	default:
+		Fail(
+			fmt.Sprintf(
+				"Do not know how to wait for Nutanix CCM using strategy %s to be ready",
+				input.CCM.Strategy,
+			),
+		)
+	}
+
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nutanix-cloud-controller-manager",
+				Namespace: metav1.NamespaceSystem,
+			},
+		},
+	}, input.DeploymentIntervals...)
 }

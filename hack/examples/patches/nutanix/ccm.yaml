@@ -7,3 +7,4 @@
     credentials:
       secretRef:
         name: ${CLUSTER_NAME}-pc-creds
+    strategy: HelmAddon
