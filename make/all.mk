@@ -19,4 +19,3 @@ include $(INCLUDE_DIR)helm.mk
 include $(INCLUDE_DIR)examples.mk
 include $(INCLUDE_DIR)apis.mk
 include $(INCLUDE_DIR)docs.mk
-include $(INCLUDE_DIR)redact.mk
