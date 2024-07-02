@@ -58,7 +58,7 @@ func TestMain(m *testing.M) {
 			Client:                      mgr.GetClient(),
 			UnstructuredCachingClient:   unstructuredCachingClient,
 			SourceClusterClassNamespace: sourceClusterClassNamespace,
-			TargetNamespaceFilter:       NamespaceHasLabelKey(targetNamespaceLabelKey),
+			IsTargetNamespace:           NamespaceHasLabelKey(targetNamespaceLabelKey),
 		}).SetupWithManager(ctx, mgr, controller.Options{MaxConcurrentReconciles: 1}); err != nil {
 			panic(fmt.Sprintf("unable to create reconciler: %v", err))
 		}
