@@ -13,6 +13,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -71,9 +72,9 @@ func main() {
 
 type configMapInfo struct {
 	configMapFieldName string
-	RepositoryURL      string `json:"RepositoryURL"`
-	ChartVersion       string `json:"ChartVersion"`
-	ChartName          string `json:"ChartName"`
+	RepositoryURL      string   `json:"RepositoryURL"`
+	ChartVersions      []string `json:"ChartVersions"`
+	ChartName          string   `json:"ChartName"`
 }
 
 func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
@@ -128,8 +129,25 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 			ChartName:          name,
 		}
 		versionEnvVar := info["version"].(string)
+
 		version := os.ExpandEnv(versionEnvVar)
-		i.ChartVersion = version
+		versions := []string{}
+		if version == "" {
+			versions = lo.FilterMap(os.Environ(), func(env string, _ int) (string, bool) {
+				envPair := strings.Split(env, "=")
+				key := envPair[0]
+				val := envPair[1]
+				sanitizedKey := strings.ReplaceAll(key, "_", "-")
+				if strings.Contains(sanitizedKey, "VERSION") && strings.Contains(sanitizedKey, dirName) {
+					return val, true
+				}
+				return "", false
+			})
+
+		} else {
+			versions = append(versions, version)
+		}
+		i.ChartVersions = versions
 		results = append(results, i)
 
 		return nil

@@ -17,9 +17,9 @@ import (
 )
 
 type HelmChartFromConfigMap struct {
-	Name       string `yaml:"ChartName"`
-	Version    string `yaml:"ChartVersion"`
-	Repository string `yaml:"RepositoryURL"`
+	Name       string   `yaml:"ChartName"`
+	Version    []string `yaml:"ChartVersions"`
+	Repository string   `yaml:"RepositoryURL"`
 }
 
 type Repository struct {
