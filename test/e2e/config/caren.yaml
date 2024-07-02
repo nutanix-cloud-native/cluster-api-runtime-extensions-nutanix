@@ -8,6 +8,14 @@ images:
     loadBehavior: mustLoad
   - name: ghcr.io/nutanix-cloud-native/caren-helm-reg:${E2E_IMAGE_TAG}-${GOARCH}
     loadBehavior: mustLoad
+  - name: docker.io/mesosphere/cluster-api-controller:${CAPI_VERSION}-d2iq.0
+    loadBehavior: mustLoad
+  - name: docker.io/mesosphere/kubeadm-bootstrap-controller:${CAPI_VERSION}-d2iq.0
+    loadBehavior: mustLoad
+  - name: docker.io/mesosphere/kubeadm-control-plane-controller:${CAPI_VERSION}-d2iq.0
+    loadBehavior: mustLoad
+  - name: docker.io/mesosphere/capd-manager:${CAPD_VERSION}-d2iq.0
+    loadBehavior: mustLoad
 
 providers:
 - name: cluster-api
