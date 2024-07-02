@@ -82,3 +82,7 @@ generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating h
 .PHONY: template-helm-repository
 template-helm-repository: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
 	sed -i '/RepositoryURL:/s#\(RepositoryURL: *\)\(.*\)#\1{{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}\2{{ end }}#'  "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
+
+.PHONY: list-images
+list-images: ## List the images used by the addons
+	./hack/addons/list-images.sh

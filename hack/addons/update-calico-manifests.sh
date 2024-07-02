@@ -20,7 +20,7 @@ trap_add "rm -rf ${ASSETS_DIR}" EXIT
 readonly FILE_NAME="tigera-operator.yaml"
 
 readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/tigera-operator/"
-envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
+envsubst -no-unset -i "${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" -o "${ASSETS_DIR}/kustomization.yaml"
 cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 
 # The operator manifest in YAML format is pretty big. It turns out that much of that is whitespace. Converting the
