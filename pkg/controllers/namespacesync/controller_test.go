@@ -17,6 +17,38 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
 )
 
+func TestReconcileExistingNamespaceWithUpdatedLabels(t *testing.T) {
+	g := NewWithT(t)
+	timeout := 5 * time.Second
+
+	sourceClusterClassName, cleanup, err := createUniqueClusterClassAndTemplates(
+		sourceClusterClassNamespace,
+	)
+	g.Expect(err).ToNot(HaveOccurred())
+	defer func() {
+		g.Expect(cleanup()).To(Succeed())
+	}()
+
+	// Create namespace without label
+	targetNamespace, err := env.CreateNamespace(ctx, "target", map[string]string{})
+	g.Expect(err).ToNot(HaveOccurred())
+
+	// Label the namespace
+	targetNamespace.Labels[targetNamespaceLabelKey] = ""
+	err = env.Update(ctx, targetNamespace)
+	g.Expect(err).ToNot(HaveOccurred())
+
+	g.Eventually(func() error {
+		return verifyClusterClassAndTemplates(
+			env.Client,
+			sourceClusterClassName,
+			targetNamespace.Name,
+		)
+	},
+		timeout,
+	).Should(Succeed())
+}
+
 func TestReconcileNewNamespaces(t *testing.T) {
 	g := NewWithT(t)
 	timeout := 5 * time.Second
