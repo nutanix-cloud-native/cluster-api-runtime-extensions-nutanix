@@ -191,6 +191,8 @@ jobs:
 
   lint-test-helm:
     runs-on: ubuntu-22.04
+    env:
+      KIND_CLUSTER_NAME: chart-testing
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -220,34 +222,26 @@ jobs:
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Create kind cluster
-        run: |
-          devbox run -- \
-            kind create cluster \
-              --image=ghcr.io/mesosphere/kind-node:"$(devbox run -- kubectl version --output=json --client | devbox run -- gojq --raw-output .clientVersion.gitVersion)" \
-              --name=chart-testing
+        run: devbox run -- make kind.create
         env:
           KUBECONFIG: ct-kind-kubeconfig
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Build Docker images
-        run: |
-          devbox run -- \
-            make release-snapshot
+        run: devbox run -- make release-snapshot
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Sideload docker image
         run: |
           devbox run -- \
             kind load docker-image \
-              --name chart-testing \
+              --name "${KIND_CLUSTER_NAME}" \
               "ko.local/cluster-api-runtime-extensions-nutanix:$(devbox run -- gojq -r .version dist/metadata.json)" \
               "ghcr.io/nutanix-cloud-native/caren-helm-reg:$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)"
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
-        run: |
-          devbox run -- \
-            make clusterctl.init
+        run: devbox run -- make clusterctl.init
         env:
           KIND_KUBECONFIG: ct-kind-kubeconfig
 
@@ -264,8 +258,7 @@ jobs:
       - if: steps.list-changed.outputs.changed == 'true' && always()
         name: Delete chart-testing KinD cluster
         run: |
-          devbox run -- \
-            kind delete cluster --name chart-testing || true
+          devbox run -- make kind.delete
 
   govulncheck:
     runs-on: ubuntu-22.04

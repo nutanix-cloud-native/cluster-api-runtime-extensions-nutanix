@@ -81,9 +81,9 @@ jobs:
         id: get-control-plane-endpoint-ip
         if: inputs.provider == 'Nutanix'
         run: |
-          CONTROL_PLANE_ENDPOINT_RANGE_START="${{ vars.NUTANIX_CONTROL_PLANE_ENDPOINT_RANGE_START }}"
-          CONTROL_PLANE_ENDPOINT_RANGE_END="${{ vars.NUTANIX_CONTROL_PLANE_ENDPOINT_RANGE_END }}"
-          control_plane_endpoint_ip="$(devbox run -- fping -g -u "${CONTROL_PLANE_ENDPOINT_RANGE_START}" "${CONTROL_PLANE_ENDPOINT_RANGE_END}" | devbox run -- shuf --head-count=1)"
+          export CONTROL_PLANE_ENDPOINT_RANGE_START="${{ vars.NUTANIX_CONTROL_PLANE_ENDPOINT_RANGE_START }}"
+          export CONTROL_PLANE_ENDPOINT_RANGE_END="${{ vars.NUTANIX_CONTROL_PLANE_ENDPOINT_RANGE_END }}"
+          control_plane_endpoint_ip="$(devbox run -- make nutanix-cp-endpoint-ip)"
           echo "control_plane_endpoint_ip=${control_plane_endpoint_ip}" >> "${GITHUB_OUTPUT}"
 
       - name: Check Control Plane endpoint IP

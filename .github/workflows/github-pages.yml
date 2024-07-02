@@ -55,7 +55,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mapfile -t releases < <( devbox run -- gh release list --json tagName | devbox run -- gojq -r .[].tagName )
+          mapfile -t releases < <( devbox run -- make list-releases )
           for release in "${releases[@]}"; do
             if devbox run -- gh release download "${release}" \
                 --pattern 'cluster-api-runtime-extensions-nutanix-*.tgz' \

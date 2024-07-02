@@ -37,3 +37,7 @@ release-snapshot: go-generate ; $(info $(M) building snapshot release $*)
 		--clean \
 		--parallelism=$(GORELEASER_PARALLELISM) \
 		--timeout=60m
+
+.PHONY: list-releases
+list-releases: ## List releases from GitHub
+	gh release list --json tagName | gojq -r .[].tagName
