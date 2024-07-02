@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -51,8 +52,10 @@ func ForObject[T client.Object](
 		true,
 		func(checkCtx context.Context) (bool, error) {
 			if getErr = input.Reader.Get(checkCtx, key, input.Target); getErr != nil {
-				// Retry if get fails.
-				return false, nil
+				if apierrors.IsNotFound(getErr) {
+					return false, nil
+				}
+				return false, getErr
 			}
 
 			if ok, err := input.Check(checkCtx, input.Target); err != nil {
