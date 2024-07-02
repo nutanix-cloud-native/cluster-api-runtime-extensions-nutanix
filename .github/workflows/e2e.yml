@@ -83,7 +83,7 @@ jobs:
         run: |
           CONTROL_PLANE_ENDPOINT_RANGE_START="${{ vars.NUTANIX_CONTROL_PLANE_ENDPOINT_RANGE_START }}"
           CONTROL_PLANE_ENDPOINT_RANGE_END="${{ vars.NUTANIX_CONTROL_PLANE_ENDPOINT_RANGE_END }}"
-          control_plane_endpoint_ip="$(devbox run -- fping -g -u "${CONTROL_PLANE_ENDPOINT_RANGE_START}" "${CONTROL_PLANE_ENDPOINT_RANGE_END}" | devbox run -- shuf --head-count=1)"
+          control_plane_endpoint_ip="$(devbox run -- fping -g -u "${CONTROL_PLANE_ENDPOINT_RANGE_START}" "${CONTROL_PLANE_ENDPOINT_RANGE_END}" | shuf --head-count=1)"
           echo "control_plane_endpoint_ip=${control_plane_endpoint_ip}" >> "${GITHUB_OUTPUT}"
 
       - name: Check Control Plane endpoint IP
