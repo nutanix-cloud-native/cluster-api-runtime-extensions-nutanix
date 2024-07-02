@@ -65,6 +65,7 @@ spec:
                             - secretRef
                           type: object
                         strategy:
+                          default: HelmAddon
                           description: Addon strategy used to deploy the CCM to the workload cluster.
                           enum:
                             - ClusterResourceSet
@@ -77,6 +78,7 @@ spec:
                       description: ClusterAutoscaler tells us to enable or disable the cluster-autoscaler addon.
                       properties:
                         strategy:
+                          default: HelmAddon
                           description: |-
                             Addon strategy used to deploy cluster-autoscaler to the management cluster
                             targeting the workload cluster.
@@ -97,6 +99,7 @@ spec:
                             - Cilium
                           type: string
                         strategy:
+                          default: HelmAddon
                           description: Addon strategy used to deploy the CNI provider to the workload cluster.
                           enum:
                             - ClusterResourceSet
@@ -176,6 +179,7 @@ spec:
                                   description: StorageClassConfigs is a map of storage class configurations for this CSI provider.
                                   type: object
                                 strategy:
+                                  default: HelmAddon
                                   description: Addon strategy used to deploy the CSI provider to the workload cluster.
                                   enum:
                                     - ClusterResourceSet
@@ -192,6 +196,7 @@ spec:
                           description: Deploy the CSI snapshot controller and associated CRDs.
                           properties:
                             strategy:
+                              default: HelmAddon
                               description: Addon strategy used to deploy the snapshot controller to the workload cluster.
                               enum:
                                 - ClusterResourceSet
@@ -208,6 +213,7 @@ spec:
                       description: NFD tells us to enable or disable the node feature discovery addon.
                       properties:
                         strategy:
+                          default: HelmAddon
                           description: Addon strategy used to deploy Node Feature Discovery (NFD) to the workload cluster.
                           enum:
                             - ClusterResourceSet

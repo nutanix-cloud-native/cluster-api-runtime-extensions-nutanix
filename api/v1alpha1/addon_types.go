@@ -96,6 +96,8 @@ type GenericAddons struct {
 	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
 }
 
+// +kubebuilder:validation:Required
+// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 type AddonStrategy string
 
 // CNI required for providing CNI configuration.
@@ -104,17 +106,16 @@ type CNI struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=Calico;Cilium
 	Provider string `json:"provider"`
+
 	// Addon strategy used to deploy the CNI provider to the workload cluster.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 }
 
 // NFD tells us to enable or disable the node feature discovery addon.
 type NFD struct {
 	// Addon strategy used to deploy Node Feature Discovery (NFD) to the workload cluster.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 }
 
@@ -122,8 +123,7 @@ type NFD struct {
 type ClusterAutoscaler struct {
 	// Addon strategy used to deploy cluster-autoscaler to the management cluster
 	// targeting the workload cluster.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 }
 
@@ -138,8 +138,7 @@ type GenericCSI struct {
 
 type SnapshotController struct {
 	// Addon strategy used to deploy the snapshot controller to the workload cluster.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 }
 
@@ -197,8 +196,7 @@ type CSIProvider struct {
 	StorageClassConfigs map[string]StorageClassConfig `json:"storageClassConfigs"`
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 
 	// The reference to any secret used by the CSI Provider.
@@ -240,8 +238,7 @@ type CCM struct {
 	Credentials *CCMCredentials `json:"credentials,omitempty"`
 
 	// Addon strategy used to deploy the CCM to the workload cluster.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy"`
 }
 

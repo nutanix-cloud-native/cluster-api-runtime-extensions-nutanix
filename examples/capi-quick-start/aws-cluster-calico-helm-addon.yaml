@@ -21,13 +21,10 @@ spec:
     - name: clusterConfig
       value:
         addons:
-          ccm:
-            strategy: HelmAddon
-          clusterAutoscaler:
-            strategy: HelmAddon
+          ccm: {}
+          clusterAutoscaler: {}
           cni:
             provider: Calico
-            strategy: HelmAddon
           csi:
             defaultStorage:
               provider: aws-ebs
@@ -36,11 +33,8 @@ spec:
               aws-ebs:
                 storageClassConfigs:
                   default: {}
-                strategy: HelmAddon
-            snapshotController:
-              strategy: HelmAddon
-          nfd:
-            strategy: HelmAddon
+            snapshotController: {}
+          nfd: {}
         aws:
           region: us-west-2
         controlPlane:
