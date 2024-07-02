@@ -16,3 +16,6 @@ helmCharts:
   version: ${NUTANIX_STORAGE_CSI_CHART_VERSION}
   includeCRDs: true
   skipTests: true
+  valuesInline:
+    createPrismCentralSecret: false
+    pcSecretName: nutanix-csi-credentials

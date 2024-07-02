@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -27,7 +27,7 @@ readonly ASSETS_DIR
 trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
 readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/aws-ccm/"
-envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
+envsubst -no-unset -i "${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" -o "${ASSETS_DIR}/kustomization.yaml"
 cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 
 readonly FILE_NAME="aws-ccm-${AWS_CCM_VERSION}.yaml"
