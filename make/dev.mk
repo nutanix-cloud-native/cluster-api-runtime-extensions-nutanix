@@ -55,3 +55,7 @@ endif
 	gojq --yaml-input --raw-output '.variables | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' < test/e2e/config/caren.yaml | envsubst > .envrc.e2e
 	setup-envtest use -p env $(ENVTEST_VERSION) >> .envrc.e2e
 	direnv reload
+
+.PHONY: nutanix-cp-endpoint-ip
+nutanix-cp-endpoint-ip: ## Gets a random IP from the control plane endpoint range.
+	shuf --head-count=1 < <(fping -g -u "$(CONTROL_PLANE_ENDPOINT_RANGE_START)" "$(CONTROL_PLANE_ENDPOINT_RANGE_END)")
