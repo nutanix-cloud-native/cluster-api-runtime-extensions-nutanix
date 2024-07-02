@@ -39,8 +39,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Install nix using cachix/install-nix-action if running on ARC runners
+      # See: https://github.com/DeterminateSystems/nix-installer-action/issues/68
       - uses: cachix/install-nix-action@V27
-        if: inputs.provider == 'Nutanix'
+        if: inputs.runs-on == 'self-hosted-ncn-dind'
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -48,7 +50,7 @@ jobs:
         uses: jetify-com/devbox-install-action@v0.11.0
         with:
           enable-cache: "true"
-          skip-nix-installation: ${{ inputs.provider == 'Nutanix' }}
+          skip-nix-installation: ${{ inputs.runs-on == 'self-hosted-ncn-dind' }}
 
       - name: Go cache
         uses: actions/cache@v4
@@ -60,7 +62,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      # The default disk size of these runners is ~14GB, this is not enough to run the e2e tests.
+      # The default disk size of Github hosted runners is ~14GB, this is not enough to run the e2e tests.
       # Cleanup the disk, see upstream discussion https://github.com/actions/runner-images/issues/2840.
       - name: Cleanup Disk Space
         if: inputs.runs-on != 'self-hosted-ncn-dind'
