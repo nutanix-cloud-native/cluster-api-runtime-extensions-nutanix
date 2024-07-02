@@ -57,7 +57,18 @@ func (r *Reconciler) SetupWithManager(
 					UpdateFunc: func(e event.UpdateEvent) bool {
 						// Called when an object is already in the cache, and it is either updated,
 						// or fetched as part of a re-list (aka re-sync).
-						return false
+						nsOld, ok := e.ObjectOld.(*corev1.Namespace)
+						if !ok {
+							return false
+						}
+						nsNew, ok := e.ObjectNew.(*corev1.Namespace)
+						if !ok {
+							return false
+						}
+						// Only reconcile the namespace if the answer to the question "Is this a
+						// target namespace?" has changed. Other changes are not relevant to
+						// this controller.
+						return r.TargetNamespaceFilter(nsOld) != r.TargetNamespaceFilter(nsNew)
 					},
 					DeleteFunc: func(e event.DeleteEvent) bool {
 						// Ignore deletes.
