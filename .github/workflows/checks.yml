@@ -193,6 +193,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       KIND_CLUSTER_NAME: chart-testing
+      KIND_KUBECONFIG: ct-kind-kubeconfig
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -223,8 +224,6 @@ jobs:
       - if: steps.list-changed.outputs.changed == 'true'
         name: Create kind cluster
         run: devbox run -- make kind.create
-        env:
-          KUBECONFIG: ct-kind-kubeconfig
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Build Docker images
@@ -242,8 +241,6 @@ jobs:
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
         run: devbox run -- make clusterctl.init
-        env:
-          KIND_KUBECONFIG: ct-kind-kubeconfig
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (install)
@@ -253,7 +250,7 @@ jobs:
               --config charts/ct-config.yaml \
               --helm-extra-set-args "--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix --set-string image.tag=$(devbox run -- gojq -r .version dist/metadata.json) --set-string helmRepositoryImage.tag=$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)"
         env:
-          KUBECONFIG: ct-kind-kubeconfig
+          KUBECONFIG: ${{ env.KIND_KUBECONFIG }}
 
       - if: steps.list-changed.outputs.changed == 'true' && always()
         name: Delete chart-testing KinD cluster
