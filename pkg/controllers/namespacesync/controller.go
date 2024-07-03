@@ -28,8 +28,8 @@ type Reconciler struct {
 	// SourceClusterClassNamespace is the namespace from which ClusterClasses are copied.
 	SourceClusterClassNamespace string
 
-	// TargetNamespaceFilter determines whether ClusterClasses should be copied to a given namespace.
-	TargetNamespaceFilter func(ns *corev1.Namespace) bool
+	// IsTargetNamespace determines whether ClusterClasses should be copied to a given namespace.
+	IsTargetNamespace func(ns *corev1.Namespace) bool
 }
 
 func (r *Reconciler) SetupWithManager(
@@ -37,8 +37,8 @@ func (r *Reconciler) SetupWithManager(
 	mgr ctrl.Manager,
 	options controller.Options,
 ) error {
-	if r.TargetNamespaceFilter == nil {
-		return fmt.Errorf("target Namespace filter is nil")
+	if r.IsTargetNamespace == nil {
+		return fmt.Errorf("define IsTargetNamespace function to use controller")
 	}
 
 	err := ctrl.NewControllerManagedBy(mgr).
@@ -52,12 +52,22 @@ func (r *Reconciler) SetupWithManager(
 						if !ok {
 							return false
 						}
-						return r.TargetNamespaceFilter(ns)
+						return r.IsTargetNamespace(ns)
 					},
 					UpdateFunc: func(e event.UpdateEvent) bool {
 						// Called when an object is already in the cache, and it is either updated,
 						// or fetched as part of a re-list (aka re-sync).
-						return false
+						nsOld, ok := e.ObjectOld.(*corev1.Namespace)
+						if !ok {
+							return false
+						}
+						nsNew, ok := e.ObjectNew.(*corev1.Namespace)
+						if !ok {
+							return false
+						}
+						// Only reconcile the namespace if the answer to the question "Is this a
+						// target namespace?" changed from no to yes.
+						return !r.IsTargetNamespace(nsOld) && r.IsTargetNamespace(nsNew)
 					},
 					DeleteFunc: func(e event.DeleteEvent) bool {
 						// Ignore deletes.
@@ -93,7 +103,7 @@ func (r *Reconciler) clusterClassToNamespaces(ctx context.Context, o client.Obje
 	rs := []ctrl.Request{}
 	for i := range namespaceList.Items {
 		ns := &namespaceList.Items[i]
-		if r.TargetNamespaceFilter(ns) {
+		if r.IsTargetNamespace(ns) {
 			rs = append(rs,
 				ctrl.Request{
 					NamespacedName: client.ObjectKeyFromObject(ns),

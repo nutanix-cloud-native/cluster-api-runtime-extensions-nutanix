@@ -173,7 +173,7 @@ func main() {
 			Client:                      mgr.GetClient(),
 			UnstructuredCachingClient:   unstructuredCachingClient,
 			SourceClusterClassNamespace: namespacesyncOptions.SourceNamespace,
-			TargetNamespaceFilter:       namespacesync.NamespaceHasLabelKey(namespacesyncOptions.TargetNamespaceLabelKey),
+			IsTargetNamespace:           namespacesync.NamespaceHasLabelKey(namespacesyncOptions.TargetNamespaceLabelKey),
 		}).SetupWithManager(
 			signalCtx,
 			mgr,
