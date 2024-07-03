@@ -218,6 +218,31 @@ spec:
                       type: object
                     serviceLoadBalancer:
                       properties:
+                        configuration:
+                          description: Configuration for the chosen ServiceLoadBalancer provider.
+                          properties:
+                            addressRanges:
+                              description: |-
+                                AddressRanges is a list of IPv4 address ranges the
+                                provider uses to choose an address for a load balancer.
+                              items:
+                                description: AddressRange defines an IPv4 range.
+                                properties:
+                                  end:
+                                    format: ipv4
+                                    type: string
+                                  start:
+                                    format: ipv4
+                                    type: string
+                                required:
+                                  - end
+                                  - start
+                                type: object
+                              minItems: 1
+                              type: array
+                          required:
+                            - addressRanges
+                          type: object
                         provider:
                           description: |-
                             The LoadBalancer-type Service provider to deploy. Not required in infrastructures where

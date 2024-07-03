@@ -257,4 +257,25 @@ type ServiceLoadBalancer struct {
 	// +kubebuilder:validation:Enum=MetalLB
 	// +kubebuilder:validation:Required
 	Provider string `json:"provider"`
+
+	// Configuration for the chosen ServiceLoadBalancer provider.
+	// +kubebuilder:validation:Optional
+	Configuration *ServiceLoadBalancerConfiguration `json:"configuration,omitempty"`
+}
+
+type ServiceLoadBalancerConfiguration struct {
+	// AddressRanges is a list of IPv4 address ranges the
+	// provider uses to choose an address for a load balancer.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
+	AddressRanges []AddressRange `json:"addressRanges"`
+}
+
+// AddressRange defines an IPv4 range.
+type AddressRange struct {
+	// +kubebuilder:validation:Format=ipv4
+	Start string `json:"start"`
+
+	// +kubebuilder:validation:Format=ipv4
+	End string `json:"end"`
 }
