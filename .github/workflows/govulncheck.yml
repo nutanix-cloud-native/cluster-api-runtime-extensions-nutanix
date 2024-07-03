@@ -1,0 +1,36 @@
+# Copyright 2023 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: govulncheck
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+jobs:
+  govulncheck:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        module: [api, common, .]
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.11.0
+        with:
+          enable-cache: true
+
+      - id: govulncheck
+        run: devbox run -- make govulncheck.${{ matrix.module }}

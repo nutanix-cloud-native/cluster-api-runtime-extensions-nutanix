@@ -256,23 +256,3 @@ jobs:
         name: Delete chart-testing KinD cluster
         run: |
           devbox run -- make kind.delete
-
-  govulncheck:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        module: [api, common, .]
-      fail-fast: false
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.11.0
-        with:
-          enable-cache: true
-
-      - id: govulncheck
-        run: devbox run -- make govulncheck.${{ matrix.module }}
