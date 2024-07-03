@@ -172,7 +172,7 @@ func (n *MetalLB) Apply(
 				return false, nil
 			},
 			Interval: 5 * time.Second,
-			Timeout:  10 * time.Second,
+			Timeout:  30 * time.Second,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to wait for MetalLB to deploy: %w", err)
@@ -197,7 +197,7 @@ func (n *MetalLB) Apply(
 	if waitErr := kwait.PollUntilContextTimeout(
 		ctx,
 		5*time.Second,
-		10*time.Second,
+		30*time.Second,
 		true,
 		func(ctx context.Context) (done bool, err error) {
 			for i := range cos {
