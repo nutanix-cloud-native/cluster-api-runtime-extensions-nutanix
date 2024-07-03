@@ -66,9 +66,8 @@ func (r *Reconciler) SetupWithManager(
 							return false
 						}
 						// Only reconcile the namespace if the answer to the question "Is this a
-						// target namespace?" has changed. Other changes are not relevant to
-						// this controller.
-						return r.IsTargetNamespace(nsOld) != r.IsTargetNamespace(nsNew)
+						// target namespace?" changed from no to yes.
+						return !r.IsTargetNamespace(nsOld) && r.IsTargetNamespace(nsNew)
 					},
 					DeleteFunc: func(e event.DeleteEvent) bool {
 						// Ignore deletes.
