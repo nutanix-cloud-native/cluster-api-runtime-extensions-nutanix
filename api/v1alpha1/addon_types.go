@@ -273,11 +273,9 @@ type ServiceLoadBalancerConfiguration struct {
 
 // AddressRange defines an IPv4 range.
 type AddressRange struct {
-	// Source: https://github.com/metal3-io/ip-address-manager/blob/b4f7c2a/api/v1alpha1/common_types.go#L19
-
-	// +kubebuilder:validation:Pattern="^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+	// +kubebuilder:validation:Format=ipv4
 	Start string `json:"start"`
 
-	// +kubebuilder:validation:Pattern="^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+	// +kubebuilder:validation:Format=ipv4
 	End string `json:"end"`
 }
