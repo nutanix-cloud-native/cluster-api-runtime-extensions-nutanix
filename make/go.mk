@@ -217,7 +217,24 @@ ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
 govulncheck: $(addprefix govulncheck.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
-.PHONY: ggovulncheck.%
+.PHONY: govulncheck.%
 govulncheck.%: ## Runs golangci-lint for a specific module
 govulncheck.%: ; $(info $(M) running govulncheck on $* module)
 	$(if $(filter-out root .,$*),cd $* && )govulncheck ./...
+
+.PHONY: go-mod-edit-toolchain
+go-mod-edit-toolchain: ## Edits the go.mod file of all modules in repository to use the toolchain version
+ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
+go-mod-edit-toolchain: go-mod-edit-toolchain.root
+endif
+ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
+go-mod-edit-toolchain: $(addprefix go-mod-edit-toolchain.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
+endif
+
+.PHONY: go-mod-edit-toolchain.%
+go-mod-edit-toolchain.%: ## Edits the go.mod file of a specifc module in repository to use the toolchain version
+go-mod-edit-toolchain.%: ; $(info $(M) setting go toolchain for $* module)
+ifndef GO_TOOLCHAIN_VERSION
+	$(error GO_TOOLCHAIN_VERSION is not set: please set GO_TOOLCHAIN_VERSION to the desired version, e.g. go1.22.5)
+endif
+	$(if $(filter-out root .,$*),cd $* && )go mod edit -toolchain=$(GO_TOOLCHAIN_VERSION)
