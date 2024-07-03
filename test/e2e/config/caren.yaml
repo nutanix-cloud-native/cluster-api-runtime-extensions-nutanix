@@ -224,3 +224,4 @@ intervals:
   default/wait-daemonset: [ "5m", "10s" ]
   default/wait-clusterresourceset: [ "5m", "10s" ]
   default/wait-helmrelease: [ "5m", "10s" ]
+  default/wait-resource: [ "5m", "10s" ]

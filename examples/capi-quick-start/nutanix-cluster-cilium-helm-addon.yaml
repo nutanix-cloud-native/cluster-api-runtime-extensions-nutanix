@@ -88,6 +88,14 @@ spec:
             snapshotController:
               strategy: HelmAddon
           nfd: {}
+          serviceLoadBalancer:
+            configuration:
+              addressRanges:
+              - end: 198.18.1.10
+                start: 198.18.1.1
+              - end: 198.18.1.30
+                start: 198.18.1.21
+            provider: MetalLB
         controlPlane:
           nutanix:
             machineDetails:

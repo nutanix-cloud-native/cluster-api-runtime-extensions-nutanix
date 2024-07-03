@@ -23,6 +23,7 @@ type WaitForAddonsToBeReadyInWorkloadClusterInput struct {
 	DaemonSetIntervals          []interface{}
 	HelmReleaseIntervals        []interface{}
 	ClusterResourceSetIntervals []interface{}
+	ResourceIntervals           []interface{}
 }
 
 func WaitForAddonsToBeReadyInWorkloadCluster(
@@ -92,6 +93,19 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 			DaemonSetIntervals:          input.DaemonSetIntervals,
 			HelmReleaseIntervals:        input.HelmReleaseIntervals,
 			ClusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+		},
+	)
+
+	WaitForServiceLoadBalancerToBeReadyInWorkloadCluster(
+		ctx,
+		WaitForServiceLoadBalancerToBeReadyInWorkloadClusterInput{
+			ServiceLoadBalancer:  input.AddonsConfig.ServiceLoadBalancer,
+			WorkloadCluster:      input.WorkloadCluster,
+			ClusterProxy:         input.ClusterProxy,
+			DeploymentIntervals:  input.DeploymentIntervals,
+			DaemonSetIntervals:   input.DaemonSetIntervals,
+			HelmReleaseIntervals: input.HelmReleaseIntervals,
+			ResourceIntervals:    input.ResourceIntervals,
 		},
 	)
 }

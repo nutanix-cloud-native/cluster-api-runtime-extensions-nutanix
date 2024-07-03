@@ -99,6 +99,10 @@ var _ = Describe("Self-hosted", Serial, func() {
 												flavour,
 												"wait-clusterresourceset",
 											),
+											ResourceIntervals: e2eConfig.GetIntervals(
+												flavour,
+												"wait-resource",
+											),
 										},
 									)
 

@@ -77,3 +77,8 @@ patches:
     - op: "replace"
       path: "/spec/topology/workers/machineDeployments/0/class"
       value: default-worker
+
+# Deploy ServiceLoadBalancer MetalLB
+- target:
+    kind: Cluster
+  path: ../../../patches/metallb.yaml

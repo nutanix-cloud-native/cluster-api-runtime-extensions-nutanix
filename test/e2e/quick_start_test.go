@@ -195,6 +195,10 @@ var _ = Describe("Quick start", Serial, func() {
 												flavour,
 												"wait-clusterresourceset",
 											),
+											ResourceIntervals: testE2EConfig.GetIntervals(
+												flavour,
+												"wait-resource",
+											),
 										},
 									)
 

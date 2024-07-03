@@ -1,0 +1,13 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables/0/value/addons/serviceLoadBalancer"
+  value:
+    provider: MetalLB
+    configuration:
+      addressRanges:
+        - start: 198.18.1.1
+          end: 198.18.1.10
+        - start: 198.18.1.21
+          end: 198.18.1.30
