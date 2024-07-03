@@ -44,6 +44,7 @@ func ForObject[T client.Object](
 ) error {
 	key := client.ObjectKeyFromObject(input.Target)
 
+	// TODO Rename this to be generic, and store ErrConditionOutOfDate or ErrStatusOutOfDate.
 	var getErr error
 	waitErr := wait.PollUntilContextTimeout(
 		ctx,
