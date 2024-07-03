@@ -8,21 +8,13 @@ images:
     loadBehavior: mustLoad
   - name: ghcr.io/nutanix-cloud-native/caren-helm-reg:${E2E_IMAGE_TAG}-${GOARCH}
     loadBehavior: mustLoad
-  - name: docker.io/mesosphere/cluster-api-controller:${CAPI_VERSION}-d2iq.0
-    loadBehavior: mustLoad
-  - name: docker.io/mesosphere/kubeadm-bootstrap-controller:${CAPI_VERSION}-d2iq.0
-    loadBehavior: mustLoad
-  - name: docker.io/mesosphere/kubeadm-control-plane-controller:${CAPI_VERSION}-d2iq.0
-    loadBehavior: mustLoad
-  - name: docker.io/mesosphere/capd-manager:${CAPD_VERSION}-d2iq.0
-    loadBehavior: mustLoad
 
 providers:
 - name: cluster-api
   type: CoreProvider
   versions:
   - name: "${CAPI_VERSION}"
-    value: "https://github.com/mesosphere/cluster-api/releases/download/${CAPI_VERSION}-d2iq.0/core-components.yaml"
+    value: "https://github.com/mesosphere/cluster-api/releases/download/${CAPI_VERSION}-d2iq.1/core-components.yaml"
     type: url
     contract: v1beta1
     files:
@@ -35,7 +27,7 @@ providers:
   type: BootstrapProvider
   versions:
   - name: "${CAPI_VERSION}"
-    value: "https://github.com/mesosphere/cluster-api/releases/download/${CAPI_VERSION}-d2iq.0/bootstrap-components.yaml"
+    value: "https://github.com/mesosphere/cluster-api/releases/download/${CAPI_VERSION}-d2iq.1/bootstrap-components.yaml"
     type: url
     contract: v1beta1
     files:
@@ -48,7 +40,7 @@ providers:
   type: ControlPlaneProvider
   versions:
   - name: "${CAPI_VERSION}"
-    value: "https://github.com/mesosphere/cluster-api/releases/download/${CAPI_VERSION}-d2iq.0/control-plane-components.yaml"
+    value: "https://github.com/mesosphere/cluster-api/releases/download/${CAPI_VERSION}-d2iq.1/control-plane-components.yaml"
     type: url
     contract: v1beta1
     files:
@@ -84,7 +76,7 @@ providers:
   type: InfrastructureProvider
   versions:
   - name: "${CAPD_VERSION}"
-    value: "https://github.com/mesosphere/cluster-api/releases/download/${CAPD_VERSION}-d2iq.0/infrastructure-components-development.yaml"
+    value: "https://github.com/mesosphere/cluster-api/releases/download/${CAPD_VERSION}-d2iq.1/infrastructure-components-development.yaml"
     type: "url"
     contract: v1beta1
     files:
