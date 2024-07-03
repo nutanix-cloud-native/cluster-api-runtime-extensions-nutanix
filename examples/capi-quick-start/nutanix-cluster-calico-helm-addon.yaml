@@ -68,11 +68,9 @@ spec:
               secretRef:
                 name: ${CLUSTER_NAME}-pc-creds
             strategy: HelmAddon
-          clusterAutoscaler:
-            strategy: HelmAddon
+          clusterAutoscaler: {}
           cni:
             provider: Calico
-            strategy: HelmAddon
           csi:
             defaultStorage:
               provider: nutanix
@@ -89,8 +87,7 @@ spec:
                 strategy: HelmAddon
             snapshotController:
               strategy: HelmAddon
-          nfd:
-            strategy: HelmAddon
+          nfd: {}
         controlPlane:
           nutanix:
             machineDetails:
