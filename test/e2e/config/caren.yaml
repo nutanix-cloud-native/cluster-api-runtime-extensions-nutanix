@@ -200,7 +200,7 @@ variables:
   # # Name of the Prism Element cluster.
   # NUTANIX_PRISM_ELEMENT_CLUSTER_NAME: ""
   # # Name of the OS image pre-uploaded in PC.
-  # NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME: ""
+  NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME: nkp-rocky-9.4-1.29.6-20240704044125
   # # Name of the subnet to be assigned to the VMs.
   # NUTANIX_SUBNET_NAME: ""
   # # Name of the storage container to CSI driver
