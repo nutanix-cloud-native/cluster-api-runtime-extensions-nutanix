@@ -13,11 +13,11 @@ data:
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/cloud-provider-aws{{ end }}
   aws-ebs-csi: |
     ChartName: aws-ebs-csi-driver
-    ChartVersion: 2.28.1
+    ChartVersion: 2.32.0
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/aws-ebs-csi-driver{{ end }}
   cilium: |
     ChartName: cilium
-    ChartVersion: 1.15.5
+    ChartVersion: 1.15.6
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
@@ -33,7 +33,7 @@ data:
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://metallb.github.io/metallb{{ end }}
   nfd: |
     ChartName: node-feature-discovery
-    ChartVersion: 0.15.2
+    ChartVersion: 0.16.1
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/node-feature-discovery/charts{{ end }}
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
