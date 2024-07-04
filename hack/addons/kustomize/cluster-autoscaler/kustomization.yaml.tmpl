@@ -15,7 +15,7 @@ helmCharts:
   includeCRDs: true
   valuesFile: helm-values.yaml
   releaseName: cluster-autoscaler-tmpl-clustername-tmpl
-  version: ${CLUSTER_AUTOSCALER_VERSION}
+  version: ${CLUSTER_AUTOSCALER_CHART_VERSION}
   repo: https://kubernetes.github.io/autoscaler
 
 namespace: tmpl-clusternamespace-tmpl
