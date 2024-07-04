@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	defaultHelmReleaseName      = "metallb"
-	defaultHelmReleaseNamespace = "metallb-system"
+	DefaultHelmReleaseName      = "metallb"
+	DefaultHelmReleaseNamespace = "metallb-system"
 )
 
 // These labels allow the MetalLB speaker pod to obtain elevated permissions,
@@ -107,14 +107,14 @@ func (n *MetalLB) Apply(
 	err = handlersutils.EnsureNamespaceWithMetadata(
 		ctx,
 		remoteClient,
-		defaultHelmReleaseNamespace,
+		DefaultHelmReleaseNamespace,
 		podSecurityReleaseNamespaceLabels,
 		nil,
 	)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to ensure release namespace %q exists: %w",
-			defaultHelmReleaseName,
+			DefaultHelmReleaseName,
 			err,
 		)
 	}
@@ -139,8 +139,8 @@ func (n *MetalLB) Apply(
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},
-			ReleaseNamespace: defaultHelmReleaseNamespace,
-			ReleaseName:      defaultHelmReleaseName,
+			ReleaseNamespace: DefaultHelmReleaseNamespace,
+			ReleaseName:      DefaultHelmReleaseName,
 			Version:          helmChartInfo.Version,
 			ValuesTemplate:   values,
 		},
@@ -189,10 +189,10 @@ func (n *MetalLB) Apply(
 		),
 	)
 
-	cos, err := configurationObjects(&configurationInput{
-		name:          defaultHelmReleaseName,
-		namespace:     defaultHelmReleaseNamespace,
-		addressRanges: slb.Configuration.AddressRanges,
+	cos, err := ConfigurationObjects(&ConfigurationInput{
+		Name:          DefaultHelmReleaseName,
+		Namespace:     DefaultHelmReleaseNamespace,
+		AddressRanges: slb.Configuration.AddressRanges,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to generate MetalLB configuration: %w", err)
@@ -206,7 +206,7 @@ func (n *MetalLB) Apply(
 		true,
 		func(ctx context.Context) (done bool, err error) {
 			for i := range cos {
-				o := &cos[i]
+				o := cos[i]
 				if err = client.ServerSideApply(
 					ctx,
 					remoteClient,
