@@ -167,7 +167,7 @@ variables:
   KUBERNETES_VERSION: "${E2E_DEFAULT_KUBERNETES_VERSION}"
   # Override Kubernetes version for test workload clusters for specific providers by setting the env variables
   # `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
-  # `KUBERNETES_VERSION_DOCKER: v1.29.5`.
+  # `KUBERNETES_VERSION_DOCKER: v1.29.6`.
   # KUBERNETES_VERSION_DOCKER: "${KINDEST_IMAGE_TAG}"
   SERVICE_CIDR: "10.128.0.0/12"
   POD_CIDR: "192.168.0.0/16"
