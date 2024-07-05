@@ -50,7 +50,7 @@ jobs:
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.11.0
         with:
-          enable-cache: "true"
+          enable-cache: ${{ inputs.runs-on != 'self-hosted-ncn-dind' }}
           skip-nix-installation: ${{ inputs.runs-on == 'self-hosted-ncn-dind' }}
 
       - name: Go cache
