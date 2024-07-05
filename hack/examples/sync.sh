@@ -22,14 +22,21 @@ readonly EXAMPLE_CLUSTERS_DIR=examples/capi-quick-start
 mkdir -p "${EXAMPLE_CLUSTERS_DIR}"
 
 for provider in "aws" "docker" "nutanix"; do
-  kustomize build --load-restrictor LoadRestrictionsNone \
-    ./hack/examples/overlays/clusterclasses/"${provider}" >"${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml
+  configuration_dir="./hack/examples/overlays/clusterclasses/${provider}"
+  clusterclass_template="${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml
+  kustomize build \
+    "$configuration_dir" \
+    --output "$clusterclass_template" \
+    --load-restrictor LoadRestrictionsNone
 
   for cni in "calico" "cilium"; do
     for strategy in "helm-addon" "crs"; do
-      kustomize build --load-restrictor LoadRestrictionsNone \
-        ./hack/examples/overlays/clusters/"${provider}"/"${cni}"/"${strategy}" \
-        >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${cni}-${strategy}.yaml"
+      configuration_dir="./hack/examples/overlays/clusters/${provider}/${cni}/${strategy}"
+      cluster_template="${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${cni}-${strategy}.yaml"
+      kustomize build \
+        "$configuration_dir" \
+        --output "$cluster_template" \
+        --load-restrictor LoadRestrictionsNone
     done
   done
 done
