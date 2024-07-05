@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.12.0 (2024-07-05)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Add waiter for object  by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/777
+* feat: Define ServiceLoadBalancer Configuration API by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/778
+* feat: Use HelmAddon as default addon strategy by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/771
+* feat: Apply MetalLB configuration to remote cluster by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/783
+* feat: Update addon versions by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/785
+### Fixes 🔧
+* fix: Copy ClusterClasses and Templates without their owner references by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/776
+* fix: Namespacesync controller should reconcile an updated namespace by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/775
+* fix: use minimal image when deploying nfd chart by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/774
+### Other Changes
+* build: Update release metadata.yaml by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/768
+* ci: Run Nutanix provider e2e tests on self-hosted runner by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/755
+* build: Fix devbox run errors due to piped commands by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/773
+* ci: Fix ct check by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/779
+* build: Use go 1.22.5 toolchain to fix CVE by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/780
+* test(e2e): Use mesosphere fork v1.7.3-d2iq.1 for CAPI providers by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/781
+* ci: Move govulncheck to nightly and push to main triggers by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/782
+* ci: Disable nix cache on self-hosted runners by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/786
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.11.2...v0.12.0
+
 ## 0.11.2 (2024-07-01)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
