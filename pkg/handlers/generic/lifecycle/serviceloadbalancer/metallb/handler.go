@@ -178,6 +178,11 @@ func (n *MetalLB) Apply(
 		return fmt.Errorf("failed to wait for MetalLB to deploy: %w", err)
 	}
 
+	if slb.Configuration == nil {
+		// Nothing more to do.
+		return nil
+	}
+
 	log.Info(
 		fmt.Sprintf("Applying MetalLB configuration to cluster %s",
 			ctrlclient.ObjectKeyFromObject(cluster),

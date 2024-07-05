@@ -26,6 +26,10 @@ type configurationInput struct {
 }
 
 func configurationObjects(input *configurationInput) ([]unstructured.Unstructured, error) {
+	if len(input.addressRanges) == 0 {
+		return nil, fmt.Errorf("must define one or more addressRanges")
+	}
+
 	ipAddressPool := unstructured.Unstructured{}
 	ipAddressPool.SetGroupVersionKind(groupVersionKind("IPAddressPool"))
 	ipAddressPool.SetName(input.name)
