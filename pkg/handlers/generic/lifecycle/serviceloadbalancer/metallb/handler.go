@@ -10,11 +10,11 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kwait "k8s.io/apimachinery/pkg/util/wait"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
+	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -164,12 +164,7 @@ func (n *MetalLB) Apply(
 			Reader: n.client,
 			Target: hcp.DeepCopy(),
 			Check: func(_ context.Context, obj *caaphv1.HelmChartProxy) (bool, error) {
-				for _, c := range obj.GetConditions() {
-					if c.Type == caaphv1.HelmReleaseProxiesReadyCondition && c.Status == corev1.ConditionTrue {
-						return true, nil
-					}
-				}
-				return false, nil
+				return conditions.IsTrue(obj, caaphv1.HelmReleaseProxiesReadyCondition), nil
 			},
 			Interval: 5 * time.Second,
 			Timeout:  30 * time.Second,
