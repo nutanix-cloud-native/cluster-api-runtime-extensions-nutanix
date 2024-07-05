@@ -9,6 +9,9 @@ IFS=$'\n\t'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 
+# shellcheck source=hack/common.sh
+source "${SCRIPT_DIR}/../common.sh"
+
 trap 'find "${SCRIPT_DIR}" -name kustomization.yaml -delete' EXIT
 
 # For details why the exec command is structured like this , see
@@ -29,6 +32,10 @@ for provider in "aws" "docker" "nutanix"; do
     --output "$clusterclass_template" \
     --load-restrictor LoadRestrictionsNone
 
+  set -x
+  prepend_generated_by_header "$clusterclass_template" "${BASH_SOURCE[0]}"
+  set +x
+
   for cni in "calico" "cilium"; do
     for strategy in "helm-addon" "crs"; do
       configuration_dir="./hack/examples/overlays/clusters/${provider}/${cni}/${strategy}"
@@ -37,6 +44,8 @@ for provider in "aws" "docker" "nutanix"; do
         "$configuration_dir" \
         --output "$cluster_template" \
         --load-restrictor LoadRestrictionsNone
+
+      prepend_generated_by_header "$cluster_template" "${BASH_SOURCE[0]}"
     done
   done
 done
