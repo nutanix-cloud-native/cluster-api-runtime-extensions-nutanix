@@ -15,12 +15,12 @@ repositories:
     repoURL: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
     charts:
       aws-ebs-csi-driver:
-      - 2.28.1
+      - 2.32.0
   cilium:
     repoURL: https://helm.cilium.io/
     charts:
       cilium:
-      - 1.15.5
+      - 1.15.6
   cluster-autoscaler:
     repoURL: https://kubernetes.github.io/autoscaler
     charts:
@@ -40,7 +40,7 @@ repositories:
     repoURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
     charts:
       node-feature-discovery:
-      - 0.15.2
+      - 0.16.1
   nutanix-cloud-provider:
     repoURL: https://nutanix.github.io/helm/
     charts:

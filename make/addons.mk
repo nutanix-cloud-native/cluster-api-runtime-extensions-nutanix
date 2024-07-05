@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 export CALICO_VERSION := v3.28.0
-export CILIUM_VERSION := 1.15.5
-export NODE_FEATURE_DISCOVERY_VERSION := 0.15.2
-export CLUSTER_AUTOSCALER_VERSION := 9.37.0
-export AWS_EBS_CSI_CHART_VERSION := 2.28.1
+export CILIUM_VERSION := 1.15.6
+export NODE_FEATURE_DISCOVERY_VERSION := 0.16.1
+export CLUSTER_AUTOSCALER_CHART_VERSION := 9.37.0
+export AWS_EBS_CSI_CHART_VERSION := 2.32.0
 export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.0.0-beta.1912
-export NUTANIX_SNAPSHOT_CSI_CHART_VERSION := 6.3.2
 export LOCAL_PATH_CSI_CHART_VERSION := 0.0.29
 export SNAPSHOT_CONTROLLER_CHART_VERSION := 3.0.5
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
@@ -21,7 +20,7 @@ export AWS_CCM_VERSION_130 := v1.30.1
 
 export NUTANIX_CCM_CHART_VERSION := 0.3.3
 
-export KUBE_VIP_VERSION := v0.8.0
+export KUBE_VIP_VERSION := v0.8.1
 
 export METALLB_CHART_VERSION := 0.14.5
 

@@ -19,19 +19,23 @@ trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
 readonly FILE_NAME="kube-vip.yaml"
 
+# shellcheck disable=SC2016 # Single quotes are required for the gojq expression.
 docker container run --rm ghcr.io/kube-vip/kube-vip:"${KUBE_VIP_VERSION}" \
   manifest pod \
   --arp \
-  --address='{{ `{{ .ControlPlaneEndpoint.Host }}` }}' \
-  --port=-99999 \
+  --address='127.0.0.1' \
   --controlplane \
   --leaderElection \
   --leaseDuration=15 \
   --leaseRenewDuration=10 \
   --leaseRetry=2 \
   --prometheusHTTPServer='' |
-  gojq --yaml-input --yaml-output 'del(.metadata.creationTimestamp, .status) | .spec.containers[].imagePullPolicy |= "IfNotPresent"' |
-  sed "s/\"-99999\"/'{{ \`{{ .ControlPlaneEndpoint.Port }}\` }}'/" >"${ASSETS_DIR}/${FILE_NAME}"
+  gojq --yaml-input --yaml-output \
+    'del(.metadata.creationTimestamp, .status) |
+     .spec.containers[].imagePullPolicy |= "IfNotPresent" |
+     (.spec.containers[0].env[] | select(.name == "port").value) |= "{{ `{{ .ControlPlaneEndpoint.Port }}` }}" |
+     (.spec.containers[0].env[] | select(.name == "address").value) |= "{{ `{{ .ControlPlaneEndpoint.Host }}` }}"
+    ' >"${ASSETS_DIR}/${FILE_NAME}"
 
 kubectl create configmap "{{ .Values.hooks.virtualIP.kubeVip.defaultTemplateConfigMap.name }}" --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/${FILE_NAME}" \

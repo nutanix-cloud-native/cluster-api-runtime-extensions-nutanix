@@ -8,8 +8,8 @@ readonly SCRIPT_DIR
 # shellcheck source=hack/common.sh
 source "${SCRIPT_DIR}/../common.sh"
 
-if [ -z "${CLUSTER_AUTOSCALER_VERSION:-}" ]; then
-  echo "Missing argument: CLUSTER_AUTOSCALER_VERSION"
+if [ -z "${CLUSTER_AUTOSCALER_CHART_VERSION:-}" ]; then
+  echo "Missing argument: CLUSTER_AUTOSCALER_CHART_VERSION"
   exit 1
 fi
 
