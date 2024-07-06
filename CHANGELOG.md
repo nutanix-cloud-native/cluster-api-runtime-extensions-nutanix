@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.1 (2024-07-05)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Only create MetalLB configuration when necessary by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/791
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.12.0...v0.12.1
+
 ## 0.12.0 (2024-07-05)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
