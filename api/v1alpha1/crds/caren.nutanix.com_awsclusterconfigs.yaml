@@ -71,8 +71,6 @@ spec:
                             - ClusterResourceSet
                             - HelmAddon
                           type: string
-                      required:
-                        - strategy
                       type: object
                     clusterAutoscaler:
                       description: ClusterAutoscaler tells us to enable or disable the cluster-autoscaler addon.
@@ -86,8 +84,6 @@ spec:
                             - ClusterResourceSet
                             - HelmAddon
                           type: string
-                      required:
-                        - strategy
                       type: object
                     cni:
                       description: CNI required for providing CNI configuration.
@@ -107,7 +103,6 @@ spec:
                           type: string
                       required:
                         - provider
-                        - strategy
                       type: object
                     csi:
                       properties:
@@ -187,7 +182,6 @@ spec:
                                   type: string
                               required:
                                 - storageClassConfigs
-                                - strategy
                               type: object
                           required:
                             - aws-ebs
@@ -202,8 +196,6 @@ spec:
                                 - ClusterResourceSet
                                 - HelmAddon
                               type: string
-                          required:
-                            - strategy
                           type: object
                       required:
                         - defaultStorage
@@ -219,8 +211,6 @@ spec:
                             - ClusterResourceSet
                             - HelmAddon
                           type: string
-                      required:
-                        - strategy
                       type: object
                     serviceLoadBalancer:
                       properties:
