@@ -95,7 +95,7 @@ jobs:
           fi
 
       - name: Run e2e tests
-        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }} && cni:${{ inputs.cni }} && addonStrategy:${{ inputs.addon-strategy }}' E2E_SKIP='${{ inputs.skip }}' E2E_FOCUS='${{ inputs.focus }}'
+        run: devbox run -- make e2e-test E2E_LABEL='provider:${{ inputs.provider }} && cni:${{ inputs.cni }} && addonStrategy:${{ inputs.addon-strategy }}' E2E_SKIP='${{ inputs.skip }}' E2E_FOCUS='${{ inputs.focus }}' E2E_VERBOSE=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}

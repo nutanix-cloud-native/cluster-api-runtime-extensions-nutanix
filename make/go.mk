@@ -75,7 +75,7 @@ bench.%: ; $(info $(M) running benchmarks$(if $(GOTEST_RUN), matching "$(GOTEST_
 	$(if $(filter-out root,$*),cd $* && )go test $(if $(GOTEST_RUN),-run "$(GOTEST_RUN)") -race -cover -v ./...
 
 E2E_DRYRUN ?= false
-E2E_VERBOSE ?= $(filter $(E2E_DRYRUN)$(CI),true) # If dry-run or CI, enable verbosity
+E2E_VERBOSE ?= $(filter $(E2E_DRYRUN),true) # If dry-run, enable verbosity
 E2E_PARALLEL_NODES ?= $(if $(filter $(E2E_DRYRUN),true),1,$(shell nproc --ignore=1)) # Ginkgo cannot dry-run in parallel
 E2E_FLAKE_ATTEMPTS ?= 1
 E2E_CONF_FILE ?= $(REPO_ROOT)/test/e2e/config/caren.yaml
