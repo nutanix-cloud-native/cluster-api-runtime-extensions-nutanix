@@ -55,6 +55,12 @@ jobs:
           test-results: test.json
 
   e2e-quick-start:
+    needs:
+      - "lint-gha"
+      - "lint-go"
+      - "lint-test-helm"
+      - "pre-commit"
+      - "unit-test"
     strategy:
       matrix:
         provider:
@@ -82,6 +88,12 @@ jobs:
       checks: write
 
   e2e-self-hosted:
+    needs:
+      - "lint-gha"
+      - "lint-go"
+      - "lint-test-helm"
+      - "pre-commit"
+      - "unit-test"
     strategy:
       matrix:
         provider:
