@@ -10,7 +10,7 @@ toolchain go1.22.5
 replace github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common => ../common
 
 require (
-	github.com/aws/aws-sdk-go v1.54.11
+	github.com/aws/aws-sdk-go v1.54.15
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
 	github.com/nutanix-cloud-native/prism-go-client v0.4.0
 	github.com/onsi/gomega v1.33.1
