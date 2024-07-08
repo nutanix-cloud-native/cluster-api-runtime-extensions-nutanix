@@ -108,6 +108,7 @@ type CNI struct {
 	Provider string `json:"provider"`
 
 	// Addon strategy used to deploy the CNI provider to the workload cluster.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
@@ -115,6 +116,7 @@ type CNI struct {
 // NFD tells us to enable or disable the node feature discovery addon.
 type NFD struct {
 	// Addon strategy used to deploy Node Feature Discovery (NFD) to the workload cluster.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
@@ -123,6 +125,7 @@ type NFD struct {
 type ClusterAutoscaler struct {
 	// Addon strategy used to deploy cluster-autoscaler to the management cluster
 	// targeting the workload cluster.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
@@ -138,6 +141,7 @@ type GenericCSI struct {
 
 type SnapshotController struct {
 	// Addon strategy used to deploy the snapshot controller to the workload cluster.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
@@ -196,6 +200,7 @@ type CSIProvider struct {
 	StorageClassConfigs map[string]StorageClassConfig `json:"storageClassConfigs"`
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy,omitempty"`
 
@@ -238,6 +243,7 @@ type CCM struct {
 	Credentials *CCMCredentials `json:"credentials,omitempty"`
 
 	// Addon strategy used to deploy the CCM to the workload cluster.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
 	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
