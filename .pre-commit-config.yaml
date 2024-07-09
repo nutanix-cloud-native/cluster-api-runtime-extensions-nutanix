@@ -70,7 +70,7 @@ repos:
   - id: check-yaml
     args: ["-m", "--unsafe"]
     stages: [commit]
-    exclude: ^charts/.+/templates/
+    exclude: ^charts/[^/]+/templates/.*|hack/addons/.+/helm-values.yaml$
   - id: mixed-line-ending
     args: ["-f", "lf"]
     exclude: \.bat$
