@@ -1,13 +1,11 @@
-# Copyright 2024 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 {{- if (index .Values.hooks.csi "local-path").helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: '{{ (index .Values.hooks.csi "local-path").helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
-  values.yaml: |-
+  values.yaml: |
+    # Copyright 2024 Nutanix. All rights reserved.
+    # SPDX-License-Identifier: Apache-2.0
+
+    ---
     storageClass:
       create: false
       provisionerName: rancher.io/local-path
@@ -25,4 +23,8 @@ data:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
         operator: Exists
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: '{{(index .Values.hooks.csi "local-path").helmAddonStrategy.defaultValueTemplateConfigMap.name}}'
 {{- end -}}

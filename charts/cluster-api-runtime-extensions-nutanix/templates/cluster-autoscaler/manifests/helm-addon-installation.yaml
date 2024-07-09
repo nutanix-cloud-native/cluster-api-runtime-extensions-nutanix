@@ -1,15 +1,15 @@
-# Copyright 2024 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 {{- if .Values.hooks.clusterAutoscaler.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: '{{ .Values.hooks.clusterAutoscaler.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
-  values.yaml: |-
+  values.yaml: |
+    # Copyright 2023 Nutanix. All rights reserved.
+    # SPDX-License-Identifier: Apache-2.0
+
     ---
-    fullnameOverride: "cluster-autoscaler-{{ `{{ .Cluster.Name }}` }}"
+    # This is a hack, but because a single cluster-autoscaler deployment can only monitor a single Kubernetes cluster
+    # we expect '"{{ `{{ .Cluster.Name }}` }}"' and '"{{ `{{ .Cluster.Namespace }}` }}"'
+    # to be replaced with the Cluster's name and namespace.
+    fullnameOverride: cluster-autoscaler-"{{ `{{ .Cluster.Name }}` }}"
 
     cloudProvider: clusterapi
 
@@ -36,7 +36,7 @@ data:
     clusterAPIWorkloadKubeconfigPath: /cluster/kubeconfig
     extraVolumeSecrets:
       kubeconfig:
-        name: "{{ `{{ .Cluster.Name }}` }}-kubeconfig"
+        name: "{{ `{{ .Cluster.Name }}` }}"-kubeconfig
         mountPath: /cluster
         readOnly: true
         items:
@@ -45,4 +45,8 @@ data:
     rbac:
       # Create a Role instead of a ClusterRoles to update cluster-api objects
       clusterScoped: false
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: '{{.Values.hooks.clusterAutoscaler.helmAddonStrategy.defaultValueTemplateConfigMap.name}}'
 {{- end -}}

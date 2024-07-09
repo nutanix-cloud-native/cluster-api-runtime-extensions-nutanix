@@ -1,13 +1,10 @@
-# Copyright 2023 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 {{- if .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.DockerCluster.create }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: '{{ .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.DockerCluster.name }}'
 data:
-  values.yaml: |-
+  values.yaml: |
+    # Copyright 2023 Nutanix. All rights reserved.
+    # SPDX-License-Identifier: Apache-2.0
+
     installation:
       cni:
         type: Calico
@@ -20,4 +17,8 @@ data:
       nodeMetricsPort: 9091
       typhaMetricsPort: 9093
       registry: quay.io/
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: '{{.Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.DockerCluster.name}}'
 {{- end -}}

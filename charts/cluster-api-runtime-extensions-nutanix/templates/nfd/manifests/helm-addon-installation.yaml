@@ -1,15 +1,14 @@
-# Copyright 2024 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 {{- if .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: '{{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
-  values.yaml: |-
+  values.yaml: |
+    # Copyright 2023 Nutanix. All rights reserved.
+    # SPDX-License-Identifier: Apache-2.0
+
+    ---
     image:
-      tag: v0.16.1-minimal
+      tag: v${NODE_FEATURE_DISCOVERY_VERSION}-minimal
+
     master:
       extraLabelNs:
         - nvidia.com
@@ -36,4 +35,8 @@ data:
           key: node-role.kubernetes.io/master
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: '{{.Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name}}'
 {{- end -}}

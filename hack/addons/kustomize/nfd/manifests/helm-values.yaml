@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ---
+image:
+  tag: v${NODE_FEATURE_DISCOVERY_VERSION}-minimal
+
 master:
   extraLabelNs:
     - nvidia.com

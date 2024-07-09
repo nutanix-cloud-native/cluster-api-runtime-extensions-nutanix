@@ -1,13 +1,11 @@
-# Copyright 2024 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 {{- if (index .Values.hooks.csi "aws-ebs").helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: '{{ (index .Values.hooks.csi "aws-ebs").helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
-  values.yaml: |-
+  values.yaml: |
+    # Copyright 2024 Nutanix. All rights reserved.
+    # SPDX-License-Identifier: Apache-2.0
+
+    ---
     controller:
       affinity:
         nodeAffinity:
@@ -33,4 +31,8 @@ data:
     sidecars:
       snapshotter:
         forceEnable: true
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: '{{(index .Values.hooks.csi "aws-ebs").helmAddonStrategy.defaultValueTemplateConfigMap.name}}'
 {{- end -}}

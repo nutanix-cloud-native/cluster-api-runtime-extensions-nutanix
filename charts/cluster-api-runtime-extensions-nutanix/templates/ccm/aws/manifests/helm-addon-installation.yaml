@@ -1,13 +1,11 @@
-# Copyright 2024 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 {{- if .Values.hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: '{{ .Values.hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
-  values.yaml: |-
+  values.yaml: |
+    # Copyright 2024 Nutanix. All rights reserved.
+    # SPDX-License-Identifier: Apache-2.0
+
+    ---
     # Starting in Kubernetes v1.29 the Kubelet no longer adds temporary addresses to the Node.
     # See https://github.com/kubernetes/kubernetes/pull/121028
     # This causes a deadlock with the AWS CCM and some CNI providers including Calico.
@@ -31,4 +29,8 @@ data:
     {{ "{{" }}$ccmVersion := get $k8sMinorVersionToCCMVersion ( print $clusterSemver.Major "." $clusterSemver.Minor ) {{ "}}" }}
     image:
       tag: {{ "{{ " }} $ccmVersion {{ "}}" }}
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: '{{.Values.hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name}}'
 {{- end -}}

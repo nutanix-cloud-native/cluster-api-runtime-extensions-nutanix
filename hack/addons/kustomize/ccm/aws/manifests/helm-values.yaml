@@ -15,3 +15,13 @@ args:
   - --v=2
   - --cloud-provider=aws
   - --configure-cloud-routes=false
+
+{{ "{{" }} $k8sMinorVersionToCCMVersion := dict
+{{ range $k8sVersion, $ccmVersion := .Values.hooks.ccm.aws.k8sMinorVersionToCCMVersion -}}
+  "{{ $k8sVersion }}" "{{ $ccmVersion }}"
+{{ end -}}
+{{ "}}" }}
+{{ "{{" }}$clusterSemver := semver .Cluster.spec.topology.version {{ "}}" }}
+{{ "{{" }}$ccmVersion := get $k8sMinorVersionToCCMVersion ( print $clusterSemver.Major "." $clusterSemver.Minor ) {{ "}}" }}
+image:
+  tag: {{ "{{ " }} $ccmVersion {{ "}}" }}

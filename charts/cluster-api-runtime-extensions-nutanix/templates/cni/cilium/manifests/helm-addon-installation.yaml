@@ -1,13 +1,11 @@
-# Copyright 2024 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 {{- if .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: '{{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
-  values.yaml: |-
+  values.yaml: |
+    # Copyright 2024 Nutanix. All rights reserved.
+    # SPDX-License-Identifier: Apache-2.0
+
+    ---
     cni:
       chainingMode: portmap
     hubble:
@@ -27,4 +25,8 @@ data:
     certgen:
       image:
         useDigest: false
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: '{{.Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name}}'
 {{- end -}}

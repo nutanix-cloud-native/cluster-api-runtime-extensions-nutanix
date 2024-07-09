@@ -1,14 +1,10 @@
-# Copyright 2024 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 {{- if .Values.hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: '{{ .Values.hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
-  values.yaml: |-
-    ---
+  values.yaml: |
+    # Copyright 2024 Nutanix. All rights reserved.
+    # SPDX-License-Identifier: Apache-2.0
+
     prismCentralEndPoint: {{ `{{ .PrismCentralHost }}` }}
     prismCentralPort: {{ `{{ .PrismCentralPort }}` }}
     prismCentralInsecure: {{ `{{ .PrismCentralInsecure }}` }}
@@ -19,4 +15,8 @@ data:
     # The Secret containing the credentials will be created by the handler.
     createSecret: false
     secretName: nutanix-ccm-credentials
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: '{{.Values.hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name}}'
 {{- end -}}
