@@ -19,7 +19,7 @@ trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
 readonly FILE_NAME="cluster-autoscaler.yaml"
 
-readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/cluster-autoscaler/"
+readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/cluster-autoscaler/manifests"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
 cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 

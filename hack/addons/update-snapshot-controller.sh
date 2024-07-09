@@ -19,7 +19,7 @@ trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
 readonly FILE_NAME="snapshot-controller.yaml"
 
-readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/snapshot-controller"
+readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/csi/snapshot-controller/manifests"
 mkdir -p "${ASSETS_DIR}/snapshot-controller"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/snapshot-controller/kustomization.yaml"
 cp -r "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}/snapshot-controller/"

@@ -1,6 +1,11 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# This file produces the CRS manifests, because we're
+# copying the helm-values.yaml file from this directory
+# to charts/templates to be used by Helm Chart Proxies
+# we use inline values here.
+
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -14,7 +19,11 @@ helmCharts:
   version: ${AWS_CCM_CHART_VERSION}
   includeCRDs: true
   skipTests: true
-  valuesFile: helm-values.yaml
   valuesInline:
     image:
       tag: ${AWS_CCM_VERSION}
+    hostNetworking: true
+    args:
+      - --v=2
+      - --cloud-provider=aws
+      - --configure-cloud-routes=false
