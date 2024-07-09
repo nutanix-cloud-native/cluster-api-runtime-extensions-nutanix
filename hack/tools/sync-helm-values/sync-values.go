@@ -87,6 +87,9 @@ func EnsureFullPath(filename string) (string, error) {
 func SyncHelmValues(sourceDirectory, destDirectory string) error {
 	sourceFS := os.DirFS(sourceDirectory)
 	err := fs.WalkDir(sourceFS, ".", func(filepath string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if !strings.Contains(filepath, helmValuesFileName) || strings.Contains(filepath, "tigera") {
 			return nil
 		}
@@ -125,8 +128,16 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 		if err != nil {
 			return fmt.Errorf("failed to decode into configmap %w", err)
 		}
-		sourceString = strings.ReplaceAll(sourceString, "tmpl-clustername-tmpl", "\"{{ `{{ .Cluster.Name }}` }}\"")
-		sourceString = strings.ReplaceAll(sourceString, "tmpl-clusternamespace-tmpl", "\"{{ `{{ .Cluster.Namespace }}` }}\"")
+		sourceString = strings.ReplaceAll(
+			sourceString,
+			"tmpl-clustername-tmpl",
+			"\"{{ `{{ .Cluster.Name }}` }}\"",
+		)
+		sourceString = strings.ReplaceAll(
+			sourceString,
+			"tmpl-clusternamespace-tmpl",
+			"\"{{ `{{ .Cluster.Namespace }}` }}\"",
+		)
 		cm.Data["values.yaml"] = sourceString
 		cm.Name = name
 
@@ -139,7 +150,7 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 		if err != nil {
 			return fmt.Errorf("failed to write %w", err)
 		}
-		_, err = finalContent.Write([]byte("{{- end -}}"))
+		_, err = finalContent.WriteString("{{- end -}}")
 		if err != nil {
 			return fmt.Errorf("failed to write to buffer %w", err)
 		}
@@ -157,7 +168,7 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 	return err
 }
 
-func extractContentAndName(node parse.Node, content *[]string, name *string, ifPipeline *string) {
+func extractContentAndName(node parse.Node, content *[]string, name, ifPipeline *string) {
 	switch n := node.(type) {
 	case *parse.ListNode:
 		for _, node := range n.Nodes {
@@ -178,13 +189,14 @@ func extractContentAndName(node parse.Node, content *[]string, name *string, ifP
 	}
 }
 
-func extractTemplateText(templateString string) (string, string, string, error) {
+func extractTemplateText(
+	templateString string,
+) (name, templateText, ifPipeline string, err error) {
 	t, err := template.New("").Parse(templateString)
 	if err != nil {
 		return "", "", "", err
 	}
 	var content []string
-	var name, ifPipeline string
 	extractContentAndName(t.Root, &content, &name, &ifPipeline)
 	return name, strings.Join(content, ""), ifPipeline, nil
 }
