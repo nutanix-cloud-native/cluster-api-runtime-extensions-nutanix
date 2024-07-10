@@ -16,7 +16,6 @@ import (
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	k8sclient "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	lifecycleconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -52,7 +51,7 @@ func (c *HelmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 type helmAddonApplier struct {
 	config    *HelmAddonConfig
 	client    ctrlclient.Client
-	chartName config.Component
+	chartName lifecycleconfig.Component
 	helmChart *lifecycleconfig.HelmChart
 }
 
@@ -62,7 +61,7 @@ func NewHelmAddonApplier(
 	config *HelmAddonConfig,
 	client ctrlclient.Client,
 	helmChart *lifecycleconfig.HelmChart,
-	name config.Component,
+	name lifecycleconfig.Component,
 ) *helmAddonApplier {
 	return &helmAddonApplier{
 		config:    config,
