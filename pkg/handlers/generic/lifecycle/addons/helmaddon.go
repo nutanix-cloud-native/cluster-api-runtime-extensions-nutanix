@@ -16,6 +16,7 @@ import (
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	k8sclient "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	lifecycleconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -51,6 +52,7 @@ func (c *HelmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 type helmAddonApplier struct {
 	config    *HelmAddonConfig
 	client    ctrlclient.Client
+	chartName config.Component
 	helmChart *lifecycleconfig.HelmChart
 }
 
@@ -60,11 +62,13 @@ func NewHelmAddonApplier(
 	config *HelmAddonConfig,
 	client ctrlclient.Client,
 	helmChart *lifecycleconfig.HelmChart,
+	name config.Component,
 ) *helmAddonApplier {
 	return &helmAddonApplier{
 		config:    config,
 		client:    client,
 		helmChart: helmChart,
+		chartName: name,
 	}
 }
 
@@ -99,7 +103,7 @@ func (a *helmAddonApplier) Apply(
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   a.helmChart.Repository,
-			ChartName: a.helmChart.Name,
+			ChartName: string(a.chartName),
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},

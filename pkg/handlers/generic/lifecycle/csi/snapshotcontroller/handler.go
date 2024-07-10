@@ -150,6 +150,7 @@ func (s *SnapshotControllerHandler) apply(
 			s.config.helmAddonConfig,
 			s.client,
 			helmChart,
+			config.SnapshotController,
 		)
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{

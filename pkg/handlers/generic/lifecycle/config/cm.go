@@ -37,7 +37,6 @@ type HelmChartGetter struct {
 }
 
 type HelmChart struct {
-	Name       string `yaml:"ChartName"`
 	Version    string `yaml:"ChartVersion"`
 	Repository string `yaml:"RepositoryURL"`
 }

@@ -101,6 +101,7 @@ func (a *AWSCCM) Apply(
 			a.config.helmAddonConfig,
 			a.client,
 			helmChart,
+			config.AWSCCM,
 		)
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{

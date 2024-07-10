@@ -99,6 +99,7 @@ func (n *NutanixCSI) Apply(
 			n.config.helmAddonConfig,
 			n.client,
 			helmChart,
+			config.NutanixStorageCSI,
 		)
 	default:
 		return fmt.Errorf("strategy %s not implemented", provider.Strategy)

@@ -135,7 +135,7 @@ func (n *MetalLB) Apply(
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   helmChartInfo.Repository,
-			ChartName: helmChartInfo.Name,
+			ChartName: string(config.MetalLB),
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},

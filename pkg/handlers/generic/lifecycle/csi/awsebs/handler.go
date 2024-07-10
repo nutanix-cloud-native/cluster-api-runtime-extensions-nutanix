@@ -88,6 +88,7 @@ func (a *AWSEBS) Apply(
 			a.config.helmAddonConfig,
 			a.client,
 			helmChart,
+			config.AWSEBSCSI,
 		)
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{

@@ -84,6 +84,7 @@ func (l *LocalPathProvisionerCSI) Apply(
 			l.config.helmAddonConfig,
 			l.client,
 			helmChart,
+			config.LocalPathProvisionerCSI,
 		)
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{

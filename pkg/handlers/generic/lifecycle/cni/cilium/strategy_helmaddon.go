@@ -75,7 +75,7 @@ func (s helmAddonStrategy) apply(
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   s.helmChart.Repository,
-			ChartName: s.helmChart.Name,
+			ChartName: string(config.Cilium),
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},
