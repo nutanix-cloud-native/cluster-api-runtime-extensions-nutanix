@@ -96,7 +96,7 @@ type GenericAddons struct {
 	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
 }
 
-// +kubebuilder:validation:Required
+// +kubebuilder:validation:Optional
 // +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 type AddonStrategy string
 
@@ -108,26 +108,23 @@ type CNI struct {
 	Provider string `json:"provider"`
 
 	// Addon strategy used to deploy the CNI provider to the workload cluster.
-	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 
 // NFD tells us to enable or disable the node feature discovery addon.
 type NFD struct {
 	// Addon strategy used to deploy Node Feature Discovery (NFD) to the workload cluster.
-	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 
 // ClusterAutoscaler tells us to enable or disable the cluster-autoscaler addon.
 type ClusterAutoscaler struct {
 	// Addon strategy used to deploy cluster-autoscaler to the management cluster
 	// targeting the workload cluster.
-	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 
 type GenericCSI struct {
@@ -141,9 +138,8 @@ type GenericCSI struct {
 
 type SnapshotController struct {
 	// Addon strategy used to deploy the snapshot controller to the workload cluster.
-	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 
 type DefaultStorage struct {
@@ -200,9 +196,8 @@ type CSIProvider struct {
 	StorageClassConfigs map[string]StorageClassConfig `json:"storageClassConfigs"`
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
-	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy *AddonStrategy `json:"strategy,omitempty"`
 
 	// The reference to any secret used by the CSI Provider.
 	// +kubebuilder:validation:Optional
@@ -243,9 +238,8 @@ type CCM struct {
 	Credentials *CCMCredentials `json:"credentials,omitempty"`
 
 	// Addon strategy used to deploy the CCM to the workload cluster.
-	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 
 type CCMCredentials struct {
