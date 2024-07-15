@@ -36,7 +36,7 @@ func TestVariableValidation_AWSCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							v1alpha1.CSIProviderAWSEBS: {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -59,7 +59,7 @@ func TestVariableValidation_AWSCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							v1alpha1.CSIProviderNutanix: {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -83,7 +83,7 @@ func TestVariableValidation_AWSCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							v1alpha1.CSIProviderLocalPath: {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -107,7 +107,7 @@ func TestVariableValidation_AWSCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							"unknown": {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -141,7 +141,7 @@ func TestVariableValidation_NutanixCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							v1alpha1.CSIProviderNutanix: {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -164,7 +164,7 @@ func TestVariableValidation_NutanixCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							v1alpha1.CSIProviderAWSEBS: {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -188,7 +188,7 @@ func TestVariableValidation_NutanixCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							v1alpha1.CSIProviderLocalPath: {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -212,7 +212,7 @@ func TestVariableValidation_NutanixCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							"unknown": {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -246,7 +246,7 @@ func TestVariableValidation_DockerCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							v1alpha1.CSIProviderLocalPath: {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -269,7 +269,7 @@ func TestVariableValidation_DockerCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							v1alpha1.CSIProviderAWSEBS: {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -293,7 +293,7 @@ func TestVariableValidation_DockerCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							v1alpha1.CSIProviderNutanix: {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},
@@ -317,7 +317,7 @@ func TestVariableValidation_DockerCSI(t *testing.T) {
 						},
 						Providers: map[string]v1alpha1.CSIProvider{
 							"unknown": {
-								Strategy: v1alpha1.AddonStrategyHelmAddon,
+								Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 								StorageClassConfigs: map[string]v1alpha1.StorageClassConfig{
 									"test-1": {},
 								},

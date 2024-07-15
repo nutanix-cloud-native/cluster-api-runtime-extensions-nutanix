@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -136,7 +137,7 @@ func (s *SnapshotControllerHandler) apply(
 	}
 
 	var strategy addons.Applier
-	switch snapshotControllerVar.Strategy {
+	switch ptr.Deref(snapshotControllerVar.Strategy, "") {
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := s.helmChartInfoGetter.For(ctx, log, config.SnapshotController)
 		if err != nil {
@@ -156,12 +157,15 @@ func (s *SnapshotControllerHandler) apply(
 			config: s.config.crsConfig,
 			client: s.client,
 		}
+	case "":
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage("strategy not provided for snapshot-controller")
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
 			fmt.Sprintf(
 				"unknown snapshot-controller addon deployment strategy %q",
-				snapshotControllerVar.Strategy,
+				*snapshotControllerVar.Strategy,
 			),
 		)
 	}
