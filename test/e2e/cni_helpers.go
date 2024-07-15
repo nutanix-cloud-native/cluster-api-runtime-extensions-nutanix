@@ -14,6 +14,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
@@ -44,7 +45,7 @@ func WaitForCNIToBeReadyInWorkloadCluster(
 		waitForCalicoToBeReadyInWorkloadCluster(
 			ctx,
 			waitForCalicoToBeReadyInWorkloadClusterInput{
-				strategy:                    input.CNI.Strategy,
+				strategy:                    ptr.Deref(input.CNI.Strategy, ""),
 				workloadCluster:             input.WorkloadCluster,
 				clusterProxy:                input.ClusterProxy,
 				deploymentIntervals:         input.DeploymentIntervals,
@@ -57,7 +58,7 @@ func WaitForCNIToBeReadyInWorkloadCluster(
 		waitForCiliumToBeReadyInWorkloadCluster(
 			ctx,
 			waitForCiliumToBeReadyInWorkloadClusterInput{
-				strategy:                    input.CNI.Strategy,
+				strategy:                    ptr.Deref(input.CNI.Strategy, ""),
 				workloadCluster:             input.WorkloadCluster,
 				clusterProxy:                input.ClusterProxy,
 				deploymentIntervals:         input.DeploymentIntervals,

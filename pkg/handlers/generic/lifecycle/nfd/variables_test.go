@@ -22,7 +22,7 @@ var testDefs = []capitest.VariableTestDef{{
 		Addons: &apivariables.Addons{
 			GenericAddons: v1alpha1.GenericAddons{
 				NFD: &v1alpha1.NFD{
-					Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+					Strategy: ptr.To(v1alpha1.AddonStrategyClusterResourceSet),
 				},
 			},
 		},
@@ -33,7 +33,7 @@ var testDefs = []capitest.VariableTestDef{{
 		Addons: &apivariables.Addons{
 			GenericAddons: v1alpha1.GenericAddons{
 				NFD: &v1alpha1.NFD{
-					Strategy: v1alpha1.AddonStrategyHelmAddon,
+					Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 				},
 			},
 		},
@@ -44,7 +44,7 @@ var testDefs = []capitest.VariableTestDef{{
 		Addons: &apivariables.Addons{
 			GenericAddons: v1alpha1.GenericAddons{
 				NFD: &v1alpha1.NFD{
-					Strategy: "invalid-strategy",
+					Strategy: ptr.To[v1alpha1.AddonStrategy]("invalid-strategy"),
 				},
 			},
 		},

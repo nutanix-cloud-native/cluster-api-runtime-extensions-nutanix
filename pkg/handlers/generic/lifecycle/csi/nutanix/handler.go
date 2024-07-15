@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -86,7 +87,7 @@ func (n *NutanixCSI) Apply(
 	log logr.Logger,
 ) error {
 	var strategy addons.Applier
-	switch provider.Strategy {
+	switch ptr.Deref(provider.Strategy, "") {
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixStorageCSI)
 		if err != nil {
@@ -100,8 +101,10 @@ func (n *NutanixCSI) Apply(
 			n.client,
 			helmChart,
 		)
+	case "":
+		return fmt.Errorf("strategy not provided for Nutanix CSI driver")
 	default:
-		return fmt.Errorf("strategy %s not implemented", provider.Strategy)
+		return fmt.Errorf("strategy %s not implemented", *provider.Strategy)
 	}
 
 	if provider.Credentials != nil {

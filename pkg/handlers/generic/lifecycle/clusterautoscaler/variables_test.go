@@ -29,7 +29,7 @@ func TestVariableValidation_AWS(t *testing.T) {
 				Addons: &apivariables.Addons{
 					GenericAddons: v1alpha1.GenericAddons{
 						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-							Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+							Strategy: ptr.To(v1alpha1.AddonStrategyClusterResourceSet),
 						},
 					},
 				},
@@ -41,7 +41,7 @@ func TestVariableValidation_AWS(t *testing.T) {
 				Addons: &apivariables.Addons{
 					GenericAddons: v1alpha1.GenericAddons{
 						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-							Strategy: v1alpha1.AddonStrategyHelmAddon,
+							Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 						},
 					},
 				},
@@ -53,7 +53,7 @@ func TestVariableValidation_AWS(t *testing.T) {
 				Addons: &apivariables.Addons{
 					GenericAddons: v1alpha1.GenericAddons{
 						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-							Strategy: "invalid-strategy",
+							Strategy: ptr.To[v1alpha1.AddonStrategy]("invalid-strategy"),
 						},
 					},
 				},
@@ -76,7 +76,7 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 				Addons: &apivariables.Addons{
 					GenericAddons: v1alpha1.GenericAddons{
 						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-							Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+							Strategy: ptr.To(v1alpha1.AddonStrategyClusterResourceSet),
 						},
 					},
 				},
@@ -88,7 +88,7 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 				Addons: &apivariables.Addons{
 					GenericAddons: v1alpha1.GenericAddons{
 						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-							Strategy: v1alpha1.AddonStrategyHelmAddon,
+							Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 						},
 					},
 				},
@@ -100,7 +100,7 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 				Addons: &apivariables.Addons{
 					GenericAddons: v1alpha1.GenericAddons{
 						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-							Strategy: "invalid-strategy",
+							Strategy: ptr.To[v1alpha1.AddonStrategy]("invalid-strategy"),
 						},
 					},
 				},
@@ -123,7 +123,7 @@ func TestVariableValidation_Docker(t *testing.T) {
 				Addons: &apivariables.Addons{
 					GenericAddons: v1alpha1.GenericAddons{
 						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-							Strategy: v1alpha1.AddonStrategyClusterResourceSet,
+							Strategy: ptr.To(v1alpha1.AddonStrategyClusterResourceSet),
 						},
 					},
 				},
@@ -135,7 +135,7 @@ func TestVariableValidation_Docker(t *testing.T) {
 				Addons: &apivariables.Addons{
 					GenericAddons: v1alpha1.GenericAddons{
 						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-							Strategy: v1alpha1.AddonStrategyHelmAddon,
+							Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
 						},
 					},
 				},
@@ -147,7 +147,7 @@ func TestVariableValidation_Docker(t *testing.T) {
 				Addons: &apivariables.Addons{
 					GenericAddons: v1alpha1.GenericAddons{
 						ClusterAutoscaler: &v1alpha1.ClusterAutoscaler{
-							Strategy: "invalid-strategy",
+							Strategy: ptr.To[v1alpha1.AddonStrategy]("invalid-strategy"),
 						},
 					},
 				},

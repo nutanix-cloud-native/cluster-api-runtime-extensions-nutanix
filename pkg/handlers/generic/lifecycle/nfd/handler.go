@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -140,7 +141,7 @@ func (n *DefaultNFD) apply(
 	}
 
 	var strategy addons.Applier
-	switch cniVar.Strategy {
+	switch ptr.Deref(cniVar.Strategy, "") {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
 			config: n.config.crsConfig,
@@ -166,9 +167,12 @@ func (n *DefaultNFD) apply(
 			n.client,
 			helmChart,
 		)
+	case "":
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage("strategy not provided for NFD")
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("unknown NFD addon deployment strategy %q", cniVar.Strategy))
+		resp.SetMessage(fmt.Sprintf("unknown NFD addon deployment strategy %q", *cniVar.Strategy))
 		return
 	}
 
