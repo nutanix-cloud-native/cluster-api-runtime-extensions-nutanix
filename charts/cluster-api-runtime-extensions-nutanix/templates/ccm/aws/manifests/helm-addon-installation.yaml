@@ -1,9 +1,7 @@
 {{- if .Values.hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
 data:
-  values.yaml: |
-    # Copyright 2024 Nutanix. All rights reserved.
-    # SPDX-License-Identifier: Apache-2.0
+  values.yaml: |2
 
     ---
     # Starting in Kubernetes v1.29 the Kubelet no longer adds temporary addresses to the Node.

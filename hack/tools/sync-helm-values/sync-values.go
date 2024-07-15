@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"text/template"
 	"text/template/parse"
@@ -135,29 +136,9 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 		if err != nil {
 			return fmt.Errorf("failed to decode into configmap %w", err)
 		}
-		// handles the special templating we have for cluster autoscaler.
-		// for cluster resource sets. this sets them to the format that
-		// HelmChartPrxoy uses.
-		sourceString = strings.ReplaceAll(
-			sourceString,
-			"tmpl-clustername-tmpl",
-			"\"{{ `{{ .Cluster.Name }}` }}\"",
-		)
-		sourceString = strings.ReplaceAll(
-			sourceString,
-			"tmpl-clusternamespace-tmpl",
-			"\"{{ `{{ .Cluster.Namespace }}` }}\"",
-		)
-		// we template this with environment variables when using CRS
-		// expand it out.
-		sourceString = strings.ReplaceAll(
-			sourceString,
-			"${NODE_FEATURE_DISCOVERY_VERSION}",
-			os.Getenv("NODE_FEATURE_DISCOVERY_VERSION"),
-		)
+		sourceString = sanitizeSourceValues(sourceString)
 		cm.Data["values.yaml"] = sourceString
 		cm.Name = name
-
 		finalContent := bytes.NewBuffer([]byte(fmt.Sprint("{{- if ", ifPipeline, " }}\n")))
 		cmBytes, err := yaml.Marshal(&cm)
 		if err != nil {
@@ -183,6 +164,37 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 		return nil
 	})
 	return err
+}
+
+func sanitizeSourceValues(sourceString string) string {
+	// handles the special templating we have for cluster autoscaler.
+	// for cluster resource sets. this sets them to the format that
+	// HelmChartPrxoy uses.
+	sourceString = strings.ReplaceAll(
+		sourceString,
+		"tmpl-clustername-tmpl",
+		"\"{{ `{{ .Cluster.Name }}` }}\"",
+	)
+	sourceString = strings.ReplaceAll(
+		sourceString,
+		"tmpl-clusternamespace-tmpl",
+		"\"{{ `{{ .Cluster.Namespace }}` }}\"",
+	)
+	// we template this with environment variables when using CRS
+	// expand it out.
+	sourceString = strings.ReplaceAll(
+		sourceString,
+		"${NODE_FEATURE_DISCOVERY_VERSION}",
+		os.Getenv("NODE_FEATURE_DISCOVERY_VERSION"),
+	)
+	// remove the license
+	pattern := `(?m)^# Copyright 202(\d+) Nutanix\. All rights reserved\.\n?`
+	re := regexp.MustCompile(pattern)
+	sourceString = re.ReplaceAllString(sourceString, "")
+
+	pattern = `# SPDX-License-Identifier: Apache-2.0\n?`
+	re = regexp.MustCompile(pattern)
+	return re.ReplaceAllString(sourceString, "")
 }
 
 func extractContentAndName(node parse.Node, content *[]string, name, ifPipeline *string) {

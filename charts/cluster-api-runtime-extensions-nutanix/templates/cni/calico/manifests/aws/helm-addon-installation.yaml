@@ -1,9 +1,7 @@
 {{- if .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.create }}
 apiVersion: v1
 data:
-  values.yaml: |
-    # Copyright 2023 Nutanix. All rights reserved.
-    # SPDX-License-Identifier: Apache-2.0
+  values.yaml: |2
 
     installation:
       cni:

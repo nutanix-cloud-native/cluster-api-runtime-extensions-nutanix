@@ -1,9 +1,7 @@
 {{- if .Values.hooks.clusterAutoscaler.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
 apiVersion: v1
 data:
-  values.yaml: |
-    # Copyright 2023 Nutanix. All rights reserved.
-    # SPDX-License-Identifier: Apache-2.0
+  values.yaml: |2
 
     ---
     # This is a hack, but because a single cluster-autoscaler deployment can only monitor a single Kubernetes cluster
