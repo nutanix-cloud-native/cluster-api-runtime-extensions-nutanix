@@ -53,8 +53,6 @@ var _ = Describe("Self-hosted", Serial, func() {
 							)
 							Context(
 								flavour,
-								Label("cni:"+cniProvider),
-								Label("addonStrategy:"+addonStrategy),
 								func() {
 									framework.SelfHostedSpec(
 										ctx,

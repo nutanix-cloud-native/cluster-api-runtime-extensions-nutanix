@@ -18,11 +18,12 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	clusterctlcluster "sigs.k8s.io/cluster-api/cmd/clusterctl/client/cluster"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
-	"sigs.k8s.io/cluster-api/test/framework"
+	capiframework "sigs.k8s.io/cluster-api/test/framework"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework/nutanix"
 )
 
 var _ = Describe("Quick start", func() {
@@ -35,6 +36,7 @@ var _ = Describe("Quick start", func() {
 		if provider == "Docker" {
 			providerSpecificDecorators = append(providerSpecificDecorators, Serial)
 		}
+
 		Context(provider, Label("provider:"+provider), providerSpecificDecorators, func() {
 			lowercaseProvider := strings.ToLower(provider)
 			for _, cniProvider := range []string{"Cilium", "Calico"} {
@@ -85,6 +87,29 @@ var _ = Describe("Quick start", func() {
 											)
 										}
 
+										// For Nutanix provider, reserve an IP address for the workload cluster control plane endpoint - remember
+										// to unreserve it!
+										if provider == "Nutanix" {
+											By(
+												"Reserving an IP address for the workload cluster control plane endpoint",
+											)
+											nutanixClient, err := nutanix.NewV4Client(
+												nutanix.CredentialsFromCAPIE2EConfig(testE2EConfig),
+											)
+											Expect(err).ToNot(HaveOccurred())
+
+											controlPlaneEndpointIP, unreserveControlPlaneEndpointIP, err := nutanix.ReserveIP(
+												testE2EConfig.GetVariable("NUTANIX_SUBNET_NAME"),
+												testE2EConfig.GetVariable(
+													"NUTANIX_PRISM_ELEMENT_CLUSTER_NAME",
+												),
+												nutanixClient,
+											)
+											Expect(err).ToNot(HaveOccurred())
+											DeferCleanup(unreserveControlPlaneEndpointIP)
+											testE2EConfig.Variables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
+										}
+
 										return capie2e.QuickStartSpecInput{
 											E2EConfig:              testE2EConfig,
 											ClusterctlConfigPath:   clusterctlConfigPath,
@@ -93,26 +118,26 @@ var _ = Describe("Quick start", func() {
 											SkipCleanup:            skipCleanup,
 											Flavor:                 ptr.To(flavour),
 											InfrastructureProvider: ptr.To(lowercaseProvider),
-											PostMachinesProvisioned: func(proxy framework.ClusterProxy, namespace, clusterName string) {
-												framework.AssertOwnerReferences(
+											PostMachinesProvisioned: func(proxy capiframework.ClusterProxy, namespace, clusterName string) {
+												capiframework.AssertOwnerReferences(
 													namespace,
 													proxy.GetKubeconfigPath(),
 													clusterctlcluster.FilterClusterObjectsWithNameFilter(
 														clusterName,
 													),
-													framework.CoreOwnerReferenceAssertion,
-													framework.DockerInfraOwnerReferenceAssertions,
-													framework.KubeadmBootstrapOwnerReferenceAssertions,
-													framework.KubeadmControlPlaneOwnerReferenceAssertions,
+													capiframework.CoreOwnerReferenceAssertion,
+													capiframework.DockerInfraOwnerReferenceAssertions,
+													capiframework.KubeadmBootstrapOwnerReferenceAssertions,
+													capiframework.KubeadmControlPlaneOwnerReferenceAssertions,
 													AWSInfraOwnerReferenceAssertions,
 													NutanixInfraOwnerReferenceAssertions,
 													AddonReferenceAssertions,
 													KubernetesReferenceAssertions,
 												)
 
-												workloadCluster := framework.GetClusterByName(
+												workloadCluster := capiframework.GetClusterByName(
 													ctx,
-													framework.GetClusterByNameInput{
+													capiframework.GetClusterByNameInput{
 														Namespace: namespace,
 														Name:      clusterName,
 														Getter:    proxy.GetClient(),
@@ -155,9 +180,9 @@ var _ = Describe("Quick start", func() {
 														0,
 													)
 
-												framework.WaitForNodesReady(
+												capiframework.WaitForNodesReady(
 													ctx,
-													framework.WaitForNodesReadyInput{
+													capiframework.WaitForNodesReadyInput{
 														Lister: workloadClient,
 														KubernetesVersion: testE2EConfig.GetVariable(
 															capie2e.KubernetesVersion,
