@@ -22,15 +22,15 @@ require (
 	k8s.io/apiextensions-apiserver v0.29.6
 	k8s.io/apimachinery v0.29.6
 	k8s.io/utils v0.0.0-20231127182322-b307cd553661
-	sigs.k8s.io/cluster-api v1.7.3
-	sigs.k8s.io/cluster-api/test v1.7.3
+	sigs.k8s.io/cluster-api v1.7.4
+	sigs.k8s.io/cluster-api/test v1.7.4
 	sigs.k8s.io/controller-runtime v0.17.5
 )
 
 require (
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 // indirect
-	github.com/aws/aws-sdk-go v1.54.11 // indirect
+	github.com/aws/aws-sdk-go v1.54.19 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
