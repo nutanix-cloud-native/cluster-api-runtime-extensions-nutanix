@@ -10,7 +10,7 @@ toolchain go1.22.5
 replace github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common => ../common
 
 require (
-	github.com/aws/aws-sdk-go v1.54.11
+	github.com/aws/aws-sdk-go v1.54.19
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
 	github.com/nutanix-cloud-native/prism-go-client v0.4.0
 	github.com/onsi/gomega v1.33.1
@@ -18,7 +18,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.29.6
 	k8s.io/apimachinery v0.29.6
 	k8s.io/utils v0.0.0-20231127182322-b307cd553661
-	sigs.k8s.io/cluster-api v1.7.3
+	sigs.k8s.io/cluster-api v1.7.4
 	sigs.k8s.io/controller-runtime v0.17.5
 )
 
