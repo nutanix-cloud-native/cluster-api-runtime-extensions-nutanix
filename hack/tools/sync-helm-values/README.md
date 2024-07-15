@@ -27,7 +27,7 @@ This tool works by traversing the file tree located at `hack/addons/kustomize` a
 
 This program can be invoked by go run from the `hack/tools/sync-helm-values` directory with the following command:
 
-```
+```bash
 go run sync-values.go \
     -kustomize-directory=../../addons/kustomize/ \
     -helm-template-directory=../../../charts/cluster-api-runtime-extensions-nutanix/templates/
