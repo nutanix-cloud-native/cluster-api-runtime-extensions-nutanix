@@ -23,3 +23,15 @@ This tool works by traversing the file tree located at `hack/addons/kustomize` a
 `helm-values.yaml` once this file is found the corresponding config map in
 `charts/templates/cluster-api-runtime-extensions-nutanix/templates/` is updated with values from `helm-values.yaml`.
 
+## Usage
+
+This program can be invoked by go run from the `hack/tools/sync-helm-values` directory with the following command:
+
+```
+go run sync-values.go \
+    -kustomize-directory=../../addons/kustomize/ \
+    -helm-template-directory=../../../charts/cluster-api-runtime-extensions-nutanix/templates/
+```
+
+This program requires two flags `kustomize-directory` which is the path to the directory containing `helm-values.yaml`
+files and `helm-template-directory` which is the path to the templates directory for CAREN.
