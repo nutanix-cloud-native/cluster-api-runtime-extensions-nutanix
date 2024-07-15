@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -18,7 +17,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/yaml"
 )
 
@@ -27,8 +25,6 @@ const (
 	helmValuesFileName      = "helm-values.yaml"
 	helmValuesConfigMapName = "helm-addon-installation.yaml"
 )
-
-var log = ctrl.LoggerFrom(context.TODO())
 
 func main() {
 	var (
@@ -54,19 +50,27 @@ func main() {
 	)
 	err := flagSet.Parse(args[1:])
 	if err != nil {
-		log.Error(err, "failed to parse args")
+		fmt.Println("failed to parse args", err.Error())
+		os.Exit(1)
 	}
 	kustomizeDir, err = EnsureFullPath(kustomizeDir)
 	if err != nil {
-		log.Error(err, "failed to ensure full path for argument")
+		fmt.Println("failed to ensure full path for argument", err.Error())
+		os.Exit(1)
 	}
 	helmTemplateDir, err = EnsureFullPath(helmTemplateDir)
 	if err != nil {
-		log.Error(err, "failed to ensure full path for argument")
+		fmt.Println("failed to ensure full path for argument", err.Error())
+		os.Exit(1)
+	}
+	if kustomizeDir == "" || helmTemplateDir == "" {
+		fmt.Println("-helm-template-directory and -kustomize-directory must be set")
+		os.Exit(1)
 	}
 	err = SyncHelmValues(kustomizeDir, helmTemplateDir)
 	if err != nil {
 		fmt.Println("failed to sync err:", err.Error())
+		os.Exit(1)
 	}
 }
 
@@ -131,6 +135,9 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 		if err != nil {
 			return fmt.Errorf("failed to decode into configmap %w", err)
 		}
+		// handles the special templating we have for cluster autoscaler.
+		// for cluster resource sets. this sets them to the format that
+		// HelmChartPrxoy uses.
 		sourceString = strings.ReplaceAll(
 			sourceString,
 			"tmpl-clustername-tmpl",
@@ -140,6 +147,13 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 			sourceString,
 			"tmpl-clusternamespace-tmpl",
 			"\"{{ `{{ .Cluster.Namespace }}` }}\"",
+		)
+		// we template this with environment variables when using CRS
+		// expand it out.
+		sourceString = strings.ReplaceAll(
+			sourceString,
+			"${NODE_FEATURE_DISCOVERY_VERSION}",
+			os.Getenv("NODE_FEATURE_DISCOVERY_VERSION"),
 		)
 		cm.Data["values.yaml"] = sourceString
 		cm.Name = name
@@ -153,7 +167,7 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 		if err != nil {
 			return fmt.Errorf("failed to write %w", err)
 		}
-		_, err = finalContent.WriteString("{{- end -}}")
+		_, err = finalContent.WriteString("{{- end -}}\n")
 		if err != nil {
 			return fmt.Errorf("failed to write to buffer %w", err)
 		}
@@ -184,9 +198,8 @@ func extractContentAndName(node parse.Node, content *[]string, name, ifPipeline 
 			extractContentAndName(node, content, name, ifPipeline)
 		}
 	case *parse.ActionNode:
-		if *name == "" {
-			*name = node.String()
-		}
+		// there are a lot of action nodes, but the last one is the name.
+		*name = node.String()
 	default:
 		*content = append(*content, node.String())
 	}
