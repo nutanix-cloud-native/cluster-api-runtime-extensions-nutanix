@@ -7,6 +7,7 @@ package e2e
 
 import (
 	"fmt"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	clusterctlcluster "sigs.k8s.io/cluster-api/cmd/clusterctl/client/cluster"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
+	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -60,16 +62,13 @@ var _ = Describe("Quick start", func() {
 							Context(
 								flavour,
 								func() {
-									capie2e.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
-										if !slices.Contains(
-											e2eConfig.InfrastructureProviders(),
-											lowercaseProvider,
-										) {
-											Fail(fmt.Sprintf(
-												"provider %s is not enabled - check environment setup for provider specific requirements",
-												lowercaseProvider,
-											))
-										}
+									var (
+										testE2EConfig                    *clusterctl.E2EConfig
+										clusterLocalClusterctlConfigPath string
+									)
+
+									BeforeEach(func() {
+										testE2EConfig = e2eConfig.DeepCopy()
 
 										// Check if a provider-specific Kubernetes version is set in the environment and use that. This allows
 										// for testing against different Kubernetes versions, as some providers (e.g. Docker) have machine images
@@ -77,7 +76,6 @@ var _ = Describe("Quick start", func() {
 										// This version can be specified in `test/e2e/config/caren.yaml` with a variable named
 										// `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
 										// `KUBERNETES_VERSION_DOCKER: v1.29.5`.
-										testE2EConfig := e2eConfig.DeepCopy()
 										varName := capie2e.KubernetesVersion + "_" + strings.ToUpper(
 											lowercaseProvider,
 										)
@@ -87,8 +85,8 @@ var _ = Describe("Quick start", func() {
 											)
 										}
 
-										// For Nutanix provider, reserve an IP address for the workload cluster control plane endpoint - remember
-										// to unreserve it!
+										// For Nutanix provider, reserve an IP address for the workload cluster control plane endpoint -
+										// remember to unreserve it!
 										if provider == "Nutanix" {
 											By(
 												"Reserving an IP address for the workload cluster control plane endpoint",
@@ -110,9 +108,31 @@ var _ = Describe("Quick start", func() {
 											testE2EConfig.Variables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
 										}
 
+										clusterLocalTempDir, err := os.MkdirTemp("", "clusterctl-")
+										Expect(err).ToNot(HaveOccurred())
+										DeferCleanup(func() {
+											Expect(os.RemoveAll(clusterLocalTempDir)).To(Succeed())
+										})
+										clusterLocalClusterctlConfigPath = createClusterctlLocalRepository(
+											testE2EConfig,
+											clusterLocalTempDir,
+										)
+									})
+
+									capie2e.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
+										if !slices.Contains(
+											e2eConfig.InfrastructureProviders(),
+											lowercaseProvider,
+										) {
+											Fail(fmt.Sprintf(
+												"provider %s is not enabled - check environment setup for provider specific requirements",
+												lowercaseProvider,
+											))
+										}
+
 										return capie2e.QuickStartSpecInput{
 											E2EConfig:              testE2EConfig,
-											ClusterctlConfigPath:   clusterctlConfigPath,
+											ClusterctlConfigPath:   clusterLocalClusterctlConfigPath,
 											BootstrapClusterProxy:  bootstrapClusterProxy,
 											ArtifactFolder:         artifactFolder,
 											SkipCleanup:            skipCleanup,
