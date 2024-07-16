@@ -103,8 +103,7 @@ func EnsureNamespaceWithName(ctx context.Context, c ctrlclient.Client, name stri
 func EnsureNamespaceWithMetadata(ctx context.Context,
 	c ctrlclient.Client,
 	name string,
-	labels,
-	annotations map[string]string,
+	labels, annotations map[string]string,
 ) error {
 	ns := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
