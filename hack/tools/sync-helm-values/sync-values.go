@@ -162,7 +162,10 @@ func SyncHelmValues(sourceDirectory, destDirectory, licenseFile string) error {
 			return fmt.Errorf("failed to read all bytes of %s got err %w", licenseFile, err)
 		}
 		finalContent := bytes.NewBuffer(licenseFileBytes)
-		finalContent.WriteString(fmt.Sprint("{{- if ", ifPipeline, " }}\n"))
+		_, err = fmt.Fprint(finalContent, "{{- if ", ifPipeline, " }}\n")
+		if err != nil {
+			return fmt.Errorf("failed to write %w", err)
+		}
 		cmBytes, err := yaml.Marshal(&cm)
 		if err != nil {
 			return fmt.Errorf("failed to marshal %w", err)
