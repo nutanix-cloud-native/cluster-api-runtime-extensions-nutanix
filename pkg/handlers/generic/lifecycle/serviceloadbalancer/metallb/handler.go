@@ -35,9 +35,8 @@ const (
 // These labels allow the MetalLB speaker pod to obtain elevated permissions,
 // which it requires in order to perform its network functionalities.
 var podSecurityReleaseNamespaceLabels = map[string]string{
-	"pod-security.kubernetes.io/enforce": "privileged",
-	"pod-security.kubernetes.io/audit":   "privileged",
-	"pod-security.kubernetes.io/warn":    "privileged",
+	"pod-security.kubernetes.io/enforce":         "privileged",
+	"pod-security.kubernetes.io/enforce-version": "latest",
 }
 
 type Config struct {
