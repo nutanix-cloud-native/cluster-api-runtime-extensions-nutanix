@@ -41,7 +41,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	templateInput := input{
 		Cluster: cluster,
 	}
-
+	clusterAutoscalerTemplate.Delims("tmpl-", "tmpl")
 	var b bytes.Buffer
 	err = clusterAutoscalerTemplate.Execute(&b, templateInput)
 	if err != nil {

@@ -84,4 +84,4 @@ template-helm-repository: generate-mindthegap-repofile ## this is used by goreal
 
 .PHONY: sync-helm-values
 sync-helm-values: ; $(info $(M) syncing helm values from hack to charts)
-	go run hack/tools/sync-helm-values/sync-values.go -kustomize-directory=./hack/addons/kustomize/ -helm-template-directory=./charts/cluster-api-runtime-extensions-nutanix/templates/
+	go run hack/tools/sync-helm-values/sync-values.go -kustomize-directory=./hack/addons/kustomize/ -helm-template-directory=./charts/cluster-api-runtime-extensions-nutanix/templates/ -license-file=./hack/license-header.yaml.txt

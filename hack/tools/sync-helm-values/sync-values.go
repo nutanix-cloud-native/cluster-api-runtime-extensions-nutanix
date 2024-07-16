@@ -31,6 +31,7 @@ func main() {
 	var (
 		kustomizeDir    string
 		helmTemplateDir string
+		licenseFile     string
 	)
 	args := os.Args
 	flagSet := flag.NewFlagSet(
@@ -49,6 +50,12 @@ func main() {
 		"",
 		"Directory of all the helm templates.",
 	)
+	flagSet.StringVar(
+		&licenseFile,
+		"license-file",
+		"",
+		"License file for templating",
+	)
 	err := flagSet.Parse(args[1:])
 	if err != nil {
 		fmt.Println("failed to parse args", err.Error())
@@ -64,11 +71,16 @@ func main() {
 		fmt.Println("failed to ensure full path for argument", err.Error())
 		os.Exit(1)
 	}
+	licenseFile, err = EnsureFullPath(licenseFile)
+	if err != nil {
+		fmt.Println("failed to ensure full path for argument", err.Error())
+		os.Exit(1)
+	}
 	if kustomizeDir == "" || helmTemplateDir == "" {
 		fmt.Println("-helm-template-directory and -kustomize-directory must be set")
 		os.Exit(1)
 	}
-	err = SyncHelmValues(kustomizeDir, helmTemplateDir)
+	err = SyncHelmValues(kustomizeDir, helmTemplateDir, licenseFile)
 	if err != nil {
 		fmt.Println("failed to sync err:", err.Error())
 		os.Exit(1)
@@ -92,7 +104,7 @@ func EnsureFullPath(filename string) (string, error) {
 	return fullPath, nil
 }
 
-func SyncHelmValues(sourceDirectory, destDirectory string) error {
+func SyncHelmValues(sourceDirectory, destDirectory, licenseFile string) error {
 	sourceFS := os.DirFS(sourceDirectory)
 	err := fs.WalkDir(sourceFS, ".", func(filepath string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -139,7 +151,18 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 		sourceString = sanitizeSourceValues(sourceString)
 		cm.Data["values.yaml"] = sourceString
 		cm.Name = name
-		finalContent := bytes.NewBuffer([]byte(fmt.Sprint("{{- if ", ifPipeline, " }}\n")))
+
+		license, err := os.Open(licenseFile)
+		if err != nil {
+			return fmt.Errorf("failed to open %s with error %w", destPath, err)
+		}
+		defer license.Close()
+		licenseFileBytes, err := io.ReadAll(license)
+		if err != nil {
+			return fmt.Errorf("failed to read all bytes of %s got err %w", licenseFile, err)
+		}
+		finalContent := bytes.NewBuffer(licenseFileBytes)
+		finalContent.WriteString(fmt.Sprint("{{- if ", ifPipeline, " }}\n"))
 		cmBytes, err := yaml.Marshal(&cm)
 		if err != nil {
 			return fmt.Errorf("failed to marshal %w", err)
@@ -167,19 +190,6 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 }
 
 func sanitizeSourceValues(sourceString string) string {
-	// handles the special templating we have for cluster autoscaler.
-	// for cluster resource sets. this sets them to the format that
-	// HelmChartPrxoy uses.
-	sourceString = strings.ReplaceAll(
-		sourceString,
-		"tmpl-clustername-tmpl",
-		"\"{{ `{{ .Cluster.Name }}` }}\"",
-	)
-	sourceString = strings.ReplaceAll(
-		sourceString,
-		"tmpl-clusternamespace-tmpl",
-		"\"{{ `{{ .Cluster.Namespace }}` }}\"",
-	)
 	// we template this with environment variables when using CRS
 	// expand it out.
 	sourceString = strings.ReplaceAll(
