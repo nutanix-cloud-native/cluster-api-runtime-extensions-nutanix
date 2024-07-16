@@ -56,6 +56,12 @@ var _ = Describe("Generate etcd patches", func() {
 							"local": map[string]interface{}{
 								"imageRepository": "my-registry.io/my-org/my-repo",
 								"imageTag":        "v3.5.99_custom.0",
+								"extraArgs": map[string]interface{}{
+									"auto-tls":        "false",
+									"peer-auto-tls":   "false",
+									"cipher-suites":   "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", //nolint:lll // Long list of ciphers ok in test.
+									"tls-min-version": "TLS1.2",
+								},
 							},
 						},
 					),
@@ -85,6 +91,12 @@ var _ = Describe("Generate etcd patches", func() {
 						map[string]interface{}{
 							"local": map[string]interface{}{
 								"imageRepository": "my-registry.io/my-org/my-repo",
+								"extraArgs": map[string]interface{}{
+									"auto-tls":        "false",
+									"peer-auto-tls":   "false",
+									"cipher-suites":   "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", //nolint:lll // Long list of ciphers ok in test.
+									"tls-min-version": "TLS1.2",
+								},
 							},
 						},
 					),
@@ -114,6 +126,12 @@ var _ = Describe("Generate etcd patches", func() {
 						map[string]interface{}{
 							"local": map[string]interface{}{
 								"imageTag": "v3.5.99_custom.0",
+								"extraArgs": map[string]interface{}{
+									"auto-tls":        "false",
+									"peer-auto-tls":   "false",
+									"cipher-suites":   "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", //nolint:lll // Long list of ciphers ok in test.
+									"tls-min-version": "TLS1.2",
+								},
 							},
 						},
 					),
