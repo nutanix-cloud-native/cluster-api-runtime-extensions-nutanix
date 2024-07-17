@@ -70,7 +70,7 @@ repos:
   - id: check-yaml
     args: ["-m", "--unsafe"]
     stages: [commit]
-    exclude: ^charts/.+/templates/
+    exclude: ^charts/.+/(templates|addons)/.+\.ya?ml$
   - id: mixed-line-ending
     args: ["-f", "lf"]
     exclude: \.bat$
@@ -140,7 +140,7 @@ repos:
     name: License headers - YAML and Makefiles
     stages: [commit]
     files: (^Makefile|\.(ya?ml|mk))$
-    exclude: ^(internal/test|pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses)/.+\.ya?ml|docs/static/helm/index\.yaml|charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml$
+    exclude: ^(internal/test|pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/(defaultclusterclasses|addons))/.+\.ya?ml|docs/static/helm/index\.yaml|charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml$
     args:
       - --license-filepath
       - hack/license-header.txt

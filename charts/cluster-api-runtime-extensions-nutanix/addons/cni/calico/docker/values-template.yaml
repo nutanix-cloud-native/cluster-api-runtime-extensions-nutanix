@@ -1,0 +1,12 @@
+installation:
+  cni:
+    type: Calico
+  calicoNetwork:
+    ipPools:{{ range $cidr := .Cluster.spec.clusterNetwork.pods.cidrBlocks }}
+    - cidr: "{{ $cidr }}"
+      encapsulation: None
+      natOutgoing: Enabled
+      nodeSelector: all(){{ end }}
+  nodeMetricsPort: 9091
+  typhaMetricsPort: 9093
+  registry: quay.io/

@@ -8,16 +8,5 @@ metadata:
   name: '{{ .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.DockerCluster.name }}'
 data:
   values.yaml: |-
-    installation:
-      cni:
-        type: Calico
-      calicoNetwork:
-        ipPools:{{ printf "{{ range $cidr := .Cluster.spec.clusterNetwork.pods.cidrBlocks }}" }}
-        - cidr: {{ printf "{{ $cidr }}" }}
-          encapsulation: None
-          natOutgoing: Enabled
-          nodeSelector: all(){{ printf "{{ end }}" }}
-      nodeMetricsPort: 9091
-      typhaMetricsPort: 9093
-      registry: quay.io/
+    {{- .Files.Get "addons/cni/calico/docker/values-template.yaml" | nindent 4 }}
 {{- end -}}
