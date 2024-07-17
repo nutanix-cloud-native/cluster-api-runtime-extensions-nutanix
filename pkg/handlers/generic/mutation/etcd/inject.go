@@ -5,6 +5,8 @@ package etcd
 
 import (
 	"context"
+	"crypto/tls"
+	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -45,6 +47,25 @@ func newEtcdPatchHandler(
 	}
 }
 
+// defaultEtcdExtraArgs holds secure default flags for etcd. These flags are
+// set in order to satisfy both STIG and FIPS requirements by explicitly disabling certain
+// insecure features (e.g. `auto-tls`), setting a required minimum TLS version to v1.2,
+// and setting a list of secure cipher suites that satisfy both FIPS and non-FIPS scenarios.
+var defaultEtcdExtraArgs = map[string]string{
+	"auto-tls":      "false",
+	"peer-auto-tls": "false",
+	"cipher-suites": strings.Join(
+		[]string{
+			tls.CipherSuiteName(tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256),
+			tls.CipherSuiteName(tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256),
+			tls.CipherSuiteName(tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384),
+			tls.CipherSuiteName(tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384),
+		},
+		",",
+	),
+	"tls-min-version": "TLS1.2",
+}
+
 func (h *etcdPatchHandler) Mutate(
 	ctx context.Context,
 	obj *unstructured.Unstructured,
@@ -62,11 +83,7 @@ func (h *etcdPatchHandler) Mutate(
 		h.variableName,
 		h.variableFieldPath...,
 	)
-	if err != nil {
-		if variables.IsNotFoundError(err) {
-			log.V(5).Info("etcd variable not defined")
-			return nil
-		}
+	if err != nil && !variables.IsNotFoundError(err) {
 		return err
 	}
 
@@ -95,10 +112,25 @@ func (h *etcdPatchHandler) Mutate(
 			}
 
 			localEtcd := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local
-			if etcd.Image != nil && etcd.Image.Tag != "" {
+
+			if localEtcd.ExtraArgs == nil {
+				localEtcd.ExtraArgs = make(map[string]string, len(defaultEtcdExtraArgs))
+			}
+
+			for k, v := range defaultEtcdExtraArgs {
+				if _, ok := localEtcd.ExtraArgs[k]; !ok {
+					localEtcd.ExtraArgs[k] = v
+				}
+			}
+
+			if etcd.Image == nil {
+				return nil
+			}
+
+			if etcd.Image.Tag != "" {
 				localEtcd.ImageTag = etcd.Image.Tag
 			}
-			if etcd.Image != nil && etcd.Image.Repository != "" {
+			if etcd.Image.Repository != "" {
 				localEtcd.ImageRepository = etcd.Image.Repository
 			}
 
