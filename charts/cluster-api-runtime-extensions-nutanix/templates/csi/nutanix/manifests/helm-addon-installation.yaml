@@ -8,22 +8,5 @@ metadata:
   name: '{{ .Values.hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    # Disable creating the Prism Central credentials Secret, the Secret will be created by the handler.
-    createPrismCentralSecret: false
-    # Disable creating the Prism Element credentials Secret, it won't be used the CSI driver as configured here.
-    createSecret: false
-    pcSecretName: nutanix-csi-credentials
-
-    tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
-      - effect: NoExecute
-        operator: Exists
-        tolerationSeconds: 300
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/master
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
+    {{- .Files.Get "addons/csi/nutanix/values-template.yaml" | nindent 4 }}
 {{- end -}}
