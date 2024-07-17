@@ -1,0 +1,17 @@
+storageClass:
+  create: false
+  provisionerName: rancher.io/local-path
+helperImage:
+  tag: 1.36.1
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+  - effect: NoExecute
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+    operator: Exists
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
