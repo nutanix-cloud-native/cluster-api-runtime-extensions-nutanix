@@ -1,0 +1,25 @@
+# Starting in Kubernetes v1.29 the Kubelet no longer adds temporary addresses to the Node.
+# See https://github.com/kubernetes/kubernetes/pull/121028
+# This causes a deadlock with the AWS CCM and some CNI providers including Calico.
+# The Calico Pods won't start until some addresses are assigned,
+# but the AWS CCM that adds the addresses can't start until the Calico Pods are running.
+# Using hostNetworking allows the AWS CCM to start before the Calico Pods.
+# The upstream CAPA templates are also already using hostNetworking for the CCM Pods.
+hostNetworking: true
+
+args:
+  - --v=2
+  - --cloud-provider=aws
+  - --configure-cloud-routes=false
+
+{{ $clusterSemver := semver .Cluster.spec.topology.version }}
+{{ $ccmVersion := get $k8sMinorVersionToCCMVersion ( print $clusterSemver.Major "." $clusterSemver.Minor ) }}
+image:
+  tag: {{ $ccmVersion }}
+
+tolerations:
+  - key: node.cloudprovider.kubernetes.io/uninitialized
+    value: "true"
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    effect: NoSchedule
