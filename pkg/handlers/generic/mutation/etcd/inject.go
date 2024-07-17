@@ -47,6 +47,10 @@ func newEtcdPatchHandler(
 	}
 }
 
+// defaultEtcdExtraArgs holds secure default flags for etcd. These flags are
+// set in order to satisfy both STIG and FIPS requirements by explicitly disabling certain
+// insecure features (e.g. `auto-tls`), setting a required minimum TLS version to v1.2,
+// and setting a list of secure cipher suites that satisfy both FIPS and non-FIPS scenarios.
 var defaultEtcdExtraArgs = map[string]string{
 	"auto-tls":      "false",
 	"peer-auto-tls": "false",
