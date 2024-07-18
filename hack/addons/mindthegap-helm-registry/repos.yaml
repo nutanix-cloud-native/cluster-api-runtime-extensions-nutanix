@@ -47,10 +47,10 @@ repositories:
       nutanix-cloud-provider:
       - 0.3.4
   nutanix-csi-storage:
-    repoURL: https://nutanix.github.io/helm-releases/
+    repoURL: https://nutanix-scratch.github.io/helm/
     charts:
       nutanix-csi-storage:
-      - 3.0.0-beta.1912
+      - 3.0.0-2458
   snapshot-controller:
     repoURL: https://piraeus.io/helm-charts/
     charts:

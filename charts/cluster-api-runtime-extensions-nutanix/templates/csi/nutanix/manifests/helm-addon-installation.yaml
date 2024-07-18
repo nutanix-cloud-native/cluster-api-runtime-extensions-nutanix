@@ -8,8 +8,10 @@ metadata:
   name: '{{ .Values.hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    # The Secret containing the credentials will be created by the handler.
+    # Disable creating the Prism Central credentials Secret, the Secret will be created by the handler.
     createPrismCentralSecret: false
+    # Disable creating the Prism Element credentials Secret, it won't be used the CSI driver as configured here.
+    createSecret: false
     pcSecretName: nutanix-csi-credentials
 
     tolerations:
