@@ -10,6 +10,7 @@ data:
   values.yaml: |-
     # The Secret containing the credentials will be created by the handler.
     createPrismCentralSecret: false
+    createSecret: false
     pcSecretName: nutanix-csi-credentials
 
     tolerations:
