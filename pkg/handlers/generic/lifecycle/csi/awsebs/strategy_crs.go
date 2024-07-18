@@ -72,6 +72,7 @@ func (s crsStrategy) Apply(
 		cm.Name,
 		s.client,
 		cluster,
+		handlersutils.DefaultEnsureCRSForClusterFromObjectsOptions(),
 		cm,
 	)
 	if err != nil {
