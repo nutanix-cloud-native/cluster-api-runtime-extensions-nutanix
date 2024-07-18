@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.13.0 (2024-07-18)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Secure ciphers, min TLS v1.2, and disable auto TLS for etcd by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/808
+* feat: Bump default k8s version for tests to v1.29.6 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/784
+### Fixes 🔧
+* fix: add omitempty to addon strategy by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/795
+* fix: update CCM to 0.3.4 to fix sweet32 issue by @tuxtof in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/805
+* fix: Clean up MetalLB pod security standards labels by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/807
+* fix: Fix ownership of ClusterAutoscaler resources by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/810
+### Other Changes
+* ci: Run e2e jobs only if unit-test, lint-*, and pre-commit jobs pass by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/796
+* ci: Enable verbose output for e2e tests by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/797
+* test: Verify ServiceLoadBalancer in e2e Docker and Nutanix tests by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/788
+* refactor: Use CAPI conditions check where possible by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/789
+* test(e2e): Use parallel tests for providers other than Docker by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/787
+
+## New Contributors
+* @tuxtof made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/805
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.12.1...v0.13.0
+
 ## 0.12.1 (2024-07-05)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
