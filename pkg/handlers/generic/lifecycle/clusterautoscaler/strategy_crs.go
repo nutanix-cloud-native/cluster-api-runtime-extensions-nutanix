@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
+	crsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -74,7 +75,7 @@ func (s crsStrategy) apply(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      defaultCM.Name + "-" + cluster.Name,
+			Name:      s.crsNameForCluster(cluster),
 		},
 		Data: data,
 	}
@@ -110,7 +111,17 @@ func (s crsStrategy) apply(
 		)
 	}
 
-	if err = utils.EnsureCRSForClusterFromObjects(ctx, cm.Name, s.client, targetCluster, cm); err != nil {
+	// NOTE Unlike other addons, the cluster-autoscaler ClusterResourceSet is created in the management cluster
+	// namespace and thus cannot be owned by the workload cluster which will commonly exist in a different namespace.
+	// Deletion is handled by a BeforeClusterDelete hook instead of relying on Kubernetes GC.
+	if err = utils.EnsureCRSForClusterFromObjects(
+		ctx,
+		cm.Name,
+		s.client,
+		targetCluster,
+		utils.EnsureCRSForClusterFromObjectsOptions{SetClusterOwnership: false},
+		cm,
+	); err != nil {
 		return fmt.Errorf(
 			"failed to apply cluster-autoscaler installation ClusterResourceSet: %w",
 			err,
@@ -118,4 +129,42 @@ func (s crsStrategy) apply(
 	}
 
 	return nil
+}
+
+func (s crsStrategy) delete(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	// The cluster-autoscaler is different from other addons.
+	// It requires all resources to be created in the management cluster,
+	// which means creating the ClusterResourceSet always targeting the management cluster.
+	targetCluster, err := findTargetCluster(ctx, s.client, cluster)
+	if err != nil {
+		return err
+	}
+
+	crs := &crsv1.ClusterResourceSet{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: crsv1.GroupVersion.String(),
+			Kind:       "ClusterResourceSet",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: targetCluster.Namespace,
+			Name:      s.crsNameForCluster(cluster),
+		},
+	}
+
+	if err := ctrlclient.IgnoreNotFound(s.client.Delete(ctx, crs)); err != nil {
+		return fmt.Errorf(
+			"failed to delete cluster-autoscaler installation ClusterResourceSet: %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
+func (s crsStrategy) crsNameForCluster(cluster *clusterv1.Cluster) string {
+	return s.config.defaultClusterAutoscalerConfigMap + "-" + cluster.Name
 }

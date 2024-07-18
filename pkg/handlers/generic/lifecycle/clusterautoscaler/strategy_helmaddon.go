@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -103,15 +102,47 @@ func (s helmAddonStrategy) apply(
 	}
 
 	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
-	if err = controllerutil.SetOwnerReference(cluster, hcp, s.client.Scheme()); err != nil {
-		return fmt.Errorf(
-			"failed to set owner reference on cluster-autoscaler installation HelmChartProxy: %w",
-			err,
-		)
-	}
+
+	// NOTE Unlike other addons, the cluster-autoscaler HelmChartProxy is created in the management cluster
+	// namespace and thus cannot be owned by the workload cluster which will commonly exist in a different namespace.
+	// Deletion is handled by a BeforeClusterDelete hook instead of relying on Kubernetes GC.
 
 	if err = client.ServerSideApply(ctx, s.client, hcp, client.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply cluster-autoscaler installation HelmChartProxy: %w", err)
+	}
+
+	return nil
+}
+
+func (s helmAddonStrategy) delete(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	// The cluster-autoscaler is different from other addons.
+	// It requires all resources to be created in the management cluster,
+	// which means creating the HelmChartProxy always targeting the management cluster.
+	targetCluster, err := findTargetCluster(ctx, s.client, cluster)
+	if err != nil {
+		return err
+	}
+
+	hcp := &caaphv1.HelmChartProxy{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: caaphv1.GroupVersion.String(),
+			Kind:       "HelmChartProxy",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: targetCluster.Namespace,
+			Name:      "cluster-autoscaler-" + cluster.Name,
+		},
+	}
+
+	if err := ctrlclient.IgnoreNotFound(s.client.Delete(ctx, hcp)); err != nil {
+		return fmt.Errorf(
+			"failed to delete cluster-autoscaler installation HelmChartProxy: %w",
+			err,
+		)
 	}
 
 	return nil

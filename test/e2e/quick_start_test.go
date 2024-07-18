@@ -17,7 +17,6 @@ import (
 	"github.com/samber/lo"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	clusterctlcluster "sigs.k8s.io/cluster-api/cmd/clusterctl/client/cluster"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
@@ -142,7 +141,7 @@ var _ = Describe("Quick start", func() {
 												capiframework.AssertOwnerReferences(
 													namespace,
 													proxy.GetKubeconfigPath(),
-													clusterctlcluster.FilterClusterObjectsWithNameFilter(
+													filterClusterObjectsWithNameFilterIgnoreClusterAutoscaler(
 														clusterName,
 													),
 													capiframework.CoreOwnerReferenceAssertion,

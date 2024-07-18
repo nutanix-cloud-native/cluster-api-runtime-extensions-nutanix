@@ -85,7 +85,14 @@ func (s crsStrategy) Apply(
 		)
 	}
 
-	if err := utils.EnsureCRSForClusterFromObjects(ctx, cm.Name, s.client, cluster, cm); err != nil {
+	if err := utils.EnsureCRSForClusterFromObjects(
+		ctx,
+		cm.Name,
+		s.client,
+		cluster,
+		utils.DefaultEnsureCRSForClusterFromObjectsOptions(),
+		cm,
+	); err != nil {
 		return fmt.Errorf(
 			"failed to apply local-path CSI installation ClusterResourceSet: %w",
 			err,

@@ -74,6 +74,7 @@ func (s crsStrategy) Apply(
 		ccmConfigMap.Name,
 		s.client,
 		cluster,
+		handlersutils.DefaultEnsureCRSForClusterFromObjectsOptions(),
 		ccmConfigMap,
 	)
 	if err != nil {

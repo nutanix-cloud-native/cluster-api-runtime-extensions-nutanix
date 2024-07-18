@@ -21,11 +21,23 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
+type EnsureCRSForClusterFromObjectsOptions struct {
+	// SetClusterOwnership will set the ownership of the CRS to the cluster when set to true
+	SetClusterOwnership bool
+}
+
+func DefaultEnsureCRSForClusterFromObjectsOptions() EnsureCRSForClusterFromObjectsOptions {
+	return EnsureCRSForClusterFromObjectsOptions{
+		SetClusterOwnership: true,
+	}
+}
+
 func EnsureCRSForClusterFromObjects(
 	ctx context.Context,
 	crsName string,
 	c ctrlclient.Client,
 	cluster *clusterv1.Cluster,
+	opts EnsureCRSForClusterFromObjectsOptions,
 	objects ...runtime.Object,
 ) error {
 	resources := make([]crsv1.ResourceRef, 0, len(objects))
@@ -71,8 +83,10 @@ func EnsureCRSForClusterFromObjects(
 		},
 	}
 
-	if err := controllerutil.SetOwnerReference(cluster, crs, c.Scheme()); err != nil {
-		return fmt.Errorf("failed to set owner reference: %w", err)
+	if opts.SetClusterOwnership {
+		if err := controllerutil.SetOwnerReference(cluster, crs, c.Scheme()); err != nil {
+			return fmt.Errorf("failed to set owner reference: %w", err)
+		}
 	}
 
 	err := client.ServerSideApply(ctx, c, crs, client.ForceOwnership)

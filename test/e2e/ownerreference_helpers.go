@@ -9,9 +9,11 @@ import (
 	"slices"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	clusterctlcluster "sigs.k8s.io/cluster-api/cmd/clusterctl/client/cluster"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
@@ -98,7 +100,7 @@ var (
 		APIVersion: capxGroupVersion,
 	}
 
-	// AddonReferenceAssertions maps addontypes to functions which return an error if the passed OwnerReferences
+	// AddonReferenceAssertions maps addon types to functions which return an error if the passed OwnerReferences
 	// aren't as expected.
 	AddonReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
 		clusterResourceSetKind: func(owners []metav1.OwnerReference) error {
@@ -223,4 +225,30 @@ func clusterResourceSetBindingIsOnlyOwnedByClusterResourceSets(
 	gotOwners []metav1.OwnerReference,
 ) error {
 	return framework.HasExactOwners(dedupeOwners(gotOwners), clusterResourceSetOwner)
+}
+
+// filterClusterObjectsWithNameFilterIgnoreClusterAutoscaler filters out all objects that are not part of the workload
+// cluster hierarchy as well as cluster autoscaler objects because they are not owned by any cluster object.
+func filterClusterObjectsWithNameFilterIgnoreClusterAutoscaler(
+	clusterName string,
+) clusterctlcluster.GetOwnerGraphFilterFunction {
+	return func(u unstructured.Unstructured) bool {
+		// If the resource does not contain the cluster name in its name, it is not part of the workload cluster hierarchy
+		// so filter it out.
+		if clusterctlcluster.FilterClusterObjectsWithNameFilter(clusterName)(u) {
+			return false
+		}
+
+		// Filter out the cluster-autoscaler resources because they are not owned by any cluster object.
+		// These check is dependent on the implementation of the cluster-autoscaler addon
+		// and as such is fragile.
+		if u.GetKind() == clusterResourceSetKind ||
+			u.GetKind() == helmChartProxyKind {
+			if u.GetName() == "cluster-autoscaler-"+clusterName {
+				return false
+			}
+		}
+
+		return true
+	}
 }

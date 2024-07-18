@@ -30,6 +30,12 @@ type addonStrategy interface {
 		string,
 		logr.Logger,
 	) error
+
+	delete(
+		context.Context,
+		*clusterv1.Cluster,
+		logr.Logger,
+	) error
 }
 type Config struct {
 	*options.GlobalOptions
@@ -110,29 +116,18 @@ func (n *DefaultClusterAutoscaler) apply(
 		clusterKey,
 	)
 
-	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-
-	caVar, err := variables.Get[v1alpha1.ClusterAutoscaler](
-		varMap,
-		n.variableName,
-		n.variablePath...)
+	caVar, err := n.getCAVariable(cluster)
 	if err != nil {
-		if variables.IsNotFoundError(err) {
-			log.V(5).Info(
-				"Skipping cluster-autoscaler handler, cluster does not specify request cluster-autoscaler addon deployment",
-			)
-			return
-		}
-		log.Error(
-			err,
-			"failed to read cluster-autoscaler variable from cluster definition",
-		)
+		log.Error(err, "failed to read cluster-autoscaler variable from cluster definition")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("failed to read cluster-autoscaler variable from cluster definition: %v",
-				err,
-			),
+		resp.SetMessage(err.Error())
+		return
+	}
+	if caVar == nil {
+		log.V(5).Info(
+			"Skipping cluster-autoscaler handler, cluster does not specify request cluster-autoscaler addon deployment",
 		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	}
 
@@ -185,4 +180,86 @@ func (n *DefaultClusterAutoscaler) apply(
 	}
 
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+}
+
+func (n *DefaultClusterAutoscaler) BeforeClusterDelete(
+	ctx context.Context,
+	req *runtimehooksv1.BeforeClusterDeleteRequest,
+	resp *runtimehooksv1.BeforeClusterDeleteResponse,
+) {
+	cluster := &req.Cluster
+
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"cluster",
+		clusterKey,
+	)
+
+	caVar, err := n.getCAVariable(cluster)
+	if err != nil {
+		log.Error(err, "failed to read cluster-autoscaler variable from cluster definition")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+		return
+	}
+	if caVar == nil {
+		log.V(5).Info(
+			"Skipping cluster-autoscaler before cluster delete handler, cluster does not specify request cluster-autoscaler" +
+				"addon deployment",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
+	var strategy addonStrategy
+	switch ptr.Deref(caVar.Strategy, "") {
+	case v1alpha1.AddonStrategyClusterResourceSet:
+		strategy = crsStrategy{
+			config: n.config.crsConfig,
+			client: n.client,
+		}
+	case v1alpha1.AddonStrategyHelmAddon:
+		strategy = helmAddonStrategy{
+			config: n.config.helmAddonConfig,
+			client: n.client,
+		}
+	case "":
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage("strategy not specified for cluster-autoscaler addon")
+	default:
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("unknown cluster-autoscaler addon deployment strategy %q", *caVar.Strategy),
+		)
+		return
+	}
+
+	if err = strategy.delete(ctx, cluster, log); err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+		return
+	}
+
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+}
+
+func (n *DefaultClusterAutoscaler) getCAVariable(
+	cluster *clusterv1.Cluster,
+) (*v1alpha1.ClusterAutoscaler, error) {
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+
+	caVar, err := variables.Get[v1alpha1.ClusterAutoscaler](
+		varMap,
+		n.variableName,
+		n.variablePath...)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &caVar, nil
 }
