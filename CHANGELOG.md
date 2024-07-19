@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.1 (2024-07-19)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: generated API file by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/811
+* fix: category race condition by updating Nutanix CSI to 3.0.0-2458 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/814
+* fix: use production repo for Nutanix CSI to 3.0.0-2458 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/815
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.13.0...v0.13.1
+
 ## 0.13.0 (2024-07-18)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
