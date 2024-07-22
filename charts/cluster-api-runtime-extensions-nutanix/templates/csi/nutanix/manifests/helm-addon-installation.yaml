@@ -26,7 +26,4 @@ data:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
         operator: Exists
-
-    # TODO Remove this once the Nutanix 3.0 CSI driver is GA.
-    supportedPCVersions: master,fraser-2024.1-stable-pc-0,fraser-2023.4-stable-pc-0,fraser-2024.1-stable-pc-0.1
 {{- end -}}
