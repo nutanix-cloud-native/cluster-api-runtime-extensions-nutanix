@@ -100,6 +100,7 @@ func (n *NutanixCSI) Apply(
 			n.config.helmAddonConfig,
 			n.client,
 			helmChart,
+			config.NutanixStorageCSI,
 		)
 	case "":
 		return fmt.Errorf("strategy not provided for Nutanix CSI driver")

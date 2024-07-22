@@ -89,6 +89,7 @@ func (a *AWSEBS) Apply(
 			a.config.helmAddonConfig,
 			a.client,
 			helmChart,
+			config.AWSEBSCSI,
 		)
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
@@ -98,7 +99,7 @@ func (a *AWSEBS) Apply(
 	case "":
 		return fmt.Errorf("strategy not specified for AWS EBS CSI driver")
 	default:
-		return fmt.Errorf("strategy %s not implemented", *provider.Strategy)
+		return fmt.Errorf("strategy %s not implemented", provider.Strategy)
 	}
 
 	if err := strategy.Apply(ctx, cluster, a.config.DefaultsNamespace(), log); err != nil {
