@@ -1,0 +1,19 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Used to generate CRS.
+---
+cni:
+  chainingMode: portmap
+hubble:
+  enabled: false
+ipam:
+  mode: kubernetes
+image:
+  useDigest: false
+operator:
+  image:
+    useDigest: false
+certgen:
+  image:
+    useDigest: false

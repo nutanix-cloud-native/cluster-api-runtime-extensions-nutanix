@@ -17,7 +17,6 @@ import (
 )
 
 type HelmChartFromConfigMap struct {
-	Name       string `yaml:"ChartName"`
 	Version    string `yaml:"ChartVersion"`
 	Repository string `yaml:"RepositoryURL"`
 }
@@ -71,17 +70,17 @@ func main() {
 	out := HelmChartsConfig{
 		map[string]Repository{},
 	}
-	for _, info := range cm.Data {
+	for chartName, info := range cm.Data {
 		var settings HelmChartFromConfigMap
 		err = yaml.Unmarshal([]byte(info), &settings)
 		if err != nil {
 			log.Error(err, "failed unmarshl settings")
 			return
 		}
-		out.Repositories[settings.Name] = Repository{
+		out.Repositories[chartName] = Repository{
 			RepoURL: settings.Repository,
 			Charts: map[string][]string{
-				settings.Name: {
+				chartName: {
 					settings.Version,
 				},
 			},

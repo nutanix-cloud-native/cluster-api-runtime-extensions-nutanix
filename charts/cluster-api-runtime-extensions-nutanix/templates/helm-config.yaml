@@ -7,44 +7,35 @@
 #=================================================================
 apiVersion: v1
 data:
-  aws-ccm: |
-    ChartName: aws-cloud-controller-manager
+  aws-cloud-controller-manager: |
     ChartVersion: 0.0.8
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/cloud-provider-aws{{ end }}
-  aws-ebs-csi: |
-    ChartName: aws-ebs-csi-driver
+  aws-ebs-csi-driver: |
     ChartVersion: 2.32.0
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/aws-ebs-csi-driver{{ end }}
   cilium: |
-    ChartName: cilium
     ChartVersion: 1.15.6
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}
   cluster-autoscaler: |
-    ChartName: cluster-autoscaler
     ChartVersion: 9.37.0
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}
-  local-path-provisioner-csi: |
-    ChartName: local-path-provisioner
+  local-path-provisioner: |
     ChartVersion: 0.0.29
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://charts.containeroo.ch{{ end }}
   metallb: |
-    ChartName: metallb
     ChartVersion: 0.14.5
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://metallb.github.io/metallb{{ end }}
-  nfd: |
-    ChartName: node-feature-discovery
+  node-feature-discovery: |
     ChartVersion: 0.16.1
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/node-feature-discovery/charts{{ end }}
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
     ChartVersion: 0.4.1
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}
-  nutanix-storage-csi: |
-    ChartName: nutanix-csi-storage
+  nutanix-csi-storage: |
     ChartVersion: 3.0.0
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}
   snapshot-controller: |
-    ChartName: snapshot-controller
     ChartVersion: 3.0.5
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://piraeus.io/helm-charts/{{ end }}
   tigera-operator: |

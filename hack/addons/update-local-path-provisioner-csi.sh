@@ -19,7 +19,7 @@ trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
 readonly FILE_NAME="local-path-provisioner-csi.yaml"
 
-readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/local-path-provisioner-csi"
+readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/csi/local-path/manifests"
 mkdir -p "${ASSETS_DIR}/local-path-provisioner-csi"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/local-path-provisioner-csi/kustomization.yaml"
 cp -r "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}/local-path-provisioner-csi/"

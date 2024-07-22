@@ -19,7 +19,7 @@ trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
 readonly FILE_NAME="aws-ebs-csi.yaml"
 
-readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/aws-ebs-csi"
+readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/csi/aws-ebs/manifests"
 mkdir -p "${ASSETS_DIR}/aws-ebs-csi"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/aws-ebs-csi/kustomization.yaml"
 cp -r "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}/aws-ebs-csi/"
