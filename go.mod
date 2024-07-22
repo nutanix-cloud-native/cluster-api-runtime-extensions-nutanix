@@ -20,10 +20,10 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api v0.0.0-00010101000000-000000000000
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
-	github.com/nutanix-cloud-native/prism-go-client v0.4.1-0.20240704131014-072b7a88a7f5
-	github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4 v4.0.2-alpha.2
+	github.com/nutanix-cloud-native/prism-go-client v0.4.1-0.20240722112004-1bfdd67beef2
+	github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4 v4.0.1-beta.2
 	github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4 v4.0.2-beta.1
-	github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.0.3-alpha.2
+	github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.0.1-beta.1
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
 	github.com/pkg/errors v0.9.1
