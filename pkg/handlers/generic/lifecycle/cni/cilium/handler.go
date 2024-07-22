@@ -182,6 +182,7 @@ func (c *CiliumCNI) apply(
 			),
 			c.client,
 			helmChart,
+			config.Cilium,
 		)
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)

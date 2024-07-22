@@ -118,6 +118,7 @@ func (n *MetalLB) Apply(
 		),
 		n.client,
 		helmChartInfo,
+		config.MetalLB,
 	)
 
 	if err := addonApplier.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {

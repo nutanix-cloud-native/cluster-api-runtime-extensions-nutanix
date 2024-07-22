@@ -166,6 +166,7 @@ func (n *DefaultNFD) apply(
 			n.config.helmAddonConfig,
 			n.client,
 			helmChart,
+			config.NFD,
 		)
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)

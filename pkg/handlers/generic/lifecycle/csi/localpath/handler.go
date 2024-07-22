@@ -85,6 +85,7 @@ func (l *LocalPathProvisionerCSI) Apply(
 			l.config.helmAddonConfig,
 			l.client,
 			helmChart,
+			config.LocalPathProvisionerCSI,
 		)
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
@@ -94,7 +95,7 @@ func (l *LocalPathProvisionerCSI) Apply(
 	case "":
 		return fmt.Errorf("strategy not provided for local-path CSI addon")
 	default:
-		return fmt.Errorf("strategy %s not implemented", *provider.Strategy)
+		return fmt.Errorf("strategy %s not implemented", provider.Strategy)
 	}
 
 	if err := strategy.Apply(ctx, cluster, l.config.DefaultsNamespace(), log); err != nil {

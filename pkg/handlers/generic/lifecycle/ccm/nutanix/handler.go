@@ -126,6 +126,7 @@ func (p *provider) Apply(
 		),
 		p.client,
 		helmChart,
+		config.NutanixCCM,
 	).WithValueTemplater(templateValuesFunc(clusterConfig.Nutanix))
 
 	if err = applier.Apply(ctx, cluster, p.config.DefaultsNamespace(), log); err != nil {

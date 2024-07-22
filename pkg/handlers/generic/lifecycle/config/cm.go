@@ -20,14 +20,14 @@ const (
 	Autoscaler              Component = "cluster-autoscaler"
 	Tigera                  Component = "tigera-operator"
 	Cilium                  Component = "cilium"
-	NFD                     Component = "nfd"
-	NutanixStorageCSI       Component = "nutanix-storage-csi"
+	NFD                     Component = "node-feature-discovery"
+	NutanixStorageCSI       Component = "nutanix-csi-storage"
 	SnapshotController      Component = "snapshot-controller"
-	NutanixCCM              Component = "nutanix-ccm"
+	NutanixCCM              Component = "nutanix-cloud-provider"
 	MetalLB                 Component = "metallb"
-	LocalPathProvisionerCSI Component = "local-path-provisioner-csi"
-	AWSEBSCSI               Component = "aws-ebs-csi"
-	AWSCCM                  Component = "aws-ccm"
+	LocalPathProvisionerCSI Component = "local-path-provisioner"
+	AWSEBSCSI               Component = "aws-ebs-csi-driver"
+	AWSCCM                  Component = "aws-cloud-controller-manager"
 )
 
 type HelmChartGetter struct {
@@ -37,7 +37,6 @@ type HelmChartGetter struct {
 }
 
 type HelmChart struct {
-	Name       string `yaml:"ChartName"`
 	Version    string `yaml:"ChartVersion"`
 	Repository string `yaml:"RepositoryURL"`
 }

@@ -70,6 +70,7 @@ func (s helmAddonStrategy) apply(
 		),
 		s.client,
 		s.helmChart,
+		config.Tigera,
 	)
 
 	if err := addonApplier.Apply(ctx, cluster, defaultsNamespace, log); err != nil {

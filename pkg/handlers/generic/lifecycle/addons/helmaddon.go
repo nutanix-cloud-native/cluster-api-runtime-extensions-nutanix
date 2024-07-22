@@ -57,6 +57,7 @@ func (c *HelmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 type helmAddonApplier struct {
 	config    *HelmAddonConfig
 	client    ctrlclient.Client
+	chartName lifecycleconfig.Component
 	helmChart *lifecycleconfig.HelmChart
 	opts      []applyOption
 }
@@ -67,11 +68,13 @@ func NewHelmAddonApplier(
 	config *HelmAddonConfig,
 	client ctrlclient.Client,
 	helmChart *lifecycleconfig.HelmChart,
+	componentName lifecycleconfig.Component,
 ) *helmAddonApplier {
 	return &helmAddonApplier{
 		config:    config,
 		client:    client,
 		helmChart: helmChart,
+		chartName: componentName,
 	}
 }
 
@@ -170,7 +173,7 @@ func (a *helmAddonApplier) Apply(
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   a.helmChart.Repository,
-			ChartName: a.helmChart.Name,
+			ChartName: string(a.chartName),
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: targetCluster.Name},
 			},

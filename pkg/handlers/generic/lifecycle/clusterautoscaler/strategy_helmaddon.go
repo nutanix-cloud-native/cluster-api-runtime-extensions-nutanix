@@ -60,6 +60,7 @@ func (s helmAddonStrategy) apply(
 		),
 		s.client,
 		s.helmChart,
+		config.Autoscaler,
 	).
 		WithTargetCluster(targetCluster).
 		WithValueTemplater(templateValues).
