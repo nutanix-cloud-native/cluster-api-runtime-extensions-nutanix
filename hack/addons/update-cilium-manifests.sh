@@ -19,7 +19,7 @@ trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
 readonly FILE_NAME="cilium.yaml"
 
-readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/cilium"
+readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/cni/cilium/manifests"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
 cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 

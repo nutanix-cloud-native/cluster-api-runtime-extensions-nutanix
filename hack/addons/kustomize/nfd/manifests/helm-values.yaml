@@ -1,5 +1,8 @@
-image:
-  tag: v${NODE_FEATURE_DISCOVERY_VERSION}-minimal
+# Copyright 2023 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# used to generate CRS
+---
 master:
   extraLabelNs:
     - nvidia.com
