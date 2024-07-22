@@ -1,0 +1,23 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+---
+cni:
+  chainingMode: portmap
+hubble:
+  tls:
+    auto:
+      enabled: true               # enable automatic TLS certificate generation
+      method: cronJob             # auto generate certificates using cronJob method
+      certValidityDuration: 60    # certificates validity duration in days (default 2 months)
+      schedule: "0 0 1 * *"       # schedule on the 1st day regeneration of each month
+ipam:
+  mode: kubernetes
+image:
+  useDigest: false
+operator:
+  image:
+    useDigest: false
+certgen:
+  image:
+    useDigest: false

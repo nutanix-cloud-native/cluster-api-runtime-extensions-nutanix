@@ -1,0 +1,15 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
+data:
+  values.yaml: |-
+    {{ "{{" }}
+    {{ tpl (.Files.Get "addons/ccm/aws/map-template.yaml") . | nindent 4 }}
+    {{ "}}" }}
+    {{ .Files.Get "addons/ccm/aws/values-template.yaml" | nindent 4 }}
+{{- end -}}
