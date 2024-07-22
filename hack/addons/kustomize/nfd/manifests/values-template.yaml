@@ -1,7 +1,5 @@
-# Copyright 2023 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
----
+image:
+  tag: v0.16.1-minimal
 master:
   extraLabelNs:
     - nvidia.com
