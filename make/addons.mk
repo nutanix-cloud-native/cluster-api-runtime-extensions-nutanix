@@ -81,3 +81,7 @@ generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating h
 .PHONY: template-helm-repository
 template-helm-repository: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
 	sed -i '/RepositoryURL:/s#\(RepositoryURL: *\)\(.*\)#\1{{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}\2{{ end }}#'  "./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
+
+.PHONY: sync-helm-values
+sync-helm-values: ; $(info $(M) syncing helm values from hack to charts)
+	go run hack/tools/sync-helm-values/sync-values.go -kustomize-directory=./hack/addons/kustomize/ -helm-chart-directory=./charts/cluster-api-runtime-extensions-nutanix/
