@@ -1,5 +1,5 @@
 image:
-  tag: v${NODE_FEATURE_DISCOVERY_VERSION}-minimal
+  tag: v0.16.1-minimal
 master:
   extraLabelNs:
     - nvidia.com
