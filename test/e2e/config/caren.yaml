@@ -134,8 +134,8 @@ providers:
 - name: caren
   type: RuntimeExtensionProvider
   versions:
-  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.11}"
-    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.11}/runtime-extension-components.yaml"
+  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.13}"
+    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.13}/runtime-extension-components.yaml"
     type: "url"
     contract: v1beta1
     files:
@@ -145,7 +145,7 @@ providers:
       new: "--v=8"
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
-  - name: v0.12.99 # "vNext"; use manifests from local source files
+  - name: v0.14.99 # "vNext"; use manifests from local source files
     value: "file://../../../runtime-extension-components.yaml"
     type: "url"
     contract: v1beta1
