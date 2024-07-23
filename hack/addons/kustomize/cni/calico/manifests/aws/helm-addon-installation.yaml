@@ -1,12 +1,12 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-{{- if .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.NutanixCluster.create }}
+{{- if .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.create }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: '{{ .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.NutanixCluster.name }}'
+  name: '{{ .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/cni/calico/nutanix/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/cni/calico/aws/values-template.yaml" | nindent 4 }}
 {{- end -}}
