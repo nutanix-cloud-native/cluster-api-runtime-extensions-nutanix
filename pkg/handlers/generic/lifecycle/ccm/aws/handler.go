@@ -114,7 +114,7 @@ func (a *AWSCCM) Apply(
 	case "":
 		return fmt.Errorf("strategy not specified for AWS CCM")
 	default:
-		return fmt.Errorf("strategy %s not implemented", clusterConfig.Addons.CCM.Strategy)
+		return fmt.Errorf("strategy %s not implemented", *clusterConfig.Addons.CCM.Strategy)
 	}
 
 	if err := strategy.Apply(ctx, cluster, a.config.DefaultsNamespace(), log); err != nil {

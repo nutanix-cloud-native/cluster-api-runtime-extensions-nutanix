@@ -4,8 +4,10 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -111,12 +113,17 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 			return fmt.Errorf("failed to open file %s with error %w", srcPath, err)
 		}
 		defer in.Close()
-		_, err = in.WriteTo(out)
+		inBytes, err := io.ReadAll(in)
+		if err != nil {
+			return fmt.Errorf("failed to read all bytes of %s %w", in.Name(), err)
+		}
+		cleanedString := sanitizeSourceValues(string(inBytes))
+		b := bytes.NewBufferString(cleanedString)
+		_, err = b.WriteTo(out)
 		if err != nil {
 			return fmt.Errorf("failed to write to file %s %w", out.Name(), err)
 		}
 		return nil
-
 	})
 	return err
 }
@@ -127,4 +134,15 @@ func getDestPath(destDirectory, filepath string) string {
 		return path.Clean(path.Join(destDirectory, "addons", filepath))
 	}
 	return path.Clean(path.Join(destDirectory, "templates", filepath))
+}
+
+func sanitizeSourceValues(sourceString string) string {
+	// we template this with environment variables when using CRS
+	// expand it out.
+	sourceString = strings.ReplaceAll(
+		sourceString,
+		"${NODE_FEATURE_DISCOVERY_VERSION}",
+		os.Getenv("NODE_FEATURE_DISCOVERY_VERSION"),
+	)
+	return sourceString
 }
