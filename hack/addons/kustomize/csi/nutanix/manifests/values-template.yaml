@@ -1,3 +1,6 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 # The Secret containing the credentials will be created by the handler.
 createPrismCentralSecret: false
 pcSecretName: nutanix-csi-credentials
