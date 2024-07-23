@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.2 (2024-07-23)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Remove unused setting from Nutanix CSI chart by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/817
+* fix: Use correct GA Nutanix CSI version by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/820
+### Other Changes
+* build: update version in metadata files by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/813
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.13.1...v0.13.2
+
 ## 0.13.1 (2024-07-19)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
