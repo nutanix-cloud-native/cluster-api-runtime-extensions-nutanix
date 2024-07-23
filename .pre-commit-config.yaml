@@ -45,6 +45,12 @@ repos:
     language: system
     files: "^(hack/addons/|charts/cluster-api-runtime-extensions-nutanix/templates/.+/manifests/|make/addons.mk$)"
     pass_filenames: false
+  - id: sync-helm-charts
+    name: helm-charts-sync
+    entry: make sync-helm-values
+    language: system
+    files: "^(hack/addons/|charts/cluster-api-runtime-extensions-nutanix/$).*"
+    pass_filenames: false
   - id: addons-repo-yaml
     name: addons-repo-yaml
     entry: make template-helm-repository
@@ -70,7 +76,7 @@ repos:
   - id: check-yaml
     args: ["-m", "--unsafe"]
     stages: [commit]
-    exclude: ^charts/[^/]+/addons/.*|charts/[^/]+/templates/.*|hack/addons/.+/*.yaml$
+    exclude: ^charts/[^/]+/addons/.|charts/[^/]+/templates/.|hack/addons/.+/.yaml$
   - id: mixed-line-ending
     args: ["-f", "lf"]
     exclude: \.bat$
