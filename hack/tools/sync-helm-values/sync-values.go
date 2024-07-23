@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 )
 
@@ -24,6 +25,7 @@ func main() {
 	var (
 		kustomizeDir string
 		helmChartDir string
+		licenseFile  string
 	)
 	args := os.Args
 	flagSet := flag.NewFlagSet(
@@ -42,6 +44,12 @@ func main() {
 		"",
 		"Directory of all the helm chart",
 	)
+	flagSet.StringVar(
+		&licenseFile,
+		"license-file",
+		"",
+		"License file for templating",
+	)
 	err := flagSet.Parse(args[1:])
 	if err != nil {
 		fmt.Println("failed to parse args", err.Error())
@@ -57,6 +65,7 @@ func main() {
 		fmt.Println("failed to ensure full path for argument", err.Error())
 		os.Exit(1)
 	}
+	licenseFile, err = EnsureFullPath(licenseFile)
 	if err != nil {
 		fmt.Println("failed to ensure full path for argument", err.Error())
 		os.Exit(1)
@@ -65,7 +74,7 @@ func main() {
 		fmt.Println("-helm-chart-directory and -kustomize-directory must be set")
 		os.Exit(1)
 	}
-	err = SyncHelmValues(kustomizeDir, helmChartDir)
+	err = SyncHelmValues(kustomizeDir, helmChartDir, licenseFile)
 	if err != nil {
 		fmt.Println("failed to sync err:", err.Error())
 		os.Exit(1)
@@ -89,7 +98,7 @@ func EnsureFullPath(filename string) (string, error) {
 	return fullPath, nil
 }
 
-func SyncHelmValues(sourceDirectory, destDirectory string) error {
+func SyncHelmValues(sourceDirectory, destDirectory, licenseFile string) error {
 	sourceFS := os.DirFS(sourceDirectory)
 	err := fs.WalkDir(sourceFS, ".", func(filepath string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -116,6 +125,17 @@ func SyncHelmValues(sourceDirectory, destDirectory string) error {
 		inBytes, err := io.ReadAll(in)
 		if err != nil {
 			return fmt.Errorf("failed to read all bytes of %s %w", in.Name(), err)
+		}
+		if !strings.Contains(filepath, chartTemplateFile) {
+			license, err := os.Open(licenseFile)
+			if err != nil {
+				return fmt.Errorf("failed to open license file %s with error %w", licenseFile, err)
+			}
+			defer license.Close()
+			_, err = license.WriteTo(out)
+			if err != nil {
+				return fmt.Errorf("failed to write license to file %s %w", out.Name(), err)
+			}
 		}
 		cleanedString := sanitizeSourceValues(string(inBytes))
 		b := bytes.NewBufferString(cleanedString)
@@ -144,5 +164,12 @@ func sanitizeSourceValues(sourceString string) string {
 		"${NODE_FEATURE_DISCOVERY_VERSION}",
 		os.Getenv("NODE_FEATURE_DISCOVERY_VERSION"),
 	)
-	return sourceString
+	// remove the license
+	pattern := `(?m)^# Copyright 202(\d+) Nutanix\. All rights reserved\.\n?`
+	re := regexp.MustCompile(pattern)
+	sourceString = re.ReplaceAllString(sourceString, "")
+
+	pattern = `# SPDX-License-Identifier: Apache-2.0\n?`
+	re = regexp.MustCompile(pattern)
+	return re.ReplaceAllString(sourceString, "")
 }

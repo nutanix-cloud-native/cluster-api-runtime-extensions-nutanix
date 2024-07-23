@@ -1,6 +1,3 @@
-# Copyright 2024 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 # These values are a combination of a Helm template to create the dict for the k8s version to
 # CCM version map, and then including the non-templated values from the values-template.yaml.
 # This simplifies the templating required in the values-template.yaml.
