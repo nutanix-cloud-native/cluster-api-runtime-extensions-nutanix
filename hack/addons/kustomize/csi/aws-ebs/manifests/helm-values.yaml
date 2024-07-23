@@ -28,4 +28,3 @@ node:
 sidecars:
   snapshotter:
     forceEnable: true
-
