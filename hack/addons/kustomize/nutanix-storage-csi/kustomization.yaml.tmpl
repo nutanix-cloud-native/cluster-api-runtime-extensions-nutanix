@@ -7,12 +7,13 @@ kind: Kustomization
 metadata:
   name: nutanix-csi-kustomize
 
-namespace: kube-system
+namespace: ntnx-system
 
 helmCharts:
 - name: nutanix-csi-storage
   repo: https://nutanix.github.io/helm-releases/
   releaseName: nutanix-csi
   version: ${NUTANIX_STORAGE_CSI_CHART_VERSION}
+  valuesFile: helm-values.yaml
   includeCRDs: true
   skipTests: true

@@ -86,9 +86,9 @@ spec:
                   volume:
                     parameters:
                       storageContainer: ${NUTANIX_STORAGE_CONTAINER_NAME}
-                strategy: HelmAddon
+                strategy: ClusterResourceSet
             snapshotController:
-              strategy: HelmAddon
+              strategy: ClusterResourceSet
           nfd:
             strategy: ClusterResourceSet
           serviceLoadBalancer:

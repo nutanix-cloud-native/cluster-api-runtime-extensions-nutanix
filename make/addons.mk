@@ -25,7 +25,7 @@ export KUBE_VIP_VERSION := v0.8.1
 export METALLB_CHART_VERSION := 0.14.5
 
 .PHONY: addons.sync
-addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi aws-ccm.127 aws-ccm.128 aws-ccm.129 aws-ccm.130 kube-vip)
+addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi nutnaix-storage-csi aws-ccm.127 aws-ccm.128 aws-ccm.129 aws-ccm.130 kube-vip)
 
 .PHONY: update-addon.calico
 update-addon.calico: ; $(info $(M) updating calico manifests)
@@ -50,6 +50,10 @@ update-addon.aws-ebs-csi: ; $(info $(M) updating aws ebs csi manifests)
 .PHONY: update-addon.local-path-provisioner-csi
 update-addon.local-path-provisioner-csi: ; $(info $(M) updating local-path-provisioner csi manifests)
 	./hack/addons/update-local-path-provisioner-csi.sh
+
+.PHONY: update-addon.nutnaix-storage-csi
+update-addon.nutnaix-storage-csi: ; $(info $(M) updating nutanix storage csi manifests)
+	./hack/addons/update-nutanix-storage-csi.sh
 
 .PHONY: update-addon.snapshot-controller
 update-addon.snapshot-controller: ; $(info $(M) updating snapshot-controller manifests)

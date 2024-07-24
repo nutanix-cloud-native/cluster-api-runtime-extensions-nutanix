@@ -43,12 +43,14 @@ var DefaultStorageClassParameters = map[string]string{
 type Config struct {
 	*options.GlobalOptions
 
+	crsConfig       crsConfig
 	helmAddonConfig *addons.HelmAddonConfig
 }
 
 func NewConfig(globalOptions *options.GlobalOptions) *Config {
 	return &Config{
 		GlobalOptions: globalOptions,
+		crsConfig:     crsConfig{},
 		helmAddonConfig: addons.NewHelmAddonConfig(
 			"default-nutanix-csi-helm-values-template",
 			defaultHelmReleaseNamespace,
@@ -58,6 +60,7 @@ func NewConfig(globalOptions *options.GlobalOptions) *Config {
 }
 
 func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
+	c.crsConfig.AddFlags(prefix+".crs", flags)
 	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
@@ -101,6 +104,11 @@ func (n *NutanixCSI) Apply(
 			n.client,
 			helmChart,
 		)
+	case v1alpha1.AddonStrategyClusterResourceSet:
+		strategy = crsStrategy{
+			config: n.config.crsConfig,
+			client: n.client,
+		}
 	case "":
 		return fmt.Errorf("strategy not provided for Nutanix CSI driver")
 	default:
@@ -140,7 +148,7 @@ func (n *NutanixCSI) Apply(
 	}
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
-		return fmt.Errorf("failed to apply nutanix CSI addon: %w", err)
+		return fmt.Errorf("failed to apply Nutanix CSI addon: %w", err)
 	}
 
 	err := csiutils.CreateStorageClassesOnRemote(
