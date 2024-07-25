@@ -26,7 +26,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		cluster: &clusterv1.Cluster{},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
-			".svc", ".svc.cluster.local",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
 	}, {
 		name:        "no networking config with additional no proxy",
@@ -34,7 +34,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		additonalNo: []string{"example.com"},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
-			".svc", ".svc.cluster.local", "example.com",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.", "example.com",
 		},
 	}, {
 		name: "custom pod network",
@@ -49,7 +49,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "10.0.0.0/24", "10.0.1.0/24", "kubernetes",
-			"kubernetes.default", ".svc", ".svc.cluster.local",
+			"kubernetes.default", ".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
 	}, {
 		name: "Unknown infrastructure cluster",
@@ -62,7 +62,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
-			".svc", ".svc.cluster.local",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
 	}, {
 		name: "AWS cluster",
@@ -75,7 +75,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
-			".svc", ".svc.cluster.local", "169.254.169.254", ".elb.amazonaws.com",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.", "169.254.169.254", ".elb.amazonaws.com",
 		},
 	}, {
 		name: "AWS managed (EKS) cluster",
@@ -88,7 +88,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
-			".svc", ".svc.cluster.local", "169.254.169.254", ".elb.amazonaws.com",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.", "169.254.169.254", ".elb.amazonaws.com",
 		},
 	}, {
 		name: "Azure cluster",
@@ -101,7 +101,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
-			".svc", ".svc.cluster.local", "169.254.169.254",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.", "169.254.169.254",
 		},
 	}, {
 		name: "Azure managed (AKS) cluster",
@@ -114,7 +114,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
-			".svc", ".svc.cluster.local", "169.254.169.254",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.", "169.254.169.254",
 		},
 	}, {
 		name: "GCP cluster",
@@ -127,7 +127,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
-			".svc", ".svc.cluster.local", "169.254.169.254", "metadata", "metadata.google.internal",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
+			"169.254.169.254", "metadata", "metadata.google.internal",
 		},
 	}, {
 		name: "custom service network",
@@ -142,7 +143,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "172.16.0.0/24", "172.16.1.0/24", "kubernetes",
-			"kubernetes.default", ".svc", ".svc.cluster.local",
+			"kubernetes.default", ".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
 	}, {
 		name: "custom servicedomain",
@@ -155,7 +156,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
-			".svc", ".svc.foo.bar",
+			".svc", ".svc.foo.bar", ".svc.foo.bar.",
 		},
 	}, {
 		name: "all options",
@@ -175,7 +176,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		additonalNo: []string{"example.com"},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "10.10.0.0/16", "172.16.0.0/16", "kubernetes",
-			"kubernetes.default", ".svc", ".svc.foo.bar", "example.com",
+			"kubernetes.default", ".svc", ".svc.foo.bar", ".svc.foo.bar.", "example.com",
 		},
 	}}
 

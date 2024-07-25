@@ -66,6 +66,8 @@ func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1.Cluster) []string {
 		".svc",
 		// append .svc.<SERVICE_DOMAIN>
 		fmt.Sprintf(".svc.%s", strings.TrimLeft(serviceDomain, ".")),
+		// append .svc.<SERVICE_DOMAIN>.
+		fmt.Sprintf(".svc.%s.", strings.TrimLeft(serviceDomain, ".")),
 	)
 
 	if cluster.Spec.InfrastructureRef == nil {
