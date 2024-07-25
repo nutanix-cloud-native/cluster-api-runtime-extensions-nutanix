@@ -7,14 +7,15 @@ dev.run-on-kind: kind.create clusterctl.init
 ifndef SKIP_BUILD
 dev.run-on-kind: release-snapshot
 endif
+dev.run-on-kind: SNAPSHOT_VERSION := $(shell gojq -r '.version+"-"+.runtime.goarch' dist/metadata.json)
 dev.run-on-kind:
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
-		ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json) \
-		ghcr.io/nutanix-cloud-native/caren-helm-reg:$$(gojq -r .version dist/metadata.json)-$(GOARCH)
+		ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION) \
+		ghcr.io/nutanix-cloud-native/caren-helm-reg:$(SNAPSHOT_VERSION)
 	helm upgrade --install cluster-api-runtime-extensions-nutanix ./charts/cluster-api-runtime-extensions-nutanix \
 		--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
-		--set-string image.tag=$$(gojq -r .version dist/metadata.json) \
-		--set-string helmRepositoryImage.tag=$$(gojq -r .version dist/metadata.json)-$(GOARCH) \
+		--set-string image.tag=$(SNAPSHOT_VERSION) \
+		--set-string helmRepositoryImage.tag=$(SNAPSHOT_VERSION) \
 		--wait --wait-for-jobs
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
 	kubectl rollout restart deployment helm-repository
@@ -26,11 +27,12 @@ dev.update-webhook-image-on-kind: export KUBECONFIG := $(KIND_KUBECONFIG)
 ifndef SKIP_BUILD
 dev.update-webhook-image-on-kind: release-snapshot
 endif
+dev.update-webhook-image-on-kind: SNAPSHOT_VERSION := $(shell gojq -r '.version+"-"+.runtime.goarch' dist/metadata.json)
 dev.update-webhook-image-on-kind:
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
-	  ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
+	  ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION)
 	kubectl set image deployment \
-	  cluster-api-runtime-extensions-nutanix webhook=ko.local/cluster-api-runtime-extensions-nutanix:$$(gojq -r .version dist/metadata.json)
+	  cluster-api-runtime-extensions-nutanix webhook=ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION)
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
 	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix
 
