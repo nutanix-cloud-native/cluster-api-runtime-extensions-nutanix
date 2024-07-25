@@ -110,6 +110,7 @@ func SyncHelmValues(sourceDirectory, destDirectory, licenseFile string) error {
 		if err != nil {
 			return err
 		}
+		// we skip tigera because we use that to generate CRS, not for HelmChartProxy objects
 		if !strings.Contains(filepath, helmValuesFileName) || strings.Contains(filepath, "tigera") {
 			return nil
 		}
