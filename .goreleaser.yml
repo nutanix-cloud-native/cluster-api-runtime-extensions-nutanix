@@ -41,8 +41,8 @@ before:
         name: caren-system
       $(helm template {{ .ProjectName }} ./charts/{{ .ProjectName }} \
         --namespace caren-system \
-        --set-string image.tag=v{{ trimprefix .Version "v" }} \
-        --set-string helmRepositoryImage.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Env.GOARCH }} \
+        --set-string image.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }}{{ end }} \
+        --set-string helmRepositoryImage.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }} \
         --set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
       EOF'
@@ -80,12 +80,13 @@ builds:
       post:
         - |
           sh -ec 'if [ {{ .IsSnapshot }} == true ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
-            env GOOS=linux GOARCH={{ .Arch }} \
-                SOURCE_DATE_EPOCH=$(date +%s) \
+            env SOURCE_DATE_EPOCH=$(date +%s) \
+                KO_DATA_DATE_EPOCH=$(date +%s) \
                 KO_DOCKER_REPO=ko.local/{{ .ProjectName }} \
                 ko build \
                   --bare \
-                  -t v{{ trimprefix .Version "v" }} \
+                  --platform linux/{{ .Arch }} \
+                  -t v{{ trimprefix .Version "v" }}-{{ .Arch }} \
                   ./cmd
           fi'
 
@@ -135,16 +136,6 @@ docker_manifests:
 kos:
   - id: cluster-api-runtime-extensions-nutanix
     build: cluster-api-runtime-extensions-nutanix
-    ldflags:
-      - -s
-      - -w
-      - -X 'k8s.io/component-base/version.buildDate={{ .CommitDate }}'
-      - -X 'k8s.io/component-base/version.gitCommit={{ .FullCommit }}'
-      - -X 'k8s.io/component-base/version.gitTreeState={{ .Env.GIT_TREE_STATE }}'
-      - -X 'k8s.io/component-base/version.gitVersion=v{{ trimprefix .Version "v" }}'
-      - -X 'k8s.io/component-base/version.major={{ .Major }}'
-      - -X 'k8s.io/component-base/version.minor={{ .Minor }}'
-      - -X 'k8s.io/component-base/version/verflag.programName={{ .ProjectName }}'
     labels:
       org.opencontainers.image.created: "{{ .CommitDate }}"
       org.opencontainers.image.title: "{{ .ProjectName }}"
@@ -156,6 +147,8 @@ kos:
       - linux/arm64
     repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
     bare: true
+    creation_time: "{{.CommitTimestamp}}"
+    ko_data_creation_time: "{{.CommitTimestamp}}"
     tags:
       - 'v{{ trimprefix .Version "v" }}'
 
