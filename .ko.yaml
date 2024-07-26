@@ -1,0 +1,13 @@
+# Copyright 2023 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+defaultLdflagdss:
+- -s
+- -w
+- -X 'k8s.io/component-base/version.buildDate={{ .Git.CommitDate }}'
+- -X 'k8s.io/component-base/version.gitCommit={{ .Git.FullCommit }}'
+- -X 'k8s.io/component-base/version.gitTreeState={{ .Env.GIT_TREE_STATE }}'
+- -X 'k8s.io/component-base/version.gitVersion=v{{ trimprefix .Env.Version "v" }}'
+- -X 'k8s.io/component-base/version.major={{ .Env.Major }}'
+- -X 'k8s.io/component-base/version.minor={{ .Env.Minor }}'
+- -X 'k8s.io/component-base/version/verflag.programName={{ .Env.ProjectName }}'

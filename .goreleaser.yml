@@ -52,6 +52,34 @@ before:
         ".releaseSeries |= (. + [{contract: \"v1beta1\", major: {{ .Major }}, minor: {{ .Minor }}}] | unique)" \
         metadata.yaml >release-metadata.yaml'
     - make template-helm-repository
+    # dev image
+    - |
+      sh -ec 'if [ {{ .IsSnapshot }} == true ] ; then
+        GOOS=linux \
+        SOURCE_DATE_EPOCH=$(date +%s) \
+        KO_DOCKER_REPO=ko.local/{{ .ProjectName }} \
+          ko build \
+          --bare \
+          --tags v{{ trimprefix .Version "v" }} \
+          ./cmd
+      fi'
+    # released image
+    - |
+      sh -ec 'if [ {{ .IsSnapshot }} == false ] ; then
+        unset GOOS GOARCH && \
+        SOURCE_DATE_EPOCH=$(date +%s) \
+        KO_DOCKER_REPO="dkoshkin/{{ .ProjectName }}" \
+        ko build \
+          --bare \
+          --platform linux/amd64,linux/arm64 \
+          --tags v{{ trimprefix .Version "v" }} \
+          --image-label org.opencontainers.image.created={{.CommitDate}} \
+          --image-label org.opencontainers.image.title={{ .ProjectName }} \
+          --image-label org.opencontainers.image.revision={{.FullCommit}} \
+          --image-label org.opencontainers.image.version=v{{ trimprefix .Version "v" }} \
+          --image-label org.opencontainers.image.source={{.GitURL}} \
+          ./cmd
+      fi'
 
 builds:
   - id: cluster-api-runtime-extensions-nutanix
@@ -76,18 +104,6 @@ builds:
       - amd64
       - arm64
     mod_timestamp: '{{ .CommitTimestamp }}'
-    hooks:
-      post:
-        - |
-          sh -ec 'if [ {{ .IsSnapshot }} == true ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
-            env GOOS=linux GOARCH={{ .Arch }} \
-                SOURCE_DATE_EPOCH=$(date +%s) \
-                KO_DOCKER_REPO=ko.local/{{ .ProjectName }} \
-                ko build \
-                  --bare \
-                  -t v{{ trimprefix .Version "v" }} \
-                  ./cmd
-          fi'
 
 archives:
   - name_template: '{{ .ProjectName }}_v{{ trimprefix .Version "v" }}_{{ .Os }}_{{ .Arch }}'
@@ -131,33 +147,6 @@ docker_manifests:
     image_templates:
       - ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-amd64
       - ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-arm64
-
-kos:
-  - id: cluster-api-runtime-extensions-nutanix
-    build: cluster-api-runtime-extensions-nutanix
-    ldflags:
-      - -s
-      - -w
-      - -X 'k8s.io/component-base/version.buildDate={{ .CommitDate }}'
-      - -X 'k8s.io/component-base/version.gitCommit={{ .FullCommit }}'
-      - -X 'k8s.io/component-base/version.gitTreeState={{ .Env.GIT_TREE_STATE }}'
-      - -X 'k8s.io/component-base/version.gitVersion=v{{ trimprefix .Version "v" }}'
-      - -X 'k8s.io/component-base/version.major={{ .Major }}'
-      - -X 'k8s.io/component-base/version.minor={{ .Minor }}'
-      - -X 'k8s.io/component-base/version/verflag.programName={{ .ProjectName }}'
-    labels:
-      org.opencontainers.image.created: "{{ .CommitDate }}"
-      org.opencontainers.image.title: "{{ .ProjectName }}"
-      org.opencontainers.image.revision: "{{ .FullCommit }}"
-      org.opencontainers.image.version: 'v{{ trimprefix .Version "v" }}'
-      org.opencontainers.image.source: "{{ .GitURL }}"
-    platforms:
-      - linux/amd64
-      - linux/arm64
-    repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
-    bare: true
-    tags:
-      - 'v{{ trimprefix .Version "v" }}'
 
 checksum:
   name_template: 'checksums.txt'
