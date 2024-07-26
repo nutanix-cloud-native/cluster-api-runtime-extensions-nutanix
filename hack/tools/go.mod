@@ -1,3 +1,6 @@
+// Copyright 2024 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/hack/tools
 
 go 1.22.5
