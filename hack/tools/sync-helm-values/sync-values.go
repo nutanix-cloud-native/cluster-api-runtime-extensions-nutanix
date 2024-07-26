@@ -104,6 +104,8 @@ func SyncHelmValues(sourceDirectory, destDirectory, licenseFile string) error {
 		if err != nil {
 			return err
 		}
+		// we skip tigera because we don't use that with CAAPH
+		// we generate ClusterResourceSets with this instead
 		if strings.Contains(filepath, "tigera") {
 			return nil
 		}
