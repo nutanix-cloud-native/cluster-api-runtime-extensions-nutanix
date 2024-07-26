@@ -15,6 +15,7 @@ import (
 	"github.com/d2iq-labs/helm-list-images/pkg/k8s"
 	yamlv2 "gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -24,25 +25,26 @@ const (
 )
 
 type ChartInfo struct {
-	repo       string
-	name       string
-	valuesFile string
+	repo         string
+	name         string
+	valuesFile   string
+	stringValues []string
 }
 
 func main() {
 	args := os.Args
 	var (
-		outputFile         string
 		chartDirectory     string
 		helmChartConfigMap string
+		carenVersion       string
 	)
 	flagSet := flag.NewFlagSet(createImagesCMD, flag.ExitOnError)
-	flagSet.StringVar(&outputFile, "output-file", "",
-		"output file name to write config map to.")
 	flagSet.StringVar(&chartDirectory, "chart-directory", "",
 		"path to chart directory for CAREN")
 	flagSet.StringVar(&helmChartConfigMap, "helm-chart-configmap", "",
 		"path to chart directory for CAREN")
+	flagSet.StringVar(&carenVersion, "caren-version", "",
+		"caren version for images override")
 	err := flagSet.Parse(args[1:])
 	if err != nil {
 		fmt.Println("failed to parse args", err.Error())
@@ -62,9 +64,16 @@ func main() {
 		fmt.Println("chart-directory helm-chart-configmap must be set")
 		os.Exit(1)
 	}
-	images, err := getImagesForChart(&ChartInfo{
+	i := &ChartInfo{
 		name: chartDirectory,
-	})
+	}
+	if carenVersion != "" {
+		i.stringValues = []string{
+			fmt.Sprintf("image.tag=%s", carenVersion),
+			fmt.Sprintf("helmRepositoryImage.tag=%s", carenVersion),
+		}
+	}
+	images, err := getImagesForChart(i)
 	if err != nil {
 		fmt.Println("failed to get images", err.Error())
 		os.Exit(1)
@@ -128,6 +137,33 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 		if valuesFile != "" {
 			info.valuesFile = valuesFile
 		}
+		if chartName == "aws-cloud-controller-manager" {
+			values, err := getHelmValues(carenChartDirectory)
+			if err != nil {
+				return nil, err
+			}
+			awsImages, found, err := unstructured.NestedStringMap(values, "hooks", "ccm", "aws", "k8sMinorVersionToCCMVersion")
+			if !found {
+				return images, fmt.Errorf("failed to find k8sMinorVersionToCCMVersion from file %s",
+					path.Join(carenChartDirectory, "values.yaml"))
+			}
+			if err != nil {
+				return images, fmt.Errorf("failed to get map k8sMinorVersionToCCMVersion with error %w",
+					err)
+			}
+			for _, tag := range awsImages {
+				info.stringValues = []string{
+					fmt.Sprintf("image.tag=%s", tag),
+				}
+				chartImages, err := getImagesForChart(info)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get images for %s with error %w", info.name, err)
+				}
+				images = append(images, chartImages...)
+			}
+			// skip the to next addon because we got what we needed
+			continue
+		}
 		chartImages, err := getImagesForChart(info)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get images for %s with error %w", info.name, err)
@@ -135,6 +171,21 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 		images = append(images, chartImages...)
 	}
 	return images, nil
+}
+
+func getHelmValues(carenChartDirectory string) (map[string]interface{}, error) {
+	values := path.Join(carenChartDirectory, "values.yaml")
+	valuesFile, err := os.Open(values)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file %s with %w", values, err)
+	}
+	defer valuesFile.Close()
+	m := make(map[string]interface{})
+	err = yaml.NewYAMLOrJSONDecoder(valuesFile, 1024).Decode(&m)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file %s with %w", values, err)
+	}
+	return m, nil
 }
 
 func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) string {
@@ -147,6 +198,11 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) string
 		return path.Join(carenChartDirectory, "addons", "csi", "snapshot-controller", defaultHelmAddonFilename)
 	case "cilium":
 		return path.Join(carenChartDirectory, "addons", "cni", "cilium", defaultHelmAddonFilename)
+	// this uses the values from kustomize because the file at addons/cluster-autoscaler/values-template.yaml
+	// is a file that is templated
+	case "cluster-autoscaler":
+		return path.Clean(path.Join(carenChartDirectory, "..", "..",
+			"hack", "addons", "kustomize", "cluster-autoscaler", "manifests", "helm-values.yaml"))
 	default:
 		return ""
 	}
@@ -161,6 +217,10 @@ func getImagesForChart(info *ChartInfo) ([]string, error) {
 	if info.valuesFile != "" {
 		images.ValueFiles.Set(info.valuesFile)
 	}
+	if len(info.stringValues) > 0 {
+		images.StringValues = info.stringValues
+	}
+	// kubeVersion needs to be set for some addons
 	images.KubeVersion = "v1.29.0"
 	images.SetRelease("sample")
 	images.SetLogger("INFO")
@@ -177,7 +237,9 @@ func getImagesForChart(info *ChartInfo) ([]string, error) {
 		return nil, err
 	}
 	ret := strings.Split(string(raw), "\n")
-	return ret[0 : len(ret)-1], nil
+	// this skips the last new line.
+	ret = ret[0 : len(ret)-1]
+	return ret, nil
 }
 
 func getTemplatedHelmConfigMap(helmChartConfigMap string) (string, error) {
