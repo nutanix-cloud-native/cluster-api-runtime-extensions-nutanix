@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.3 (2024-07-26)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: add cluster domain with final dot to no proxy list by @mhrabovcin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/821
+### Other Changes
+* build: Ensure clean go build environment for goreleaser and ko by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/824
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.13.2...v0.13.3
+
 ## 0.13.2 (2024-07-23)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
