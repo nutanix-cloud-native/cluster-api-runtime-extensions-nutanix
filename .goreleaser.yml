@@ -1,9 +1,9 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-version: 2
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 
-project_name: cluster-api-runtime-extensions-nutanix
+version: 2
 
 changelog:
   use: github
@@ -30,6 +30,7 @@ release:
       name_template: metadata.yaml
     - glob: runtime-extension-components.yaml
     - glob: ./charts/{{ .ProjectName }}/defaultclusterclasses/*.yaml
+    - glob: caren-images.txt
 
 before:
   hooks:
@@ -52,6 +53,10 @@ before:
         ".releaseSeries |= (. + [{contract: \"v1beta1\", major: {{ .Major }}, minor: {{ .Minor }}}] | unique)" \
         metadata.yaml >release-metadata.yaml'
     - make template-helm-repository
+    - |
+      sh -ec 'if [ {{ .IsSnapshot }} == false ] ; then
+        env CAREN_VERSION=v{{ trimprefix .Version "v" }} make list-images >caren-images.txt
+      fi'
 
 builds:
   - id: cluster-api-runtime-extensions-nutanix
