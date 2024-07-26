@@ -7,7 +7,7 @@ dev.run-on-kind: kind.create clusterctl.init
 ifndef SKIP_BUILD
 dev.run-on-kind: release-snapshot
 endif
-dev.run-on-kind: SNAPSHOT_VERSION := $(shell gojq -r '.version+"-"+.runtime.goarch' dist/metadata.json)
+dev.run-on-kind: SNAPSHOT_VERSION = $(shell gojq -r '.version+"-"+.runtime.goarch' dist/metadata.json)
 dev.run-on-kind:
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
 		ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION) \
@@ -27,7 +27,7 @@ dev.update-webhook-image-on-kind: export KUBECONFIG := $(KIND_KUBECONFIG)
 ifndef SKIP_BUILD
 dev.update-webhook-image-on-kind: release-snapshot
 endif
-dev.update-webhook-image-on-kind: SNAPSHOT_VERSION := $(shell gojq -r '.version+"-"+.runtime.goarch' dist/metadata.json)
+dev.update-webhook-image-on-kind: SNAPSHOT_VERSION = $(shell gojq -r '.version+"-"+.runtime.goarch' dist/metadata.json)
 dev.update-webhook-image-on-kind:
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
 	  ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION)
