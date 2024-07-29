@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -105,7 +106,16 @@ func (s helmAddonStrategy) apply(
 
 	// NOTE Unlike other addons, the cluster-autoscaler HelmChartProxy is created in the management cluster
 	// namespace and thus cannot be owned by the workload cluster which will commonly exist in a different namespace.
-	// Deletion is handled by a BeforeClusterDelete hook instead of relying on Kubernetes GC.
+	// Ownership is set up to be owned by the management cluster so that move will work correctly but deletion is handled
+	// by a BeforeClusterDelete hook instead of relying on Kubernetes GC.
+
+	if err = controllerutil.SetOwnerReference(targetCluster, hcp, s.client.Scheme()); err != nil {
+		return fmt.Errorf(
+			"failed to set owner reference on HelmChartProxy %q: %w",
+			hcp.Name,
+			err,
+		)
+	}
 
 	if err = client.ServerSideApply(ctx, s.client, hcp, client.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply cluster-autoscaler installation HelmChartProxy: %w", err)

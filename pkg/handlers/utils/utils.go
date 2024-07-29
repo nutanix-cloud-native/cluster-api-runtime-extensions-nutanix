@@ -22,14 +22,22 @@ import (
 )
 
 type EnsureCRSForClusterFromObjectsOptions struct {
-	// SetClusterOwnership will set the ownership of the CRS to the cluster when set to true
-	SetClusterOwnership bool
+	// OwnerCluster holds the owning cluster for the ClusterResourceSet.
+	// This allows setting the owner to something other than the workload cluster, which is
+	// needed specifically for the ClusterAutoscaler addon which can be deployed in a different
+	// namespace to the target cluster as it must exist in the management cluster.
+	OwnerCluster *clusterv1.Cluster
 }
 
 func DefaultEnsureCRSForClusterFromObjectsOptions() EnsureCRSForClusterFromObjectsOptions {
-	return EnsureCRSForClusterFromObjectsOptions{
-		SetClusterOwnership: true,
-	}
+	return EnsureCRSForClusterFromObjectsOptions{}
+}
+
+func (o EnsureCRSForClusterFromObjectsOptions) WithOwnerCluster(
+	cluster *clusterv1.Cluster,
+) EnsureCRSForClusterFromObjectsOptions {
+	o.OwnerCluster = cluster
+	return o
 }
 
 func EnsureCRSForClusterFromObjects(
@@ -83,10 +91,12 @@ func EnsureCRSForClusterFromObjects(
 		},
 	}
 
-	if opts.SetClusterOwnership {
-		if err := controllerutil.SetOwnerReference(cluster, crs, c.Scheme()); err != nil {
-			return fmt.Errorf("failed to set owner reference: %w", err)
-		}
+	ownerCluster := cluster
+	if opts.OwnerCluster != nil {
+		ownerCluster = opts.OwnerCluster
+	}
+	if err := controllerutil.SetOwnerReference(ownerCluster, crs, c.Scheme()); err != nil {
+		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
 
 	err := client.ServerSideApply(ctx, c, crs, client.ForceOwnership)

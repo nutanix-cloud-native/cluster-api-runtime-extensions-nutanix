@@ -119,7 +119,7 @@ func (s crsStrategy) apply(
 		cm.Name,
 		s.client,
 		targetCluster,
-		utils.EnsureCRSForClusterFromObjectsOptions{SetClusterOwnership: false},
+		utils.DefaultEnsureCRSForClusterFromObjectsOptions().WithOwnerCluster(targetCluster),
 		cm,
 	); err != nil {
 		return fmt.Errorf(
