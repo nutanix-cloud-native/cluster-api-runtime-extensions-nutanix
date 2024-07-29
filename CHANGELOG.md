@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.4 (2024-07-29)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: ClusterAutoscaler addon ownership for move by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/830
+### Other Changes
+* build: Remove noisy build messages by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/826
+* build(deps): Upgrade CAPX version to v1.5.0-beta.1 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/827
+* build: Latest devbox update by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/829
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.13.3...v0.13.4
+
 ## 0.13.3 (2024-07-26)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
