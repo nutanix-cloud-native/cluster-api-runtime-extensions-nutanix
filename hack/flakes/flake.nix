@@ -59,16 +59,16 @@
 
           clusterawsadm = buildGo122Module rec {
             name = "clusterawsadm";
-            version = "2.5.0";
+            version = "2.5.2";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-iR+r8UaaYIWeFuiGikOdMnCJZuNTQeOKhg2cjTZzs+A=";
+              hash = "sha256-ttmRrKlHS5ftzirYVfnnB4S057gBh8Mn5f4YlQf3eLk=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
-            vendorHash = "sha256-mbOnD4idQmN2xcDcD0Li7HrJ5ip1se3mNx6ET2znRFI=";
+            vendorHash = "sha256-7IJVT9BX18QpuTVfetT0WorKNTto6Y0AK6UCcEchoNs=";
             ldflags = let t = "sigs.k8s.io/cluster-api-provider-aws/v2/version"; in [
               "-s"
               "-w"
@@ -112,13 +112,13 @@
 
           clusterctl = buildGo122Module rec {
             pname = "clusterctl";
-            version = "1.7.3";
+            version = "1.7.4";
 
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api";
               rev = "v${version}";
-              hash = "sha256-CqUAySELc9jMQD6+BCgnvajEDv8FjU4Ita7v0EFrPug=";
+              hash = "sha256-ziW+ROuUmrgsIWHXKL2Yw+9gC6VgE/7Ri3zc3sveyU8=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterctl" ];
@@ -132,13 +132,13 @@
 
           helm-schema = buildGo122Module rec {
             pname = "helm-schema";
-            version = "1.4.1";
+            version = "1.5.2";
 
             src = fetchFromGitHub {
               owner = "losisin";
               repo = "helm-values-schema-json";
               rev = "v${version}";
-              hash = "sha256-pi/Xp4t8UFgdFvU2De2Uo/gVsVltan4iSw2XGEtynuw=";
+              hash = "sha256-5f54Qcz9Gt/d3qZbIrISr46J0yQKhEg886TSFnWuBXw=";
             };
             doCheck = false;
             vendorHash = "sha256-F2mT36aYkLjUZbV5GQH8mNMZjGi/70dTENU2rRhAJq4=";
