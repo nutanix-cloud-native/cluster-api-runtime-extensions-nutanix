@@ -7,7 +7,7 @@
 
 ## Motivation
 
-The purpose of this tool is to synchronize the helm values files located `hack/addons/kustomize` with the files
+The purpose of this tool is to synchronize the helm values files located in `hack/addons/kustomize` with the files
 present in `charts/cluster-api-runtime-extensions-nutanix/addons/`
 and `charts/cluster-api-runtime-extensions-nutanix/templates` which are used by CAREN to deploy
 [CAAPH](https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm) `HelmChartProxy` objects.
