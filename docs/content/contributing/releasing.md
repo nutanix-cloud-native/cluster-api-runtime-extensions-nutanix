@@ -60,6 +60,6 @@ relevant artifacts and images.
     docs][gha-security-hardening].
 
 [release-please]: https://github.com/googleapis/release-please/
-[release-please-action]: https://github.com/google-github-actions/release-please-action
+[release-please-action]: https://github.com/googleapis/release-please-action
 [cider-sec]: https://medium.com/cider-sec/bypassing-required-reviews-using-github-actions-6e1b29135cc7
 [gha-security-hardening]: https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions
