@@ -23,7 +23,7 @@ The tool sets the files located in `hack/addons/kustomize` to serve as a single 
 ## How it works
 
 This tool works by traversing the file tree located at `hack/addons/kustomize` and looking for files named
-`helm-addon-installation.yaml` and `*-template.yaml` and moves them to
+`helm-addon-installation.yaml` and `*-template.yaml` and copies them to
 `charts/cluster-api-runtime-extensions-nutanix/templates` and
 `charts/cluster-api-runtime-extensions-nutanix/addons` respectively.
 
