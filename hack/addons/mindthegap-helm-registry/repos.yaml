@@ -45,7 +45,7 @@ repositories:
     repoURL: https://nutanix.github.io/helm/
     charts:
       nutanix-cloud-provider:
-      - 0.3.4
+      - 0.4.0
   nutanix-csi-storage:
     repoURL: https://nutanix.github.io/helm-releases/
     charts:
