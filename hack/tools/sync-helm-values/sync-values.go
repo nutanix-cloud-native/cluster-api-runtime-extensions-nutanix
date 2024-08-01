@@ -70,8 +70,8 @@ func main() {
 		fmt.Println("failed to ensure full path for argument", err.Error())
 		os.Exit(1)
 	}
-	if kustomizeDir == "" || helmChartDir == "" {
-		fmt.Println("-helm-chart-directory and -kustomize-directory must be set")
+	if kustomizeDir == "" || helmChartDir == "" || licenseFile == "" {
+		fmt.Println("-helm-chart-directory -license-file -kustomize-directory must all be set")
 		os.Exit(1)
 	}
 	err = SyncHelmValues(kustomizeDir, helmChartDir, licenseFile)
