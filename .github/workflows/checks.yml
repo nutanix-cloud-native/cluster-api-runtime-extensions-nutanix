@@ -231,7 +231,7 @@ jobs:
           devbox run -- \
             kind load docker-image \
               --name "${KIND_CLUSTER_NAME}" \
-              "ko.local/cluster-api-runtime-extensions-nutanix:$(devbox run -- gojq -r .version dist/metadata.json)" \
+              "ko.local/cluster-api-runtime-extensions-nutanix:$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)" \
               "ghcr.io/nutanix-cloud-native/caren-helm-reg:$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)"
 
       - if: steps.list-changed.outputs.changed == 'true'
