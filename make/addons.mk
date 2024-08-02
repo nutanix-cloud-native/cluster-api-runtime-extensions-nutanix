@@ -88,3 +88,11 @@ sync-helm-values: ; $(info $(M) syncing helm values from hack to charts)
 		-kustomize-directory=./hack/addons/kustomize/ \
 		-helm-chart-directory=./charts/cluster-api-runtime-extensions-nutanix/ \
 		-license-file=./hack/license-header.yaml.txt
+
+.PHONY: list-images
+list-images:
+	cd hack/tools/fetch-images && go build
+	./hack/tools/fetch-images/fetch-images \
+		-chart-directory=./charts/cluster-api-runtime-extensions-nutanix/ \
+		-helm-chart-configmap=./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml \
+		-caren-version=$(CAREN_VERSION) >> caren-images.txt

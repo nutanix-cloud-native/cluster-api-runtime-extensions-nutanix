@@ -162,9 +162,44 @@
             '';
           };
 
+          helm-list-images = buildGo122Module rec {
+            pname = "helm-list-images";
+            version = "0.11.0";
+
+            src = fetchFromGitHub {
+              owner = "d2iq-labs";
+              repo = "helm-list-images";
+              rev = "v${version}";
+              hash = "sha256-AKj2u0Rz0lK/NJJr+QSM4tLkvZigFS5JfMOg5vVZK8Q=";
+            };
+            doCheck = false;
+            vendorHash = "sha256-YLXRs2vqiwakcxjeoYidpakZJhGO4WjKOrm76Feu5c4=";
+            ldflags = let t = "k8s.io/component-base/version"; in [
+              "-s"
+              "-w"
+              "-X ${t}/verflag.programName=${pname}"
+              "-X ${t}.buildDate=19700101-00:00:00"
+              "-X ${t}.gitCommit=v${version}"
+              "-X ${t}.gitMajor==${lib.versions.major version}"
+              "-X ${t}.gitMinor==${lib.versions.minor version}"
+              "-X ${t}.gitVersion=v${version}"
+            ];
+
+            postPatch = ''
+              sed -i '/^hooks:/,+2 d' plugin.yaml
+            '';
+
+            postInstall = ''
+              install -dm755 $out/${pname}
+              mv $out/bin/ $out/${pname}/
+              install -m644 -Dt $out/${pname} plugin.yaml
+            '';
+          };
+
           helm-with-plugins = wrapHelm kubernetes-helm {
             plugins = [
               helm-schema
+              helm-list-images
             ];
           };
         };
