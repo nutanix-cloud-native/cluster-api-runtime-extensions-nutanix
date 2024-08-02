@@ -1,0 +1,12 @@
+# Copyright 2023 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# used to generate CRS.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: node-feature-discovery
+  labels:
+    pod-security.kubernetes.io/enforce: "privileged"
+    pod-security.kubernetes.io/enforce-version: "latest"

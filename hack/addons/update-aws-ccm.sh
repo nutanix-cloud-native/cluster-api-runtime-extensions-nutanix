@@ -26,7 +26,7 @@ ASSETS_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}")"
 readonly ASSETS_DIR
 trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
-readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/aws-ccm/"
+readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/ccm/aws/manifests/"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
 cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 

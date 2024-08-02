@@ -151,7 +151,7 @@ func (p *provider) Apply(
 		},
 		Spec: caaphv1.HelmChartProxySpec{
 			RepoURL:   helmChart.Repository,
-			ChartName: helmChart.Name,
+			ChartName: string(config.NutanixCCM),
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
 			},

@@ -19,7 +19,7 @@ trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
 readonly FILE_NAME="tigera-operator.yaml"
 
-readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/tigera-operator/"
+readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/cni/calico/manifests/tigera-operator/"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
 cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 

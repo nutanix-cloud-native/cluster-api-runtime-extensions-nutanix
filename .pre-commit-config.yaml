@@ -45,6 +45,12 @@ repos:
     language: system
     files: "^(hack/addons/|charts/cluster-api-runtime-extensions-nutanix/templates/.+/manifests/|make/addons.mk$)"
     pass_filenames: false
+  - id: sync-helm-charts
+    name: helm-charts-sync
+    entry: make sync-helm-values
+    language: system
+    files: "^(hack/addons/|charts/cluster-api-runtime-extensions-nutanix/$).*"
+    pass_filenames: false
   - id: addons-repo-yaml
     name: addons-repo-yaml
     entry: make template-helm-repository
@@ -70,7 +76,7 @@ repos:
   - id: check-yaml
     args: ["-m", "--unsafe"]
     stages: [commit]
-    exclude: ^charts/.+/templates/
+    exclude: ^charts/[^/]+/addons/.|charts/[^/]+/templates/.|hack/addons/kustomize/.*$
   - id: mixed-line-ending
     args: ["-f", "lf"]
     exclude: \.bat$
@@ -140,7 +146,7 @@ repos:
     name: License headers - YAML and Makefiles
     stages: [commit]
     files: (^Makefile|\.(ya?ml|mk))$
-    exclude: ^(internal/test|pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses)/.+\.ya?ml|docs/static/helm/index\.yaml|charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml$
+    exclude: ^(internal/test|pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/(defaultclusterclasses|addons))/.+\.ya?ml|docs/static/helm/index\.yaml|charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml|hack/addons/kustomize/.+/(map|values)-template.yaml$
     args:
       - --license-filepath
       - hack/license-header.txt

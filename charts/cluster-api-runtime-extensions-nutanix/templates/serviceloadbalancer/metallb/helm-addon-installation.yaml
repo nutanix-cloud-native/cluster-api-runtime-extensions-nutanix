@@ -1,4 +1,4 @@
-# Copyright 2023 Nutanix. All rights reserved.
+# Copyright 2024 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 {{- if .Values.hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.create }}
@@ -8,24 +8,5 @@ metadata:
   name: '{{ .Values.hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    controller:
-      tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          effect: NoSchedule
-          operator: Exists
-        - key: CriticalAddonsOnly
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
-          tolerationSeconds: 300
-    speaker:
-      tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          effect: NoSchedule
-          operator: Exists
-        - key: CriticalAddonsOnly
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
-          tolerationSeconds: 300
+    {{- .Files.Get "addons/serviceloadbalancer/metallb/values-template.yaml" | nindent 4 }}
 {{- end -}}
