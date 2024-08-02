@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.13.5 (2024-08-02)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: sets uefi boot type by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/838
+### Other Changes
+* ci: Change release-please-action to new org googleapis by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/832
+* build: Derive GH owner/repo via gh by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/833
+* build(deps): Upgrade CAPX Version to v1.5.0-beta.2 by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/835
+* build(e2e): Remove Kind DNS resolver override by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/837
+* build(deps): Upgrade CCM Version to v0.4.0 by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/836
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.13.4...v0.13.5
+
 ## 0.13.4 (2024-07-29)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
