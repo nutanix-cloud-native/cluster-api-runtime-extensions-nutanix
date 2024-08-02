@@ -99,7 +99,7 @@ spec:
         controlPlane:
           nutanix:
             machineDetails:
-              bootType: legacy
+              bootType: uefi
               cluster:
                 name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
                 type: name
@@ -137,7 +137,7 @@ spec:
       value:
         nutanix:
           machineDetails:
-            bootType: legacy
+            bootType: uefi
             cluster:
               name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
               type: name

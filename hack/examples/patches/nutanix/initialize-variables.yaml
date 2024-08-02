@@ -24,7 +24,7 @@
   value:
     nutanix:
       machineDetails:
-        bootType: legacy
+        bootType: uefi
         cluster:
           name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
           type: name
@@ -42,7 +42,7 @@
   path: "/spec/topology/variables/1/value/nutanix"
   value:
     machineDetails:
-      bootType: legacy
+      bootType: uefi
       cluster:
         name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
         type: name
