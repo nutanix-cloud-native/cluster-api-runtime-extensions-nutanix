@@ -1,4 +1,5 @@
 #!/bin/bash
+systemctl daemon-reload
 systemctl restart containerd
 
 if ! command -v crictl; then
