@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.6 (2024-08-05)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: run systemctl daemon-reload before Containerd restart by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/842
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.13.5...v0.13.6
+
 ## 0.13.5 (2024-08-02)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
