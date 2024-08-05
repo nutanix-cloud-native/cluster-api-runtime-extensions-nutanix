@@ -1,5 +1,7 @@
 #!/bin/bash
-systemctl daemon-reload
+if [ "$(systemctl show containerd -p NeedDaemonReload --value)" == "yes" ]; then
+  systemctl daemon-reload
+fi
 systemctl restart containerd
 
 if ! command -v crictl; then
