@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 )
 
 const (
@@ -23,6 +25,14 @@ type NutanixSpec struct {
 	// Nutanix Prism Central endpoint configuration.
 	// +kubebuilder:validation:Required
 	PrismCentralEndpoint NutanixPrismCentralEndpointSpec `json:"prismCentralEndpoint"`
+
+	// failureDomains configures failure domains information for the Nutanix platform.
+	// When set, the failure domains defined here may be used to spread Machines across
+	// prism element clusters to improve fault tolerance of the cluster.
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:Optional
+	FailureDomains []NutanixFailureDomain `json:"failureDomains,omitempty"`
 }
 
 type NutanixPrismCentralEndpointSpec struct {
@@ -75,4 +85,38 @@ func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, int32, error) {
 	}
 
 	return hostname, int32(port), nil
+}
+
+// NutanixFailureDomains is a list of FDs.
+type NutanixFailureDomains []NutanixFailureDomain
+
+// NutanixFailureDomain configures failure domain information for Nutanix.
+type NutanixFailureDomain struct {
+	// name defines the unique name of a failure domain.
+	// Name is required and must be at most 64 characters in length.
+	// It must consist of only lower case alphanumeric characters and hyphens (-).
+	// It must start and end with an alphanumeric character.
+	// This value is arbitrary and is used to identify the failure domain within the platform.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=64
+	// +kubebuilder:validation:Pattern=`[a-z0-9]([-a-z0-9]*[a-z0-9])?`
+	Name string `json:"name"`
+
+	// cluster is to identify the cluster (the Prism Element under management of the Prism Central),
+	// in which the Machine's VM will be created. The cluster identifier (uuid or name) can be obtained
+	// from the Prism Central console or using the prism_central API.
+	// +kubebuilder:validation:Required
+	Cluster capxv1.NutanixResourceIdentifier `json:"cluster"`
+
+	// subnets holds a list of identifiers (one or more) of the cluster's network subnets
+	// for the Machine's VM to connect to. The subnet identifiers (uuid or name) can be
+	// obtained from the Prism Central console or using the prism_central API.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
+	Subnets []capxv1.NutanixResourceIdentifier `json:"subnets"`
+
+	// indicates if a failure domain is suited for control plane nodes
+	// +kubebuilder:validation:Required
+	ControlPlane bool `json:"controlPlane,omitempty"`
 }
