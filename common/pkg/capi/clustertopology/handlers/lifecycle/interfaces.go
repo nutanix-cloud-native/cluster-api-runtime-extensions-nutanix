@@ -6,6 +6,7 @@ package lifecycle
 import (
 	"context"
 
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 )
 
@@ -43,4 +44,11 @@ type BeforeClusterDelete interface {
 		*runtimehooksv1.BeforeClusterDeleteRequest,
 		*runtimehooksv1.BeforeClusterDeleteResponse,
 	)
+}
+
+type OnClusterSpecUpdated interface {
+	OnClusterSpecUpdated(
+		ctx context.Context,
+		cluster *clusterv1.Cluster,
+	) error
 }
