@@ -56,9 +56,9 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 		},
 	)
 
-	WaitForClusterAutoscalerToBeReadyInWorkloadCluster(
+	WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 		ctx,
-		WaitForClusterAutoscalerToBeReadyInWorkloadClusterInput{
+		WaitForClusterAutoscalerToBeReadyForWorkloadClusterInput{
 			ClusterAutoscaler:           input.AddonsConfig.ClusterAutoscaler,
 			WorkloadCluster:             input.WorkloadCluster,
 			ClusterProxy:                input.ClusterProxy,

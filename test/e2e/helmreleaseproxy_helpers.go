@@ -7,6 +7,7 @@ package e2e
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"time"
 
@@ -18,13 +19,14 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 )
 
 // WaitForHelmReleaseProxyReadyInput is the input for WaitForHelmReleaseProxyReady.
 type WaitForHelmReleaseProxyReadyForClusterInput struct {
-	GetLister          framework.GetLister
-	Cluster            *clusterv1.Cluster
-	HelmChartProxyName string
+	GetLister       framework.GetLister
+	Cluster         *clusterv1.Cluster
+	HelmReleaseName string
 }
 
 // WaitForHelmReleaseProxyReady waits until the HelmReleaseProxy has ready condition = True, that signals that the Helm
@@ -35,12 +37,22 @@ func WaitForHelmReleaseProxyReadyForCluster(
 	intervals ...interface{},
 ) {
 	start := time.Now()
+
+	hcp, err := getHelmChartProxy(
+		ctx,
+		input.GetLister,
+		input.Cluster.Name,
+		input.Cluster.Namespace,
+		input.HelmReleaseName,
+	)
+	Expect(err).ToNot(HaveOccurred())
+
 	hrp, err := getHelmReleaseProxy(
 		ctx,
 		input.GetLister,
 		input.Cluster.Name,
 		input.Cluster.Namespace,
-		input.HelmChartProxyName,
+		hcp.Name,
 	)
 	Expect(err).ToNot(HaveOccurred())
 	hrpKey := ctrlclient.ObjectKeyFromObject(hrp)
@@ -87,4 +99,34 @@ func getHelmReleaseProxy(
 	}
 
 	return &releaseList.Items[0], nil
+}
+
+func getHelmChartProxy(
+	ctx context.Context,
+	getLister framework.GetLister,
+	clusterName string,
+	clusterNamespace string,
+	helmReleaseName string,
+) (*helmaddonsv1.HelmChartProxy, error) {
+	// Get the HelmChartProxy using label selectors since we don't know the name of the HelmChartProxy.
+	chartList := &helmaddonsv1.HelmChartProxyList{}
+	labels := map[string]string{
+		addons.ClusterNamespaceLabel:    clusterNamespace,
+		clusterv1.ClusterNameLabel:      clusterName,
+		addons.HelmReleaseNameHashLabel: fmt.Sprintf("%x", sha256.Sum224([]byte(helmReleaseName))),
+	}
+	if err := getLister.List(
+		ctx,
+		chartList,
+		ctrlclient.InNamespace(clusterNamespace),
+		ctrlclient.MatchingLabels(labels),
+	); err != nil {
+		return nil, err
+	}
+
+	if len(chartList.Items) != 1 {
+		return nil, fmt.Errorf("expected 1 HelmChartProxy, got %d", len(chartList.Items))
+	}
+
+	return &chartList.Items[0], nil
 }
