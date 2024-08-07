@@ -65,9 +65,9 @@ func WaitForNFDToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.ClusterProxy.GetClient(),
-				Cluster:            input.WorkloadCluster,
-				HelmChartProxyName: "node-feature-discovery-" + input.WorkloadCluster.Name,
+				GetLister:       input.ClusterProxy.GetClient(),
+				Cluster:         input.WorkloadCluster,
+				HelmReleaseName: "node-feature-discovery",
 			},
 			input.HelmReleaseIntervals...,
 		)

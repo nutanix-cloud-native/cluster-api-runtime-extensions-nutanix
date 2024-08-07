@@ -5,6 +5,8 @@ package clusterautoscaler
 
 import (
 	"bytes"
+	"crypto/md5" //nolint:gosec // Does not need to be cryptographically secure.
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"text/template"
@@ -29,7 +31,18 @@ func templateData(cluster *clusterv1.Cluster, data map[string]string) map[string
 
 // templateValues replaces Cluster.Name and Cluster.Namespace in Helm values text.
 func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
-	clusterAutoscalerTemplate, err := template.New("").Parse(text)
+	clusterAutoscalerTemplate, err := template.New("").
+		Funcs(
+			template.FuncMap{
+				"md5sum": func(input string) string {
+					hash := md5.Sum( //nolint:gosec // Does not need to be cryptographically secure.
+						[]byte(input),
+					)
+					return hex.EncodeToString(hash[:])
+				},
+			},
+		).
+		Parse(text)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
