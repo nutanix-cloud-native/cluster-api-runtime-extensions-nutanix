@@ -11,7 +11,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kwait "k8s.io/apimachinery/pkg/util/wait"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -178,7 +177,7 @@ func (n *MetalLB) Apply(
 	}
 
 	log.Info(
-		fmt.Sprintf("Applying MetalLB configuration to cluster %s",
+		fmt.Sprintf("Creating MetalLB configuration for cluster %s",
 			ctrlclient.ObjectKeyFromObject(cluster),
 		),
 	)
@@ -191,42 +190,29 @@ func (n *MetalLB) Apply(
 	if err != nil {
 		return fmt.Errorf("failed to generate MetalLB configuration: %w", err)
 	}
+	cm, err := configMapForClusterResourceSet(cluster.Namespace, cluster.Name, cos)
+	if err != nil {
+		return fmt.Errorf("failed to generate ConfigMap with MetalLB configuration: %w", err)
+	}
+	if err := client.ServerSideApply(ctx, n.client, cm, client.ForceOwnership); err != nil {
+		return fmt.Errorf(
+			"failed to apply MetalLB configuration ConfigMap: %w",
+			err,
+		)
+	}
 
-	var applyErr error
-	if waitErr := kwait.PollUntilContextTimeout(
+	if err := handlersutils.EnsureCRSForClusterFromObjects(
 		ctx,
-		5*time.Second,
-		30*time.Second,
-		true,
-		func(ctx context.Context) (done bool, err error) {
-			for i := range cos {
-				o := cos[i]
-				if err = client.ServerSideApply(
-					ctx,
-					remoteClient,
-					o,
-					&ctrlclient.PatchOptions{
-						Raw: &metav1.PatchOptions{
-							FieldValidation: metav1.FieldValidationStrict,
-						},
-					},
-				); err != nil {
-					applyErr = fmt.Errorf(
-						"failed to apply MetalLB configuration %s %s: %w",
-						o.GetKind(),
-						ctrlclient.ObjectKeyFromObject(o),
-						err,
-					)
-					return false, nil
-				}
-			}
-			return true, nil
-		},
-	); waitErr != nil {
-		if applyErr != nil {
-			return fmt.Errorf("%w: last apply error: %w", waitErr, applyErr)
-		}
-		return fmt.Errorf("%w: failed to apply MetalLB configuration", waitErr)
+		cm.Name,
+		n.client,
+		cluster,
+		handlersutils.DefaultEnsureCRSForClusterFromObjectsOptions(),
+		cm,
+	); err != nil {
+		return fmt.Errorf(
+			"failed to apply MetalLB configuration ClusterResourceSet: %w",
+			err,
+		)
 	}
 
 	return nil

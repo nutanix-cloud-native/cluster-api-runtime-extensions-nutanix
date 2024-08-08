@@ -128,7 +128,7 @@ func waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadCluster(
 
 	resources := make([]client.Object, len(cos))
 	for i := range cos {
-		resources[i] = cos[i]
+		resources[i] = cos[i].DeepCopy()
 	}
 
 	WaitForResources(ctx, WaitForResourcesInput{
