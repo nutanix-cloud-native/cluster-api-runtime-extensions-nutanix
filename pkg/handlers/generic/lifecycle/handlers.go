@@ -4,11 +4,13 @@
 package lifecycle
 
 import (
+	"github.com/samber/lo"
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm"
 	awsccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/aws"
 	nutanixccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/nutanix"
@@ -102,7 +104,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 			helmChartInfoGetter,
 		),
 	}
-	return []handlers.Named{
+	allHandlers := []handlers.Named{
 		calico.New(mgr.GetClient(), h.calicoCNIConfig, helmChartInfoGetter),
 		cilium.New(mgr.GetClient(), h.ciliumCNIConfig, helmChartInfoGetter),
 		nfd.New(mgr.GetClient(), h.nfdConfig, helmChartInfoGetter),
@@ -113,6 +115,85 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		serviceloadbalancer.New(mgr.GetClient(), serviceLoadBalancerHandlers),
 		snapshotcontroller.New(mgr.GetClient(), h.snapshotControllerConfig, helmChartInfoGetter),
 	}
+
+	var orderedHandlers []handlers.Named
+
+	bccHandlers := lo.FlatMap(
+		allHandlers,
+		func(h handlers.Named, _ int) []lifecycle.BeforeClusterCreate {
+			if h, ok := h.(lifecycle.BeforeClusterCreate); ok {
+				return []lifecycle.BeforeClusterCreate{h}
+			}
+			return nil
+		})
+	if len(bccHandlers) > 0 {
+		orderedHandlers = append(
+			orderedHandlers,
+			lifecycle.OrderedBeforeClusterCreateHook("caren", bccHandlers...),
+		)
+	}
+
+	acpiHandlers := lo.FlatMap(
+		allHandlers,
+		func(h handlers.Named, _ int) []lifecycle.AfterControlPlaneInitialized {
+			if h, ok := h.(lifecycle.AfterControlPlaneInitialized); ok {
+				return []lifecycle.AfterControlPlaneInitialized{h}
+			}
+			return nil
+		})
+	if len(acpiHandlers) > 0 {
+		orderedHandlers = append(
+			orderedHandlers,
+			lifecycle.OrderedAfterControlPlaneInitializedHook("caren", acpiHandlers...),
+		)
+	}
+
+	bcuHandlers := lo.FlatMap(
+		allHandlers,
+		func(h handlers.Named, _ int) []lifecycle.BeforeClusterUpgrade {
+			if h, ok := h.(lifecycle.BeforeClusterUpgrade); ok {
+				return []lifecycle.BeforeClusterUpgrade{h}
+			}
+			return nil
+		})
+	if len(bcuHandlers) > 0 {
+		orderedHandlers = append(
+			orderedHandlers,
+			lifecycle.OrderedBeforeClusterUpgradeHook("caren", bcuHandlers...),
+		)
+	}
+
+	acpuHandlers := lo.FlatMap(
+		allHandlers,
+		func(h handlers.Named, _ int) []lifecycle.AfterControlPlaneUpgrade {
+			if h, ok := h.(lifecycle.AfterControlPlaneUpgrade); ok {
+				return []lifecycle.AfterControlPlaneUpgrade{h}
+			}
+			return nil
+		})
+	if len(acpuHandlers) > 0 {
+		orderedHandlers = append(
+			orderedHandlers,
+			lifecycle.OrderedAfterControlPlaneUpgradeHook("caren", acpuHandlers...),
+		)
+	}
+
+	bcdHandlers := lo.FlatMap(
+		allHandlers,
+		func(h handlers.Named, _ int) []lifecycle.BeforeClusterDelete {
+			if h, ok := h.(lifecycle.BeforeClusterDelete); ok {
+				return []lifecycle.BeforeClusterDelete{h}
+			}
+			return nil
+		})
+	if len(bcdHandlers) > 0 {
+		orderedHandlers = append(
+			orderedHandlers,
+			lifecycle.OrderedBeforeClusterDeleteHook("caren", bcdHandlers...),
+		)
+	}
+
+	return orderedHandlers
 }
 
 func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
