@@ -105,13 +105,18 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	return []handlers.Named{
 		calico.New(mgr.GetClient(), h.calicoCNIConfig, helmChartInfoGetter),
 		cilium.New(mgr.GetClient(), h.ciliumCNIConfig, helmChartInfoGetter),
+		ccm.New(mgr.GetClient(), ccmHandlers),
 		nfd.New(mgr.GetClient(), h.nfdConfig, helmChartInfoGetter),
 		clusterautoscaler.New(mgr.GetClient(), h.clusterAutoscalerConfig, helmChartInfoGetter),
-		servicelbgc.New(mgr.GetClient()),
 		csi.New(mgr.GetClient(), csiHandlers),
-		ccm.New(mgr.GetClient(), ccmHandlers),
-		serviceloadbalancer.New(mgr.GetClient(), serviceLoadBalancerHandlers),
 		snapshotcontroller.New(mgr.GetClient(), h.snapshotControllerConfig, helmChartInfoGetter),
+		servicelbgc.New(mgr.GetClient()),
+		// The order of the handlers in the list is important and are called consecutively.
+		// The MetalLB provider may be configured to create a IPAddressPool on the remote cluster.
+		// However, the MetalLB provider also has a webhook that validates IPAddressPool requests.
+		// Because this webhook relies on CNI and CCM to already be installed on the remote cluster,
+		// we are placing this handler after the CNI and CCM handlers.
+		serviceloadbalancer.New(mgr.GetClient(), serviceLoadBalancerHandlers),
 	}
 }
 
