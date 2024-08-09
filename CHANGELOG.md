@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.7 (2024-08-09)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Deterministic ordering of lifecycle hooks by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/847
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.13.6...v0.13.7
+
 ## 0.13.6 (2024-08-05)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
