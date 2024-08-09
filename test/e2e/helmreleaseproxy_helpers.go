@@ -113,6 +113,7 @@ func getHelmChartProxy(
 	labels := map[string]string{
 		addons.ClusterNamespaceLabel:    clusterNamespace,
 		clusterv1.ClusterNameLabel:      clusterName,
+		// Reflects the hash implementation used by the helm addon strategy.
 		addons.HelmReleaseNameHashLabel: fmt.Sprintf("%x", sha256.Sum224([]byte(helmReleaseName))),
 	}
 	if err := getLister.List(
