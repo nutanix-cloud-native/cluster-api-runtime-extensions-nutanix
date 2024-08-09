@@ -99,9 +99,9 @@ func WaitForAWSCCMToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.ClusterProxy.GetClient(),
-				Cluster:            input.WorkloadCluster,
-				HelmChartProxyName: "aws-cloud-controller-manager-" + input.WorkloadCluster.Name,
+				GetLister:       input.ClusterProxy.GetClient(),
+				Cluster:         input.WorkloadCluster,
+				HelmReleaseName: "aws-cloud-controller-manager",
 			},
 			input.HelmReleaseIntervals...,
 		)
@@ -137,9 +137,9 @@ func WaitForNutanixCCMToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.ClusterProxy.GetClient(),
-				Cluster:            input.WorkloadCluster,
-				HelmChartProxyName: "nutanix-ccm-" + input.WorkloadCluster.Name,
+				GetLister:       input.ClusterProxy.GetClient(),
+				Cluster:         input.WorkloadCluster,
+				HelmReleaseName: "nutanix-ccm",
 			},
 			input.HelmReleaseIntervals...,
 		)
