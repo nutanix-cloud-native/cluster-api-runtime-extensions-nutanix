@@ -7,6 +7,8 @@ import (
 	"context"
 
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 )
 
 type BeforeClusterCreate interface {
@@ -16,6 +18,11 @@ type BeforeClusterCreate interface {
 		*runtimehooksv1.BeforeClusterCreateResponse,
 	)
 }
+type NamedBeforeClusterCreate interface {
+	handlers.Named
+	BeforeClusterCreate
+}
+
 type AfterControlPlaneInitialized interface {
 	AfterControlPlaneInitialized(
 		context.Context,
@@ -23,6 +30,11 @@ type AfterControlPlaneInitialized interface {
 		*runtimehooksv1.AfterControlPlaneInitializedResponse,
 	)
 }
+type NamedAfterControlPlaneInitialized interface {
+	handlers.Named
+	AfterControlPlaneInitialized
+}
+
 type BeforeClusterUpgrade interface {
 	BeforeClusterUpgrade(
 		context.Context,
@@ -30,6 +42,11 @@ type BeforeClusterUpgrade interface {
 		*runtimehooksv1.BeforeClusterUpgradeResponse,
 	)
 }
+type NamedBeforeClusterUpgrade interface {
+	handlers.Named
+	BeforeClusterUpgrade
+}
+
 type AfterControlPlaneUpgrade interface {
 	AfterControlPlaneUpgrade(
 		context.Context,
@@ -37,10 +54,19 @@ type AfterControlPlaneUpgrade interface {
 		*runtimehooksv1.AfterControlPlaneUpgradeResponse,
 	)
 }
+type NamedAfterControlPlaneUpgrade interface {
+	handlers.Named
+	AfterControlPlaneUpgrade
+}
+
 type BeforeClusterDelete interface {
 	BeforeClusterDelete(
 		context.Context,
 		*runtimehooksv1.BeforeClusterDeleteRequest,
 		*runtimehooksv1.BeforeClusterDeleteResponse,
 	)
+}
+type NamedBeforeClusterDelete interface {
+	handlers.Named
+	BeforeClusterDelete
 }
