@@ -76,8 +76,9 @@ func NewHelmAddonApplier(
 }
 
 type applyOptions struct {
-	valueTemplater func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error)
-	targetCluster  *clusterv1.Cluster
+	valueTemplater  func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error)
+	targetCluster   *clusterv1.Cluster
+	helmReleaseName string
 }
 
 type applyOption func(*applyOptions)
@@ -95,6 +96,14 @@ func (a *helmAddonApplier) WithValueTemplater(
 func (a *helmAddonApplier) WithTargetCluster(cluster *clusterv1.Cluster) *helmAddonApplier {
 	a.opts = append(a.opts, func(o *applyOptions) {
 		o.targetCluster = cluster
+	})
+
+	return a
+}
+
+func (a *helmAddonApplier) WithHelmReleaseName(name string) *helmAddonApplier {
+	a.opts = append(a.opts, func(o *applyOptions) {
+		o.helmReleaseName = name
 	})
 
 	return a
@@ -145,6 +154,11 @@ func (a *helmAddonApplier) Apply(
 		targetCluster = applyOpts.targetCluster
 	}
 
+	helmReleaseName := a.config.defaultHelmReleaseName
+	if applyOpts.helmReleaseName != "" {
+		helmReleaseName = applyOpts.helmReleaseName
+	}
+
 	chartProxy := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: caaphv1.GroupVersion.String(),
@@ -161,7 +175,7 @@ func (a *helmAddonApplier) Apply(
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: targetCluster.Name},
 			},
 			ReleaseNamespace: a.config.defaultHelmReleaseNamespace,
-			ReleaseName:      a.config.defaultHelmReleaseName,
+			ReleaseName:      helmReleaseName,
 			Version:          a.helmChart.Version,
 			ValuesTemplate:   values,
 		},

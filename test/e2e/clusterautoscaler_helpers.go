@@ -23,7 +23,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
-const clusterAutoscalerReleaseName = "cluster-autoscaler"
+const clusterAutoscalerReleaseName = "ca"
 
 type WaitForClusterAutoscalerToBeReadyForWorkloadClusterInput struct {
 	ClusterAutoscaler           *v1alpha1.ClusterAutoscaler
@@ -110,8 +110,7 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: input.WorkloadCluster.Namespace,
 					Name: fmt.Sprintf(
-						"%s-%s",
-						clusterAutoscalerReleaseName,
+						"cluster-autoscaler-%s",
 						input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
 					),
 				},

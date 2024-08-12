@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	addonName = "cluster-autoscaler"
+	addonName = "ca"
 )
 
 type addonStrategy interface {

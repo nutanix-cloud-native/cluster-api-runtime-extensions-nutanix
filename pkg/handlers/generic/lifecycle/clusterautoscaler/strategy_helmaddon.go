@@ -60,7 +60,10 @@ func (s helmAddonStrategy) apply(
 		),
 		s.client,
 		s.helmChart,
-	).WithTargetCluster(targetCluster).WithValueTemplater(templateValues)
+	).
+		WithTargetCluster(targetCluster).
+		WithValueTemplater(templateValues).
+		WithHelmReleaseName(addonResourceNameForCluster(cluster))
 
 	if err = applier.Apply(ctx, cluster, defaultsNamespace, log); err != nil {
 		return fmt.Errorf("failed to apply cluster-autoscaler installation HelmChartProxy: %w", err)
