@@ -124,9 +124,15 @@ func (n *MetalLB) Apply(
 		return fmt.Errorf("failed to apply MetalLB addon: %w", err)
 	}
 
-	hcp, err := addonApplier.FindExistingHelmChartProxy(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to lookup existing HelmChartProxy for cluster: %w", err)
+	hcp := &caaphv1.HelmChartProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cluster.Namespace,
+			Name: fmt.Sprintf(
+				"%s-%s",
+				DefaultHelmReleaseName,
+				cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
+			),
+		},
 	}
 
 	if err := wait.ForObject(

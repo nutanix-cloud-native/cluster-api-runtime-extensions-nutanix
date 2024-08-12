@@ -25,6 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
@@ -36,6 +38,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/cluster"
 )
 
 func main() {
@@ -48,6 +51,10 @@ func main() {
 	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
 	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
 
+	webhookOptions := webhook.Options{
+		Port:    9444,
+		CertDir: "/admission-certs",
+	}
 	mgrOptions := &ctrl.Options{
 		Scheme: clientScheme,
 		Metrics: metricsserver.Options{
@@ -55,6 +62,7 @@ func main() {
 		},
 		HealthProbeBindAddress: ":8081",
 		LeaderElection:         false,
+		WebhookServer:          webhook.NewServer(webhookOptions),
 	}
 
 	pflag.CommandLine.StringVar(
@@ -73,6 +81,13 @@ func main() {
 
 	pflag.CommandLine.StringVar(&mgrOptions.PprofBindAddress, "profiler-address", "",
 		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
+
+	pflag.CommandLine.StringVar(
+		&webhookOptions.CertDir,
+		"admission-webhook-cert-dir",
+		webhookOptions.CertDir,
+		"Admission webhooks server cert dir.",
+	)
 
 	logOptions := logs.NewOptions()
 
@@ -188,6 +203,13 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	mgr.GetWebhookServer().Register("/mutate-v1beta1-cluster", &webhook.Admission{
+		Handler: cluster.NewDefaulter(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme())),
+	})
+	mgr.GetWebhookServer().Register("/validate-v1beta1-cluster", &webhook.Admission{
+		Handler: cluster.NewValidator(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme())),
+	})
 
 	if err := mgr.Start(signalCtx); err != nil {
 		setupLog.Error(err, "unable to start controller manager")

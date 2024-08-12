@@ -5,20 +5,17 @@ package clusterautoscaler
 
 import (
 	"context"
-	"crypto/md5" //nolint:gosec // Does not need to be cryptographically secure.
 	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
-)
-
-const (
-	defaultHelmReleaseName = "cluster-autoscaler"
 )
 
 type helmAddonConfig struct {
@@ -59,12 +56,7 @@ func (s helmAddonStrategy) apply(
 		addons.NewHelmAddonConfig(
 			s.config.defaultValuesTemplateConfigMapName,
 			cluster.Namespace,
-			//nolint:gosec // Does not need to be cryptographically secure.
-			fmt.Sprintf(
-				"%s-%x",
-				defaultHelmReleaseName,
-				md5.Sum([]byte(cluster.Namespace+"/"+cluster.Name)),
-			),
+			addonName,
 		),
 		s.client,
 		s.helmChart,
@@ -82,32 +74,11 @@ func (s helmAddonStrategy) delete(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
-	// The cluster-autoscaler is different from other addons.
-	// It requires all resources to be created in the management cluster,
-	// which means creating the HelmChartProxy always targeting the management cluster.
-	targetCluster, err := findTargetCluster(ctx, s.client, cluster)
-	if err != nil {
-		return err
-	}
-
-	applier := addons.NewHelmAddonApplier(
-		addons.NewHelmAddonConfig(
-			s.config.defaultValuesTemplateConfigMapName,
-			cluster.Namespace,
-			//nolint:gosec // Does not need to be cryptographically secure.
-			fmt.Sprintf(
-				"%s-%x",
-				defaultHelmReleaseName,
-				md5.Sum([]byte(cluster.Namespace+"/"+cluster.Name)),
-			),
-		),
-		s.client,
-		s.helmChart,
-	).WithTargetCluster(targetCluster)
-
-	hcp, err := applier.FindExistingHelmChartProxy(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to lookup existing HelmChartProxy for cluster: %w", err)
+	hcp := &caaphv1.HelmChartProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      addonResourceNameForCluster(cluster),
+			Namespace: cluster.Namespace,
+		},
 	}
 
 	if err := ctrlclient.IgnoreNotFound(s.client.Delete(ctx, hcp)); err != nil {

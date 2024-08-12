@@ -23,6 +23,10 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
+const (
+	addonName = "cluster-autoscaler"
+)
+
 type addonStrategy interface {
 	apply(
 		context.Context,
@@ -227,6 +231,7 @@ func (n *DefaultClusterAutoscaler) BeforeClusterDelete(
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage("strategy not specified for cluster-autoscaler addon")
+		return
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
@@ -262,4 +267,8 @@ func (n *DefaultClusterAutoscaler) getCAVariable(
 	}
 
 	return &caVar, nil
+}
+
+func addonResourceNameForCluster(cluster *clusterv1.Cluster) string {
+	return fmt.Sprintf("%s-%s", addonName, cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey])
 }

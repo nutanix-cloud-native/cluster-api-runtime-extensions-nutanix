@@ -7,7 +7,6 @@ package e2e
 
 import (
 	"context"
-	"crypto/md5" //nolint:gosec // Does not need to be cryptographically secure.
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -61,7 +60,11 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 		Expect(input.ClusterProxy.GetClient().Get(
 			ctx,
 			types.NamespacedName{
-				Name:      clusterAutoscalerReleaseName + "-" + input.WorkloadCluster.Name,
+				Name: fmt.Sprintf(
+					"%s-%s",
+					clusterAutoscalerReleaseName,
+					input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
+				),
 				Namespace: input.WorkloadCluster.Namespace,
 			},
 			crs,
@@ -97,10 +100,9 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 				GetLister: input.ClusterProxy.GetClient(),
 				Cluster:   input.WorkloadCluster,
 				HelmReleaseName: fmt.Sprintf(
-					"%s-%x",
+					"%s-%s",
 					clusterAutoscalerReleaseName,
-					//nolint:gosec // Does not need to be cryptographically secure.
-					md5.Sum([]byte(input.WorkloadCluster.Namespace+"/"+input.WorkloadCluster.Name)),
+					input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
 				),
 			},
 			input.HelmReleaseIntervals...,
@@ -112,12 +114,9 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: input.WorkloadCluster.Namespace,
 					Name: fmt.Sprintf(
-						"%s-%x",
+						"%s-%s",
 						clusterAutoscalerReleaseName,
-						//nolint:gosec // Does not need to be cryptographically secure.
-						md5.Sum(
-							[]byte(input.WorkloadCluster.Namespace+"/"+input.WorkloadCluster.Name),
-						),
+						input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
 					),
 				},
 			},

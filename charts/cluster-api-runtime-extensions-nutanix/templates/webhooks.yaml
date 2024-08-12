@@ -1,0 +1,58 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: '{{ include "chart.name" . }}-mutating-webhook-configuration'
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace}}/{{ template "chart.name" . }}-admission-tls'
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: '{{ include "chart.name" . }}-admission'
+        namespace: '{{ .Release.Namespace }}'
+        path: /mutate-v1beta1-cluster
+    failurePolicy: Fail
+    name: cluster-defaulter.caren.nutanix.com
+    rules:
+      - apiGroups:
+          - cluster.x-k8s.io
+        apiVersions:
+          - '*'
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - clusters
+    sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: '{{ include "chart.name" . }}-validating-webhook-configuration'
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace}}/{{ template "chart.name" . }}-admission-tls'
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: '{{ include "chart.name" . }}-admission'
+        namespace: '{{ .Release.Namespace }}'
+        path: /validate-v1beta1-cluster
+    failurePolicy: Fail
+    name: cluster-validator.caren.nutanix.com
+    rules:
+      - apiGroups:
+          - cluster.x-k8s.io
+        apiVersions:
+          - '*'
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - clusters
+    sideEffects: None

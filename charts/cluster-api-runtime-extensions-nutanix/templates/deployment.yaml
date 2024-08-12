@@ -44,6 +44,7 @@ spec:
         {{- range $k, $v := .Values.hooks.ccm.aws.k8sMinorVersionToCCMVersion }}
         - --ccm.aws.aws-ccm-versions={{ $k }}={{ $v }}
         {{- end }}
+        - --admission-webhook-cert-dir=/admission-certs/
         {{- range $key, $value := .Values.extraArgs }}
         - --{{ $key }}={{ $value }}
         {{- end }}
@@ -56,6 +57,9 @@ spec:
         ports:
         - containerPort: 9443
           name: runtimehooks
+          protocol: TCP
+        - containerPort: 9444
+          name: admission
           protocol: TCP
         - containerPort: 8080
           name: metrics
@@ -75,6 +79,9 @@ spec:
         volumeMounts:
         - mountPath: /runtimehooks-certs
           name: runtimehooks-cert
+          readOnly: true
+        - mountPath: /admission-certs
+          name: admission-cert
           readOnly: true
         livenessProbe:
           httpGet:
@@ -96,3 +103,7 @@ spec:
         secret:
           defaultMode: 420
           secretName: {{ template "chart.name" . }}-runtimehooks-tls
+      - name: admission-cert
+        secret:
+          defaultMode: 420
+          secretName: {{ template "chart.name" . }}-admission-tls

@@ -75,7 +75,7 @@ func (s crsStrategy) apply(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      s.crsNameForCluster(cluster),
+			Name:      addonResourceNameForCluster(cluster),
 		},
 		Data: data,
 	}
@@ -151,7 +151,7 @@ func (s crsStrategy) delete(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: targetCluster.Namespace,
-			Name:      s.crsNameForCluster(cluster),
+			Name:      addonResourceNameForCluster(cluster),
 		},
 	}
 
@@ -163,8 +163,4 @@ func (s crsStrategy) delete(
 	}
 
 	return nil
-}
-
-func (s crsStrategy) crsNameForCluster(cluster *clusterv1.Cluster) string {
-	return s.config.defaultClusterAutoscalerConfigMap + "-" + cluster.Name
 }

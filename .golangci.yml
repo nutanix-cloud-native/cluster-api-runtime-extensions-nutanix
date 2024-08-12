@@ -108,3 +108,17 @@ issues:
     - text: "hugeParam: holderRef is heavy"
       linters:
         - gocritic
+    # Admission request interface is defined by k8s
+    - path: pkg/webhook
+      text: "hugeParam: req is heavy"
+      linters:
+        - gocritic
+    # This is not a problem in tests
+    - path: internal/test/envtest
+      text: "hugeParam: webhookInstallOptions is heavy"
+      linters:
+        - gocritic
+    - path: internal/test/envtest
+      text: "hugeParam: input is heavy"
+      linters:
+        - gocritic
