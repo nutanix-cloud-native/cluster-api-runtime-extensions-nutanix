@@ -123,7 +123,7 @@ func Test_templateValues(t *testing.T) {
 		tt := tests[idx]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			out, err := templateValuesFunc(tt.clusterConfig)(nil, tt.in)
+			out, err := templateValuesFunc(tt.clusterConfig.Nutanix)(nil, tt.in)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, out)
 		})

@@ -93,26 +93,5 @@ func TestMain(m *testing.M) {
 				},
 			}},
 		},
-
-		// 			- admissionReviewVersions:
-		//   - v1
-		// clientConfig:
-		//   service:
-		//     name: '{{ include "chart.name" . }}-admission'
-		//     namespace: '{{ .Release.Namespace }}'
-		//     path: /mutate-v1beta1-cluster
-		// failurePolicy: Fail
-		// name: cluster-defaulter.caren.nutanix.com
-		// rules:
-		//   - apiGroups:
-		//       - cluster.x-k8s.io
-		//     apiVersions:
-		//       - '*'
-		//     operations:
-		//       - CREATE
-		//       - UPDATE
-		//     resources:
-		//       - clusters
-		// sideEffects: None
 	}))
 }

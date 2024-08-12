@@ -97,13 +97,9 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister: input.ClusterProxy.GetClient(),
-				Cluster:   input.WorkloadCluster,
-				HelmReleaseName: fmt.Sprintf(
-					"%s-%s",
-					clusterAutoscalerReleaseName,
-					input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
-				),
+				GetLister:       input.ClusterProxy.GetClient(),
+				Cluster:         input.WorkloadCluster,
+				HelmReleaseName: clusterAutoscalerReleaseName,
 			},
 			input.HelmReleaseIntervals...,
 		)

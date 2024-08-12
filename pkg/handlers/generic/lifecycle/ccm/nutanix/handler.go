@@ -15,6 +15,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
@@ -125,7 +126,7 @@ func (p *provider) Apply(
 		),
 		p.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfig))
+	).WithValueTemplater(templateValuesFunc(clusterConfig.Nutanix))
 
 	if err = applier.Apply(ctx, cluster, p.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply nutanix-ccm installation HelmChartProxy: %w", err)
@@ -135,7 +136,7 @@ func (p *provider) Apply(
 }
 
 func templateValuesFunc(
-	clusterConfig *apivariables.ClusterConfigSpec,
+	nutanixConfig *v1alpha1.NutanixSpec,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		helmValuesTemplate, err := template.New("").Parse(valuesTemplate)
@@ -150,15 +151,15 @@ func templateValuesFunc(
 			PrismCentralAdditionalTrustBundle string
 		}
 
-		address, port, err := clusterConfig.Nutanix.PrismCentralEndpoint.ParseURL()
+		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
 		if err != nil {
 			return "", err
 		}
 		templateInput := input{
 			PrismCentralHost:                  address,
 			PrismCentralPort:                  port,
-			PrismCentralInsecure:              clusterConfig.Nutanix.PrismCentralEndpoint.Insecure,
-			PrismCentralAdditionalTrustBundle: clusterConfig.Nutanix.PrismCentralEndpoint.AdditionalTrustBundle,
+			PrismCentralInsecure:              nutanixConfig.PrismCentralEndpoint.Insecure,
+			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
 		}
 
 		var b bytes.Buffer
