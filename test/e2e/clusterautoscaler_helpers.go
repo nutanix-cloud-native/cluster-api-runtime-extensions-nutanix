@@ -85,8 +85,7 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 			Deployment: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: fmt.Sprintf(
-						"%s-%s",
-						clusterAutoscalerReleaseName,
+						"cluster-autoscaler-%s",
 						input.WorkloadCluster.Name,
 					),
 					Namespace: input.WorkloadCluster.Namespace,

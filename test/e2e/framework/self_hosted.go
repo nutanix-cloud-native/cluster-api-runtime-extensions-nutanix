@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
@@ -37,6 +38,10 @@ type SelfHostedSpecInput struct {
 	SkipCleanup           bool
 	ControlPlaneWaiters   clusterctl.ControlPlaneWaiters
 	Flavor                string
+
+	// Cluster name allows to specify a deterministic clusterName.
+	// If not set, a random one will be generated.
+	ClusterName *string
 
 	// InfrastructureProviders specifies the infrastructure to use for clusterctl
 	// operations (Example: get cluster templates).
@@ -109,6 +114,10 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 			Succeed(),
 			"Invalid argument. input.ArtifactFolder can't be created for %s spec", specName,
 		)
+		Expect(len(ptr.Deref(input.ClusterName, ""))).To(
+			BeNumerically("<=", 63),
+			"Invalid argument. input.ClusterName %q can't be longer than 63 characters", input.ClusterName,
+		)
 
 		// Use KubernetesVersion if no upgrade step is defined by test input.
 		Expect(input.E2EConfig.Variables).To(HaveKey(capie2e.KubernetesVersion))
@@ -140,6 +149,10 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 		By("Creating a workload cluster")
 
 		workloadClusterName := fmt.Sprintf("%s-%s", specName, util.RandomString(6))
+		if input.ClusterName != nil {
+			workloadClusterName = *input.ClusterName
+		}
+
 		clusterctlVariables := map[string]string{}
 
 		// In case the infrastructure-docker provider is installed, ensure to add the preload images variable to load the

@@ -14,6 +14,7 @@ import (
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
+	"sigs.k8s.io/cluster-api/util"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -57,6 +58,25 @@ var _ = Describe("Self-hosted", Serial, func() {
 									framework.SelfHostedSpec(
 										ctx,
 										func() framework.SelfHostedSpecInput {
+											clusterNamePrefix := "self-hosted-"
+											// To be able to test the self-hosted cluster with long name, we need to set the
+											// maxClusterNameLength to 63 which is the maximum length of a cluster name.
+											maxClusterNameLength := 63
+											// However, if the provider is Docker, we need to reduce the maxClusterNameLength
+											// because CAPI adds multiple random suffixes to the cluster name which are used in
+											// Docker cluster, and then in MachineDeployment, and finally in the machine names,
+											// resulting in 23 extra characters added to the cluster name for the actual worker node
+											// machine names. These machine names are used for Docker container names. The Docker
+											// image used by KinD have a maximum hostname length of 64 characters. This can be
+											// determined by running `getconf HOST_NAME_MAX` in a Docker container and is different
+											// from the host which generally allows 255 characters nowadays.
+											// Any longer than this prevents the container from starting, returning an error such
+											// as `error during container init: sethostname: invalid argument: unknown`.
+											// Therefore we reduce the maximum cluster to 64 (max hostname length) - 23 (random suffixes).
+											if lowercaseProvider == "docker" {
+												maxClusterNameLength = 64 - 23
+											}
+
 											return framework.SelfHostedSpecInput{
 												E2EConfig:              e2eConfig,
 												ClusterctlConfigPath:   clusterctlConfigPath,
@@ -65,6 +85,10 @@ var _ = Describe("Self-hosted", Serial, func() {
 												SkipCleanup:            skipCleanup,
 												Flavor:                 flavour,
 												InfrastructureProvider: ptr.To(lowercaseProvider),
+												ClusterName: ptr.To(clusterNamePrefix +
+													util.RandomString(
+														maxClusterNameLength-len(clusterNamePrefix),
+													)),
 												PostClusterMoved: func(proxy capiframework.ClusterProxy, cluster *clusterv1.Cluster) {
 													By(
 														"Waiting for all requested addons to be ready in workload cluster",
