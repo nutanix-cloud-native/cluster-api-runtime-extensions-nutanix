@@ -8,7 +8,9 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -79,19 +81,6 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 			},
 			input.ClusterResourceSetIntervals...,
 		)
-
-		WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-			Getter: workloadClusterClient,
-			Deployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: fmt.Sprintf(
-						"cluster-autoscaler-%s",
-						input.WorkloadCluster.Name,
-					),
-					Namespace: input.WorkloadCluster.Namespace,
-				},
-			},
-		}, input.DeploymentIntervals...)
 	case v1alpha1.AddonStrategyHelmAddon:
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
@@ -102,19 +91,6 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 			},
 			input.HelmReleaseIntervals...,
 		)
-
-		WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-			Getter: workloadClusterClient,
-			Deployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: input.WorkloadCluster.Namespace,
-					Name: fmt.Sprintf(
-						"cluster-autoscaler-%s",
-						input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
-					),
-				},
-			},
-		}, input.DeploymentIntervals...)
 	case "":
 		Fail("Strategy not provided for cluster autoscaler")
 	default:
@@ -125,4 +101,33 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 			),
 		)
 	}
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: input.WorkloadCluster.Namespace,
+			Name: fmt.Sprintf(
+				"cluster-autoscaler-%s",
+				input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
+			),
+		},
+	}
+
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter:     workloadClusterClient,
+		Deployment: deployment,
+	}, input.DeploymentIntervals...)
+
+	Expect(deployment.Spec.Selector.MatchLabels).NotTo(BeEmpty())
+	Expect(deployment.Spec.Selector.MatchLabels).To(
+		HaveKeyWithValue(
+			"app.kubernetes.io/instance",
+			SatisfyAll(
+				HavePrefix("ca-"),
+				WithTransform(
+					func(s string) error { return uuid.Validate(strings.TrimPrefix(s, "ca-")) },
+					Not(HaveOccurred()),
+				),
+			),
+		),
+	)
 }

@@ -67,7 +67,11 @@ func (s crsStrategy) apply(
 
 	log.Info("Ensuring cluster-autoscaler ConfigMap exists for cluster")
 
-	data := templateData(cluster, defaultCM.Data)
+	data, err := templateData(cluster, defaultCM.Data)
+	if err != nil {
+		return fmt.Errorf("failed to template cluster-autoscaler configuration: %w", err)
+	}
+
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),

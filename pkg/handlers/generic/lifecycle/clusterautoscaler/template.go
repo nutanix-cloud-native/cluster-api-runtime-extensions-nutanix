@@ -6,25 +6,22 @@ package clusterautoscaler
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"text/template"
 
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
-const (
-	nameTemplate      = "tmpl-clustername-tmpl"
-	namespaceTemplate = "tmpl-clusternamespace-tmpl"
-)
-
-// templateData replaces 'tmpl-clustername-tmpl' and 'tmpl-clusternamespace-tmpl' in data.
-func templateData(cluster *clusterv1.Cluster, data map[string]string) map[string]string {
+// templateData uses golang template to replace values in a map.
+func templateData(cluster *clusterv1.Cluster, data map[string]string) (map[string]string, error) {
 	templated := make(map[string]string, len(data))
 	for k, v := range data {
-		r := strings.NewReplacer(nameTemplate, cluster.Name, namespaceTemplate, cluster.Namespace)
-		templated[k] = r.Replace(v)
+		templatedV, err := templateValues(cluster, v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to template values: %w", err)
+		}
+		templated[k] = templatedV
 	}
-	return templated
+	return templated, nil
 }
 
 // templateValues replaces Cluster.Name and Cluster.Namespace in Helm values text.
