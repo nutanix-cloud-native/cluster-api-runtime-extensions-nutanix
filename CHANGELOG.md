@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.7 (2024-08-13)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Deterministic ordering of lifecycle hooks by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/847
+* fix: reorder lifecycle handlers with serviceloadbalancer being last by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/848
+* fix: update mindthegap by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/852
+* fix: Handle long cluster names by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/845
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.13.6...v0.13.7
+
 ## 0.13.6 (2024-08-05)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
