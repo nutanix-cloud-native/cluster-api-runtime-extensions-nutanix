@@ -8,7 +8,9 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -23,9 +25,9 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
-const clusterAutoscalerPrefix = "cluster-autoscaler-"
+const clusterAutoscalerReleaseName = "ca"
 
-type WaitForClusterAutoscalerToBeReadyInWorkloadClusterInput struct {
+type WaitForClusterAutoscalerToBeReadyForWorkloadClusterInput struct {
 	ClusterAutoscaler           *v1alpha1.ClusterAutoscaler
 	WorkloadCluster             *clusterv1.Cluster
 	ClusterProxy                framework.ClusterProxy
@@ -35,9 +37,9 @@ type WaitForClusterAutoscalerToBeReadyInWorkloadClusterInput struct {
 	ClusterResourceSetIntervals []interface{}
 }
 
-func WaitForClusterAutoscalerToBeReadyInWorkloadCluster(
+func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 	ctx context.Context,
-	input WaitForClusterAutoscalerToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
+	input WaitForClusterAutoscalerToBeReadyForWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
 ) {
 	if input.ClusterAutoscaler == nil {
 		return
@@ -60,7 +62,11 @@ func WaitForClusterAutoscalerToBeReadyInWorkloadCluster(
 		Expect(input.ClusterProxy.GetClient().Get(
 			ctx,
 			types.NamespacedName{
-				Name:      clusterAutoscalerPrefix + input.WorkloadCluster.Name,
+				Name: fmt.Sprintf(
+					"%s-%s",
+					clusterAutoscalerReleaseName,
+					input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
+				),
 				Namespace: input.WorkloadCluster.Namespace,
 			},
 			crs,
@@ -79,9 +85,9 @@ func WaitForClusterAutoscalerToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.ClusterProxy.GetClient(),
-				Cluster:            input.WorkloadCluster,
-				HelmChartProxyName: clusterAutoscalerPrefix + input.WorkloadCluster.Name,
+				GetLister:       input.ClusterProxy.GetClient(),
+				Cluster:         input.WorkloadCluster,
+				HelmReleaseName: clusterAutoscalerReleaseName,
 			},
 			input.HelmReleaseIntervals...,
 		)
@@ -96,13 +102,32 @@ func WaitForClusterAutoscalerToBeReadyInWorkloadCluster(
 		)
 	}
 
-	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-		Getter: workloadClusterClient,
-		Deployment: &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterAutoscalerPrefix + input.WorkloadCluster.Name,
-				Namespace: input.WorkloadCluster.Namespace,
-			},
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: input.WorkloadCluster.Namespace,
+			Name: fmt.Sprintf(
+				"cluster-autoscaler-%s",
+				input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
+			),
 		},
+	}
+
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter:     workloadClusterClient,
+		Deployment: deployment,
 	}, input.DeploymentIntervals...)
+
+	Expect(deployment.Spec.Selector.MatchLabels).NotTo(BeEmpty())
+	Expect(deployment.Spec.Selector.MatchLabels).To(
+		HaveKeyWithValue(
+			"app.kubernetes.io/instance",
+			SatisfyAll(
+				HavePrefix("ca-"),
+				WithTransform(
+					func(s string) error { return uuid.Validate(strings.TrimPrefix(s, "ca-")) },
+					Not(HaveOccurred()),
+				),
+			),
+		),
+	)
 }

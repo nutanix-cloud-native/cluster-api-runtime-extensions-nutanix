@@ -12,14 +12,12 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
@@ -80,25 +78,11 @@ func (p *provider) Apply(
 		return ErrMissingCredentials
 	}
 
-	log.Info("Retrieving Nutanix CCM installation values template for cluster")
-	values, err := handlersutils.RetrieveValuesTemplate(
-		ctx,
-		p.client,
-		p.config.defaultValuesTemplateConfigMapName,
-		p.config.DefaultsNamespace(),
-	)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to retrieve Nutanix CCM installation values template for cluster: %w",
-			err,
-		)
-	}
-
 	// It's possible to have the credentials Secret be created by the Helm chart.
 	// However, that would leave the credentials visible in the HelmChartProxy.
 	// Instead, we'll create the Secret on the remote cluster and reference it in the Helm values.
 	if clusterConfig.Addons.CCM.Credentials != nil {
-		err = handlersutils.EnsureOwnerReferenceForSecret(
+		err := handlersutils.EnsureOwnerReferenceForSecret(
 			ctx,
 			p.client,
 			clusterConfig.Addons.CCM.Credentials.SecretRef.Name,
@@ -134,77 +118,56 @@ func (p *provider) Apply(
 		return fmt.Errorf("failed to get values for nutanix-ccm-config: %w", err)
 	}
 
-	// The configMap will contain the Helm values, but templated with fields that need to be filled in.
-	values, err = templateValues(clusterConfig, values)
-	if err != nil {
-		return fmt.Errorf("failed to template Helm values read from ConfigMap: %w", err)
-	}
+	applier := addons.NewHelmAddonApplier(
+		addons.NewHelmAddonConfig(
+			p.config.defaultValuesTemplateConfigMapName,
+			defaultHelmReleaseNamespace,
+			defaultHelmReleaseName,
+		),
+		p.client,
+		helmChart,
+	).WithValueTemplater(templateValuesFunc(clusterConfig.Nutanix))
 
-	hcp := &caaphv1.HelmChartProxy{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: caaphv1.GroupVersion.String(),
-			Kind:       "HelmChartProxy",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Namespace,
-			Name:      "nutanix-ccm-" + cluster.Name,
-		},
-		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   helmChart.Repository,
-			ChartName: helmChart.Name,
-			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
-			},
-			ReleaseNamespace: defaultHelmReleaseNamespace,
-			ReleaseName:      defaultHelmReleaseName,
-			Version:          helmChart.Version,
-			ValuesTemplate:   values,
-		},
-	}
-	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
-	if err = controllerutil.SetOwnerReference(cluster, hcp, p.client.Scheme()); err != nil {
-		return fmt.Errorf(
-			"failed to set owner reference on nutanix-ccm installation HelmChartProxy: %w",
-			err,
-		)
-	}
-
-	if err = client.ServerSideApply(ctx, p.client, hcp, client.ForceOwnership); err != nil {
+	if err = applier.Apply(ctx, cluster, p.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply nutanix-ccm installation HelmChartProxy: %w", err)
 	}
 
 	return nil
 }
 
-func templateValues(clusterConfig *apivariables.ClusterConfigSpec, text string) (string, error) {
-	helmValuesTemplate, err := template.New("").Parse(text)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse Helm values template: %w", err)
-	}
+func templateValuesFunc(
+	nutanixConfig *v1alpha1.NutanixSpec,
+) func(*clusterv1.Cluster, string) (string, error) {
+	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
+		helmValuesTemplate, err := template.New("").Parse(valuesTemplate)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse Helm values template: %w", err)
+		}
 
-	type input struct {
-		PrismCentralHost                  string
-		PrismCentralPort                  int32
-		PrismCentralInsecure              bool
-		PrismCentralAdditionalTrustBundle string
-	}
+		type input struct {
+			PrismCentralHost                  string
+			PrismCentralPort                  int32
+			PrismCentralInsecure              bool
+			PrismCentralAdditionalTrustBundle string
+		}
 
-	address, port, err := clusterConfig.Nutanix.PrismCentralEndpoint.ParseURL()
-	if err != nil {
-		return "", err
-	}
-	templateInput := input{
-		PrismCentralHost:                  address,
-		PrismCentralPort:                  port,
-		PrismCentralInsecure:              clusterConfig.Nutanix.PrismCentralEndpoint.Insecure,
-		PrismCentralAdditionalTrustBundle: clusterConfig.Nutanix.PrismCentralEndpoint.AdditionalTrustBundle,
-	}
+		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
+		if err != nil {
+			return "", err
+		}
+		templateInput := input{
+			PrismCentralHost:                  address,
+			PrismCentralPort:                  port,
+			PrismCentralInsecure:              nutanixConfig.PrismCentralEndpoint.Insecure,
+			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
+		}
 
-	var b bytes.Buffer
-	err = helmValuesTemplate.Execute(&b, templateInput)
-	if err != nil {
-		return "", fmt.Errorf("failed setting PrismCentral configuration in template: %w", err)
-	}
+		var b bytes.Buffer
+		err = helmValuesTemplate.Execute(&b, templateInput)
+		if err != nil {
+			return "", fmt.Errorf("failed setting PrismCentral configuration in template: %w", err)
+		}
 
-	return b.String(), nil
+		return b.String(), nil
+	}
 }

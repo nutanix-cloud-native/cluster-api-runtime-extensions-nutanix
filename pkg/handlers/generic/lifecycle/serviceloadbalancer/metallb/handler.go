@@ -16,11 +16,11 @@ import (
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
@@ -80,19 +80,6 @@ func (n *MetalLB) Apply(
 ) error {
 	log.Info("Applying MetalLB installation")
 
-	values, err := handlersutils.RetrieveValuesTemplate(
-		ctx,
-		n.client,
-		n.config.defaultValuesTemplateConfigMapName,
-		n.config.DefaultsNamespace(),
-	)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to retrieve MetalLB installation values template ConfigMap for cluster: %w",
-			err,
-		)
-	}
-
 	remoteClient, err := remote.NewClusterClient(
 		ctx,
 		"",
@@ -123,38 +110,29 @@ func (n *MetalLB) Apply(
 		return fmt.Errorf("failed to get MetalLB helm chart: %w", err)
 	}
 
+	addonApplier := addons.NewHelmAddonApplier(
+		addons.NewHelmAddonConfig(
+			n.config.defaultValuesTemplateConfigMapName,
+			DefaultHelmReleaseNamespace,
+			DefaultHelmReleaseName,
+		),
+		n.client,
+		helmChartInfo,
+	)
+
+	if err := addonApplier.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
+		return fmt.Errorf("failed to apply MetalLB addon: %w", err)
+	}
+
 	hcp := &caaphv1.HelmChartProxy{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: caaphv1.GroupVersion.String(),
-			Kind:       "HelmChartProxy",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      "metallb-" + cluster.Name,
+			Name: fmt.Sprintf(
+				"%s-%s",
+				DefaultHelmReleaseName,
+				cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
+			),
 		},
-		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   helmChartInfo.Repository,
-			ChartName: helmChartInfo.Name,
-			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
-			},
-			ReleaseNamespace: DefaultHelmReleaseNamespace,
-			ReleaseName:      DefaultHelmReleaseName,
-			Version:          helmChartInfo.Version,
-			ValuesTemplate:   values,
-		},
-	}
-
-	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
-	if err = controllerutil.SetOwnerReference(cluster, hcp, n.client.Scheme()); err != nil {
-		return fmt.Errorf(
-			"failed to set owner reference on MetalLB installation HelmChartProxy: %w",
-			err,
-		)
-	}
-
-	if err = client.ServerSideApply(ctx, n.client, hcp); err != nil {
-		return fmt.Errorf("failed to apply MetalLB installation HelmChartProxy: %w", err)
 	}
 
 	if err := wait.ForObject(

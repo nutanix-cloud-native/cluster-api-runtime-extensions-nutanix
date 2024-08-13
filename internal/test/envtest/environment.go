@@ -19,6 +19,7 @@ package envtest
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"maps"
 	"os"
@@ -52,6 +53,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
 )
@@ -80,10 +82,11 @@ func init() {
 
 // RunInput is the input for Run.
 type RunInput struct {
-	M                   *testing.M
-	ManagerUncachedObjs []client.Object
-	SetupReconcilers    func(ctx context.Context, mgr ctrl.Manager)
-	SetupEnv            func(e *Environment)
+	M                     *testing.M
+	ManagerUncachedObjs   []client.Object
+	SetupReconcilers      func(ctx context.Context, mgr ctrl.Manager)
+	SetupEnv              func(e *Environment)
+	WebhookInstallOptions envtest.WebhookInstallOptions
 }
 
 // Run executes the tests of the given testing.M in a test environment.
@@ -97,7 +100,7 @@ type RunInput struct {
 // to a non-empty value.
 func Run(ctx context.Context, input RunInput) int {
 	// Bootstrapping test environment
-	env := newEnvironment(input.ManagerUncachedObjs...)
+	env := newEnvironment(input.WebhookInstallOptions, input.ManagerUncachedObjs...)
 
 	if input.SetupReconcilers != nil {
 		input.SetupReconcilers(ctx, env.Manager)
@@ -116,7 +119,7 @@ func Run(ctx context.Context, input RunInput) int {
 		}
 	}
 
-	// Expose the environment.
+	// Configure the environment.
 	input.SetupEnv(env)
 
 	// Run tests
@@ -155,7 +158,10 @@ type Environment struct {
 //
 // This function should be called only once for each package you're running tests within,
 // usually the environment is initialized in a suite_test.go file within a `BeforeSuite` ginkgo block.
-func newEnvironment(uncachedObjs ...client.Object) *Environment {
+func newEnvironment(
+	webhookInstallOptions envtest.WebhookInstallOptions,
+	uncachedObjs ...client.Object,
+) *Environment {
 	// Create the test environment.
 	env := &envtest.Environment{
 		ErrorIfCRDPathMissing: true,
@@ -184,6 +190,7 @@ func newEnvironment(uncachedObjs ...client.Object) *Environment {
 			builder.TestControlPlaneTemplateCRD.DeepCopy(),
 			builder.TestControlPlaneCRD.DeepCopy(),
 		},
+		WebhookInstallOptions: webhookInstallOptions,
 	}
 
 	if _, err := env.Start(); err != nil {
@@ -201,6 +208,12 @@ func newEnvironment(uncachedObjs ...client.Object) *Environment {
 				DisableFor: uncachedObjs,
 			},
 		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port:    env.WebhookInstallOptions.LocalServingPort,
+			Host:    env.WebhookInstallOptions.LocalServingHost,
+			CertDir: env.WebhookInstallOptions.LocalServingCertDir,
+			TLSOpts: []func(*tls.Config){func(config *tls.Config) {}},
+		}),
 	}
 
 	mgr, err := ctrl.NewManager(env.Config, options)

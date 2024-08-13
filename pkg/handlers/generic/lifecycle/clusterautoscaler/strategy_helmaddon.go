@@ -12,16 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
-	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
-)
-
-const (
-	defaultHelmReleaseNameTemplate = "cluster-autoscaler-%s"
 )
 
 type helmAddonConfig struct {
@@ -50,20 +44,6 @@ func (s helmAddonStrategy) apply(
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {
-	log.Info("Retrieving cluster-autoscaler installation values template for cluster")
-	values, err := handlersutils.RetrieveValuesTemplate(
-		ctx,
-		s.client,
-		s.config.defaultValuesTemplateConfigMapName,
-		defaultsNamespace,
-	)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to retrieve cluster-autoscaler installation values template for cluster: %w",
-			err,
-		)
-	}
-
 	// The cluster-autoscaler is different from other addons.
 	// It requires all resources to be created in the management cluster,
 	// which means creating the HelmChartProxy always targeting the management cluster.
@@ -72,52 +52,20 @@ func (s helmAddonStrategy) apply(
 		return err
 	}
 
-	// Cannot rely directly on Cluster.metadata.Name and Cluster.metadata.Namespace values
-	// because the selected Cluster will always be the management cluster.
-	// By templating the values, we will have unique Deployment name for each cluster.
-	values, err = templateValues(cluster, values)
-	if err != nil {
-		return fmt.Errorf("failed to template Helm values read from ConfigMap: %w", err)
-	}
+	applier := addons.NewHelmAddonApplier(
+		addons.NewHelmAddonConfig(
+			s.config.defaultValuesTemplateConfigMapName,
+			cluster.Namespace,
+			addonName,
+		),
+		s.client,
+		s.helmChart,
+	).
+		WithTargetCluster(targetCluster).
+		WithValueTemplater(templateValues).
+		WithHelmReleaseName(addonResourceNameForCluster(cluster))
 
-	hcp := &caaphv1.HelmChartProxy{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: caaphv1.GroupVersion.String(),
-			Kind:       "HelmChartProxy",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: targetCluster.Namespace,
-			Name:      "cluster-autoscaler-" + cluster.Name,
-		},
-		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   s.helmChart.Repository,
-			ChartName: s.helmChart.Name,
-			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: targetCluster.Name},
-			},
-			ReleaseNamespace: cluster.Namespace,
-			ReleaseName:      fmt.Sprintf(defaultHelmReleaseNameTemplate, cluster.Name),
-			Version:          s.helmChart.Version,
-			ValuesTemplate:   values,
-		},
-	}
-
-	handlersutils.SetTLSConfigForHelmChartProxyIfNeeded(hcp)
-
-	// NOTE Unlike other addons, the cluster-autoscaler HelmChartProxy is created in the management cluster
-	// namespace and thus cannot be owned by the workload cluster which will commonly exist in a different namespace.
-	// Ownership is set up to be owned by the management cluster so that move will work correctly but deletion is handled
-	// by a BeforeClusterDelete hook instead of relying on Kubernetes GC.
-
-	if err = controllerutil.SetOwnerReference(targetCluster, hcp, s.client.Scheme()); err != nil {
-		return fmt.Errorf(
-			"failed to set owner reference on HelmChartProxy %q: %w",
-			hcp.Name,
-			err,
-		)
-	}
-
-	if err = client.ServerSideApply(ctx, s.client, hcp, client.ForceOwnership); err != nil {
+	if err = applier.Apply(ctx, cluster, defaultsNamespace, log); err != nil {
 		return fmt.Errorf("failed to apply cluster-autoscaler installation HelmChartProxy: %w", err)
 	}
 
@@ -129,22 +77,10 @@ func (s helmAddonStrategy) delete(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
-	// The cluster-autoscaler is different from other addons.
-	// It requires all resources to be created in the management cluster,
-	// which means creating the HelmChartProxy always targeting the management cluster.
-	targetCluster, err := findTargetCluster(ctx, s.client, cluster)
-	if err != nil {
-		return err
-	}
-
 	hcp := &caaphv1.HelmChartProxy{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: caaphv1.GroupVersion.String(),
-			Kind:       "HelmChartProxy",
-		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: targetCluster.Namespace,
-			Name:      "cluster-autoscaler-" + cluster.Name,
+			Name:      addonResourceNameForCluster(cluster),
+			Namespace: cluster.Namespace,
 		},
 	}
 

@@ -5,7 +5,7 @@
 # This is a hack, but because a single cluster-autoscaler deployment can only monitor a single Kubernetes cluster
 # we expect 'tmpl-clustername-tmpl' and 'tmpl-clusternamespace-tmpl'
 # to be replaced with the Cluster's name and namespace.
-fullnameOverride: cluster-autoscaler-tmpl-clustername-tmpl
+fullnameOverride: cluster-autoscaler-tmpl-clusteruuid-tmpl
 
 cloudProvider: clusterapi
 

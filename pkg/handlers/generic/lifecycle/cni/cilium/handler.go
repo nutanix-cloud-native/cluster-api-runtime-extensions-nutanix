@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -19,24 +18,34 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
-
-type addonStrategy interface {
-	apply(
-		context.Context,
-		*clusterv1.Cluster,
-		string,
-		logr.Logger,
-	) error
-}
 
 type CNIConfig struct {
 	*options.GlobalOptions
 
 	crsConfig       crsConfig
 	helmAddonConfig helmAddonConfig
+}
+
+const (
+	defaultCiliumReleaseName = "cilium"
+	defaultCiliumNamespace   = "kube-system"
+)
+
+type helmAddonConfig struct {
+	defaultValuesTemplateConfigMapName string
+}
+
+func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+	flags.StringVar(
+		&c.defaultValuesTemplateConfigMapName,
+		prefix+".default-values-template-configmap-name",
+		"default-cilium-cni-helm-values-template",
+		"default values ConfigMap name",
+	)
 }
 
 func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
@@ -143,7 +152,7 @@ func (c *CiliumCNI) apply(
 		return
 	}
 
-	var strategy addonStrategy
+	var strategy addons.Applier
 	switch ptr.Deref(cniVar.Strategy, "") {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
@@ -165,11 +174,15 @@ func (c *CiliumCNI) apply(
 			)
 			return
 		}
-		strategy = helmAddonStrategy{
-			config:    c.config.helmAddonConfig,
-			client:    c.client,
-			helmChart: helmChart,
-		}
+		strategy = addons.NewHelmAddonApplier(
+			addons.NewHelmAddonConfig(
+				c.config.helmAddonConfig.defaultValuesTemplateConfigMapName,
+				defaultCiliumNamespace,
+				defaultCiliumReleaseName,
+			),
+			c.client,
+			helmChart,
+		)
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage("strategy not specified for Cilium CNI addon")
@@ -179,7 +192,7 @@ func (c *CiliumCNI) apply(
 		return
 	}
 
-	if err := strategy.apply(ctx, cluster, c.config.DefaultsNamespace(), log); err != nil {
+	if err := strategy.Apply(ctx, cluster, c.config.DefaultsNamespace(), log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return

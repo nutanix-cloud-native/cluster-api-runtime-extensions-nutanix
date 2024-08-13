@@ -32,4 +32,6 @@ const (
 	GlobalMirrorVariableName = "globalImageRegistryMirror"
 	// ImageRegistriesVariableName is the image registries patch variable name.
 	ImageRegistriesVariableName = "imageRegistries"
+
+	ClusterUUIDAnnotationKey = APIGroup + "/cluster-uuid"
 )

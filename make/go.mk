@@ -193,11 +193,23 @@ go-fix.%: ; $(info $(M) go fixing $* module)
 go-generate: ## Runs go generate
 go-generate: ; $(info $(M) running go generate)
 	go generate -x ./...
-	controller-gen paths="./..." rbac:headerFile="hack/license-header.yaml.txt",roleName=cluster-api-runtime-extensions-nutanix-manager-role output:rbac:artifacts:config=charts/cluster-api-runtime-extensions-nutanix/templates
-	sed --in-place 's/cluster-api-runtime-extensions-nutanix-manager-role/{{ include "chart.name" . }}-manager-role/' charts/cluster-api-runtime-extensions-nutanix/templates/role.yaml
+	controller-gen paths="./..." \
+		rbac:headerFile="hack/license-header.yaml.txt",roleName=cluster-api-runtime-extensions-nutanix-manager-role \
+		output:rbac:artifacts:config=charts/cluster-api-runtime-extensions-nutanix/templates
 	controller-gen paths="./api/v1alpha1" \
 	  object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/dev/null \
 	  crd:headerFile=hack/license-header.yaml.txt output:crd:artifacts:config=./api/v1alpha1/crds
+	controller-gen paths="./..." \
+	  webhook:headerFile="hack/license-header.yaml.txt" \
+	  output:webhook:stdout >charts/cluster-api-runtime-extensions-nutanix/templates/webhooks.yaml
+	yq --inplace \
+	  '.metadata.name = "{{ include \"chart.name\" . }}-manager-role"' \
+	  charts/cluster-api-runtime-extensions-nutanix/templates/role.yaml
+	# Update the webhook names and configure cert-manager CA injection.
+	yq --inplace \
+	  --from-file=hack/update-webhook-configurations.yq \
+	  charts/cluster-api-runtime-extensions-nutanix/templates/webhooks.yaml
+	# Update the CA injection annotation.
 	#$(MAKE) go-fix
 	$(MAKE) configure-csi-providers
 

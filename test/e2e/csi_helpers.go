@@ -168,9 +168,9 @@ func waitForLocalPathCSIToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.clusterProxy.GetClient(),
-				Cluster:            input.workloadCluster,
-				HelmChartProxyName: "local-path-provisioner-csi-" + input.workloadCluster.Name,
+				GetLister:       input.clusterProxy.GetClient(),
+				Cluster:         input.workloadCluster,
+				HelmReleaseName: "local-path-provisioner-csi",
 			},
 			input.helmReleaseIntervals...,
 		)
@@ -237,9 +237,8 @@ func waitForAWSEBSCSIToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.clusterProxy.GetClient(),
-				Cluster:            input.workloadCluster,
-				HelmChartProxyName: "aws-ebs-csi-driver-" + input.workloadCluster.Name,
+				GetLister: input.clusterProxy.GetClient(),
+				Cluster:   input.workloadCluster,
 			},
 			input.helmReleaseIntervals...,
 		)
@@ -295,9 +294,9 @@ func waitForNutanixCSIToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.clusterProxy.GetClient(),
-				Cluster:            input.workloadCluster,
-				HelmChartProxyName: "nutanix-csi-" + input.workloadCluster.Name,
+				GetLister:       input.clusterProxy.GetClient(),
+				Cluster:         input.workloadCluster,
+				HelmReleaseName: "nutanix-csi",
 			},
 			input.helmReleaseIntervals...,
 		)
@@ -476,9 +475,9 @@ func waitForSnapshotControllerToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.clusterProxy.GetClient(),
-				Cluster:            input.workloadCluster,
-				HelmChartProxyName: "snapshot-controller-" + input.workloadCluster.Name,
+				GetLister:       input.clusterProxy.GetClient(),
+				Cluster:         input.workloadCluster,
+				HelmReleaseName: "snapshot-controller",
 			},
 			input.helmReleaseIntervals...,
 		)

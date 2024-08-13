@@ -78,9 +78,9 @@ func waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadCluster(
 	WaitForHelmReleaseProxyReadyForCluster(
 		ctx,
 		WaitForHelmReleaseProxyReadyForClusterInput{
-			GetLister:          input.clusterProxy.GetClient(),
-			Cluster:            input.workloadCluster,
-			HelmChartProxyName: "metallb-" + input.workloadCluster.Name,
+			GetLister:       input.clusterProxy.GetClient(),
+			Cluster:         input.workloadCluster,
+			HelmReleaseName: "metallb",
 		},
 		input.helmReleaseIntervals...,
 	)

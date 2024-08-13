@@ -18,13 +18,14 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
 // WaitForHelmReleaseProxyReadyInput is the input for WaitForHelmReleaseProxyReady.
 type WaitForHelmReleaseProxyReadyForClusterInput struct {
-	GetLister          framework.GetLister
-	Cluster            *clusterv1.Cluster
-	HelmChartProxyName string
+	GetLister       framework.GetLister
+	Cluster         *clusterv1.Cluster
+	HelmReleaseName string
 }
 
 // WaitForHelmReleaseProxyReady waits until the HelmReleaseProxy has ready condition = True, that signals that the Helm
@@ -35,12 +36,17 @@ func WaitForHelmReleaseProxyReadyForCluster(
 	intervals ...interface{},
 ) {
 	start := time.Now()
+
 	hrp, err := getHelmReleaseProxy(
 		ctx,
 		input.GetLister,
 		input.Cluster.Name,
 		input.Cluster.Namespace,
-		input.HelmChartProxyName,
+		fmt.Sprintf(
+			"%s-%s",
+			input.HelmReleaseName,
+			input.Cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
+		),
 	)
 	Expect(err).ToNot(HaveOccurred())
 	hrpKey := ctrlclient.ObjectKeyFromObject(hrp)

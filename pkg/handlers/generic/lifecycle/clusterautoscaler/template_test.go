@@ -52,7 +52,8 @@ func Test_templateData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := templateData(tt.cluster, tt.data)
+			got, err := templateData(tt.cluster, tt.data)
+			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -104,27 +105,27 @@ const (
     apiVersion: apps/v1
     kind: Deployment
     metadata:
-      name: cluster-autoscaler-tmpl-clustername-tmpl
-      namespace: tmpl-clusternamespace-tmpl
+      name: cluster-autoscaler-{{ .Cluster.Name }}
+      namespace: {{ .Cluster.Namespace }}
     spec:
       replicas: 1
       revisionHistoryLimit: 10
       selector:
         matchLabels:
-          app.kubernetes.io/instance: cluster-autoscaler-tmpl-clustername-tmpl
+          app.kubernetes.io/instance: cluster-autoscaler-{{ .Cluster.Name }}
           app.kubernetes.io/name: clusterapi-cluster-autoscaler
       template:
         metadata:
           labels:
-            app.kubernetes.io/instance: cluster-autoscaler-tmpl-clustername-tmpl
+            app.kubernetes.io/instance: cluster-autoscaler-{{ .Cluster.Name }}
             app.kubernetes.io/name: clusterapi-cluster-autoscaler
         spec:
           containers:
           - command:
             - ./cluster-autoscaler
             - --cloud-provider=clusterapi
-            - --namespace=tmpl-clusternamespace-tmpl
-            - --node-group-auto-discovery=clusterapi:clusterName=tmpl-clustername-tmpl
+            - --namespace={{ .Cluster.Namespace }}
+            - --node-group-auto-discovery=clusterapi:clusterName={{ .Cluster.Name }}
             - --kubeconfig=/cluster/kubeconfig
             - --clusterapi-cloud-config-authoritative
             - --enforce-node-group-min-size=true
@@ -136,14 +137,14 @@ const (
             - mountPath: /cluster
               name: kubeconfig
               readOnly: true
-          serviceAccountName: cluster-autoscaler-tmpl-clustername-tmpl
+          serviceAccountName: cluster-autoscaler-{{ .Cluster.Name }}
           volumes:
           - name: kubeconfig
             secret:
               items:
               - key: value
                 path: kubeconfig
-              secretName: tmpl-clustername-tmpl-kubeconfig`
+              secretName: {{ .Cluster.Name }}-kubeconfig`
 
 	templatedDeployment = `---
     apiVersion: apps/v1

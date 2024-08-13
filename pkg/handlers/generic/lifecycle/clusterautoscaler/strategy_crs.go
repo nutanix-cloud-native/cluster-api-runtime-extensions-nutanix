@@ -67,7 +67,11 @@ func (s crsStrategy) apply(
 
 	log.Info("Ensuring cluster-autoscaler ConfigMap exists for cluster")
 
-	data := templateData(cluster, defaultCM.Data)
+	data, err := templateData(cluster, defaultCM.Data)
+	if err != nil {
+		return fmt.Errorf("failed to template cluster-autoscaler configuration: %w", err)
+	}
+
 	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -75,7 +79,7 @@ func (s crsStrategy) apply(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Namespace,
-			Name:      s.crsNameForCluster(cluster),
+			Name:      addonResourceNameForCluster(cluster),
 		},
 		Data: data,
 	}
@@ -151,7 +155,7 @@ func (s crsStrategy) delete(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: targetCluster.Namespace,
-			Name:      s.crsNameForCluster(cluster),
+			Name:      addonResourceNameForCluster(cluster),
 		},
 	}
 
@@ -163,8 +167,4 @@ func (s crsStrategy) delete(
 	}
 
 	return nil
-}
-
-func (s crsStrategy) crsNameForCluster(cluster *clusterv1.Cluster) string {
-	return s.config.defaultClusterAutoscalerConfigMap + "-" + cluster.Name
 }

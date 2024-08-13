@@ -116,9 +116,9 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.clusterProxy.GetClient(),
-				Cluster:            input.workloadCluster,
-				HelmChartProxyName: "calico-cni-installation-" + input.workloadCluster.Name,
+				GetLister:       input.clusterProxy.GetClient(),
+				Cluster:         input.workloadCluster,
+				HelmReleaseName: "tigera-operator",
 			},
 			input.helmReleaseIntervals...,
 		)
@@ -230,9 +230,9 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
 			WaitForHelmReleaseProxyReadyForClusterInput{
-				GetLister:          input.clusterProxy.GetClient(),
-				Cluster:            input.workloadCluster,
-				HelmChartProxyName: "cilium-cni-installation-" + input.workloadCluster.Name,
+				GetLister:       input.clusterProxy.GetClient(),
+				Cluster:         input.workloadCluster,
+				HelmReleaseName: "cilium",
 			},
 			input.helmReleaseIntervals...,
 		)
