@@ -28,4 +28,6 @@ data:
     certgen:
       image:
         useDigest: false
+    socketLB:
+      hostNamespaceOnly: true
 {{- end -}}

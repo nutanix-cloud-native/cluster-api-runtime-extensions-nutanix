@@ -17,3 +17,5 @@ operator:
 certgen:
   image:
     useDigest: false
+socketLB:
+  hostNamespaceOnly: true
