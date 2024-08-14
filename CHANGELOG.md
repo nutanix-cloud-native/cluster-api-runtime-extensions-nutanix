@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.14.0 (2024-08-14)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Run hooks in parallel with aggregated responses by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/855
+### Fixes 🔧
+* fix: Cilium-Istio compatibility fixes by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/856
+### Other Changes
+* build: Latest devbox update by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/857
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.13.7...v0.14.0
+
 ## 0.13.7 (2024-08-13)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
