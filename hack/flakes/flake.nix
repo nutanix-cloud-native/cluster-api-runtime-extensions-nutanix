@@ -29,12 +29,12 @@
 
           setup-envtest = buildGo122Module rec {
             name = "setup-envtest";
-            version = "0.18.4";
+            version = "0.18.5";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "controller-runtime";
               rev = "v${version}";
-              hash = "sha256-Yl2pcu09Dyk0Y2v5RtEJwOSyBJ6Avj5d7Bh25bxnkvU=";
+              hash = "sha256-WGq5juv+QET0PHXW8uj9fV8D3NTSey3RqwvLxJDU014=";
             } + "/tools/setup-envtest";
             doCheck = false;
             subPackages = [ "." ];
@@ -59,16 +59,16 @@
 
           clusterawsadm = buildGo122Module rec {
             name = "clusterawsadm";
-            version = "2.5.2";
+            version = "2.6.1";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-ttmRrKlHS5ftzirYVfnnB4S057gBh8Mn5f4YlQf3eLk=";
+              hash = "sha256-y3tN/OciKNcqvcROmSKPcehW/4+dBWmGESZYjmYbkBo=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
-            vendorHash = "sha256-7IJVT9BX18QpuTVfetT0WorKNTto6Y0AK6UCcEchoNs=";
+            vendorHash = "sha256-WRKViPMlJVV3uS+TK6Rd4EoEQ5ttdXDoOqoYiuga1WE=";
             ldflags = let t = "sigs.k8s.io/cluster-api-provider-aws/v2/version"; in [
               "-s"
               "-w"
@@ -97,32 +97,32 @@
 
           controller-gen = buildGo122Module rec {
             name = "controller-gen";
-            version = "0.15.0";
+            version = "0.16.0";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "controller-tools";
               rev = "v${version}";
-              hash = "sha256-TRJW2//UYQMZM19D74O4SA0GnKPAUI2n+dNKIUzqRuw=";
+              hash = "sha256-0JSzk57XkvlP46SdC50zOtcx+XecGmFfkB+8XyGx6Ps=";
             };
             doCheck = false;
             subPackages = [ "./cmd/controller-gen" ];
-            vendorHash = "sha256-6he/zYznnmhmFU2YPRTnWBTLG2nEOZZu9Iks6orMVMs=";
+            vendorHash = "sha256-3p9K08WMqDRHHa9116//3lFeaMtRaipD4LyisaKWV7I=";
             ldflags = [ "-s" "-w" ];
           };
 
           clusterctl = buildGo122Module rec {
             pname = "clusterctl";
-            version = "1.7.4";
+            version = "1.8.1";
 
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api";
               rev = "v${version}";
-              hash = "sha256-ziW+ROuUmrgsIWHXKL2Yw+9gC6VgE/7Ri3zc3sveyU8=";
+              hash = "sha256-Z7cFwR8IUThEd4Te3KHPC8K8v56ymAG7nIM/7pxWq4U=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterctl" ];
-            vendorHash = "sha256-ALRnccGjPGuAITtuz79Cao95NhvSczAzspSMXytlw+A=";
+            vendorHash = "sha256-0VVaD1vGIGezgkVCvIhNHmZqVFxFu4UcUUh0wuX2viw=";
             ldflags = let t = "sigs.k8s.io/cluster-api/version"; in [
               "-X ${t}.gitMajor=${lib.versions.major version}"
               "-X ${t}.gitMinor=${lib.versions.minor version}"
