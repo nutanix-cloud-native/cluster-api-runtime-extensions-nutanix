@@ -15,7 +15,7 @@ helmCharts:
   repo: https://kubernetes-sigs.github.io/node-feature-discovery/charts
   releaseName: node-feature-discovery
   version: ${NODE_FEATURE_DISCOVERY_VERSION}
-  valuesFile: helm-values.yaml
+  valuesFile: values-template.yaml
   valuesInline:
     image:
       tag: "v${NODE_FEATURE_DISCOVERY_VERSION}-minimal"

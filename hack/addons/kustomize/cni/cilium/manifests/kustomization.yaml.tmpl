@@ -15,7 +15,11 @@ helmCharts:
   repo: https://helm.cilium.io/
   releaseName: cilium
   version: ${CILIUM_VERSION}
-  valuesFile: helm-values.yaml
+  valuesFile: values-template.yaml
+  # we need to do this because hubble is disabled for CRS.
+  valuesInline:
+    hubble:
+      enabled: false
   includeCRDs: true
   skipTests: true
   namespace: kube-system

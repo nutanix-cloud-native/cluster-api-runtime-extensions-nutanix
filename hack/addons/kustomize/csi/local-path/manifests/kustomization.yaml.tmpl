@@ -14,7 +14,7 @@ helmCharts:
   repo: https://charts.containeroo.ch
   releaseName: local-path-provisioner-csi
   version: ${LOCAL_PATH_CSI_CHART_VERSION}
-  valuesFile: helm-values.yaml
+  valuesFile: values-template.yaml
   includeCRDs: true
   skipTests: true
   namespace: kube-system
