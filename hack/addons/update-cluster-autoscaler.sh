@@ -25,6 +25,9 @@ cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 
 kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
 
+# this replaces the custom templating used for kustomize to generate the configmap to using the same templating as we do
+# with helm chart proxy
+# transforming tmpl-clustername-tmpl to -- {{ .Cluster.Name }}
 sed -i -e "s/\([a-z-]*\)tmpl-clustername\([^-]*\)-tmpl\([a-z-]*\)/\1{{ \`{{ .Cluster.Name\2 }}\` }}\3/g" \
   -e "s/\([a-z-]*\)tmpl-clusteruuid-tmpl\([a-z-]*\)/\1{{ \`{{ index .Cluster.Annotations \"caren.nutanix.com\/cluster-uuid\" }}\` }}\2/g" \
   "${ASSETS_DIR}/${FILE_NAME}"
