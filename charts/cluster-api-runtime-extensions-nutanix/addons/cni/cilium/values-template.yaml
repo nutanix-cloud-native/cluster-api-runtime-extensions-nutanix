@@ -2,6 +2,7 @@
 ---
 cni:
   chainingMode: portmap
+  exclusive: false
 hubble:
   tls:
     auto:
@@ -19,3 +20,5 @@ operator:
 certgen:
   image:
     useDigest: false
+socketLB:
+  hostNamespaceOnly: true
