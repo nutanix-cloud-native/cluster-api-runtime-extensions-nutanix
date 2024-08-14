@@ -76,7 +76,7 @@ repos:
   - id: check-yaml
     args: ["-m", "--unsafe"]
     stages: [commit]
-    exclude: ^charts/.+/(templates|addons)/.+\.ya?ml$
+    exclude: ^(charts/.+/(templates|addons)/|hack/addons/kustomize/).+\.ya?ml$
   - id: mixed-line-ending
     args: ["-f", "lf"]
     exclude: \.bat$
