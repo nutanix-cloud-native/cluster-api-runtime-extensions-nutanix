@@ -3,7 +3,7 @@
 
 module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common
 
-go 1.21
+go 1.22
 
 toolchain go1.22.5
 
@@ -15,6 +15,7 @@ require (
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo/v2 v2.20.0
 	github.com/onsi/gomega v1.34.1
+	github.com/samber/lo v1.47.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	gomodules.xyz/jsonpatch/v2 v2.4.0

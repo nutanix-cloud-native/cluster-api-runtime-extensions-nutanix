@@ -3,7 +3,7 @@
 
 module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/external/capa
 
-go 1.21
+go 1.22
 
 require sigs.k8s.io/cluster-api-provider-aws/v2 v2.6.1
 

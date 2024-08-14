@@ -134,7 +134,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	if len(bccHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,
-			lifecycle.OrderedBeforeClusterCreateHook("caren", bccHandlers...),
+			lifecycle.ParallelBeforeClusterCreateHook("caren", bccHandlers...),
 		)
 	}
 
@@ -149,7 +149,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	if len(acpiHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,
-			lifecycle.OrderedAfterControlPlaneInitializedHook("caren", acpiHandlers...),
+			lifecycle.ParallelAfterControlPlaneInitializedHook("caren", acpiHandlers...),
 		)
 	}
 
@@ -164,7 +164,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	if len(bcuHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,
-			lifecycle.OrderedBeforeClusterUpgradeHook("caren", bcuHandlers...),
+			lifecycle.ParallelBeforeClusterUpgradeHook("caren", bcuHandlers...),
 		)
 	}
 
@@ -179,7 +179,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	if len(acpuHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,
-			lifecycle.OrderedAfterControlPlaneUpgradeHook("caren", acpuHandlers...),
+			lifecycle.ParallelAfterControlPlaneUpgradeHook("caren", acpuHandlers...),
 		)
 	}
 
@@ -194,7 +194,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	if len(bcdHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,
-			lifecycle.OrderedBeforeClusterDeleteHook("caren", bcdHandlers...),
+			lifecycle.ParallelBeforeClusterDeleteHook("caren", bcdHandlers...),
 		)
 	}
 
