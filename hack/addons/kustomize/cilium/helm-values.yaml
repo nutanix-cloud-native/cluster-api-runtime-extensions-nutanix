@@ -4,6 +4,7 @@
 ---
 cni:
   chainingMode: portmap
+  exclusive: false
 hubble:
   enabled: false
 ipam:
@@ -16,3 +17,5 @@ operator:
 certgen:
   image:
     useDigest: false
+socketLB:
+  hostNamespaceOnly: true
