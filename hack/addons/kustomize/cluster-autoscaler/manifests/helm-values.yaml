@@ -4,9 +4,9 @@
 # This is used to generate CRS
 ---
 # This is a hack, but because a single cluster-autoscaler deployment can only monitor a single Kubernetes cluster
-# we expect 'tmpl-clustername-tmpl' and 'tmpl-clusternamespace-tmpl'
+# we expect 'tmpl-clusteruuid-tmpl' and 'tmpl-clusteruuidspace-tmpl'
 # to be replaced with the Cluster's name and namespace.
-fullnameOverride: cluster-autoscaler-tmpl-clustername-tmpl
+fullnameOverride: cluster-autoscaler-tmpl-clusteruuid-tmpl
 
 cloudProvider: clusterapi
 
@@ -21,7 +21,7 @@ tolerations:
 
 # Limit a single cluster-autoscaler Deployment to a single Cluster.
 autoDiscovery:
-  clusterName: tmpl-clustername-tmpl
+  clusterName: tmpl-clusteruuid-tmpl
   # The controller failed with an RBAC error trying to watch CAPI objects at the cluster scope without this.
   labels:
     - namespace: tmpl-clusternamespace-tmpl
@@ -33,7 +33,7 @@ clusterAPIMode: kubeconfig-incluster
 clusterAPIWorkloadKubeconfigPath: /cluster/kubeconfig
 extraVolumeSecrets:
   kubeconfig:
-    name: tmpl-clustername-tmpl-kubeconfig
+    name: tmpl-clusteruuid-tmpl-kubeconfig
     mountPath: /cluster
     readOnly: true
     items:

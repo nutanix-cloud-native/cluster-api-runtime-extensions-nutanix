@@ -1,4 +1,4 @@
-fullnameOverride: "cluster-autoscaler-{{ .Cluster.Name }}"
+fullnameOverride: "cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}"
 
 cloudProvider: clusterapi
 
