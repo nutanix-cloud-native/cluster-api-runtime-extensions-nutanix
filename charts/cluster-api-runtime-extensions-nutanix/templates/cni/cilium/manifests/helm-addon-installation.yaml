@@ -10,6 +10,7 @@ data:
   values.yaml: |-
     cni:
       chainingMode: portmap
+      exclusive: false
     hubble:
       tls:
         auto:

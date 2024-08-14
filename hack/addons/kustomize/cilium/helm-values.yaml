@@ -4,6 +4,7 @@
 ---
 cni:
   chainingMode: portmap
+  exclusive: false
 hubble:
   enabled: false
 ipam:
