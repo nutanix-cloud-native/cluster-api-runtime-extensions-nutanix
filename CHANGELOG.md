@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.2 (2024-08-15)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Ensure ClusterAutoscaler can write status CM in workload cluster by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/864
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.1...v0.14.2
+
 ## 0.14.1 (2024-08-15)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
