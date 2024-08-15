@@ -57,8 +57,8 @@
             ldflags = [ "-s" "-w" ];
           };
 
-          clusterawsadm = buildGo122Module rec {
-            name = "clusterawsadm";
+          clusterctl-aws = buildGo122Module rec {
+            name = "clusterctl-aws";
             version = "2.6.1";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
@@ -69,17 +69,23 @@
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
             vendorHash = "sha256-WRKViPMlJVV3uS+TK6Rd4EoEQ5ttdXDoOqoYiuga1WE=";
-            ldflags = let t = "sigs.k8s.io/cluster-api-provider-aws/v2/version"; in [
+            ldflags = let modPrefix = "sigs.k8s.io/cluster-api-provider-aws/v2";
+                          v = "${modPrefix}/version";
+                          c = "${modPrefix}/cmd/clusterawsadm/cmd/version"; in [
               "-s"
               "-w"
-              "-X" "${t}.gitVersion=v${version}"
-              "-X" "${t}.gitCommit=v${version}"
-              "-X" "${t}.gitReleaseCommit=v${version}"
-              "-X" "${t}.gitMajor=${lib.versions.major version}"
-              "-X" "${t}.gitMinor=${lib.versions.minor version}"
-              "-X" "${t}.buildDate=19700101-00:00:00"
-              "-X" "${t}.gitTreeState=clean"
+              "-X" "${v}.gitVersion=v${version}"
+              "-X" "${v}.gitCommit=v${version}"
+              "-X" "${v}.gitReleaseCommit=v${version}"
+              "-X" "${v}.gitMajor=${lib.versions.major version}"
+              "-X" "${v}.gitMinor=${lib.versions.minor version}"
+              "-X" "${v}.buildDate=19700101-00:00:00"
+              "-X" "${v}.gitTreeState=clean"
+              "-X" "${c}.CLIName=clusterctl-aws"
             ];
+            preInstall = ''
+              mv $GOPATH/bin/clusterawsadm $GOPATH/bin/clusterctl-aws
+            '';
           };
 
           release-please = buildNpmPackage rec {

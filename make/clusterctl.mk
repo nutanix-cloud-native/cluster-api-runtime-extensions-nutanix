@@ -14,7 +14,7 @@ clusterctl.init:
 	    EXP_RUNTIME_SDK=true \
 	    EXP_CLUSTER_RESOURCE_SET=true \
 	    EXP_MACHINE_POOL=true \
-	    AWS_B64ENCODED_CREDENTIALS=$$(clusterawsadm bootstrap credentials encode-as-profile) \
+	    AWS_B64ENCODED_CREDENTIALS=$$(clusterctl-aws bootstrap credentials encode-as-profile) \
 	    NUTANIX_ENDPOINT="" NUTANIX_PASSWORD="" NUTANIX_USER="" \
 	    clusterctl init \
 	      --kubeconfig=$(KIND_KUBECONFIG) \
