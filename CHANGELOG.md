@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.14.1 (2024-08-15)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: delete correct cluster-autoscaler HCP by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/859
+* fix: skip UUID annotation webhook for clusters with nil topology by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/860
+### Other Changes
+* docs: Update release process for adding release series metadata by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/861
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.0...v0.14.1
+
 ## 0.14.0 (2024-08-14)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
