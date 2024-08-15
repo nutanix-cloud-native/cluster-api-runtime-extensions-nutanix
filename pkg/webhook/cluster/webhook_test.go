@@ -21,6 +21,7 @@ func TestWebhookBehaviour(t *testing.T) {
 			GenerateName: "test-cluster-",
 			Namespace:    metav1.NamespaceDefault,
 		},
+		Spec: clusterv1.ClusterSpec{Topology: &clusterv1.Topology{}},
 	}
 
 	g.Expect(env.Client.Create(ctx, cluster)).To(Succeed())
@@ -43,4 +44,24 @@ func TestWebhookBehaviour(t *testing.T) {
 	g.Expect(env.Client.Update(ctx, cluster)).To(Succeed())
 	g.Expect(cluster.Annotations).
 		To(HaveKeyWithValue(v1alpha1.ClusterUUIDAnnotationKey, assignedUUID))
+}
+
+func TestWebhookSkipsClusterWithNilTopology(t *testing.T) {
+	g := NewWithT(t)
+
+	cluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-cluster-",
+			Namespace:    metav1.NamespaceDefault,
+		},
+	}
+
+	g.Expect(env.Client.Create(ctx, cluster)).To(Succeed())
+	t.Cleanup(func() {
+		g.Expect(env.Client.Delete(ctx, cluster)).To(Succeed())
+	})
+
+	// Validate the cluster has not been assigned a UUID.
+	g.Expect(cluster.Annotations).
+		NotTo(HaveKey(v1alpha1.ClusterUUIDAnnotationKey))
 }

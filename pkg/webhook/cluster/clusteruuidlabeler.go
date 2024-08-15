@@ -50,6 +50,10 @@ func (a *clusterUUIDLabeler) defaulter(
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if cluster.Spec.Topology == nil {
+		return admission.Allowed("")
+	}
+
 	if cluster.Annotations == nil {
 		cluster.Annotations = make(map[string]string, 1)
 	}
@@ -100,6 +104,10 @@ func (a *clusterUUIDLabeler) validate(
 	err := a.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if cluster.Spec.Topology == nil {
+		return admission.Allowed("")
 	}
 
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
