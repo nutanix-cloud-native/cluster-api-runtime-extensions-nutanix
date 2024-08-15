@@ -168,7 +168,7 @@ data:
           - command:
             - ./cluster-autoscaler
             - --cloud-provider=clusterapi
-            - --namespace='{{ `{{ .Cluster.Namespace }}` }}'
+            - --namespace=kube-system
             - --node-group-auto-discovery=clusterapi:clusterName='{{ `{{ .Cluster.Name }}` }}',namespace='{{ `{{ .Cluster.Namespace }}` }}'
             - --kubeconfig=/cluster/kubeconfig
             - --clusterapi-cloud-config-authoritative
