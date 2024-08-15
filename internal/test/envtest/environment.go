@@ -83,7 +83,7 @@ func init() {
 // RunInput is the input for Run.
 type RunInput struct {
 	M                     *testing.M
-	ManagerUncachedObjs   []client.Object
+	EnvironmentOpts       []EnvironmentOpt
 	SetupReconcilers      func(ctx context.Context, mgr ctrl.Manager)
 	SetupEnv              func(e *Environment)
 	WebhookInstallOptions envtest.WebhookInstallOptions
@@ -100,7 +100,7 @@ type RunInput struct {
 // to a non-empty value.
 func Run(ctx context.Context, input RunInput) int {
 	// Bootstrapping test environment
-	env := newEnvironment(input.WebhookInstallOptions, input.ManagerUncachedObjs...)
+	env := newEnvironment(ctx, input.WebhookInstallOptions, input.EnvironmentOpts...)
 
 	if input.SetupReconcilers != nil {
 		input.SetupReconcilers(ctx, env.Manager)
@@ -154,14 +154,43 @@ type Environment struct {
 	cancelManager context.CancelFunc
 }
 
+type environmentOpts struct {
+	uncachedObjs    []client.Object
+	preexistingObjs []client.Object
+}
+
+// EnvironmentOption is a functional option for configuring the environment.
+type EnvironmentOpt func(*environmentOpts)
+
+// WithUncachedObjects sets the list of objects that should not be cached by the controller-runtime client.
+func WithUncachedObjects(objs ...client.Object) EnvironmentOpt {
+	return func(opts *environmentOpts) {
+		opts.uncachedObjs = objs
+	}
+}
+
+// WithPreexistingObjects sets the list of objects that should be created before the test environment is started.
+func WithPreexistingObjects(objs ...client.Object) EnvironmentOpt {
+	return func(opts *environmentOpts) {
+		opts.preexistingObjs = objs
+	}
+}
+
 // newEnvironment creates a new environment spinning up a local api-server.
 //
 // This function should be called only once for each package you're running tests within,
 // usually the environment is initialized in a suite_test.go file within a `BeforeSuite` ginkgo block.
 func newEnvironment(
+	ctx context.Context,
 	webhookInstallOptions envtest.WebhookInstallOptions,
-	uncachedObjs ...client.Object,
+	opts ...EnvironmentOpt,
 ) *Environment {
+	// Apply options.
+	envOpts := &environmentOpts{}
+	for _, opt := range opts {
+		opt(envOpts)
+	}
+
 	// Create the test environment.
 	env := &envtest.Environment{
 		ErrorIfCRDPathMissing: true,
@@ -205,7 +234,7 @@ func newEnvironment(
 		},
 		Client: client.Options{
 			Cache: &client.CacheOptions{
-				DisableFor: uncachedObjs,
+				DisableFor: envOpts.uncachedObjs,
 			},
 		},
 		WebhookServer: webhook.NewServer(webhook.Options{
@@ -219,6 +248,13 @@ func newEnvironment(
 	mgr, err := ctrl.NewManager(env.Config, options)
 	if err != nil {
 		klog.Fatalf("Failed to start testenv manager: %v", err)
+	}
+
+	// Create pre-existing objects.
+	for _, obj := range envOpts.preexistingObjs {
+		if err := mgr.GetClient().Create(ctx, obj); err != nil {
+			klog.Fatalf("Failed to create pre-existing object: %v", err)
+		}
 	}
 
 	return &Environment{

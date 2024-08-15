@@ -50,6 +50,10 @@ func (a *clusterUUIDLabeler) defaulter(
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if cluster.Spec.Topology == nil {
+		return admission.Allowed("")
+	}
+
 	if cluster.Annotations == nil {
 		cluster.Annotations = make(map[string]string, 1)
 	}
@@ -60,7 +64,7 @@ func (a *clusterUUIDLabeler) defaulter(
 		// If this is an update request, copy the UUID from the old object if it exists. This prevents deletion of the
 		// annotation.
 		//
-		// This is also important for move operations where the clusterctl for some reason deletes
+		// This is especially important for move operations where the clusterctl for some reason deletes
 		// all annotations (see
 		// https://github.com/kubernetes-sigs/cluster-api/blob/v1.7.4/cmd/clusterctl/client/cluster/mover.go#L1188).
 		// Without this logic, the UUID would be deleted and the UUID validation webhook would fail.
@@ -77,6 +81,12 @@ func (a *clusterUUIDLabeler) defaulter(
 			oldClusterUUID, ok := oldCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
 			if ok {
 				cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey] = oldClusterUUID
+			} else {
+				// If the old cluster does not have a UUID, generate a new one. This can happen if the cluster was
+				// created before this webhook was installed or if the cluster began without spec.topology and was
+				// later converted to a ClusterClass based cluster.
+				cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey] = uuid.Must(uuid.NewV7()).
+					String()
 			}
 		// If this is a create request, generate a new UUID.
 		case v1.Create:
@@ -100,6 +110,10 @@ func (a *clusterUUIDLabeler) validate(
 	err := a.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if cluster.Spec.Topology == nil {
+		return admission.Allowed("")
 	}
 
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
