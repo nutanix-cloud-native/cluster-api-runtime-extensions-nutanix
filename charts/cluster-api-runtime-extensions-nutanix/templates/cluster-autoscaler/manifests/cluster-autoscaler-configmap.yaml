@@ -17,7 +17,7 @@ data:
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
       name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
-      namespace: '{{ `{{ .Cluster.Namespace }}` }}'
+      namespace: {{ `{{ .Cluster.Namespace }}` }}
     spec:
       maxUnavailable: 1
       selector:
@@ -35,7 +35,7 @@ data:
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
       name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
-      namespace: '{{ `{{ .Cluster.Namespace }}` }}'
+      namespace: {{ `{{ .Cluster.Namespace }}` }}
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
@@ -46,7 +46,7 @@ data:
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
       name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
-      namespace: '{{ `{{ .Cluster.Namespace }}` }}'
+      namespace: {{ `{{ .Cluster.Namespace }}` }}
     rules:
     - apiGroups:
       - ""
@@ -110,7 +110,7 @@ data:
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
       name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
-      namespace: '{{ `{{ .Cluster.Namespace }}` }}'
+      namespace: {{ `{{ .Cluster.Namespace }}` }}
     roleRef:
       apiGroup: rbac.authorization.k8s.io
       kind: Role
@@ -118,7 +118,7 @@ data:
     subjects:
     - kind: ServiceAccount
       name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
-      namespace: '{{ `{{ .Cluster.Namespace }}` }}'
+      namespace: {{ `{{ .Cluster.Namespace }}` }}
     ---
     apiVersion: v1
     kind: Service
@@ -129,7 +129,7 @@ data:
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
       name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
-      namespace: '{{ `{{ .Cluster.Namespace }}` }}'
+      namespace: {{ `{{ .Cluster.Namespace }}` }}
     spec:
       ports:
       - name: http
@@ -150,7 +150,7 @@ data:
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
       name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
-      namespace: '{{ `{{ .Cluster.Namespace }}` }}'
+      namespace: {{ `{{ .Cluster.Namespace }}` }}
     spec:
       replicas: 1
       revisionHistoryLimit: 10
@@ -169,7 +169,7 @@ data:
             - ./cluster-autoscaler
             - --cloud-provider=clusterapi
             - --namespace=kube-system
-            - --node-group-auto-discovery=clusterapi:clusterName='{{ `{{ .Cluster.Name }}` }}',namespace='{{ `{{ .Cluster.Namespace }}` }}'
+            - --node-group-auto-discovery=clusterapi:clusterName={{ `{{ .Cluster.Name }}` }},namespace={{ `{{ .Cluster.Namespace }}` }}
             - --kubeconfig=/cluster/kubeconfig
             - --clusterapi-cloud-config-authoritative
             - --enforce-node-group-min-size=true
@@ -211,7 +211,7 @@ data:
               items:
               - key: value
                 path: kubeconfig
-              secretName: '{{ `{{ .Cluster.Name }}` }}-kubeconfig'
+              secretName: {{ `{{ .Cluster.Name }}` }}-kubeconfig
 kind: ConfigMap
 metadata:
   creationTimestamp: null

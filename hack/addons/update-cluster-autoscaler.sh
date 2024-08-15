@@ -25,7 +25,7 @@ cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 
 kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
 
-sed -i -e "s/\([a-z-]*\)tmpl-clustername\([^-]*\)-tmpl\([a-z-]*\)/'\1{{ \`{{ .Cluster.Name\2 }}\` }}\3'/g" \
+sed -i -e "s/\([a-z-]*\)tmpl-clustername\([^-]*\)-tmpl\([a-z-]*\)/\1{{ \`{{ .Cluster.Name\2 }}\` }}\3/g" \
   -e "s/\([a-z-]*\)tmpl-clusteruuid-tmpl\([a-z-]*\)/'\1{{ \`{{ index .Cluster.Annotations \"caren.nutanix.com\/cluster-uuid\" }}\` }}\2'/g" \
   "${ASSETS_DIR}/${FILE_NAME}"
 
