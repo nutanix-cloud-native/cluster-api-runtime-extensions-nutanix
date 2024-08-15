@@ -77,10 +77,18 @@ func (s helmAddonStrategy) delete(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
+	// The cluster-autoscaler is different from other addons.
+	// It requires all resources to be created in the management cluster,
+	// which means creating the HelmChartProxy always targeting the management cluster.
+	targetCluster, err := findTargetCluster(ctx, s.client, cluster)
+	if err != nil {
+		return err
+	}
+
 	hcp := &caaphv1.HelmChartProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      addonResourceNameForCluster(cluster),
-			Namespace: cluster.Namespace,
+			Namespace: targetCluster.Namespace,
 		},
 	}
 
