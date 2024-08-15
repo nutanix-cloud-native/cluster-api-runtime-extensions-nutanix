@@ -35,7 +35,7 @@ Sign the previous commit:
 git commit --gpg-sign --amend --no-edit
 ```
 
-If you are releasing a new minor release, the update the `metadata.yaml`s so that the upcoming release version is used
+If you are releasing a new minor release, then update the `metadata.yaml`s so that the upcoming release version is used
 for e.g. local development and e2e tests:
 
 1. Add the new release to the root level `metadata.yaml` release series.
@@ -45,6 +45,12 @@ for e.g. local development and e2e tests:
 1. Update the `caren` provider configuration in `test/e2e/config/caren.yaml` with the new release (replacing the last
    minor release with the new minor release version) and the next minor release configuration (replacing the `v0.x.99`
    configuration).
+1. Commit the changed files:
+
+   ```shell
+   git add metadata.yaml test/e2e/data/shared/v1beta1-caren/metadata.yaml test/e2e/config/caren.yaml
+   git commit --gpg-sign -m 'fixup! release: Update metadata for release'
+   ```
 
 And force push:
 
