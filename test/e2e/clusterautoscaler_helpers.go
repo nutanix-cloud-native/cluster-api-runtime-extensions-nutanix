@@ -14,12 +14,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
+	"sigs.k8s.io/yaml"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
@@ -130,4 +132,24 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 			),
 		),
 	)
+
+	statusConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "kube-system",
+			Name:      "cluster-autoscaler-status",
+		},
+	}
+
+	WaitForConfigMapData(ctx, WaitForConfigMapDataInput{
+		Getter:    workloadClusterClient,
+		ConfigMap: statusConfigMap,
+		DataValidator: func(data map[string]string) bool {
+			type clusterAutoscalerStatus struct {
+				AutoScalerStatus string `json:"autoscalerStatus,omitempty" yaml:"autoscalerStatus,omitempty"`
+			}
+			status := &clusterAutoscalerStatus{}
+			err = yaml.Unmarshal([]byte(data["status"]), status)
+			return err == nil && status.AutoScalerStatus == "Running"
+		},
+	}, input.DeploymentIntervals...)
 }
