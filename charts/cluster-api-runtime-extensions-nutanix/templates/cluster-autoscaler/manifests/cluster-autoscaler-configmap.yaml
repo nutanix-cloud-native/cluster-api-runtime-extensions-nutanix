@@ -12,17 +12,17 @@ data:
     kind: PodDisruptionBudget
     metadata:
       labels:
-        app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+        app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
-      name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+      name: cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
       namespace: {{ `{{ .Cluster.Namespace }}` }}
     spec:
       maxUnavailable: 1
       selector:
         matchLabels:
-          app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+          app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
           app.kubernetes.io/name: clusterapi-cluster-autoscaler
     ---
     apiVersion: v1
@@ -30,22 +30,22 @@ data:
     kind: ServiceAccount
     metadata:
       labels:
-        app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+        app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
-      name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+      name: cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
       namespace: {{ `{{ .Cluster.Namespace }}` }}
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
     metadata:
       labels:
-        app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+        app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
-      name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+      name: cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
       namespace: {{ `{{ .Cluster.Namespace }}` }}
     rules:
     - apiGroups:
@@ -105,30 +105,30 @@ data:
     kind: RoleBinding
     metadata:
       labels:
-        app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+        app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
-      name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+      name: cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
       namespace: {{ `{{ .Cluster.Namespace }}` }}
     roleRef:
       apiGroup: rbac.authorization.k8s.io
       kind: Role
-      name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+      name: cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
     subjects:
     - kind: ServiceAccount
-      name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+      name: cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
       namespace: {{ `{{ .Cluster.Namespace }}` }}
     ---
     apiVersion: v1
     kind: Service
     metadata:
       labels:
-        app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+        app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
-      name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+      name: cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
       namespace: {{ `{{ .Cluster.Namespace }}` }}
     spec:
       ports:
@@ -137,7 +137,7 @@ data:
         protocol: TCP
         targetPort: 8085
       selector:
-        app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+        app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
       type: ClusterIP
     ---
@@ -145,23 +145,23 @@ data:
     kind: Deployment
     metadata:
       labels:
-        app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+        app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: clusterapi-cluster-autoscaler
         helm.sh/chart: cluster-autoscaler-9.37.0
-      name: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+      name: cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
       namespace: {{ `{{ .Cluster.Namespace }}` }}
     spec:
       replicas: 1
       revisionHistoryLimit: 10
       selector:
         matchLabels:
-          app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+          app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
           app.kubernetes.io/name: clusterapi-cluster-autoscaler
       template:
         metadata:
           labels:
-            app.kubernetes.io/instance: 'ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+            app.kubernetes.io/instance: ca-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
             app.kubernetes.io/name: clusterapi-cluster-autoscaler
         spec:
           containers:
@@ -201,7 +201,7 @@ data:
               readOnly: true
           dnsPolicy: ClusterFirst
           priorityClassName: system-cluster-critical
-          serviceAccountName: 'cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}'
+          serviceAccountName: cluster-autoscaler-{{ `{{ index .Cluster.Annotations "caren.nutanix.com/cluster-uuid" }}` }}
           tolerations:
           - effect: NoSchedule
             key: node-role.kubernetes.io/control-plane
