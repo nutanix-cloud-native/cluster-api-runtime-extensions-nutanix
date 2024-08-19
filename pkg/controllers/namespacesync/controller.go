@@ -35,7 +35,7 @@ type Reconciler struct {
 func (r *Reconciler) SetupWithManager(
 	ctx context.Context,
 	mgr ctrl.Manager,
-	options controller.Options,
+	options *controller.Options,
 ) error {
 	if r.IsTargetNamespace == nil {
 		return fmt.Errorf("define IsTargetNamespace function to use controller")
@@ -83,7 +83,7 @@ func (r *Reconciler) SetupWithManager(
 			handler.EnqueueRequestsFromMapFunc(r.clusterClassToNamespaces),
 		).
 		Named("syncclusterclass").
-		WithOptions(options).
+		WithOptions(*options).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to set up with controller manager: %w", err)

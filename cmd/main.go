@@ -192,7 +192,7 @@ func main() {
 		}).SetupWithManager(
 			signalCtx,
 			mgr,
-			controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},
+			&controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},
 		); err != nil {
 			setupLog.Error(
 				err,

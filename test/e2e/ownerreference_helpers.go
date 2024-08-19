@@ -10,6 +10,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
@@ -102,8 +103,8 @@ var (
 
 	// AddonReferenceAssertions maps addon types to functions which return an error if the passed OwnerReferences
 	// aren't as expected.
-	AddonReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
-		clusterResourceSetKind: func(owners []metav1.OwnerReference) error {
+	AddonReferenceAssertions = map[string]func(types.NamespacedName, []metav1.OwnerReference) error{
+		clusterResourceSetKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// The ClusterResourcesSets that we create are cluster specific and so should be owned by the cluster.
 			return framework.HasExactOwners(
 				owners,
@@ -113,7 +114,7 @@ var (
 
 		clusterResourceSetBindingKind: clusterResourceSetBindingIsOnlyOwnedByClusterResourceSets,
 
-		helmChartProxyKind: func(owners []metav1.OwnerReference) error {
+		helmChartProxyKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// The HelmChartProxies that we create are cluster specific and so should be owned by the cluster.
 			return framework.HasExactOwners(
 				owners,
@@ -121,7 +122,7 @@ var (
 			)
 		},
 
-		helmReleaseProxyKind: func(owners []metav1.OwnerReference) error {
+		helmReleaseProxyKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// HelmReleaseProxies should be owned by the relevant HelmChartProxy.
 			return framework.HasExactOwners(
 				owners,
@@ -132,12 +133,12 @@ var (
 
 	// AWSInfraOwnerReferenceAssertions maps AWS Infrastructure types to functions which return an error if the passed
 	// OwnerReferences aren't as expected.
-	AWSInfraOwnerReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
-		awsMachineKind: func(owners []metav1.OwnerReference) error {
+	AWSInfraOwnerReferenceAssertions = map[string]func(types.NamespacedName, []metav1.OwnerReference) error{
+		awsMachineKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// The AWSMachine must be owned and controlled by a Machine.
 			return framework.HasExactOwners(owners, machineController)
 		},
-		awsMachineTemplateKind: func(owners []metav1.OwnerReference) error {
+		awsMachineTemplateKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// Base AWSMachineTemplates referenced in a ClusterClass must be owned by the ClusterClass.
 			// AWSMachineTemplates created for specific Clusters in the Topology controller must be owned by a Cluster.
 			return framework.HasOneOfExactOwners(
@@ -146,15 +147,15 @@ var (
 				[]metav1.OwnerReference{clusterClassOwner},
 			)
 		},
-		awsClusterKind: func(owners []metav1.OwnerReference) error {
+		awsClusterKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// AWSCluster must be owned and controlled by a Cluster.
 			return framework.HasExactOwners(owners, clusterController)
 		},
-		awsClusterTemplateKind: func(owners []metav1.OwnerReference) error {
+		awsClusterTemplateKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// AWSClusterTemplate must be owned by a ClusterClass.
 			return framework.HasExactOwners(owners, clusterClassOwner)
 		},
-		awsClusterControllerIdentityKind: func(owners []metav1.OwnerReference) error {
+		awsClusterControllerIdentityKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// AWSClusterControllerIdentity should have no owners.
 			return framework.HasExactOwners(owners)
 		},
@@ -162,12 +163,12 @@ var (
 
 	// NutanixInfraOwnerReferenceAssertions maps Nutanix Infrastructure types to functions which return an error
 	// if the passed OwnerReferences aren't as expected.
-	NutanixInfraOwnerReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
-		nutanixMachineKind: func(owners []metav1.OwnerReference) error {
+	NutanixInfraOwnerReferenceAssertions = map[string]func(types.NamespacedName, []metav1.OwnerReference) error{
+		nutanixMachineKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// The NutanixMachine must be owned and controlled by a Machine.
 			return framework.HasExactOwners(owners, machineController)
 		},
-		nutanixMachineTemplateKind: func(owners []metav1.OwnerReference) error {
+		nutanixMachineTemplateKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// Base NutanixMachineTemplates referenced in a ClusterClass must be owned by the ClusterClass.
 			// NutanixMachineTemplates created for specific Clusters in the Topology controller must be owned by a Cluster.
 			return framework.HasOneOfExactOwners(
@@ -176,11 +177,11 @@ var (
 				[]metav1.OwnerReference{clusterClassOwner},
 			)
 		},
-		nutanixClusterKind: func(owners []metav1.OwnerReference) error {
+		nutanixClusterKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// NutanixCluster must be owned and controlled by a Cluster.
 			return framework.HasExactOwners(owners, clusterController)
 		},
-		nutanixClusterTemplateKind: func(owners []metav1.OwnerReference) error {
+		nutanixClusterTemplateKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// NutanixClusterTemplate must be owned by a ClusterClass.
 			return framework.HasExactOwners(owners, clusterClassOwner)
 		},
@@ -190,8 +191,8 @@ var (
 	// aren't as expected.
 	// Note: These relationships are documented in
 	// https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
-	KubernetesReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
-		secretKind: func(owners []metav1.OwnerReference) error {
+	KubernetesReferenceAssertions = map[string]func(types.NamespacedName, []metav1.OwnerReference) error{
+		secretKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// Secrets for cluster certificates must be owned and controlled by the KubeadmControlPlane.
 			// The bootstrap secret should be owned and controlled by a KubeadmControlPlane.
 			// Other resources can be owned by the Cluster to ensure correct GC.
@@ -203,7 +204,7 @@ var (
 				[]metav1.OwnerReference{clusterOwner, nutanixClusterOwner},
 			)
 		},
-		configMapKind: func(owners []metav1.OwnerReference) error {
+		configMapKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// The only configMaps considered here are those owned by a ClusterResourceSet.
 			return framework.HasExactOwners(owners, clusterResourceSetOwner)
 		},
@@ -222,6 +223,7 @@ func dedupeOwners(owners []metav1.OwnerReference) []metav1.OwnerReference {
 // clusterResourceSetBindingIsOnlyOwnedByClusterResourceSets returns a function that checks that the passed
 // OwnerReferences are as expected, which means only owned by ClusterResourceSets and not by any other kinds.
 func clusterResourceSetBindingIsOnlyOwnedByClusterResourceSets(
+	_ types.NamespacedName,
 	gotOwners []metav1.OwnerReference,
 ) error {
 	return framework.HasExactOwners(dedupeOwners(gotOwners), clusterResourceSetOwner)
