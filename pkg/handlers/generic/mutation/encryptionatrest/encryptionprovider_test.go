@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	configv1 "k8s.io/apiserver/pkg/apis/config/v1"
+	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -18,7 +18,7 @@ func Test_encryptionConfigForSecretsAndConfigMaps(t *testing.T) {
 		name      string
 		providers *v1alpha1.EncryptionProviders
 		wantErr   error
-		want      *configv1.ResourceConfiguration
+		want      *apiserverv1.ResourceConfiguration
 	}{
 		{
 			name: "encryption configuration using all providers",
@@ -27,20 +27,20 @@ func Test_encryptionConfigForSecretsAndConfigMaps(t *testing.T) {
 				Secretbox: &v1alpha1.SecretboxConfiguration{},
 			},
 			wantErr: nil,
-			want: &configv1.ResourceConfiguration{
+			want: &apiserverv1.ResourceConfiguration{
 				Resources: []string{"secrets", "configmaps"},
-				Providers: []configv1.ProviderConfiguration{
+				Providers: []apiserverv1.ProviderConfiguration{
 					{
-						AESCBC: &configv1.AESConfiguration{
-							Keys: []configv1.Key{
+						AESCBC: &apiserverv1.AESConfiguration{
+							Keys: []apiserverv1.Key{
 								{
 									Name:   "key1",
 									Secret: base64.StdEncoding.EncodeToString([]byte(testToken)),
 								},
 							},
 						},
-						Secretbox: &configv1.SecretboxConfiguration{
-							Keys: []configv1.Key{
+						Secretbox: &apiserverv1.SecretboxConfiguration{
+							Keys: []apiserverv1.Key{
 								{
 									Name:   "key1",
 									Secret: base64.StdEncoding.EncodeToString([]byte(testToken)),
@@ -57,12 +57,12 @@ func Test_encryptionConfigForSecretsAndConfigMaps(t *testing.T) {
 				AESCBC: &v1alpha1.AESConfiguration{},
 			},
 			wantErr: nil,
-			want: &configv1.ResourceConfiguration{
+			want: &apiserverv1.ResourceConfiguration{
 				Resources: []string{"secrets", "configmaps"},
-				Providers: []configv1.ProviderConfiguration{
+				Providers: []apiserverv1.ProviderConfiguration{
 					{
-						AESCBC: &configv1.AESConfiguration{
-							Keys: []configv1.Key{
+						AESCBC: &apiserverv1.AESConfiguration{
+							Keys: []apiserverv1.Key{
 								{
 									Name:   "key1",
 									Secret: base64.StdEncoding.EncodeToString([]byte(testToken)),
