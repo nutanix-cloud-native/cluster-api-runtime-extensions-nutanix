@@ -202,16 +202,22 @@ go-generate: ; $(info $(M) running go generate)
 	controller-gen paths="./..." \
 	  webhook:headerFile="hack/license-header.yaml.txt" \
 	  output:webhook:stdout >charts/cluster-api-runtime-extensions-nutanix/templates/webhooks.yaml
+	# Update the webhook names and configure cert-manager CA injection.
 	yq --inplace \
 	  '.metadata.name = "{{ include \"chart.name\" . }}-manager-role"' \
 	  charts/cluster-api-runtime-extensions-nutanix/templates/role.yaml
-	# Update the webhook names and configure cert-manager CA injection.
+	# Update the CA injection annotation.
 	yq --inplace \
 	  --from-file=hack/update-webhook-configurations.yq \
 	  charts/cluster-api-runtime-extensions-nutanix/templates/webhooks.yaml
-	# Update the CA injection annotation.
 	#$(MAKE) go-fix
 	$(MAKE) configure-csi-providers
+	# Update anyOf schemas for resource.Quantity fields to only accept strings
+	# until CAPI ClusterClass variables support anyOf schemas.
+	find api/v1alpha1/crds/ -name 'caren.nutanix.com_nutanix*configs.yaml' \
+	  -exec yq --inplace \
+	    '(.. | select(has("memorySize") or has("systemDiskSize")) | (.memorySize?, .systemDiskSize?) | del(.anyOf)) += {"type": "string"}' \
+	    {} \;
 
 .PHONY: go-mod-upgrade
 go-mod-upgrade: ## Interactive check for direct module dependency upgrades

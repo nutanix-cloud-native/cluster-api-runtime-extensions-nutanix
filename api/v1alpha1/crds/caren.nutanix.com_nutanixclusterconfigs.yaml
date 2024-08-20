@@ -339,12 +339,10 @@ spec:
                                 - type
                               type: object
                             memorySize:
-                              anyOf:
-                                - type: integer
-                                - type: string
                               description: memorySize is the memory size (in Quantity format) of the VM
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
+                              type: string
                             project:
                               description: |-
                                 add the virtual machines to the project defined in Prism Central.
@@ -389,14 +387,12 @@ spec:
                                 type: object
                               type: array
                             systemDiskSize:
-                              anyOf:
-                                - type: integer
-                                - type: string
                               description: |-
                                 systemDiskSize is size (in Quantity format) of the system disk of the VM
                                 The minimum systemDiskSize is 20Gi bytes
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
+                              type: string
                             vcpuSockets:
                               description: vcpuSockets is the number of vCPU sockets of the VM
                               format: int32
