@@ -61,8 +61,6 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s
-      - -w
       - -X 'k8s.io/component-base/version.buildDate={{ .CommitDate }}'
       - -X 'k8s.io/component-base/version.gitCommit={{ .FullCommit }}'
       - -X 'k8s.io/component-base/version.gitTreeState={{ .Env.GIT_TREE_STATE }}'
