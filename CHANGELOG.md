@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.14.3 (2024-08-20)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: CRS generated CA Deployment has extra quotes by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/867
+* fix: Use same security context & priority class for helm-repository pod by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/871
+### Other Changes
+* build: Include debug symbols in release image executable by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/873
+* build: Use new clusterctl-aws name for clusterawsadm by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/863
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.2...v0.14.3
+
 ## 0.14.2 (2024-08-15)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
