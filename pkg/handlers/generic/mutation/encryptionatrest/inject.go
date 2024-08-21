@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
+	configv1 "k8s.io/apiserver/pkg/apis/config/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
@@ -160,8 +160,8 @@ func generateEncryptionCredentialsFile(cluster *clusterv1.Cluster) cabpkv1.File 
 
 func (h *encryptionPatchHandler) generateEncryptionConfiguration(
 	providers []v1alpha1.EncryptionProviders,
-) (*apiserverv1.EncryptionConfiguration, error) {
-	resourceConfigs := []apiserverv1.ResourceConfiguration{}
+) (*configv1.EncryptionConfiguration, error) {
+	resourceConfigs := []configv1.ResourceConfiguration{}
 	for _, encProvider := range providers {
 		provider := encProvider
 		resourceConfig, err := defaultEncryptionConfiguration(
@@ -175,9 +175,9 @@ func (h *encryptionPatchHandler) generateEncryptionConfiguration(
 	}
 	// We only support encryption for "secrets" and "configmaps" using "aescbc" provider.
 
-	return &apiserverv1.EncryptionConfiguration{
+	return &configv1.EncryptionConfiguration{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: apiserverv1.SchemeGroupVersion.String(),
+			APIVersion: configv1.SchemeGroupVersion.String(),
 			Kind:       "EncryptionConfiguration",
 		},
 		Resources: resourceConfigs,
@@ -211,7 +211,7 @@ func (h *encryptionPatchHandler) defaultEncryptionSecretExists(
 
 func (h *encryptionPatchHandler) createEncryptionConfigurationSecret(
 	ctx context.Context,
-	encryptionConfig *apiserverv1.EncryptionConfiguration,
+	encryptionConfig *configv1.EncryptionConfiguration,
 	cluster *clusterv1.Cluster,
 ) error {
 	dataYaml, err := yaml.Marshal(encryptionConfig)
@@ -255,8 +255,8 @@ func (h *encryptionPatchHandler) createEncryptionConfigurationSecret(
 func defaultEncryptionConfiguration(
 	providers *v1alpha1.EncryptionProviders,
 	secretGenerator TokenGenerator,
-) (*apiserverv1.ResourceConfiguration, error) {
-	providerConfig := apiserverv1.ProviderConfiguration{}
+) (*configv1.ResourceConfiguration, error) {
+	providerConfig := configv1.ProviderConfiguration{}
 	// We only support "aescbc", "secretbox" for now.
 	// "aesgcm" is another AESConfiguration. "aesgcm" requires secret key rotation before 200k write calls.
 	// "aesgcm" should not be supported until secret key's rotation is implemented.
@@ -268,8 +268,8 @@ func defaultEncryptionConfiguration(
 				err,
 			)
 		}
-		providerConfig.AESCBC = &apiserverv1.AESConfiguration{
-			Keys: []apiserverv1.Key{
+		providerConfig.AESCBC = &configv1.AESConfiguration{
+			Keys: []configv1.Key{
 				{
 					Name:   "key1", // we only support one key during cluster creation.
 					Secret: base64.StdEncoding.EncodeToString(token),
@@ -285,8 +285,8 @@ func defaultEncryptionConfiguration(
 				err,
 			)
 		}
-		providerConfig.Secretbox = &apiserverv1.SecretboxConfiguration{
-			Keys: []apiserverv1.Key{
+		providerConfig.Secretbox = &configv1.SecretboxConfiguration{
+			Keys: []configv1.Key{
 				{
 					Name:   "key1", // we only support one key during cluster creation.
 					Secret: base64.StdEncoding.EncodeToString(token),
@@ -295,9 +295,9 @@ func defaultEncryptionConfiguration(
 		}
 	}
 
-	return &apiserverv1.ResourceConfiguration{
+	return &configv1.ResourceConfiguration{
 		Resources: []string{"secrets", "configmaps"},
-		Providers: []apiserverv1.ProviderConfiguration{
+		Providers: []configv1.ProviderConfiguration{
 			providerConfig,
 		},
 	}, nil

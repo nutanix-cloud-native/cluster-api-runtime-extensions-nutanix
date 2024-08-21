@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func NewDefaulter(client ctrlclient.Client, decoder admission.Decoder) admission.Handler {
+func NewDefaulter(client ctrlclient.Client, decoder *admission.Decoder) admission.Handler {
 	return admission.MultiMutatingHandler(
 		NewClusterUUIDLabeler(client, decoder).Defaulter(),
 	)

@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func NewValidator(client ctrlclient.Client, decoder admission.Decoder) admission.Handler {
+func NewValidator(client ctrlclient.Client, decoder *admission.Decoder) admission.Handler {
 	return admission.MultiValidatingHandler(
 		NewClusterUUIDLabeler(client, decoder).Validator(),
 	)
