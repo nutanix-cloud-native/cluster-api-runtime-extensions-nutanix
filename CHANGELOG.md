@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.4 (2024-08-21)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Properly set additionalTrustBundle for Nutanix CCM by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/874
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.3...v0.14.4
+
 ## 0.14.3 (2024-08-20)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
