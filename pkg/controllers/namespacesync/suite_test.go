@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 			UnstructuredCachingClient:   unstructuredCachingClient,
 			SourceClusterClassNamespace: sourceClusterClassNamespace,
 			IsTargetNamespace:           NamespaceHasLabelKey(targetNamespaceLabelKey),
-		}).SetupWithManager(ctx, mgr, controller.Options{MaxConcurrentReconciles: 1}); err != nil {
+		}).SetupWithManager(ctx, mgr, &controller.Options{MaxConcurrentReconciles: 1}); err != nil {
 			panic(fmt.Sprintf("unable to create reconciler: %v", err))
 		}
 	}

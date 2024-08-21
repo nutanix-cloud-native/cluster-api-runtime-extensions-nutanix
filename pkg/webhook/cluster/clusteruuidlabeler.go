@@ -20,11 +20,11 @@ import (
 
 type clusterUUIDLabeler struct {
 	client  ctrlclient.Client
-	decoder *admission.Decoder
+	decoder admission.Decoder
 }
 
 func NewClusterUUIDLabeler(
-	client ctrlclient.Client, decoder *admission.Decoder,
+	client ctrlclient.Client, decoder admission.Decoder,
 ) *clusterUUIDLabeler {
 	return &clusterUUIDLabeler{
 		client:  client,

@@ -101,8 +101,7 @@ func (h *awsNetworkPatchHandler) Mutate(
 				}
 			}
 
-			if networkVar.Subnets != nil &&
-				len(networkVar.Subnets) > 0 {
+			if len(networkVar.Subnets) > 0 {
 				subnets := make([]capav1.SubnetSpec, 0)
 				for _, subnet := range networkVar.Subnets {
 					if subnet.ID == "" {
