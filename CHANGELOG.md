@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.5 (2024-08-21)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* revert: Revert upgrades for CAPI 1.8 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/876
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.4...v0.14.5
+
 ## 0.14.4 (2024-08-21)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
