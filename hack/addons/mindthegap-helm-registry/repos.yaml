@@ -60,4 +60,4 @@ repositories:
     repoURL: https://docs.tigera.io/calico/charts
     charts:
       tigera-operator:
-      - v3.28.0
+      - v3.28.1
