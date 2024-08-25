@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.6 (2024-08-25)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: [BACKPORT v0.14] Filter out control plane endpoint from Nutanix node IPs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/882
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.5...v0.14.6
+
 ## 0.14.5 (2024-08-21)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
