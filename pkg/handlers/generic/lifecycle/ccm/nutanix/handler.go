@@ -149,6 +149,7 @@ func templateValuesFunc(
 			PrismCentralPort                  int32
 			PrismCentralInsecure              bool
 			PrismCentralAdditionalTrustBundle string
+			ControlPlaneEndpointHost          string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -160,6 +161,7 @@ func templateValuesFunc(
 			PrismCentralPort:                  port,
 			PrismCentralInsecure:              nutanixConfig.PrismCentralEndpoint.Insecure,
 			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
+			ControlPlaneEndpointHost:          nutanixConfig.ControlPlaneEndpoint.Host,
 		}
 
 		var b bytes.Buffer
