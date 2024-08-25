@@ -15,6 +15,9 @@ data:
     {{ `{{- with .PrismCentralAdditionalTrustBundle }}` }}
     prismCentralAdditionalTrustBundle: {{ `{{ printf "%q" . }}` }}
     {{ `{{- end }}` }}
+    {{ `{{- with .ControlPlaneEndpointHost }}` }}
+    ignoredNodeIPs: [ {{ `{{ printf "%q" . }}` }} ]
+    {{ `{{- end }}` }}
 
     # The Secret containing the credentials will be created by the handler.
     createSecret: false
