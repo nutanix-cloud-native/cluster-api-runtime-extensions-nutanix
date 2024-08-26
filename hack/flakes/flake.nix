@@ -10,9 +10,11 @@
     flake-utils.lib.eachDefaultSystem (system:
       with nixpkgs.legacyPackages.${system}; rec {
         packages = rec {
-          golangci-lint = pkgs.golangci-lint.override { buildGoModule = buildGo122Module; };
+          golangci-lint = pkgs.golangci-lint.override { buildGoModule = buildGo123Module; };
 
-          go-mod-upgrade = buildGo122Module rec {
+          govulncheck = pkgs.govulncheck.override { buildGoModule = buildGo123Module; };
+
+          go-mod-upgrade = buildGo123Module rec {
             name = "go-mod-upgrade";
             version = "0.10.0";
             src = fetchFromGitHub {
@@ -27,7 +29,7 @@
             ldflags = [ "-s" "-w" "-X" "main.version=v${version}" ];
           };
 
-          setup-envtest = buildGo122Module rec {
+          setup-envtest = buildGo123Module rec {
             name = "setup-envtest";
             version = "0.18.5";
             src = fetchFromGitHub {
@@ -42,7 +44,7 @@
             ldflags = [ "-s" "-w" ];
           };
 
-          goprintconst = buildGo122Module rec {
+          goprintconst = buildGo123Module rec {
             name = "goprintconst";
             version = "0.0.1-dev";
             src = fetchFromGitHub {
@@ -57,7 +59,7 @@
             ldflags = [ "-s" "-w" ];
           };
 
-          clusterctl-aws = buildGo122Module rec {
+          clusterctl-aws = buildGo123Module rec {
             name = "clusterctl-aws";
             version = "2.6.1";
             src = fetchFromGitHub {
@@ -101,7 +103,7 @@
             dontNpmBuild = true;
           };
 
-          controller-gen = buildGo122Module rec {
+          controller-gen = buildGo123Module rec {
             name = "controller-gen";
             version = "0.16.0";
             src = fetchFromGitHub {
@@ -116,7 +118,7 @@
             ldflags = [ "-s" "-w" ];
           };
 
-          clusterctl = buildGo122Module rec {
+          clusterctl = buildGo123Module rec {
             pname = "clusterctl";
             version = "1.8.1";
 
@@ -136,7 +138,7 @@
             ];
           };
 
-          helm-schema = buildGo122Module rec {
+          helm-schema = buildGo123Module rec {
             pname = "helm-schema";
             version = "1.5.2";
 

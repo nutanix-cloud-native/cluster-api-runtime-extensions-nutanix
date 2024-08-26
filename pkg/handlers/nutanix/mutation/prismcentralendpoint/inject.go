@@ -99,14 +99,14 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 			).Info("setting prismCentralEndpoint in NutanixCluster spec")
 
 			var address string
-			var port int32
+			var port uint16
 			address, port, err = prismCentralEndpointVar.ParseURL()
 			if err != nil {
 				return err
 			}
 			prismCentral := &credentials.NutanixPrismEndpoint{
 				Address:  address,
-				Port:     port,
+				Port:     int32(port),
 				Insecure: prismCentralEndpointVar.Insecure,
 				CredentialRef: &credentials.NutanixCredentialReference{
 					Kind: credentials.SecretKind,

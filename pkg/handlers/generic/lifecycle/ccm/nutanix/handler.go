@@ -146,7 +146,7 @@ func templateValuesFunc(
 
 		type input struct {
 			PrismCentralHost                  string
-			PrismCentralPort                  int32
+			PrismCentralPort                  uint16
 			PrismCentralInsecure              bool
 			PrismCentralAdditionalTrustBundle string
 			ControlPlaneEndpointHost          string

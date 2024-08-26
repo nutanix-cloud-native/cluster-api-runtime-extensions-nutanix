@@ -55,11 +55,11 @@ type NutanixPrismCentralEndpointCredentials struct {
 }
 
 //nolint:gocritic // No need for named return values
-func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, int32, error) {
+func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, uint16, error) {
 	var prismCentralURL *url.URL
 	prismCentralURL, err := url.Parse(s.URL)
 	if err != nil {
-		return "", -1, fmt.Errorf("error parsing Prism Central URL: %w", err)
+		return "", 0, fmt.Errorf("error parsing Prism Central URL: %w", err)
 	}
 
 	hostname := prismCentralURL.Hostname()
@@ -69,10 +69,10 @@ func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, int32, error) {
 		return hostname, DefaultPrismCentralPort, nil
 	}
 
-	port, err := strconv.ParseInt(prismCentralURL.Port(), 10, 32)
+	port, err := strconv.ParseUint(prismCentralURL.Port(), 10, 16)
 	if err != nil {
-		return "", -1, fmt.Errorf("error converting port to int: %w", err)
+		return "", 0, fmt.Errorf("error converting port to int: %w", err)
 	}
 
-	return hostname, int32(port), nil
+	return hostname, uint16(port), nil //nolint:gosec // Bounds are checked by ParseUint call above.
 }
