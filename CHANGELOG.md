@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.15.0 (2024-08-26)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Upgrade to Calico v3.28.1 by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/878
+### Fixes 🔧
+* fix: Filter out control plane endpoint from Nutanix node IPs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/881
+### Other Changes
+* ci: Support release branches for release-please by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/880
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.5...v0.15.0
+
 ## 0.14.5 (2024-08-21)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
