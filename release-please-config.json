@@ -10,7 +10,8 @@
           "path": "docs/hugo.toml",
           "jsonpath": "$.params.version"
         }
-      ]
+      ],
+      "versioning": "always-bump-patch"
     }
   }
 }
