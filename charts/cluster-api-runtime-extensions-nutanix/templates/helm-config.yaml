@@ -28,8 +28,7 @@ data:
   node-feature-discovery: |
     ChartVersion: 0.16.1
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/node-feature-discovery/charts{{ end }}
-  nutanix-ccm: |
-    ChartName: nutanix-cloud-provider
+  nutanix-cloud-provider: |
     ChartVersion: 0.4.1
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}
   nutanix-csi-storage: |
@@ -39,7 +38,6 @@ data:
     ChartVersion: 3.0.5
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://piraeus.io/helm-charts/{{ end }}
   tigera-operator: |
-    ChartName: tigera-operator
     ChartVersion: v3.28.1
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}
 kind: ConfigMap

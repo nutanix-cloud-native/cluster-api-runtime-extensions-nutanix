@@ -4,18 +4,16 @@
 package nutanix
 
 import (
-	"bytes"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
-	"text/template"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/yaml"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -34,7 +32,8 @@ ignoredNodeIPs: [ "1.2.3.4" ]
 
 # The Secret containing the credentials will be created by the handler.
 createSecret: false
-secretName: nutanix-ccm-credentials`
+secretName: nutanix-ccm-credentials
+`
 
 	expectedWithoutAdditionalTrustBundle = `prismCentralEndPoint: prism-central.nutanix.com
 prismCentralPort: 9440
@@ -43,18 +42,18 @@ ignoredNodeIPs: [ "1.2.3.4" ]
 
 # The Secret containing the credentials will be created by the handler.
 createSecret: false
-secretName: nutanix-ccm-credentials`
+secretName: nutanix-ccm-credentials
+`
 )
 
 var templateFile = filepath.Join(
 	moduleRootDir(),
 	"charts",
 	"cluster-api-runtime-extensions-nutanix",
-	"templates",
+	"addons",
 	"ccm",
 	"nutanix",
-	"manifests",
-	"helm-addon-installation.yaml",
+	"values-template.yaml",
 )
 
 func Test_templateValues(t *testing.T) {
@@ -141,42 +140,17 @@ func Test_templateValues(t *testing.T) {
 	}
 }
 
-// readCCMTemplateFromProjectHelmChart gets the CCM template from the Helm chart in the project
-// and renders it with dummy values, finally extracting the embedded template that will be used by
-// CAAPH when installing the Nutanix CCM addon.
-// This is important to do this way to ensure that the hard-to-read double templating works as expected.
 func readCCMTemplateFromProjectHelmChart(t *testing.T) string {
 	t.Helper()
-
-	// Mimic the Helm templating using dummy values that will render the template correctly.
-	const dummyValues = `---
-hooks:
-  ccm:
-    nutanix:
-      helmAddonStrategy:
-        defaultValueTemplateConfigMap:
-          create: true
-`
-	templateData := map[string]interface{}{}
-	require.NoError(t, yaml.Unmarshal([]byte(dummyValues), &templateData))
-
-	// And set that as the value of Values in the templateData.
-	templateData["Values"] = templateData
-
-	// Run the actual template as Helm would.
-	var templatedBytes bytes.Buffer
-	require.NoError(
-		t,
-		template.Must(
-			template.New(
-				"helm-addon-installation.yaml").ParseFiles(templateFile),
-		).Execute(&templatedBytes, templateData),
-	)
-	cm := &corev1.ConfigMap{}
-	require.NoError(t, yaml.UnmarshalStrict(templatedBytes.Bytes(), cm))
-
-	// And return the values from the template.
-	return cm.Data["values.yaml"]
+	f, err := os.Open(templateFile)
+	if err != nil {
+		t.Errorf("failed to open template file %v", err)
+	}
+	b, err := io.ReadAll(f)
+	if err != nil {
+		t.Errorf("failed to open template file %v", err)
+	}
+	return string(b)
 }
 
 func moduleRootDir() string {
