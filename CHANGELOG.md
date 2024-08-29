@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.14.7 (2024-08-28)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Upgrade to Calico v3.28.1 by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/890
+### Other Changes
+* build: Update patch only for local release branch dev builds by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/888
+* ci: Always bump patch on release branch by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/886
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.6...v0.14.7
+
 ## 0.14.6 (2024-08-25)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
