@@ -63,17 +63,20 @@ jobs:
       - "unit-test"
     strategy:
       matrix:
-        provider:
-          - Docker
-          - Nutanix
+        config:
+          - {"provider": "Nutanix", "kubernetesVersion": "v1.29.6"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.29.8"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.30.4"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.31.0"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
-          # - AWS
+          # - {"provider": "AWS", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
     uses: ./.github/workflows/e2e.yml
     with:
-      provider: ${{ matrix.provider }}
       focus: Quick start
-      runs-on: ${{ matrix.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-22.04' }}
+      provider: ${{ matrix.config.provider }}
+      kubernetes-version: ${{ matrix.config.kubernetesVersion }}
+      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-22.04' }}
     secrets: inherit
     permissions:
       contents: read
@@ -88,17 +91,20 @@ jobs:
       - "unit-test"
     strategy:
       matrix:
-        provider:
-          - Docker
+        config:
+          - {"provider": "Docker", "kubernetesVersion": "v1.29.8"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.30.4"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.31.0"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
-          # - AWS
-          # - Nutanix
+          # - {"provider": "Nutanix", "kubernetesVersion": "v1.29.6"}
+          # - {"provider": "AWS", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
     uses: ./.github/workflows/e2e.yml
     with:
-      provider: ${{ matrix.provider }}
       focus: Self-hosted
-      runs-on: ${{ matrix.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-22.04' }}
+      provider: ${{ matrix.config.provider }}
+      kubernetes-version: ${{ matrix.config.kubernetesVersion }}
+      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-22.04' }}
     secrets: inherit
     permissions:
       contents: read

@@ -164,11 +164,10 @@ variables:
   # This avoids building node images in the default case which improves the test duration significantly.
   KUBERNETES_VERSION_MANAGEMENT: "${KINDEST_IMAGE_TAG}"
   # The default Kubernetes version for the test workload clusters for all providers, unless overridden below.
-  KUBERNETES_VERSION: "${E2E_DEFAULT_KUBERNETES_VERSION}"
+  KUBERNETES_VERSION: "${E2E_KUBERNETES_VERSION}"
   # Override Kubernetes version for test workload clusters for specific providers by setting the env variables
   # `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
-  # `KUBERNETES_VERSION_DOCKER: v1.29.6`.
-  # KUBERNETES_VERSION_DOCKER: "${KINDEST_IMAGE_TAG}"
+  # `KUBERNETES_VERSION_DOCKER: v1.31.0`.
   SERVICE_CIDR: "10.128.0.0/12"
   POD_CIDR: "192.168.0.0/16"
   NODE_DRAIN_TIMEOUT: "60s"
@@ -200,7 +199,7 @@ variables:
   # # Name of the Prism Element cluster.
   # NUTANIX_PRISM_ELEMENT_CLUSTER_NAME: ""
   # # Name of the OS image pre-uploaded in PC.
-  NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME: nkp-rocky-9.4-1.29.6-20240704044125
+  NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME: nkp-rocky-9.4-release-1.29.6-20240816215147
   # # Name of the subnet to be assigned to the VMs.
   # NUTANIX_SUBNET_NAME: ""
   # # Name of the storage container to CSI driver
