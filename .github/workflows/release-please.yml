@@ -1,7 +1,7 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-name: release-please-main
+name: release-please
 
 on:
   push:
@@ -22,8 +22,10 @@ jobs:
   release-please:
     runs-on: ubuntu-22.04
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release-please
+        with:
+          target-branch: ${{ github.ref_name }}
 
       - uses: actions/checkout@v4
         if: ${{ steps.release-please.outputs.release_created }}
