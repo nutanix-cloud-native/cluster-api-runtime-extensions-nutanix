@@ -48,7 +48,7 @@ data:
             - name: address
               value: '{{ `{{ .ControlPlaneEndpoint.Host }}` }}'
             - name: prometheus_server
-          image: ghcr.io/kube-vip/kube-vip:v0.8.1
+          image: ghcr.io/kube-vip/kube-vip:v0.8.2
           imagePullPolicy: IfNotPresent
           name: kube-vip
           resources: {}

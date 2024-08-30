@@ -37,6 +37,10 @@ kubectl create configmap aws-ccm-"${AWS_CCM_VERSION}" --dry-run=client --output 
   --from-file "${ASSETS_DIR}/${FILE_NAME}" \
   >"${ASSETS_DIR}/aws-ccm-${AWS_CCM_VERSION}-configmap.yaml"
 
+# shellcheck disable=SC2001 # Requires sed.
+K8S_MINOR_VERSION="$(echo "${AWS_CCM_VERSION}" | sed -e 's/^v\([0-9]\+\.[0-9]\+\).\+$/\1/')"
+rm -f "${GIT_REPO_ROOT}"/charts/cluster-api-runtime-extensions-nutanix/templates/ccm/aws/manifests/aws-ccm-v"${K8S_MINOR_VERSION}".*-configmap.yaml
+
 # add warning not to edit file directly
 cat <<EOF >"${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/ccm/aws/manifests/aws-ccm-${AWS_CCM_VERSION}-configmap.yaml"
 $(cat "${GIT_REPO_ROOT}/hack/license-header.yaml.txt")
@@ -49,8 +53,6 @@ $(cat "${ASSETS_DIR}/aws-ccm-${AWS_CCM_VERSION}-configmap.yaml")
 EOF
 
 # Check that the versions specified in the helm chart have been updated too.
-# shellcheck disable=SC2001 # Requires sed.
-K8S_MINOR_VERSION="$(echo "${AWS_CCM_VERSION}" | sed -e 's/^v\([0-9]\+\.[0-9]\+\).\+$/\1/')"
 if gojq --yaml-input --exit-status \
   ".hooks.ccm.aws.k8sMinorVersionToCCMVersion[\"${K8S_MINOR_VERSION}\"] != env.AWS_CCM_VERSION" \
   "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/values.yaml" &>/dev/null; then
