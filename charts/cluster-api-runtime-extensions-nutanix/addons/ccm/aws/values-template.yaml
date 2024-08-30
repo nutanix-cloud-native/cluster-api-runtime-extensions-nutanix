@@ -12,8 +12,6 @@ args:
   - --cloud-provider=aws
   - --configure-cloud-routes=false
 
-{{ $clusterSemver := semver .Cluster.spec.topology.version }}
-{{ $ccmVersion := get $k8sMinorVersionToCCMVersion ( print $clusterSemver.Major "." $clusterSemver.Minor ) }}
 image:
   tag: {{ $ccmVersion }}
 

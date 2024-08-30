@@ -1,0 +1,8 @@
+# These values are a combination of a Helm template to create the dict for the k8s version to
+# CCM version map, and then including the non-templated values from the values-template.yaml.
+# This simplifies the templating required in the values-template.yaml.
+$k8sMinorVersionToCCMVersion := dict
+{{ range $k8sVersion, $ccmVersion := .Values.hooks.ccm.aws.k8sMinorVersionToCCMVersion -}}
+  "{{ $k8sVersion }}" "{{ $ccmVersion }}"
+supershal marked this conversation as resolved.
+{{ end -}}

@@ -15,10 +15,15 @@ helmCharts:
   repo: https://helm.cilium.io/
   releaseName: cilium
   version: ${CILIUM_VERSION}
-  valuesFile: helm-values.yaml
+  valuesFile: ../../../../charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml
   includeCRDs: true
   skipTests: true
   namespace: kube-system
   kubeVersion: ${E2E_KUBERNETES_VERSION}
+  valuesInline:
+    hubble:
+      enabled: false
+      relay:
+        enabled: false
 
 namespace: kube-system

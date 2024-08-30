@@ -26,12 +26,16 @@ ASSETS_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}")"
 readonly ASSETS_DIR
 trap_add "rm -rf ${ASSETS_DIR}" EXIT
 
-readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/aws-ccm/"
-envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
-cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
-
 readonly FILE_NAME="aws-ccm-${AWS_CCM_VERSION}.yaml"
-kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
+
+readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/aws-ccm/"
+envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${KUSTOMIZE_BASE_DIR}/kustomization.yaml"
+trap_add "rm -f ${KUSTOMIZE_BASE_DIR}/kustomization.yaml" EXIT
+
+kustomize build \
+  --load-restrictor LoadRestrictionsNone \
+  --enable-helm "${KUSTOMIZE_BASE_DIR}/" >"${ASSETS_DIR}/${FILE_NAME}"
+trap_add "rm -rf ${KUSTOMIZE_BASE_DIR}/charts/" EXIT
 
 kubectl create configmap aws-ccm-"${AWS_CCM_VERSION}" --dry-run=client --output yaml \
   --from-file "${ASSETS_DIR}/${FILE_NAME}" \
