@@ -12,9 +12,6 @@ args:
   - --cloud-provider=aws
   - --configure-cloud-routes=false
 
-image:
-  tag: {{ $ccmVersion }}
-
 tolerations:
   - key: node.cloudprovider.kubernetes.io/uninitialized
     value: "true"

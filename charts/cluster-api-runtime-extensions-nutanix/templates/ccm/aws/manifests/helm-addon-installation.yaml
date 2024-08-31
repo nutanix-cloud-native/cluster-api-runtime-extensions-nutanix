@@ -11,7 +11,9 @@ data:
   # CCM version map, and then including the non-templated values from the values-template.yaml.
   # This simplifies the templating required in the values-template.yaml.
   values.yaml: |-
-    {{ .Files.Get "addons/ccm/aws/map-template.yaml" | nindent 4 }}
-
-    {{ .Files.Get "addons/ccm/aws/values-template.yaml" | nindent 4 }}
+    {{ "{{" }}
+    {{- tpl (.Files.Get "addons/ccm/aws/map-template.yaml") . | nindent 4 -}}
+    {{ "}}" }}
+    {{- .Files.Get "addons/ccm/aws/image-selection.yaml" | nindent 4 -}}
+    {{- .Files.Get "addons/ccm/aws/values-template.yaml" | nindent 4 -}}
 {{- end -}}
