@@ -1019,7 +1019,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.uid
-            image: registry.k8s.io/nfd/node-feature-discovery:v0.16.4-minimal
+            image: registry.k8s.io/nfd/node-feature-discovery:v0.16.4
             imagePullPolicy: IfNotPresent
             livenessProbe:
               grpc:
@@ -1173,7 +1173,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: registry.k8s.io/nfd/node-feature-discovery:v0.16.4-minimal
+            image: registry.k8s.io/nfd/node-feature-discovery:v0.16.4
             imagePullPolicy: IfNotPresent
             livenessProbe:
               grpc:
@@ -1264,7 +1264,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: registry.k8s.io/nfd/node-feature-discovery:v0.16.4-minimal
+            image: registry.k8s.io/nfd/node-feature-discovery:v0.16.4
             imagePullPolicy: IfNotPresent
             name: gc
             ports:
