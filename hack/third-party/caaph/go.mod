@@ -3,8 +3,9 @@
 
 module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/external/caaph
 
-go 1.22
-toolchain go1.22.5
+go 1.22.0
+
+toolchain go1.23.0
 
 require sigs.k8s.io/cluster-api-addon-provider-helm v0.2.5
 
