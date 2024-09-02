@@ -3,6 +3,20 @@ master:
     - nvidia.com
     - beta.amd.com
     - amd.com
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Equal"
+      value: ""
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: In
+                values: [""]
 
 worker: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
   config:
@@ -14,7 +28,6 @@ worker: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
-### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
 gc:
   tolerations:

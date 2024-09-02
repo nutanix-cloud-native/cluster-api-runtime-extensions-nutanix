@@ -1203,10 +1203,6 @@ data:
           serviceAccountName: node-feature-discovery
           tolerations:
           - effect: NoSchedule
-            key: node-role.kubernetes.io/master
-            operator: Equal
-            value: ""
-          - effect: NoSchedule
             key: node-role.kubernetes.io/control-plane
             operator: Equal
             value: ""
