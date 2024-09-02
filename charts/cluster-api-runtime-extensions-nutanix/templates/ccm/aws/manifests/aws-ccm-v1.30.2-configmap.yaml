@@ -7,7 +7,7 @@
 #=================================================================
 apiVersion: v1
 data:
-  aws-ccm-v1.27.7.yaml: |
+  aws-ccm-v1.30.2.yaml: |
     apiVersion: v1
     kind: ServiceAccount
     metadata:
@@ -160,7 +160,7 @@ data:
             - --cloud-provider=aws
             - --configure-cloud-routes=false
             env: []
-            image: registry.k8s.io/provider-aws/cloud-controller-manager:v1.27.7
+            image: registry.k8s.io/provider-aws/cloud-controller-manager:v1.30.2
             name: aws-cloud-controller-manager
             resources:
               requests:
@@ -186,4 +186,4 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: aws-ccm-v1.27.7
+  name: aws-ccm-v1.30.2

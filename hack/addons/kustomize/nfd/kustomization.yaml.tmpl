@@ -16,9 +16,6 @@ helmCharts:
   releaseName: node-feature-discovery
   version: ${NODE_FEATURE_DISCOVERY_VERSION}
   valuesFile: helm-values.yaml
-  valuesInline:
-    image:
-      tag: "v${NODE_FEATURE_DISCOVERY_VERSION}-minimal"
   includeCRDs: true
   skipTests: true
   skipHooks: true
