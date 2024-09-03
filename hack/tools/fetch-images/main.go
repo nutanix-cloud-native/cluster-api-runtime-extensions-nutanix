@@ -113,6 +113,7 @@ func EnsureFullPath(filename string) (string, error) {
 type HelmChartFromConfigMap struct {
 	Version    string `yaml:"ChartVersion"`
 	Repository string `yaml:"RepositoryURL"`
+	ChartName  string `yaml:"ChartName"`
 }
 
 func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]string, error) {
@@ -133,10 +134,10 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 			return nil, fmt.Errorf("failed to unmarshal chart info from configmap %w", err)
 		}
 		info := &ChartInfo{
-			name: chartName,
+			name: settings.ChartName,
 			repo: settings.Repository,
 		}
-		valuesFile := getValuesFileForChartIfNeeded(chartName, carenChartDirectory)
+		valuesFile := getValuesFileForChartIfNeeded(settings.ChartName, carenChartDirectory)
 		if valuesFile != "" {
 			info.valuesFile = valuesFile
 		}
@@ -205,7 +206,7 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) string
 	// is a file that is templated
 	case "cluster-autoscaler":
 		return path.Clean(path.Join(carenChartDirectory, "..", "..",
-			"hack", "addons", "kustomize", "cluster-autoscaler", "manifests", "helm-values.yaml"))
+			"hack", "addons", "kustomize", "cluster-autoscaler", "helm-values.yaml"))
 	default:
 		return ""
 	}
