@@ -18,8 +18,10 @@ import (
 	"github.com/d2iq-labs/helm-list-images/pkg/k8s"
 	yamlv2 "gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 const (
@@ -127,7 +129,7 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 		return nil, fmt.Errorf("failed to unmarshal configmap to object %w", err)
 	}
 	images := []string{}
-	for chartName, chartInfoRaw := range cm.Data {
+	for _, chartInfoRaw := range cm.Data {
 		var settings HelmChartFromConfigMap
 		err = yamlv2.Unmarshal([]byte(chartInfoRaw), &settings)
 		if err != nil {
@@ -141,7 +143,7 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 		if valuesFile != "" {
 			info.valuesFile = valuesFile
 		}
-		if chartName == "aws-cloud-controller-manager" {
+		if settings.ChartName == "aws-cloud-controller-manager" {
 			values, err := getHelmValues(carenChartDirectory)
 			if err != nil {
 				return nil, err
@@ -205,8 +207,27 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) string
 	// this uses the values from kustomize because the file at addons/cluster-autoscaler/values-template.yaml
 	// is a file that is templated
 	case "cluster-autoscaler":
-		return path.Clean(path.Join(carenChartDirectory, "..", "..",
-			"hack", "addons", "kustomize", "cluster-autoscaler", "helm-values.yaml"))
+		f := path.Join(carenChartDirectory, "addons", "cluster-autoscaler", defaultHelmAddonFilename)
+		tempFile, _ := os.CreateTemp("", "")
+		c := clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "tmplCluster",
+				Namespace: "templNamespace",
+				Annotations: map[string]string{
+					"caren.nutanix.com/cluster-uuid": "03c19062-493d-4c41-89c3-728624313118",
+				},
+			},
+		}
+		type input struct {
+			Cluster *clusterv1.Cluster
+		}
+
+		templateInput := input{
+			Cluster: &c,
+		}
+
+		template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
+		return tempFile.Name()
 	default:
 		return ""
 	}

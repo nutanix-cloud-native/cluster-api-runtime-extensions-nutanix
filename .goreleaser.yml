@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
-
 version: 2
+
+project_name: cluster-api-runtime-extensions-nutanix
 
 changelog:
   use: github
