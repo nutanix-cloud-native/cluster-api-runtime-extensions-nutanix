@@ -89,6 +89,7 @@ func main() {
 		os.Exit(1)
 	}
 	images = append(images, addonImages...)
+	slices.Sort(images)
 	images = slices.Compact(images)
 	for _, image := range images {
 		fmt.Println(image)
