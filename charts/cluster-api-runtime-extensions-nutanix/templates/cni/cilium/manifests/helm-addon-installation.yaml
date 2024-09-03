@@ -12,6 +12,7 @@ data:
       chainingMode: portmap
       exclusive: false
     hubble:
+      relay: enabled
       tls:
         auto:
           enabled: true               # enable automatic TLS certificate generation
