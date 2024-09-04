@@ -12,6 +12,7 @@ data:
       chainingMode: portmap
       exclusive: false
     hubble:
+      enabled: true
       relay:
         enabled: true
       tls:
