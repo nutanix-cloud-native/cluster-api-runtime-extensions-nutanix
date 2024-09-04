@@ -1080,8 +1080,6 @@ data:
           serviceAccountName: node-feature-discovery-worker
           tolerations:
           - effect: NoSchedule
-            key: node-role.kubernetes.io/master
-          - effect: NoSchedule
             key: node-role.kubernetes.io/control-plane
           volumes:
           - hostPath:
@@ -1145,13 +1143,6 @@ data:
           affinity:
             nodeAffinity:
               preferredDuringSchedulingIgnoredDuringExecution:
-              - preference:
-                  matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                    - ""
-                weight: 1
               - preference:
                   matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
@@ -1287,8 +1278,6 @@ data:
           securityContext: {}
           serviceAccountName: node-feature-discovery-gc
           tolerations:
-          - effect: NoSchedule
-            key: node-role.kubernetes.io/master
           - effect: NoSchedule
             key: node-role.kubernetes.io/control-plane
 kind: ConfigMap
