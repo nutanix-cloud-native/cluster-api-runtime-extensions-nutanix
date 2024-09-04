@@ -139,9 +139,7 @@ func Test_templateValues(t *testing.T) {
 	}
 }
 
-// readCCMTemplateFromProjectHelmChart gets the CCM template from the Helm chart in the project
-// and renders it with dummy values, finally extracting the embedded template that will be used by
-// CAAPH when installing the Nutanix CCM addon.
+// readCCMValuesTemplateFromProjectHelmChart reads the requested Helm values file from the Helm chart in the project.
 // This is important to do this way to ensure that the hard-to-read double templating works as expected.
 func readCCMValuesTemplateFromProjectHelmChart(t *testing.T) string {
 	t.Helper()
