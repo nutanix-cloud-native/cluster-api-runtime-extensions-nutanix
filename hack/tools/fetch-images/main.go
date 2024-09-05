@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 	"text/template"
@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
@@ -30,10 +31,11 @@ const (
 )
 
 type ChartInfo struct {
-	repo         string
-	name         string
-	valuesFile   string
-	stringValues []string
+	repo             string
+	name             string
+	valuesFile       string
+	stringValues     []string
+	extraImagesFiles []string
 }
 
 func main() {
@@ -47,9 +49,9 @@ func main() {
 	flagSet.StringVar(&chartDirectory, "chart-directory", "",
 		"path to chart directory for CAREN")
 	flagSet.StringVar(&helmChartConfigMap, "helm-chart-configmap", "",
-		"path to chart directory for CAREN")
+		"path to helm chart configmap for CAREN")
 	flagSet.StringVar(&carenVersion, "caren-version", "",
-		"caren version for images override")
+		"CAREN version for images override")
 	err := flagSet.Parse(args[1:])
 	if err != nil {
 		fmt.Println("failed to parse args", err.Error())
@@ -66,7 +68,7 @@ func main() {
 		os.Exit(1)
 	}
 	if chartDirectory == "" || helmChartConfigMap == "" {
-		fmt.Println("chart-directory helm-chart-configmap must be set")
+		fmt.Println("chart-directory and helm-chart-configmap must be set")
 		os.Exit(1)
 	}
 	i := &ChartInfo{
@@ -97,15 +99,10 @@ func main() {
 }
 
 func EnsureFullPath(filename string) (string, error) {
-	if path.IsAbs(filename) {
-		return filename, nil
-	}
-	wd, err := os.Getwd()
+	fullPath, err := filepath.Abs(filename)
 	if err != nil {
-		return "", fmt.Errorf("failed to get wd: %w", err)
+		return "", err
 	}
-	fullPath := path.Join(wd, filename)
-	fullPath = path.Clean(fullPath)
 	_, err = os.Stat(fullPath)
 	if err != nil {
 		return "", err
@@ -129,7 +126,7 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal configmap to object %w", err)
 	}
-	images := []string{}
+	var images []string
 	for _, chartInfoRaw := range cm.Data {
 		var settings HelmChartFromConfigMap
 		err = yamlv2.Unmarshal([]byte(chartInfoRaw), &settings)
@@ -140,11 +137,16 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 			name: settings.ChartName,
 			repo: settings.Repository,
 		}
-		valuesFile := getValuesFileForChartIfNeeded(settings.ChartName, carenChartDirectory)
+		valuesFile, err := getValuesFileForChartIfNeeded(settings.ChartName, carenChartDirectory)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get values file for %s: %w", settings.ChartName, err)
+		}
 		if valuesFile != "" {
 			info.valuesFile = valuesFile
 		}
-		if settings.ChartName == "aws-cloud-controller-manager" {
+
+		switch settings.ChartName {
+		case "aws-cloud-controller-manager":
 			values, err := getHelmValues(carenChartDirectory)
 			if err != nil {
 				return nil, err
@@ -152,7 +154,7 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 			awsImages, found, err := unstructured.NestedStringMap(values, "hooks", "ccm", "aws", "k8sMinorVersionToCCMVersion")
 			if !found {
 				return images, fmt.Errorf("failed to find k8sMinorVersionToCCMVersion from file %s",
-					path.Join(carenChartDirectory, "values.yaml"))
+					filepath.Join(carenChartDirectory, "values.yaml"))
 			}
 			if err != nil {
 				return images, fmt.Errorf("failed to get map k8sMinorVersionToCCMVersion with error %w",
@@ -168,9 +170,33 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 				}
 				images = append(images, chartImages...)
 			}
-			// skip the to next addon because we got what we needed
+			// skip to the next addon because we got what we needed
 			continue
+		case "tigera-operator":
+			extraImagesFile, err := os.CreateTemp("", "")
+			if err != nil {
+				return nil, fmt.Errorf("failed to create temp file for extra Calico images: %w", err)
+			}
+			defer os.Remove(extraImagesFile.Name()) //nolint:gocritic // Won't be leaked.
+			_, err = extraImagesFile.WriteString(`
+{{default "docker.io/" .Values.installation.registry }}calico/cni:{{ .Chart.Version }}
+{{default "docker.io/" .Values.installation.registry }}calico/kube-controllers:{{ .Chart.Version }}
+{{default "docker.io/" .Values.installation.registry }}calico/node:{{ .Chart.Version }}
+{{default "docker.io/" .Values.installation.registry }}calico/apiserver:{{ .Chart.Version }}
+{{default "docker.io/" .Values.installation.registry }}calico/pod2daemon-flexvol:{{ .Chart.Version }}
+{{default "docker.io/" .Values.installation.registry }}calico/typha:{{ .Chart.Version }}
+{{default "docker.io/" .Values.installation.registry }}calico/csi:{{ .Chart.Version }}
+{{default "docker.io/" .Values.installation.registry }}calico/node-driver-registrar:{{ .Chart.Version }}
+{{default "docker.io/" .Values.installation.registry }}calico/ctl:{{ .Chart.Version }}
+`)
+			_ = extraImagesFile.Close()
+			if err != nil {
+				return nil, fmt.Errorf("failed to write to temp file for extra Calico images: %w", err)
+			}
+
+			info.extraImagesFiles = append(info.extraImagesFiles, extraImagesFile.Name())
 		}
+
 		chartImages, err := getImagesForChart(info)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get images for %s with error %w", info.name, err)
@@ -181,7 +207,7 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 }
 
 func getHelmValues(carenChartDirectory string) (map[string]interface{}, error) {
-	values := path.Join(carenChartDirectory, "values.yaml")
+	values := filepath.Join(carenChartDirectory, "values.yaml")
 	valuesFile, err := os.Open(values)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file %s with %w", values, err)
@@ -195,21 +221,50 @@ func getHelmValues(carenChartDirectory string) (map[string]interface{}, error) {
 	return m, nil
 }
 
-func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) string {
+func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (string, error) {
 	switch chartName {
 	case "nutanix-csi-storage":
-		return path.Join(carenChartDirectory, "addons", "csi", "nutanix", defaultHelmAddonFilename)
+		return filepath.Join(carenChartDirectory, "addons", "csi", "nutanix", defaultHelmAddonFilename), nil
 	case "node-feature-discovery":
-		return path.Join(carenChartDirectory, "addons", "nfd", defaultHelmAddonFilename)
+		return filepath.Join(carenChartDirectory, "addons", "nfd", defaultHelmAddonFilename), nil
 	case "snapshot-controller":
-		return path.Join(carenChartDirectory, "addons", "csi", "snapshot-controller", defaultHelmAddonFilename)
+		return filepath.Join(carenChartDirectory, "addons", "csi", "snapshot-controller", defaultHelmAddonFilename), nil
 	case "cilium":
-		return path.Join(carenChartDirectory, "addons", "cni", "cilium", defaultHelmAddonFilename)
+		return filepath.Join(carenChartDirectory, "addons", "cni", "cilium", defaultHelmAddonFilename), nil
+	// Calico values differ slightly per provider, but that does not have a material imapct on the images required
+	// so we can use the default values file for AWS provider.
+	case "tigera-operator":
+		f := filepath.Join(carenChartDirectory, "addons", "cni", "calico", "aws", defaultHelmAddonFilename)
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+
+		// CAAPH uses unstructured internally, so we need to create an unstructured copy of a cluster
+		// to pass to the CAAPH values template.
+		c, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterv1.Cluster{})
+
+		templateInput := struct {
+			Cluster map[string]interface{}
+		}{
+			Cluster: c,
+		}
+
+		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
+		if err != nil {
+			return "", fmt.Errorf("failed to execute helm values template %w", err)
+		}
+
+		return tempFile.Name(), nil
 	// this uses the values from kustomize because the file at addons/cluster-autoscaler/values-template.yaml
 	// is a file that is templated
 	case "cluster-autoscaler":
-		f := path.Join(carenChartDirectory, "addons", "cluster-autoscaler", defaultHelmAddonFilename)
-		tempFile, _ := os.CreateTemp("", "")
+		f := filepath.Join(carenChartDirectory, "addons", "cluster-autoscaler", defaultHelmAddonFilename)
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+
 		c := clusterv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "tmplCluster",
@@ -227,25 +282,26 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) string
 			Cluster: &c,
 		}
 
-		template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
-		return tempFile.Name()
+		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
+		if err != nil {
+			return "", fmt.Errorf("failed to execute helm values template %w", err)
+		}
+
+		return tempFile.Name(), nil
 	default:
-		return ""
+		return "", nil
 	}
 }
 
 func getImagesForChart(info *ChartInfo) ([]string, error) {
 	images := pkg.Images{}
 	images.SetChart(info.name)
-	if info.repo != "" {
-		images.RepoURL = info.repo
-	}
+	images.RepoURL = info.repo
 	if info.valuesFile != "" {
-		images.ValueFiles.Set(info.valuesFile)
+		_ = images.ValueFiles.Set(info.valuesFile)
 	}
-	if len(info.stringValues) > 0 {
-		images.StringValues = info.stringValues
-	}
+	images.StringValues = info.stringValues
+	images.ExtraImagesFiles = info.extraImagesFiles
 	// kubeVersion needs to be set for some addons
 	images.KubeVersion = "v1.29.0"
 	images.SetRelease("sample")
