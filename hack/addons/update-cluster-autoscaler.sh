@@ -21,6 +21,12 @@ readonly FILE_NAME="cluster-autoscaler.yaml"
 
 readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/cluster-autoscaler/"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
+
+# Cluster Autoscaler addon is different from other addons as it requires deploying the addon in the
+# management cluster instead of the workload cluster. In order to do that the Helm values file has
+# template fields for the cluster name, namespace, and CAREN cluster UUID annotation.
+# To generate the CRS from that same values file requires templating here with dummy values, which
+# will then be replaced with the actual values by the Cluster Autoscaler addon handler.
 cat <<EOF >"${ASSETS_DIR}/gomplate-context.yaml"
 Cluster:
   Name: tmpl-clustername-tmpl
