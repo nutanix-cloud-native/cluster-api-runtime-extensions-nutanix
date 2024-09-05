@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -25,7 +26,7 @@ import (
 
 const (
 	defaultHelmReleaseName      = "nutanix-ccm"
-	defaultHelmReleaseNamespace = "kube-system"
+	defaultHelmReleaseNamespace = metav1.NamespaceSystem
 
 	// This is the name of the Secret on the remote cluster that should match what is defined in Helm values.
 	//nolint:gosec // Does not contain hard coded credentials.

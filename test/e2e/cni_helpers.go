@@ -205,6 +205,13 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 	ctx context.Context,
 	input waitForCiliumToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
 ) {
+	expectedDeployments := []*appsv1.Deployment{{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cilium-operator",
+			Namespace: metav1.NamespaceSystem,
+		},
+	}}
+
 	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		crs := &addonsv1.ClusterResourceSet{}
@@ -236,6 +243,15 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 			},
 			input.helmReleaseIntervals...,
 		)
+
+		// Hubble relay is also deployed as part of the Cilium Helm chart when deplying via
+		// CAAPH.
+		expectedDeployments = append(expectedDeployments, &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hubble-relay",
+				Namespace: metav1.NamespaceSystem,
+			},
+		})
 	default:
 		Fail(
 			fmt.Sprintf(
@@ -249,23 +265,20 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 		ctx, input.workloadCluster.Namespace, input.workloadCluster.Name,
 	).GetClient()
 
-	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-		Getter: workloadClusterClient,
-		Deployment: &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "cilium-operator",
-				Namespace: "kube-system",
-			},
-		},
-	}, input.deploymentIntervals...)
-
 	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
 		Getter: workloadClusterClient,
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "cilium",
-				Namespace: "kube-system",
+				Namespace: metav1.NamespaceSystem,
 			},
 		},
 	}, input.daemonSetIntervals...)
+
+	for _, deployment := range expectedDeployments {
+		WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+			Getter:     workloadClusterClient,
+			Deployment: deployment,
+		}, input.deploymentIntervals...)
+	}
 }
