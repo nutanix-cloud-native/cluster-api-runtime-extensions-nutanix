@@ -16,6 +16,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
@@ -286,12 +287,12 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 		Consistently(func() error {
 			kubeSystem := &corev1.Namespace{}
 			return input.BootstrapClusterProxy.GetClient().
-				Get(ctx, client.ObjectKey{Name: "kube-system"}, kubeSystem)
+				Get(ctx, client.ObjectKey{Name: metav1.NamespaceSystem}, kubeSystem)
 		}, "5s", "100ms").Should(BeNil(), "Failed to assert bootstrap API server stability")
 		Consistently(func() error {
 			kubeSystem := &corev1.Namespace{}
 			return selfHostedClusterProxy.GetClient().
-				Get(ctx, client.ObjectKey{Name: "kube-system"}, kubeSystem)
+				Get(ctx, client.ObjectKey{Name: metav1.NamespaceSystem}, kubeSystem)
 		}, "5s", "100ms").Should(BeNil(), "Failed to assert self-hosted API server stability")
 
 		By("Moving the cluster to self hosted")
@@ -343,12 +344,12 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 			Consistently(func() error {
 				kubeSystem := &corev1.Namespace{}
 				return input.BootstrapClusterProxy.GetClient().
-					Get(ctx, client.ObjectKey{Name: "kube-system"}, kubeSystem)
+					Get(ctx, client.ObjectKey{Name: metav1.NamespaceSystem}, kubeSystem)
 			}, "5s", "100ms").Should(BeNil(), "Failed to assert bootstrap API server stability")
 			Consistently(func() error {
 				kubeSystem := &corev1.Namespace{}
 				return selfHostedClusterProxy.GetClient().
-					Get(ctx, client.ObjectKey{Name: "kube-system"}, kubeSystem)
+					Get(ctx, client.ObjectKey{Name: metav1.NamespaceSystem}, kubeSystem)
 			}, "5s", "100ms").Should(BeNil(), "Failed to assert self-hosted API server stability")
 
 			By("Moving the cluster back to bootstrap")

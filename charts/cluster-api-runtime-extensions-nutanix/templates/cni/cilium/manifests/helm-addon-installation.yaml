@@ -12,12 +12,17 @@ data:
       chainingMode: portmap
       exclusive: false
     hubble:
+      enabled: true
       tls:
         auto:
           enabled: true               # enable automatic TLS certificate generation
           method: cronJob             # auto generate certificates using cronJob method
           certValidityDuration: 60    # certificates validity duration in days (default 2 months)
           schedule: "0 0 1 * *"       # schedule on the 1st day regeneration of each month
+      relay:
+        enabled: true
+        image:
+          useDigest: false
     ipam:
       mode: kubernetes
     image:

@@ -135,7 +135,7 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 
 	statusConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "kube-system",
+			Namespace: metav1.NamespaceSystem,
 			Name:      "cluster-autoscaler-status",
 		},
 	}
