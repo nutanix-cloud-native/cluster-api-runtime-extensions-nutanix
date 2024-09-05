@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,7 +23,7 @@ import (
 
 const (
 	defaultHelmReleaseName      = "aws-ebs-csi-driver"
-	defaultHelmReleaseNamespace = "kube-system"
+	defaultHelmReleaseNamespace = metav1.NamespaceSystem
 )
 
 var DefaultStorageClassParameters = map[string]string{

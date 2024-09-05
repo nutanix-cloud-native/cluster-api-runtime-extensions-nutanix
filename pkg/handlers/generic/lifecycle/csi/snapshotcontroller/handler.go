@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -25,7 +26,7 @@ import (
 
 const (
 	defaultHelmReleaseName      = "snapshot-controller"
-	defaultHelmReleaseNamespace = "kube-system"
+	defaultHelmReleaseNamespace = metav1.NamespaceSystem
 )
 
 type Config struct {
