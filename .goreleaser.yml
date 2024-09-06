@@ -56,7 +56,7 @@ before:
     - make template-helm-repository
     - |
       sh -ec 'if [ {{ .IsSnapshot }} == false ] ; then
-        env CAREN_VERSION=v{{ trimprefix .Version "v" }} make list-images >caren-images.txt
+        env CAREN_VERSION=v{{ trimprefix .Version "v" }} make list-images
       fi'
 
 builds:
