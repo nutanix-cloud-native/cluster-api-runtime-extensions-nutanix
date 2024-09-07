@@ -14,7 +14,7 @@ helmCharts:
   repo: https://piraeus.io/helm-charts/
   releaseName: snapshot-controller
   version: ${SNAPSHOT_CONTROLLER_CHART_VERSION}
-  valuesFile: helm-values.yaml
+  valuesFile: ../../../../charts/cluster-api-runtime-extensions-nutanix/addons/csi/snapshot-controller/values-template.yaml
   includeCRDs: true
   skipTests: true
   namespace: kube-system

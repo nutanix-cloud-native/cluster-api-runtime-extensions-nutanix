@@ -8,17 +8,5 @@ metadata:
   name: '{{ (index .Values.hooks.csi "snapshot-controller").helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    controller:
-      priorityClassName: system-cluster-critical
-      tolerations:
-        - key: CriticalAddonsOnly
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
-          tolerationSeconds: 300
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/control-plane
-          operator: Exists
-    webhook:
-      enabled: false
+    {{- .Files.Get "addons/csi/snapshot-controller/values-template.yaml" | nindent 4 }}
 {{- end -}}

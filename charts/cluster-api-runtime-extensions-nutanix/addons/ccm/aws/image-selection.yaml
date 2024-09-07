@@ -1,0 +1,4 @@
+{{ $clusterSemver := semver .Cluster.spec.topology.version }}
+{{ $ccmVersion := get $k8sMinorVersionToCCMVersion ( print $clusterSemver.Major "." $clusterSemver.Minor ) }}
+image:
+  tag: "{{ $ccmVersion }}"

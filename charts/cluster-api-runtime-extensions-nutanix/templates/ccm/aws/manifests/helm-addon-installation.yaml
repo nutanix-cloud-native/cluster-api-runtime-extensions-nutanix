@@ -7,37 +7,13 @@ kind: ConfigMap
 metadata:
   name: '{{ .Values.hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
+  # These values are a combination of a Helm template to create the dict for the k8s version to
+  # CCM version map, and then including the non-templated values from the values-template.yaml.
+  # This simplifies the templating required in the values-template.yaml.
   values.yaml: |-
-    # Starting in Kubernetes v1.29 the Kubelet no longer adds temporary addresses to the Node.
-    # See https://github.com/kubernetes/kubernetes/pull/121028
-    # This causes a deadlock with the AWS CCM and some CNI providers including Calico.
-    # The Calico Pods won't start until some addresses are assigned,
-    # but the AWS CCM that adds the addresses can't start until the Calico Pods are running.
-    # Using hostNetworking allows the AWS CCM to start before the Calico Pods.
-    # The upstream CAPA templates are also already using hostNetworking for the CCM Pods.
-    hostNetworking: true
-
-    args:
-      - --v=2
-      - --cloud-provider=aws
-      - --configure-cloud-routes=false
-
-    {{ "{{" }} $k8sMinorVersionToCCMVersion := dict
-    {{ range $k8sVersion, $ccmVersion := .Values.hooks.ccm.aws.k8sMinorVersionToCCMVersion -}}
-      "{{ $k8sVersion }}" "{{ $ccmVersion }}"
-    {{ end -}}
+    {{ "{{" }}
+    {{- tpl (.Files.Get "addons/ccm/aws/map-template.yaml") . | nindent 4 -}}
     {{ "}}" }}
-    {{ "{{" }}$clusterSemver := semver .Cluster.spec.topology.version {{ "}}" }}
-    {{ "{{" }}$ccmVersion := get $k8sMinorVersionToCCMVersion ( print $clusterSemver.Major "." $clusterSemver.Minor ) {{ "}}" }}
-    image:
-      tag: {{ "{{ " }} $ccmVersion {{ "}}" }}
-
-    tolerations:
-    - key: node.cloudprovider.kubernetes.io/uninitialized
-      value: "true"
-      effect: NoSchedule
-    - key: node-role.kubernetes.io/control-plane
-      effect: NoSchedule
-
-
+    {{- .Files.Get "addons/ccm/aws/image-selection.yaml" | nindent 4 -}}
+    {{- .Files.Get "addons/ccm/aws/values-template.yaml" | nindent 4 -}}
 {{- end -}}

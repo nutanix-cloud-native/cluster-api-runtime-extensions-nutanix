@@ -1,12 +1,13 @@
-# Copyright 2023 Nutanix. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
----
 master:
   extraLabelNs:
     - nvidia.com
     - beta.amd.com
     - amd.com
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Equal"
+      value: ""
+      effect: "NoSchedule"
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -27,7 +28,6 @@ worker: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
-### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
 gc:
   tolerations:

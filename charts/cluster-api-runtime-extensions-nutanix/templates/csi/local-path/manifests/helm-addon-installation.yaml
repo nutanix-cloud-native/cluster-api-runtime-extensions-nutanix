@@ -8,18 +8,5 @@ metadata:
   name: '{{ (index .Values.hooks.csi "local-path").helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    storageClass:
-      create: false
-      provisionerName: rancher.io/local-path
-    helperImage:
-      tag: 1.36.1
-    tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
-      - effect: NoExecute
-        operator: Exists
-        tolerationSeconds: 300
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
+    {{- .Files.Get "addons/csi/local-path/values-template.yaml" | nindent 4 }}
 {{- end -}}

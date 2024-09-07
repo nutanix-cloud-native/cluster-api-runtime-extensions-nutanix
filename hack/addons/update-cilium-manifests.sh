@@ -20,8 +20,14 @@ trap_add "rm -rf ${ASSETS_DIR}" EXIT
 readonly FILE_NAME="cilium.yaml"
 
 readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/cilium"
-envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
-cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
+mkdir -p "${ASSETS_DIR}/cilium"
+envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${KUSTOMIZE_BASE_DIR}/kustomization.yaml"
+trap_add "rm -f ${KUSTOMIZE_BASE_DIR}/kustomization.yaml" EXIT
+
+kustomize build \
+  --load-restrictor LoadRestrictionsNone \
+  --enable-helm "${KUSTOMIZE_BASE_DIR}/" >"${ASSETS_DIR}/${FILE_NAME}"
+trap_add "rm -rf ${KUSTOMIZE_BASE_DIR}/charts/" EXIT
 
 # The operator manifest in YAML format is pretty big. It turns out that much of that is whitespace. Converting the
 # manifest to JSON without indentation allows us to remove most of the whitespace, reducing the size by more than half.
@@ -35,8 +41,6 @@ cp "${KUSTOMIZE_BASE_DIR}"/*.yaml "${ASSETS_DIR}"
 #    of the ClusterResourceSet controller to misbehave. We remove these null entries using a filter expression.
 # 3. If we indent the JSON document, it is nearly as large as the YAML document, at 1099093 bytes. We remove indentation
 #    with the --indent=0 flag.
-kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
-
 gojq --yaml-input \
   --slurp \
   --indent=0 \

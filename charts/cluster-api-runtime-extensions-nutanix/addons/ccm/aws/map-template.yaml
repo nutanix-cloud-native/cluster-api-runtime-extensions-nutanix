@@ -1,0 +1,4 @@
+$k8sMinorVersionToCCMVersion := dict
+{{ range $k8sVersion, $ccmVersion := .Values.hooks.ccm.aws.k8sMinorVersionToCCMVersion -}}
+  "{{ $k8sVersion }}" "{{ $ccmVersion }}"
+{{ end -}}

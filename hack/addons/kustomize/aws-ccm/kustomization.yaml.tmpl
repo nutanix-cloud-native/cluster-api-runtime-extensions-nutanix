@@ -14,7 +14,7 @@ helmCharts:
   version: ${AWS_CCM_CHART_VERSION}
   includeCRDs: true
   skipTests: true
-  valuesFile: helm-values.yaml
+  valuesFile: ../../../../charts/cluster-api-runtime-extensions-nutanix/addons/ccm/aws/values-template.yaml
   valuesInline:
     image:
       tag: ${AWS_CCM_VERSION}

@@ -18,7 +18,9 @@ helmCharts:
   repo: https://docs.tigera.io/calico/charts
   releaseName: tigera-operator
   version: ${CALICO_VERSION}
-  valuesFile: helm-values.yaml
+  valuesInline:
+    installation:
+      enabled: false
   includeCRDs: true
   skipTests: true
   skipHooks: true

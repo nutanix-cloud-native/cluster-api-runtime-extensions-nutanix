@@ -14,7 +14,7 @@ helmCharts:
   repo: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
   releaseName: aws-ebs-csi-driver
   version: ${AWS_EBS_CSI_CHART_VERSION}
-  valuesFile: helm-values.yaml
+  valuesFile: ../../../../charts/cluster-api-runtime-extensions-nutanix/addons/csi/aws-ebs/values-template.yaml
   includeCRDs: true
   skipTests: true
   namespace: kube-system

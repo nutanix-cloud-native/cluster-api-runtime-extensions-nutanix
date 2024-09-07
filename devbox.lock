@@ -849,6 +849,54 @@
         }
       }
     },
+    "gomplate@latest": {
+      "last_modified": "2024-08-14T11:41:26Z",
+      "resolved": "github:NixOS/nixpkgs/0cb2fd7c59fed0cd82ef858cbcbdb552b9a33465#gomplate",
+      "source": "devbox-search",
+      "version": "3.11.8",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/izzgap3k4ghnxypr4qadh402vv07shs5-gomplate-3.11.8",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/izzgap3k4ghnxypr4qadh402vv07shs5-gomplate-3.11.8"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ins0wf20sqjh3z461msiwp55i7if4k4f-gomplate-3.11.8",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/ins0wf20sqjh3z461msiwp55i7if4k4f-gomplate-3.11.8"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/lari4khpqrdz8wh0zj9naxja6c39gmif-gomplate-3.11.8",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/lari4khpqrdz8wh0zj9naxja6c39gmif-gomplate-3.11.8"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/nz70llbyavibalycfrbsf37f7178bcli-gomplate-3.11.8",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/nz70llbyavibalycfrbsf37f7178bcli-gomplate-3.11.8"
+        }
+      }
+    },
     "goreleaser@latest": {
       "last_modified": "2024-08-21T20:16:49Z",
       "resolved": "github:NixOS/nixpkgs/36a9aeaaa17a2d4348498275f9fe530cd4f9e519#goreleaser",

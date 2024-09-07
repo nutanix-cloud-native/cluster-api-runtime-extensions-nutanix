@@ -15,10 +15,19 @@ helmCharts:
   repo: https://helm.cilium.io/
   releaseName: cilium
   version: ${CILIUM_VERSION}
-  valuesFile: helm-values.yaml
   includeCRDs: true
   skipTests: true
   namespace: kube-system
   kubeVersion: ${E2E_KUBERNETES_VERSION}
+  valuesFile: ../../../../charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml
+  # The CRS manifests are generated from the Cilium Helm chart using Kustomize. The Cilium
+  # Helm chart uses a Helm hook to generate TLS certificates for Hubble. As the
+  # CRS manifests are static those Helm hooks don't apply and so for now Hubble is
+  # disabled when deploying Cilium via CRS.
+  valuesInline:
+    hubble:
+      enabled: false
+      relay:
+        enabled: false
 
 namespace: kube-system
