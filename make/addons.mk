@@ -87,8 +87,7 @@ template-helm-repository: generate-mindthegap-repofile ## this is used by goreal
 
 .PHONY: list-images
 list-images:
-	cd hack/tools/fetch-images && go build
-	./hack/tools/fetch-images/fetch-images \
-		-chart-directory=./charts/cluster-api-runtime-extensions-nutanix/ \
-		-helm-chart-configmap=./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml \
-		-caren-version=$(CAREN_VERSION) >> caren-images.txt
+	cd hack/tools/fetch-images && go run . \
+	  -chart-directory=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/ \
+	  -helm-chart-configmap=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml \
+	  -caren-version=$(CAREN_VERSION)
