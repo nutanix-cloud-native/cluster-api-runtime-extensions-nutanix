@@ -33,3 +33,6 @@ socketLB:
 envoy:
   image:
     useDigest: false
+kubeProxyReplacement: true
+k8sServiceHost: {{ .Cluster.Spec.ControlPlaneEndpoint.Host }}
+k8sServicePort: {{ .Cluster.Spec.ControlPlaneEndpoint.Port }}

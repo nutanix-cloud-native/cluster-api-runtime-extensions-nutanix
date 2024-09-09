@@ -8,10 +8,12 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -222,7 +224,8 @@ func (c *CiliumCNI) apply(
 			),
 			c.client,
 			helmChart,
-		)
+		).
+			WithValueTemplater(templateValues)
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage("strategy not specified for Cilium CNI addon")
@@ -238,5 +241,52 @@ func (c *CiliumCNI) apply(
 		return
 	}
 
+	// TODO: wait for Cilium to be rolled out
+
+	if err := cleanupKubeProxy(ctx, c.client, cluster); err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to cleanup kube-proxy: %v", err))
+		return
+	}
+
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+}
+
+func cleanupKubeProxy(ctx context.Context, c ctrlclient.Client, cluster *clusterv1.Cluster) error {
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		c,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating remote cluster client: %w", err)
+	}
+
+	const (
+		kubeProxyName      = "kube-proxy"
+		kubeProxyNamespace = "kube-system"
+	)
+
+	objs := []ctrlclient.Object{
+		&appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kubeProxyName,
+				Namespace: kubeProxyNamespace,
+			},
+		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kubeProxyName,
+				Namespace: kubeProxyNamespace,
+			},
+		},
+	}
+	for _, obj := range objs {
+		if err := ctrlclient.IgnoreNotFound(remoteClient.Delete(ctx, obj)); err != nil {
+			return fmt.Errorf("failed to delete %s/%s: %w", obj.GetNamespace(), obj.GetName(), err)
+		}
+	}
+
+	return nil
 }
