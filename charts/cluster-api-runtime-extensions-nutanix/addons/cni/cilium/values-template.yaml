@@ -25,3 +25,6 @@ certgen:
     useDigest: false
 socketLB:
   hostNamespaceOnly: true
+envoy:
+  image:
+    useDigest: false
