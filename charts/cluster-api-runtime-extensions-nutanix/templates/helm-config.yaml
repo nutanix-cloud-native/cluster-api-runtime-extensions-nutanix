@@ -29,7 +29,7 @@ data:
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://charts.containeroo.ch{{ end }}
   metallb: |
     ChartName: metallb
-    ChartVersion: 0.14.5
+    ChartVersion: 0.14.8
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://metallb.github.io/metallb{{ end }}
   nfd: |
     ChartName: node-feature-discovery
