@@ -22,7 +22,7 @@ export NUTANIX_CCM_CHART_VERSION := 0.4.1
 
 export KUBE_VIP_VERSION := v0.8.1
 
-export METALLB_CHART_VERSION := 0.14.5
+export METALLB_CHART_VERSION := 0.14.8
 
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi aws-ccm.127 aws-ccm.128 aws-ccm.129 aws-ccm.130 kube-vip)

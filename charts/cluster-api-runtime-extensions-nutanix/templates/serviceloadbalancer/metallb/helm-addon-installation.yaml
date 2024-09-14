@@ -19,6 +19,9 @@ data:
           operator: Exists
           tolerationSeconds: 300
     speaker:
+      frr:
+        image:
+          tag: 9.1.2
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           effect: NoSchedule
