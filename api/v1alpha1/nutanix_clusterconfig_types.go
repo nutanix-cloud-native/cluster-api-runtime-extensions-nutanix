@@ -74,5 +74,5 @@ func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, uint16, error) {
 		return "", 0, fmt.Errorf("error converting port to int: %w", err)
 	}
 
-	return hostname, uint16(port), nil //nolint:gosec // Bounds are checked by ParseUint call above.
+	return hostname, uint16(port), nil
 }
