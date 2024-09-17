@@ -45,11 +45,10 @@ dev.update-bootstrap-credentials-aws:
 
 .PHONY: release-please
 release-please:
-ifneq ($(GIT_CURRENT_BRANCH),main)
-	$(error "release-please should only be run on the main branch")
+ifneq ($(shell [[ "$(GIT_CURRENT_BRANCH)" = "main" ]] || [[ "$(GIT_CURRENT_BRANCH)" == release/v* ]]; echo $$?),0)
+	$(error "release-please should only be run on the main or release branch")
 else
-	release-please release-pr \
-	  --repo-url $(GITHUB_ORG)/$(GITHUB_REPOSITORY) --token "$$(gh auth token)"
+	release-please release-pr --repo-url $(GITHUB_ORG)/$(GITHUB_REPOSITORY) --target-branch $(GIT_CURRENT_BRANCH) --token "$$(gh auth token)"
 endif
 
 .PHONY: .envrc.e2e
