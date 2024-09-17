@@ -219,11 +219,6 @@ go-generate: ; $(info $(M) running go generate)
 	    '(.. | select(has("memorySize") or has("systemDiskSize")) | (.memorySize?, .systemDiskSize?) | del(.anyOf)) += {"type": "string"}' \
 	    {} \;
 
-.PHONY: go-mod-upgrade
-go-mod-upgrade: ## Interactive check for direct module dependency upgrades
-go-mod-upgrade: ; $(info $(M) checking for direct module dependency upgrades)
-	go-mod-upgrade
-
 .PHONY: govulncheck
 govulncheck: ## Runs go fix for all modules in repository
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
