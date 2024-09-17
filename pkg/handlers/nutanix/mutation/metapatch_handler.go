@@ -18,15 +18,14 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPX clusters.
 func MetaPatchHandler(mgr manager.Manager, cfg *controlplanevirtualip.Config) handlers.Named {
-	patchHandlers := append(
-		[]mutation.MetaMutator{
-			controlplaneendpoint.NewPatch(),
-			nutanixcontrolplanevirtualip.NewPatch(mgr.GetClient(), cfg),
-			prismcentralendpoint.NewPatch(),
-			machinedetails.NewControlPlanePatch(),
-		},
-		genericmutation.MetaMutators(mgr)...,
-	)
+	patchHandlers := []mutation.MetaMutator{
+		controlplaneendpoint.NewPatch(),
+		nutanixcontrolplanevirtualip.NewPatch(mgr.GetClient(), cfg),
+		prismcentralendpoint.NewPatch(),
+		machinedetails.NewControlPlanePatch(),
+	}
+	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"nutanixClusterConfigPatch",
@@ -40,6 +39,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		machinedetails.NewWorkerPatch(),
 	}
+	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"nutanixWorkerConfigPatch",

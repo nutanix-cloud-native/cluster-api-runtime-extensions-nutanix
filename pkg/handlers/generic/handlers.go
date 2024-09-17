@@ -21,5 +21,6 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	return []handlers.Named{
 		genericclusterconfig.NewVariable(),
 		genericmutation.MetaPatchHandler(mgr),
+		genericmutation.MetaWorkerPatchHandler(mgr),
 	}
 }
