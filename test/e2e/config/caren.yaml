@@ -134,8 +134,8 @@ providers:
 - name: caren
   type: RuntimeExtensionProvider
   versions:
-  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.14}"
-    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.14}/runtime-extension-components.yaml"
+  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.15}"
+    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.15}/runtime-extension-components.yaml"
     type: "url"
     contract: v1beta1
     files:
