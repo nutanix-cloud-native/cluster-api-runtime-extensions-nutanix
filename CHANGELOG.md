@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.14.8 (2024-09-18)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: upgrade metallb to 0.14.8 by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/904
+### Other Changes
+* ci: Fix up release please trigger for release branches by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/894
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.7...v0.14.8
+
 ## 0.14.7 (2024-08-28)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
