@@ -10,7 +10,10 @@ This project uses [release-please] to automate changelog updates per release. Du
 [release-please-action].
 
 When a release has been cut, a new release PR can be created manually using the `release-please` CLI locally. This needs
-to be run by someone with write permissions to the repository. Create the `release-please` branch and PR:
+to be run by someone with write permissions to the repository.
+The new release PR can be only created against `main` or `release/*` branch.
+Ensure to checkout `main` or `release/*` branch locally.
+Create the `release-please` branch and PR from `main` or `release/*` branch:
 
 ```shell
 make release-please
