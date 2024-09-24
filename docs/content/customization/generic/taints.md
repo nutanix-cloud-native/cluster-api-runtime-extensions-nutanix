@@ -29,6 +29,20 @@ spec:
                 value: some-value
 ```
 
+{{% alert title="Default control plane taints" color="warning" %}}
+When using this customization, the default taint added by kubeadm to the control plane nodes will not be added unless
+explicitly specified as well.
+
+To add the default taint to the control-plane, add the following taint along with any custom taints you wish to add to
+the control-plane taints:
+
+```yaml
+- key: node-role.kubernetes.io/control-plane
+  effect: NoSchedule
+```
+
+{{% /alert %}}
+
 Taints for individual nodepools can be configured similarly:
 
 ```yaml

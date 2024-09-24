@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestInstanceTypePatch(t *testing.T) {
+func TestTaintsPatch(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Taints patches for ControlPlane and Workers suite")
 }
