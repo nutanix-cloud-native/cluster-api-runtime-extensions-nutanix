@@ -4,8 +4,12 @@
 package taints
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
@@ -67,3 +71,48 @@ var _ = Describe("Generate taints patches for Worker", func() {
 		})
 	}
 })
+
+func Test_toCoreTaints(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		existingTaints []v1.Taint
+		newTaints      []v1alpha1.Taint
+		want           []v1.Taint
+	}{{
+		name: "nil new and existing taints",
+		want: nil,
+	}, {
+		name:           "nil new taints with existing taints",
+		existingTaints: []v1.Taint{{Key: "key", Effect: v1.TaintEffectNoExecute, Value: "value"}},
+		want:           []v1.Taint{{Key: "key", Effect: v1.TaintEffectNoExecute, Value: "value"}},
+	}, {
+		name: "nil existing taints with new taints",
+		newTaints: []v1alpha1.Taint{
+			{Key: "key", Effect: v1alpha1.TaintEffectNoExecute, Value: "value"},
+		},
+		want: []v1.Taint{{Key: "key", Effect: v1.TaintEffectNoExecute, Value: "value"}},
+	}, {
+		name:           "existing and new taints",
+		existingTaints: []v1.Taint{{Key: "key", Effect: v1.TaintEffectNoExecute, Value: "value"}},
+		newTaints: []v1alpha1.Taint{
+			{Key: "key2", Effect: v1alpha1.TaintEffectNoExecute, Value: "value2"},
+		},
+		want: []v1.Taint{
+			{Key: "key", Effect: v1.TaintEffectNoExecute, Value: "value"},
+			{Key: "key2", Effect: v1.TaintEffectNoExecute, Value: "value2"},
+		},
+	}, {
+		name:      "nil existing taints and empty but non-nil new taints",
+		newTaints: []v1alpha1.Taint{},
+		want:      []v1.Taint{},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, toCoreTaints(tt.existingTaints, tt.newTaints))
+		})
+	}
+}
