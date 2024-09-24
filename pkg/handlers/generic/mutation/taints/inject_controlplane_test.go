@@ -55,6 +55,33 @@ var _ = Describe("Generate taints patches for Control Plane", func() {
 				),
 			}},
 		},
+		{
+			Name: "taints for control plane set to empty slice to remove default taints",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					[]v1alpha1.Taint{},
+					v1alpha1.ControlPlaneConfigVariableName,
+					VariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/taints",
+				ValueMatcher: gomega.SatisfyAll(
+					gomega.Not(gomega.BeNil()),
+					gomega.BeEmpty(),
+				),
+			}, {
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/taints",
+				ValueMatcher: gomega.SatisfyAll(
+					gomega.Not(gomega.BeNil()),
+					gomega.BeEmpty(),
+				),
+			}},
+		},
 	}
 
 	// create test node for each case

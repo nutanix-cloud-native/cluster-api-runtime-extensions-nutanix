@@ -90,20 +90,37 @@ func (h *taintsWorkerPatchHandler) Mutate(
 			if obj.Spec.Template.Spec.JoinConfiguration != nil {
 				obj.Spec.Template.Spec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
 			}
-			obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.Taints = append(
+			obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.Taints = toCoreTaints(
 				obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.Taints,
-				toCoreTaints(taintsVar)...,
+				taintsVar,
 			)
 			return nil
 		})
 }
 
-func toCoreTaints(taints []v1alpha1.Taint) []v1.Taint {
-	return lo.Map(taints, func(t v1alpha1.Taint, _ int) v1.Taint {
-		return v1.Taint{
-			Key:    t.Key,
-			Effect: v1.TaintEffect(t.Effect),
-			Value:  t.Value,
-		}
-	})
+func toCoreTaints(existingTaints []v1.Taint, newTaints []v1alpha1.Taint) []v1.Taint {
+	var newCoreTaints []v1.Taint
+	// Only initialize newCoreTaints if newTaints is not nil otherwise not setting the value at all will
+	// end up with an empty (but initialized) slice which will remove all taints, which is not the desired behavior.
+	if newTaints != nil {
+		newCoreTaints = lo.Map(newTaints, func(t v1alpha1.Taint, _ int) v1.Taint {
+			return v1.Taint{
+				Key:    t.Key,
+				Effect: v1.TaintEffect(t.Effect),
+				Value:  t.Value,
+			}
+		})
+	}
+
+	switch {
+	// If no new taints then return existing taints.
+	case newTaints == nil:
+		return existingTaints
+	// If no existing taints then return new taints.
+	case existingTaints == nil:
+		return newCoreTaints
+	// If both existing and new taints are present then append new taints to existing taints.
+	default:
+		return append(existingTaints, newCoreTaints...)
+	}
 }

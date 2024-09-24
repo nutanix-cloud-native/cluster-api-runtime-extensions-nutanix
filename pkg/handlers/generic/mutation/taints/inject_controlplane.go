@@ -91,15 +91,13 @@ func (h *taintsControlPlanePatchHandler) Mutate(
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration != nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
 			}
-			coreTaints := toCoreTaints(taintsVar)
-
-			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints = append(
+			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints = toCoreTaints(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints,
-				coreTaints...,
+				taintsVar,
 			)
-			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints = append(
+			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints = toCoreTaints(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints,
-				coreTaints...,
+				taintsVar,
 			)
 
 			return nil
