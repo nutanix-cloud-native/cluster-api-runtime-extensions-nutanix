@@ -31,6 +31,27 @@ spec:
                 value: some-value
 ```
 
+Applying this configuration will result in the following value being set:
+
+- `KubeadmControlPlaneTemplate`:
+
+  - ```yaml
+    spec:
+      kubeadmConfigSpec:
+        initConfiguration:
+          nodeRegistration:
+            taints:
+              - key: some-key
+                effect: NoSchedule
+                value: some-value
+        joinConfiguration:
+          nodeRegistration:
+            taints:
+              - key: some-key
+                effect: NoSchedule
+                value: some-value
+    ```
+
 #### Default control-plane taint applied by kubeadm
 
 When using this customization, the default taint added by kubeadm to the control plane nodes will not be added unless
@@ -89,25 +110,6 @@ spec:
 ```
 
 Applying this configuration will result in the following value being set:
-
-- `KubeadmControlPlaneTemplate`:
-
-  - ```yaml
-    spec:
-      kubeadmConfigSpec:
-        initConfiguration:
-          nodeRegistration:
-            taints:
-              - key: some-key
-                effect: NoSchedule
-                value: some-value
-        joinConfiguration:
-          nodeRegistration:
-            taints:
-              - key: some-key
-                effect: NoSchedule
-                value: some-value
-    ```
 
 - `KubeadmConfigTemplate`:
 
