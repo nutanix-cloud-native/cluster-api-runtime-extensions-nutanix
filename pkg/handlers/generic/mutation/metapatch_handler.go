@@ -12,9 +12,22 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating generic Kubernetes clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+	patchHandlers := MetaMutators(mgr)
+	patchHandlers = append(patchHandlers, ControlPlaneMetaMutators()...)
 	return mutation.NewMetaGeneratePatchesHandler(
 		"genericClusterConfigPatch",
 		mgr.GetClient(),
-		MetaMutators(mgr)...,
+		patchHandlers...,
+	)
+}
+
+// MetaWorkerPatchHandler returns a meta patch handler for mutating generic workers.
+func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
+	patchHandlers := WorkerMetaMutators()
+
+	return mutation.NewMetaGeneratePatchesHandler(
+		"genericWorkerConfigPatch",
+		mgr.GetClient(),
+		patchHandlers...,
 	)
 }

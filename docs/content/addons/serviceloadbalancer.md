@@ -1,5 +1,6 @@
 +++
 title = "Service LoadBalancer"
+icon = "fa-solid fa-arrows-turn-to-dots"
 +++
 
 When an application running in a cluster needs to be exposed outside of the cluster, one option is

@@ -21,19 +21,18 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := append(
-		[]mutation.MetaMutator{
-			calico.NewPatch(),
-			region.NewPatch(),
-			network.NewPatch(),
-			controlplaneloadbalancer.NewPatch(),
-			iaminstanceprofile.NewControlPlanePatch(),
-			instancetype.NewControlPlanePatch(),
-			ami.NewControlPlanePatch(),
-			securitygroups.NewControlPlanePatch(),
-		},
-		genericmutation.MetaMutators(mgr)...,
-	)
+	patchHandlers := []mutation.MetaMutator{
+		calico.NewPatch(),
+		region.NewPatch(),
+		network.NewPatch(),
+		controlplaneloadbalancer.NewPatch(),
+		iaminstanceprofile.NewControlPlanePatch(),
+		instancetype.NewControlPlanePatch(),
+		ami.NewControlPlanePatch(),
+		securitygroups.NewControlPlanePatch(),
+	}
+	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"awsClusterConfigPatch",
@@ -50,6 +49,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 		ami.NewWorkerPatch(),
 		securitygroups.NewWorkerPatch(),
 	}
+	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"awsWorkerConfigPatch",

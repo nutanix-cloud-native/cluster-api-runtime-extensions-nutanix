@@ -14,12 +14,11 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPD clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := append(
-		[]mutation.MetaMutator{
-			customimage.NewControlPlanePatch(),
-		},
-		genericmutation.MetaMutators(mgr)...,
-	)
+	patchHandlers := []mutation.MetaMutator{
+		customimage.NewControlPlanePatch(),
+	}
+	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"dockerClusterConfigPatch",
@@ -33,6 +32,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		customimage.NewWorkerPatch(),
 	}
+	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"dockerWorkerConfigPatch",
