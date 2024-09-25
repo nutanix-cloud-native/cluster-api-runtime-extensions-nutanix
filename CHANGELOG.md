@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.16.0 (2024-09-25)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Build with go 1.23 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/889
+* feat: Enable Hubble Relay in Cilium deployment via CAAPH by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/899
+* feat: Extract CAAPH values templates to files by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/896
+* feat: Build with go 1.23.1 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/913
+* feat: Support node taints per nodepool and control plane by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/909
+### Fixes 🔧
+* fix: Remove deprecated toleration for node-role.kubernetes.io/master by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/895
+* fix: Do not use digests for Cilium images by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/901
+### Other Changes
+* test: Bump Kubernetes versions for tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/893
+* ci: images tool  by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/822
+* build: Include Calico images in image list by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/903
+* build: Use upstream packages again from upstream by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/908
+* ci(main): enable creating release-please PR from release branches by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/912
+* docs: Enable dark mode, add Nutanix color, and header links by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/915
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.15.0...v0.16.0
+
 ## 0.15.0 (2024-08-26)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
