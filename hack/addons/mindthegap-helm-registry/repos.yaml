@@ -15,17 +15,17 @@ repositories:
     repoURL: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
     charts:
       aws-ebs-csi-driver:
-      - 2.34.0
+      - 2.35.1
   cilium:
     repoURL: https://helm.cilium.io/
     charts:
       cilium:
-      - 1.16.1
+      - 1.16.2
   cluster-autoscaler:
     repoURL: https://kubernetes.github.io/autoscaler
     charts:
       cluster-autoscaler:
-      - 9.37.0
+      - 9.40.0
   local-path-provisioner:
     repoURL: https://charts.containeroo.ch
     charts:
@@ -55,9 +55,9 @@ repositories:
     repoURL: https://piraeus.io/helm-charts/
     charts:
       snapshot-controller:
-      - 3.0.5
+      - 3.0.6
   tigera-operator:
     repoURL: https://docs.tigera.io/calico/charts
     charts:
       tigera-operator:
-      - v3.28.1
+      - v3.28.2
