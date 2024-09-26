@@ -1838,8 +1838,8 @@ data:
         app.kubernetes.io/instance: snapshot-controller
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: snapshot-controller
-        app.kubernetes.io/version: v8.0.1
-        helm.sh/chart: snapshot-controller-3.0.5
+        app.kubernetes.io/version: v8.1.0
+        helm.sh/chart: snapshot-controller-3.0.6
       name: snapshot-controller
       namespace: kube-system
     ---
@@ -2015,8 +2015,8 @@ data:
         app.kubernetes.io/instance: snapshot-controller
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: snapshot-controller
-        app.kubernetes.io/version: v8.0.1
-        helm.sh/chart: snapshot-controller-3.0.5
+        app.kubernetes.io/version: v8.1.0
+        helm.sh/chart: snapshot-controller-3.0.6
       name: snapshot-controller
       namespace: kube-system
     spec:
@@ -2042,7 +2042,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            image: registry.k8s.io/sig-storage/snapshot-controller:v8.0.1
+            image: registry.k8s.io/sig-storage/snapshot-controller:v8.1.0
             imagePullPolicy: IfNotPresent
             livenessProbe:
               httpGet:

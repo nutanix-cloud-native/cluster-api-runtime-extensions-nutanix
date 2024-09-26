@@ -13,15 +13,15 @@ data:
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/cloud-provider-aws{{ end }}
   aws-ebs-csi: |
     ChartName: aws-ebs-csi-driver
-    ChartVersion: 2.34.0
+    ChartVersion: 2.35.1
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/aws-ebs-csi-driver{{ end }}
   cilium: |
     ChartName: cilium
-    ChartVersion: 1.16.1
+    ChartVersion: 1.16.2
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
-    ChartVersion: 9.37.0
+    ChartVersion: 9.40.0
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
@@ -45,11 +45,11 @@ data:
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}
   snapshot-controller: |
     ChartName: snapshot-controller
-    ChartVersion: 3.0.5
+    ChartVersion: 3.0.6
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://piraeus.io/helm-charts/{{ end }}
   tigera-operator: |
     ChartName: tigera-operator
-    ChartVersion: v3.28.1
+    ChartVersion: v3.28.2
     RepositoryURL: {{ if .Values.selfHostedRegistry }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}
 kind: ConfigMap
 metadata:
