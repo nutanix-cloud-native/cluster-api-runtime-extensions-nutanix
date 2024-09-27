@@ -43,7 +43,7 @@ func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "ECR credentials",
+			name: "ECR registry with no credentials",
 			configs: []providerConfig{
 				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			},
@@ -59,7 +59,7 @@ func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 			need: true,
 		},
 		{
-			name: "ECR mirror",
+			name: "ECR mirror with no credentials",
 			configs: []providerConfig{
 				{
 					URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
@@ -71,7 +71,7 @@ func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 		{
 			name: "mirror with static credentials",
 			configs: []providerConfig{{
-				URL:      "https://myregistry.com",
+				URL:      "https://mymirror.com",
 				Username: "myuser",
 				Password: "mypassword",
 				Mirror:   true,
@@ -81,7 +81,7 @@ func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 		{
 			name: "mirror with no credentials",
 			configs: []providerConfig{{
-				URL:    "https://myregistry.com",
+				URL:    "https://mymirror.com",
 				Mirror: true,
 			}},
 			need: false,
@@ -93,14 +93,29 @@ func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 					URL:      "https://myregistry.com",
 					Username: "myuser",
 					Password: "mypassword",
-					Mirror:   true,
+					Mirror:   false,
 				},
 				{
-					URL:    "https://myregistry.com",
+					URL:    "https://mymirror.com",
 					Mirror: true,
 				},
 			},
 			need: true,
+		},
+		{
+			name: "a registry with missing credentials and a mirror with no credentials",
+			configs: []providerConfig{
+				{
+					URL:    "https://myregistry.com",
+					Mirror: false,
+				},
+				{
+					URL:    "https://mymirror.com",
+					Mirror: true,
+				},
+			},
+			need:    false,
+			wantErr: ErrCredentialsNotFound,
 		},
 		{
 			name: "registry with missing credentials",
@@ -109,6 +124,23 @@ func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 			}},
 			need:    false,
 			wantErr: ErrCredentialsNotFound,
+		},
+		{
+			name: "registry with missing credentials but with a CA",
+			configs: []providerConfig{{
+				URL:       "https://myregistry.com",
+				HasCACert: true,
+			}},
+			need: false,
+		},
+		{
+			name: "mirror with missing credentials but with a CA",
+			configs: []providerConfig{{
+				URL:       "https://mymirror.com",
+				HasCACert: true,
+				Mirror:    true,
+			}},
+			need: false,
 		},
 	}
 
