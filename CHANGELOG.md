@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.17.0 (2024-09-27)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Support XValidations (CEL) for CC variables by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/916
+* feat: Update addon versions by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/917
+### Other Changes
+* build: Fix up metadata missed in v0.16.0 release process by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/920
+* build: Consistently format even generated files by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/923
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.16.0...v0.17.0
+
 ## 0.16.0 (2024-09-25)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
