@@ -42,7 +42,7 @@ func (h *dockerWorkerConfigVariableHandler) DiscoverVariables(
 	resp.Variables = append(resp.Variables, clusterv1.ClusterClassVariable{
 		Name:     v1alpha1.WorkerConfigVariableName,
 		Required: false,
-		Schema:   v1alpha1.DockerNodeConfig{}.VariableSchema(),
+		Schema:   v1alpha1.DockerWorkerNodeConfig{}.VariableSchema(),
 	})
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

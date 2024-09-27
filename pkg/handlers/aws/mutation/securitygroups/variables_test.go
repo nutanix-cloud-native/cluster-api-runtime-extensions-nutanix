@@ -23,7 +23,7 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "Additional Security Group Specification",
 			Vals: v1alpha1.AWSClusterConfigSpec{
-				ControlPlane: &v1alpha1.AWSControlPlaneNodeConfigSpec{
+				ControlPlane: &v1alpha1.AWSControlPlaneSpec{
 					AWS: &v1alpha1.AWSControlPlaneNodeSpec{
 						AWSGenericNodeSpec: v1alpha1.AWSGenericNodeSpec{
 							AdditionalSecurityGroups: v1alpha1.AdditionalSecurityGroup{

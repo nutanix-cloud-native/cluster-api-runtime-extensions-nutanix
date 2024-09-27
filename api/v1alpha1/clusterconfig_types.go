@@ -76,7 +76,7 @@ type AWSClusterConfigSpec struct {
 	Addons *AWSAddons `json:"addons,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	ControlPlane *AWSControlPlaneNodeConfigSpec `json:"controlPlane,omitempty"`
+	ControlPlane *AWSControlPlaneSpec `json:"controlPlane,omitempty"`
 
 	// Extra Subject Alternative Names for the API Server signing cert.
 	// +kubebuilder:validation:Optional
@@ -111,7 +111,7 @@ type DockerClusterConfigSpec struct {
 	Addons *DockerAddons `json:"addons,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	ControlPlane *DockerNodeConfigSpec `json:"controlPlane,omitempty"`
+	ControlPlane *DockerControlPlaneSpec `json:"controlPlane,omitempty"`
 
 	// Extra Subject Alternative Names for the API Server signing cert.
 	// For the Docker provider, the following default SANs will always be added:
@@ -151,7 +151,7 @@ type NutanixClusterConfigSpec struct {
 	Addons *NutanixAddons `json:"addons,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	ControlPlane *NutanixNodeConfigSpec `json:"controlPlane,omitempty"`
+	ControlPlane *NutanixControlPlaneSpec `json:"controlPlane,omitempty"`
 
 	// Subject Alternative Names for the API Server signing cert.
 	// For the Nutanix provider, the following default SANs will always be added:

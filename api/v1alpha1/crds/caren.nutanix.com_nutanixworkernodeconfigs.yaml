@@ -6,20 +6,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.4
-  name: nutanixnodeconfigs.caren.nutanix.com
+  name: nutanixworkernodeconfigs.caren.nutanix.com
 spec:
   group: caren.nutanix.com
   names:
-    kind: NutanixNodeConfig
-    listKind: NutanixNodeConfigList
-    plural: nutanixnodeconfigs
-    singular: nutanixnodeconfig
+    kind: NutanixWorkerNodeConfig
+    listKind: NutanixWorkerNodeConfigList
+    plural: nutanixworkernodeconfigs
+    singular: nutanixworkernodeconfig
   scope: Namespaced
   versions:
     - name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: NutanixNodeConfig is the Schema for the nutanixnodeconfigs API.
+          description: NutanixWorkerNodeConfig is the Schema for the nutanixworkernodeconfigs API.
           properties:
             apiVersion:
               description: |-
@@ -39,7 +39,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: NutanixNodeSpec defines the desired state of NutanixNodeSpec.
+              description: NutanixWorkerNodeConfigSpec defines the desired state of NutanixNodeSpec.
               properties:
                 nutanix:
                   properties:

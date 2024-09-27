@@ -24,17 +24,21 @@ type ClusterConfigSpec struct {
 
 	Addons *Addons `json:"addons,omitempty"`
 
-	ControlPlane *ControlPlaneNodeConfigSpec `json:"controlPlane,omitempty"`
+	ControlPlane *ControlPlaneSpec `json:"controlPlane,omitempty"`
 
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
-type ControlPlaneNodeConfigSpec struct {
+type ControlPlaneSpec struct {
 	AWS *carenv1.AWSControlPlaneNodeSpec `json:"aws,omitempty"`
 
 	Docker *carenv1.DockerNodeSpec `json:"docker,omitempty"`
 
 	Nutanix *carenv1.NutanixNodeSpec `json:"nutanix,omitempty"`
+
+	carenv1.GenericControlPlaneSpec `json:",inline"`
+
+	carenv1.GenericNodeSpec `json:",inline"`
 }
 
 type WorkerNodeConfigSpec struct {

@@ -49,7 +49,7 @@ Applying this configuration will result in
 
 - `KubeadmControlPlaneTemplate`:
 
-  ```yaml
+  - ```yaml
     spec:
       kubeadmConfigSpec:
         clusterConfiguration:
@@ -63,4 +63,4 @@ Applying this configuration will result in
               name: <CLUSTER_NAME>-encryption-config
           path: /etc/kubernetes/pki/encryptionconfig.yaml
           permissions: "0640"
-  ```
+    ```
