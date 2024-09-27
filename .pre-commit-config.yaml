@@ -9,9 +9,15 @@ repos:
     entry: make schema-chart
     language: system
     files: "^charts/cluster-api-runtime-extensions-nutanix/values.yaml$"
+  - id: go-generate
+    name: go-generate
+    entry: make go-generate
+    language: system
+    files: "(.*\\.go|go.mod|go.sum|go.mk)$"
+    pass_filenames: false
   - id: golangci-lint
     name: golangci-lint
-    entry: make go-generate lint
+    entry: make lint
     language: system
     files: "(.*\\.go|go.mod|go.sum|go.mk)$"
     pass_filenames: false
