@@ -295,11 +295,23 @@ spec:
                       type: string
                   type: object
                 controlPlane:
-                  description: |-
-                    AWSControlPlaneConfigSpec defines the desired state of AWSNodeConfig.
-                    Place any configuration that can be applied to individual Nodes here.
-                    Otherwise, it should go into the ClusterConfigSpec.
+                  description: AWSControlPlaneSpec defines the desired state of the control plane for an AWS cluster.
                   properties:
+                    autoRenewCertificates:
+                      description: |-
+                        AutoRenewCertificates specifies the configuration for auto-renewing the
+                        certificates of the control plane.
+                      properties:
+                        daysBeforeExpiry:
+                          description: |-
+                            DaysBeforeExpiry indicates a rollout needs to be performed if the
+                            certificates of the control plane will expire within the specified days.
+                          format: int32
+                          minimum: 7
+                          type: integer
+                      required:
+                        - daysBeforeExpiry
+                      type: object
                     aws:
                       properties:
                         additionalSecurityGroups:
