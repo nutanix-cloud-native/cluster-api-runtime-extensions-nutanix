@@ -137,10 +137,23 @@ endif
 
 .PHONY: lint.%
 lint.%: ## Runs golangci-lint for a specific module
-lint.%: ; $(info $(M) linting $* module)
-	$(if $(filter-out root,$*),cd $* && )golines -w $$(GOWORK=off go list -tags e2e ./... | grep -v external | sed "s|^$$(GOWORK=off go list -m)|.|")
+lint.%: golines.% ; $(info $(M) linting $* module)
 	$(if $(filter-out root,$*),cd $* && )golangci-lint run --fix --config=$(GOLANGCI_CONFIG_FILE)
-	$(if $(filter-out root,$*),cd $* && )golines -w $$(GOWORK=off go list -tags e2e ./... | grep -v external | sed "s|^$$(GOWORK=off go list -m)|.|")
+	$(MAKE) golines.$*
+
+.PHONY: golines
+golines: ## Runs golines for all modules in repository
+ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
+golines: golines.root
+endif
+ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
+golines: $(addprefix golines.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
+endif
+
+.PHONY: golines.%
+golines.%: ## Runs golines for a specific module
+golines.%:
+	$(if $(filter-out root,$*),cd $* && )golines -w --ignored-dirs external $$(GOWORK=off go list -tags e2e ./... | sed "s|^$$(GOWORK=off go list -m)|.|")
 
 .PHONY: mod-tidy
 mod-tidy: ## Run go mod tidy for all modules
@@ -185,9 +198,9 @@ go-fix: $(addprefix go-fix.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
 .PHONY: go-fix.%
-go-fix.%: ## Runs golangci-lint for a specific module
+go-fix.%: ## Runs go fix for a specific module
 go-fix.%: ; $(info $(M) go fixing $* module)
-	$(if $(filter-out root,$*),cd $* && )go fix ./...
+	$(if $(filter-out root,$*),cd $* && )go fix $$(GOWORK=off go list ./... | sed "s|^$$(GOWORK=off go list -m)|.|" | grep -v external)
 
 .PHONY: go-generate
 go-generate: ## Runs go generate
@@ -210,7 +223,7 @@ go-generate: ; $(info $(M) running go generate)
 	yq --inplace \
 	  --from-file=hack/update-webhook-configurations.yq \
 	  charts/cluster-api-runtime-extensions-nutanix/templates/webhooks.yaml
-	#$(MAKE) go-fix
+	$(MAKE) go-fix golines
 	$(MAKE) configure-csi-providers
 	# Update anyOf schemas for resource.Quantity fields to only accept strings
 	# until CAPI ClusterClass variables support anyOf schemas.
