@@ -72,6 +72,7 @@ jobs:
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "AWS", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
+    name: e2e-quick-start (${{ matrix.config.provider }}, ${{ matrix.config.kubernetesVersion }})
     uses: ./.github/workflows/e2e.yml
     with:
       focus: Quick start
