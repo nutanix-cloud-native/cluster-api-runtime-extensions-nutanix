@@ -24,7 +24,7 @@ spec:
       serviceAccountName: {{ template "chart.name" . }}
       terminationGracePeriodSeconds: 10
       containers:
-      - name: webhook
+      - name: manager
         image: "{{ .Values.image.repository }}:{{ default $.Chart.AppVersion .Values.image.tag }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         args:
