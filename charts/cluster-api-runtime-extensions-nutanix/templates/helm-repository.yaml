@@ -63,6 +63,7 @@ spec:
         readinessProbe:
           tcpSocket:
             port: serve
+          periodSeconds: 1
       priorityClassName: {{ .Values.priorityClassName }}
       securityContext:
         {{ with .Values.securityContext }}
