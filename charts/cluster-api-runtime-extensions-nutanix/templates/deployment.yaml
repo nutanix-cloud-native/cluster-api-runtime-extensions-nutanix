@@ -73,7 +73,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         resources:
-          {{ with .Values.resources }}
+          {{- with .Values.resources }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         volumeMounts:
@@ -93,9 +93,16 @@ spec:
             port: probes
             scheme: HTTP
             path: /readyz
+        startupProbe:
+          httpGet:
+            port: probes
+            scheme: HTTP
+            path: /healthz
+          periodSeconds: 1
+          failureThreshold: 30
       priorityClassName: {{ .Values.priorityClassName }}
       securityContext:
-        {{ with .Values.securityContext }}
+        {{- with .Values.securityContext }}
         {{- toYaml . | nindent 8}}
         {{- end }}
       volumes:
