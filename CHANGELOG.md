@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.14.9 (2024-10-02)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: [release/v0.14.x] Rename webhook container to manager by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/933
+* fix: [release/v0.14.x] Introduce startup probe to CAREN pod to reduce races by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/934
+### Other Changes
+* ci(release/v0.14.x): enable creating release-please PR from release branches by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/911
+* test(e2e): [release/v0.14.x] Use released rocky image by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/935
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.8...v0.14.9
+
 ## 0.14.8 (2024-09-18)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
