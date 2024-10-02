@@ -16,6 +16,7 @@ build-snapshot: go-generate ; $(info $(M) building snapshot $*)
 		--snapshot \
 		--clean \
 		--parallelism=$(GORELEASER_PARALLELISM) \
+		--config=<(env GOOS=$(shell go env GOOS) gojq --yaml-input --yaml-output '.builds[0].goos |= (. + [env.GOOS] | unique)' .goreleaser.yml) \
 		$(if $(BUILD_ALL),,--single-target)
 
 .PHONY: release
