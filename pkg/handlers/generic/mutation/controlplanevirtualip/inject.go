@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -181,6 +182,32 @@ func (h *ControlPlaneVirtualIP) Mutate(
 					obj.Spec.Template.Spec.KubeadmConfigSpec.PostKubeadmCommands,
 					postKubeadmCommands...,
 				)
+			}
+
+			if controlPlaneEndpointVar.Port != 6443 {
+				log.WithValues(
+					"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+					"patchedObjectName", client.ObjectKeyFromObject(obj),
+				).Info(fmt.Sprintf(
+					"setting bindPort on the api-servers to %d",
+					controlPlaneEndpointVar.Port,
+				))
+				if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
+					obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1.InitConfiguration{}
+				}
+				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.LocalAPIEndpoint.BindPort =
+					controlPlaneEndpointVar.Port
+
+				if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration == nil {
+					obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration =
+						&bootstrapv1.JoinConfiguration{}
+				}
+				if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.ControlPlane == nil {
+					obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.ControlPlane =
+						&bootstrapv1.JoinControlPlane{}
+				}
+				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.ControlPlane.LocalAPIEndpoint.BindPort =
+					controlPlaneEndpointVar.Port
 			}
 
 			return nil

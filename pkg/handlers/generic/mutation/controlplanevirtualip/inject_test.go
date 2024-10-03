@@ -186,6 +186,98 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				},
 			},
 		},
+		{
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "host and port should be templated in a new file with pre/post commands, and localAPIEndpoint should be set",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						v1alpha1.ControlPlaneEndpointSpec{
+							Host: "10.20.100.10",
+							Port: 443,
+							VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
+								Provider: v1alpha1.VirtualIPProviderKubeVIP,
+							},
+						},
+						VariableName,
+					),
+				},
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(
+					"",
+				),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+						ValueMatcher: gomega.ContainElements(
+							gomega.SatisfyAll(
+								gomega.HaveKeyWithValue(
+									"content",
+									gomega.ContainSubstring("value: \"10.20.100.10\""),
+								),
+								gomega.HaveKeyWithValue(
+									"content",
+									gomega.ContainSubstring("value: \"443\""),
+								),
+								gomega.HaveKey("owner"),
+								gomega.HaveKeyWithValue(
+									"path",
+									gomega.ContainSubstring("kube-vip"),
+								),
+								gomega.HaveKey("permissions"),
+							),
+							gomega.SatisfyAll(
+								gomega.HaveKey("content"),
+								gomega.HaveKeyWithValue(
+									"path",
+									gomega.ContainSubstring("configure-for-kube-vip.sh"),
+								),
+								gomega.HaveKey("permissions"),
+							),
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+						ValueMatcher: gomega.ContainElements(
+							"/bin/bash /etc/caren/configure-for-kube-vip.sh set-host-aliases use-super-admin.conf",
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands",
+						ValueMatcher: gomega.ContainElements(
+							"/bin/bash /etc/caren/configure-for-kube-vip.sh use-admin.conf",
+						),
+					},
+					{
+						Operation:    "add",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/initConfiguration/localAPIEndpoint/bindPort",
+						ValueMatcher: gomega.Equal(443),
+					},
+					// {
+					// 	Operation: "add",
+					// 	Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/controlPlane",
+					// 	ValueMatcher: gomega.HaveKeyWithValue(
+					// 		"localAPIEndpoint",
+					// 		gomega.ContainSubstring("bindPort: 443"),
+					// 	),
+					// },
+				},
+			},
+			virtualIPTemplate: validKubeVIPTemplate,
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: request.Namespace,
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "v1.29.0",
+					},
+				},
+			},
+		},
 	}
 
 	// create test node for each case
