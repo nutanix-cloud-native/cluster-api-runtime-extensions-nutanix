@@ -47,3 +47,5 @@ node_modules/
 /_artifacts/
 test/e2e/config/caren-envsubst.yaml
 /release-metadata.yaml
+hack/tools/fetch-images/fetch-images
+caren-images.txt
