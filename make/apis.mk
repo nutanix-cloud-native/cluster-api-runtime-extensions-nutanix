@@ -55,3 +55,8 @@ api.sync.%: ; $(info $(M) syncing external API: $(PROVIDER_MODULE_$*)/$(PROVIDER
 	  $(PROVIDER_API_DIR)
 	find $(PROVIDER_API_DIR) -type d -exec chmod 0755 {} \;
 	find $(PROVIDER_API_DIR) -type f -exec chmod 0644 {} \;
+
+.PHONY: coredns.sync
+coredns.sync: ## Syncs the Kubernetes version to CoreDNS version mapping used in the cluster upgrade
+coredns.sync: ; $(info $(M) syncing CoreDNS version mapping)
+	go run hack/tools/coredns-versions/main.go
