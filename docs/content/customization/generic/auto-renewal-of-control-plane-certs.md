@@ -33,9 +33,10 @@ Applying this configuration will result in the following configuration being app
 
   - ```yaml
     spec:
-      kubeadmConfigSpec:
-        rolloutBefore:
-          certificatesExpiryDays: 30
+      template:
+        spec:
+          rolloutBefore:
+            certificatesExpiryDays: 30
     ```
 
 [Automatically rotating certificates using Kubeadm Control Plane provider]: https://cluster-api.sigs.k8s.io/tasks/certs/auto-rotate-certificates-in-kcp.html
