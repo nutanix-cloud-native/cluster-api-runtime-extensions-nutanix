@@ -6,6 +6,7 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/ha
 go 1.22.5
 
 require (
+	github.com/blang/semver/v4 v4.0.0
 	github.com/d2iq-labs/helm-list-images v0.11.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.30.3
