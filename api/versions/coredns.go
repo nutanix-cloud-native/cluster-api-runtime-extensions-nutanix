@@ -6,7 +6,10 @@
 package versions
 
 import (
-	"golang.org/x/mod/semver"
+	"fmt"
+	"maps"
+
+	"github.com/blang/semver/v4"
 )
 
 // Kubernetes versions
@@ -53,15 +56,14 @@ var kubernetesToCoreDNSVersion = map[string]string{
 // The function maps based on the major and minor versions (e.g., "v1.27").
 // If the Kubernetes version is not found, it returns an empty string and false.
 func GetCoreDNSVersion(kubernetesVersion string) (string, bool) {
-	// Normalize the version using semver
-	normalizedVersion := semver.Canonical(kubernetesVersion)
-	if normalizedVersion == "" {
-		// Handle invalid version strings
+	// Parse the version using semver
+	v, err := semver.ParseTolerant(kubernetesVersion)
+	if err != nil {
 		return "", false
 	}
 
-	// Extract major and minor versions
-	majorMinor := semver.MajorMinor(normalizedVersion) // e.g., "v1.27"
+	// Construct "vMAJOR.MINOR" format
+	majorMinor := fmt.Sprintf("v%d.%d", v.Major, v.Minor)
 
 	// Lookup the CoreDNS version using the major and minor version
 	version, found := kubernetesToCoreDNSVersion[majorMinor]
@@ -71,9 +73,5 @@ func GetCoreDNSVersion(kubernetesVersion string) (string, bool) {
 // GetKubernetesToCoreDNSVersionMap returns a copy of the Kubernetes to CoreDNS version mapping.
 // The map keys are Kubernetes versions in "vMAJOR.MINOR" format.
 func GetKubernetesToCoreDNSVersionMap() map[string]string {
-	copyMap := make(map[string]string, len(kubernetesToCoreDNSVersion))
-	for k, v := range kubernetesToCoreDNSVersion {
-		copyMap[k] = v
-	}
-	return copyMap
+	return maps.Clone(kubernetesToCoreDNSVersion)
 }
