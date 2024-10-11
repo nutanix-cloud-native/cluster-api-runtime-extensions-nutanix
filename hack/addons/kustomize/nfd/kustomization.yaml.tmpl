@@ -20,5 +20,8 @@ helmCharts:
   skipTests: true
   skipHooks: true
   namespace: node-feature-discovery
+  valuesInline:
+    image:
+      tag: v${NODE_FEATURE_DISCOVERY_VERSION}-minimal
 
 namespace: node-feature-discovery
