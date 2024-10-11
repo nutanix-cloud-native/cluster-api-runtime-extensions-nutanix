@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -38,12 +39,24 @@ type ChartInfo struct {
 	extraImagesFiles []string
 }
 
+type stringSlice []string
+
+func (s *stringSlice) String() string {
+	return strings.Join(*s, ",")
+}
+
+func (s *stringSlice) Set(value string) error {
+	*s = append(*s, value)
+	return nil
+}
+
 func main() {
 	args := os.Args
 	var (
-		chartDirectory     string
-		helmChartConfigMap string
-		carenVersion       string
+		chartDirectory      string
+		helmChartConfigMap  string
+		carenVersion        string
+		additionalYAMLFiles stringSlice
 	)
 	flagSet := flag.NewFlagSet(createImagesCMD, flag.ExitOnError)
 	flagSet.StringVar(&chartDirectory, "chart-directory", "",
@@ -52,6 +65,8 @@ func main() {
 		"path to helm chart configmap for CAREN")
 	flagSet.StringVar(&carenVersion, "caren-version", "",
 		"CAREN version for images override")
+	flagSet.Var(&additionalYAMLFiles, "additional-yaml-files",
+		"additional YAML images to include")
 	err := flagSet.Parse(args[1:])
 	if err != nil {
 		fmt.Println("failed to parse args", err.Error())
@@ -91,6 +106,12 @@ func main() {
 		os.Exit(1)
 	}
 	images = append(images, addonImages...)
+	additionalYAMLImages, err := getImagesFromYAMLFiles(additionalYAMLFiles)
+	if err != nil {
+		fmt.Println("failed to get images from additional YAML files", err.Error())
+		os.Exit(1)
+	}
+	images = append(images, additionalYAMLImages...)
 	slices.Sort(images)
 	images = slices.Compact(images)
 	for _, image := range images {
@@ -347,4 +368,33 @@ func getTemplatedHelmConfigMap(helmChartConfigMap string) (string, error) {
 		return "", fmt.Errorf("failed to execute template %w", err)
 	}
 	return b.String(), nil
+}
+
+func getImagesFromYAMLFiles(files []string) ([]string, error) {
+	var images []string
+	for _, f := range files {
+		file, err := os.Open(f)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open file %s with %w", f, err)
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, " image: ") {
+				// Get everything after "image: "
+				image := strings.SplitAfterN(line, "image: ", 2)
+				if len(image) == 2 {
+					images = append(images, strings.TrimSpace(image[1]))
+				}
+			}
+		}
+
+		err = scanner.Err()
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan file %s: %w", f, err)
+		}
+	}
+	return images, nil
 }
