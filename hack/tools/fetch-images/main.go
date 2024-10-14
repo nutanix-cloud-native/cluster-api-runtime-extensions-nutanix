@@ -307,6 +307,8 @@ func getImagesForChart(info *ChartInfo) ([]string, error) {
 	images.ExtraImagesFiles = info.extraImagesFiles
 	// kubeVersion needs to be set for some addons
 	images.KubeVersion = "v1.29.0"
+	// apiVersions needs to be set for some addons
+	images.APIVersions = []string{"snapshot.storage.k8s.io/v1"}
 	images.SetRelease("sample")
 	images.SetLogger("INFO")
 	images.Kind = k8s.SupportedKinds()
