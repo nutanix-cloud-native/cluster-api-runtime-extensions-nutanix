@@ -136,8 +136,8 @@ providers:
   versions:
   # Upgrade e2e tests will use this as the "upgrade from" version.
   # This should reference the most recent successful release.
-  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.15}"
-    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.15}/runtime-extension-components.yaml"
+  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.17}"
+    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.17}/runtime-extension-components.yaml"
     type: "url"
     contract: v1beta1
     files:

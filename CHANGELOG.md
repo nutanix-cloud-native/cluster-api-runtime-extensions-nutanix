@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.18.0 (2024-10-15)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Add feature-gates plumbing by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/919
+* feat(api): Add kubernetes version to coredns version mapping by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/939
+### Fixes 🔧
+* fix: Shorten readiness probe period to try to prevent races by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/930
+* fix: Rename webhook container to manager by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/932
+* fix: list correct registry.k8s.io/sig-storage/csi-snapshotter image by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/943
+* fix: include kube-vip image in generated caren-images.txt by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/940
+### Other Changes
+* test(e2e): Add v1.30.5 test for Nutanix by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/931
+* build: Enable building binary only on macos by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/918
+* build(deps): Update clusterctl binary to v1.8.3 by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/929
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.17.0...v0.18.0
+
 ## 0.17.0 (2024-09-27)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
