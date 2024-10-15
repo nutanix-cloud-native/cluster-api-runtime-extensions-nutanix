@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.18.1 (2024-10-15)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* build: pass the Chart version when listing images by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/945
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.18.0...v0.18.1
+
 ## 0.18.0 (2024-10-15)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
