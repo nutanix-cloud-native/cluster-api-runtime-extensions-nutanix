@@ -42,14 +42,13 @@ If you are releasing a new minor release, then update the `metadata.yaml`s so th
 for e.g. local development and e2e tests:
 
 1. Add the new release to the root level `metadata.yaml` release series.
-1. Add the new release to the e2e configuration `test/e2e/data/shared/v1beta1-caren/metadata.yaml` release series.
 1. Add the next release to the e2e configuration `test/e2e/data/shared/v1beta1-caren/metadata.yaml` (e.g. if release
-   `v0.6.0` then add release series for `v0.7`).
+   `v0.22.0` then add release series for `v0.23`).
 1. Update the `caren` provider configuration in `test/e2e/config/caren.yaml`:
    - The first reference should be the most recent successful patch release of the previous minor version. For example,
-     if you releasing v0.22, reference the most recent successful patch release of v0.21.
+     if you are releasing `v0.22`, reference the most recent successful patch release of `v0.21`.
    - The second reference should be the 99th patch version of the minor version being released. For example, if you
-     are releasing v0.22, the reference should be v0.22.99.
+     are releasing `v0.22`, the reference should be `v0.22.99`.
 1. Commit the changed files:
 
    ```shell
