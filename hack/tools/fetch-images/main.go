@@ -34,6 +34,7 @@ const (
 type ChartInfo struct {
 	repo             string
 	name             string
+	version          string
 	valuesFile       string
 	stringValues     []string
 	extraImagesFiles []string
@@ -155,8 +156,9 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 			return nil, fmt.Errorf("failed to unmarshal chart info from configmap %w", err)
 		}
 		info := &ChartInfo{
-			name: settings.ChartName,
-			repo: settings.Repository,
+			name:    settings.ChartName,
+			version: settings.Version,
+			repo:    settings.Repository,
 		}
 		valuesFile, err := getValuesFileForChartIfNeeded(settings.ChartName, carenChartDirectory)
 		if err != nil {
@@ -320,6 +322,7 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (strin
 func getImagesForChart(info *ChartInfo) ([]string, error) {
 	images := pkg.Images{}
 	images.SetChart(info.name)
+	images.ChartVersionConstraint = info.version
 	images.RepoURL = info.repo
 	if info.valuesFile != "" {
 		_ = images.ValueFiles.Set(info.valuesFile)
