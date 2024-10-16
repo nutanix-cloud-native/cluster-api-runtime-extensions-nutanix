@@ -162,6 +162,8 @@ jobs:
 
   pre-commit:
     runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
