@@ -13,11 +13,11 @@ import (
 )
 
 var (
-	//go:embed crds/caren.nutanix.com_dockernodeconfigs.yaml
+	//go:embed crds/caren.nutanix.com_dockerworkernodeconfigs.yaml
 	dockerNodeConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_awsworkernodeconfigs.yaml
 	awsNodeConfigCRDDefinition []byte
-	//go:embed crds/caren.nutanix.com_nutanixnodeconfigs.yaml
+	//go:embed crds/caren.nutanix.com_nutanixworkernodeconfigs.yaml
 	nutanixNodeConfigCRDDefinition []byte
 
 	dockerNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(
@@ -54,33 +54,25 @@ type AWSWorkerNodeConfigSpec struct {
 	GenericNodeSpec `json:",inline"`
 }
 
-// AWSControlPlaneConfigSpec defines the desired state of AWSNodeConfig.
-// Place any configuration that can be applied to individual Nodes here.
-// Otherwise, it should go into the ClusterConfigSpec.
-type AWSControlPlaneNodeConfigSpec struct {
-	// +kubebuilder:validation:Optional
-	AWS *AWSControlPlaneNodeSpec `json:"aws,omitempty"`
-
-	GenericNodeSpec `json:",inline"`
-}
-
 // +kubebuilder:object:root=true
 
-// DockerNodeConfig is the Schema for the dockernodeconfigs API.
-type DockerNodeConfig struct {
+// DockerWorkerNodeConfig is the Schema for the dockerworkernodeconfigs API.
+type DockerWorkerNodeConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Spec DockerNodeConfigSpec `json:"spec,omitempty"`
+	Spec DockerControlPlaneSpec `json:"spec,omitempty"`
 }
 
-func (s DockerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s DockerWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return dockerNodeConfigVariableSchema
 }
 
-// DockerNodeConfigSpec defines the desired state of DockerNodeSpec.
-type DockerNodeConfigSpec struct {
+// DockerWorkerNodeConfigSpec defines the desired state of DockerNodeConfig.
+// Place any configuration that can be applied to individual Nodes here.
+// Otherwise, it should go into the ClusterConfigSpec.
+type DockerWorkerNodeConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Docker *DockerNodeSpec `json:"docker,omitempty"`
 
@@ -89,21 +81,21 @@ type DockerNodeConfigSpec struct {
 
 // +kubebuilder:object:root=true
 
-// NutanixNodeConfig is the Schema for the nutanixnodeconfigs API.
-type NutanixNodeConfig struct {
+// NutanixWorkerNodeConfig is the Schema for the nutanixworkernodeconfigs API.
+type NutanixWorkerNodeConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Spec NutanixNodeConfigSpec `json:"spec,omitempty"`
+	Spec NutanixWorkerNodeConfigSpec `json:"spec,omitempty"`
 }
 
-func (s NutanixNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s NutanixWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return nutanixNodeConfigVariableSchema
 }
 
-// NutanixNodeSpec defines the desired state of NutanixNodeSpec.
-type NutanixNodeConfigSpec struct {
+// NutanixWorkerNodeConfigSpec defines the desired state of NutanixNodeSpec.
+type NutanixWorkerNodeConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Nutanix *NutanixNodeSpec `json:"nutanix,omitempty"`
 
@@ -156,5 +148,9 @@ const (
 
 //nolint:gochecknoinits // Idiomatic to use init functions to register APIs with scheme.
 func init() {
-	SchemeBuilder.Register(&AWSWorkerNodeConfig{}, &DockerNodeConfig{}, &NutanixNodeConfig{})
+	SchemeBuilder.Register(
+		&AWSWorkerNodeConfig{},
+		&DockerWorkerNodeConfig{},
+		&NutanixWorkerNodeConfig{},
+	)
 }

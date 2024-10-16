@@ -23,7 +23,7 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "valid",
 			Vals: v1alpha1.DockerClusterConfigSpec{
-				ControlPlane: &v1alpha1.DockerNodeConfigSpec{
+				ControlPlane: &v1alpha1.DockerControlPlaneSpec{
 					Docker: &v1alpha1.DockerNodeSpec{
 						CustomImage: ptr.To("docker.io/some/image:v2.3.4"),
 					},
@@ -33,7 +33,7 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "invalid",
 			Vals: v1alpha1.DockerClusterConfigSpec{
-				ControlPlane: &v1alpha1.DockerNodeConfigSpec{
+				ControlPlane: &v1alpha1.DockerControlPlaneSpec{
 					Docker: &v1alpha1.DockerNodeSpec{
 						CustomImage: ptr.To("this.is.not.valid?"),
 					},

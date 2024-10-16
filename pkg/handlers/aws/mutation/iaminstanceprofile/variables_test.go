@@ -23,7 +23,7 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "AMI specification",
 			Vals: v1alpha1.AWSClusterConfigSpec{
-				ControlPlane: &v1alpha1.AWSControlPlaneNodeConfigSpec{
+				ControlPlane: &v1alpha1.AWSControlPlaneSpec{
 					AWS: &v1alpha1.AWSControlPlaneNodeSpec{
 						AWSGenericNodeSpec: v1alpha1.AWSGenericNodeSpec{
 							AMISpec: &v1alpha1.AMISpec{
