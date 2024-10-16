@@ -12,9 +12,15 @@ ASSETS_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}")"
 
 cp "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml" "${ASSETS_DIR}"
 
+gh release download "${PREVIOUS_CAREN_CHARTS_VERSION}" \
+  -p "runtime-extension-components.yaml" -D "${ASSETS_DIR}/" --clobber
+
+cat "${ASSETS_DIR}/runtime-extension-components.yaml" | yq e '. | select(.metadata.name == "default-helm-addons-config")' >>"${ASSETS_DIR}/previous-charts.yaml"
+
 # this sed line is needed because the go library is unable to parse yaml with a template string.
 sed -i s/"{{ .Values.helmAddonsConfigMap }}"/placeholder/g "${ASSETS_DIR}/helm-config.yaml"
-go run "${GIT_REPO_ROOT}/hack/tools/mindthegap-helm-reg/main.go" --input-configmap-file="${ASSETS_DIR}/helm-config.yaml" --output-file="${ASSETS_DIR}/repos.yaml"
+go run "${GIT_REPO_ROOT}/hack/tools/mindthegap-helm-reg/main.go" --input-configmap-file="${ASSETS_DIR}/helm-config.yaml" --output-file="${ASSETS_DIR}/repos.yaml" \
+  --previous-configmap-file="${ASSETS_DIR}/previous-charts.yaml"
 
 # add warning not to edit file directly
 cat <<EOF >"${GIT_REPO_ROOT}/hack/addons/mindthegap-helm-registry/repos.yaml"

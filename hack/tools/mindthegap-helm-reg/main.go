@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
+	"slices"
 
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -36,57 +38,46 @@ var log = ctrl.LoggerFrom(context.Background())
 func main() {
 	args := os.Args
 	var (
-		outputFile         string
-		inputConfigMapFile string
+		outputFile            string
+		inputConfigMapFile    string
+		previousConfigMapFile string
 	)
 	flagSet := flag.NewFlagSet("mindthegap-helm-registry", flag.ExitOnError)
-	flagSet.StringVar(&outputFile, "output-file", "",
-		"output file name to write config map to.")
-	flagSet.StringVar(&inputConfigMapFile, "input-configmap-file", "",
-		"input configmap file to create the mindthegap repo file from")
+	flagSet.StringVar(
+		&outputFile,
+		"output-file",
+		"",
+		"output file name to write config map to.",
+	)
+	flagSet.StringVar(
+		&inputConfigMapFile,
+		"input-configmap-file",
+		"",
+		"input configmap file to create the mindthegap repo file from",
+	)
+	flagSet.StringVar(
+		&previousConfigMapFile,
+		"previous-configmap-file",
+		"",
+		"input configmap file to create the mindthegap repo file from",
+	)
 	err := flagSet.Parse(args[1:])
 	if err != nil {
 		log.Error(err, "failed to parse args")
 	}
-	fullPath := inputConfigMapFile
-	if !path.IsAbs(fullPath) {
-		wd, err := os.Getwd()
-		if err != nil {
-			log.Error(err, "failed to get wd")
-			return
-		}
-		fullPath = path.Join(wd, inputConfigMapFile)
-	}
-	f, err := os.Open(fullPath)
+	inputCm, err := getConfigMapFromFile(inputConfigMapFile)
 	if err != nil {
-		log.Error(err, "failed to open file")
-		return
-	}
-	defer f.Close()
-	cm := &corev1.ConfigMap{}
-	err = yamlDecode.NewYAMLOrJSONDecoder(f, 1024).Decode(cm)
-	if err != nil {
-		log.Error(err, fmt.Sprintf("failed to unmarshal file %s", fullPath))
+		log.Error(err, fmt.Sprintf("failed to get configmap from file %s %w", inputConfigMapFile, err))
 	}
 	out := HelmChartsConfig{
 		map[string]Repository{},
 	}
-	for _, info := range cm.Data {
-		var settings HelmChartFromConfigMap
-		err = yaml.Unmarshal([]byte(info), &settings)
-		if err != nil {
-			log.Error(err, "failed unmarshl settings")
-			return
-		}
-		out.Repositories[settings.Name] = Repository{
-			RepoURL: settings.Repository,
-			Charts: map[string][]string{
-				settings.Name: {
-					settings.Version,
-				},
-			},
-		}
+	ConfigMapToHelmChartConfig(&out, inputCm)
+	previousCm, err := getConfigMapFromFile(previousConfigMapFile)
+	if err != nil {
+		log.Error(err, fmt.Sprintf("failed to get configmap from file %s %w", inputConfigMapFile, err))
 	}
+	ConfigMapToHelmChartConfig(&out, previousCm)
 	b, err := yaml.Marshal(out)
 	if err != nil {
 		log.Error(err, fmt.Sprintf("failed to marshal obj %v", out))
@@ -99,7 +90,7 @@ func main() {
 		}
 		fullOutputfilePath = path.Join(wd, outputFile)
 	}
-	f, err = os.OpenFile(fullOutputfilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
+	f, err := os.OpenFile(fullOutputfilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 	if err != nil {
 		log.Error(err, "failed to create file")
 	}
@@ -108,4 +99,59 @@ func main() {
 	if err != nil {
 		log.Error(err, "failed to write to file")
 	}
+}
+
+func ConfigMapToHelmChartConfig(out *HelmChartsConfig, cm *corev1.ConfigMap) {
+	for _, info := range cm.Data {
+		var settings HelmChartFromConfigMap
+		err := yaml.Unmarshal([]byte(info), &settings)
+		if err != nil {
+			log.Error(err, "failed unmarshl settings")
+			return
+		}
+		repo, ok := out.Repositories[settings.Name]
+		// if this is the first time we saw this add a new entry
+		if !ok {
+			out.Repositories[settings.Name] = Repository{
+				RepoURL: settings.Repository,
+				Charts: map[string][]string{
+					settings.Name: {
+						settings.Version,
+					},
+				},
+			}
+			continue
+		}
+		// we've seen it already only add a new chart if the versions are different
+		if !slices.Contains(repo.Charts[settings.Name], settings.Version) {
+			repo.Charts[settings.Name] = append(repo.Charts[settings.Name], settings.Version)
+		}
+	}
+}
+
+func getConfigMapFromFile(configMapFile string) (*corev1.ConfigMap, error) {
+	fullPath, err := EnsureFullPath(configMapFile)
+	if err != nil {
+		return nil, err
+	}
+	f, err := os.Open(fullPath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	cm := &corev1.ConfigMap{}
+	err = yamlDecode.NewYAMLOrJSONDecoder(f, 1024).Decode(cm)
+	return cm, err
+}
+
+func EnsureFullPath(filename string) (string, error) {
+	fullPath, err := filepath.Abs(filename)
+	if err != nil {
+		return "", err
+	}
+	_, err = os.Stat(fullPath)
+	if err != nil {
+		return "", err
+	}
+	return fullPath, nil
 }
