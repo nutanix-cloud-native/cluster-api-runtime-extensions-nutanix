@@ -30,7 +30,6 @@ export PREVIOUS_CAREN_CHARTS_VERSION := v0.14.6
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi kube-vip)
 addons.sync: $(addprefix update-addon.aws-ccm.,127 128 129 130 131)
-addons.sync: template-helm-repository
 
 .PHONY: update-addon.calico
 update-addon.calico: ; $(info $(M) updating calico manifests)
