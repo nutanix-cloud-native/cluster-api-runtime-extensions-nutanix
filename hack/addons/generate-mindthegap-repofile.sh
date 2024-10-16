@@ -15,7 +15,7 @@ cp "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/hel
 gh release download "${PREVIOUS_CAREN_CHARTS_VERSION}" \
   -p "runtime-extension-components.yaml" -D "${ASSETS_DIR}/" --clobber
 
-cat "${ASSETS_DIR}/runtime-extension-components.yaml" | yq e '. | select(.metadata.name == "default-helm-addons-config")' >>"${ASSETS_DIR}/previous-charts.yaml"
+yq e '. | select(.metadata.name == "default-helm-addons-config")' >>"${ASSETS_DIR}/previous-charts.yaml" <"${ASSETS_DIR}/runtime-extension-components.yaml"
 
 # this sed line is needed because the go library is unable to parse yaml with a template string.
 sed -i s/"{{ .Values.helmAddonsConfigMap }}"/placeholder/g "${ASSETS_DIR}/helm-config.yaml"
