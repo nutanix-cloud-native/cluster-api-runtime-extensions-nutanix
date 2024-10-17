@@ -25,7 +25,9 @@ export KUBE_VIP_VERSION := v0.8.3
 
 export METALLB_CHART_VERSION := 0.14.8
 
+# these versions correspond to n-1 and n-2 shipped releases.
 export PREVIOUS_CAREN_CHARTS_VERSION := v0.14.6
+export CAREN_CHARTS_VERSION_N_MINUS_2 := v0.13.7
 
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi kube-vip)

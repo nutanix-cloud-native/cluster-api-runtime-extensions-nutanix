@@ -41,6 +41,7 @@ func main() {
 		outputFile            string
 		inputConfigMapFile    string
 		previousConfigMapFile string
+		nminus2ConfigMapFile  string
 	)
 	flagSet := flag.NewFlagSet("mindthegap-helm-registry", flag.ExitOnError)
 	flagSet.StringVar(
@@ -61,6 +62,12 @@ func main() {
 		"",
 		"input configmap file to create the mindthegap repo file from",
 	)
+	flagSet.StringVar(
+		&nminus2ConfigMapFile,
+		"n-minus-2-configmap-file",
+		"",
+		"input configmap file to create the mindthegap repo file from",
+	)
 	err := flagSet.Parse(args[1:])
 	if err != nil {
 		log.Error(err, "failed to parse args")
@@ -78,6 +85,11 @@ func main() {
 		log.Error(err, fmt.Sprintf("failed to get configmap from file %s %w", inputConfigMapFile, err))
 	}
 	ConfigMapToHelmChartConfig(&out, previousCm)
+	nMinus2Cm, err := getConfigMapFromFile(nminus2ConfigMapFile)
+	if err != nil {
+		log.Error(err, fmt.Sprintf("failed to get configmap from file %s %w", inputConfigMapFile, err))
+	}
+	ConfigMapToHelmChartConfig(&out, nMinus2Cm)
 	b, err := yaml.Marshal(out)
 	if err != nil {
 		log.Error(err, fmt.Sprintf("failed to marshal obj %v", out))
