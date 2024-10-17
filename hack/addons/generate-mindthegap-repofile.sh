@@ -26,7 +26,7 @@ yq e '. | select(.metadata.name == "default-helm-addons-config")' >>"${ASSETS_DI
 sed -i s/"{{ .Values.helmAddonsConfigMap }}"/placeholder/g "${ASSETS_DIR}/helm-config.yaml"
 go run "${GIT_REPO_ROOT}/hack/tools/mindthegap-helm-reg/main.go" --input-configmap-file="${ASSETS_DIR}/helm-config.yaml" --output-file="${ASSETS_DIR}/repos.yaml" \
   --previous-configmap-file="${ASSETS_DIR}/previous-charts.yaml" \
-  --n-minus-2-configmap-file="${ASSETS_DIR}/n-2-charts.yaml" \
+  --n-minus-2-configmap-file="${ASSETS_DIR}/n-2-charts.yaml"
 
 # add warning not to edit file directly
 cat <<EOF >"${GIT_REPO_ROOT}/hack/addons/mindthegap-helm-registry/repos.yaml"
