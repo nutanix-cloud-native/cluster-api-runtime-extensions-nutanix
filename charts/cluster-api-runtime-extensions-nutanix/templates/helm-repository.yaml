@@ -26,6 +26,21 @@ spec:
     kind: Issuer
   secretName: helm-repository-tls
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  finalizers:
+  - kubernetes.io/pvc-protection
+  name: charts-pvc
+  namespace: default
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeMode: Filesystem
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -45,17 +60,33 @@ spec:
       labels:
         app: helm-repository  # pods have this label, and Service and Deployment depend on it
     spec:
+      initContainers:
+      - name: init-container
+        image: "{{ .Values.helmChartsImage.repository }}:{{ default $.Chart.AppVersion .Values.helmChartsImage.tag }}"
+        command: ["/bin/sh", "-c", "cp /charts/*.tar /helm-charts"]
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
       containers:
       - name: helm-repository
         ports:
           - name: serve
             protocol: TCP
             containerPort: 5000
-        image: "{{ .Values.helmRepositoryImage.repository }}:{{ default $.Chart.AppVersion .Values.helmRepositoryImage.tag }}"
-        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        image: "{{ .Values.mindthegap.repository }}:{{ .Values.mindthegap.tag }}"
+        imagePullPolicy: "{{ .Values.mindthegap.pullPolicy }}"
+        args:
+          - serve
+          - bundle
+          - --bundle=/helm-charts/helm-charts-*.tar
+          - --listen-port=5000
+          - --listen-address=0.0.0.0
+          - --tls-private-key-file=/certs/tls.key
+          - --tls-cert-file=/certs/tls.crt
         volumeMounts:
         - name: certs-vol
           mountPath: "/certs"
+          readOnly: true
+        - name: charts-volume
+          mountPath: "/helm-charts"
           readOnly: true
         livenessProbe:
           tcpSocket:
@@ -73,6 +104,9 @@ spec:
       - name: certs-vol
         secret:
           secretName: helm-repository-tls
+      - name: charts-volume
+        persistentVolumeClaim:
+          claimName: charts-pvc
 ---
 apiVersion: v1
 kind: Service

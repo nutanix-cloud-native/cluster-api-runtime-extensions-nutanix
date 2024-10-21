@@ -132,9 +132,14 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
-helmRepositoryImage:
+helmChartsImage:
   repository: ghcr.io/nutanix-cloud-native/caren-helm-reg
   tag: ""
+  pullPolicy: IfNotPresent
+
+mindthegap:
+  repository: ghcr.io/mesosphere/mindthegap
+  tag: "v1.14.4"
   pullPolicy: IfNotPresent
 
 # -- Optional secrets used for pulling the container image

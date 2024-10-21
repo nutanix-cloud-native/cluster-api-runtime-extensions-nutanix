@@ -38,7 +38,7 @@
         "helmAddonsConfigMap": {
             "type": "string"
         },
-        "helmRepositoryImage": {
+        "helmChartsImage": {
             "properties": {
                 "pullPolicy": {
                     "type": "string"
@@ -504,6 +504,20 @@
         },
         "imagePullSecrets": {
             "type": "array"
+        },
+        "mindthegap": {
+            "properties": {
+                "pullPolicy": {
+                    "type": "string"
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
         },
         "namespaceSync": {
             "properties": {
