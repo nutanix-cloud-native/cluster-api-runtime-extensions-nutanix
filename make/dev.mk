@@ -15,7 +15,7 @@ dev.run-on-kind:
 	helm upgrade --install cluster-api-runtime-extensions-nutanix ./charts/cluster-api-runtime-extensions-nutanix \
 		--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
 		--set-string image.tag=$(SNAPSHOT_VERSION) \
-		--set-string helmRepositoryImage.tag=$(SNAPSHOT_VERSION) \
+		--set-string helmChartsImage.tag=$(SNAPSHOT_VERSION) \
 		--wait --wait-for-jobs
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
 	kubectl rollout restart deployment helm-repository

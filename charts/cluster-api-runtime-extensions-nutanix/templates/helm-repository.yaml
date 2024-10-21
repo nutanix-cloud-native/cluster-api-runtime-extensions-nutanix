@@ -32,7 +32,7 @@ metadata:
   finalizers:
   - kubernetes.io/pvc-protection
   name: charts-pvc
-  namespace: default
+  namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
   - ReadWriteOnce
@@ -61,10 +61,13 @@ spec:
         app: helm-repository  # pods have this label, and Service and Deployment depend on it
     spec:
       initContainers:
-      - name: init-container
+      - name: copy-charts
         image: "{{ .Values.helmChartsImage.repository }}:{{ default $.Chart.AppVersion .Values.helmChartsImage.tag }}"
         command: ["/bin/sh", "-c", "cp /charts/*.tar /helm-charts"]
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        volumeMounts:
+        - name: charts-volume
+          mountPath: "/helm-charts"
       containers:
       - name: helm-repository
         ports:
