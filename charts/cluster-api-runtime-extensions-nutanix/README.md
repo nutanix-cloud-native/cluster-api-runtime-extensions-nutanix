@@ -86,9 +86,6 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | image.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` | Optional secrets used for pulling the container image |
-| mindthegap.pullPolicy | string | `"IfNotPresent"` |  |
-| mindthegap.repository | string | `"ghcr.io/mesosphere/mindthegap"` |  |
-| mindthegap.tag | string | `"v1.14.4"` |  |
 | namespaceSync.enabled | bool | `true` |  |
 | namespaceSync.sourceNamespace | string | `""` |  |
 | namespaceSync.targetNamespaceLabelKey | string | `"caren.nutanix.com/namespace-sync"` |  |
