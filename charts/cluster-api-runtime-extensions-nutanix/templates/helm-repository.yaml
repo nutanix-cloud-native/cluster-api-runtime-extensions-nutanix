@@ -76,6 +76,14 @@ spec:
             containerPort: 5000
         image: "{{ .Values.helmChartsImage.repository }}:{{ default $.Chart.AppVersion .Values.helmChartsImage.tag }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        args:
+          - serve
+          - bundle
+          - --bundle=/helm-charts/helm-charts-*.tar
+          - --listen-port=5000
+          - --listen-address=0.0.0.0
+          - --tls-private-key-file=/certs/tls.key
+          - --tls-cert-file=/certs/tls.crt
         volumeMounts:
         - name: certs-vol
           mountPath: "/certs"

@@ -10,9 +10,3 @@ COPY --from=bundle_builder /tmp/helm-charts.tar /charts/helm-charts-${VERSION}.t
 COPY --from=bundle_builder /ko-app/mindthegap /usr/bin/mindthegap
 VOLUME /certs
 ENTRYPOINT /usr/bin/mindthegap
-CMD [ "serve", "bundle", \
-      "--bundle=/tmp/helm-charts.tar", \
-      "--listen-port=5000", \
-      "--listen-address=0.0.0.0", \
-      "--tls-private-key-file=/certs/tls.key", \
-      "--tls-cert-file=/certs/tls.crt" ]
