@@ -76,6 +76,7 @@ spec:
             containerPort: 5000
         image: "{{ .Values.helmChartsImage.repository }}:{{ default $.Chart.AppVersion .Values.helmChartsImage.tag }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        command: ["/usr/bin/mindthegap"]
         args:
           - serve
           - bundle
