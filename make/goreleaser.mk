@@ -8,6 +8,12 @@ ifndef GORELEASER_CURRENT_TAG
 export GORELEASER_CURRENT_TAG=$(GIT_TAG)
 endif
 
+.PHONY: buildx
+buildx:
+buildx:
+	 docker buildx create --name=caren || true
+	 docker run --privileged --rm tonistiigi/binfmt --install all &>/dev/null || true
+
 .PHONY: build-snapshot
 build-snapshot: ## Builds a snapshot with goreleaser
 build-snapshot: go-generate ; $(info $(M) building snapshot $*)
@@ -21,7 +27,7 @@ build-snapshot: go-generate ; $(info $(M) building snapshot $*)
 
 .PHONY: release
 release: ## Builds a release with goreleaser
-release: go-generate ; $(info $(M) building release $*)
+release: buildx go-generate ; $(info $(M) building release $*)
 	goreleaser --verbose=$(GORELEASER_VERBOSE) \
 		release \
 		--clean \
@@ -31,7 +37,7 @@ release: go-generate ; $(info $(M) building release $*)
 
 .PHONY: release-snapshot
 release-snapshot: ## Builds a snapshot release with goreleaser
-release-snapshot: go-generate ; $(info $(M) building snapshot release $*)
+release-snapshot: buildx go-generate ; $(info $(M) building snapshot release $*)
 	goreleaser --verbose=$(GORELEASER_VERBOSE) \
 		release \
 		--snapshot \
