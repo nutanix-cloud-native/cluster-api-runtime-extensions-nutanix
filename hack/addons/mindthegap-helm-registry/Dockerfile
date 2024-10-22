@@ -5,5 +5,5 @@ RUN --mount=source=./hack/addons/mindthegap-helm-registry/repos.yaml,target=/rep
     ["/ko-app/mindthegap", "create", "bundle", "--helm-charts-file=/repos.yaml", "--output-file=/tmp/helm-charts.tar"]
 
 FROM --platform=${TARGETPLATFORM} alpine
-COPY --from=bundle_builder /tmp/helm-charts.tar /charts/
-RUN mv /charts/helm-charts.tar /charts/helm-charts-$(date +%s).tar
+ARG VERSION
+COPY --from=bundle_builder /tmp/helm-charts.tar /charts/helm-charts-${VERSION}.tar

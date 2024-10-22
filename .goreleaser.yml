@@ -108,8 +108,7 @@ dockers:
       - hack/addons/mindthegap-helm-registry/repos.yaml
     build_flag_templates:
       - "--platform=linux/amd64"
-      - "--pull"
-      - "--builder=caren"
+      - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.created={{.CommitDate}}"
       - "--label=org.opencontainers.image.title=caren-helm-reg"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
@@ -124,8 +123,7 @@ dockers:
       - hack/addons/mindthegap-helm-registry/repos.yaml
     build_flag_templates:
       - "--platform=linux/arm64"
-      - "--pull"
-      - "--builder=caren"
+      - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.created={{.CommitDate}}"
       - "--label=org.opencontainers.image.title=caren-helm-reg"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
