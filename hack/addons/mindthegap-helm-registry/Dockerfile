@@ -4,7 +4,7 @@ FROM --platform=${BUILDPLATFORM} ghcr.io/mesosphere/mindthegap:${MINDTHEGAP_VERS
 RUN --mount=source=./hack/addons/mindthegap-helm-registry/repos.yaml,target=/repos.yaml \
     ["/ko-app/mindthegap", "create", "bundle", "--helm-charts-file=/repos.yaml", "--output-file=/tmp/helm-charts.tar"]
 
-FROM --platform=${TARGETPLATFORM} alpine
+FROM --platform=${TARGETPLATFORM} alpine:3.20.3
 ARG VERSION
 COPY --from=bundle_builder /tmp/helm-charts.tar /charts/helm-charts-${VERSION}.tar
 COPY --from=bundle_builder /ko-app/mindthegap /usr/bin/mindthegap
