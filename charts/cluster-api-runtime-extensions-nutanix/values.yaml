@@ -137,11 +137,6 @@ helmChartsImage:
   tag: ""
   pullPolicy: IfNotPresent
 
-mindthegap:
-  repository: ghcr.io/mesosphere/mindthegap
-  tag: "v1.14.4"
-  pullPolicy: IfNotPresent
-
 # -- Optional secrets used for pulling the container image
 imagePullSecrets: []
 # - name: Secret with Registry credentials

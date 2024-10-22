@@ -74,16 +74,8 @@ spec:
           - name: serve
             protocol: TCP
             containerPort: 5000
-        image: "{{ .Values.mindthegap.repository }}:{{ .Values.mindthegap.tag }}"
-        imagePullPolicy: "{{ .Values.mindthegap.pullPolicy }}"
-        args:
-          - serve
-          - bundle
-          - --bundle=/helm-charts/helm-charts-*.tar
-          - --listen-port=5000
-          - --listen-address=0.0.0.0
-          - --tls-private-key-file=/certs/tls.key
-          - --tls-cert-file=/certs/tls.crt
+        image: "{{ .Values.helmChartsImage.repository }}:{{ default $.Chart.AppVersion .Values.helmChartsImage.tag }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         volumeMounts:
         - name: certs-vol
           mountPath: "/certs"
