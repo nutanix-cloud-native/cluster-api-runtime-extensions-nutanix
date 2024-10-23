@@ -44,7 +44,7 @@ before:
       $(helm template {{ .ProjectName }} ./charts/{{ .ProjectName }} \
         --namespace caren-system \
         --set-string image.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }}{{ end }} \
-        --set-string helmChartsImage.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }} \
+        --set-string helmRepositoryImage.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }} \
         --set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
       EOF'

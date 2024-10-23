@@ -38,7 +38,7 @@
         "helmAddonsConfigMap": {
             "type": "string"
         },
-        "helmChartsImage": {
+        "helmRepositoryImage": {
             "properties": {
                 "pullPolicy": {
                     "type": "string"

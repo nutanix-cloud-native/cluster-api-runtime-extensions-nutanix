@@ -132,7 +132,7 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
-helmChartsImage:
+helmRepositoryImage:
   repository: ghcr.io/nutanix-cloud-native/caren-helm-reg
   tag: ""
   pullPolicy: IfNotPresent

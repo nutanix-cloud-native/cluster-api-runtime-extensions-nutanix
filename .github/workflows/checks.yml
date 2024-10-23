@@ -253,7 +253,7 @@ jobs:
           devbox run -- \
             ct install \
               --config charts/ct-config.yaml \
-              --helm-extra-set-args "--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix --set-string image.tag=$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH) --set-string helmChartsImage.tag=$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)"
+              --helm-extra-set-args "--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix --set-string image.tag=$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH) --set-string helmRepositoryImage.tag=$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)"
         env:
           KUBECONFIG: ${{ env.KIND_KUBECONFIG }}
 

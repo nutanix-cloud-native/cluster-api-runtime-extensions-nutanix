@@ -62,7 +62,7 @@ spec:
     spec:
       initContainers:
       - name: copy-charts
-        image: "{{ .Values.helmChartsImage.repository }}:{{ default $.Chart.AppVersion .Values.helmChartsImage.tag }}"
+        image: "{{ .Values.helmRepositoryImage.repository }}:{{ default $.Chart.AppVersion .Values.helmRepositoryImage.tag }}"
         command: ["/bin/sh", "-c", "cp /charts/*.tar /helm-charts"]
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         volumeMounts:
@@ -74,7 +74,7 @@ spec:
           - name: serve
             protocol: TCP
             containerPort: 5000
-        image: "{{ .Values.helmChartsImage.repository }}:{{ default $.Chart.AppVersion .Values.helmChartsImage.tag }}"
+        image: "{{ .Values.helmRepositoryImage.repository }}:{{ default $.Chart.AppVersion .Values.helmRepositoryImage.tag }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         command: ["/usr/bin/mindthegap"]
         args:

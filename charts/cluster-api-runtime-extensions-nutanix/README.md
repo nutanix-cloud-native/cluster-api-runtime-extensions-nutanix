@@ -32,9 +32,9 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
 | helmAddonsConfigMap | string | `"default-helm-addons-config"` |  |
-| helmChartsImage.pullPolicy | string | `"IfNotPresent"` |  |
-| helmChartsImage.repository | string | `"ghcr.io/nutanix-cloud-native/caren-helm-reg"` |  |
-| helmChartsImage.tag | string | `""` |  |
+| helmRepositoryImage.pullPolicy | string | `"IfNotPresent"` |  |
+| helmRepositoryImage.repository | string | `"ghcr.io/nutanix-cloud-native/caren-helm-reg"` |  |
+| helmRepositoryImage.tag | string | `""` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-aws-ccm-helm-values-template"` |  |
 | hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.27" | string | `"v1.27.9"` |  |
