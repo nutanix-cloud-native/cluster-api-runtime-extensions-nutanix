@@ -31,7 +31,7 @@ kind: PersistentVolumeClaim
 metadata:
   finalizers:
   - kubernetes.io/pvc-protection
-  name: charts-pvc
+  name: helm-charts-pvc
   namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
@@ -110,7 +110,7 @@ spec:
           secretName: helm-repository-tls
       - name: charts-volume
         persistentVolumeClaim:
-          claimName: charts-pvc
+          claimName: helm-charts-pvc
 ---
 apiVersion: v1
 kind: Service
