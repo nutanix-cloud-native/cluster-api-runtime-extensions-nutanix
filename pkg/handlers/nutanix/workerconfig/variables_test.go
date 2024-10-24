@@ -16,7 +16,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.WorkerConfigVariableName,
-		ptr.To(v1alpha1.NutanixNodeConfig{}.VariableSchema()),
+		ptr.To(v1alpha1.NutanixWorkerNodeConfig{}.VariableSchema()),
 		false,
 		NewVariable,
 	)
