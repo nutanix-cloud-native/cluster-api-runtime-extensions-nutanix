@@ -11,6 +11,7 @@ import (
 	"path"
 	"text/template"
 
+	corev1 "k8s.io/api/core/v1"
 	credentialproviderv1 "k8s.io/kubelet/pkg/apis/credentialprovider/v1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 
@@ -28,6 +29,8 @@ const (
 	kubeletDynamicCredentialProviderConfigOnRemote = "/etc/kubernetes/dynamic-credential-provider-config.yaml"
 
 	azureCloudConfigFilePath = "/etc/kubernetes/azure.json"
+
+	secretKeyForCACert = "ca.crt"
 )
 
 var (
@@ -47,10 +50,11 @@ var (
 )
 
 type providerConfig struct {
-	URL      string
-	Username string
-	Password string
-	Mirror   bool
+	URL       string
+	Username  string
+	Password  string
+	HasCACert bool
+	Mirror    bool
 }
 
 func (c providerConfig) isCredentialsEmpty() bool {
@@ -248,4 +252,13 @@ func fileFromTemplate(
 		Content:     b.String(),
 		Permissions: "0600",
 	}, nil
+}
+
+func secretHasCACert(secret *corev1.Secret) bool {
+	if secret == nil {
+		return false
+	}
+
+	_, ok := secret.Data[secretKeyForCACert]
+	return ok
 }
