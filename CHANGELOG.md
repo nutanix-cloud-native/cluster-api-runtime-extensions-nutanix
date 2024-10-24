@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.19.0 (2024-10-23)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: copy charts to pvc by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/947
+### Other Changes
+* build: pass the Chart version when listing images by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/945
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.18.0...v0.19.0
+
 ## 0.18.0 (2024-10-15)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
