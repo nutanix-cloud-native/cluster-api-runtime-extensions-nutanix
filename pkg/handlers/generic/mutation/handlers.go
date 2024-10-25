@@ -12,6 +12,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdapplypatchesandrestart"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdmetrics"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdunprivilegedports"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/coredns"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/encryptionatrest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/etcd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/extraapiservercertsans"
@@ -28,6 +29,7 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 	return []mutation.MetaMutator{
 		auditpolicy.NewPatch(),
 		etcd.NewPatch(),
+		coredns.NewPatch(),
 		extraapiservercertsans.NewPatch(),
 		httpproxy.NewPatch(mgr.GetClient()),
 		kubernetesimagerepository.NewPatch(),

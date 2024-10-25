@@ -33,5 +33,8 @@ const (
 	// ImageRegistriesVariableName is the image registries patch variable name.
 	ImageRegistriesVariableName = "imageRegistries"
 
+	// DNSVariableName is the DNS external patch variable name.
+	DNSVariableName = "dns"
+
 	ClusterUUIDAnnotationKey = APIGroup + "/cluster-uuid"
 )
