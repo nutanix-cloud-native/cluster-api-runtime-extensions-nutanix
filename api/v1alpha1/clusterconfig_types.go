@@ -207,8 +207,11 @@ type GenericClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Users []User `json:"users,omitempty"`
 
-	// +optional
+	// +kubebuilder:validation:Optional
 	EncryptionAtRest *EncryptionAtRest `json:"encryptionAtRest,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	DNS *DNS `json:"dns,omitempty"`
 }
 
 type Image struct {
@@ -309,6 +312,19 @@ type EncryptionProviders struct {
 type AESConfiguration struct{}
 
 type SecretboxConfiguration struct{}
+
+// DNS defines the DNS configuration for the cluster.
+type DNS struct {
+	// CoreDNS defines the CoreDNS configuration for the cluster.
+	// +kubebuilder:validation:Optional
+	CoreDNS *CoreDNS `json:"coreDNS,omitempty"`
+}
+
+type CoreDNS struct {
+	// Image required for overriding Kubernetes DNS image details.
+	// +kubebuilder:validation:Optional
+	Image *Image `json:"image,omitempty"`
+}
 
 //nolint:gochecknoinits // Idiomatic to use init functions to register APIs with scheme.
 func init() {

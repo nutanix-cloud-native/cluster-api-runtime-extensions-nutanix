@@ -289,6 +289,26 @@ spec:
                         type: object
                       type: array
                   type: object
+                dns:
+                  description: DNS defines the DNS configuration for the cluster.
+                  properties:
+                    coreDNS:
+                      description: CoreDNS defines the CoreDNS configuration for the cluster.
+                      properties:
+                        image:
+                          description: Image required for overriding Kubernetes DNS image details.
+                          properties:
+                            repository:
+                              description: Repository is used to override the image repository to pull from.
+                              pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                              type: string
+                            tag:
+                              description: Tag is used to override the default image tag.
+                              pattern: ^[\w][\w.-]{0,127}$
+                              type: string
+                          type: object
+                      type: object
+                  type: object
                 docker:
                   type: object
                 encryptionAtRest:
