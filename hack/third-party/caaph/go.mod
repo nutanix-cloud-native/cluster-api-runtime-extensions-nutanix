@@ -7,7 +7,7 @@ go 1.22.0
 
 toolchain go1.23.0
 
-require sigs.k8s.io/cluster-api-addon-provider-helm v0.2.5
+require sigs.k8s.io/cluster-api-addon-provider-helm v0.2.6
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -45,7 +45,7 @@ require (
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
+	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/term v0.23.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
@@ -61,7 +61,7 @@ require (
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e // indirect
-	sigs.k8s.io/cluster-api v1.8.1 // indirect
+	sigs.k8s.io/cluster-api v1.8.4 // indirect
 	sigs.k8s.io/controller-runtime v0.18.5 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
