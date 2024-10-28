@@ -12,6 +12,8 @@ the customization will be skipped.
 
 To change the repository and tag for the container image for the etcd pod, specify the following configuration:
 
+> Note do not include "etcd" in the repository, kubeadm already appends it.
+
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
