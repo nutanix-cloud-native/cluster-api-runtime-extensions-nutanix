@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.20.0 (2024-10-28)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: support configuring CoreDNS image by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/950
+### Fixes 🔧
+* fix: adds previous versions helm charts in this container by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/949
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.19.0...v0.20.0
+
 ## 0.19.0 (2024-10-23)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
