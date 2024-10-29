@@ -52,6 +52,20 @@
             },
             "type": "object"
         },
+        "helmRepositorySecurityContext": {
+            "properties": {
+                "fsGroup": {
+                    "type": "integer"
+                },
+                "runAsGroup": {
+                    "type": "integer"
+                },
+                "runAsUser": {
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
         "hooks": {
             "properties": {
                 "ccm": {

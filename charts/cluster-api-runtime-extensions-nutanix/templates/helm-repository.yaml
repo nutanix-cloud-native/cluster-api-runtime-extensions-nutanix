@@ -101,7 +101,7 @@ spec:
           periodSeconds: 1
       priorityClassName: {{ .Values.priorityClassName }}
       securityContext:
-        {{ with .Values.securityContext }}
+        {{ with .Values.helmRepositorySecurityContext }}
         {{- toYaml . | nindent 8}}
         {{- end }}
       volumes:
