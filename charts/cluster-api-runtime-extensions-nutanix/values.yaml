@@ -162,9 +162,9 @@ securityContext:
 
 # The helm-repository containers are based on an Alpine image with a different nonroot user
 helmRepositorySecurityContext:
-  runAsUser: 405
-  runAsGroup: 100
-  fsGroup: 100
+  runAsUser: 65534
+  runAsGroup: 65534
+  fsGroup: 65534
 
 service:
   annotations: {}
