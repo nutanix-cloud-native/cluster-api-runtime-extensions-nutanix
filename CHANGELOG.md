@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.21.0 (2024-10-29)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: update Nutanix CSI to 3.1.0 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/956
+### Fixes 🔧
+* fix: bundle correct arch for the mindthegap binary by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/954
+* fix: use correct securityContext for Alpine based helm-repository Pod by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/955
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.20.0...v0.21.0
+
 ## 0.20.0 (2024-10-28)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
