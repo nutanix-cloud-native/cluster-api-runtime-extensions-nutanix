@@ -35,6 +35,9 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | helmRepositoryImage.pullPolicy | string | `"IfNotPresent"` |  |
 | helmRepositoryImage.repository | string | `"ghcr.io/nutanix-cloud-native/caren-helm-reg"` |  |
 | helmRepositoryImage.tag | string | `""` |  |
+| helmRepositorySecurityContext.fsGroup | int | `100` |  |
+| helmRepositorySecurityContext.runAsGroup | int | `100` |  |
+| helmRepositorySecurityContext.runAsUser | int | `405` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-aws-ccm-helm-values-template"` |  |
 | hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.27" | string | `"v1.27.9"` |  |

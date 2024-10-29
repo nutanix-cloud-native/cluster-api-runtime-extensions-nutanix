@@ -156,8 +156,16 @@ resources:
   requests:
     cpu: 100m
     memory: 128Mi
+
 securityContext:
   runAsUser: 65532
+
+# The helm-repository containers are based on an Alpine image with a different nonroot user
+helmRepositorySecurityContext:
+  runAsUser: 405
+  runAsGroup: 100
+  fsGroup: 100
+
 service:
   annotations: {}
   type: ClusterIP
