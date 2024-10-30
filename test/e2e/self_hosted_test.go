@@ -142,6 +142,17 @@ var _ = Describe("Self-hosted", Serial, func() {
 														},
 													)
 
+													WaitForCoreDNSImageVersion(
+														ctx,
+														WaitForDNSUpgradeInput{
+															WorkloadCluster: workloadCluster,
+															ClusterProxy:    proxy,
+															DeploymentIntervals: e2eConfig.GetIntervals(
+																flavour,
+																"wait-deployment",
+															),
+														},
+													)
 													WaitForCoreDNSToBeReadyInWorkloadCluster(
 														ctx,
 														WaitForCoreDNSToBeReadyInWorkloadClusterInput{
