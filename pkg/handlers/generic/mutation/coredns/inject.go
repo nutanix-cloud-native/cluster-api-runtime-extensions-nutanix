@@ -5,6 +5,7 @@ package coredns
 
 import (
 	"context"
+	"errors"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -25,6 +26,10 @@ import (
 const (
 	// VariableName is the external patch variable name.
 	VariableName = "coreDNS"
+)
+
+var ErrDefaultCoreDNSVersionNotFound = errors.New(
+	"could not determine default CoreDNS version based on the Kubernetes version",
 )
 
 type coreDNSPatchHandler struct {
@@ -113,7 +118,7 @@ func (h *coreDNSPatchHandler) Mutate(
 					cluster.Spec.Topology.Version,
 				)
 				if !found {
-					log.Info("Default CoreDNS version not found for Kubernetes version")
+					return ErrDefaultCoreDNSVersionNotFound
 				}
 				dns.ImageTag = defaultCoreDNSVersion
 			}
