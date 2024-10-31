@@ -74,7 +74,7 @@ func (h *coreDNSPatchHandler) Mutate(
 		if !variables.IsNotFoundError(err) {
 			return err
 		}
-		log.V(5).Info("coreDNSVar variable not defined")
+		log.V(5).Info("coreDNS variable not defined")
 	}
 
 	log = log.WithValues(
@@ -90,7 +90,7 @@ func (h *coreDNSPatchHandler) Mutate(
 	if err != nil {
 		log.Error(
 			err,
-			"failed to get cluster from CoreDNS mutation handler",
+			"failed to get cluster for CoreDNS mutation handler",
 		)
 		return err
 	}
@@ -107,43 +107,31 @@ func (h *coreDNSPatchHandler) Mutate(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
 			}
 
-			dns := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.DNS
+			dns := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.DNS
 
 			// Set the CoreDNS image from the variable if it is defined.
-			setFromVar(coreDNSVar.Image, &dns)
+			if coreDNSVar.Image != nil {
+				if coreDNSVar.Image.Tag != "" {
+					dns.ImageTag = coreDNSVar.Image.Tag
+				}
+				if coreDNSVar.Image.Repository != "" {
+					dns.ImageRepository = coreDNSVar.Image.Repository
+				}
+			}
 
-			// Always set the default if the CoreDNS image version is not defined in the variable.
-			if useDefaultVersion(coreDNSVar) {
+			// If the CoreDNS image tag is still not set, set the image tag to the default CoreDNS version based on the
+			// Kubernetes version.
+			if dns.ImageTag == "" {
 				defaultCoreDNSVersion, found := corednsversions.GetCoreDNSVersion(
 					cluster.Spec.Topology.Version,
 				)
 				if !found {
 					return ErrDefaultCoreDNSVersionNotFound
 				}
+
 				dns.ImageTag = defaultCoreDNSVersion
 			}
 
-			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.DNS = dns
-
 			return nil
 		})
-}
-
-// setFromVar sets the CoreDNS image tag and repository from the variable if it is defined.
-// If the variable is not defined, the function just returns.
-func setFromVar(image *v1alpha1.Image, dns *bootstrapv1.DNS) {
-	if image == nil {
-		return
-	}
-	if image.Tag != "" {
-		dns.ImageTag = image.Tag
-	}
-	if image.Repository != "" {
-		dns.ImageRepository = image.Repository
-	}
-}
-
-// useDefaultVersion returns true if the CoreDNS version should be set to the default version.
-func useDefaultVersion(coreDNSVar v1alpha1.CoreDNS) bool {
-	return coreDNSVar.Image == nil || coreDNSVar.Image.Tag == ""
 }
