@@ -137,7 +137,7 @@ providers:
   # Upgrade e2e tests will use this as the "upgrade from" version.
   # This should reference the most recent successful release.
   - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.20}"
-    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.20}/runtime-extension-components.yaml"
+    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.20}/runtime-extensions-components.yaml"
     type: "url"
     contract: v1beta1
     files:
@@ -148,7 +148,7 @@ providers:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
   - name: v0.21.99 # "vNext"; use manifests from local source files
-    value: "file://../../../runtime-extension-components.yaml"
+    value: "file://../../../runtime-extensions-components.yaml"
     type: "url"
     contract: v1beta1
     files:
