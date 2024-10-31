@@ -38,30 +38,51 @@
         "helmAddonsConfigMap": {
             "type": "string"
         },
-        "helmRepositoryImage": {
+        "helmRepository": {
             "properties": {
-                "pullPolicy": {
-                    "type": "string"
+                "images": {
+                    "properties": {
+                        "bundleInitializer": {
+                            "properties": {
+                                "pullPolicy": {
+                                    "type": "string"
+                                },
+                                "repository": {
+                                    "type": "string"
+                                },
+                                "tag": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "mindthegap": {
+                            "properties": {
+                                "pullPolicy": {
+                                    "type": "string"
+                                },
+                                "repository": {
+                                    "type": "string"
+                                },
+                                "tag": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
                 },
-                "repository": {
-                    "type": "string"
-                },
-                "tag": {
-                    "type": "string"
-                }
-            },
-            "type": "object"
-        },
-        "helmRepositorySecurityContext": {
-            "properties": {
-                "fsGroup": {
-                    "type": "integer"
-                },
-                "runAsGroup": {
-                    "type": "integer"
-                },
-                "runAsUser": {
-                    "type": "integer"
+                "securityContext": {
+                    "properties": {
+                        "fsGroup": {
+                            "type": "integer"
+                        },
+                        "runAsUser": {
+                            "type": "integer"
+                        }
+                    },
+                    "type": "object"
                 }
             },
             "type": "object"

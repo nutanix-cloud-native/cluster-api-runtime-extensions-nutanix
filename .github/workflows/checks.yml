@@ -235,13 +235,18 @@ jobs:
         run: devbox run -- make release-snapshot
 
       - if: steps.list-changed.outputs.changed == 'true'
+        name: Export image tag
+        id: export-image-tag
+        run: echo test-image-tag="$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)" >> "$GITHUB_OUTPUT"
+
+      - if: steps.list-changed.outputs.changed == 'true'
         name: Sideload docker image
         run: |
           devbox run -- \
             kind load docker-image \
               --name "${KIND_CLUSTER_NAME}" \
-              "ko.local/cluster-api-runtime-extensions-nutanix:$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)" \
-              "ghcr.io/nutanix-cloud-native/caren-helm-reg:$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)"
+              "ko.local/cluster-api-runtime-extensions-nutanix:${{ steps.export-image-tag.outputs.test-image-tag }}" \
+              "ghcr.io/nutanix-cloud-native/caren-helm-reg:${{ steps.export-image-tag.outputs.test-image-tag }}"
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
@@ -253,7 +258,7 @@ jobs:
           devbox run -- \
             ct install \
               --config charts/ct-config.yaml \
-              --helm-extra-set-args "--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix --set-string image.tag=$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH) --set-string helmRepositoryImage.tag=$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)"
+              --helm-extra-set-args "--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix --set-string image.tag=${{ steps.export-image-tag.outputs.test-image-tag }} --set-string helmRepository.images.bundleInitializer.tag=${{ steps.export-image-tag.outputs.test-image-tag }}"
         env:
           KUBECONFIG: ${{ env.KIND_KUBECONFIG }}
 
