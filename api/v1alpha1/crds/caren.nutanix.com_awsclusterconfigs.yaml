@@ -379,10 +379,7 @@ spec:
                       description: CoreDNS defines the CoreDNS configuration for the cluster.
                       properties:
                         image:
-                          description: |-
-                            Image required for overriding Kubernetes DNS image details.
-                            If the image version is not specified,
-                            the default version based on the cluster's Kubernetes version will be used.
+                          description: Image required for overriding Kubernetes DNS image details.
                           properties:
                             repository:
                               description: Repository is used to override the image repository to pull from.
@@ -393,6 +390,16 @@ spec:
                               pattern: ^[\w][\w.-]{0,127}$
                               type: string
                           type: object
+                        updateStrategy:
+                          default: Automatic
+                          description: |-
+                            UpdateStrategy defines the strategy for how the CoreDNS version will be updated.
+                            If not specified, the default value is Automatic,
+                            which sets the CoreDNS version based on the cluster's Kubernetes version.
+                          enum:
+                            - Manual
+                            - Automatic
+                          type: string
                       type: object
                   type: object
                 encryptionAtRest:

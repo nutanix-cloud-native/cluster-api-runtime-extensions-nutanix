@@ -12,6 +12,11 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
+const (
+	CoreDNSUpdateStrategyAutomatic CoreDNSUpdateStrategy = "Automatic"
+	CoreDNSUpdateStrategyManual    CoreDNSUpdateStrategy = "Manual"
+)
+
 var (
 	DefaultDockerCertSANs = []string{
 		"localhost",
@@ -320,12 +325,20 @@ type DNS struct {
 	CoreDNS *CoreDNS `json:"coreDNS,omitempty"`
 }
 
+// +kubebuilder:validation:Optional
+// +kubebuilder:validation:Enum=Manual;Automatic
+type CoreDNSUpdateStrategy string
+
 type CoreDNS struct {
 	// Image required for overriding Kubernetes DNS image details.
-	// If the image version is not specified,
-	// the default version based on the cluster's Kubernetes version will be used.
 	// +kubebuilder:validation:Optional
 	Image *Image `json:"image,omitempty"`
+
+	// UpdateStrategy defines the strategy for how the CoreDNS version will be updated.
+	// If not specified, the default value is Automatic,
+	// which sets the CoreDNS version based on the cluster's Kubernetes version.
+	// +kubebuilder:default=Automatic
+	UpdateStrategy *CoreDNSUpdateStrategy `json:"updateStrategy,omitempty"`
 }
 
 //nolint:gochecknoinits // Idiomatic to use init functions to register APIs with scheme.

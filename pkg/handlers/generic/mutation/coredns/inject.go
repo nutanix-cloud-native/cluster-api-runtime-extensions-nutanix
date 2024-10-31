@@ -9,6 +9,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -71,10 +72,11 @@ func (h *coreDNSPatchHandler) Mutate(
 		h.variableFieldPath...,
 	)
 	if err != nil {
-		if !variables.IsNotFoundError(err) {
-			return err
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("coreDNS variable not defined")
+			return nil
 		}
-		log.V(5).Info("coreDNS variable not defined")
+		return err
 	}
 
 	log = log.WithValues(
@@ -101,7 +103,7 @@ func (h *coreDNSPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("setting CoreDNS version")
+			).Info("setting CoreDNS version if needed")
 
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
@@ -119,9 +121,14 @@ func (h *coreDNSPatchHandler) Mutate(
 				}
 			}
 
-			// If the CoreDNS image tag is still not set, set the image tag to the default CoreDNS version based on the
+			// If the updateStrategy is set Automatic, set the image tag to the default CoreDNS version based on the
 			// Kubernetes version.
-			if dns.ImageTag == "" {
+			// Default the strategy to Automatic if var is not nil.
+			strategy := ptr.Deref(
+				coreDNSVar.UpdateStrategy,
+				v1alpha1.CoreDNSUpdateStrategyAutomatic,
+			)
+			if strategy == v1alpha1.CoreDNSUpdateStrategyAutomatic {
 				defaultCoreDNSVersion, found := corednsversions.GetCoreDNSVersion(
 					cluster.Spec.Topology.Version,
 				)

@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
@@ -46,7 +47,34 @@ var _ = Describe("Generate CoreDNS patches", func() {
 	testDefs := []testObj{
 		{
 			patchTest: capitest.PatchTestDef{
-				Name:        "unset variable",
+				Name: "unset variable",
+			},
+			cluster: clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: request.Namespace,
+					Labels: map[string]string{
+						clusterv1.ProviderNameLabel: "nutanix",
+					},
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "1.30.100",
+					},
+				},
+			},
+		},
+		{
+			patchTest: capitest.PatchTestDef{
+				Name: "variable with defaults",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						v1alpha1.CoreDNS{},
+						v1alpha1.DNSVariableName,
+						VariableName,
+					),
+				},
 				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 					Operation: "add",
@@ -85,6 +113,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 								Repository: "my-registry.io/my-org/my-repo",
 								Tag:        "v1.11.3_custom.0",
 							},
+							UpdateStrategy: ptr.To(v1alpha1.CoreDNSUpdateStrategyManual),
 						},
 						v1alpha1.DNSVariableName,
 						VariableName,
@@ -171,6 +200,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 							Image: &v1alpha1.Image{
 								Tag: "v1.11.3_custom.0",
 							},
+							UpdateStrategy: ptr.To(v1alpha1.CoreDNSUpdateStrategyManual),
 						},
 						v1alpha1.DNSVariableName,
 						VariableName,
@@ -205,7 +235,15 @@ var _ = Describe("Generate CoreDNS patches", func() {
 		},
 		{
 			patchTest: capitest.PatchTestDef{
-				Name:            "error if cannot find default CoreDNS version",
+				Name: "error if cannot find default CoreDNS version",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						v1alpha1.CoreDNS{},
+						v1alpha1.DNSVariableName,
+						VariableName,
+					),
+				},
 				RequestItem:     request.NewKubeadmControlPlaneTemplateRequestItem(""),
 				ExpectedFailure: true,
 			},
@@ -235,6 +273,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 								Repository: "my-registry.io/my-org/my-repo",
 								Tag:        "v1.11.3_custom.0",
 							},
+							UpdateStrategy: ptr.To(v1alpha1.CoreDNSUpdateStrategyManual),
 						},
 						v1alpha1.DNSVariableName,
 						VariableName,
