@@ -116,6 +116,8 @@ spec:
               systemDiskSize: 40Gi
               vcpuSockets: 2
               vcpusPerSocket: 1
+        dns:
+          coreDNS: {}
         encryptionAtRest:
           providers:
           - aescbc: {}

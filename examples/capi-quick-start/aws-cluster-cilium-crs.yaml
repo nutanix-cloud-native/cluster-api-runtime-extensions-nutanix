@@ -50,6 +50,8 @@ spec:
                 baseOS: ${AMI_LOOKUP_BASEOS}
                 format: ${AMI_LOOKUP_FORMAT}
                 org: "${AMI_LOOKUP_ORG}"
+        dns:
+          coreDNS: {}
         encryptionAtRest:
           providers:
           - aescbc: {}
