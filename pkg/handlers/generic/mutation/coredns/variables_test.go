@@ -15,10 +15,6 @@ import (
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
-const (
-	invalidUpdateStrategy = v1alpha1.CoreDNSUpdateStrategy("this:is:not:a:valid:update:strategy")
-)
-
 var testDefs = []capitest.VariableTestDef{{
 	Name: "unset",
 	Vals: v1alpha1.GenericClusterConfigSpec{
@@ -78,16 +74,6 @@ var testDefs = []capitest.VariableTestDef{{
 				Image: &v1alpha1.Image{
 					Tag: "this:is:not:a:valid:tag",
 				},
-			},
-		},
-	},
-	ExpectError: true,
-}, {
-	Name: "set an invalid updateStrategy",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		DNS: &v1alpha1.DNS{
-			CoreDNS: &v1alpha1.CoreDNS{
-				UpdateStrategy: ptr.To(invalidUpdateStrategy),
 			},
 		},
 	},
