@@ -46,7 +46,34 @@ var _ = Describe("Generate CoreDNS patches", func() {
 	testDefs := []testObj{
 		{
 			patchTest: capitest.PatchTestDef{
-				Name:        "unset variable",
+				Name: "unset variable",
+			},
+			cluster: clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: request.Namespace,
+					Labels: map[string]string{
+						clusterv1.ProviderNameLabel: "nutanix",
+					},
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "1.30.100",
+					},
+				},
+			},
+		},
+		{
+			patchTest: capitest.PatchTestDef{
+				Name: "variable with defaults",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						v1alpha1.CoreDNS{},
+						v1alpha1.DNSVariableName,
+						VariableName,
+					),
+				},
 				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 					Operation: "add",
@@ -205,8 +232,16 @@ var _ = Describe("Generate CoreDNS patches", func() {
 		},
 		{
 			patchTest: capitest.PatchTestDef{
-				Name:            "error if cannot find default CoreDNS version",
-				RequestItem:     request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				Name:        "error if cannot find default CoreDNS version",
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						v1alpha1.CoreDNS{},
+						v1alpha1.DNSVariableName,
+						VariableName,
+					),
+				},
 				ExpectedFailure: true,
 			},
 			cluster: clusterv1.Cluster{

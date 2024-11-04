@@ -48,3 +48,32 @@ Applying this configuration will result in the following value being set:
             imageRepository: "my-registry.io/my-org/my-repo"
             imageTag: "v1.11.3_custom.0"
     ```
+
+The CoreDNS version can also be updated automatically. To do this, set `coreDNS` to an empty object:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          dns:
+            coreDNS: {}
+```
+
+Applying this configuration will result in the following value being set,
+with the version of the CoreDNS image being set based on the cluster's Kubernetes version:
+
+- `KubeadmControlPlaneTemplate`:
+
+  - ```yaml
+    spec:
+      kubeadmConfigSpec:
+        clusterConfiguration:
+          dns:
+            imageTag: "v1.11.3"
+    ```

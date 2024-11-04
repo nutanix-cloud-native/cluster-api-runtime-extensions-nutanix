@@ -71,10 +71,11 @@ func (h *coreDNSPatchHandler) Mutate(
 		h.variableFieldPath...,
 	)
 	if err != nil {
-		if !variables.IsNotFoundError(err) {
-			return err
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("coreDNS variable not defined")
+			return nil
 		}
-		log.V(5).Info("coreDNS variable not defined")
+		return err
 	}
 
 	log = log.WithValues(
