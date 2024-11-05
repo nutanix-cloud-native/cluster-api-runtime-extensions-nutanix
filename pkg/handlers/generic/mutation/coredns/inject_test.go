@@ -71,6 +71,32 @@ var _ = Describe("Generate CoreDNS patches", func() {
 						v1alpha1.ClusterConfigVariableName,
 						v1alpha1.CoreDNS{},
 						v1alpha1.DNSVariableName,
+					),
+				},
+			},
+			cluster: clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: request.Namespace,
+					Labels: map[string]string{
+						clusterv1.ProviderNameLabel: "nutanix",
+					},
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "1.30.100",
+					},
+				},
+			},
+		},
+		{
+			patchTest: capitest.PatchTestDef{
+				Name: "variable with defaults",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						v1alpha1.CoreDNS{},
+						v1alpha1.DNSVariableName,
 						VariableName,
 					),
 				},
