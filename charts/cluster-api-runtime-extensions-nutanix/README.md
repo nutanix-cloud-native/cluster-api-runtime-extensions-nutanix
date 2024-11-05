@@ -38,8 +38,9 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | helmRepository.images.mindthegap.pullPolicy | string | `"IfNotPresent"` |  |
 | helmRepository.images.mindthegap.repository | string | `"ghcr.io/mesosphere/mindthegap"` |  |
 | helmRepository.images.mindthegap.tag | string | `"v1.16.0"` |  |
-| helmRepository.securityContext.fsGroup | int | `65534` |  |
-| helmRepository.securityContext.runAsUser | int | `65534` |  |
+| helmRepository.securityContext.fsGroup | int | `65532` |  |
+| helmRepository.securityContext.runAsGroup | int | `65532` |  |
+| helmRepository.securityContext.runAsUser | int | `65532` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-aws-ccm-helm-values-template"` |  |
 | hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.27" | string | `"v1.27.9"` |  |

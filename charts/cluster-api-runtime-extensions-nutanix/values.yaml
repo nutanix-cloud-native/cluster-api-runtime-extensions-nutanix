@@ -143,8 +143,9 @@ helmRepository:
       tag: "v1.16.0"
       pullPolicy: IfNotPresent
   securityContext:
-    runAsUser: 65534
-    fsGroup: 65534
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
 
 # -- Optional secrets used for pulling the container image
 imagePullSecrets: []
