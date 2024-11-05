@@ -29,14 +29,14 @@ release:
     - glob: ./examples/capi-quick-start/*.yaml
     - glob: release-metadata.yaml
       name_template: metadata.yaml
-    - glob: runtime-extension-components.yaml
+    - glob: runtime-extensions-components.yaml
     - glob: ./charts/{{ .ProjectName }}/defaultclusterclasses/*.yaml
     - glob: caren-images.txt
 
 before:
   hooks:
     - |
-      sh -ec 'cat <<EOF > runtime-extension-components.yaml
+      sh -ec 'cat <<EOF > runtime-extensions-components.yaml
       apiVersion: v1
       kind: Namespace
       metadata:
@@ -48,7 +48,7 @@ before:
         --set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
       EOF'
-    - sed -i -e 's/\${/$${/g' -e 's/v0.0.0-dev/v{{ trimprefix .Version "v" }}/g' runtime-extension-components.yaml
+    - sed -i -e 's/\${/$${/g' -e 's/v0.0.0-dev/v{{ trimprefix .Version "v" }}/g' runtime-extensions-components.yaml
     - |
       sh -ec 'gojq --yaml-input --yaml-output \
         ".releaseSeries |= (. + [{contract: \"v1beta1\", major: {{ .Major }}, minor: {{ .Minor }}}] | unique)" \

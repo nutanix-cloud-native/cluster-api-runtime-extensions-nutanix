@@ -12,7 +12,7 @@ key from this block below:
 ```yaml
 providers:
   - name: "caren"
-    url: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/v{{< param "version" >}}/runtime-extension-components.yaml"
+    url: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/v{{< param "version" >}}/runtime-extensions-components.yaml"
     type: "RuntimeExtensionProvider"
 ```
 

@@ -43,7 +43,7 @@ node_modules/
 .hugo_build.lock
 
 /cluster.yaml
-/runtime-extension-components.yaml
+/runtime-extensions-components.yaml
 /_artifacts/
 test/e2e/config/caren-envsubst.yaml
 /release-metadata.yaml
