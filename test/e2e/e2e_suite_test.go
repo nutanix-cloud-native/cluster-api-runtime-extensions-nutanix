@@ -11,16 +11,22 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/klog/v2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capie2eframework "sigs.k8s.io/cluster-api/test/framework"
@@ -109,6 +115,39 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		scheme,
 		useExistingCluster,
 	)
+
+	By("Overriding coreDNS resolver")
+	// override coredns resolver to 8.8.8.8 and restart coredns deployment
+	// read the dns-override.yaml file
+	filePath, _ := filepath.Abs("../../hack/kind/dns-override.yaml")
+	yamlFile, err := os.ReadFile(filePath)
+	Expect(err).To(BeNil(), "Failed to read the dns-override.yaml file")
+
+	// decode the yaml file into a Kubernetes object
+	decode := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(yamlFile), 4096)
+	configMap := &corev1.ConfigMap{}
+	err = decode.Decode(&configMap)
+	Expect(err).To(BeNil(), "Failed to decode the yaml file into a Kubernetes object")
+
+	_, err = bootstrapClusterProxy.GetClientSet().
+		CoreV1().
+		ConfigMaps(configMap.GetNamespace()).
+		Update(context.Background(), configMap, metav1.UpdateOptions{})
+	Expect(
+		err,
+	).To(BeNil(), "Failed to update the coredns deployment with the dns-override.yaml file")
+
+	timeNow := time.Now().Format(time.RFC3339)
+	patch := fmt.Sprintf(
+		`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":%q}}}}}`,
+		timeNow,
+	)
+
+	_, err = bootstrapClusterProxy.GetClientSet().
+		AppsV1().
+		Deployments("kube-system").
+		Patch(context.Background(), "coredns", types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	Expect(err).To(BeNil(), "Failed to restart the coredns deployment")
 
 	By("Initializing the bootstrap cluster")
 	initBootstrapCluster(bootstrapClusterProxy, e2eConfig, clusterctlConfigPath, artifactFolder)
