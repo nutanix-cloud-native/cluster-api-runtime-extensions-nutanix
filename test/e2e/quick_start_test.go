@@ -280,6 +280,18 @@ var _ = Describe("Quick start", func() {
 													},
 												)
 
+												WaitForCoreDNSImageVersion(
+													ctx,
+													WaitForDNSUpgradeInput{
+														WorkloadCluster: workloadCluster,
+														ClusterProxy:    proxy,
+														DeploymentIntervals: testE2EConfig.GetIntervals(
+															flavour,
+															"wait-deployment",
+														),
+													},
+												)
+
 												WaitForCoreDNSToBeReadyInWorkloadCluster(
 													ctx,
 													WaitForCoreDNSToBeReadyInWorkloadClusterInput{

@@ -5,6 +5,7 @@ package coredns
 
 import (
 	"context"
+	"errors"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,6 +16,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	corednsversions "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/versions"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
@@ -24,6 +26,10 @@ import (
 const (
 	// VariableName is the external patch variable name.
 	VariableName = "coreDNS"
+)
+
+var ErrDefaultCoreDNSVersionNotFound = errors.New(
+	"could not determine default CoreDNS version based on the Kubernetes version",
 )
 
 type coreDNSPatchHandler struct {
@@ -53,7 +59,7 @@ func (h *coreDNSPatchHandler) Mutate(
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ ctrlclient.ObjectKey,
-	_ mutation.ClusterGetter,
+	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
@@ -66,7 +72,7 @@ func (h *coreDNSPatchHandler) Mutate(
 	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.V(5).Info("coreDNSVar variable not defined")
+			log.V(5).Info("coreDNS variable not defined")
 			return nil
 		}
 		return err
@@ -81,33 +87,51 @@ func (h *coreDNSPatchHandler) Mutate(
 		coreDNSVar,
 	)
 
+	cluster, err := clusterGetter(ctx)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to get cluster for CoreDNS mutation handler",
+		)
+		return err
+	}
+
 	return patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("setting CoreDNS version if needed")
+			).Info("setting CoreDNS version")
 
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
 			}
 
-			if coreDNSVar.Image == nil {
-				return nil
+			dns := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.DNS
+
+			// Set the CoreDNS image from the variable if it is defined.
+			if coreDNSVar.Image != nil {
+				if coreDNSVar.Image.Tag != "" {
+					dns.ImageTag = coreDNSVar.Image.Tag
+				}
+				if coreDNSVar.Image.Repository != "" {
+					dns.ImageRepository = coreDNSVar.Image.Repository
+				}
 			}
 
-			dns := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.DNS
+			// If the CoreDNS image tag is still not set, set the image tag to the default CoreDNS version based on the
+			// Kubernetes version.
+			if dns.ImageTag == "" {
+				defaultCoreDNSVersion, found := corednsversions.GetCoreDNSVersion(
+					cluster.Spec.Topology.Version,
+				)
+				if !found {
+					return ErrDefaultCoreDNSVersionNotFound
+				}
 
-			if coreDNSVar.Image.Tag != "" {
-				dns.ImageTag = coreDNSVar.Image.Tag
+				dns.ImageTag = defaultCoreDNSVersion
 			}
-
-			if coreDNSVar.Image.Repository != "" {
-				dns.ImageRepository = coreDNSVar.Image.Repository
-			}
-
-			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.DNS = dns
 
 			return nil
 		})

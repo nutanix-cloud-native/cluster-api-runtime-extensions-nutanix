@@ -48,6 +48,8 @@ spec:
               - end: 198.18.1.30
                 start: 198.18.1.21
             provider: MetalLB
+        dns:
+          coreDNS: {}
         encryptionAtRest:
           providers:
           - aescbc: {}

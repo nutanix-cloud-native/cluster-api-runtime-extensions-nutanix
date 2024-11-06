@@ -322,6 +322,8 @@ type DNS struct {
 
 type CoreDNS struct {
 	// Image required for overriding Kubernetes DNS image details.
+	// If the image version is not specified,
+	// the default version based on the cluster's Kubernetes version will be used.
 	// +kubebuilder:validation:Optional
 	Image *Image `json:"image,omitempty"`
 }
