@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.22.0 (2024-11-06)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: set default CoreDNS version by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/959
+### Fixes 🔧
+* fix: Use correct filename for runtime extensions component YAML by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/960
+### Other Changes
+* docs: Update hugo and docsy by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/958
+* refactor: Update helm registry initialization by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/961
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.21.0...v0.22.0
+
 ## 0.21.0 (2024-10-29)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
