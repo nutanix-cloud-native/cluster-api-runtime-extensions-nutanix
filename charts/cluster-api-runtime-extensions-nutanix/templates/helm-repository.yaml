@@ -3,7 +3,7 @@
 # This file contains the manifests to run a helmRepository deployment which contains helm charts for our addons.
 # The pod is built via goreleaser with configuration from hack/addons.
 #
-{{ if .Values.selfHostedRegistry }}
+{{ if .Values.helmRepository.enabled }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -62,8 +62,8 @@ spec:
     spec:
       initContainers:
       - name: copy-charts
-        image: "{{ .Values.helmRepositoryImage.repository }}:{{ default $.Chart.AppVersion .Values.helmRepositoryImage.tag }}"
-        command: ["/bin/sh", "-c", "cp /charts/*.tar /helm-charts"]
+        image: "{{ .Values.helmRepository.images.bundleInitializer.repository }}:{{ default $.Chart.AppVersion .Values.helmRepository.images.bundleInitializer.tag }}"
+        command: ["/bin/cp", "-r", "/charts/",  "/helm-charts/bundles/"]
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         volumeMounts:
         - name: charts-volume
@@ -74,13 +74,12 @@ spec:
           - name: serve
             protocol: TCP
             containerPort: 5000
-        image: "{{ .Values.helmRepositoryImage.repository }}:{{ default $.Chart.AppVersion .Values.helmRepositoryImage.tag }}"
+        image: "{{ .Values.helmRepository.images.mindthegap.repository }}:{{ .Values.helmRepository.images.mindthegap.tag }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
-        command: ["/usr/bin/mindthegap"]
         args:
           - serve
           - bundle
-          - --bundle=/helm-charts/helm-charts-*.tar
+          - --bundle=/helm-charts/bundles/helm-charts-*.tar
           - --listen-port=5000
           - --listen-address=0.0.0.0
           - --tls-private-key-file=/certs/tls.key
@@ -101,7 +100,7 @@ spec:
           periodSeconds: 1
       priorityClassName: {{ .Values.priorityClassName }}
       securityContext:
-        {{ with .Values.helmRepositorySecurityContext }}
+        {{ with .Values.helmRepository.securityContext }}
         {{- toYaml . | nindent 8}}
         {{- end }}
       volumes:

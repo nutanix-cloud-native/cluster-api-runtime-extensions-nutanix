@@ -9,15 +9,14 @@ readonly SCRIPT_DIR
 source "${SCRIPT_DIR}/../common.sh"
 
 ASSETS_DIR="$(mktemp -d -p "${TMPDIR:-/tmp}")"
+trap 'rm -rf "${ASSETS_DIR}"' EXIT
 
 cp "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml" "${ASSETS_DIR}"
 
-# this sed line is needed because the go library is unable to parse yaml with a template string.
-sed -i s/"{{ .Values.helmAddonsConfigMap }}"/placeholder/g "${ASSETS_DIR}/helm-config.yaml"
 go run "${GIT_REPO_ROOT}/hack/tools/mindthegap-helm-reg/main.go" --input-configmap-file="${ASSETS_DIR}/helm-config.yaml" --output-file="${ASSETS_DIR}/repos.yaml"
 
 # add warning not to edit file directly
-cat <<EOF >"${GIT_REPO_ROOT}/hack/addons/mindthegap-helm-registry/repos.yaml"
+cat <<EOF >"${GIT_REPO_ROOT}/hack/addons/helm-chart-bundler/repos.yaml"
 $(cat "${GIT_REPO_ROOT}/hack/license-header.yaml.txt")
 
 #=================================================================

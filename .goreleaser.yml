@@ -44,7 +44,7 @@ before:
       $(helm template {{ .ProjectName }} ./charts/{{ .ProjectName }} \
         --namespace caren-system \
         --set-string image.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }}{{ end }} \
-        --set-string helmRepositoryImage.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }} \
+        --set-string helmRepository.images.bundleInitializer.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }} \
         --set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
       )
       EOF'
@@ -103,9 +103,9 @@ dockers:
   - image_templates:
       - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-amd64'
     use: buildx
-    dockerfile: ./hack/addons/mindthegap-helm-registry/Dockerfile
+    dockerfile: ./hack/addons/helm-chart-bundler/Dockerfile
     extra_files:
-      - hack/addons/mindthegap-helm-registry/repos.yaml
+      - hack/addons/helm-chart-bundler/repos.yaml
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--pull"
@@ -119,9 +119,9 @@ dockers:
   - image_templates:
       - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-arm64'
     use: buildx
-    dockerfile: ./hack/addons/mindthegap-helm-registry/Dockerfile
+    dockerfile: ./hack/addons/helm-chart-bundler/Dockerfile
     extra_files:
-      - hack/addons/mindthegap-helm-registry/repos.yaml
+      - hack/addons/helm-chart-bundler/repos.yaml
     build_flag_templates:
       - "--platform=linux/arm64"
       - "--pull"

@@ -110,8 +110,6 @@ hooks:
 
 helmAddonsConfigMap: default-helm-addons-config
 
-selfHostedRegistry: true
-
 deployDefaultClusterClasses: true
 
 # The ClusterClass and the Templates it references must be in the same namespace
@@ -132,10 +130,21 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
-helmRepositoryImage:
-  repository: ghcr.io/nutanix-cloud-native/caren-helm-reg
-  tag: ""
-  pullPolicy: IfNotPresent
+helmRepository:
+  enabled: true
+  images:
+    bundleInitializer:
+      repository: ghcr.io/nutanix-cloud-native/caren-helm-reg
+      tag: ""
+      pullPolicy: IfNotPresent
+    mindthegap:
+      repository: ghcr.io/mesosphere/mindthegap
+      tag: "v1.16.0"
+      pullPolicy: IfNotPresent
+  securityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
 
 # -- Optional secrets used for pulling the container image
 imagePullSecrets: []
@@ -159,12 +168,6 @@ resources:
 
 securityContext:
   runAsUser: 65532
-
-# The helm-repository containers are based on an Alpine image with a different nonroot user
-helmRepositorySecurityContext:
-  runAsUser: 65534
-  runAsGroup: 65534
-  fsGroup: 65534
 
 service:
   annotations: {}
