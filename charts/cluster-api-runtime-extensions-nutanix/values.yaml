@@ -110,8 +110,6 @@ hooks:
 
 helmAddonsConfigMap: default-helm-addons-config
 
-selfHostedRegistry: true
-
 deployDefaultClusterClasses: true
 
 # The ClusterClass and the Templates it references must be in the same namespace
@@ -133,6 +131,7 @@ image:
   pullPolicy: IfNotPresent
 
 helmRepository:
+  enabled: true
   images:
     bundleInitializer:
       repository: ghcr.io/nutanix-cloud-native/caren-helm-reg

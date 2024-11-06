@@ -21,5 +21,3 @@ $(cat "${GIT_REPO_ROOT}/hack/license-header.yaml.txt")
 #=================================================================
 $(cat "${ASSETS_DIR}/helm-config.yaml")
 EOF
-
-sed -i s/placeholder/"{{ .Values.helmAddonsConfigMap }}"/g "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"

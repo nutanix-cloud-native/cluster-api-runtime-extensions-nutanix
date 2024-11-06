@@ -40,6 +40,9 @@
         },
         "helmRepository": {
             "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
                 "images": {
                     "properties": {
                         "bundleInitializer": {
@@ -598,9 +601,6 @@
                 }
             },
             "type": "object"
-        },
-        "selfHostedRegistry": {
-            "type": "boolean"
         },
         "service": {
             "properties": {

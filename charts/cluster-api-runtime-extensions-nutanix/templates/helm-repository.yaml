@@ -3,7 +3,7 @@
 # This file contains the manifests to run a helmRepository deployment which contains helm charts for our addons.
 # The pod is built via goreleaser with configuration from hack/addons.
 #
-{{ if .Values.selfHostedRegistry }}
+{{ if .Values.helmRepository.enabled }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:

@@ -4,16 +4,14 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"flag"
-	"fmt"
+	"log"
 	"os"
 	"path"
 
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	yamlDecode "k8s.io/apimachinery/pkg/util/yaml"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type HelmChartFromConfigMap struct {
@@ -31,8 +29,6 @@ type HelmChartsConfig struct {
 	Repositories map[string]Repository `yaml:"repositories,omitempty"`
 }
 
-var log = ctrl.LoggerFrom(context.Background())
-
 func main() {
 	args := os.Args
 	var (
@@ -46,27 +42,32 @@ func main() {
 		"input configmap file to create the mindthegap repo file from")
 	err := flagSet.Parse(args[1:])
 	if err != nil {
-		log.Error(err, "failed to parse args")
+		log.Fatalln("failed to parse args:", err)
+	}
+	if outputFile == "" {
+		log.Fatalln("output file is required")
+	}
+	if inputConfigMapFile == "" {
+		log.Fatalln("input configmap file is required")
 	}
 	fullPath := inputConfigMapFile
 	if !path.IsAbs(fullPath) {
 		wd, err := os.Getwd()
 		if err != nil {
-			log.Error(err, "failed to get wd")
-			return
+			log.Fatalln("failed to get wd:", err)
 		}
 		fullPath = path.Join(wd, inputConfigMapFile)
 	}
 	f, err := os.Open(fullPath)
 	if err != nil {
-		log.Error(err, "failed to open file")
-		return
+		log.Fatalln("failed to open file:", err)
 	}
 	defer f.Close()
 	cm := &corev1.ConfigMap{}
 	err = yamlDecode.NewYAMLOrJSONDecoder(f, 1024).Decode(cm)
 	if err != nil {
-		log.Error(err, fmt.Sprintf("failed to unmarshal file %s", fullPath))
+		f.Close()
+		log.Fatalf("failed to unmarshal file %s: %v\n", fullPath, err)
 	}
 	out := HelmChartsConfig{
 		map[string]Repository{},
@@ -75,8 +76,7 @@ func main() {
 		var settings HelmChartFromConfigMap
 		err = yaml.Unmarshal([]byte(info), &settings)
 		if err != nil {
-			log.Error(err, "failed unmarshl settings")
-			return
+			log.Fatalln("failed to unmarshal settings:", err)
 		}
 		out.Repositories[settings.Name] = Repository{
 			RepoURL: settings.Repository,
@@ -89,23 +89,23 @@ func main() {
 	}
 	b, err := yaml.Marshal(out)
 	if err != nil {
-		log.Error(err, fmt.Sprintf("failed to marshal obj %v", out))
+		log.Fatalf("failed to marshal obj %+v: %v", out, err)
 	}
 	fullOutputfilePath := outputFile
 	if !path.IsAbs(outputFile) {
 		wd, err := os.Getwd()
 		if err != nil {
-			log.Error(err, "failed")
+			log.Fatalln("failed:", err)
 		}
 		fullOutputfilePath = path.Join(wd, outputFile)
 	}
 	f, err = os.OpenFile(fullOutputfilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 	if err != nil {
-		log.Error(err, "failed to create file")
+		log.Fatalln("failed to create file:", err)
 	}
 	defer f.Close()
 	_, err = bytes.NewBuffer(b).WriteTo(f)
 	if err != nil {
-		log.Error(err, "failed to write to file")
+		log.Fatalln("failed to write to file:", err)
 	}
 }

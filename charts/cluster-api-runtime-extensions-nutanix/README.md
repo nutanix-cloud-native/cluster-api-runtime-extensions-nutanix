@@ -32,6 +32,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | deployment.replicas | int | `1` |  |
 | env | object | `{}` |  |
 | helmAddonsConfigMap | string | `"default-helm-addons-config"` |  |
+| helmRepository.enabled | bool | `true` |  |
 | helmRepository.images.bundleInitializer.pullPolicy | string | `"IfNotPresent"` |  |
 | helmRepository.images.bundleInitializer.repository | string | `"ghcr.io/nutanix-cloud-native/caren-helm-reg"` |  |
 | helmRepository.images.bundleInitializer.tag | string | `""` |  |
@@ -102,7 +103,6 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | resources.requests.cpu | string | `"100m"` |  |
 | resources.requests.memory | string | `"128Mi"` |  |
 | securityContext.runAsUser | int | `65532` |  |
-| selfHostedRegistry | bool | `true` |  |
 | service.annotations | object | `{}` |  |
 | service.port | int | `443` |  |
 | service.type | string | `"ClusterIP"` |  |
