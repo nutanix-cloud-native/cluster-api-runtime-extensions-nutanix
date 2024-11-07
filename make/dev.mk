@@ -11,7 +11,7 @@ dev.run-on-kind: SNAPSHOT_VERSION = $(shell gojq -r '.version+"-"+.runtime.goarc
 dev.run-on-kind:
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
 		ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION) \
-		ghcr.io/nutanix-cloud-native/caren-helm-reg:$(SNAPSHOT_VERSION)
+		ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer:$(SNAPSHOT_VERSION)
 	helm upgrade --install cluster-api-runtime-extensions-nutanix ./charts/cluster-api-runtime-extensions-nutanix \
 		--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
 		--set-string image.tag=$(SNAPSHOT_VERSION) \

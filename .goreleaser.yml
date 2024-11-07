@@ -101,7 +101,7 @@ archives:
 
 dockers:
   - image_templates:
-      - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-amd64'
+      - 'ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer:v{{ trimprefix .Version "v" }}-amd64'
     use: buildx
     dockerfile: ./hack/addons/helm-chart-bundler/Dockerfile
     extra_files:
@@ -111,13 +111,13 @@ dockers:
       - "--pull"
       - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.created={{.CommitDate}}"
-      - "--label=org.opencontainers.image.title=caren-helm-reg"
+      - "--label=org.opencontainers.image.title=cluster-api-runtime-extensions-bundle-initializer"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.source={{.GitURL}}"
     goarch: amd64
   - image_templates:
-      - 'ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-arm64'
+      - 'ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer:v{{ trimprefix .Version "v" }}-arm64'
     use: buildx
     dockerfile: ./hack/addons/helm-chart-bundler/Dockerfile
     extra_files:
@@ -127,17 +127,17 @@ dockers:
       - "--pull"
       - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.created={{.CommitDate}}"
-      - "--label=org.opencontainers.image.title=caren-helm-reg"
+      - "--label=org.opencontainers.image.title=cluster-api-runtime-extensions-bundle-initializer"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.source={{.GitURL}}"
     goarch: arm64
 
 docker_manifests:
-  - name_template: ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}
+  - name_template: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer:v{{ trimprefix .Version "v" }}
     image_templates:
-      - ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-amd64
-      - ghcr.io/nutanix-cloud-native/caren-helm-reg:v{{ trimprefix .Version "v" }}-arm64
+      - ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer:v{{ trimprefix .Version "v" }}-amd64
+      - ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer:v{{ trimprefix .Version "v" }}-arm64
 
 kos:
   - id: cluster-api-runtime-extensions-nutanix

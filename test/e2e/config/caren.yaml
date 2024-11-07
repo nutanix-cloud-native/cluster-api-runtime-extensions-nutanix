@@ -6,7 +6,7 @@ managementClusterName: caren-e2e
 images:
   - name: ko.local/cluster-api-runtime-extensions-nutanix:${E2E_IMAGE_TAG}
     loadBehavior: mustLoad
-  - name: ghcr.io/nutanix-cloud-native/caren-helm-reg:${E2E_IMAGE_TAG}
+  - name: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer:${E2E_IMAGE_TAG}
     loadBehavior: mustLoad
 
 providers:
