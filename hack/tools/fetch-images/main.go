@@ -93,7 +93,7 @@ func main() {
 	if carenVersion != "" {
 		i.stringValues = []string{
 			fmt.Sprintf("image.tag=%s", carenVersion),
-			fmt.Sprintf("helmRepositoryImage.tag=%s", carenVersion),
+			fmt.Sprintf("helmRepository.images.bundleInitializer.tag=%s", carenVersion),
 		}
 	}
 	images, err := getImagesForChart(i)
