@@ -77,36 +77,36 @@ repos:
   rev: v4.6.0
   hooks:
   - id: trailing-whitespace
-    stages: [commit]
+    stages: [pre-commit]
   - id: check-yaml
     args: ["-m", "--unsafe"]
-    stages: [commit]
+    stages: [pre-commit]
     exclude: ^charts/.+/(templates|addons)/.+\.ya?ml$
   - id: mixed-line-ending
     args: ["-f", "lf"]
     exclude: \.bat$
-    stages: [commit]
+    stages: [pre-commit]
   - id: no-commit-to-branch
-    stages: [commit]
+    stages: [pre-commit]
   - id: check-added-large-files
-    stages: [commit]
+    stages: [pre-commit]
     exclude: ^pkg/handlers/cni/calico/manifests/tigera-operator-configmap.yaml$
   - id: check-case-conflict
-    stages: [commit]
+    stages: [pre-commit]
   - id: check-merge-conflict
-    stages: [commit]
+    stages: [pre-commit]
   - id: check-executables-have-shebangs
-    stages: [commit]
+    stages: [pre-commit]
   - id: check-symlinks
-    stages: [commit]
+    stages: [pre-commit]
   - id: end-of-file-fixer
-    stages: [commit]
+    stages: [pre-commit]
     exclude: ^charts/cluster-api-runtime-extensions-nutanix/README.md$
 - repo: https://github.com/rhysd/actionlint
   rev: v1.7.1
   hooks:
   - id: actionlint-system
-    stages: [commit]
+    stages: [pre-commit]
 - repo: https://github.com/jorisroovers/gitlint
   rev: v0.19.1
   hooks:
@@ -117,28 +117,28 @@ repos:
   rev: 3.0.0
   hooks:
   - id: shfmt
-    stages: [commit]
+    stages: [pre-commit]
     args: ["-s", "-i", "2"]
   - id: script-must-have-extension
-    stages: [commit]
+    stages: [pre-commit]
 - repo: https://github.com/shellcheck-py/shellcheck-py
   rev: v0.10.0.1
   hooks:
   - id: shellcheck
-    stages: [commit]
+    stages: [pre-commit]
     args: ["-e", "SC2211", "-x"]
 - repo: https://github.com/igorshubovych/markdownlint-cli
   rev: v0.41.0
   hooks:
   - id: markdownlint
-    stages: [commit]
+    stages: [pre-commit]
     exclude: ^(CHANGELOG.md|charts/.+/README.md|.github/pull_request_template.md)$
 - repo: https://github.com/Lucas-C/pre-commit-hooks
   rev: v1.5.5
   hooks:
   - id: insert-license
     name: License headers - Go
-    stages: [commit]
+    stages: [pre-commit]
     files: "(.*\\.go|go.mod)$"
     exclude: ^(api/external/|internal/test)
     args:
@@ -149,7 +149,7 @@ repos:
       - --allow-past-years
   - id: insert-license
     name: License headers - YAML and Makefiles
-    stages: [commit]
+    stages: [pre-commit]
     files: (^Makefile|\.(ya?ml|mk))$
     exclude: ^(internal/test|pkg/handlers/.+/embedded|examples|charts/cluster-api-runtime-extensions-nutanix/(defaultclusterclasses|addons))/.+\.ya?ml|docs/static/helm/index\.yaml|charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml$
     args:
@@ -158,7 +158,7 @@ repos:
       - --allow-past-years
   - id: insert-license
     name: License headers - Markdown
-    stages: [commit]
+    stages: [pre-commit]
     files: \.md$
     exclude: ^(CHANGELOG.md$|docs/|.github/pull_request_template.md$)
     args:

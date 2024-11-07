@@ -66,9 +66,9 @@ jobs:
         config:
           - {"provider": "Nutanix", "kubernetesVersion": "v1.29.6", "osImage": "nkp-rocky-9.4-release-1.29.6-20240816215147"}
           - {"provider": "Nutanix", "kubernetesVersion": "v1.30.5", "osImage": "nkp-rocky-9.4-release-1.30.5-20240930171619"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.29.8"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.30.5"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.31.0"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.29.9"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.30.6"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.31.2"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "AWS", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
@@ -95,9 +95,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - {"provider": "Docker", "kubernetesVersion": "v1.29.8"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.30.5"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.31.0"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.29.9"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.30.6"}
+          - {"provider": "Docker", "kubernetesVersion": "v1.31.2"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "Nutanix", "kubernetesVersion": "v1.29.6"}
           # - {"provider": "AWS", "kubernetesVersion": "v1.29.6"}
