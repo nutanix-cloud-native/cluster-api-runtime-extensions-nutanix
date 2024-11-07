@@ -246,7 +246,7 @@ jobs:
             kind load docker-image \
               --name "${KIND_CLUSTER_NAME}" \
               "ko.local/cluster-api-runtime-extensions-nutanix:${{ steps.export-image-tag.outputs.test-image-tag }}" \
-              "ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer:${{ steps.export-image-tag.outputs.test-image-tag }}"
+              "ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:${{ steps.export-image-tag.outputs.test-image-tag }}"
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager

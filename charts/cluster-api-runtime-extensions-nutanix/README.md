@@ -34,7 +34,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | helmAddonsConfigMap | string | `"default-helm-addons-config"` |  |
 | helmRepository.enabled | bool | `true` |  |
 | helmRepository.images.bundleInitializer.pullPolicy | string | `"IfNotPresent"` |  |
-| helmRepository.images.bundleInitializer.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer"` |  |
+| helmRepository.images.bundleInitializer.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer"` |  |
 | helmRepository.images.bundleInitializer.tag | string | `""` |  |
 | helmRepository.images.mindthegap.pullPolicy | string | `"IfNotPresent"` |  |
 | helmRepository.images.mindthegap.repository | string | `"ghcr.io/mesosphere/mindthegap"` |  |

@@ -134,7 +134,7 @@ helmRepository:
   enabled: true
   images:
     bundleInitializer:
-      repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-bundle-initializer
+      repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer
       tag: ""
       pullPolicy: IfNotPresent
     mindthegap:
