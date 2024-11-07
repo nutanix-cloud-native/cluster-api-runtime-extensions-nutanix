@@ -25,20 +25,20 @@
     "ko@latest",
     "kubebuilder@latest",
     "kubectl@latest",
+    "kubernetes-controller-tools@latest",
     "kustomize@latest",
     "pre-commit@latest",
     "rsync@latest",
+    "setup-envtest@latest",
     "shfmt@latest",
     "yamale@latest",
     "yamllint@latest",
     "yq-go@latest",
     "path:./hack/flakes#clusterctl-aws",
-    "path:./hack/flakes#controller-gen",
     "path:./hack/flakes#goprintconst",
     "path:./hack/flakes#govulncheck",
     "path:./hack/flakes#helm-with-plugins",
-    "path:./hack/flakes#release-please",
-    "path:./hack/flakes#setup-envtest"
+    "path:./hack/flakes#release-please"
   ],
   "shell": {
     "scripts": {

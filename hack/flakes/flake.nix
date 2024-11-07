@@ -12,21 +12,6 @@
         packages = rec {
           govulncheck = pkgs.govulncheck.override { buildGoModule = buildGo123Module; };
 
-          setup-envtest = buildGo123Module rec {
-            name = "setup-envtest";
-            version = "0.18.5";
-            src = fetchFromGitHub {
-              owner = "kubernetes-sigs";
-              repo = "controller-runtime";
-              rev = "v${version}";
-              hash = "sha256-WGq5juv+QET0PHXW8uj9fV8D3NTSey3RqwvLxJDU014=";
-            } + "/tools/setup-envtest";
-            doCheck = false;
-            subPackages = [ "." ];
-            vendorHash = "sha256-tFWXROKZ+5rrHdiY3dFHAo5g5TKYfc8HgLSouD7bI+s=";
-            ldflags = [ "-s" "-w" ];
-          };
-
           goprintconst = buildGo123Module rec {
             name = "goprintconst";
             version = "0.0.1-dev";
@@ -44,16 +29,16 @@
 
           clusterctl-aws = buildGo123Module rec {
             name = "clusterctl-aws";
-            version = "2.6.1";
+            version = "2.7.1";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-y3tN/OciKNcqvcROmSKPcehW/4+dBWmGESZYjmYbkBo=";
+              hash = "sha256-l2ZCylr47vRYw/HyYaeKfSvH1Kt9YQPwLoHLU2h+AE4=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
-            vendorHash = "sha256-WRKViPMlJVV3uS+TK6Rd4EoEQ5ttdXDoOqoYiuga1WE=";
+            vendorHash = "sha256-iAheoh9VMSdTVvJzhXZBFpGDoDsGO8OV/sYjDEsf8qw=";
             ldflags = let modPrefix = "sigs.k8s.io/cluster-api-provider-aws/v2";
                           v = "${modPrefix}/version";
                           c = "${modPrefix}/cmd/clusterawsadm/cmd/version"; in [
@@ -84,21 +69,6 @@
             };
             npmDepsHash = "sha256-UXWzBUrZCIklITav3VShL+whiWmvLkFw+/i/k0s13k0=";
             dontNpmBuild = true;
-          };
-
-          controller-gen = buildGo123Module rec {
-            name = "controller-gen";
-            version = "0.16.0";
-            src = fetchFromGitHub {
-              owner = "kubernetes-sigs";
-              repo = "controller-tools";
-              rev = "v${version}";
-              hash = "sha256-0JSzk57XkvlP46SdC50zOtcx+XecGmFfkB+8XyGx6Ps=";
-            };
-            doCheck = false;
-            subPackages = [ "./cmd/controller-gen" ];
-            vendorHash = "sha256-3p9K08WMqDRHHa9116//3lFeaMtRaipD4LyisaKWV7I=";
-            ldflags = [ "-s" "-w" ];
           };
 
           helm-schema = buildGo123Module rec {
