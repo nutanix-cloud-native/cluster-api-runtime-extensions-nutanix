@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.23.0 (2024-11-13)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Build with go 1.23.3 and upgrade all tools by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/967
+### Fixes 🔧
+* fix: Update mindthegap to fix cert rotation by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/971
+* fix: image registries with no credentials but with a CA by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/927
+### Other Changes
+* build: set helmRepository tag in list-images target by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/968
+* build: rename caren-helm-reg to better match role by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/969
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.22.0...v0.23.0
+
 ## 0.22.0 (2024-11-06)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
