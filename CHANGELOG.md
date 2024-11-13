@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.10 (2024-11-13)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Update mindthegap to fix cert rotation by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/972
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.9...v0.14.10
+
 ## 0.14.9 (2024-10-02)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
