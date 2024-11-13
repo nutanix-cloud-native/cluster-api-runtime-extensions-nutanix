@@ -116,7 +116,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	}
 
 	if globalMirrorErr == nil {
-		mirrorCredentials, generateErr := mirrorConfigFromGlobalImageRegistryMirror(
+		mirrorCredentials, generateErr := mirrorWithOptionalCredentialsFromGlobalImageRegistryMirror(
 			ctx,
 			h.client,
 			globalMirror,
@@ -131,19 +131,19 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		)
 	}
 
-	needCredentials, err := needImageRegistryCredentialsConfiguration(
+	registriesThatNeedConfiguration, err := providerConfigsThatNeedConfiguration(
 		registriesWithOptionalCredentials,
 	)
 	if err != nil {
 		return err
 	}
-	if !needCredentials {
-		log.V(5).Info("Only Global Registry Mirror is defined but credentials are not needed")
+	if len(registriesThatNeedConfiguration) == 0 {
+		log.V(5).Info("Image registry credentials are not needed")
 		return nil
 	}
 
 	files, commands, generateErr := generateFilesAndCommands(
-		registriesWithOptionalCredentials,
+		registriesThatNeedConfiguration,
 		clusterKey.Name,
 	)
 	if generateErr != nil {
@@ -185,7 +185,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				return err
 			}
 
-			err = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
+			err = createSecretIfNeeded(ctx, h.client, registriesThatNeedConfiguration, cluster)
 			if err != nil {
 				return err
 			}
@@ -243,7 +243,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				return err
 			}
 
-			err = createSecretIfNeeded(ctx, h.client, registriesWithOptionalCredentials, cluster)
+			err = createSecretIfNeeded(ctx, h.client, registriesThatNeedConfiguration, cluster)
 			if err != nil {
 				return err
 			}
@@ -332,12 +332,13 @@ func registryWithOptionalCredentialsFromImageRegistryCredentials(
 	if secret != nil {
 		registryWithOptionalCredentials.Username = string(secret.Data["username"])
 		registryWithOptionalCredentials.Password = string(secret.Data["password"])
+		registryWithOptionalCredentials.HasCACert = secretHasCACert(secret)
 	}
 
 	return registryWithOptionalCredentials, nil
 }
 
-func mirrorConfigFromGlobalImageRegistryMirror(
+func mirrorWithOptionalCredentialsFromGlobalImageRegistryMirror(
 	ctx context.Context,
 	c ctrlclient.Client,
 	mirror v1alpha1.GlobalImageRegistryMirror,
@@ -365,6 +366,7 @@ func mirrorConfigFromGlobalImageRegistryMirror(
 	if secret != nil {
 		mirrorCredentials.Username = string(secret.Data["username"])
 		mirrorCredentials.Password = string(secret.Data["password"])
+		mirrorCredentials.HasCACert = secretHasCACert(secret)
 	}
 
 	return mirrorCredentials, nil
@@ -438,31 +440,35 @@ func createSecretIfNeeded(
 // This handler reads input from two user provided variables: globalImageRegistryMirror and imageRegistries.
 // We expect if imageRegistries is set it will either have static credentials
 // or be for a registry where the credential plugin returns the credentials, ie ECR, GCR, ACR, etc,
+// or have no credentials set but to contain a CA cert,
 // and if that is not the case we assume the users missed setting static credentials and return an error.
 // However, in addition to passing credentials with the globalImageRegistryMirror variable,
 // it can also be used to only set Containerd mirror configuration,
-// in that case it valid for static credentials to not be set and will return false, no error
+// in which case it is valid for static credentials to not be set and will be skipped, no error
 // and this handler will skip generating any credential plugin related configuration.
-func needImageRegistryCredentialsConfiguration(configs []providerConfig) (bool, error) {
+func providerConfigsThatNeedConfiguration(configs []providerConfig) ([]providerConfig, error) {
+	var needConfiguration []providerConfig //nolint:prealloc // We don't know the size of the slice yet.
 	for _, config := range configs {
 		requiresStaticCredentials, err := config.requiresStaticCredentials()
 		if err != nil {
-			return false,
+			return nil,
 				fmt.Errorf("error determining if Image Registry is a supported provider: %w", err)
 		}
 		// verify the credentials are actually set if the plugin requires static credentials
 		if config.isCredentialsEmpty() && requiresStaticCredentials {
-			// not setting credentials for a mirror is valid
-			// but if it's the only configuration then return false here and exit the handler early
-			if config.Mirror {
-				if len(configs) == 1 {
-					return false, nil
-				}
-			} else {
-				return false, fmt.Errorf("invalid image registry: %s: %w", config.URL, ErrCredentialsNotFound)
+			if config.Mirror || config.HasCACert {
+				// not setting credentials for a mirror is valid, but won't need any configuration
+				// not setting credentials for a registry with a CA cert is valid, but won't need any configuration
+				continue
 			}
+			return nil, fmt.Errorf(
+				"invalid image registry: %s: %w",
+				config.URL,
+				ErrCredentialsNotFound,
+			)
 		}
+		needConfiguration = append(needConfiguration, config)
 	}
 
-	return true, nil
+	return needConfiguration, nil
 }

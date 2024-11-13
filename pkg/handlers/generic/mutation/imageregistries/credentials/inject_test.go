@@ -33,21 +33,23 @@ const (
 	validSecretName = "myregistry-credentials"
 )
 
-func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
+func Test_providerConfigsThatNeedConfiguration(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		name    string
-		configs []providerConfig
-		need    bool
-		wantErr error
+		name     string
+		configs  []providerConfig
+		expected []providerConfig
+		wantErr  error
 	}{
 		{
-			name: "ECR credentials",
+			name: "ECR registry with no credentials",
 			configs: []providerConfig{
 				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			},
-			need: true,
+			expected: []providerConfig{
+				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+			},
 		},
 		{
 			name: "registry with static credentials",
@@ -56,35 +58,45 @@ func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 				Username: "myuser",
 				Password: "mypassword",
 			}},
-			need: true,
+			expected: []providerConfig{{
+				URL:      "https://myregistry.com",
+				Username: "myuser",
+				Password: "mypassword",
+			}},
 		},
 		{
-			name: "ECR mirror",
-			configs: []providerConfig{
-				{
-					URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
-					Mirror: true,
-				},
-			},
-			need: true,
+			name: "ECR mirror with no credentials",
+			configs: []providerConfig{{
+				URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+				Mirror: true,
+			}},
+			expected: []providerConfig{{
+				URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+				Mirror: true,
+			}},
 		},
 		{
 			name: "mirror with static credentials",
 			configs: []providerConfig{{
-				URL:      "https://myregistry.com",
+				URL:      "https://mymirror.com",
 				Username: "myuser",
 				Password: "mypassword",
 				Mirror:   true,
 			}},
-			need: true,
+			expected: []providerConfig{{
+				URL:      "https://mymirror.com",
+				Username: "myuser",
+				Password: "mypassword",
+				Mirror:   true,
+			}},
 		},
 		{
 			name: "mirror with no credentials",
 			configs: []providerConfig{{
-				URL:    "https://myregistry.com",
+				URL:    "https://mymirror.com",
 				Mirror: true,
 			}},
-			need: false,
+			expected: nil,
 		},
 		{
 			name: "a registry with static credentials and a mirror with no credentials",
@@ -93,22 +105,57 @@ func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 					URL:      "https://myregistry.com",
 					Username: "myuser",
 					Password: "mypassword",
-					Mirror:   true,
+					Mirror:   false,
 				},
 				{
-					URL:    "https://myregistry.com",
+					URL:    "https://mymirror.com",
 					Mirror: true,
 				},
 			},
-			need: true,
+			expected: []providerConfig{
+				{
+					URL:      "https://myregistry.com",
+					Username: "myuser",
+					Password: "mypassword",
+					Mirror:   false,
+				},
+			},
+		},
+		{
+			name: "a registry with missing credentials and a mirror with no credentials",
+			configs: []providerConfig{
+				{
+					URL:    "https://myregistry.com",
+					Mirror: false,
+				},
+				{
+					URL:    "https://mymirror.com",
+					Mirror: true,
+				},
+			},
+			wantErr: ErrCredentialsNotFound,
 		},
 		{
 			name: "registry with missing credentials",
 			configs: []providerConfig{{
 				URL: "https://myregistry.com",
 			}},
-			need:    false,
 			wantErr: ErrCredentialsNotFound,
+		},
+		{
+			name: "registry with missing credentials but with a CA",
+			configs: []providerConfig{{
+				URL:       "https://myregistry.com",
+				HasCACert: true,
+			}},
+		},
+		{
+			name: "mirror with missing credentials but with a CA",
+			configs: []providerConfig{{
+				URL:       "https://mymirror.com",
+				HasCACert: true,
+				Mirror:    true,
+			}},
 		},
 	}
 
@@ -118,9 +165,9 @@ func Test_needImageRegistryCredentialsConfiguration(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			need, err := needImageRegistryCredentialsConfiguration(tt.configs)
+			expected, err := providerConfigsThatNeedConfiguration(tt.configs)
 			require.ErrorIs(t, err, tt.wantErr)
-			assert.Equal(t, tt.need, need)
+			assert.Equal(t, tt.expected, expected)
 		})
 	}
 }
