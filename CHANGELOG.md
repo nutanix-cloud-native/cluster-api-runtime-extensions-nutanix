@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.23.1 (2024-11-14)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: set container name to manager to ensure we wait for it by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/975
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.23.0...v0.23.1
+
 ## 0.23.0 (2024-11-13)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
