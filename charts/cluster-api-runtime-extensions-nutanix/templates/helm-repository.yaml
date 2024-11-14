@@ -69,7 +69,7 @@ spec:
         - name: charts-volume
           mountPath: "/helm-charts"
       containers:
-      - name: helm-repository
+      - name: manager
         ports:
           - name: serve
             protocol: TCP
