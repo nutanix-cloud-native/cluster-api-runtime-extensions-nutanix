@@ -60,29 +60,29 @@
 
           release-please = buildNpmPackage rec {
             pname = "release-please";
-            version = "16.12.0";
+            version = "16.15.0";
             src = fetchFromGitHub {
               owner = "googleapis";
               repo = "release-please";
               rev = "v${version}";
-              hash = "sha256-M4wsk0Vpkl6JAOM2BdSu8Uud7XA+iRHAaQOxHLux+VE=";
+              hash = "sha256-AUKyBjUD77uoymSDrIQ1YMv00KL4ay5pqoaIsIuYT2o=";
             };
-            npmDepsHash = "sha256-UXWzBUrZCIklITav3VShL+whiWmvLkFw+/i/k0s13k0=";
+            npmDepsHash = "sha256-boD+mNuf/SSBJtVyNWe561rjmaoxrhJQUxl4IzFvtN8=";
             dontNpmBuild = true;
           };
 
           helm-schema = buildGo123Module rec {
             pname = "helm-schema";
-            version = "1.5.2";
+            version = "1.6.4";
 
             src = fetchFromGitHub {
               owner = "losisin";
               repo = "helm-values-schema-json";
               rev = "v${version}";
-              hash = "sha256-5f54Qcz9Gt/d3qZbIrISr46J0yQKhEg886TSFnWuBXw=";
+              hash = "sha256-9UD9bEepXNjDTJl1ghEj/BQoEOySd2b3mPLXxMhDFeM=";
             };
             doCheck = false;
-            vendorHash = "sha256-F2mT36aYkLjUZbV5GQH8mNMZjGi/70dTENU2rRhAJq4=";
+            vendorHash = "sha256-mT2A6xXlTFYrA6yNpz9jaa69vdetY/OgjNtTvG4jAYs=";
             ldflags = let t = "main"; in [
               "-s"
               "-w"
