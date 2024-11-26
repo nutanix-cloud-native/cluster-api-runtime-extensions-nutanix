@@ -42,3 +42,7 @@ release-snapshot: go-generate ; $(info $(M) building snapshot release $*)
 .PHONY: list-releases
 list-releases: ## List releases from GitHub
 	gh release list --json tagName | gojq -r .[].tagName
+
+.PHONY: add-version-to-clusterclasses
+add-version-to-clusterclasses:
+	./hack/examples/release/add-version-to-clusterclasses.sh $(CAREN_VERSION)
