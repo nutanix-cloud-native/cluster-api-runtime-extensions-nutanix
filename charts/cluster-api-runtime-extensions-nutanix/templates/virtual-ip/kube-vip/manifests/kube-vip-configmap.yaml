@@ -22,7 +22,7 @@ data:
             - name: vip_arp
               value: "true"
             - name: port
-              value: '{{ `{{ .ControlPlaneEndpoint.Port }}` }}'
+              value: '{{ `{{ .Port }}` }}'
             - name: vip_nodename
               valueFrom:
                 fieldRef:
@@ -46,7 +46,7 @@ data:
             - name: vip_retryperiod
               value: "2"
             - name: address
-              value: '{{ `{{ .ControlPlaneEndpoint.Host }}` }}'
+              value: '{{ `{{ .Address }}` }}'
             - name: prometheus_server
           image: ghcr.io/kube-vip/kube-vip:v0.8.3
           imagePullPolicy: IfNotPresent

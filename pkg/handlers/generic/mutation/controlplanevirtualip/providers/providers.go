@@ -5,6 +5,7 @@ package providers
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"text/template"
@@ -35,11 +36,28 @@ func templateValues(
 	}
 
 	type input struct {
-		ControlPlaneEndpoint v1alpha1.ControlPlaneEndpointSpec
+		Address string
+		Port    int32
 	}
 
+	// If specified, use the virtual IP address and/or port,
+	// otherwise fall back to the control plane endpoint host and port.
+	address := controlPlaneEndpoint.Host
+	port := controlPlaneEndpoint.Port
+	if controlPlaneEndpoint.VirtualIPSpec != nil &&
+		controlPlaneEndpoint.VirtualIPSpec.Configuration != nil {
+		address = cmp.Or(
+			controlPlaneEndpoint.VirtualIPSpec.Configuration.Address,
+			controlPlaneEndpoint.Host,
+		)
+		port = cmp.Or(
+			controlPlaneEndpoint.VirtualIPSpec.Configuration.Port,
+			controlPlaneEndpoint.Port,
+		)
+	}
 	templateInput := input{
-		ControlPlaneEndpoint: controlPlaneEndpoint,
+		Address: address,
+		Port:    port,
 	}
 
 	var b bytes.Buffer
