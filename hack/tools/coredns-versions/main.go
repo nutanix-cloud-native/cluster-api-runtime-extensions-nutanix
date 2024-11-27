@@ -29,8 +29,8 @@ var (
 )
 
 const (
-	constantsURLTemplate = "https://raw.githubusercontent.com/kubernetes/kubernetes/%s/cmd/kubeadm/app/constants/constants.go"
-	branchesAPIURL       = "https://api.github.com/repos/kubernetes/kubernetes/branches?per_page=100&page=%d"
+	constantsURLTemplate = "https://raw.githubusercontent.com/kubernetes/kubernetes/v%s/cmd/kubeadm/app/constants/constants.go"
+	tagsAPIURL           = "https://api.github.com/repos/kubernetes/kubernetes/tags?per_page=100&page=%d"
 )
 
 var goTemplate = `// Copyright 2024 Nutanix. All rights reserved.
@@ -131,32 +131,40 @@ func main() {
 }
 
 // Fetch Kubernetes versions from GitHub branches
-func fetchKubernetesVersions(minVersion semver.Version) ([]string, error) {
-	var versions []string
+func fetchKubernetesVersions(minVersion semver.Version) ([]semver.Version, error) {
+	minorVersionToPatchVersion := make(map[string]semver.Version)
 	page := 1
 
 	for {
-		url := fmt.Sprintf(branchesAPIURL, page)
-		branchNames, err := fetchBranchNames(url)
+		url := fmt.Sprintf(tagsAPIURL, page)
+		tagNames, err := fetchTagNames(url)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(branchNames) == 0 {
+		if len(tagNames) == 0 {
 			break
 		}
 
-		for _, branch := range branchNames {
-			if strings.HasPrefix(branch, "release-1.") {
-				versionStr := strings.TrimPrefix(branch, "release-")
-				semverStr := versionStr + ".0"
-				v, err := semver.ParseTolerant(semverStr)
+		for _, tag := range tagNames {
+			if strings.HasPrefix(tag, "v") {
+				v, err := semver.ParseTolerant(tag)
 				if err != nil {
 					continue // Skip invalid version
 				}
 
-				if v.GE(minVersion) {
-					versions = append(versions, versionStr)
+				if v.Pre != nil {
+					continue // Skip pre-release versions
+				}
+
+				if v.LT(minVersion) {
+					continue // Skip versions below the minimum
+				}
+
+				// Store the highest patch version for each minor version
+				minorVersion := fmt.Sprintf("v%d.%d", v.Major, v.Minor)
+				if existingPatchVersionForMinor, exists := minorVersionToPatchVersion[minorVersion]; !exists || v.GT(existingPatchVersionForMinor) {
+					minorVersionToPatchVersion[minorVersion] = v
 				}
 			}
 		}
@@ -164,35 +172,22 @@ func fetchKubernetesVersions(minVersion semver.Version) ([]string, error) {
 		page++
 	}
 
-	if len(versions) == 0 {
+	if len(minorVersionToPatchVersion) == 0 {
 		return nil, errors.New("no Kubernetes versions found")
 	}
 
-	// Remove duplicates and sort
-	versionSet := make(map[string]struct{})
-	for _, v := range versions {
-		versionSet[v] = struct{}{}
-	}
-
-	versions = nil
-	for v := range versionSet {
+	versions := make(semver.Versions, 0, len(minorVersionToPatchVersion))
+	for _, v := range minorVersionToPatchVersion {
 		versions = append(versions, v)
 	}
 
-	sort.Slice(versions, func(i, j int) bool {
-		v1, err1 := semver.ParseTolerant(versions[i] + ".0")
-		v2, err2 := semver.ParseTolerant(versions[j] + ".0")
-		if err1 != nil || err2 != nil {
-			return versions[i] < versions[j] // Fallback to string comparison
-		}
-		return v1.LT(v2)
-	})
+	sort.Sort(versions)
 
 	return versions, nil
 }
 
 // Fetch branch names from GitHub API
-func fetchBranchNames(url string) ([]string, error) {
+func fetchTagNames(url string) ([]string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP GET error: %w", err)
@@ -203,29 +198,28 @@ func fetchBranchNames(url string) ([]string, error) {
 		return nil, fmt.Errorf("non-200 HTTP status: %d", resp.StatusCode)
 	}
 
-	var branches []struct {
+	var tags []struct {
 		Name string `json:"name"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&branches); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&tags); err != nil {
 		return nil, fmt.Errorf("decoding JSON error: %w", err)
 	}
 
-	var branchNames []string
-	for _, branch := range branches {
-		branchNames = append(branchNames, branch.Name)
+	tagNames := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		tagNames = append(tagNames, tag.Name)
 	}
 
-	return branchNames, nil
+	return tagNames, nil
 }
 
-func fetchCoreDNSVersions(versions []string) (map[string]string, error) {
+func fetchCoreDNSVersions(versions []semver.Version) (map[string]string, error) {
 	versionMap := make(map[string]string)
 	re := regexp.MustCompile(`CoreDNSVersion\s*=\s*"([^"]+)"`)
 
 	for _, k8sVersion := range versions {
-		branch := "release-" + k8sVersion
-		url := fmt.Sprintf(constantsURLTemplate, branch)
+		url := fmt.Sprintf(constantsURLTemplate, k8sVersion)
 		coreDNSVersionStr, err := extractCoreDNSVersion(url, re)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Failed for Kubernetes %s: %v\n", k8sVersion, err)
@@ -241,14 +235,7 @@ func fetchCoreDNSVersions(versions []string) (map[string]string, error) {
 
 		coreDNSVersion := "v" + v.String()
 
-		// Construct "vMAJOR.MINOR" format for Kubernetes version
-		k8sSemverStr := k8sVersion + ".0"
-		k8sSemver, err := semver.ParseTolerant(k8sSemverStr)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Invalid Kubernetes version '%s'\n", k8sVersion)
-			continue
-		}
-		k8sMajorMinor := fmt.Sprintf("v%d.%d", k8sSemver.Major, k8sSemver.Minor)
+		k8sMajorMinor := fmt.Sprintf("v%d.%d", k8sVersion.Major, k8sVersion.Minor)
 
 		versionMap[k8sMajorMinor] = coreDNSVersion
 	}
@@ -307,7 +294,7 @@ func generateGoFile(versionMap map[string]string, outputPath string) error {
 		return fmt.Errorf("creating directories error: %w", err)
 	}
 
-	if err := os.WriteFile(outputPath, formattedSrc, 0644); err != nil {
+	if err := os.WriteFile(outputPath, formattedSrc, 0o644); err != nil {
 		return fmt.Errorf("writing file error: %w", err)
 	}
 
