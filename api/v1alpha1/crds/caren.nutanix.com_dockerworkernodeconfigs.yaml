@@ -6,20 +6,21 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.4
-  name: dockernodeconfigs.caren.nutanix.com
+  name: dockerworkernodeconfigs.caren.nutanix.com
 spec:
   group: caren.nutanix.com
   names:
-    kind: DockerNodeConfig
-    listKind: DockerNodeConfigList
-    plural: dockernodeconfigs
-    singular: dockernodeconfig
+    kind: DockerWorkerNodeConfig
+    listKind: DockerWorkerNodeConfigList
+    plural: dockerworkernodeconfigs
+    singular: dockerworkernodeconfig
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: DockerNodeConfig is the Schema for the dockernodeconfigs API.
+        description: DockerWorkerNodeConfig is the Schema for the dockerworkernodeconfigs
+          API.
         properties:
           apiVersion:
             description: |-
@@ -39,8 +40,24 @@ spec:
           metadata:
             type: object
           spec:
-            description: DockerNodeConfigSpec defines the desired state of DockerNodeSpec.
+            description: DockerControlPlaneSpec defines the desired state of the control
+              plane for a Docker cluster.
             properties:
+              autoRenewCertificates:
+                description: |-
+                  AutoRenewCertificates specifies the configuration for auto-renewing the
+                  certificates of the control plane.
+                properties:
+                  daysBeforeExpiry:
+                    description: |-
+                      DaysBeforeExpiry indicates a rollout needs to be performed if the
+                      certificates of the control plane will expire within the specified days.
+                    format: int32
+                    minimum: 7
+                    type: integer
+                required:
+                - daysBeforeExpiry
+                type: object
               docker:
                 properties:
                   customImage:

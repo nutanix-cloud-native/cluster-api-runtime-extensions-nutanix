@@ -23,7 +23,7 @@ func TestVariableValidation(t *testing.T) {
 		capitest.VariableTestDef{
 			Name: "specified instance type",
 			Vals: v1alpha1.NutanixClusterConfigSpec{
-				ControlPlane: &v1alpha1.NutanixNodeConfigSpec{
+				ControlPlane: &v1alpha1.NutanixControlPlaneSpec{
 					GenericNodeSpec: v1alpha1.GenericNodeSpec{
 						Taints: []v1alpha1.Taint{{
 							Key:    "key",
