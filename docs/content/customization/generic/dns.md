@@ -1,5 +1,5 @@
 +++
-title = "etcd"
+title = "DNS"
 +++
 
 This customization will be available when the
