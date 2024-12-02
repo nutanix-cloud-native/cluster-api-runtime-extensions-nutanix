@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.24.0 (2024-12-02)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Auto renewal of control plane certificates patch by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/924
+* feat: Add CAREN version to ExtensionConfig by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/982
+### Other Changes
+* build: Latest devbox update by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/978
+* build: Add CAREN release to cluster class artifacts by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/979
+* build: Only consider GA releases of k8s for CoreDNS version map by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/981
+* docs: Fix title of DNS customization page by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/985
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.23.1...v0.24.0
+
 ## 0.23.1 (2024-11-14)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
