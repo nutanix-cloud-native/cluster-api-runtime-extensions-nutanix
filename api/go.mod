@@ -14,7 +14,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
 	github.com/nutanix-cloud-native/prism-go-client v0.5.1
-	github.com/onsi/gomega v1.35.1
+	github.com/onsi/gomega v1.36.0
 	github.com/stretchr/testify v1.10.0
 	k8s.io/api v0.30.7
 	k8s.io/apiextensions-apiserver v0.30.7
