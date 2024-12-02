@@ -6,6 +6,7 @@ kind: ExtensionConfig
 metadata:
   annotations:
     runtime.cluster.x-k8s.io/inject-ca-from-secret: {{ .Release.Namespace }}/{{ template "chart.name" . }}-runtimehooks-tls
+    caren.nutanix.com/version: "{{ .Chart.AppVersion }}"
   name: {{ template "chart.name" . }}
   namespace: {{ .Release.Namespace }}
 spec:
