@@ -28,6 +28,8 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework/nutanix"
 )
 
 // SelfHostedSpecInput is the input for SelfHostedSpec.
@@ -180,6 +182,30 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 		if input.InfrastructureProvider != nil {
 			infrastructureProvider = *input.InfrastructureProvider
 		}
+
+		// For Nutanix provider, reserve an IP address for the workload cluster control plane endpoint -
+		// remember to unreserve it!
+		if infrastructureProvider == "nutanix" {
+			By(
+				"Reserving an IP address for the workload cluster control plane endpoint",
+			)
+			nutanixClient, err := nutanix.NewV4Client(
+				nutanix.CredentialsFromCAPIE2EConfig(input.E2EConfig),
+			)
+			Expect(err).ToNot(HaveOccurred())
+			//nolint:contextcheck // ReserverIP function does not accept context. Its okay to ignore the context check in tests.
+			controlPlaneEndpointIP, unreserveControlPlaneEndpointIP, err := nutanix.ReserveIP(
+				input.E2EConfig.GetVariable("NUTANIX_SUBNET_NAME"),
+				input.E2EConfig.GetVariable(
+					"NUTANIX_PRISM_ELEMENT_CLUSTER_NAME",
+				),
+				nutanixClient,
+			)
+			Expect(err).ToNot(HaveOccurred())
+			DeferCleanup(unreserveControlPlaneEndpointIP)
+			clusterctlVariables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
+		}
+
 		clusterctl.ApplyClusterTemplateAndWait(ctx, clusterctl.ApplyClusterTemplateAndWaitInput{
 			ClusterProxy: input.BootstrapClusterProxy,
 			ConfigCluster: clusterctl.ConfigClusterInput{
