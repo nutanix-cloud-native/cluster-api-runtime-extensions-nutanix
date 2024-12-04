@@ -14,7 +14,6 @@ import (
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
-	"sigs.k8s.io/cluster-api/util"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -22,7 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
 )
 
-var _ = Describe("Self-hosted", Serial, func() {
+var _ = Describe("Self-hosted-upgrade", Serial, func() {
 	for _, provider := range []string{"Docker", "Nutanix"} {
 		// Add any provider specific decorators here.
 		// Currently, only Docker requires Serial decorator to ensure the machine running the Docker e2e tests
@@ -58,10 +57,10 @@ var _ = Describe("Self-hosted", Serial, func() {
 									framework.SelfHostedSpec(
 										ctx,
 										func() framework.SelfHostedSpecInput {
-											clusterNamePrefix := "self-hosted-"
+											//clusterNamePrefix := "self-hosted-upgrade-"
 											// To be able to test the self-hosted cluster with long name, we need to set the
 											// maxClusterNameLength to 63 which is the maximum length of a cluster name.
-											maxClusterNameLength := 63
+											//maxClusterNameLength := 63
 											// However, if the provider is Docker, we need to reduce the maxClusterNameLength
 											// because CAPI adds multiple random suffixes to the cluster name which are used in
 											// Docker cluster, and then in MachineDeployment, and finally in the machine names,
@@ -73,9 +72,9 @@ var _ = Describe("Self-hosted", Serial, func() {
 											// Any longer than this prevents the container from starting, returning an error such
 											// as `error during container init: sethostname: invalid argument: unknown`.
 											// Therefore we reduce the maximum cluster to 64 (max hostname length) - 23 (random suffixes).
-											if lowercaseProvider == "docker" {
-												maxClusterNameLength = 64 - 23
-											}
+											// if lowercaseProvider == "docker" {
+											// 	maxClusterNameLength = 64 - 23
+											// }
 
 											return framework.SelfHostedSpecInput{
 												E2EConfig:              e2eConfig,
@@ -83,13 +82,14 @@ var _ = Describe("Self-hosted", Serial, func() {
 												BootstrapClusterProxy:  bootstrapClusterProxy,
 												ArtifactFolder:         artifactFolder,
 												SkipCleanup:            skipCleanup,
-												SkipUpgrade:            true,
+												SkipUpgrade:            false,
 												Flavor:                 flavour,
 												InfrastructureProvider: ptr.To(lowercaseProvider),
-												ClusterName: ptr.To(clusterNamePrefix +
-													util.RandomString(
-														maxClusterNameLength-len(clusterNamePrefix),
-													)),
+												ClusterName:            ptr.To("upgrade-test"),
+												// ClusterName: ptr.To(clusterNamePrefix +
+												// 	util.RandomString(
+												// 		maxClusterNameLength-len(clusterNamePrefix),
+												// 	)),
 												PostClusterMoved: func(proxy capiframework.ClusterProxy, cluster *clusterv1.Cluster) {
 													By(
 														"Waiting for all requested addons to be ready in workload cluster",

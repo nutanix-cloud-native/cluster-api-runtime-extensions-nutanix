@@ -93,7 +93,8 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 		controlPlaneMachineCount int64
 		workerMachineCount       int64
 
-		kubernetesVersion string
+		kubernetesVersion          string
+		kubernetesVersionUpgradeTo string
 	)
 
 	BeforeEach(func() {
@@ -121,8 +122,13 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 		)
 
 		// Use KubernetesVersion if no upgrade step is defined by test input.
-		Expect(input.E2EConfig.Variables).To(HaveKey(capie2e.KubernetesVersion))
-		kubernetesVersion = input.E2EConfig.GetVariable(capie2e.KubernetesVersion)
+		if input.SkipUpgrade {
+			Expect(input.E2EConfig.Variables).To(HaveKey(capie2e.KubernetesVersion))
+			kubernetesVersion = input.E2EConfig.GetVariable(capie2e.KubernetesVersion)
+		} else {
+			Expect(input.E2EConfig.Variables).To(HaveKey(capie2e.KubernetesVersionUpgradeFrom))
+			kubernetesVersion = input.E2EConfig.GetVariable(capie2e.KubernetesVersionUpgradeFrom)
+		}
 
 		// Setup a Namespace where to host objects for this spec and create a watcher for the namespace events.
 		namespace, cancelWatches = setupSpecNamespace(
@@ -320,6 +326,29 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 				selfHostedClusterProxy,
 				selfHostedCluster,
 			)
+		}
+
+		if !input.SkipUpgrade {
+			Expect(input.E2EConfig.Variables).To(HaveKey(capie2e.KubernetesVersion))
+			kubernetesVersionUpgradeTo = input.E2EConfig.GetVariable(capie2e.KubernetesVersionUpgradeTo)
+			By("Upgrade Kubernetes version")
+			capie2eframework.UpgradeClusterTopologyAndWaitForUpgrade(ctx,
+				capie2eframework.UpgradeClusterTopologyAndWaitForUpgradeInput{
+					ClusterProxy:                selfHostedClusterProxy,
+					Cluster:                     selfHostedCluster,
+					ControlPlane:                clusterResources.ControlPlane,
+					MachineDeployments:          clusterResources.MachineDeployments,
+					KubernetesUpgradeVersion:    kubernetesVersionUpgradeTo,
+					WaitForMachinesToBeUpgraded: input.E2EConfig.GetIntervals(specName, "wait-machine-upgrade"),
+					WaitForKubeProxyUpgrade:     input.E2EConfig.GetIntervals(specName, "wait-machine-upgrade"),
+					WaitForDNSUpgrade:           input.E2EConfig.GetIntervals(specName, "wait-machine-upgrade"),
+					WaitForEtcdUpgrade:          input.E2EConfig.GetIntervals(specName, "wait-machine-upgrade"),
+					// PreWaitForControlPlaneToBeUpgraded: func(managementClusterProxy capie2eframework.ClusterProxy, workloadClusterNamespace, workloadClusterName string) {
+
+					// },
+				},
+			)
+
 		}
 
 		By("PASSED!")

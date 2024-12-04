@@ -167,6 +167,8 @@ variables:
   KUBERNETES_VERSION_MANAGEMENT: "${KINDEST_IMAGE_TAG}"
   # The default Kubernetes version for the test workload clusters for all providers, unless overridden below.
   KUBERNETES_VERSION: "${E2E_KUBERNETES_VERSION}"
+  KUBERNETES_VERSION_UPGRADE_FROM: "${E2E_KUBERNETES_VERSION_UPGRADE_FROM}"
+  KUBERNETES_VERSION_UPGRADE_TO: "${E2E_KUBERNETES_VERSION}"
   # Override Kubernetes version for test workload clusters for specific providers by setting the env variables
   # `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
   # `KUBERNETES_VERSION_DOCKER: v1.31.0`.
@@ -222,3 +224,4 @@ intervals:
   default/wait-clusterresourceset: [ "5m", "10s" ]
   default/wait-helmrelease: [ "5m", "10s" ]
   default/wait-resource: [ "5m", "10s" ]
+  default/wait-machine-upgrade: ["20m", "10s"]
