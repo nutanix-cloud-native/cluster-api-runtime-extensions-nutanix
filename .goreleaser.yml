@@ -45,7 +45,7 @@ before:
         --namespace caren-system \
         --set-string image.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }}{{ end }} \
         --set-string helmRepository.images.bundleInitializer.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }} \
-        --set-string image.repository=ko.local/{{ .ProjectName }}{{ end }} \
+        --set-string image.repository={{ .Env.LOCAL_IMAGE_REGISTRY }}/{{ .ProjectName }}{{ end }} \
       )
       EOF'
     - sed -i -e 's/\${/$${/g' -e 's/v0.0.0-dev/v{{ trimprefix .Version "v" }}/g' runtime-extensions-components.yaml
@@ -90,7 +90,7 @@ builds:
           sh -ec 'if [ {{ .IsSnapshot }} == true ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
             env SOURCE_DATE_EPOCH=$(date +%s) \
                 KO_DATA_DATE_EPOCH=$(date +%s) \
-                KO_DOCKER_REPO=ko.local/{{ .ProjectName }} \
+                KO_DOCKER_REPO={{ .Env.LOCAL_IMAGE_REGISTRY }}/{{ .ProjectName }} \
                 ko build \
                   --bare \
                   --platform linux/{{ .Arch }} \
