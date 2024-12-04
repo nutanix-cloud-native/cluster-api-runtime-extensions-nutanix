@@ -96,10 +96,9 @@ jobs:
       matrix:
         config:
           - {"provider": "Docker", "kubernetesVersion": "v1.29.9"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.30.6"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.31.2"}
-          # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
-          # - {"provider": "Nutanix", "kubernetesVersion": "v1.29.6"}
+          # - {"provider": "Docker", "kubernetesVersion": "v1.30.6"}
+          # - {"provider": "Docker", "kubernetesVersion": "v1.31.2"}
+          - {"provider": "Nutanix", "kubernetesVersion": "v1.30.5", "osImage": "nkp-rocky-9.4-release-1.30.5-20240930171619"}
           # - {"provider": "AWS", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
     uses: ./.github/workflows/e2e.yml
@@ -107,7 +106,8 @@ jobs:
       focus: Self-hosted
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
-      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-22.04' }}
+      runs-on: 'self-hosted-ncn-dind'
+      os-image: ${{ matrix.config.provider == 'Nutanix' && matrix.config.osImage || '' }}
     secrets: inherit
     permissions:
       contents: read
