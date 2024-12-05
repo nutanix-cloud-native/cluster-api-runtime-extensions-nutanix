@@ -6,11 +6,13 @@ package addons
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -19,6 +21,7 @@ import (
 	k8sclient "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	lifecycleconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/wait"
 )
 
 var (
@@ -75,16 +78,21 @@ func NewHelmAddonApplier(
 	}
 }
 
+type valueTemplaterFunc func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error)
+
+type waiterFunc func(ctx context.Context, client ctrlclient.Client, hcp *caaphv1.HelmChartProxy) error
+
 type applyOptions struct {
-	valueTemplater  func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error)
+	valueTemplater  valueTemplaterFunc
 	targetCluster   *clusterv1.Cluster
 	helmReleaseName string
+	waiter          waiterFunc
 }
 
 type applyOption func(*applyOptions)
 
 func (a *helmAddonApplier) WithValueTemplater(
-	valueTemplater func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error),
+	valueTemplater valueTemplaterFunc,
 ) *helmAddonApplier {
 	a.opts = append(a.opts, func(o *applyOptions) {
 		o.valueTemplater = valueTemplater
@@ -104,6 +112,14 @@ func (a *helmAddonApplier) WithTargetCluster(cluster *clusterv1.Cluster) *helmAd
 func (a *helmAddonApplier) WithHelmReleaseName(name string) *helmAddonApplier {
 	a.opts = append(a.opts, func(o *applyOptions) {
 		o.helmReleaseName = name
+	})
+
+	return a
+}
+
+func (a *helmAddonApplier) WithDefaultWaiter() *helmAddonApplier {
+	a.opts = append(a.opts, func(o *applyOptions) {
+		o.waiter = waitToBeReady
 	})
 
 	return a
@@ -192,6 +208,33 @@ func (a *helmAddonApplier) Apply(
 
 	if err = k8sclient.ServerSideApply(ctx, a.client, chartProxy, k8sclient.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply HelmChartProxy %q: %w", chartProxy.Name, err)
+	}
+
+	if applyOpts.waiter != nil {
+		return applyOpts.waiter(ctx, a.client, chartProxy)
+	}
+
+	return nil
+}
+
+func waitToBeReady(
+	ctx context.Context,
+	client ctrlclient.Client,
+	hcp *caaphv1.HelmChartProxy,
+) error {
+	if err := wait.ForObject(
+		ctx,
+		wait.ForObjectInput[*caaphv1.HelmChartProxy]{
+			Reader: client,
+			Target: hcp.DeepCopy(),
+			Check: func(_ context.Context, obj *caaphv1.HelmChartProxy) (bool, error) {
+				return conditions.IsTrue(obj, caaphv1.HelmReleaseProxiesReadyCondition), nil
+			},
+			Interval: 5 * time.Second,
+			Timeout:  30 * time.Second,
+		},
+	); err != nil {
+		return fmt.Errorf("failed to wait for MetalLB to deploy: %w", err)
 	}
 
 	return nil
