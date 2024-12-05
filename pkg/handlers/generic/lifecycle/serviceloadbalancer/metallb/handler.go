@@ -14,17 +14,14 @@ import (
 	kwait "k8s.io/apimachinery/pkg/util/wait"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/wait"
 )
 
 const (
@@ -118,36 +115,10 @@ func (n *MetalLB) Apply(
 		),
 		n.client,
 		helmChartInfo,
-	)
+	).WithDefaultWaiter()
 
 	if err := addonApplier.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply MetalLB addon: %w", err)
-	}
-
-	hcp := &caaphv1.HelmChartProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Namespace,
-			Name: fmt.Sprintf(
-				"%s-%s",
-				DefaultHelmReleaseName,
-				cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
-			),
-		},
-	}
-
-	if err := wait.ForObject(
-		ctx,
-		wait.ForObjectInput[*caaphv1.HelmChartProxy]{
-			Reader: n.client,
-			Target: hcp.DeepCopy(),
-			Check: func(_ context.Context, obj *caaphv1.HelmChartProxy) (bool, error) {
-				return conditions.IsTrue(obj, caaphv1.HelmReleaseProxiesReadyCondition), nil
-			},
-			Interval: 5 * time.Second,
-			Timeout:  30 * time.Second,
-		},
-	); err != nil {
-		return fmt.Errorf("failed to wait for MetalLB to deploy: %w", err)
 	}
 
 	if slb.Configuration == nil {
