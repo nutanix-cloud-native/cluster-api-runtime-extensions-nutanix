@@ -605,6 +605,7 @@ spec:
                                   description: |-
                                     The virtual IP on which the API server is serving.
                                     If left empty, the value from controlPlaneEndpoint.host will be used.
+                                  format: ipv4
                                   type: string
                                 port:
                                   description: |-
