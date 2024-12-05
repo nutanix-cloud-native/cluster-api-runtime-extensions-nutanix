@@ -44,8 +44,9 @@ before:
       $(helm template {{ .ProjectName }} ./charts/{{ .ProjectName }} \
         --namespace caren-system \
         --set-string image.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }}{{ end }} \
-        --set-string helmRepository.images.bundleInitializer.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }} \
-        --set-string image.repository={{ .Env.LOCAL_IMAGE_REGISTRY }}/{{ .ProjectName }}{{ end }} \
+        --set-string helmRepository.images.bundleInitializer.tag=v{{ trimprefix .Version "v" }}{{ if .IsSnapshot }}-{{ .Runtime.Goarch }}{{ end }} \
+        {{ if .IsSnapshot }}--set-string image.repository={{ .Env.LOCAL_IMAGE_REGISTRY }}/{{ .ProjectName }}{{ end }} \
+        {{ if .IsSnapshot }}--set-string helmRepository.images.bundleInitializer.repository={{ .Env.LOCAL_IMAGE_REGISTRY }}/cluster-api-runtime-extensions-helm-chart-bundle-initializer{{ end }} \
       )
       EOF'
     - sed -i -e 's/\${/$${/g' -e 's/v0.0.0-dev/v{{ trimprefix .Version "v" }}/g' runtime-extensions-components.yaml
@@ -96,8 +97,16 @@ builds:
                   --platform linux/{{ .Arch }} \
                   -t v{{ trimprefix .Version "v" }}-{{ .Arch }} \
                   ./cmd
+            docker buildx build \
+              --platform linux/{{ .Arch }} \
+              -t {{ .Env.LOCAL_IMAGE_REGISTRY }}/cluster-api-runtime-extensions-helm-chart-bundle-initializer:v{{ trimprefix .Version "v" }}-{{ .Arch }} \
+              -f ./hack/addons/helm-chart-bundler/Dockerfile \
+              --load \
+              .
+            if [ {{ .Env.LOCAL_IMAGE_REGISTRY }} != "ko.local" ]; then
+              docker push {{ .Env.LOCAL_IMAGE_REGISTRY }}/cluster-api-runtime-extensions-helm-chart-bundle-initializer:v{{ trimprefix .Version "v" }}-{{ .Arch }}
+            fi
           fi'
-
 archives:
   - name_template: '{{ .ProjectName }}_v{{ trimprefix .Version "v" }}_{{ .Os }}_{{ .Arch }}'
     builds:

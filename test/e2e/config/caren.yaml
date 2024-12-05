@@ -6,7 +6,7 @@ managementClusterName: caren-e2e
 images:
   - name: ${LOCAL_IMAGE_REGISTRY}/cluster-api-runtime-extensions-nutanix:${E2E_IMAGE_TAG}
     loadBehavior: mustLoad
-  - name: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:${E2E_IMAGE_TAG}
+  - name: ${LOCAL_IMAGE_REGISTRY}/cluster-api-runtime-extensions-helm-chart-bundle-initializer:${E2E_IMAGE_TAG}
     loadBehavior: mustLoad
 
 providers:
@@ -211,7 +211,7 @@ variables:
   # DOCKER_HUB_PASSWORD: ""
 
 intervals:
-  default/wait-controllers: ["3m", "10s"]
+  default/wait-controllers: ["10m", "10s"]
   default/wait-cluster: ["10m", "10s"]
   default/wait-control-plane: ["10m", "10s"]
   default/wait-worker-nodes: ["10m", "10s"]
