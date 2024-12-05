@@ -42,22 +42,14 @@ func templateValues(
 
 	// If specified, use the virtual IP address and/or port,
 	// otherwise fall back to the control plane endpoint host and port.
-	address := controlPlaneEndpoint.Host
-	port := controlPlaneEndpoint.Port
+	var virtualIPConfig v1alpha1.ControlPlaneVirtualIPConfiguration
 	if controlPlaneEndpoint.VirtualIPSpec != nil &&
 		controlPlaneEndpoint.VirtualIPSpec.Configuration != nil {
-		address = cmp.Or(
-			controlPlaneEndpoint.VirtualIPSpec.Configuration.Address,
-			controlPlaneEndpoint.Host,
-		)
-		port = cmp.Or(
-			controlPlaneEndpoint.VirtualIPSpec.Configuration.Port,
-			controlPlaneEndpoint.Port,
-		)
+		virtualIPConfig = *controlPlaneEndpoint.VirtualIPSpec.Configuration
 	}
 	templateInput := input{
-		Address: address,
-		Port:    port,
+		Address: cmp.Or(virtualIPConfig.Address, controlPlaneEndpoint.Host),
+		Port:    cmp.Or(virtualIPConfig.Port, controlPlaneEndpoint.Port),
 	}
 
 	var b bytes.Buffer
