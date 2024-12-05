@@ -234,7 +234,11 @@ func waitToBeReady(
 			Timeout:  30 * time.Second,
 		},
 	); err != nil {
-		return fmt.Errorf("failed to wait for MetalLB to deploy: %w", err)
+		return fmt.Errorf(
+			"failed to wait for addon %s to deploy: %w",
+			ctrlclient.ObjectKeyFromObject(hcp),
+			err,
+		)
 	}
 
 	return nil
