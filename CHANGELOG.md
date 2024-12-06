@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.24.1 (2024-12-06)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: check HelmReleaseReadyCondition when status is up-to-date by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/989
+### Other Changes
+* refactor: new waiter functionality in helmAddonApplier by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/988
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.24.0...v0.24.1
+
 ## 0.24.0 (2024-12-02)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
