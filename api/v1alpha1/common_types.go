@@ -47,6 +47,25 @@ type ControlPlaneVirtualIPSpec struct {
 	// +kubebuilder:validation:Enum=KubeVIP
 	// +kubebuilder:default=KubeVIP
 	Provider string `json:"provider,omitempty"`
+
+	// Configuration for the chosen control-plane virtual IP provider.
+	// +kubebuilder:validation:Optional
+	Configuration *ControlPlaneVirtualIPConfiguration `json:"configuration,omitempty"`
+}
+
+type ControlPlaneVirtualIPConfiguration struct {
+	// The virtual IP on which the API server is serving.
+	// If left empty, the value from controlPlaneEndpoint.host will be used.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=ipv4
+	Address string `json:"address,omitempty"`
+
+	// The port on which the API server is serving.
+	// If left empty, the value from controlPlaneEndpoint.port will be used.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	Port int32 `json:"port,omitempty"`
 }
 
 // LocalObjectReference contains enough information to let you locate the

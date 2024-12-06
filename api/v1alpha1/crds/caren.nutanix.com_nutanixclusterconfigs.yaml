@@ -613,6 +613,24 @@ spec:
                         virtualIP:
                           description: Configuration for the virtual IP provider.
                           properties:
+                            configuration:
+                              description: Configuration for the chosen control-plane virtual IP provider.
+                              properties:
+                                address:
+                                  description: |-
+                                    The virtual IP on which the API server is serving.
+                                    If left empty, the value from controlPlaneEndpoint.host will be used.
+                                  format: ipv4
+                                  type: string
+                                port:
+                                  description: |-
+                                    The port on which the API server is serving.
+                                    If left empty, the value from controlPlaneEndpoint.port will be used.
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
+                              type: object
                             provider:
                               default: KubeVIP
                               description: Virtual IP provider to deploy.
