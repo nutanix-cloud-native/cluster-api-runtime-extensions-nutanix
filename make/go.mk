@@ -13,6 +13,12 @@ override undefine GOARCH
 ALL_GO_SUBMODULES := $(shell find -mindepth 2 -maxdepth 2 -name go.mod -printf '%P\n' | sort)
 GO_SUBMODULES_NO_DOCS := $(filter-out $(addsuffix /go.mod,docs),$(ALL_GO_SUBMODULES))
 THIRD_PARTY_GO_SUBMODULES := $(shell find hack/third-party -mindepth 2 -name go.mod -printf 'hack/third-party/%P\n' | sort)
+# self hosted tests requires the local caren images to be available to the workload clusters.
+# export LOCAL_IMAGE_REGISTRY to an accessible registry when running self hosted tests.
+# When e2e tests builds the project using goreleaser, the images are pushed to the registry and available for the workload clusters.
+# by default, the CAREN image is stored in local container engine store as ko.local/cluster-api-runtime-extensions-nutanix:${TAG}
+LOCAL_IMAGE_REGISTRY ?= ko.local
+export LOCAL_IMAGE_REGISTRY
 
 define go_test
 	source <(setup-envtest use -p env $(ENVTEST_VERSION)) && \
