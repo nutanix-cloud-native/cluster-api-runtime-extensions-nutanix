@@ -57,7 +57,7 @@ type NutanixPrismCentralEndpointCredentials struct {
 //nolint:gocritic // No need for named return values
 func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, uint16, error) {
 	var prismCentralURL *url.URL
-	prismCentralURL, err := url.Parse(s.URL)
+	prismCentralURL, err := url.ParseRequestURI(s.URL)
 	if err != nil {
 		return "", 0, fmt.Errorf("error parsing Prism Central URL: %w", err)
 	}
