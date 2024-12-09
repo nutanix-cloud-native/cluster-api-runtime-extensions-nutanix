@@ -198,8 +198,8 @@ github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4 v4.0.1-beta.
 github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4 v4.0.1-beta.2/go.mod h1:sd4Fnk6MVfEDVY+8WyRoQTmLhi2SgZ3riySWErVHf8E=
 github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4 v4.0.2-beta.1 h1:PvZQwYhhJtxmzLpnzEhHTpp2fV6woc6W65PHGsHzVfs=
 github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4 v4.0.2-beta.1/go.mod h1:+eZgV1+xL/r84qmuFSVt5R8OFRO70rEz92jOnVgJNco=
-github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.0.1-beta.1 h1:hvy3QCc2SgVidYxTq0rRPOazJOt1PP8A86kW7j6sywU=
-github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.0.1-beta.1/go.mod h1:Yhk+xD4mN90OKEHnk5ARf97CX5p4+MEC/B/YIVoZeZ0=
+github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.0.1 h1:cPQ5RczmwE98P24bhWrMtJzuPKrnCMB48G7Dzzfca1g=
+github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.0.1/go.mod h1:Yhk+xD4mN90OKEHnk5ARf97CX5p4+MEC/B/YIVoZeZ0=
 github.com/nutanix/ntnx-api-golang-clients/storage-go-client/v4 v4.0.2-alpha.3 h1:K3I9YtqKcKKxSL4+tcxnFeLOoaptiVlpsOJ9Xzq3shM=
 github.com/nutanix/ntnx-api-golang-clients/storage-go-client/v4 v4.0.2-alpha.3/go.mod h1:kz3gO87xtWnPOCP2kN7yw5LvCDVRnvg8BOWL7CarqXA=
 github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4 v4.0.1-beta.1 h1:XuTRvYu1kiNjdXOYVwyjhKlFWyo9nMit6GsOYV8+5Cg=
