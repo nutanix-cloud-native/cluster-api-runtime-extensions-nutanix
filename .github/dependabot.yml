@@ -28,7 +28,6 @@ updates:
       update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
     # Ignore ntnx-api-golang-clients modules major, minor, and patch as they are upgraded together with prism-go-client.
     - dependency-name: "github.com/nutanix/ntnx-api-golang-clients/*"
-      update-types: [ "version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch" ]
 
   - package-ecosystem: "gomod"
     directory: "/hack/third-party/capa"
