@@ -4,9 +4,9 @@ prismCentralInsecure: {{ .PrismCentralInsecure }}
 {{- with .PrismCentralAdditionalTrustBundle }}
 prismCentralAdditionalTrustBundle: "{{ . }}"
 {{- end }}
-{{- with .ControlPlaneEndpointHost }}
-ignoredNodeIPs: [ {{ printf "%q" . }} ]
- {{- end }}
+{{- with .IPsToIgnore }}
+ignoredNodeIPs: [ {{ joinQuoted . }} ]
+{{- end }}
 
 # The Secret containing the credentials will be created by the handler.
 createSecret: false

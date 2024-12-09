@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"github.com/go-logr/logr"
@@ -140,7 +141,15 @@ func templateValuesFunc(
 	nutanixConfig *v1alpha1.NutanixSpec,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
-		helmValuesTemplate, err := template.New("").Parse(valuesTemplate)
+		joinQuoted := template.FuncMap{
+			"joinQuoted": func(items []string) string {
+				for i, item := range items {
+					items[i] = fmt.Sprintf("%q", item)
+				}
+				return strings.Join(items, ", ")
+			},
+		}
+		helmValuesTemplate, err := template.New("").Funcs(joinQuoted).Parse(valuesTemplate)
 		if err != nil {
 			return "", fmt.Errorf("failed to parse Helm values template: %w", err)
 		}
@@ -150,7 +159,7 @@ func templateValuesFunc(
 			PrismCentralPort                  uint16
 			PrismCentralInsecure              bool
 			PrismCentralAdditionalTrustBundle string
-			ControlPlaneEndpointHost          string
+			IPsToIgnore                       []string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -162,7 +171,7 @@ func templateValuesFunc(
 			PrismCentralPort:                  port,
 			PrismCentralInsecure:              nutanixConfig.PrismCentralEndpoint.Insecure,
 			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
-			ControlPlaneEndpointHost:          nutanixConfig.ControlPlaneEndpoint.Host,
+			IPsToIgnore:                       ipsToIgnore(nutanixConfig),
 		}
 
 		var b bytes.Buffer
@@ -173,4 +182,18 @@ func templateValuesFunc(
 
 		return b.String(), nil
 	}
+}
+
+func ipsToIgnore(nutanixConfig *v1alpha1.NutanixSpec) []string {
+	toIgnore := []string{nutanixConfig.ControlPlaneEndpoint.Host}
+	// Also ignore the virtual IP if it is set.
+	if nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec != nil &&
+		nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration != nil &&
+		nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address != "" {
+		toIgnore = append(
+			toIgnore,
+			nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address,
+		)
+	}
+	return toIgnore
 }

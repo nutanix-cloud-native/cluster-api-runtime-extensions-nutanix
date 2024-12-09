@@ -43,6 +43,16 @@ ignoredNodeIPs: [ "1.2.3.4" ]
 createSecret: false
 secretName: nutanix-ccm-credentials
 `
+
+	expectedWithVirtualIPSet = `prismCentralEndPoint: prism-central.nutanix.com
+prismCentralPort: 9440
+prismCentralInsecure: true
+ignoredNodeIPs: [ "1.2.3.4", "5.6.7.8" ]
+
+# The Secret containing the credentials will be created by the handler.
+createSecret: false
+secretName: nutanix-ccm-credentials
+`
 )
 
 var valuesTemplateFile = filepath.Join(
@@ -126,6 +136,41 @@ func Test_templateValues(t *testing.T) {
 			},
 			in:       valuesTemplate,
 			expected: expectedWithoutAdditionalTrustBundle,
+		},
+		{
+			name: "With VirtualIP Set",
+			clusterConfig: &apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						CCM: &v1alpha1.CCM{
+							Credentials: &v1alpha1.CCMCredentials{
+								SecretRef: v1alpha1.LocalObjectReference{
+									Name: "creds",
+								},
+							},
+						},
+					},
+				},
+				Nutanix: &v1alpha1.NutanixSpec{
+					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+						URL: fmt.Sprintf(
+							"https://prism-central.nutanix.com:%d",
+							v1alpha1.DefaultPrismCentralPort,
+						),
+						Insecure: true,
+					},
+					ControlPlaneEndpoint: v1alpha1.ControlPlaneEndpointSpec{
+						Host: "1.2.3.4",
+						VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
+							Configuration: &v1alpha1.ControlPlaneVirtualIPConfiguration{
+								Address: "5.6.7.8",
+							},
+						},
+					},
+				},
+			},
+			in:       valuesTemplate,
+			expected: expectedWithVirtualIPSet,
 		},
 	}
 	for idx := range tests {

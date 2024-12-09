@@ -264,7 +264,7 @@ spec:
         - name: vip_arp
           value: "true"
         - name: address
-          value: "{{ .ControlPlaneEndpoint.Host }}"
+          value: "{{ .Address }}"
         - name: port
-          value: "{{ .ControlPlaneEndpoint.Port }}"
+          value: "{{ .Port }}"
 `
