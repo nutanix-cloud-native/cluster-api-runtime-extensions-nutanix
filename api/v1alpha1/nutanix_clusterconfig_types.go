@@ -14,6 +14,7 @@ const (
 )
 
 // NutanixSpec defines the desired state of NutanixCluster.
+// +kubebuilder:validation:XValidation:rule="isURL(self.prismCentralEndpoint.url) && (url(self.prismCentralEndpoint.url).getHostname() != self.controlPlaneEndpoint.host)", message="Prism Central URL must not match the control plane endpoint IP"
 type NutanixSpec struct {
 	// ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// host can be either DNS name or ip address

@@ -668,6 +668,9 @@ spec:
                     - controlPlaneEndpoint
                     - prismCentralEndpoint
                   type: object
+                  x-kubernetes-validations:
+                    - message: Prism Central URL must not match the control plane endpoint IP
+                      rule: isURL(self.prismCentralEndpoint.url) && (url(self.prismCentralEndpoint.url).getHostname() != self.controlPlaneEndpoint.host)
                 proxy:
                   description: HTTPProxy required for providing proxy configuration.
                   properties:
