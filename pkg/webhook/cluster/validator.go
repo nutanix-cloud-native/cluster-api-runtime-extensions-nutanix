@@ -11,6 +11,5 @@ import (
 func NewValidator(client ctrlclient.Client, decoder admission.Decoder) admission.Handler {
 	return admission.MultiValidatingHandler(
 		NewClusterUUIDLabeler(client, decoder).Validator(),
-		NewNutanixValidator(client, decoder).Validator(),
 	)
 }
