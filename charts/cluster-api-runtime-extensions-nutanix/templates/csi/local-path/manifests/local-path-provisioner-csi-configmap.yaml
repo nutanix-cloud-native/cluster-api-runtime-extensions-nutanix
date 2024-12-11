@@ -16,8 +16,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.27
-        helm.sh/chart: local-path-provisioner-0.0.29
+        app.kubernetes.io/version: v0.0.28
+        helm.sh/chart: local-path-provisioner-0.0.30
       name: local-path-provisioner-csi
       namespace: kube-system
     ---
@@ -28,8 +28,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.27
-        helm.sh/chart: local-path-provisioner-0.0.29
+        app.kubernetes.io/version: v0.0.28
+        helm.sh/chart: local-path-provisioner-0.0.30
       name: local-path-provisioner-csi
       namespace: kube-system
     rules:
@@ -53,8 +53,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.27
-        helm.sh/chart: local-path-provisioner-0.0.29
+        app.kubernetes.io/version: v0.0.28
+        helm.sh/chart: local-path-provisioner-0.0.30
       name: local-path-provisioner-csi
     rules:
     - apiGroups:
@@ -104,8 +104,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.27
-        helm.sh/chart: local-path-provisioner-0.0.29
+        app.kubernetes.io/version: v0.0.28
+        helm.sh/chart: local-path-provisioner-0.0.30
       name: local-path-provisioner-csi
       namespace: kube-system
     roleRef:
@@ -124,8 +124,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.27
-        helm.sh/chart: local-path-provisioner-0.0.29
+        app.kubernetes.io/version: v0.0.28
+        helm.sh/chart: local-path-provisioner-0.0.30
       name: local-path-provisioner-csi
     roleRef:
       apiGroup: rbac.authorization.k8s.io
@@ -181,8 +181,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.27
-        helm.sh/chart: local-path-provisioner-0.0.29
+        app.kubernetes.io/version: v0.0.28
+        helm.sh/chart: local-path-provisioner-0.0.30
       name: local-path-config
       namespace: kube-system
     ---
@@ -193,8 +193,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.27
-        helm.sh/chart: local-path-provisioner-0.0.29
+        app.kubernetes.io/version: v0.0.28
+        helm.sh/chart: local-path-provisioner-0.0.30
       name: local-path-provisioner-csi
       namespace: kube-system
     spec:
@@ -209,8 +209,8 @@ data:
             app.kubernetes.io/instance: local-path-provisioner-csi
             app.kubernetes.io/managed-by: Helm
             app.kubernetes.io/name: local-path-provisioner
-            app.kubernetes.io/version: v0.0.27
-            helm.sh/chart: local-path-provisioner-0.0.29
+            app.kubernetes.io/version: v0.0.28
+            helm.sh/chart: local-path-provisioner-0.0.30
         spec:
           containers:
           - command:
@@ -232,7 +232,7 @@ data:
               value: kube-system
             - name: CONFIG_MOUNT_PATH
               value: /etc/config/
-            image: rancher/local-path-provisioner:v0.0.27
+            image: rancher/local-path-provisioner:v0.0.28
             imagePullPolicy: IfNotPresent
             name: local-path-provisioner
             resources: {}
