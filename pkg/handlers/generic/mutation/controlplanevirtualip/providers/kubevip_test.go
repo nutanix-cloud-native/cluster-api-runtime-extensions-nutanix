@@ -105,6 +105,79 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "should return templated data with both IP and port from virtual IP configuration overrides",
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "10.20.100.10",
+				Port: 6443,
+				VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
+					Configuration: &v1alpha1.ControlPlaneVirtualIPConfiguration{
+						Address: "172.20.100.10",
+						Port:    8443,
+					},
+				},
+			},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data": validKubeVIPTemplate,
+				},
+			},
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "v1.28.0",
+					},
+				},
+			},
+			expectedFiles: []bootstrapv1.File{
+				{
+					Content:     expectedKubeVIPPodWithOverrides,
+					Owner:       kubeVIPFileOwner,
+					Path:        kubeVIPFilePath,
+					Permissions: kubeVIPFilePermissions,
+				},
+			},
+		},
+		{
+			name: "should return templated data with IP from virtual IP configuration overrides",
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "10.20.100.10",
+				Port: 8443,
+				VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
+					Configuration: &v1alpha1.ControlPlaneVirtualIPConfiguration{
+						Address: "172.20.100.10",
+					},
+				},
+			},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data": validKubeVIPTemplate,
+				},
+			},
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "v1.28.0",
+					},
+				},
+			},
+			expectedFiles: []bootstrapv1.File{
+				{
+					Content:     expectedKubeVIPPodWithOverrides,
+					Owner:       kubeVIPFileOwner,
+					Path:        kubeVIPFilePath,
+					Permissions: kubeVIPFilePermissions,
+				},
+			},
+		},
 	}
 
 	for idx := range tests {
@@ -227,9 +300,9 @@ spec:
         - name: vip_arp
           value: "true"
         - name: address
-          value: "{{ .ControlPlaneEndpoint.Host }}"
+          value: "{{ .Address }}"
         - name: port
-          value: "{{ .ControlPlaneEndpoint.Port }}"
+          value: "{{ .Port }}"
 `
 
 	expectedKubeVIPPod = `
@@ -252,5 +325,27 @@ spec:
           value: "10.20.100.10"
         - name: port
           value: "6443"
+`
+
+	expectedKubeVIPPodWithOverrides = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-vip
+  namespace: kube-system
+spec:
+  containers:
+    - name: kube-vip
+      image: ghcr.io/kube-vip/kube-vip:v1.1.1
+      imagePullPolicy: IfNotPresent
+      args:
+        - manager
+      env:
+        - name: vip_arp
+          value: "true"
+        - name: address
+          value: "172.20.100.10"
+        - name: port
+          value: "8443"
 `
 )

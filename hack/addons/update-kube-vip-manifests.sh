@@ -33,8 +33,8 @@ docker container run --rm ghcr.io/kube-vip/kube-vip:"${KUBE_VIP_VERSION}" \
   gojq --yaml-input --yaml-output \
     'del(.metadata.creationTimestamp, .status) |
      .spec.containers[].imagePullPolicy |= "IfNotPresent" |
-     (.spec.containers[0].env[] | select(.name == "port").value) |= "{{ `{{ .ControlPlaneEndpoint.Port }}` }}" |
-     (.spec.containers[0].env[] | select(.name == "address").value) |= "{{ `{{ .ControlPlaneEndpoint.Host }}` }}"
+     (.spec.containers[0].env[] | select(.name == "port").value) |= "{{ `{{ .Port }}` }}" |
+     (.spec.containers[0].env[] | select(.name == "address").value) |= "{{ `{{ .Address }}` }}"
     ' >"${ASSETS_DIR}/${FILE_NAME}"
 
 kubectl create configmap "{{ .Values.hooks.virtualIP.kubeVip.defaultTemplateConfigMap.name }}" --dry-run=client --output yaml \
