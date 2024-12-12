@@ -57,7 +57,10 @@ func TestIsIPInRange(t *testing.T) {
 			endIP:           "192.168.1.10",
 			targetIP:        "192.168.1.5",
 			expectedInRange: false,
-			expectedErr:     fmt.Errorf("invalid start IP: %q", "invalid-ip"),
+			expectedErr: fmt.Errorf(
+				"invalid start IP: ParseAddr(%q): unable to parse IP",
+				"invalid-ip",
+			),
 		},
 		{
 			name:            "Invalid end IP",
@@ -65,7 +68,10 @@ func TestIsIPInRange(t *testing.T) {
 			endIP:           "invalid-ip",
 			targetIP:        "192.168.1.5",
 			expectedInRange: false,
-			expectedErr:     fmt.Errorf("invalid end IP: %q", "invalid-ip"),
+			expectedErr: fmt.Errorf(
+				"invalid end IP: ParseAddr(%q): unable to parse IP",
+				"invalid-ip",
+			),
 		},
 		{
 			name:            "Invalid target IP",
@@ -73,7 +79,10 @@ func TestIsIPInRange(t *testing.T) {
 			endIP:           "192.168.1.10",
 			targetIP:        "invalid-ip",
 			expectedInRange: false,
-			expectedErr:     fmt.Errorf("invalid target IP: %q", "invalid-ip"),
+			expectedErr: fmt.Errorf(
+				"invalid target IP: ParseAddr(%q): unable to parse IP",
+				"invalid-ip",
+			),
 		},
 		{
 			name:            "IPv6 range - target within range",
