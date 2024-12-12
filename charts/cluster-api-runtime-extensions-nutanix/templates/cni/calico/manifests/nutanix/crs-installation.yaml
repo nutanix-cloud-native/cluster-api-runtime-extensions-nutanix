@@ -30,6 +30,8 @@ data:
           natOutgoing: Enabled
           nodeSelector: all()
         bgp: Enabled
+        nodeAddressAutodetectionV4:
+          kubernetes: NodeInternalIP
       nodeMetricsPort: 9091
       typhaMetricsPort: 9093
       registry: quay.io/
