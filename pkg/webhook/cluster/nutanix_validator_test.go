@@ -112,3 +112,121 @@ func TestValidatePrismCentralIPNotInLoadBalancerIPRange(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckIfPrismCentralAndControlPlaneIPSame(t *testing.T) {
+	tests := []struct {
+		name                     string
+		pcEndpoint               v1alpha1.NutanixPrismCentralEndpointSpec
+		controlPlaneEndpointSpec v1alpha1.ControlPlaneEndpointSpec
+		expectedErr              error
+	}{
+		{
+			name: "Different IPs",
+			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL: "https://192.168.1.1:9440",
+			},
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "192.168.1.2",
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "Same IPs",
+			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL: "https://192.168.1.1:9440",
+			},
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "192.168.1.1",
+			},
+			expectedErr: fmt.Errorf(
+				"prism central and control plane endpoint cannot have the same IP %q",
+				"192.168.1.1",
+			),
+		},
+		{
+			name: "Invalid Control Plane IP",
+			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL: "https://192.168.1.1:9440",
+			},
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "invalid-ip",
+			},
+			expectedErr: fmt.Errorf(
+				"invalid Nutanix control plane endpoint IP: ParseAddr(%q): unable to parse IP",
+				"invalid-ip",
+			),
+		},
+		{
+			name: "Invalid Prism Central URL",
+			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL: "invalid-url",
+			},
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "192.168.1.2",
+			},
+			expectedErr: fmt.Errorf(
+				"error parsing Prism Central URL: parse %q: invalid URI for request",
+				"invalid-url",
+			),
+		},
+		{
+			name: "Prism Central URL is FQDN",
+			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL: "https://example.com:9440",
+			},
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "192.168.1.2",
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "With KubeVIP ovveride and same PC and Control Plane IPs",
+			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL: "https://192.168.1.1:9440",
+			},
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "192.168.1.2",
+				VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
+					Provider: "KubeVIP",
+					Configuration: &v1alpha1.ControlPlaneVirtualIPConfiguration{
+						Address: "192.168.1.1",
+					},
+				},
+			},
+			expectedErr: fmt.Errorf(
+				"prism central and control plane endpoint cannot have the same IP %q",
+				"192.168.1.1",
+			),
+		},
+		{
+			name: "With KubeVIP ovveride and different PC and Control Plane IPs",
+			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL: "https://192.168.1.2:9440",
+			},
+			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
+				Host: "192.168.1.2",
+				VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
+					Provider: "KubeVIP",
+					Configuration: &v1alpha1.ControlPlaneVirtualIPConfiguration{
+						Address: "192.168.1.1",
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := checkIfPrismCentralAndControlPlaneIPSame(
+				tt.pcEndpoint,
+				tt.controlPlaneEndpointSpec,
+			)
+			if tt.expectedErr != nil {
+				assert.Equal(t, tt.expectedErr.Error(), err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
