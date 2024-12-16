@@ -144,17 +144,14 @@ func TestCheckIfPrismCentralAndControlPlaneIPSame(t *testing.T) {
 			),
 		},
 		{
-			name: "Invalid Control Plane IP",
+			name: "Control Plane IP specified as hostname",
 			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 				URL: "https://192.168.1.1:9440",
 			},
 			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
-				Host: "invalid-ip",
+				Host: "dummy-hostname",
 			},
-			expectedErr: fmt.Errorf(
-				"invalid Nutanix control plane endpoint IP: ParseAddr(%q): unable to parse IP",
-				"invalid-ip",
-			),
+			expectedErr: nil,
 		},
 		{
 			name: "Invalid Prism Central URL",
@@ -199,7 +196,7 @@ func TestCheckIfPrismCentralAndControlPlaneIPSame(t *testing.T) {
 			),
 		},
 		{
-			name: "With KubeVIP ovveride and different PC and Control Plane IPs",
+			name: "With KubeVIP override and different PC and Control Plane IPs",
 			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 				URL: "https://192.168.1.2:9440",
 			},

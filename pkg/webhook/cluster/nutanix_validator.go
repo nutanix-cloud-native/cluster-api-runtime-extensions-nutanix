@@ -153,9 +153,9 @@ func checkIfPrismCentralAndControlPlaneIPSame(
 		controlPlaneEndpointSpec.ControlPlaneEndpointIP(),
 	)
 	if err != nil {
-		// controlPlaneEndpointIP is strictly accepted as an IP address from user so
-		// if it is not an IP address, it is invalid.
-		return fmt.Errorf("invalid Nutanix control plane endpoint IP: %w", err)
+		// If controlPlaneEndpointIP is a hostname, we cannot compare it with PC IP
+		// so return directly.
+		return nil
 	}
 
 	pcHostname, _, err := pcEndpoint.ParseURL()
