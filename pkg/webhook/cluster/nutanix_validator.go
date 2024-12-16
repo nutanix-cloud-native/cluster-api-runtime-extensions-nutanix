@@ -149,9 +149,7 @@ func checkIfPrismCentralAndControlPlaneIPSame(
 	pcEndpoint v1alpha1.NutanixPrismCentralEndpointSpec,
 	controlPlaneEndpointSpec v1alpha1.ControlPlaneEndpointSpec,
 ) error {
-	controlPlaneEndpointIP, err := netip.ParseAddr(
-		controlPlaneEndpointSpec.ControlPlaneEndpointIP(),
-	)
+	controlPlaneEndpointIP, err := netip.ParseAddr(controlPlaneEndpointSpec.VirtualIPAddress())
 	if err != nil {
 		// If controlPlaneEndpointIP is a hostname, we cannot compare it with PC IP
 		// so return directly.

@@ -78,7 +78,7 @@ type LocalObjectReference struct {
 	Name string `json:"name"`
 }
 
-func (s ControlPlaneEndpointSpec) ControlPlaneEndpointIP() string {
+func (s ControlPlaneEndpointSpec) VirtualIPAddress() string {
 	// If specified, use the virtual IP address and/or port,
 	// otherwise fall back to the control plane endpoint host and port.
 	if s.VirtualIPSpec != nil &&
