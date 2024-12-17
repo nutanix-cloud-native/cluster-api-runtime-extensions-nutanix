@@ -5,6 +5,7 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -72,7 +73,7 @@ func (a *nutanixValidator) validate(
 	if clusterConfig.Nutanix != nil &&
 		clusterConfig.Addons != nil {
 		// Check if Prism Central IP is in MetalLB Load Balancer IP range.
-		if err := checkIfPrismCentralIPInLoadBalancerIPRange(
+		if err := validatePrismCentralIPNotInLoadBalancerIPRange(
 			clusterConfig.Nutanix.PrismCentralEndpoint,
 			clusterConfig.Addons.ServiceLoadBalancer,
 		); err != nil {
@@ -83,9 +84,9 @@ func (a *nutanixValidator) validate(
 	return admission.Allowed("")
 }
 
-// checkIfPrismCentralIPInLoadBalancerIPRange checks if the Prism Central IP is in the MetalLB Load Balancer IP range.
-// Errors out if Prism Central IP is in the Load Balancer IP range.
-func checkIfPrismCentralIPInLoadBalancerIPRange(
+// validatePrismCentralIPNotInLoadBalancerIPRange checks if the Prism Central IP is not
+// in the MetalLB Load Balancer IP range and error out if it is.
+func validatePrismCentralIPNotInLoadBalancerIPRange(
 	pcEndpoint v1alpha1.NutanixPrismCentralEndpointSpec,
 	serviceLoadBalancerConfiguration *v1alpha1.ServiceLoadBalancer,
 ) error {
@@ -110,7 +111,7 @@ func checkIfPrismCentralIPInLoadBalancerIPRange(
 		isIPInRange, err := helpers.IsIPInRange(pool.Start, pool.End, pcIP.String())
 		if err != nil {
 			return fmt.Errorf(
-				"error while checking if Prism Central IP %q is part of MetalLB address range %q-%q: %w",
+				"failed to check if Prism Central IP %q is part of MetalLB address range %q-%q: %w",
 				pcIP,
 				pool.Start,
 				pool.End,
@@ -118,8 +119,13 @@ func checkIfPrismCentralIPInLoadBalancerIPRange(
 			)
 		}
 		if isIPInRange {
-			return fmt.Errorf("prism central IP %q must not be part of MetalLB address range %q-%q",
-				pcIP, pool.Start, pool.End)
+			errMsg := fmt.Sprintf(
+				"Prism Central IP %q must not be part of MetalLB address range %q-%q",
+				pcIP,
+				pool.Start,
+				pool.End,
+			)
+			return errors.New(errMsg)
 		}
 	}
 

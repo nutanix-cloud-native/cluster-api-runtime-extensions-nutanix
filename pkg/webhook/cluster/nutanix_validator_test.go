@@ -12,7 +12,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-func TestCheckIfPrismCentralIPInLoadBalancerIPRange(t *testing.T) {
+func TestValidatePrismCentralIPNotInLoadBalancerIPRange(t *testing.T) {
 	tests := []struct {
 		name                             string
 		pcEndpoint                       v1alpha1.NutanixPrismCentralEndpointSpec
@@ -48,7 +48,7 @@ func TestCheckIfPrismCentralIPInLoadBalancerIPRange(t *testing.T) {
 				},
 			},
 			expectedErr: fmt.Errorf(
-				"prism central IP %q must not be part of MetalLB address range %q-%q",
+				"Prism Central IP %q must not be part of MetalLB address range %q-%q",
 				"192.168.1.15",
 				"192.168.1.10",
 				"192.168.1.20",
@@ -99,7 +99,7 @@ func TestCheckIfPrismCentralIPInLoadBalancerIPRange(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := checkIfPrismCentralIPInLoadBalancerIPRange(
+			err := validatePrismCentralIPNotInLoadBalancerIPRange(
 				tt.pcEndpoint,
 				tt.serviceLoadBalancerConfiguration,
 			)
