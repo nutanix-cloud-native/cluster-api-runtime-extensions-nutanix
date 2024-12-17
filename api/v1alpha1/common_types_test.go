@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestControlPlaneEndpointIP(t *testing.T) {
+func TestVirtualIPAddress(t *testing.T) {
 	tests := []struct {
 		name     string
 		spec     ControlPlaneEndpointSpec

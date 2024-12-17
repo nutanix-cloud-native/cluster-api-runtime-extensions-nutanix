@@ -67,10 +67,7 @@ func TestValidatePrismCentralIPNotInLoadBalancerIPRange(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: fmt.Errorf(
-				"error parsing Prism Central URL: parse %q: invalid URI for request",
-				"invalid-url",
-			),
+			expectedErr: nil,
 		},
 		{
 			name: "Service Load Balancer Configuration is nil",
@@ -113,7 +110,7 @@ func TestValidatePrismCentralIPNotInLoadBalancerIPRange(t *testing.T) {
 	}
 }
 
-func TestCheckIfPrismCentralAndControlPlaneIPSame(t *testing.T) {
+func TestValidatePrismCentralIPDoesNotEqualControlPlaneIP(t *testing.T) {
 	tests := []struct {
 		name                     string
 		pcEndpoint               v1alpha1.NutanixPrismCentralEndpointSpec
@@ -139,7 +136,7 @@ func TestCheckIfPrismCentralAndControlPlaneIPSame(t *testing.T) {
 				Host: "192.168.1.1",
 			},
 			expectedErr: fmt.Errorf(
-				"prism central and control plane endpoint cannot have the same IP %q",
+				"Prism Central and control plane endpoint cannot have the same IP %q",
 				"192.168.1.1",
 			),
 		},
@@ -161,10 +158,7 @@ func TestCheckIfPrismCentralAndControlPlaneIPSame(t *testing.T) {
 			controlPlaneEndpointSpec: v1alpha1.ControlPlaneEndpointSpec{
 				Host: "192.168.1.2",
 			},
-			expectedErr: fmt.Errorf(
-				"error parsing Prism Central URL: parse %q: invalid URI for request",
-				"invalid-url",
-			),
+			expectedErr: nil,
 		},
 		{
 			name: "Prism Central URL is FQDN",
@@ -191,7 +185,7 @@ func TestCheckIfPrismCentralAndControlPlaneIPSame(t *testing.T) {
 				},
 			},
 			expectedErr: fmt.Errorf(
-				"prism central and control plane endpoint cannot have the same IP %q",
+				"Prism Central and control plane endpoint cannot have the same IP %q",
 				"192.168.1.1",
 			),
 		},
@@ -215,7 +209,7 @@ func TestCheckIfPrismCentralAndControlPlaneIPSame(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := checkIfPrismCentralAndControlPlaneIPSame(
+			err := validatePrismCentralIPDoesNotEqualControlPlaneIP(
 				tt.pcEndpoint,
 				tt.controlPlaneEndpointSpec,
 			)

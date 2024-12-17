@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"net/netip"
 
@@ -72,7 +71,7 @@ func (a *nutanixValidator) validate(
 	}
 
 	if clusterConfig.Nutanix != nil {
-		if err := checkIfPrismCentralAndControlPlaneIPSame(
+		if err := validatePrismCentralIPDoesNotEqualControlPlaneIP(
 			clusterConfig.Nutanix.PrismCentralEndpoint,
 			clusterConfig.Nutanix.ControlPlaneEndpoint,
 		); err != nil {
@@ -105,14 +104,10 @@ func validatePrismCentralIPNotInLoadBalancerIPRange(
 		return nil
 	}
 
-	pcHostname, _, err := pcEndpoint.ParseURL()
+	pcIP, err := pcEndpoint.ParseIP()
 	if err != nil {
-		return err
-	}
-
-	pcIP := net.ParseIP(pcHostname)
-	// PC URL can contain IP/FQDN, so compare only if PC is an IP address.
-	if pcIP == nil {
+		// If it's not able to parse IP correctly then, ignore the error as
+		// we want to compare only IP addresses.
 		return nil
 	}
 
@@ -141,31 +136,33 @@ func validatePrismCentralIPNotInLoadBalancerIPRange(
 	return nil
 }
 
-// checkIfPrismCentralAndControlPlaneIPSame checks if Prism Central and Control Plane IP are same.
-// It compares strictly IP addresses(no FQDN) and doesn't involve any network calls.
-// This is a temporary check until we have a better way to handle this by reserving IPs
-// using IPAM provider.
-func checkIfPrismCentralAndControlPlaneIPSame(
+// validatePrismCentralIPDoesNotEqualControlPlaneIP checks if Prism Central and Control Plane IP are same,
+// error out if they are same.
+// It strictly compares IP addresses(no FQDN) and doesn't involve any network calls.
+func validatePrismCentralIPDoesNotEqualControlPlaneIP(
 	pcEndpoint v1alpha1.NutanixPrismCentralEndpointSpec,
 	controlPlaneEndpointSpec v1alpha1.ControlPlaneEndpointSpec,
 ) error {
-	controlPlaneEndpointIP, err := netip.ParseAddr(controlPlaneEndpointSpec.VirtualIPAddress())
+	controlPlaneVIP, err := netip.ParseAddr(controlPlaneEndpointSpec.VirtualIPAddress())
 	if err != nil {
 		// If controlPlaneEndpointIP is a hostname, we cannot compare it with PC IP
 		// so return directly.
 		return nil
 	}
 
-	pcHostname, _, err := pcEndpoint.ParseURL()
+	pcIP, err := pcEndpoint.ParseIP()
 	if err != nil {
-		return err
+		// If it's not able to parse IP correctly then, ignore the error as
+		// we want to compare only IP addresses.
+		return nil
 	}
 
-	pcIP, err := netip.ParseAddr(pcHostname)
-	// PC URL can contain IP/FQDN, so compare only if PC is an IP address i.e. error is nil.
-	if err == nil && pcIP.Compare(controlPlaneEndpointIP) == 0 {
-		return fmt.Errorf("prism central and control plane endpoint cannot have the same IP %q",
-			pcIP.String())
+	if pcIP.Compare(controlPlaneVIP) == 0 {
+		errMsg := fmt.Sprintf(
+			"Prism Central and control plane endpoint cannot have the same IP %q",
+			pcIP.String(),
+		)
+		return errors.New(errMsg)
 	}
 
 	return nil
