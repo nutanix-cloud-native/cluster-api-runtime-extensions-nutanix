@@ -6,6 +6,14 @@ metadata:
   name: docker-quick-start
 spec:
   controlPlane:
+    machineHealthCheck:
+      unhealthyConditions:
+      - status: Unknown
+        timeout: 300s
+        type: Ready
+      - status: "False"
+        timeout: 300s
+        type: Ready
     machineInfrastructure:
       ref:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -32,6 +40,14 @@ spec:
   workers:
     machineDeployments:
     - class: default-worker
+      machineHealthCheck:
+        unhealthyConditions:
+        - status: Unknown
+          timeout: 300s
+          type: Ready
+        - status: "False"
+          timeout: 300s
+          type: Ready
       template:
         bootstrap:
           ref:
