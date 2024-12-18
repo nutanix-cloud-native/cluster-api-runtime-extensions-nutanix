@@ -43,7 +43,7 @@ func getReference(
 		return nil, errors.New("reference is not set")
 	}
 
-	obj, err := external.Get(ctx, cli, ref, ref.Namespace)
+	obj, err := external.Get(ctx, cli, ref)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get %s %s/%s", ref.Kind, ref.Name, ref.Namespace)
 	}
