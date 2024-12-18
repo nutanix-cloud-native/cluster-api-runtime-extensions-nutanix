@@ -1,13 +1,13 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-export CALICO_VERSION := v3.28.2
-export CILIUM_VERSION := 1.16.2
-export NODE_FEATURE_DISCOVERY_VERSION := 0.16.4
-export CLUSTER_AUTOSCALER_CHART_VERSION := 9.40.0
-export AWS_EBS_CSI_CHART_VERSION := 2.35.1
-export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.1.0
-export LOCAL_PATH_CSI_CHART_VERSION := 0.0.29
+export CALICO_VERSION := v3.29.1
+export CILIUM_VERSION := 1.16.4
+export NODE_FEATURE_DISCOVERY_VERSION := 0.16.6
+export CLUSTER_AUTOSCALER_CHART_VERSION := 9.43.2
+export AWS_EBS_CSI_CHART_VERSION := 2.37.0
+export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.2.0
+export LOCAL_PATH_CSI_CHART_VERSION := 0.0.30
 export SNAPSHOT_CONTROLLER_CHART_VERSION := 3.0.6
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
 # be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
@@ -17,7 +17,7 @@ export AWS_CCM_VERSION_127 := v1.27.9
 export AWS_CCM_VERSION_128 := v1.28.9
 export AWS_CCM_VERSION_129 := v1.29.6
 export AWS_CCM_VERSION_130 := v1.30.3
-export AWS_CCM_VERSION_131 := v1.31.0
+export AWS_CCM_VERSION_131 := v1.31.1
 
 export NUTANIX_CCM_CHART_VERSION := 0.4.1
 
