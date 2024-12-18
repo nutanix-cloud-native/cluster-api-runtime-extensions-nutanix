@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"net/netip"
 	"net/url"
 	"strconv"
 )
@@ -57,7 +58,7 @@ type NutanixPrismCentralEndpointCredentials struct {
 //nolint:gocritic // No need for named return values
 func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, uint16, error) {
 	var prismCentralURL *url.URL
-	prismCentralURL, err := url.Parse(s.URL)
+	prismCentralURL, err := url.ParseRequestURI(s.URL)
 	if err != nil {
 		return "", 0, fmt.Errorf("error parsing Prism Central URL: %w", err)
 	}
@@ -75,4 +76,18 @@ func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, uint16, error) {
 	}
 
 	return hostname, uint16(port), nil
+}
+
+func (s NutanixPrismCentralEndpointSpec) ParseIP() (netip.Addr, error) {
+	pcHostname, _, err := s.ParseURL()
+	if err != nil {
+		return netip.Addr{}, err
+	}
+
+	pcIP, err := netip.ParseAddr(pcHostname)
+	if err != nil {
+		return netip.Addr{}, fmt.Errorf("error parsing Prism Central IP: %w", err)
+	}
+
+	return pcIP, nil
 }

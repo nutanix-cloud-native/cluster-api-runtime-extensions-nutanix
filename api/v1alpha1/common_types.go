@@ -77,3 +77,15 @@ type LocalObjectReference struct {
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 }
+
+func (s ControlPlaneEndpointSpec) VirtualIPAddress() string {
+	// If specified, use the virtual IP address and/or port,
+	// otherwise fall back to the control plane endpoint host and port.
+	if s.VirtualIPSpec != nil &&
+		s.VirtualIPSpec.Configuration != nil &&
+		s.VirtualIPSpec.Configuration.Address != "" {
+		return s.VirtualIPSpec.Configuration.Address
+	}
+
+	return s.Host
+}
