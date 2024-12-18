@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"net/netip"
 	"net/url"
 	"strconv"
 )
@@ -75,4 +76,18 @@ func (s NutanixPrismCentralEndpointSpec) ParseURL() (string, uint16, error) {
 	}
 
 	return hostname, uint16(port), nil
+}
+
+func (s NutanixPrismCentralEndpointSpec) ParseIP() (netip.Addr, error) {
+	pcHostname, _, err := s.ParseURL()
+	if err != nil {
+		return netip.Addr{}, err
+	}
+
+	pcIP, err := netip.ParseAddr(pcHostname)
+	if err != nil {
+		return netip.Addr{}, fmt.Errorf("error parsing Prism Central IP: %w", err)
+	}
+
+	return pcIP, nil
 }
