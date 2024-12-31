@@ -9,6 +9,9 @@ IFS=$'\n\t'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 
+# shellcheck source=hack/common.sh
+source "${SCRIPT_DIR}/../common.sh"
+
 trap 'find "${SCRIPT_DIR}" -name kustomization.yaml -delete' EXIT
 
 # For details why the exec command is structured like this , see
@@ -22,14 +25,27 @@ readonly EXAMPLE_CLUSTERS_DIR=examples/capi-quick-start
 mkdir -p "${EXAMPLE_CLUSTERS_DIR}"
 
 for provider in "aws" "docker" "nutanix"; do
-  kustomize build --load-restrictor LoadRestrictionsNone \
-    ./hack/examples/overlays/clusterclasses/"${provider}" >"${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml
+  configuration_dir="./hack/examples/overlays/clusterclasses/${provider}"
+  clusterclass_template="${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml
+  kustomize build \
+    "$configuration_dir" \
+    --output "$clusterclass_template" \
+    --load-restrictor LoadRestrictionsNone
+
+  set -x
+  prepend_generated_by_header "$clusterclass_template" "${BASH_SOURCE[0]}"
+  set +x
 
   for cni in "calico" "cilium"; do
     for strategy in "helm-addon" "crs"; do
-      kustomize build --load-restrictor LoadRestrictionsNone \
-        ./hack/examples/overlays/clusters/"${provider}"/"${cni}"/"${strategy}" \
-        >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${cni}-${strategy}.yaml"
+      configuration_dir="./hack/examples/overlays/clusters/${provider}/${cni}/${strategy}"
+      cluster_template="${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${cni}-${strategy}.yaml"
+      kustomize build \
+        "$configuration_dir" \
+        --output "$cluster_template" \
+        --load-restrictor LoadRestrictionsNone
+
+      prepend_generated_by_header "$cluster_template" "${BASH_SOURCE[0]}"
     done
   done
 done
