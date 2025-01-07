@@ -71,6 +71,7 @@ spec:
           clusterAutoscaler: {}
           cni:
             provider: Cilium
+          cosi: {}
           csi:
             defaultStorage:
               provider: nutanix
