@@ -23,6 +23,10 @@ data:
     ChartName: cluster-autoscaler
     ChartVersion: 9.43.2
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}'
+  cosi-controller: |
+    ChartName: cosi
+    ChartVersion: 0.0.1-alpha.1
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/stable/{{ end }}'
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
     ChartVersion: 0.0.30

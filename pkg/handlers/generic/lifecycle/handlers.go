@@ -18,6 +18,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/calico"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/cilium"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cosi"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/awsebs"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/localpath"
@@ -43,6 +44,7 @@ type Handlers struct {
 	metalLBConfig            *metallb.Config
 	localPathCSIConfig       *localpath.Config
 	snapshotControllerConfig *snapshotcontroller.Config
+	cosiControllerConfig     *cosi.ControllerConfig
 }
 
 func New(
@@ -63,6 +65,7 @@ func New(
 		metalLBConfig:            &metallb.Config{GlobalOptions: globalOptions},
 		localPathCSIConfig:       localpath.NewConfig(globalOptions),
 		snapshotControllerConfig: snapshotcontroller.NewConfig(globalOptions),
+		cosiControllerConfig:     cosi.NewControllerConfig(globalOptions),
 	}
 }
 
@@ -112,6 +115,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		clusterautoscaler.New(mgr.GetClient(), h.clusterAutoscalerConfig, helmChartInfoGetter),
 		csi.New(mgr.GetClient(), csiHandlers),
 		snapshotcontroller.New(mgr.GetClient(), h.snapshotControllerConfig, helmChartInfoGetter),
+		cosi.New(mgr.GetClient(), h.cosiControllerConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
 		// The order of the handlers in the list is important and are called consecutively.
 		// The MetalLB provider may be configured to create a IPAddressPool on the remote cluster.
@@ -213,4 +217,5 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.awsccmConfig.AddFlags("ccm.aws", pflag.CommandLine)
 	h.nutanixCCMConfig.AddFlags("ccm.nutanix", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
+	h.cosiControllerConfig.AddFlags("cosi.controller", flagSet)
 }

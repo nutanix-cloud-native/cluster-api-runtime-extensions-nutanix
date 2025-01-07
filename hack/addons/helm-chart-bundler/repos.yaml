@@ -26,6 +26,11 @@ repositories:
     charts:
       cluster-autoscaler:
       - 9.43.2
+  cosi:
+    repoURL: https://mesosphere.github.io/charts/stable/
+    charts:
+      cosi:
+      - 0.0.1-alpha.1
   local-path-provisioner:
     repoURL: https://charts.containeroo.ch
     charts:

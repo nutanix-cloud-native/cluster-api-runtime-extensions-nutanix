@@ -22,7 +22,8 @@ const (
 	CNIVariableName = "cni"
 	// NFDVariableName is the NFD external patch variable name.
 	NFDVariableName = "nfd"
-
+	// COSIVariableName is the COSI external patch variable name.
+	COSIVariableName = "cosi"
 	// ClusterAutoscalerVariableName is the cluster-autoscaler external patch variable name.
 	ClusterAutoscalerVariableName = "clusterAutoscaler"
 	// ServiceLoadBalancerVariableName is the Service LoadBalancer config patch variable name.

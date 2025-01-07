@@ -361,6 +361,32 @@
                     },
                     "type": "object"
                 },
+                "cosi": {
+                    "properties": {
+                        "controller": {
+                            "properties": {
+                                "helmAddonStrategy": {
+                                    "properties": {
+                                        "defaultValueTemplateConfigMap": {
+                                            "properties": {
+                                                "create": {
+                                                    "type": "boolean"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
                 "csi": {
                     "properties": {
                         "aws-ebs": {
