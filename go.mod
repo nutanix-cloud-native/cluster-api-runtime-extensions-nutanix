@@ -30,6 +30,7 @@ require (
 	github.com/samber/lo v1.47.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
+	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.30.7
 	k8s.io/apiextensions-apiserver v0.30.7

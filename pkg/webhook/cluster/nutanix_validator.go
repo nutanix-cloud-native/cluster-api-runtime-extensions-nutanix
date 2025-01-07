@@ -112,7 +112,7 @@ func validatePrismCentralIPNotInLoadBalancerIPRange(
 	}
 
 	for _, pool := range serviceLoadBalancerConfiguration.Configuration.AddressRanges {
-		isIPInRange, err := helpers.IsIPInRange(pool.Start, pool.End, pcIP.String())
+		isIPInRange, err := helpers.IsIPInRange(pool.Start+"-"+pool.End, pcIP.String())
 		if err != nil {
 			return fmt.Errorf(
 				"failed to check if Prism Central IP %q is part of MetalLB address range %q-%q: %w",
