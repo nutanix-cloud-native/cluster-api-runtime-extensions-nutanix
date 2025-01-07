@@ -70,6 +70,9 @@ type DockerAddons struct {
 
 	// +kubebuilder:validation:Optional
 	CSI *DockerCSI `json:"csi,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	COSI *DockerCOSI `json:"cosi,omitempty"`
 }
 
 type NutanixAddons struct {
@@ -77,6 +80,9 @@ type NutanixAddons struct {
 
 	// +kubebuilder:validation:Optional
 	CSI *NutanixCSI `json:"csi,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	COSI *NutanixCOSI `json:"cosi,omitempty"`
 }
 
 type GenericAddons struct {
@@ -96,8 +102,6 @@ type GenericAddons struct {
 	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
 }
 
-// +kubebuilder:validation:Optional
-// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 type AddonStrategy string
 
 // CNI required for providing CNI configuration.
@@ -109,6 +113,7 @@ type CNI struct {
 
 	// Addon strategy used to deploy the CNI provider to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 
@@ -116,6 +121,7 @@ type CNI struct {
 type NFD struct {
 	// Addon strategy used to deploy Node Feature Discovery (NFD) to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 
@@ -124,6 +130,7 @@ type ClusterAutoscaler struct {
 	// Addon strategy used to deploy cluster-autoscaler to the management cluster
 	// targeting the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 
@@ -136,9 +143,17 @@ type GenericCSI struct {
 	SnapshotController *SnapshotController `json:"snapshotController,omitempty"`
 }
 
+type GenericCOSI struct {
+	// Addon strategy used to deploy the COSI controller to the workload cluster.
+	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Enum=HelmAddon
+	Strategy *AddonStrategy `json:"strategy,omitempty"`
+}
+
 type SnapshotController struct {
 	// Addon strategy used to deploy the snapshot controller to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 
@@ -197,6 +212,7 @@ type CSIProvider struct {
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy *AddonStrategy `json:"strategy,omitempty"`
 
 	// The reference to any secret used by the CSI Provider.
@@ -231,6 +247,14 @@ type CSICredentials struct {
 	SecretRef LocalObjectReference `json:"secretRef"`
 }
 
+type DockerCOSI struct {
+	GenericCOSI `json:",inline"`
+}
+
+type NutanixCOSI struct {
+	GenericCOSI `json:",inline"`
+}
+
 // CCM tells us to enable or disable the cloud provider interface.
 type CCM struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
@@ -239,6 +263,7 @@ type CCM struct {
 
 	// Addon strategy used to deploy the CCM to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy *AddonStrategy `json:"strategy,omitempty"`
 }
 

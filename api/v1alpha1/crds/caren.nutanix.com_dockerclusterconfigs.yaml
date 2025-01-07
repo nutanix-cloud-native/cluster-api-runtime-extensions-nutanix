@@ -104,6 +104,15 @@ spec:
                       required:
                         - provider
                       type: object
+                    cosi:
+                      properties:
+                        strategy:
+                          default: HelmAddon
+                          description: Addon strategy used to deploy the COSI controller to the workload cluster.
+                          enum:
+                            - HelmAddon
+                          type: string
+                      type: object
                     csi:
                       properties:
                         defaultStorage:

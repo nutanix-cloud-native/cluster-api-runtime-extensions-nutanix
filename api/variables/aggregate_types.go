@@ -53,10 +53,16 @@ type Addons struct {
 	carenv1.GenericAddons `json:",inline"`
 
 	CSI *CSI `json:"csi,omitempty"`
+
+	COSI *COSI `json:"cosi,omitempty"`
 }
 
 type CSI struct {
 	carenv1.GenericCSI `json:",inline"`
 
 	Providers map[string]carenv1.CSIProvider `json:"providers"`
+}
+
+type COSI struct {
+	carenv1.GenericCOSI `json:",inline"`
 }
