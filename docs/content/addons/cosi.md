@@ -8,7 +8,7 @@ on the new cluster at the `AfterControlPlaneInitialized` phase.
 
 Deployment of COSI is opt-in via the [provider-specific cluster configuration]({{< ref ".." >}}).
 
-The hook uses the [Cluster API Add-on Provider for Helm] to deploy the NFD resources.
+The hook uses the [Cluster API Add-on Provider for Helm] to deploy the COSI resources.
 
 ## Example
 
