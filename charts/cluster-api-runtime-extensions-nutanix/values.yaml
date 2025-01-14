@@ -107,6 +107,12 @@ hooks:
       defaultTemplateConfigMap:
         create: true
         name: default-kube-vip-template
+  cosi:
+    controller:
+      helmAddonStrategy:
+        defaultValueTemplateConfigMap:
+          create: true
+          name: default-cosi-controller-helm-values-template
 
 helmAddonsConfigMap: default-helm-addons-config
 

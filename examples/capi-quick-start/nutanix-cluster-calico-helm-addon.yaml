@@ -71,6 +71,7 @@ spec:
           clusterAutoscaler: {}
           cni:
             provider: Calico
+          cosi: {}
           csi:
             defaultStorage:
               provider: nutanix

@@ -25,6 +25,8 @@ export KUBE_VIP_VERSION := v0.8.3
 
 export METALLB_CHART_VERSION := 0.14.8
 
+export COSI_CONTROLLER_VERSION := 0.0.1-alpha.1
+
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi kube-vip)
 addons.sync: $(addprefix update-addon.aws-ccm.,127 128 129 130 131)

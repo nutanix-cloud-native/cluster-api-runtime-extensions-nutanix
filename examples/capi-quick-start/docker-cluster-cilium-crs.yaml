@@ -27,6 +27,7 @@ spec:
           cni:
             provider: Cilium
             strategy: ClusterResourceSet
+          cosi: {}
           csi:
             defaultStorage:
               provider: local-path

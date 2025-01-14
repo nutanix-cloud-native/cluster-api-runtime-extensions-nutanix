@@ -74,6 +74,8 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.cni.cilium.crsStrategy.defaultCiliumConfigMap.name | string | `"cilium"` |  |
 | hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-cilium-cni-helm-values-template"` |  |
+| hooks.cosi.controller.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
+| hooks.cosi.controller.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-cosi-controller-helm-values-template"` |  |
 | hooks.csi.aws-ebs.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.csi.aws-ebs.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-aws-ebs-csi-helm-values-template"` |  |
 | hooks.csi.local-path.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
