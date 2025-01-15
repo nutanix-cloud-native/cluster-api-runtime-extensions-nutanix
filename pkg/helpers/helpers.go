@@ -5,22 +5,39 @@ package helpers
 import (
 	"fmt"
 	"net/netip"
+	"strings"
+
+	"go4.org/netipx"
 )
 
-// IsIPInRange checks if the target IP falls within the start and end IP range (inclusive).
-func IsIPInRange(startIP, endIP, targetIP string) (bool, error) {
-	start, err := netip.ParseAddr(startIP)
+// IsIPInRange returns true if target IP falls within the IP range(inclusive of start and end IP),
+// CIDR(inclusive of start and end IP), single IP.
+func IsIPInRange(ipAddr, targetIP string) (bool, error) {
+	parsedTargetIP, err := netip.ParseAddr(targetIP)
 	if err != nil {
-		return false, fmt.Errorf("invalid start IP: %w", err)
-	}
-	end, err := netip.ParseAddr(endIP)
-	if err != nil {
-		return false, fmt.Errorf("invalid end IP: %w", err)
-	}
-	target, err := netip.ParseAddr(targetIP)
-	if err != nil {
-		return false, fmt.Errorf("invalid target IP: %w", err)
+		return false, fmt.Errorf("failed to parse target IP %q: %v", targetIP, err)
 	}
 
-	return start.Compare(target) <= 0 && end.Compare(target) >= 0, nil
+	switch {
+	case strings.Contains(ipAddr, "-"):
+		ipRange, err := netipx.ParseIPRange(ipAddr)
+		if err != nil {
+			return false, fmt.Errorf("failed to parse IP range %q: %v", ipAddr, err)
+		}
+		return ipRange.Contains(parsedTargetIP), nil
+
+	case strings.Contains(ipAddr, "/"):
+		prefix, err := netip.ParsePrefix(ipAddr)
+		if err != nil {
+			return false, fmt.Errorf("failed to parse IP prefix %q: %v", ipAddr, err)
+		}
+		return prefix.Contains(parsedTargetIP), nil
+
+	default:
+		parsedIP, err := netip.ParseAddr(ipAddr)
+		if err != nil {
+			return false, fmt.Errorf("failed to parse IP address %q: %v", ipAddr, err)
+		}
+		return parsedIP.Compare(parsedTargetIP) == 0, nil
+	}
 }
