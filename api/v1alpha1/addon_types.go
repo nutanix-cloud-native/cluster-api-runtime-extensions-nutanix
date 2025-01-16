@@ -119,7 +119,7 @@ type CNI struct {
 	// ValuesRef is an object reference to Configmap/Secret which contains inline YAML
 	// representing the values for the Helm chart when HelmAddon is the strategy.
 	// +kubebuilder:validation:Optional
-	ValuesRef *corev1.ObjectReference `json:"valuesRef,omitempty"`
+	ValuesRef *corev1.TypedLocalObjectReference `json:"valuesRef,omitempty"`
 }
 
 // NFD tells us to enable or disable the node feature discovery addon.

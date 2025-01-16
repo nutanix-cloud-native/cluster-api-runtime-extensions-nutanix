@@ -482,8 +482,8 @@ func (in *CNI) DeepCopyInto(out *CNI) {
 	}
 	if in.ValuesRef != nil {
 		in, out := &in.ValuesRef, &out.ValuesRef
-		*out = new(v1.ObjectReference)
-		**out = **in
+		*out = new(v1.TypedLocalObjectReference)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
