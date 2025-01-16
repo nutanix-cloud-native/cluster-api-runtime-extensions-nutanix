@@ -13,11 +13,11 @@ export SNAPSHOT_CONTROLLER_CHART_VERSION := 3.0.6
 # be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
 export AWS_CCM_CHART_VERSION := 0.0.8
 # A map of AWS CCM versions.
-export AWS_CCM_VERSION_127 := v1.27.9
-export AWS_CCM_VERSION_128 := v1.28.9
-export AWS_CCM_VERSION_129 := v1.29.6
-export AWS_CCM_VERSION_130 := v1.30.3
-export AWS_CCM_VERSION_131 := v1.31.1
+export AWS_CCM_VERSION_127 := v1.27.10
+export AWS_CCM_VERSION_128 := v1.28.10
+export AWS_CCM_VERSION_129 := v1.29.7
+export AWS_CCM_VERSION_130 := v1.30.6
+export AWS_CCM_VERSION_131 := v1.31.4
 
 export NUTANIX_CCM_CHART_VERSION := 0.5.0
 
