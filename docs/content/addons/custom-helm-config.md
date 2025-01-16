@@ -11,7 +11,10 @@ The helm chart configuration for an addon included in the custom ConfigMap will 
 If configuration for an addon is not included in the the customized addon configuration ConfigMap,
 it will be defauled from the `default-helm-addons-config` configmap.
 
-The content of the ConfigMap must follow following specification.
+The content of the ConfigMap must use below specification:
+
+- It should be immutable
+- The format of the addon chart configuration should be:
 
 ```yaml
   addon-name: |
@@ -26,10 +29,11 @@ Example configmap `custom-helm-addons-config.yaml`:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: <CLUSTER_NAME>-helm-addons-config
+  name: <CLUSTER_NAME>-helm-addons-config-<uuid>
   namespace: <CLUSTER_NAMESPACE>
   labels:
     clusterctl.cluster.x-k8s.io/move: ""
+immutable: true
 data:
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
