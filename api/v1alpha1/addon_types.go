@@ -116,8 +116,9 @@ type CNI struct {
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy *AddonStrategy `json:"strategy,omitempty"`
 
-	// ValuesRef is an object reference to Configmap/Secret which contains inline YAML
-	// representing the values for the Helm chart when HelmAddon is the strategy.
+	// ValuesRef is an object reference to Configmap/Secret inside the same namespace
+	// which contains inline YAML representing the values for the Helm chart
+	// when HelmAddon is the strategy.
 	// +kubebuilder:validation:Optional
 	ValuesRef *corev1.TypedLocalObjectReference `json:"valuesRef,omitempty"`
 }
