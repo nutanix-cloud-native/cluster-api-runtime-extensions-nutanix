@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.25.0 (2025-01-16)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Virtual IP configuration to set different address/port by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/986
+* feat: update addon versions by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/997
+* feat: COSI controller Addon by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1008
+### Fixes 🔧
+* fix: check HelmReleaseReadyCondition when status is up-to-date by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/989
+* fix: update CoreDNS mapping file by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/998
+* fix: validates PC IP is outside Load Balancer IP Range by @manoj-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1001
+* fix: update COSI controller image to fix CVEs by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1012
+* fix(deps): Update Nutanix CCM Version by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1016
+* fix: update AWS CCM to latest versions by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1013
+### Other Changes
+* refactor: new waiter functionality in helmAddonApplier by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/988
+* build: Properly ignore ntnx API client from dependabot by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/995
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.24.0...v0.25.0
+
 ## 0.24.0 (2024-12-02)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
