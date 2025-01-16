@@ -8,6 +8,7 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 
 	nutanixv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
+	objectstoragev1alpha1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/container-object-storage-interface/client/apis/objectstorage/v1alpha1"
 )
 
 // All kubebuilder "Enum" build tag values are available in the OpenAPI spec.
@@ -253,6 +254,88 @@ type DockerCOSI struct {
 
 type NutanixCOSI struct {
 	GenericCOSI `json:",inline"`
+
+	Providers NutanixCOSIProviders `json:"providers"`
+}
+
+// COSICredentials holds a reference to the Secret used by the COSI provider.
+type COSICredentials struct {
+	// A reference to the Secret containing the credentials used by the COSI provider.
+	// +kubebuilder:validation:Required
+	SecretRef LocalObjectReference `json:"secretRef"`
+}
+
+type BucketClassRetentionPolicy objectstoragev1alpha1.DeletionPolicy
+
+// BucketClassConfig describes how to create a BucketClass in the cluster
+type BucketClassConfig struct {
+	// RetentionPolicy is used to specify how COSI should handle deletion of this
+	// bucket. There are 2 possible values:
+	//  - Retain: Indicates that the bucket should not be deleted from the OSP
+	//  - Delete: Indicates that the bucket should be deleted from the OSP
+	//        once all the workloads accessing this bucket are done
+	// +kubebuilder:default:=Retain
+	RetentionPolicy BucketClassRetentionPolicy `json:"deletionPolicy"`
+
+	// Parameters is an opaque map for passing in configuration to a driver
+	// for creating the bucket
+	// +optional
+	Parameters map[string]string `json:"parameters,omitempty"`
+}
+
+type BucketAccessClassAuthenticationType objectstoragev1alpha1.AuthenticationType
+
+// BucketAccessClassConfig describes how to create a BucketAccessClass in the cluster
+type BucketAccessClassConfig struct {
+	// AuthenticationType denotes the style of authentication
+	// It can be one of
+	// Key - access, secret tokens based authentication
+	// IAM - implicit authentication of pods to the OSP based on service account mappings
+	// +kubebuilder:default:=Key
+	AuthenticationType BucketAccessClassAuthenticationType `json:"authenticationType"`
+
+	// Parameters is an opaque map for passing in configuration to a driver
+	// for granting access to a bucket
+	// +optional
+	Parameters map[string]string `json:"parameters,omitempty"`
+}
+
+// COSIProvider is analogous to CSIProvider, but for object storage. It allows
+// you to configure credentials and (optionally) “BucketClassConfigs” or
+// provider-specific parameters for object buckets.
+type COSIProvider struct {
+	// BucketClassConfigs is a map of storage class configurations for this CSI provider.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:minItems=1
+	BucketClassConfigs map[string]BucketClassConfig `json:"bucketClassConfigs,omitempty"`
+
+	// BucketAccessClassConfigs is a map of storage class configurations for this CSI provider.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:minItems=1
+	BucketAccessClassConfigs map[string]BucketClassConfig `json:"bucketAccessClassConfigs,omitempty"`
+
+	// Addon strategy used to deploy the specific COSI provider to the workload cluster.
+	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Enum=HelmAddon
+	Strategy *AddonStrategy `json:"strategy,omitempty"`
+}
+
+type NutanixCOSIProviders struct {
+	NutanixCOSI NutanixCOSIProvider `json:"nutanix"`
+}
+
+type NutanixCOSIProvider struct {
+	COSIProvider `json:",inline"`
+
+	// PrismCentralCredentials is a reference to the secret used by the COSI Provider to authenticate with prism central
+	// to create IAM users
+	// +kubebuilder:validation:Required
+	PrismCentralCredentials *COSICredentials `json:"prismCentralCredentials,omitempty"`
+
+	// ObjectsStoreCredentials is a reference to the secret used by the COSI Provider to do S3 Operations on the Objects
+	// Store
+	// +kubebuilder:validation:Required
+	ObjectsStoreCredentials *COSICredentials `json:"objectsStoreCredentials,omitempty"`
 }
 
 // CCM tells us to enable or disable the cloud provider interface.
