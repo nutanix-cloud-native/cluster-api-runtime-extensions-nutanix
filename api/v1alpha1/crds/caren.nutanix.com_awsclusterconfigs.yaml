@@ -101,29 +101,32 @@ spec:
                             - ClusterResourceSet
                             - HelmAddon
                           type: string
-                        valuesRef:
-                          description: |-
-                            ValuesRef is an object reference to Configmap/Secret inside the same namespace
-                            which contains inline YAML representing the values for the Helm chart
-                            when HelmAddon is the strategy.
+                        values:
+                          description: Values contains the helm values for the CNI when HelmAddon is the strategy.
                           properties:
-                            apiGroup:
+                            sourceRef:
                               description: |-
-                                APIGroup is the group for the resource being referenced.
-                                If APIGroup is not specified, the specified Kind must be in the core API group.
-                                For any other third-party types, APIGroup is required.
-                              type: string
-                            kind:
-                              description: Kind is the type of resource being referenced
-                              type: string
-                            name:
-                              description: Name is the name of resource being referenced
-                              type: string
-                          required:
-                            - kind
-                            - name
+                                SourceRef is an object reference to Configmap/Secret inside the same namespace
+                                which contains inline YAML representing the values for the Helm chart.
+                              properties:
+                                apiGroup:
+                                  description: |-
+                                    APIGroup is the group for the resource being referenced.
+                                    If APIGroup is not specified, the specified Kind must be in the core API group.
+                                    For any other third-party types, APIGroup is required.
+                                  type: string
+                                kind:
+                                  description: Kind is the type of resource being referenced
+                                  type: string
+                                name:
+                                  description: Name is the name of resource being referenced
+                                  type: string
+                              required:
+                                - kind
+                                - name
+                              type: object
+                              x-kubernetes-map-type: atomic
                           type: object
-                          x-kubernetes-map-type: atomic
                       required:
                         - provider
                       type: object

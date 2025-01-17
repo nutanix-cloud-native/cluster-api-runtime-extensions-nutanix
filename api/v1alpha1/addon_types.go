@@ -116,11 +116,24 @@ type CNI struct {
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy *AddonStrategy `json:"strategy,omitempty"`
 
-	// ValuesRef is an object reference to Configmap/Secret inside the same namespace
-	// which contains inline YAML representing the values for the Helm chart
-	// when HelmAddon is the strategy.
+	// AddonConfig contains the configuration for the CNI provider.
 	// +kubebuilder:validation:Optional
-	ValuesRef *corev1.TypedLocalObjectReference `json:"valuesRef,omitempty"`
+	AddonConfig `json:",inline"`
+}
+
+// AddonConfig contains the configuration for the Addon provider.
+type AddonConfig struct {
+	// Values contains the helm values for the CNI when HelmAddon is the strategy.
+	// +kubebuilder:validation:Optional
+	Values *AddonValues `json:"values,omitempty"`
+}
+
+// AddonValues contains the configuration values for the Helm Addon.
+type AddonValues struct {
+	// SourceRef is an object reference to Configmap/Secret inside the same namespace
+	// which contains inline YAML representing the values for the Helm chart.
+	// +kubebuilder:validation:Optional
+	SourceRef *corev1.TypedLocalObjectReference `json:"sourceRef,omitempty"`
 }
 
 // NFD tells us to enable or disable the node feature discovery addon.
