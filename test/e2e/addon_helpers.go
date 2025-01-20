@@ -96,6 +96,17 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 		},
 	)
 
+	WaitForCOSIControllerToBeReadyInWorkloadCluster(
+		ctx,
+		WaitForCOSIControllerToBeReadyInWorkloadClusterInput{
+			COSI:                 input.AddonsConfig.COSI,
+			WorkloadCluster:      input.WorkloadCluster,
+			ClusterProxy:         input.ClusterProxy,
+			DeploymentIntervals:  input.DeploymentIntervals,
+			HelmReleaseIntervals: input.HelmReleaseIntervals,
+		},
+	)
+
 	WaitForServiceLoadBalancerToBeReadyInWorkloadCluster(
 		ctx,
 		WaitForServiceLoadBalancerToBeReadyInWorkloadClusterInput{
