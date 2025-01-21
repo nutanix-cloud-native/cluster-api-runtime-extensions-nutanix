@@ -63,7 +63,7 @@ spec:
       initContainers:
       - name: copy-charts
         image: "{{ .Values.helmRepository.images.bundleInitializer.repository }}:{{ default $.Chart.AppVersion .Values.helmRepository.images.bundleInitializer.tag }}"
-        command: ["/bin/cp", "-r", "/charts/",  "/helm-charts/bundles/"]
+        command: ["/bin/cp", "-r", "/charts/.",  "/helm-charts/bundles/"]
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         volumeMounts:
         - name: charts-volume
