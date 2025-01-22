@@ -133,7 +133,7 @@ type AddonValues struct {
 	// SourceRef is an object reference to Configmap/Secret inside the same namespace
 	// which contains inline YAML representing the values for the Helm chart.
 	// +kubebuilder:validation:Optional
-	SourceRef *corev1.TypedLocalObjectReference `json:"sourceRef,omitempty"`
+	SourceRef *TypedLocalObjectReference `json:"sourceRef,omitempty"`
 }
 
 // NFD tells us to enable or disable the node feature discovery addon.
