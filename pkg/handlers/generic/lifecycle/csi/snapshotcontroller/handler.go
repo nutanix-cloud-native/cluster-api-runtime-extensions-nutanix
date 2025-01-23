@@ -140,7 +140,7 @@ func (s *SnapshotControllerHandler) apply(
 	var strategy addons.Applier
 	switch ptr.Deref(snapshotControllerVar.Strategy, "") {
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmChart, err := s.helmChartInfoGetter.For(ctx, log, config.SnapshotController)
+		helmChart, err := s.helmChartInfoGetter.For(ctx, log, cluster, config.SnapshotController)
 		if err != nil {
 			msg := "failed to get configuration to create helm addon"
 			log.Error(err, msg)

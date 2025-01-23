@@ -102,7 +102,7 @@ func (n *MetalLB) Apply(
 		)
 	}
 
-	helmChartInfo, err := n.helmChartInfoGetter.For(ctx, log, config.MetalLB)
+	helmChartInfo, err := n.helmChartInfoGetter.For(ctx, log, cluster, config.MetalLB)
 	if err != nil {
 		return fmt.Errorf("failed to get MetalLB helm chart: %w", err)
 	}

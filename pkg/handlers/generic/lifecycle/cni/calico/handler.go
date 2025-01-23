@@ -154,7 +154,7 @@ func (c *CalicoCNI) apply(
 	case v1alpha1.AddonStrategyHelmAddon:
 		// this is tigera and not calico because we deploy calico via operataor
 		log.Info("fetching settings for tigera-operator-config")
-		helmChart, err := c.helmChartInfoGetter.For(ctx, log, config.Tigera)
+		helmChart, err := c.helmChartInfoGetter.For(ctx, log, cluster, config.Tigera)
 		if err != nil {
 			log.Error(
 				err,

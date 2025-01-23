@@ -161,7 +161,7 @@ func (c *CiliumCNI) apply(
 			client: c.client,
 		}
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmChart, err := c.helmChartInfoGetter.For(ctx, log, config.Cilium)
+		helmChart, err := c.helmChartInfoGetter.For(ctx, log, cluster, config.Cilium)
 		if err != nil {
 			log.Error(
 				err,
