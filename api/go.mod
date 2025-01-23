@@ -5,7 +5,7 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/ap
 
 go 1.22.0
 
-toolchain go1.23.3
+toolchain go1.23.5
 
 replace github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common => ../common
 
