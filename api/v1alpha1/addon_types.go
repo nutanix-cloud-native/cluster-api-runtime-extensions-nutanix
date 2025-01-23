@@ -133,7 +133,22 @@ type AddonValues struct {
 	// SourceRef is an object reference to Configmap/Secret inside the same namespace
 	// which contains inline YAML representing the values for the Helm chart.
 	// +kubebuilder:validation:Optional
-	SourceRef *TypedLocalObjectReference `json:"sourceRef,omitempty"`
+	SourceRef *ValuesReference `json:"sourceRef,omitempty"`
+}
+
+// ValuesReference contains enough information to let you locate the
+// typed referenced object inside the same namespace.
+// This is redacted from the upstream https://pkg.go.dev/k8s.io/api/core/v1#TypedLocalObjectReference
+type ValuesReference struct {
+	// Kind is the type of resource being referenced, valid values are ('Secret', 'ConfigMap').
+	// +kubebuilder:validation:Enum=Secret;ConfigMap
+	// +kubebuilder:validation:Required
+	Kind string `json:"kind"`
+
+	// Name is the name of resource being referenced.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
 }
 
 // NFD tells us to enable or disable the node feature discovery addon.
