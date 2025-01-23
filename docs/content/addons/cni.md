@@ -75,6 +75,8 @@ data:
       mode: kubernetes
 kind: ConfigMap
 metadata:
+  labels:
+    clusterctl.cluster.x-k8s.io/move: ""
   name: <CLUSTER_NAME>-cilium-cni-helm-values-template
   namespace: <CLUSTER_NAMESPACE>
 ```
@@ -92,6 +94,8 @@ stringData:
       mode: kubernetes
 kind: Secret
 metadata:
+  labels:
+    clusterctl.cluster.x-k8s.io/move: ""
   name: <CLUSTER_NAME>-cilium-cni-helm-values-template
   namespace: <CLUSTER_NAMESPACE>
 type: Opaque
