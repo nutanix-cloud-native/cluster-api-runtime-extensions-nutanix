@@ -63,7 +63,18 @@ spec:
       initContainers:
       - name: copy-charts
         image: "{{ .Values.helmRepository.images.bundleInitializer.repository }}:{{ default $.Chart.AppVersion .Values.helmRepository.images.bundleInitializer.tag }}"
-        command: ["/bin/cp", "-r", "/charts/",  "/helm-charts/bundles/"]
+        # Copy the charts bundled in the image to the mounted PVC.
+        # The combination of flags `--recursive --no-target-directory` ensure that the bundled directory contents only are copied to the destination,
+        # rather than copying the source directory itself to the destination, which would lead to incorrect nesting.
+        # See https://unix.stackexchange.com/a/94838 for further explanation.
+        # Globs cannot be used here because we are not running in a shell and `cp` does not natively support globbing.
+        command:
+          - /bin/cp
+          - --recursive
+          - --no-target-directory
+          - --verbose
+          - /charts/
+          - /helm-charts/bundles/
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         volumeMounts:
         - name: charts-volume
