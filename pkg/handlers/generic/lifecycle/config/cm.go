@@ -80,15 +80,15 @@ func (h *HelmChartGetter) get(
 	return cm, err
 }
 
-type HelmChartNotFoundError struct {
+type HelmChartInfoNotFoundError struct {
 	Component Component
 	Name      string
 	Namespace string
 }
 
-func (e HelmChartNotFoundError) Error() string {
+func (e HelmChartInfoNotFoundError) Error() string {
 	return fmt.Sprintf(
-		"did not find Helm Chart component %q in configmap %s/%s",
+		"Helm Chart component %q not found in configmap %s/%s",
 		e.Component,
 		e.Namespace,
 		e.Name,
@@ -100,13 +100,19 @@ func (h *HelmChartGetter) getInfoFor(
 	log logr.Logger,
 	name Component,
 ) (*HelmChart, error) {
+	log.Info(
+		fmt.Sprintf("fetching HelmChart info for %q from configmap %s/%s",
+			string(name),
+			h.cmNamespace,
+			h.cmName),
+	)
 	cm, err := h.get(ctx)
 	if err != nil {
 		return nil, err
 	}
 	d, ok := cm.Data[string(name)]
 	if !ok {
-		return nil, HelmChartNotFoundError{
+		return nil, HelmChartInfoNotFoundError{
 			name,
 			h.cmNamespace,
 			h.cmName,
@@ -114,14 +120,6 @@ func (h *HelmChartGetter) getInfoFor(
 	}
 	var settings HelmChart
 	err = yaml.Unmarshal([]byte(d), &settings)
-	if err != nil {
-		log.Info(
-			fmt.Sprintf("Using HelmChart info for %q from configmap %s/%s",
-				string(name),
-				h.cmNamespace,
-				h.cmName),
-		)
-	}
 	return &settings, err
 }
 
@@ -151,11 +149,19 @@ func (h *HelmChartGetter) For(
 	hcGetter := NewHelmChartGetterFromConfigMap(cmNameFromVariables, clusterNamespace, h.cl)
 	overrideHelmChart, err := hcGetter.getInfoFor(ctx, log, name)
 	if err != nil {
-		if errors.As(err, &HelmChartNotFoundError{}) {
+		if errors.As(err, &HelmChartInfoNotFoundError{}) {
 			// HelmChart is not defined in the custom configmap. Get the HelmChart from the default configmap.
 			return h.getInfoFor(ctx, log, name)
 		}
 		return nil, err
 	}
+	log.Info(
+		fmt.Sprintf(
+			"using HelmChart info for %q from custom configmap  %s/%s referenced in cluster variables",
+			string(name),
+			clusterNamespace,
+			cmNameFromVariables,
+		),
+	)
 	return overrideHelmChart, nil
 }
