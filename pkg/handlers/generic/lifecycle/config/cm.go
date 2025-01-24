@@ -123,6 +123,9 @@ func (h *HelmChartGetter) getInfoFor(
 	return &settings, err
 }
 
+// For returns the HelmChart info for the given component from the configmap referenced in the cluster variables.
+// It first checks the configmap referenced in the cluster variables.
+// If not found, it returns the HelmChart info from the default configmap.
 func (h *HelmChartGetter) For(
 	ctx context.Context,
 	log logr.Logger,

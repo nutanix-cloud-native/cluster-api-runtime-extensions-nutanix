@@ -10,7 +10,7 @@ import (
 
 	v1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -64,7 +64,8 @@ func (a *addonsValidator) validate(
 		)
 	}
 
-	if clusterConfig.Addons != nil && clusterConfig.Addons.HelmChartConfig != nil {
+	if clusterConfig != nil && clusterConfig.Addons != nil &&
+		clusterConfig.Addons.HelmChartConfig != nil {
 		// Check if custom helm chart ConfigMap is provided
 		if err := validateCustomHelmChartConfigMapExists(
 			ctx,
@@ -91,7 +92,7 @@ func validateCustomHelmChartConfigMapExists(
 		Name:      name,
 	}, configMap)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return fmt.Errorf(
 				"HelmChart ConfigMap %q referenced in the cluster variables not found: %w",
 				name,
