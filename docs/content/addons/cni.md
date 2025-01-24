@@ -36,6 +36,74 @@ spec:
               strategy: HelmAddon
 ```
 
+## Cilium Example with custom values
+
+To enable deployment of Cilium on a cluster with custom helm values, specify the following:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          addons:
+            cni:
+              provider: Cilium
+              strategy: HelmAddon
+              values:
+                sourceRef:
+                  name: <NAME> #name of ConfigMap/Secret present in same namespace
+                  kind: <ConfigMap/Secret>
+```
+
+NOTE: Only ConfigMap/Secret kind objects will be allowed to refer helm values from.
+
+ConfigMap Format -
+
+```yaml
+apiVersion: v1
+data:
+  values.yaml: |-
+    cni:
+      chainingMode: portmap
+      exclusive: false
+    ipam:
+      mode: kubernetes
+kind: ConfigMap
+metadata:
+  labels:
+    clusterctl.cluster.x-k8s.io/move: ""
+  name: <CLUSTER_NAME>-cilium-cni-helm-values-template
+  namespace: <CLUSTER_NAMESPACE>
+```
+
+Secret Format -
+
+```yaml
+apiVersion: v1
+stringData:
+  values.yaml: |-
+    cni:
+      chainingMode: portmap
+      exclusive: false
+    ipam:
+      mode: kubernetes
+kind: Secret
+metadata:
+  labels:
+    clusterctl.cluster.x-k8s.io/move: ""
+  name: <CLUSTER_NAME>-cilium-cni-helm-values-template
+  namespace: <CLUSTER_NAMESPACE>
+type: Opaque
+```
+
+NOTE: ConfigMap/Secret should contain complete helm values for Cilium as same will be applied
+to Cilium helm chart as it is.
+
 To deploy the addon via `ClusterResourceSet` replace the value of `strategy` with `ClusterResourceSet`.
 
 ## Calico

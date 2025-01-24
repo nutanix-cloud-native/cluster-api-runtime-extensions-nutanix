@@ -115,6 +115,40 @@ type CNI struct {
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy *AddonStrategy `json:"strategy,omitempty"`
+
+	// AddonConfig contains the configuration for the CNI provider.
+	// +kubebuilder:validation:Optional
+	AddonConfig `json:",inline"`
+}
+
+// AddonConfig contains the configuration for the Addon provider.
+type AddonConfig struct {
+	// Values contains the helm values for the CNI when HelmAddon is the strategy.
+	// +kubebuilder:validation:Optional
+	Values *AddonValues `json:"values,omitempty"`
+}
+
+// AddonValues contains the configuration values for the Helm Addon.
+type AddonValues struct {
+	// SourceRef is an object reference to Configmap/Secret inside the same namespace
+	// which contains inline YAML representing the values for the Helm chart.
+	// +kubebuilder:validation:Optional
+	SourceRef *ValuesReference `json:"sourceRef,omitempty"`
+}
+
+// ValuesReference contains enough information to let you locate the
+// typed referenced object inside the same namespace.
+// This is redacted from the upstream https://pkg.go.dev/k8s.io/api/core/v1#TypedLocalObjectReference
+type ValuesReference struct {
+	// Kind is the type of resource being referenced, valid values are ('Secret', 'ConfigMap').
+	// +kubebuilder:validation:Enum=Secret;ConfigMap
+	// +kubebuilder:validation:Required
+	Kind string `json:"kind"`
+
+	// Name is the name of resource being referenced.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
 }
 
 // NFD tells us to enable or disable the node feature discovery addon.

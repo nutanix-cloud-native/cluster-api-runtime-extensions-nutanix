@@ -101,6 +101,29 @@ spec:
                             - ClusterResourceSet
                             - HelmAddon
                           type: string
+                        values:
+                          description: Values contains the helm values for the CNI when HelmAddon is the strategy.
+                          properties:
+                            sourceRef:
+                              description: |-
+                                SourceRef is an object reference to Configmap/Secret inside the same namespace
+                                which contains inline YAML representing the values for the Helm chart.
+                              properties:
+                                kind:
+                                  description: Kind is the type of resource being referenced, valid values are ('Secret', 'ConfigMap').
+                                  enum:
+                                    - Secret
+                                    - ConfigMap
+                                  type: string
+                                name:
+                                  description: Name is the name of resource being referenced.
+                                  minLength: 1
+                                  type: string
+                              required:
+                                - kind
+                                - name
+                              type: object
+                          type: object
                       required:
                         - provider
                       type: object
