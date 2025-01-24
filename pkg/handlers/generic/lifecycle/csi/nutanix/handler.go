@@ -89,7 +89,7 @@ func (n *NutanixCSI) Apply(
 	var strategy addons.Applier
 	switch ptr.Deref(provider.Strategy, "") {
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NutanixStorageCSI)
+		helmChart, err := n.helmChartInfoGetter.For(ctx, log, cluster, config.NutanixStorageCSI)
 		if err != nil {
 			return fmt.Errorf(
 				"failed to get configuration for Nutanix storage chart to create helm addon: %w",

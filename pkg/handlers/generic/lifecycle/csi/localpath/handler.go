@@ -78,7 +78,12 @@ func (l *LocalPathProvisionerCSI) Apply(
 	var strategy addons.Applier
 	switch ptr.Deref(provider.Strategy, "") {
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmChart, err := l.helmChartInfoGetter.For(ctx, log, config.LocalPathProvisionerCSI)
+		helmChart, err := l.helmChartInfoGetter.For(
+			ctx,
+			log,
+			cluster,
+			config.LocalPathProvisionerCSI,
+		)
 		if err != nil {
 			return fmt.Errorf("failed to get configuration to create helm addon: %w", err)
 		}

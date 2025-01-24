@@ -148,7 +148,7 @@ func (n *DefaultNFD) apply(
 			client: n.client,
 		}
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.NFD)
+		helmChart, err := n.helmChartInfoGetter.For(ctx, log, cluster, config.NFD)
 		if err != nil {
 			log.Error(
 				err,

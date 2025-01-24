@@ -144,7 +144,7 @@ func (n *DefaultCOSIController) apply(
 	var strategy addons.Applier
 	switch ptr.Deref(cosiVar.Strategy, "") {
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.COSIController)
+		helmChart, err := n.helmChartInfoGetter.For(ctx, log, cluster, config.COSIController)
 		if err != nil {
 			log.Error(
 				err,

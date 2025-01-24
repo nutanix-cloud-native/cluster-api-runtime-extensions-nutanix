@@ -115,7 +115,7 @@ func (p *provider) Apply(
 		}
 	}
 
-	helmChart, err := p.helmChartInfoGetter.For(ctx, log, config.NutanixCCM)
+	helmChart, err := p.helmChartInfoGetter.For(ctx, log, cluster, config.NutanixCCM)
 	if err != nil {
 		return fmt.Errorf("failed to get values for nutanix-ccm-config: %w", err)
 	}

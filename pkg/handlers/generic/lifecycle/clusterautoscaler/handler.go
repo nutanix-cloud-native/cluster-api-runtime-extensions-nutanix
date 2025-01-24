@@ -146,6 +146,7 @@ func (n *DefaultClusterAutoscaler) apply(
 		helmChart, err := n.helmChartInfoGetter.For(
 			ctx,
 			log,
+			cluster,
 			config.Autoscaler,
 		)
 		if err != nil {

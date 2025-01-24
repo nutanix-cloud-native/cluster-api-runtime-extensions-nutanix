@@ -95,7 +95,7 @@ func (a *AWSCCM) Apply(
 	var strategy addons.Applier
 	switch ptr.Deref(clusterConfig.Addons.CCM.Strategy, "") {
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmChart, err := a.helmChartInfoGetter.For(ctx, log, config.AWSCCM)
+		helmChart, err := a.helmChartInfoGetter.For(ctx, log, cluster, config.AWSCCM)
 		if err != nil {
 			return fmt.Errorf("failed to get configuration to create helm addon: %w", err)
 		}

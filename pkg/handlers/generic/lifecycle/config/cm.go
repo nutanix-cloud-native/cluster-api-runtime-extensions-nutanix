@@ -5,13 +5,18 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
 type Component string
@@ -75,13 +80,28 @@ func (h *HelmChartGetter) get(
 	return cm, err
 }
 
-func (h *HelmChartGetter) For(
+type HelmChartInfoNotFoundError struct {
+	Component Component
+	Name      string
+	Namespace string
+}
+
+func (e HelmChartInfoNotFoundError) Error() string {
+	return fmt.Sprintf(
+		"Helm Chart component %q not found in configmap %s/%s",
+		e.Component,
+		e.Namespace,
+		e.Name,
+	)
+}
+
+func (h *HelmChartGetter) getInfoFor(
 	ctx context.Context,
 	log logr.Logger,
 	name Component,
 ) (*HelmChart, error) {
 	log.Info(
-		fmt.Sprintf("Fetching HelmChart info for %q from configmap %s/%s",
+		fmt.Sprintf("fetching HelmChart info for %q from configmap %s/%s",
 			string(name),
 			h.cmNamespace,
 			h.cmName),
@@ -92,14 +112,59 @@ func (h *HelmChartGetter) For(
 	}
 	d, ok := cm.Data[string(name)]
 	if !ok {
-		return nil, fmt.Errorf(
-			"did not find key %q in configmap %s/%s",
+		return nil, HelmChartInfoNotFoundError{
 			name,
 			h.cmNamespace,
 			h.cmName,
-		)
+		}
 	}
 	var settings HelmChart
 	err = yaml.Unmarshal([]byte(d), &settings)
 	return &settings, err
+}
+
+// For returns the HelmChart info for the given component from the configmap referenced in the cluster variables.
+// It first checks the configmap referenced in the cluster variables.
+// If not found, it returns the HelmChart info from the default configmap.
+func (h *HelmChartGetter) For(
+	ctx context.Context,
+	log logr.Logger,
+	cluster *clusterv1.Cluster,
+	name Component,
+) (*HelmChart, error) {
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+
+	helmChartConfig, err := variables.Get[v1alpha1.HelmChartConfig](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+		"addons", "helmChartConfig")
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			// HelmChartConfig is not defined in the cluster. Get the HelmChart from the default configmap.
+			return h.getInfoFor(ctx, log, name)
+		}
+		return nil, err
+	}
+	// helmChartConfig.ConfigMapRef or helmChartConfig.ConfigMapRef.Name will not be nil
+	// because it will be validated by the schema validation.
+	cmNameFromVariables := helmChartConfig.ConfigMapRef.Name
+	clusterNamespace := cluster.Namespace
+	hcGetter := NewHelmChartGetterFromConfigMap(cmNameFromVariables, clusterNamespace, h.cl)
+	overrideHelmChart, err := hcGetter.getInfoFor(ctx, log, name)
+	if err != nil {
+		if errors.As(err, &HelmChartInfoNotFoundError{}) {
+			// HelmChart is not defined in the custom configmap. Get the HelmChart from the default configmap.
+			return h.getInfoFor(ctx, log, name)
+		}
+		return nil, err
+	}
+	log.Info(
+		fmt.Sprintf(
+			"using HelmChart info for %q from custom configmap  %s/%s referenced in cluster variables",
+			string(name),
+			clusterNamespace,
+			cmNameFromVariables,
+		),
+	)
+	return overrideHelmChart, nil
 }
