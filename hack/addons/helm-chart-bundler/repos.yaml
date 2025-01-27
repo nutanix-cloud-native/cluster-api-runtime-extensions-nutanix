@@ -30,7 +30,7 @@ repositories:
     repoURL: https://mesosphere.github.io/charts/stable/
     charts:
       cosi:
-      - 0.0.1-alpha.2
+      - 0.0.1-alpha.4
   local-path-provisioner:
     repoURL: https://charts.containeroo.ch
     charts:
