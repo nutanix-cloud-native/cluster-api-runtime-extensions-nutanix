@@ -24,6 +24,7 @@ const (
 	Kubernetes_V1_29 = "v1.29"
 	Kubernetes_V1_30 = "v1.30"
 	Kubernetes_V1_31 = "v1.31"
+	Kubernetes_V1_32 = "v1.32"
 )
 
 // CoreDNS versions
@@ -49,6 +50,7 @@ var kubernetesToCoreDNSVersion = map[string]string{
 	Kubernetes_V1_29: CoreDNS_V1_11_1,
 	Kubernetes_V1_30: CoreDNS_V1_11_3,
 	Kubernetes_V1_31: CoreDNS_V1_11_3,
+	Kubernetes_V1_32: CoreDNS_V1_11_3,
 }
 
 // GetCoreDNSVersion returns the CoreDNS version for a given Kubernetes version.
