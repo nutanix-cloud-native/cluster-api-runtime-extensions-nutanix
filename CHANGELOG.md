@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.23.2 (2025-01-28)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.23.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Use mindthegap v1.17.0 for the helm-repository container (#1024) by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1027
+* fix: update CoreDNS mapping file by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1029
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.23.1...v0.23.2
+
 ## 0.23.1 (2024-11-14)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
