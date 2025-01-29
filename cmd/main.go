@@ -64,7 +64,6 @@ func main() {
 		},
 		HealthProbeBindAddress: ":8081",
 		LeaderElection:         false,
-		WebhookServer:          webhook.NewServer(webhookOptions),
 	}
 
 	pflag.CommandLine.StringVar(
@@ -89,6 +88,13 @@ func main() {
 		"admission-webhook-cert-dir",
 		webhookOptions.CertDir,
 		"Admission webhooks server cert dir.",
+	)
+
+	pflag.CommandLine.IntVar(
+		&webhookOptions.Port,
+		"admission-webhook-port",
+		webhookOptions.Port,
+		"Admission webhooks server port.",
 	)
 
 	logOptions := logs.NewOptions()
@@ -150,6 +156,7 @@ func main() {
 
 	signalCtx := ctrl.SetupSignalHandler()
 
+	mgrOptions.WebhookServer = webhook.NewServer(webhookOptions)
 	mgr, err := newManager(mgrOptions)
 	if err != nil {
 		setupLog.Error(err, "failed to create a new controller manager")
