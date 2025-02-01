@@ -72,6 +72,11 @@ type AWSClusterConfigSpec struct {
 
 	GenericClusterConfigSpec `json:",inline"`
 
+	// Configuration for all addons. This configuration is stored in a ConfigMap and refererenced in the Cluster object.
+	// This configuration is optional. If not provided, the default configuration will be used.
+	// +kubebuilder:validation:Optional
+	AddonsMetadata *AddonMetadataSpec `json:"addonsMetadata,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	Addons *AWSAddons `json:"addons,omitempty"`
 
