@@ -87,9 +87,6 @@ type NutanixAddons struct {
 
 type GenericAddons struct {
 	// +kubebuilder:validation:Optional
-	HelmChartConfig *HelmChartConfig `json:"helmChartConfig,omitempty"`
-
-	// +kubebuilder:validation:Optional
 	CNI *CNI `json:"cni,omitempty"`
 
 	// +kubebuilder:validation:Optional
@@ -105,7 +102,7 @@ type GenericAddons struct {
 	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
 }
 
-type HelmChartConfig struct {
+type AddonMetadataSpec struct {
 	// Reference to a ConfigMap containing configuration for addons Helm charts.
 	// +kubebuilder:validation:Required
 	ConfigMapRef LocalObjectReference `json:"configMapRef"`

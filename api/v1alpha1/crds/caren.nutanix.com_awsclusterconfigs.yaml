@@ -224,23 +224,6 @@ spec:
                         - defaultStorage
                         - providers
                       type: object
-                    helmChartConfig:
-                      properties:
-                        configMapRef:
-                          description: Reference to a ConfigMap containing configuration for addons Helm charts.
-                          properties:
-                            name:
-                              description: |-
-                                Name of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              minLength: 1
-                              type: string
-                          required:
-                            - name
-                          type: object
-                      required:
-                        - configMapRef
-                      type: object
                     nfd:
                       description: NFD tells us to enable or disable the node feature discovery addon.
                       properties:
@@ -289,6 +272,26 @@ spec:
                       required:
                         - provider
                       type: object
+                  type: object
+                addonsMetadata:
+                  description: |-
+                    Configuration for all addons. This configuration is stored in a ConfigMap and refererenced in the Cluster object.
+                    This configuration is optional. If not provided, the default configuration will be used.
+                  properties:
+                    configMapRef:
+                      description: Reference to a ConfigMap containing configuration for addons Helm charts.
+                      properties:
+                        name:
+                          description: |-
+                            Name of the referent.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          minLength: 1
+                          type: string
+                      required:
+                        - name
+                      type: object
+                  required:
+                    - configMapRef
                   type: object
                 aws:
                   description: AWS cluster configuration.
