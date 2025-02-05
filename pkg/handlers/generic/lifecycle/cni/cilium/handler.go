@@ -153,7 +153,7 @@ func (c *CiliumCNI) apply(
 		return
 	}
 
-	defaultNamespace := c.config.DefaultsNamespace()
+	targetNamespace := c.config.DefaultsNamespace()
 
 	var strategy addons.Applier
 	switch ptr.Deref(cniVar.Strategy, "") {
@@ -178,15 +178,16 @@ func (c *CiliumCNI) apply(
 			return
 		}
 
-		helmValuesConfigmapRef := c.config.helmAddonConfig.defaultValuesTemplateConfigMapName
+		helmValuesSourceRefName := c.config.helmAddonConfig.defaultValuesTemplateConfigMapName
 		if cniVar.Values != nil && cniVar.Values.SourceRef != nil {
-			helmValuesConfigmapRef = cniVar.Values.SourceRef.Name
-			defaultNamespace = cluster.Namespace
+			helmValuesSourceRefName = cniVar.Values.SourceRef.Name
+			// Use cluster's namespace since Values.SourceRef is always a LocalObjectReference
+			targetNamespace = cluster.Namespace
 		}
 
 		strategy = addons.NewHelmAddonApplier(
 			addons.NewHelmAddonConfig(
-				helmValuesConfigmapRef,
+				helmValuesSourceRefName,
 				defaultCiliumNamespace,
 				defaultCiliumReleaseName,
 			),
@@ -202,7 +203,7 @@ func (c *CiliumCNI) apply(
 		return
 	}
 
-	if err := strategy.Apply(ctx, cluster, defaultNamespace, log); err != nil {
+	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
