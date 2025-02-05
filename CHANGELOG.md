@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.26.0 (2025-02-05)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: adds new field for helm values input for cilium CNI by @manoj-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1011
+* feat: implementation for user defined configmap for cilium addon in cluster creation by @manoj-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1033
+* feat: update CAPI to v1.9.3 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1010
+* feat: adds cluster's ownerref on cilium helm values source object by @manoj-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1034
+### Fixes 🔧
+* fix: correctly copy Helm charts in init container by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1018
+* fix: Use mindthegap v1.17.0 for the helm-repository container by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1024
+* fix: use republished COSI controller image by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1022
+### Other Changes
+* test: wait for COSI controller to be ready by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1014
+* refactor: Remove api module dependency from common module by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1019
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.25.0...v0.26.0
+
 ## 0.25.0 (2025-01-16)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
