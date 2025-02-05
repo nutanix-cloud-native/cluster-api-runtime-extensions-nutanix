@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -287,10 +288,13 @@ func ensureOwnerReferenceOnCredentialsSecrets(
 		if secretName := handlersutils.SecretNameForImageRegistryCredentials(credential); secretName != "" {
 			// Ensure the Secret is owned by the Cluster so it is correctly moved and deleted with the Cluster.
 			// This code assumes that Secret exists and that was validated before calling this function.
-			err := handlersutils.EnsureOwnerReferenceForSecret(
+			err := handlersutils.EnsureClusterOwnerReferenceForObject(
 				ctx,
 				c,
-				secretName,
+				corev1.TypedLocalObjectReference{
+					Kind: "Secret",
+					Name: secretName,
+				},
 				cluster,
 			)
 			if err != nil {
