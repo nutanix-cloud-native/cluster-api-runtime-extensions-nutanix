@@ -198,7 +198,7 @@ func (c *CiliumCNI) apply(
 			if err != nil {
 				log.Error(
 					err,
-					"error updating Cluster's owner reference on cilium helm values source object",
+					"error updating Cluster's owner reference on Cilium helm values source object",
 					"name",
 					cniVar.Values.SourceRef.Name,
 					"kind",
@@ -207,7 +207,7 @@ func (c *CiliumCNI) apply(
 				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 				resp.SetMessage(
 					fmt.Sprintf(
-						"failed to set Cluster's owner reference on cilium helm values source object: %v",
+						"failed to set Cluster's owner reference on Cilium helm values source object: %v",
 						err,
 					),
 				)
