@@ -88,7 +88,7 @@ func (p *provider) Apply(
 		err := handlersutils.EnsureClusterOwnerReferenceForObject(
 			ctx,
 			p.client,
-			&corev1.TypedLocalObjectReference{
+			corev1.TypedLocalObjectReference{
 				Kind: "Secret",
 				Name: clusterConfig.Addons.CCM.Credentials.SecretRef.Name,
 			},

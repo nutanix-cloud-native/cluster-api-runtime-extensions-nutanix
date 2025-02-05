@@ -112,7 +112,7 @@ func (n *NutanixCSI) Apply(
 		err := handlersutils.EnsureClusterOwnerReferenceForObject(
 			ctx,
 			n.client,
-			&corev1.TypedLocalObjectReference{
+			corev1.TypedLocalObjectReference{
 				Kind: "Secret",
 				Name: provider.Credentials.SecretRef.Name,
 			},

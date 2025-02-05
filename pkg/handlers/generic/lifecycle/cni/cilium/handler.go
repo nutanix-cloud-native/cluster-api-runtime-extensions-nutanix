@@ -189,7 +189,7 @@ func (c *CiliumCNI) apply(
 			err := handlersutils.EnsureClusterOwnerReferenceForObject(
 				ctx,
 				c.client,
-				&corev1.TypedLocalObjectReference{
+				corev1.TypedLocalObjectReference{
 					Kind: cniVar.Values.SourceRef.Kind,
 					Name: cniVar.Values.SourceRef.Name,
 				},

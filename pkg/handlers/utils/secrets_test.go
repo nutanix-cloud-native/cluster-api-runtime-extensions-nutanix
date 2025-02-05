@@ -117,7 +117,7 @@ func Test_EnsureOwnerReferenceForSecret(t *testing.T) {
 			err := EnsureClusterOwnerReferenceForObject(
 				context.Background(),
 				tt.client,
-				&corev1.TypedLocalObjectReference{
+				corev1.TypedLocalObjectReference{
 					Kind: "Secret",
 					Name: tt.secretName,
 				},

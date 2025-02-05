@@ -291,7 +291,7 @@ func ensureOwnerReferenceOnCredentialsSecrets(
 			err := handlersutils.EnsureClusterOwnerReferenceForObject(
 				ctx,
 				c,
-				&corev1.TypedLocalObjectReference{
+				corev1.TypedLocalObjectReference{
 					Kind: "Secret",
 					Name: secretName,
 				},

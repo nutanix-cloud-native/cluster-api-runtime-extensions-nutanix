@@ -70,7 +70,7 @@ func CopySecretToRemoteCluster(
 func EnsureClusterOwnerReferenceForObject(
 	ctx context.Context,
 	cl ctrlclient.Client,
-	objectRef *corev1.TypedLocalObjectReference,
+	objectRef corev1.TypedLocalObjectReference,
 	cluster *clusterv1.Cluster,
 ) error {
 	targetObj, err := GetResourceFromTypedLocalObjectReference(
@@ -99,7 +99,7 @@ func EnsureClusterOwnerReferenceForObject(
 func GetResourceFromTypedLocalObjectReference(
 	ctx context.Context,
 	cl ctrlclient.Client,
-	typedLocalObjectRef *corev1.TypedLocalObjectReference,
+	typedLocalObjectRef corev1.TypedLocalObjectReference,
 	ns string,
 ) (*unstructured.Unstructured, error) {
 	apiVersion := corev1.SchemeGroupVersion.String()
