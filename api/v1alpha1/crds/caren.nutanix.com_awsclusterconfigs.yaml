@@ -110,9 +110,8 @@ spec:
                                 which contains inline YAML representing the values for the Helm chart.
                               properties:
                                 kind:
-                                  description: Kind is the type of resource being referenced, valid values are ('Secret', 'ConfigMap').
+                                  description: Kind is the type of resource being referenced, valid values are ('ConfigMap').
                                   enum:
-                                    - Secret
                                     - ConfigMap
                                   type: string
                                 name:
