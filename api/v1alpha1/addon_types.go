@@ -140,8 +140,8 @@ type AddonValues struct {
 // typed referenced object inside the same namespace.
 // This is redacted from the upstream https://pkg.go.dev/k8s.io/api/core/v1#TypedLocalObjectReference
 type ValuesReference struct {
-	// Kind is the type of resource being referenced, valid values are ('Secret', 'ConfigMap').
-	// +kubebuilder:validation:Enum=Secret;ConfigMap
+	// Kind is the type of resource being referenced, valid values are ('ConfigMap').
+	// +kubebuilder:validation:Enum=ConfigMap
 	// +kubebuilder:validation:Required
 	Kind string `json:"kind"`
 

@@ -41,6 +41,26 @@ var testDefs = []capitest.VariableTestDef{{
 		},
 	},
 }, {
+	Name: "set with valid provider using HelmAddon strategy and custom helm values",
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			GenericAddons: v1alpha1.GenericAddons{
+				CNI: &v1alpha1.CNI{
+					Provider: v1alpha1.CNIProviderCilium,
+					Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Name: "custom-cilium-cni-helm-values",
+								Kind: "ConfigMap",
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+}, {
 	Name: "set with invalid provider",
 	Vals: apivariables.ClusterConfigSpec{
 		Addons: &apivariables.Addons{

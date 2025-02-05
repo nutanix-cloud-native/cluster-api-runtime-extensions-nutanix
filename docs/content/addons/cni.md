@@ -56,11 +56,11 @@ spec:
               strategy: HelmAddon
               values:
                 sourceRef:
-                  name: <NAME> #name of ConfigMap/Secret present in same namespace
-                  kind: <ConfigMap/Secret>
+                  name: <NAME> #name of ConfigMap present in same namespace
+                  kind: <ConfigMap>
 ```
 
-NOTE: Only ConfigMap/Secret kind objects will be allowed to refer helm values from.
+NOTE: Only ConfigMap kind objects will be allowed to refer helm values from.
 
 ConfigMap Format -
 
@@ -81,27 +81,7 @@ metadata:
   namespace: <CLUSTER_NAMESPACE>
 ```
 
-Secret Format -
-
-```yaml
-apiVersion: v1
-stringData:
-  values.yaml: |-
-    cni:
-      chainingMode: portmap
-      exclusive: false
-    ipam:
-      mode: kubernetes
-kind: Secret
-metadata:
-  labels:
-    clusterctl.cluster.x-k8s.io/move: ""
-  name: <CLUSTER_NAME>-cilium-cni-helm-values-template
-  namespace: <CLUSTER_NAMESPACE>
-type: Opaque
-```
-
-NOTE: ConfigMap/Secret should contain complete helm values for Cilium as same will be applied
+NOTE: ConfigMap should contain complete helm values for Cilium as same will be applied
 to Cilium helm chart as it is.
 
 To deploy the addon via `ClusterResourceSet` replace the value of `strategy` with `ClusterResourceSet`.
