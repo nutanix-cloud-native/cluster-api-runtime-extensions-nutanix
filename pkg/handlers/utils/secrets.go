@@ -10,8 +10,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -80,7 +80,7 @@ func EnsureClusterOwnerReferenceForObject(
 		cluster.Namespace,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to get object from TypedLocalObjectReference: %w", err)
+		return err
 	}
 
 	err = controllerutil.SetOwnerReference(cluster, targetObj, cl.Scheme())
@@ -99,23 +99,24 @@ func EnsureClusterOwnerReferenceForObject(
 func GetResourceFromTypedLocalObjectReference(
 	ctx context.Context,
 	cl ctrlclient.Client,
-	objectRef *corev1.TypedLocalObjectReference,
+	typedLocalObjectRef *corev1.TypedLocalObjectReference,
 	ns string,
 ) (*unstructured.Unstructured, error) {
-	targetObj := &unstructured.Unstructured{}
-
 	apiVersion := corev1.SchemeGroupVersion.String()
-	if objectRef.APIGroup != nil {
-		apiVersion = *objectRef.APIGroup
+	if typedLocalObjectRef.APIGroup != nil {
+		apiVersion = *typedLocalObjectRef.APIGroup
 	}
 
-	targetObj.SetGroupVersionKind(schema.FromAPIVersionAndKind(apiVersion, objectRef.Kind))
-	err := cl.Get(ctx, ctrlclient.ObjectKey{
-		Namespace: ns,
-		Name:      objectRef.Name,
-	}, targetObj)
+	objectRef := &corev1.ObjectReference{
+		APIVersion: apiVersion,
+		Kind:       typedLocalObjectRef.Kind,
+		Name:       typedLocalObjectRef.Name,
+		Namespace:  ns,
+	}
+
+	targetObj, err := external.Get(ctx, cl, objectRef, ns)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get resource from object reference: %w", err)
 	}
 
 	return targetObj, nil

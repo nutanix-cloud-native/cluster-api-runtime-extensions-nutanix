@@ -5,12 +5,14 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -97,7 +99,16 @@ func Test_EnsureOwnerReferenceForSecret(t *testing.T) {
 			client:     buildFakeClient(t, testSecret, testCluster),
 			secretName: "missing-secret",
 			cluster:    testCluster,
-			wantErr:    errors.NewNotFound(corev1.Resource("secrets"), "missing-secret"),
+			wantErr: fmt.Errorf(
+				"failed to get resource from object reference: %w",
+				errors.Wrapf(
+					apiErrors.NewNotFound(corev1.Resource("secrets"), "missing-secret"),
+					"failed to retrieve %s external object %q/%q",
+					"Secret",
+					"",
+					"missing-secret",
+				),
+			),
 		},
 	}
 	for _, tt := range tests {
@@ -113,10 +124,14 @@ func Test_EnsureOwnerReferenceForSecret(t *testing.T) {
 				},
 				tt.cluster,
 			)
-			require.Equal(t, tt.wantErr, err)
+
 			if tt.wantErr != nil {
+				assert.Equal(t, tt.wantErr.Error(), err.Error())
 				return
+			} else {
+				require.NoError(t, err)
 			}
+
 			// verify that the owner reference was added
 			secret := &corev1.Secret{}
 			err = tt.client.Get(
