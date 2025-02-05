@@ -103,9 +103,8 @@ func Test_EnsureOwnerReferenceForSecret(t *testing.T) {
 				"failed to get resource from object reference: %w",
 				errors.Wrapf(
 					apiErrors.NewNotFound(corev1.Resource("secrets"), "missing-secret"),
-					"failed to retrieve %s external object %q/%q",
+					"failed to retrieve %s %s",
 					"Secret",
-					"",
 					"missing-secret",
 				),
 			),

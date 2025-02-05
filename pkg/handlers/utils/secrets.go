@@ -114,7 +114,7 @@ func GetResourceFromTypedLocalObjectReference(
 		Namespace:  ns,
 	}
 
-	targetObj, err := external.Get(ctx, cl, objectRef, ns)
+	targetObj, err := external.Get(ctx, cl, objectRef)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource from object reference: %w", err)
 	}
