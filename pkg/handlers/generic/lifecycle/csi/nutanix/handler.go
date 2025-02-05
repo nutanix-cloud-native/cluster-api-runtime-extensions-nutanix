@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -108,10 +109,13 @@ func (n *NutanixCSI) Apply(
 	}
 
 	if provider.Credentials != nil {
-		err := handlersutils.EnsureOwnerReferenceForSecret(
+		err := handlersutils.EnsureClusterOwnerReferenceForObject(
 			ctx,
 			n.client,
-			provider.Credentials.SecretRef.Name,
+			&corev1.TypedLocalObjectReference{
+				Kind: "Secret",
+				Name: provider.Credentials.SecretRef.Name,
+			},
 			cluster,
 		)
 		if err != nil {

@@ -104,10 +104,13 @@ func Test_EnsureOwnerReferenceForSecret(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := EnsureOwnerReferenceForSecret(
+			err := EnsureClusterOwnerReferenceForObject(
 				context.Background(),
 				tt.client,
-				tt.secretName,
+				&corev1.TypedLocalObjectReference{
+					Kind: "Secret",
+					Name: tt.secretName,
+				},
 				tt.cluster,
 			)
 			require.Equal(t, tt.wantErr, err)

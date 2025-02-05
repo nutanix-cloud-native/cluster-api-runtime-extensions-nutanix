@@ -9,6 +9,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,28 +66,59 @@ func CopySecretToRemoteCluster(
 	return nil
 }
 
-// EnsureOwnerReferenceForSecret will ensure that the secretName Secret has an OwnerReference of the cluster.
-func EnsureOwnerReferenceForSecret(
+// EnsureClusterOwnerReferenceForObject ensures that OwnerReference of the cluster is added on provided object.
+func EnsureClusterOwnerReferenceForObject(
 	ctx context.Context,
 	cl ctrlclient.Client,
-	secretName string,
+	objectRef *corev1.TypedLocalObjectReference,
 	cluster *clusterv1.Cluster,
 ) error {
-	secret, err := getSecretForCluster(ctx, cl, secretName, cluster)
+	targetObj, err := GetResourceFromTypedLocalObjectReference(
+		ctx,
+		cl,
+		objectRef,
+		cluster.Namespace,
+	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get object from TypedLocalObjectReference: %w", err)
 	}
 
-	err = controllerutil.SetOwnerReference(cluster, secret, cl.Scheme())
+	err = controllerutil.SetOwnerReference(cluster, targetObj, cl.Scheme())
 	if err != nil {
-		return fmt.Errorf("failed to set owner reference on Secret: %w", err)
+		return fmt.Errorf("failed to set cluster's owner reference on object: %w", err)
 	}
 
-	err = cl.Update(ctx, secret)
+	err = cl.Update(ctx, targetObj)
 	if err != nil {
-		return fmt.Errorf("failed to update Secret with owner references: %w", err)
+		return fmt.Errorf("failed to update object with cluster's owner reference: %w", err)
 	}
 	return nil
+}
+
+// GetResourceFromTypedLocalObjectReference gets the resource from the provided TypedLocalObjectReference.
+func GetResourceFromTypedLocalObjectReference(
+	ctx context.Context,
+	cl ctrlclient.Client,
+	objectRef *corev1.TypedLocalObjectReference,
+	ns string,
+) (*unstructured.Unstructured, error) {
+	targetObj := &unstructured.Unstructured{}
+
+	apiVersion := corev1.SchemeGroupVersion.String()
+	if objectRef.APIGroup != nil {
+		apiVersion = *objectRef.APIGroup
+	}
+
+	targetObj.SetGroupVersionKind(schema.FromAPIVersionAndKind(apiVersion, objectRef.Kind))
+	err := cl.Get(ctx, ctrlclient.ObjectKey{
+		Namespace: ns,
+		Name:      objectRef.Name,
+	}, targetObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return targetObj, nil
 }
 
 func getSecretForCluster(

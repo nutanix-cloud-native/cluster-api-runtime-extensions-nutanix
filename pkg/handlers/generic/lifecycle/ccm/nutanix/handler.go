@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -84,10 +85,13 @@ func (p *provider) Apply(
 	// However, that would leave the credentials visible in the HelmChartProxy.
 	// Instead, we'll create the Secret on the remote cluster and reference it in the Helm values.
 	if clusterConfig.Addons.CCM.Credentials != nil {
-		err := handlersutils.EnsureOwnerReferenceForSecret(
+		err := handlersutils.EnsureClusterOwnerReferenceForObject(
 			ctx,
 			p.client,
-			clusterConfig.Addons.CCM.Credentials.SecretRef.Name,
+			&corev1.TypedLocalObjectReference{
+				Kind: "Secret",
+				Name: clusterConfig.Addons.CCM.Credentials.SecretRef.Name,
+			},
 			cluster,
 		)
 		if err != nil {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -22,6 +23,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 type CNIConfig struct {
@@ -183,6 +185,33 @@ func (c *CiliumCNI) apply(
 			helmValuesSourceRefName = cniVar.Values.SourceRef.Name
 			// Use cluster's namespace since Values.SourceRef is always a LocalObjectReference
 			targetNamespace = cluster.Namespace
+
+			err := handlersutils.EnsureClusterOwnerReferenceForObject(
+				ctx,
+				c.client,
+				&corev1.TypedLocalObjectReference{
+					Kind: cniVar.Values.SourceRef.Kind,
+					Name: cniVar.Values.SourceRef.Name,
+				},
+				cluster,
+			)
+			if err != nil {
+				log.Error(
+					err,
+					"error updating Cluster's owner reference on cilium helm values source object",
+					"name",
+					cniVar.Values.SourceRef.Name,
+					"kind",
+					cniVar.Values.SourceRef.Kind,
+				)
+				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+				resp.SetMessage(
+					fmt.Sprintf(
+						"failed to set Cluster's owner reference on cilium helm values source object: %v",
+						err,
+					),
+				)
+			}
 		}
 
 		strategy = addons.NewHelmAddonApplier(
