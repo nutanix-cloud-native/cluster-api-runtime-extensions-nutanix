@@ -1,3 +1,5 @@
+priorityClass: system-node-critical
+
 master:
   extraLabelNs:
     - nvidia.com
