@@ -64,11 +64,11 @@ func (c containerdConfig) needContainerdConfiguration() bool {
 
 // Containerd registry configuration created at /etc/containerd/certs.d/_default/hosts.toml for:
 //
-//  1. Set the default mirror for all registries.
+//  1. Setting the default mirror for all registries.
 //     The upstream registry will be automatically used after all defined mirrors have been tried.
 //     https://github.com/containerd/containerd/blob/main/docs/hosts.md#setup-default-mirror-for-all-registries
 //
-//  2. Setting CA certificate for global image registry mirror and image registries.
+//  2. Setting CA certificate for global image registry mirror.
 func generateContainerdDefaultHostsFile(
 	configs []containerdConfig,
 ) (*cabpkv1.File, error) {
