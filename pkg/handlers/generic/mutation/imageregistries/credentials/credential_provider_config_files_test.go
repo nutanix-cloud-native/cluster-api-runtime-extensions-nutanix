@@ -121,6 +121,45 @@ providers:
 `,
 			},
 		},
+		{
+			name: "multiple image registries with static config",
+			credentials: []providerConfig{{
+				URL:      "https://myregistry.com:5000/myproject",
+				Username: "myuser",
+				Password: "mypassword",
+			}, {
+				URL:      "https://myotherregistry.com:5000/myproject",
+				Username: "otheruser",
+				Password: "otherpassword",
+			}},
+			want: &cabpkv1.File{
+				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
+				Owner:       "",
+				Permissions: "0600",
+				Encoding:    "",
+				Append:      false,
+				Content: `apiVersion: kubelet.config.k8s.io/v1
+kind: CredentialProviderConfig
+providers:
+- name: dynamic-credential-provider
+  args:
+  - get-credentials
+  - -c
+  - /etc/kubernetes/dynamic-credential-provider-config.yaml
+  matchImages:
+  - "myregistry.com:5000/myproject"
+  - "myotherregistry.com:5000/myproject"
+  - "*"
+  - "*.*"
+  - "*.*.*"
+  - "*.*.*.*"
+  - "*.*.*.*.*"
+  - "*.*.*.*.*.*"
+  defaultCacheDuration: "0s"
+  apiVersion: credentialprovider.kubelet.k8s.io/v1
+`,
+			},
+		},
 	}
 	for idx := range tests {
 		tt := tests[idx]
@@ -261,21 +300,6 @@ credentialProviders:
   apiVersion: kubelet.config.k8s.io/v1
   kind: CredentialProviderConfig
   providers:
-  - name: static-credential-provider
-    args:
-    - /etc/kubernetes/static-image-credentials.json
-    matchImages:
-    - "registry-1.docker.io"
-    - "docker.io"
-    defaultCacheDuration: "0s"
-    apiVersion: credentialprovider.kubelet.k8s.io/v1
-  - name: static-credential-provider
-    args:
-    - /etc/kubernetes/static-image-credentials.json
-    matchImages:
-    - "myregistry.com"
-    defaultCacheDuration: "0s"
-    apiVersion: credentialprovider.kubelet.k8s.io/v1
   - name: ecr-credential-provider
     args:
     - get-credentials
@@ -288,6 +312,9 @@ credentialProviders:
     - /etc/kubernetes/static-image-credentials.json
     matchImages:
     - "anotherregistry.com"
+    - "myregistry.com"
+    - "registry-1.docker.io"
+    - "docker.io"
     defaultCacheDuration: "0s"
     apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
@@ -325,12 +352,6 @@ credentialProviders:
     - get-credentials
     matchImages:
     - "123456789.dkr.ecr.us-east-1.amazonaws.com"
-    defaultCacheDuration: "0s"
-    apiVersion: credentialprovider.kubelet.k8s.io/v1
-  - name: ecr-credential-provider
-    args:
-    - get-credentials
-    matchImages:
     - "98765432.dkr.ecr.us-east-1.amazonaws.com"
     defaultCacheDuration: "0s"
     apiVersion: credentialprovider.kubelet.k8s.io/v1
@@ -372,14 +393,8 @@ credentialProviders:
     args:
     - /etc/kubernetes/static-image-credentials.json
     matchImages:
-    - "myregistry.com"
-    defaultCacheDuration: "0s"
-    apiVersion: credentialprovider.kubelet.k8s.io/v1
-  - name: static-credential-provider
-    args:
-    - /etc/kubernetes/static-image-credentials.json
-    matchImages:
     - "mymirror.com"
+    - "myregistry.com"
     defaultCacheDuration: "0s"
     apiVersion: credentialprovider.kubelet.k8s.io/v1
 `,
