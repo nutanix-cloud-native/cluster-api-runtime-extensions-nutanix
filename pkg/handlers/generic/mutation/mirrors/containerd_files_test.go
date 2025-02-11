@@ -134,15 +134,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 					CACert: "myregistrycert",
 				},
 			},
-			want: &cabpkv1.File{
-				Path:        "/etc/containerd/certs.d/_default/hosts.toml",
-				Owner:       "",
-				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
-				Content: `
-`,
-			},
+			want:    nil,
 			wantErr: nil,
 		},
 	}

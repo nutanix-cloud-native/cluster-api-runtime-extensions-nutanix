@@ -163,9 +163,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
 					ValueMatcher: gomega.HaveExactElements(
 						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/certs.d/_default/hosts.toml",
-						),
-						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/certs.d/registry.example.com/ca.crt",
 						),
 						gomega.HaveKeyWithValue(
@@ -323,9 +320,6 @@ var _ = Describe("Generate Global mirror patches", func() {
 					Operation: "add",
 					Path:      "/spec/template/spec/files",
 					ValueMatcher: gomega.HaveExactElements(
-						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/certs.d/_default/hosts.toml",
-						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/containerd/certs.d/registry.example.com:5050/ca.crt",
 						),
