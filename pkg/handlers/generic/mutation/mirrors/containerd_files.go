@@ -112,6 +112,11 @@ func generateContainerdDefaultHostsFile(
 		inputs = append(inputs, input)
 	}
 
+	// No need to generate the file if there are no mirrors.
+	if len(inputs) == 0 {
+		return nil, nil
+	}
+
 	var b bytes.Buffer
 	err := containerdDefaultHostsConfigurationTemplate.Execute(&b, inputs)
 	if err != nil {
