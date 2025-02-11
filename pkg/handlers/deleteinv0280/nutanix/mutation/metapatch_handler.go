@@ -8,6 +8,7 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	deleteinv0280genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/deleteinv0280/generic/mutation"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/controlplanevirtualip"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/controlplaneendpoint"
@@ -24,25 +25,11 @@ func MetaPatchHandler(mgr manager.Manager, cfg *controlplanevirtualip.Config) ha
 		prismcentralendpoint.NewPatch(),
 		machinedetails.NewControlPlanePatch(),
 	}
-	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, deleteinv0280genericmutation.MetaMutators(mgr)...)
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixClusterV2ConfigPatch",
-		mgr.GetClient(),
-		patchHandlers...,
-	)
-}
-
-// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
-func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := []mutation.MetaMutator{
-		machinedetails.NewWorkerPatch(),
-	}
-	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
-
-	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixWorkerConfigPatch",
+		"nutanixClusterConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
