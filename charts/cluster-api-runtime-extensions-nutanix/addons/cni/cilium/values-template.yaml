@@ -13,6 +13,7 @@ hubble:
     enabled: true
     image:
       useDigest: false
+    priorityClassName: system-cluster-critical
 ipam:
   mode: kubernetes
 image:
