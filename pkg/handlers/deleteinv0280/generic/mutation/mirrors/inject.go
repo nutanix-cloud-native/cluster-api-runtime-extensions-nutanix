@@ -239,7 +239,7 @@ func generateFiles(
 ) ([]bootstrapv1.File, error) {
 	var files []bootstrapv1.File
 	// generate default registry mirror file
-	containerdHostsFile, err := generateContainerdDefaultHostsFile(registriesWithOptionalCA)
+	containerdHostsFile, err := generateContainerdHostsFile(registriesWithOptionalCA)
 	if err != nil {
 		return nil, err
 	}

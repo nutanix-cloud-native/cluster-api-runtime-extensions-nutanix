@@ -26,7 +26,7 @@ var (
 	//go:embed templates/hosts.toml.gotmpl
 	containerdHostsConfiguration []byte
 
-	containerdDefaultHostsConfigurationTemplate = template.Must(
+	containerdHostsConfigurationTemplate = template.Must(
 		template.New("").Parse(string(containerdHostsConfiguration)),
 	)
 
@@ -36,7 +36,7 @@ var (
 		"registry-config.toml",
 	)
 
-	caCertPathOnRemoteFmt = "/etc/containerd/certs.d/%s/ca.crt"
+	mirrorCACertPathOnRemoteFmt = "/etc/certs/%s.pem"
 )
 
 type containerdConfig struct {
@@ -54,7 +54,14 @@ func (c containerdConfig) filePathFromURL() (string, error) {
 		return "", fmt.Errorf("failed parsing registry URL: %w", err)
 	}
 
-	return fmt.Sprintf(caCertPathOnRemoteFmt, registryURL.Host), nil
+	registryHostWithPath := registryURL.Host
+	if registryURL.Path != "" {
+		registryHostWithPath = path.Join(registryURL.Host, registryURL.Path)
+	}
+
+	replaced := strings.ReplaceAll(registryHostWithPath, "/", "-")
+
+	return fmt.Sprintf(mirrorCACertPathOnRemoteFmt, replaced), nil
 }
 
 // Return true if configuration is a mirror or has a CA certificate.
@@ -64,12 +71,12 @@ func (c containerdConfig) needContainerdConfiguration() bool {
 
 // Containerd registry configuration created at /etc/containerd/certs.d/_default/hosts.toml for:
 //
-//  1. Setting the default mirror for all registries.
+//  1. Set the default mirror for all registries.
 //     The upstream registry will be automatically used after all defined mirrors have been tried.
 //     https://github.com/containerd/containerd/blob/main/docs/hosts.md#setup-default-mirror-for-all-registries
 //
-//  2. Setting CA certificate for global image registry mirror.
-func generateContainerdDefaultHostsFile(
+//  2. Setting CA certificate for global image registry mirror and image registries.
+func generateContainerdHostsFile(
 	configs []containerdConfig,
 ) (*cabpkv1.File, error) {
 	if len(configs) == 0 {
@@ -79,12 +86,13 @@ func generateContainerdDefaultHostsFile(
 	type templateInput struct {
 		URL        string
 		CACertPath string
+		Mirror     bool
 	}
 
 	inputs := make([]templateInput, 0, len(configs))
 
 	for _, config := range configs {
-		if !config.Mirror {
+		if !config.needContainerdConfiguration() {
 			continue
 		}
 
@@ -94,12 +102,14 @@ func generateContainerdDefaultHostsFile(
 		}
 
 		input := templateInput{
-			URL: formattedURL,
+			URL:    formattedURL,
+			Mirror: config.Mirror,
 		}
 		// CA cert is optional for mirror registry.
 		// i.e. registry is using signed certificates. Insecure registry will not be allowed.
 		if config.CACert != "" {
-			registryCACertPathOnRemote, err := config.filePathFromURL()
+			var registryCACertPathOnRemote string
+			registryCACertPathOnRemote, err = config.filePathFromURL()
 			if err != nil {
 				return nil, fmt.Errorf(
 					"failed generating CA certificate file path from URL: %w",
@@ -113,7 +123,7 @@ func generateContainerdDefaultHostsFile(
 	}
 
 	var b bytes.Buffer
-	err := containerdDefaultHostsConfigurationTemplate.Execute(&b, inputs)
+	err := containerdHostsConfigurationTemplate.Execute(&b, inputs)
 	if err != nil {
 		return nil, fmt.Errorf("failed executing template for Containerd hosts.toml file: %w", err)
 	}

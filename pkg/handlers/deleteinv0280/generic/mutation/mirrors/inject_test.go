@@ -99,7 +99,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/certs.d/registry.example.com/ca.crt",
+							"path", "/etc/certs/registry.example.com.pem",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
@@ -166,7 +166,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/certs.d/registry.example.com/ca.crt",
+							"path", "/etc/certs/registry.example.com.pem",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
@@ -244,7 +244,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/certs.d/registry.example.com/ca.crt",
+							"path", "/etc/certs/registry.example.com.pem",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
@@ -299,7 +299,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					[]v1alpha1.ImageRegistry{{
-						URL: "https://registry.example.com:5050",
+						URL: "https://registry.example.com",
 						Credentials: &v1alpha1.RegistryCredentials{
 							SecretRef: &v1alpha1.LocalObjectReference{
 								Name: validMirrorCASecretName,
@@ -327,7 +327,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
-							"path", "/etc/containerd/certs.d/registry.example.com:5050/ca.crt",
+							"path", "/etc/certs/registry.example.com.pem",
 						),
 						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",

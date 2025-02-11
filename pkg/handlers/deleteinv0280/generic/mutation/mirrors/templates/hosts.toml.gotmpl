@@ -1,4 +1,5 @@
 {{- range . }}
+{{- if .Mirror }}
 [host."{{ .URL }}"]
   capabilities = ["pull", "resolve"]
   {{- if .CACertPath }}
@@ -7,4 +8,8 @@
   # don't rely on Containerd to add the v2/ suffix
   # there is a bug where it is added incorrectly for mirrors with a path
   override_path = true
+{{- else }}
+[host."{{ .URL }}"]
+  ca = "{{ .CACertPath }}"
+{{- end }}
 {{- end }}

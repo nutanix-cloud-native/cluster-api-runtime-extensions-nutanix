@@ -11,7 +11,7 @@ import (
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 )
 
-func Test_generateContainerdDefaultHostsFile(t *testing.T) {
+func Test_generateContainerdHostsFile(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
@@ -85,7 +85,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 				Append:      false,
 				Content: `[host."https://mymirror.com/v2"]
   capabilities = ["pull", "resolve"]
-  ca = "/etc/containerd/certs.d/mymirror.com/ca.crt"
+  ca = "/etc/certs/mymirror.com.pem"
   # don't rely on Containerd to add the v2/ suffix
   # there is a bug where it is added incorrectly for mirrors with a path
   override_path = true
@@ -118,10 +118,14 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 				Append:      false,
 				Content: `[host."https://mymirror.com/v2"]
   capabilities = ["pull", "resolve"]
-  ca = "/etc/containerd/certs.d/mymirror.com/ca.crt"
+  ca = "/etc/certs/mymirror.com.pem"
   # don't rely on Containerd to add the v2/ suffix
   # there is a bug where it is added incorrectly for mirrors with a path
   override_path = true
+[host."https://myregistry.com/v2"]
+  ca = "/etc/certs/myregistry.com.pem"
+[host."https://172.100.0.10:5000/v2/myproject"]
+  ca = "/etc/certs/172.100.0.10:5000-myproject.pem"
 `,
 			},
 			wantErr: nil,
@@ -140,7 +144,8 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 				Permissions: "0600",
 				Encoding:    "",
 				Append:      false,
-				Content: `
+				Content: `[host."https://myregistry.com/v2"]
+  ca = "/etc/certs/myregistry.com.pem"
 `,
 			},
 			wantErr: nil,
@@ -150,7 +155,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 		tt := tests[idx]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			file, err := generateContainerdDefaultHostsFile(tt.configs)
+			file, err := generateContainerdHostsFile(tt.configs)
 			require.ErrorIs(t, err, tt.wantErr)
 			assert.Equal(t, tt.want, file)
 		})
@@ -185,7 +190,7 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 			},
 			want: []cabpkv1.File{
 				{
-					Path:        "/etc/containerd/certs.d/registry.example.com/ca.crt",
+					Path:        "/etc/certs/registry.example.com.pem",
 					Owner:       "",
 					Permissions: "0600",
 					Encoding:    "",
