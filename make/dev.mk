@@ -32,7 +32,7 @@ dev.update-webhook-image-on-kind:
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
 	  ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION)
 	kubectl set image deployment \
-	  cluster-api-runtime-extensions-nutanix webhook=ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION)
+	  cluster-api-runtime-extensions-nutanix manager=ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION)
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
 	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix
 

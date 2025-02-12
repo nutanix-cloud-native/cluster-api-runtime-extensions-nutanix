@@ -8,6 +8,7 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/cni/calico"
+	deleteinv0280credentials "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/deleteinv0280/generic/mutation/imageregistries/credentials"
 	deleteinv0280mirrors "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/deleteinv0280/generic/mutation/mirrors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/auditpolicy"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/autorenewcerts"
@@ -19,7 +20,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/etcd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/extraapiservercertsans"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/httpproxy"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries/credentials"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubernetesimagerepository"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/users"
 )
@@ -33,7 +33,7 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		extraapiservercertsans.NewPatch(),
 		httpproxy.NewPatch(mgr.GetClient()),
 		kubernetesimagerepository.NewPatch(),
-		credentials.NewPatch(mgr.GetClient()),
+		deleteinv0280credentials.NewPatch(mgr.GetClient()),
 		deleteinv0280mirrors.NewPatch(mgr.GetClient()),
 		calico.NewPatch(),
 		users.NewPatch(),

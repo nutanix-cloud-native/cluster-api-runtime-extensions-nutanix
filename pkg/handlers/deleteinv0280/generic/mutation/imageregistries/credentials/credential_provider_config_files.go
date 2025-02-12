@@ -9,10 +9,8 @@ import (
 	"fmt"
 	"net/url"
 	"path"
-	"sort"
 	"text/template"
 
-	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	credentialproviderv1 "k8s.io/kubelet/pkg/apis/credentialprovider/v1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
@@ -167,28 +165,20 @@ func templateKubeletCredentialProviderConfig(
 func templateDynamicCredentialProviderConfig(
 	configs []providerConfig,
 ) (*cabpkv1.File, error) {
-	type providerConfig struct {
-		RegistryHosts      []string
+	type templateInput struct {
+		RegistryHost       string
 		ProviderBinary     string
 		ProviderArgs       []string
 		ProviderAPIVersion string
-	}
-	type templateInput struct {
-		Mirror          string
-		ProviderConfigs []*providerConfig
+		Mirror             bool
 	}
 
-	binaryToProviderConfigMap := map[string]*providerConfig{}
+	inputs := make([]templateInput, 0, len(configs))
 
-	mirror := ""
 	for _, config := range configs {
 		registryHostWithPath, err := config.registryHostWithPath()
 		if err != nil {
 			return nil, err
-		}
-
-		if config.Mirror {
-			mirror = registryHostWithPath
 		}
 
 		providerBinary, providerArgs, providerAPIVersion, err := dynamicCredentialProvider(
@@ -198,34 +188,18 @@ func templateDynamicCredentialProviderConfig(
 			return nil, err
 		}
 
-		input, ok := binaryToProviderConfigMap[providerBinary]
-		if !ok {
-			input = &providerConfig{
-				ProviderBinary:     providerBinary,
-				ProviderArgs:       providerArgs,
-				ProviderAPIVersion: providerAPIVersion,
-			}
-			binaryToProviderConfigMap[providerBinary] = input
-		}
-
-		input.RegistryHosts = append(input.RegistryHosts, registryHostWithPath)
+		inputs = append(inputs, templateInput{
+			RegistryHost:       registryHostWithPath,
+			ProviderBinary:     providerBinary,
+			ProviderArgs:       providerArgs,
+			ProviderAPIVersion: providerAPIVersion,
+			Mirror:             config.Mirror,
+		})
 	}
-
-	// Make sure the output is deterministic to avoid unnecessary rollouts.
-	providerConfigs := lo.Values(binaryToProviderConfigMap)
-	for _, cfg := range providerConfigs {
-		sort.Strings(cfg.RegistryHosts)
-	}
-	sort.SliceStable(providerConfigs, func(i, j int) bool {
-		return providerConfigs[i].ProviderBinary < providerConfigs[j].ProviderBinary
-	})
 
 	return fileFromTemplate(
 		dynamicCredentialProviderConfigPatchTemplate,
-		templateInput{
-			Mirror:          mirror,
-			ProviderConfigs: providerConfigs,
-		},
+		inputs,
 		kubeletDynamicCredentialProviderConfigOnRemote,
 	)
 }
