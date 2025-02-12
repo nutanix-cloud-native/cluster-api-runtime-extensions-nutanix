@@ -1,4 +1,5 @@
 controller:
+  priorityClassName: system-cluster-critical
   tolerations:
     - key: node-role.kubernetes.io/control-plane
       effect: NoSchedule
@@ -9,6 +10,7 @@ controller:
       operator: Exists
       tolerationSeconds: 300
 speaker:
+  priorityClassName: system-cluster-critical
   tolerations:
     - key: node-role.kubernetes.io/control-plane
       effect: NoSchedule
