@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.27.0 (2025-02-12)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Update COSI controller Addon by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1043
+* feat: Build with Go 1.24.0 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1047
+### Fixes 🔧
+* fix: Specify PriorityClass for Node Feature Discovery components by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1041
+* fix: Correctly configure non-mirror registry certificates by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1039
+* fix: Configure priorityClassName for Cilium Hubble by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1045
+* fix: don't generate empty _default containerd mirror file by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1042
+* fix: set priority class name for metallb by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1046
+* fix: Correctly configure dynamic credential provider by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1040
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.26.0...v0.27.0
+
 ## 0.26.0 (2025-02-05)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
