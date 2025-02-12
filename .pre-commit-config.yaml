@@ -74,7 +74,7 @@ repos:
   - id: go-mod-tidy
     exclude: ^docs/
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.6.0
+  rev: v5.0.0
   hooks:
   - id: trailing-whitespace
     stages: [pre-commit]
@@ -103,7 +103,7 @@ repos:
     stages: [pre-commit]
     exclude: ^charts/cluster-api-runtime-extensions-nutanix/README.md$
 - repo: https://github.com/rhysd/actionlint
-  rev: v1.7.1
+  rev: v1.7.7
   hooks:
   - id: actionlint-system
     stages: [pre-commit]
@@ -121,14 +121,16 @@ repos:
     args: ["-s", "-i", "2"]
   - id: script-must-have-extension
     stages: [pre-commit]
+    exclude: ^\.envrc$
 - repo: https://github.com/shellcheck-py/shellcheck-py
   rev: v0.10.0.1
   hooks:
   - id: shellcheck
     stages: [pre-commit]
     args: ["-e", "SC2211", "-x"]
+    exclude: ^\.envrc$
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.41.0
+  rev: v0.44.0
   hooks:
   - id: markdownlint
     stages: [pre-commit]
