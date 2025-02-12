@@ -13,8 +13,7 @@ We support following encryption providers
 - aescbc
 - secretbox
 
-More information about encryption at-rest: [Encrypting Confidential Data at Rest
-](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
+More information about encryption at-rest: [Encrypting Confidential Data at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
 
 ## Example
 
