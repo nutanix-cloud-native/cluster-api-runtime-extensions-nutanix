@@ -10,9 +10,32 @@
     flake-utils.lib.eachDefaultSystem (system:
       with nixpkgs.legacyPackages.${system}; rec {
         packages = rec {
-          govulncheck = pkgs.govulncheck.override { buildGoModule = buildGo123Module; };
+          govulncheck = pkgs.govulncheck.override { buildGoModule = buildGo124Module; };
 
-          goprintconst = buildGo123Module rec {
+          golangci-lint = buildGo124Module rec {
+            pname = "golangci-lint";
+            version = "1.64.2";
+
+            src = fetchFromGitHub {
+              owner = "golangci";
+              repo = "golangci-lint";
+              rev = "v${version}";
+              hash = "sha256-ODnNBwtfILD0Uy2AKDR/e76ZrdyaOGlCktVUcf9ujy8=";
+            };
+
+            vendorHash = "sha256-/iq7Ju7c2gS7gZn3n+y0kLtPn2Nn8HY/YdqSDYjtEkI=";
+
+            subPackages = [ "cmd/golangci-lint" ];
+
+            ldflags = [
+              "-s"
+              "-X main.version=${version}"
+              "-X main.commit=v${version}"
+              "-X main.date=19700101-00:00:00"
+            ];
+          };
+
+          goprintconst = buildGo124Module rec {
             name = "goprintconst";
             version = "0.0.1-dev";
             src = fetchFromGitHub {
@@ -27,7 +50,7 @@
             ldflags = [ "-s" "-w" ];
           };
 
-          clusterctl-aws = buildGo123Module rec {
+          clusterctl-aws = buildGo124Module rec {
             name = "clusterctl-aws";
             version = "2.7.1";
             src = fetchFromGitHub {
@@ -71,7 +94,7 @@
             dontNpmBuild = true;
           };
 
-          helm-schema = buildGo123Module rec {
+          helm-schema = buildGo124Module rec {
             pname = "helm-schema";
             version = "1.6.4";
 
