@@ -33,13 +33,13 @@ linters:
     - prealloc
     - staticcheck
     - stylecheck
-    - tenv
     - testifylint
     - thelper
     - tparallel
     - unconvert
     - unparam
     - unused
+    - usetesting
     - whitespace
 
 linters-settings:
