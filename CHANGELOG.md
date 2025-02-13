@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.27.1 (2025-02-13)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Use new patch handler for AWS and Docker ClusterClasses by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1050
+### Other Changes
+* build: Updated goreleaser kos.repositories config by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1051
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.27.0...v0.27.1
+
 ## 0.27.0 (2025-02-12)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
