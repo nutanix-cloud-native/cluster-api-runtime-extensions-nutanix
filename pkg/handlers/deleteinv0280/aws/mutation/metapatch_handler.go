@@ -1,4 +1,4 @@
-// Copyright 2023 Nutanix. All rights reserved.
+// Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package mutation
@@ -16,6 +16,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/network"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/region"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/securitygroups"
+	deleteinv0280genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/deleteinv0280/generic/mutation"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
 )
 
@@ -31,28 +32,11 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 		ami.NewControlPlanePatch(),
 		securitygroups.NewControlPlanePatch(),
 	}
-	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, deleteinv0280genericmutation.MetaMutators(mgr)...)
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsClusterV2ConfigPatch",
-		mgr.GetClient(),
-		patchHandlers...,
-	)
-}
-
-// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
-func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := []mutation.MetaMutator{
-		iaminstanceprofile.NewWorkerPatch(),
-		instancetype.NewWorkerPatch(),
-		ami.NewWorkerPatch(),
-		securitygroups.NewWorkerPatch(),
-	}
-	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
-
-	return mutation.NewMetaGeneratePatchesHandler(
-		"awsWorkerConfigPatch",
+		"awsClusterConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

@@ -31,7 +31,7 @@ spec:
   patches:
   - external:
       discoverVariablesExtension: dockerclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: dockerclusterconfigpatch-gp.cluster-api-runtime-extensions-nutanix
+      generateExtension: dockerclusterv2configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
       discoverVariablesExtension: dockerworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix

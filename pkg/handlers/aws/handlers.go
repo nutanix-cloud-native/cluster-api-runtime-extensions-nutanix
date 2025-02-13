@@ -11,6 +11,7 @@ import (
 	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
 	awsmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation"
 	awsworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/workerconfig"
+	deleteinv0280awsmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/deleteinv0280/aws/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -27,6 +28,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		awsclusterconfig.NewVariable(),
 		awsworkerconfig.NewVariable(),
 		awsmutation.MetaPatchHandler(mgr),
+		deleteinv0280awsmutation.MetaPatchHandler(mgr),
 		awsmutation.MetaWorkerPatchHandler(mgr),
 	}
 }
