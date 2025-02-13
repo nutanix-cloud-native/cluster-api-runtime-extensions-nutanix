@@ -102,6 +102,12 @@ type GenericAddons struct {
 	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
 }
 
+type AddonMetadataSpec struct {
+	// Reference to a ConfigMap containing configuration for addons Helm charts.
+	// +kubebuilder:validation:Required
+	ConfigMapRef LocalObjectReference `json:"configMapRef"`
+}
+
 type AddonStrategy string
 
 // CNI required for providing CNI configuration.
