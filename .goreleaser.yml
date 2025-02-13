@@ -155,7 +155,8 @@ kos:
     platforms:
       - linux/amd64
       - linux/arm64
-    repository: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
+    repositories:
+      - ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
     bare: true
     creation_time: "{{.CommitTimestamp}}"
     ko_data_creation_time: "{{.CommitTimestamp}}"
