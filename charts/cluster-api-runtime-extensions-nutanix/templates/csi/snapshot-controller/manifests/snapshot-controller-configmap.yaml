@@ -12,7 +12,7 @@ data:
     kind: CustomResourceDefinition
     metadata:
       annotations:
-        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/814
+        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1150
         controller-gen.kubebuilder.io/version: v0.15.0
       name: volumegroupsnapshotclasses.groupsnapshot.storage.k8s.io
     spec:
@@ -40,7 +40,7 @@ data:
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
-        name: v1alpha1
+        name: v1beta1
         schema:
           openAPIV3Schema:
             description: |-
@@ -106,7 +106,7 @@ data:
     kind: CustomResourceDefinition
     metadata:
       annotations:
-        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1068
+        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1150
         controller-gen.kubebuilder.io/version: v0.15.0
       name: volumegroupsnapshotcontents.groupsnapshot.storage.k8s.io
     spec:
@@ -156,7 +156,7 @@ data:
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
-        name: v1alpha1
+        name: v1beta1
         schema:
           openAPIV3Schema:
             description: |-
@@ -340,8 +340,6 @@ data:
                     - message: both volumeGroupSnapshotRef.name and volumeGroupSnapshotRef.namespace
                         must be set
                       rule: has(self.name) && has(self.__namespace__)
-                    - message: volumeGroupSnapshotRef is immutable
-                      rule: self == oldSelf
                 required:
                 - deletionPolicy
                 - driver
@@ -360,8 +358,9 @@ data:
                       The format of this field is a Unix nanoseconds time encoded as an int64.
                       On Unix, the command date +%s%N returns the current time in nanoseconds
                       since 1970-01-01 00:00:00 UTC.
-                    format: int64
-                    type: integer
+                      This field is the source for the CreationTime field in VolumeGroupSnapshotStatus
+                    format: date-time
+                    type: string
                   error:
                     description: |-
                       Error is the last observed error during group snapshot creation, if any.
@@ -379,42 +378,6 @@ data:
                         format: date-time
                         type: string
                     type: object
-                  pvVolumeSnapshotContentList:
-                    description: |-
-                      PVVolumeSnapshotContentList is the list of pairs of PV and
-                      VolumeSnapshotContent for this group snapshot
-                      The maximum number of allowed snapshots in the group is 100.
-                    items:
-                      description: |-
-                        PVVolumeSnapshotContentPair represent a pair of PV names and
-                        VolumeSnapshotContent names
-                      properties:
-                        persistentVolumeRef:
-                          description: PersistentVolumeRef is a reference to the persistent
-                            volume resource
-                          properties:
-                            name:
-                              description: |-
-                                Name of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        volumeSnapshotContentRef:
-                          description: VolumeSnapshotContentRef is a reference to the
-                            volume snapshot content resource
-                          properties:
-                            name:
-                              description: |-
-                                Name of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                      type: object
-                    type: array
                   readyToUse:
                     description: |-
                       ReadyToUse indicates if all the individual snapshots in the group are ready to be
@@ -428,6 +391,32 @@ data:
                       If a storage system does not provide such an id, the
                       CSI driver can choose to return the VolumeGroupSnapshot name.
                     type: string
+                  volumeSnapshotHandlePairList:
+                    description: |-
+                      VolumeSnapshotHandlePairList is a list of CSI "volume_id" and "snapshot_id"
+                      pair returned by the CSI driver to identify snapshots and their source volumes
+                      on the storage system.
+                    items:
+                      description: VolumeSnapshotHandlePair defines a pair of a source
+                        volume handle and a snapshot handle
+                      properties:
+                        snapshotHandle:
+                          description: |-
+                            SnapshotHandle is a unique id returned by the CSI driver to identify a volume
+                            snapshot on the storage system
+                            Required.
+                          type: string
+                        volumeHandle:
+                          description: |-
+                            VolumeHandle is a unique id returned by the CSI driver to identify a volume
+                            on the storage system
+                            Required.
+                          type: string
+                      required:
+                      - snapshotHandle
+                      - volumeHandle
+                      type: object
+                    type: array
                 type: object
             required:
             - spec
@@ -441,7 +430,7 @@ data:
     kind: CustomResourceDefinition
     metadata:
       annotations:
-        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1068
+        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1150
         controller-gen.kubebuilder.io/version: v0.15.0
       name: volumegroupsnapshots.groupsnapshot.storage.k8s.io
     spec:
@@ -481,7 +470,7 @@ data:
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
-        name: v1alpha1
+        name: v1beta1
         schema:
           openAPIV3Schema:
             description: |-
@@ -636,6 +625,7 @@ data:
                       The format of this field is a Unix nanoseconds time encoded as an int64.
                       On Unix, the command date +%s%N returns the current time in nanoseconds
                       since 1970-01-01 00:00:00 UTC.
+                      This field is updated based on the CreationTime field in VolumeGroupSnapshotContentStatus
                     format: date-time
                     type: string
                   error:
@@ -659,41 +649,6 @@ data:
                         format: date-time
                         type: string
                     type: object
-                  pvcVolumeSnapshotRefList:
-                    description: |-
-                      VolumeSnapshotRefList is the list of PVC and VolumeSnapshot pairs that
-                      is part of this group snapshot.
-                      The maximum number of allowed snapshots in the group is 100.
-                    items:
-                      description: PVCVolumeSnapshotPair defines a pair of a PVC reference
-                        and a Volume Snapshot Reference
-                      properties:
-                        persistentVolumeClaimRef:
-                          description: PersistentVolumeClaimRef is a reference to the
-                            PVC this pair is referring to
-                          properties:
-                            name:
-                              description: |-
-                                Name of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        volumeSnapshotRef:
-                          description: VolumeSnapshotRef is a reference to the VolumeSnapshot
-                            this pair is referring to
-                          properties:
-                            name:
-                              description: |-
-                                Name of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                      type: object
-                    type: array
                   readyToUse:
                     description: |-
                       ReadyToUse indicates if all the individual snapshots in the group are ready
@@ -1838,8 +1793,8 @@ data:
         app.kubernetes.io/instance: snapshot-controller
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: snapshot-controller
-        app.kubernetes.io/version: v8.1.0
-        helm.sh/chart: snapshot-controller-3.0.6
+        app.kubernetes.io/version: v8.2.0
+        helm.sh/chart: snapshot-controller-4.0.1
       name: snapshot-controller
       namespace: kube-system
     ---
@@ -1924,6 +1879,7 @@ data:
       resources:
       - volumesnapshots
       verbs:
+      - create
       - get
       - list
       - watch
@@ -2015,8 +1971,8 @@ data:
         app.kubernetes.io/instance: snapshot-controller
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: snapshot-controller
-        app.kubernetes.io/version: v8.1.0
-        helm.sh/chart: snapshot-controller-3.0.6
+        app.kubernetes.io/version: v8.2.0
+        helm.sh/chart: snapshot-controller-4.0.1
       name: snapshot-controller
       namespace: kube-system
     spec:
@@ -2042,7 +1998,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            image: registry.k8s.io/sig-storage/snapshot-controller:v8.1.0
+            image: registry.k8s.io/sig-storage/snapshot-controller:v8.2.0
             imagePullPolicy: IfNotPresent
             livenessProbe:
               httpGet:

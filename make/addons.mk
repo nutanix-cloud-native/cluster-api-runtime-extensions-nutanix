@@ -1,35 +1,33 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-export CALICO_VERSION := v3.29.1
-export CILIUM_VERSION := 1.16.4
-export NODE_FEATURE_DISCOVERY_VERSION := 0.16.6
-export CLUSTER_AUTOSCALER_CHART_VERSION := 9.43.2
-export AWS_EBS_CSI_CHART_VERSION := 2.37.0
+export CALICO_VERSION := v3.29.2
+export CILIUM_VERSION := 1.17.1
+export NODE_FEATURE_DISCOVERY_VERSION := 0.17.1
+export CLUSTER_AUTOSCALER_CHART_VERSION := 9.46.0
+export AWS_EBS_CSI_CHART_VERSION := 2.39.3
 export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.2.0
-export LOCAL_PATH_CSI_CHART_VERSION := 0.0.30
-export SNAPSHOT_CONTROLLER_CHART_VERSION := 3.0.6
+export LOCAL_PATH_CSI_CHART_VERSION := 0.0.31
+export SNAPSHOT_CONTROLLER_CHART_VERSION := 4.0.1
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
 # be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
 export AWS_CCM_CHART_VERSION := 0.0.8
 # A map of AWS CCM versions.
-export AWS_CCM_VERSION_127 := v1.27.10
-export AWS_CCM_VERSION_128 := v1.28.10
-export AWS_CCM_VERSION_129 := v1.29.7
 export AWS_CCM_VERSION_130 := v1.30.6
 export AWS_CCM_VERSION_131 := v1.31.4
+export AWS_CCM_VERSION_132 := v1.32.0
 
 export NUTANIX_CCM_CHART_VERSION := 0.5.0
 
-export KUBE_VIP_VERSION := v0.8.3
+export KUBE_VIP_VERSION := v0.8.9
 
-export METALLB_CHART_VERSION := 0.14.8
+export METALLB_CHART_VERSION := 0.14.9
 
 export COSI_CONTROLLER_VERSION := 0.0.1-alpha.5
 
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi kube-vip)
-addons.sync: $(addprefix update-addon.aws-ccm.,127 128 129 130 131)
+addons.sync: $(addprefix update-addon.aws-ccm.,130 131 132)
 addons.sync: template-helm-repository
 
 .PHONY: update-addon.calico
