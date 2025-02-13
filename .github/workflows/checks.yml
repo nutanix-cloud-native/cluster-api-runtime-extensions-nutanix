@@ -65,7 +65,7 @@ jobs:
       matrix:
         config:
           - {"provider": "Nutanix", "kubernetesVersion": "v1.30.5", "osImage": "nkp-rocky-9.5-release-1.30.5-20241204003513"}
-          - {"provider": "Nutanix", "kubernetesVersion": "v1.31.4", "osImage": "nkp-rocky-9.5-release-1.31.4-20250212073339"}
+          - {"provider": "Nutanix", "kubernetesVersion": "v1.31.4", "osImage": "nkp-rocky-9.5-release-1.31.4-20250205191544"}
           - {"provider": "Docker", "kubernetesVersion": "v1.30.10"}
           - {"provider": "Docker", "kubernetesVersion": "v1.31.6"}
           - {"provider": "Docker", "kubernetesVersion": "v1.32.2"}
