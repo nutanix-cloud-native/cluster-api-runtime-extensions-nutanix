@@ -23,7 +23,7 @@ spec:
   patches:
   - external:
       discoverVariablesExtension: awsclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: awsclusterconfigpatch-gp.cluster-api-runtime-extensions-nutanix
+      generateExtension: awsclusterv2configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
       discoverVariablesExtension: awsworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
