@@ -36,7 +36,7 @@ spec:
               strategy: HelmAddon
 ```
 
-## Cilium Example with custom values
+## Cilium Example With Custom Values
 
 To enable deployment of Cilium on a cluster with custom helm values, specify the following:
 
@@ -79,8 +79,13 @@ metadata:
   namespace: <CLUSTER_NAMESPACE>
 ```
 
-NOTE: ConfigMap should contain complete helm values for Cilium as same will be applied
-to Cilium helm chart as it is.
+NOTE: ConfigMap should contain complete helm values for Cilium as same will be applied to Cilium helm chart as it is.
+
+### Default Cilium Specification
+
+Please check default Cilium configuration [here](../../../charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml).
+
+## Select Deployment Strategy
 
 To deploy the addon via `ClusterResourceSet` replace the value of `strategy` with `ClusterResourceSet`.
 
