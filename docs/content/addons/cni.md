@@ -83,7 +83,7 @@ NOTE: ConfigMap should contain complete helm values for Cilium as same will be a
 
 ### Default Cilium Specification
 
-To refer default Cilium specification that is shipped with NKP releases, please check [here](../../../charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml).
+Please check default Cilium configuration [here](../../../charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml).
 
 ## Select Deployment Strategy
 
