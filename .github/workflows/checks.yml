@@ -157,7 +157,7 @@ jobs:
       - name: actionlint
         uses: reviewdog/action-actionlint@v1
         with:
-          fail_on_error: true
+          fail_level: error
           reporter: github-pr-review
 
   pre-commit:
