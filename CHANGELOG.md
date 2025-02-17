@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.11 (2025-02-17)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix(deps): Update Nutanix CCM Version by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1021
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.14.10...v0.14.11
+
 ## 0.14.10 (2024-11-13)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.14.x -->
