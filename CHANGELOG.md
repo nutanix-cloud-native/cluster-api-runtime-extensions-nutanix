@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.27.2 (2025-02-21)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.27.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: update Cilium version to 1.16.7 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1056
+### Other Changes
+* build: Update k8s versions for tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1052
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.27.1...v0.27.2
+
 ## 0.27.1 (2025-02-13)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
