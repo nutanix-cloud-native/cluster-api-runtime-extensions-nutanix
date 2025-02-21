@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.27.3 (2025-02-21)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.27.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: release 0.27 devbox changes by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1058
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.27.2...v0.27.3
+
 ## 0.27.2 (2025-02-21)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.27.x -->
