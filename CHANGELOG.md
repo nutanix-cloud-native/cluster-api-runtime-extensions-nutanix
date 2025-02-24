@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.28.0 (2025-02-24)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Update all addon versions by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1054
+### Other Changes
+* build: Update k8s versions for tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1052
+* docs: updates cilium doc with link to its default spec by @manoj-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1036
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.27.1...v0.28.0
+
 ## 0.27.1 (2025-02-13)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
