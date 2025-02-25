@@ -16,7 +16,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/network"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/region"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/securitygroups"
-	deleteinv0280genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/deleteinv0280/generic/mutation"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
 )
 
@@ -32,11 +31,11 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 		ami.NewControlPlanePatch(),
 		securitygroups.NewControlPlanePatch(),
 	}
-	patchHandlers = append(patchHandlers, deleteinv0280genericmutation.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsClusterConfigPatch",
+		"awsClusterV2ConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

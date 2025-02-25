@@ -67,7 +67,7 @@ spec:
   patches:
   - external:
       discoverVariablesExtension: nutanixclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: nutanixclusterv2configpatch-gp.cluster-api-runtime-extensions-nutanix
+      generateExtension: nutanixclusterv3configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
       discoverVariablesExtension: nutanixworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix

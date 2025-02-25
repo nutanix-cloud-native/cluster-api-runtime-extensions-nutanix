@@ -7,9 +7,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
-	deleteinv0280genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/deleteinv0280/generic/mutation"
 	genericclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
+	v2genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/generic/mutation"
 )
 
 type Handlers struct{}
@@ -22,7 +22,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	return []handlers.Named{
 		genericclusterconfig.NewVariable(),
 		genericmutation.MetaPatchHandler(mgr),
-		deleteinv0280genericmutation.MetaPatchHandler(mgr),
+		v2genericmutation.MetaPatchHandler(mgr),
 		genericmutation.MetaWorkerPatchHandler(mgr),
 	}
 }
