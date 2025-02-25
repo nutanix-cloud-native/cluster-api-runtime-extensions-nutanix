@@ -28,7 +28,7 @@ func MetaPatchHandler(mgr manager.Manager, cfg *controlplanevirtualip.Config) ha
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixClusterV2ConfigPatch",
+		"nutanixClusterV3ConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

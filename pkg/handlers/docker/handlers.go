@@ -8,11 +8,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
-	deleteinv0280dockermutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/deleteinv0280/docker/mutation"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
 	dockermutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/mutation"
 	dockerworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	v2dockermutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/docker/mutation"
 )
 
 type Handlers struct{}
@@ -28,7 +28,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		dockerclusterconfig.NewVariable(),
 		dockerworkerconfig.NewVariable(),
 		dockermutation.MetaPatchHandler(mgr),
-		deleteinv0280dockermutation.MetaPatchHandler(mgr),
+		v2dockermutation.MetaPatchHandler(mgr),
 		dockermutation.MetaWorkerPatchHandler(mgr),
 	}
 }
