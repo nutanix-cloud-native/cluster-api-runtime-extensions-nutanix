@@ -8,5 +8,27 @@ metadata:
   name: '{{ .Values.hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/serviceloadbalancer/metallb/values-template.yaml" | nindent 4 }}
+      controller:
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            effect: NoSchedule
+            operator: Exists
+          - key: CriticalAddonsOnly
+            operator: Exists
+          - effect: NoExecute
+            operator: Exists
+            tolerationSeconds: 300
+      speaker:
+        frr:
+          image:
+            tag: 9.1.3
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            effect: NoSchedule
+            operator: Exists
+          - key: CriticalAddonsOnly
+            operator: Exists
+          - effect: NoExecute
+            operator: Exists
+            tolerationSeconds: 300
 {{- end -}}
