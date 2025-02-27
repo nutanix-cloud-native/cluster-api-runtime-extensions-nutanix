@@ -83,9 +83,19 @@ func NewKubeadmConfigTemplateRequest(
 	)
 }
 
-func NewKubeadmControlPlaneTemplateRequest(
+type KubeadmControlPlaneTemplateRequestItemBuilder struct {
+	files []bootstrapv1.File
+}
+
+func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithFiles(
+	files ...bootstrapv1.File,
+) *KubeadmControlPlaneTemplateRequestItemBuilder {
+	b.files = files
+	return b
+}
+
+func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 	uid types.UID,
-	name string,
 ) runtimehooksv1.GeneratePatchesRequestItem {
 	return NewRequestItem(
 		&controlplanev1.KubeadmControlPlaneTemplate{
@@ -94,7 +104,7 @@ func NewKubeadmControlPlaneTemplateRequest(
 				Kind:       "KubeadmControlPlaneTemplate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
+				Name:      kubeadmControlPlaneTemplateRequestObjectName,
 				Namespace: Namespace,
 			},
 			Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
@@ -107,6 +117,7 @@ func NewKubeadmControlPlaneTemplateRequest(
 							JoinConfiguration: &bootstrapv1.JoinConfiguration{
 								NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
 							},
+							Files: b.files,
 						},
 					},
 				},
@@ -126,7 +137,8 @@ func NewKubeadmControlPlaneTemplateRequest(
 func NewKubeadmControlPlaneTemplateRequestItem(
 	uid types.UID,
 ) runtimehooksv1.GeneratePatchesRequestItem {
-	return NewKubeadmControlPlaneTemplateRequest(uid, kubeadmControlPlaneTemplateRequestObjectName)
+	builder := &KubeadmControlPlaneTemplateRequestItemBuilder{}
+	return builder.NewRequest(uid)
 }
 
 func NewCPDockerMachineTemplateRequestItem(
