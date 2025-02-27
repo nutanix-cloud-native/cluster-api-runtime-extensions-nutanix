@@ -9,10 +9,9 @@ import (
 	"fmt"
 
 	"github.com/blang/semver/v4"
-	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
@@ -39,26 +38,19 @@ var (
 //go:embed templates/configure-for-kube-vip.sh
 var configureForKubeVIPScript []byte
 
-type kubeVIPFromConfigMapProvider struct {
-	client client.Reader
-
-	configMapKey client.ObjectKey
+type kubeVIPFromKCPTemplateProvider struct {
+	template *controlplanev1.KubeadmControlPlaneTemplate
 }
 
-func NewKubeVIPFromConfigMapProvider(
-	cl client.Reader,
-	name, namespace string,
-) *kubeVIPFromConfigMapProvider {
-	return &kubeVIPFromConfigMapProvider{
-		client: cl,
-		configMapKey: client.ObjectKey{
-			Name:      name,
-			Namespace: namespace,
-		},
+func NewKubeVIPFromKCPTemplateProvider(
+	template *controlplanev1.KubeadmControlPlaneTemplate,
+) *kubeVIPFromKCPTemplateProvider {
+	return &kubeVIPFromKCPTemplateProvider{
+		template: template,
 	}
 }
 
-func (p *kubeVIPFromConfigMapProvider) Name() string {
+func (p *kubeVIPFromKCPTemplateProvider) Name() string {
 	return "kube-vip"
 }
 
@@ -66,12 +58,12 @@ func (p *kubeVIPFromConfigMapProvider) Name() string {
 // It reads kube-vip template from a ConfigMap and returns the content a File, templating the required variables.
 // If required, it also returns a script file and pre/post kubeadm commands to change the kube-vip Pod to use the new
 // super-admin.conf file.
-func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
-	ctx context.Context,
+func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
+	_ context.Context,
 	spec v1alpha1.ControlPlaneEndpointSpec,
 	cluster *clusterv1.Cluster,
 ) (files []bootstrapv1.File, preKubeadmCommands, postKubeadmCommands []string, err error) {
-	data, err := getTemplateFromConfigMap(ctx, p.client, p.configMapKey)
+	data, err := getTemplate(p.template)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed getting template data: %w", err)
 	}
@@ -136,51 +128,25 @@ func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
 	return files, preKubeadmCommands, postKubeadmCommands, nil
 }
 
-type multipleKeysError struct {
-	configMapKey client.ObjectKey
+type missingTemplateError struct {
+	path string
 }
 
-func (e multipleKeysError) Error() string {
+func (e missingTemplateError) Error() string {
 	return fmt.Sprintf(
-		"found multiple keys in ConfigMap %q, when only 1 is expected",
-		e.configMapKey,
+		"did not find kube-vip template file %q in KubeadmControlPlaneTemplate",
+		e.path,
 	)
 }
 
-type emptyValuesError struct {
-	configMapKey client.ObjectKey
-}
-
-func (e emptyValuesError) Error() string {
-	return fmt.Sprintf(
-		"could not find any keys with non-empty vaules in ConfigMap %q",
-		e.configMapKey,
-	)
-}
-
-func getTemplateFromConfigMap(
-	ctx context.Context,
-	cl client.Reader,
-	configMapKey client.ObjectKey,
-) (string, error) {
-	configMap := &corev1.ConfigMap{}
-	err := cl.Get(ctx, configMapKey, configMap)
-	if err != nil {
-		return "", fmt.Errorf("failed to get template ConfigMap %q: %w", configMapKey, err)
-	}
-
-	if len(configMap.Data) > 1 {
-		return "", multipleKeysError{configMapKey: configMapKey}
-	}
-
-	// at this point there should only be 1 key ConfigMap, return on the first non-empty value
-	for _, data := range configMap.Data {
-		if data != "" {
-			return data, nil
+func getTemplate(kcp *controlplanev1.KubeadmControlPlaneTemplate) (string, error) {
+	for _, file := range kcp.Spec.Template.Spec.KubeadmConfigSpec.Files {
+		if file.Path == kubeVIPFilePath && file.Content != "" {
+			return file.Content, nil
 		}
 	}
 
-	return "", emptyValuesError{configMapKey: configMapKey}
+	return "", missingTemplateError{path: kubeVIPFilePath}
 }
 
 func needHackCommands(cluster *clusterv1.Cluster) (bool, error) {

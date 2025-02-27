@@ -6,10 +6,11 @@ package controlplanevirtualip
 import (
 	"context"
 	"fmt"
+	"slices"
 
-	"github.com/spf13/pflag"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,23 +32,9 @@ const (
 
 type Config struct {
 	*options.GlobalOptions
-
-	defaultKubeVIPConfigMapName string
-}
-
-func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		&c.defaultKubeVIPConfigMapName,
-		prefix+".default-kube-vip-template-configmap-name",
-		"default-kube-vip-template",
-		"default ConfigMap name that holds the kube-vip template used for the control-plane virtual IP",
-	)
 }
 
 type ControlPlaneVirtualIP struct {
-	client client.Reader
-	config *Config
-
 	variableName      string
 	variableFieldPath []string
 }
@@ -56,14 +43,10 @@ type ControlPlaneVirtualIP struct {
 // It requires variableName and variableFieldPath to be passed from another provider specific handler.
 // The code is here to be shared across different providers.
 func NewControlPlaneVirtualIP(
-	cl client.Reader,
-	config *Config,
 	variableName string,
 	variableFieldPath ...string,
 ) *ControlPlaneVirtualIP {
 	return &ControlPlaneVirtualIP{
-		client:            cl,
-		config:            config,
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -103,11 +86,6 @@ func (h *ControlPlaneVirtualIP) Mutate(
 		controlPlaneEndpointVar,
 	)
 
-	if controlPlaneEndpointVar.VirtualIPSpec == nil {
-		log.V(5).Info("ControlPlane VirtualIP not set")
-		return nil
-	}
-
 	cluster, err := clusterGetter(ctx)
 	if err != nil {
 		log.Error(
@@ -117,16 +95,6 @@ func (h *ControlPlaneVirtualIP) Mutate(
 		return err
 	}
 
-	var virtualIPProvider providers.Provider
-	// only kube-vip is supported, but more providers can be added in the future
-	if controlPlaneEndpointVar.VirtualIPSpec.Provider == v1alpha1.VirtualIPProviderKubeVIP {
-		virtualIPProvider = providers.NewKubeVIPFromConfigMapProvider(
-			h.client,
-			h.config.defaultKubeVIPConfigMapName,
-			h.config.DefaultsNamespace(),
-		)
-	}
-
 	return patches.MutateIfApplicable(
 		obj,
 		vars,
@@ -134,6 +102,20 @@ func (h *ControlPlaneVirtualIP) Mutate(
 		selectors.ControlPlane(),
 		log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+			if controlPlaneEndpointVar.VirtualIPSpec == nil {
+				log.V(5).Info("ControlPlane VirtualIP not set")
+				// if VirtualIPSpec is not set, delete all template files
+				// as we do not want them to end up in the generated KCP
+				deleteFiles(obj, providers.TemplateFileNames...)
+				return nil
+			}
+
+			var virtualIPProvider providers.Provider
+			// only kube-vip is supported, but more providers can be added in the future
+			if controlPlaneEndpointVar.VirtualIPSpec.Provider == v1alpha1.VirtualIPProviderKubeVIP {
+				virtualIPProvider = providers.NewKubeVIPFromKCPTemplateProvider(obj)
+			}
+
 			files, preKubeadmCommands, postKubeadmCommands, generateErr := virtualIPProvider.GenerateFilesAndCommands(
 				ctx,
 				controlPlaneEndpointVar,
@@ -150,10 +132,8 @@ func (h *ControlPlaneVirtualIP) Mutate(
 				"adding %s static Pod file to control plane kubeadm config spec",
 				virtualIPProvider.Name(),
 			))
-			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				files...,
-			)
+
+			mergeFiles(obj, files...)
 
 			if len(preKubeadmCommands) > 0 {
 				log.WithValues(
@@ -185,5 +165,38 @@ func (h *ControlPlaneVirtualIP) Mutate(
 
 			return nil
 		},
+	)
+}
+
+func deleteFiles(obj *controlplanev1.KubeadmControlPlaneTemplate, filePathsToDelete ...string) {
+	for i := len(obj.Spec.Template.Spec.KubeadmConfigSpec.Files) - 1; i >= 0; i-- {
+		for _, path := range filePathsToDelete {
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.Files[i].Path == path {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.Files = slices.Delete(
+					obj.Spec.Template.Spec.KubeadmConfigSpec.Files, i, i+1,
+				)
+				break
+			}
+		}
+	}
+}
+
+// mergeFiles will merge the files into the KubeadmControlPlaneTemplate,
+// overriding any file with the same path and appending the rest.
+func mergeFiles(obj *controlplanev1.KubeadmControlPlaneTemplate, filesToMerge ...bootstrapv1.File) {
+	// replace any existing files with the same path
+	for i := len(filesToMerge) - 1; i >= 0; i-- {
+		for j := range obj.Spec.Template.Spec.KubeadmConfigSpec.Files {
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.Files[j].Path == filesToMerge[i].Path {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.Files[j] = filesToMerge[i]
+				filesToMerge = slices.Delete(filesToMerge, i, i+1)
+				break
+			}
+		}
+	}
+	// append the remaining files
+	obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
+		obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+		filesToMerge...,
 	)
 }

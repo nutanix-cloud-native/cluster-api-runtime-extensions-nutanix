@@ -270,10 +270,7 @@ var _ = Describe("Generate Image registry patches", func() {
 						v1alpha1.ImageRegistriesVariableName,
 					),
 				},
-				RequestItem: request.NewKubeadmControlPlaneTemplateRequest(
-					"",
-					"test-kubeadmconfigtemplate",
-				),
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 					{
 						Operation: "add",
@@ -400,10 +397,7 @@ var _ = Describe("Generate Image registry patches", func() {
 						},
 					),
 				},
-				RequestItem: request.NewKubeadmConfigTemplateRequest(
-					"",
-					"test-kubeadmconfigtemplate",
-				),
+				RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 					{
 						Operation: "add",
