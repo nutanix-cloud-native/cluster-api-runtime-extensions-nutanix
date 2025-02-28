@@ -10,16 +10,17 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/controlplaneendpoint"
-	nutanixcontrolplanevirtualip "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/controlplanevirtualip"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/machinedetails"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/prismcentralendpoint"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/generic/mutation/controlplanevirtualip"
+	nutanixcontrolplanevirtualip "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/nutanix/mutation/controlplanevirtualip"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPX clusters.
-func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+func MetaPatchHandler(mgr manager.Manager, cfg *controlplanevirtualip.Config) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		controlplaneendpoint.NewPatch(),
-		nutanixcontrolplanevirtualip.NewPatch(),
+		nutanixcontrolplanevirtualip.NewPatch(mgr.GetClient(), cfg),
 		prismcentralendpoint.NewPatch(),
 		machinedetails.NewControlPlanePatch(),
 	}
@@ -27,21 +28,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixClusterV3ConfigPatch",
-		mgr.GetClient(),
-		patchHandlers...,
-	)
-}
-
-// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
-func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := []mutation.MetaMutator{
-		machinedetails.NewWorkerPatch(),
-	}
-	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
-
-	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixWorkerConfigPatch",
+		"nutanixClusterV2ConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
