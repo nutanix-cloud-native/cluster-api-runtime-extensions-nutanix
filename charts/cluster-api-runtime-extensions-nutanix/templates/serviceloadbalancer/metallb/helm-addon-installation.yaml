@@ -8,5 +8,5 @@ metadata:
   name: '{{ .Values.hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-      {{- .Files.Get "addons/serviceloadbalancer/metallb/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/serviceloadbalancer/metallb/values-template.yaml" | nindent 4 }}
 {{- end -}}
