@@ -4,6 +4,7 @@
 package mirrors
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -156,6 +157,7 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 		name    string
 		configs []containerdConfig
 		want    []cabpkv1.File
+		wantErr error
 	}{
 		{
 			name: "ECR mirror image registry with no CA certificate",
@@ -173,6 +175,7 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 				{
 					URL:          "https://registry.example.com",
 					CASecretName: "my-registry-credentials-secret",
+					CACert:       "-----BEGIN CERTIFICATE-----",
 					Mirror:       true,
 				},
 			},
@@ -192,13 +195,71 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Mirror image registry and registry with the same CA certificate",
+			configs: []containerdConfig{
+				{
+					URL:          "https://registry.example.com/mirror",
+					CASecretName: "my-registry-credentials-secret",
+					CACert:       "-----BEGIN CERTIFICATE-----",
+					Mirror:       true,
+				},
+				{
+					URL:          "https://registry.example.com/library",
+					CASecretName: "my-registry-credentials-secret",
+					CACert:       "-----BEGIN CERTIFICATE-----",
+					Mirror:       true,
+				},
+			},
+			want: []cabpkv1.File{
+				{
+					Path:        "/etc/containerd/certs.d/registry.example.com/ca.crt",
+					Owner:       "",
+					Permissions: "0600",
+					Encoding:    "",
+					Append:      false,
+					ContentFrom: &cabpkv1.FileSource{
+						Secret: cabpkv1.SecretFileSource{
+							Name: "my-registry-credentials-secret",
+							Key:  "ca.crt",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Mirror image registry and registry with different CA certificates",
+			configs: []containerdConfig{
+				{
+					URL:          "https://registry.example.com/mirror",
+					CASecretName: "my-registry-credentials-secret",
+					CACert:       "-----BEGIN CERTIFICATE-----",
+					Mirror:       true,
+				},
+				{
+					URL:          "https://registry.example.com/library",
+					CASecretName: "my-registry-credentials-secret",
+					CACert:       "-----BEGIN CERTIFICATE----------END CERTIFICATE-----",
+					Mirror:       true,
+				},
+			},
+			wantErr: fmt.Errorf(
+				"CA certificate content for \"https://registry.example.com/library\" " +
+					"does not match one for \"https://registry.example.com/mirror\"",
+			),
+		},
 	}
 	for idx := range tests {
 		tt := tests[idx]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			file, err := generateRegistryCACertFiles(tt.configs)
-			require.NoError(t, err)
+			if tt.wantErr != nil {
+				assert.Equal(t, tt.wantErr.Error(), err.Error())
+				return
+			} else {
+				require.NoError(t, err)
+			}
 			assert.Equal(t, tt.want, file)
 		})
 	}

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -139,21 +140,17 @@ func generateRegistryCACertFiles(
 
 	var files []cabpkv1.File //nolint:prealloc // We don't know the size of the slice yet.
 
-	for _, config := range configs {
-		if config.CASecretName == "" {
-			continue
-		}
-
-		registryCACertPathOnRemote, err := config.filePathFromURL()
-		if err != nil {
-			return nil, fmt.Errorf("failed generating CA certificate file path from URL: %w", err)
-		}
+	filesToGenerate, err := registryCACertFiles(configs)
+	if err != nil {
+		return nil, err
+	}
+	for _, file := range filesToGenerate {
 		files = append(files, cabpkv1.File{
-			Path:        registryCACertPathOnRemote,
+			Path:        file.path,
 			Permissions: "0600",
 			ContentFrom: &cabpkv1.FileSource{
 				Secret: cabpkv1.SecretFileSource{
-					Name: config.CASecretName,
+					Name: file.caSecretName,
 					Key:  secretKeyForCACert,
 				},
 			},
@@ -188,4 +185,53 @@ func formatURLForContainerd(uri string) (string, error) {
 	}
 	// using path.Join on all elements incorrectly drops a "/" from "https://"
 	return fmt.Sprintf("%s/%s", mirror, mirrorPath), nil
+}
+
+type containerdConfigFile struct {
+	path         string
+	url          string
+	caSecretName string
+	caCert       string
+}
+
+// registryCACertFiles returns a list of CA certificate files
+// that should be generated for the given containerd configurations.
+// If any of the provided configurations share the same url.Host only a single file will be generated.
+// An error will be returned, if the CA certificate content for the same URL.Host do not match.
+func registryCACertFiles(configs []containerdConfig) ([]containerdConfigFile, error) {
+	filesToGenerate := make([]containerdConfigFile, 0)
+	for _, config := range configs {
+		// Skip if CA certificate is not provided.
+		if config.CASecretName == "" {
+			continue
+		}
+		registryCACertPathOnRemote, err := config.filePathFromURL()
+		if err != nil {
+			return nil, fmt.Errorf("failed generating CA certificate file path from URL: %w", err)
+		}
+
+		foundIndex := slices.IndexFunc(filesToGenerate, func(f containerdConfigFile) bool {
+			return registryCACertPathOnRemote == f.path
+		})
+		// File not already found and needs to be generated.
+		if foundIndex == -1 {
+			filesToGenerate = append(filesToGenerate, containerdConfigFile{
+				path:         registryCACertPathOnRemote,
+				url:          config.URL,
+				caSecretName: config.CASecretName,
+				caCert:       config.CACert,
+			})
+			continue
+		}
+		// File is already in the list, check if the CA certificate content matches.
+		if config.CACert != filesToGenerate[foundIndex].caCert {
+			return nil, fmt.Errorf(
+				"CA certificate content for %q does not match one for %q",
+				config.URL,
+				filesToGenerate[foundIndex].url,
+			)
+		}
+	}
+
+	return filesToGenerate, nil
 }
