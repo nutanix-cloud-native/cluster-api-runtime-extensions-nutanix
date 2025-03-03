@@ -4,7 +4,6 @@
 package mirrors
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -41,7 +40,6 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
   override_path = true
 `,
 			},
-			wantErr: nil,
 		},
 		{
 			name: "ECR mirror image registry with a path and no CA certificate",
@@ -64,7 +62,6 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
   override_path = true
 `,
 			},
-			wantErr: nil,
 		},
 		{
 			name: "Mirror image registry with a CA and an image registry with no CA certificate",
@@ -92,7 +89,6 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
   override_path = true
 `,
 			},
-			wantErr: nil,
 		},
 		{
 			name: "Mirror image registry with a CA and an image registry with a CA",
@@ -125,7 +121,6 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
   override_path = true
 `,
 			},
-			wantErr: nil,
 		},
 		{
 			name: "Image registry with a CA",
@@ -136,8 +131,6 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 				},
 			},
 			want: nil,
-
-			wantErr: nil,
 		},
 	}
 	for idx := range tests {
@@ -208,7 +201,7 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 					URL:          "https://registry.example.com/library",
 					CASecretName: "my-registry-credentials-secret",
 					CACert:       "-----BEGIN CERTIFICATE-----",
-					Mirror:       true,
+					Mirror:       false,
 				},
 			},
 			want: []cabpkv1.File{
@@ -240,13 +233,28 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 					URL:          "https://registry.example.com/library",
 					CASecretName: "my-registry-credentials-secret",
 					CACert:       "-----BEGIN CERTIFICATE----------END CERTIFICATE-----",
-					Mirror:       true,
+					Mirror:       false,
 				},
 			},
-			wantErr: fmt.Errorf(
-				"CA certificate content for \"https://registry.example.com/library\" " +
-					"does not match one for \"https://registry.example.com/mirror\"",
-			),
+			wantErr: ErrConflictingRegistryCACertificates,
+		},
+		{
+			name: "Multiple image registries with different CA certificates",
+			configs: []containerdConfig{
+				{
+					URL:          "https://registry.example.com/mirror",
+					CASecretName: "my-registry-credentials-secret",
+					CACert:       "-----BEGIN CERTIFICATE-----",
+					Mirror:       false,
+				},
+				{
+					URL:          "https://registry.example.com/library",
+					CASecretName: "my-registry-credentials-secret",
+					CACert:       "-----BEGIN CERTIFICATE----------END CERTIFICATE-----",
+					Mirror:       false,
+				},
+			},
+			wantErr: ErrConflictingRegistryCACertificates,
 		},
 	}
 	for idx := range tests {
@@ -254,12 +262,7 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			file, err := generateRegistryCACertFiles(tt.configs)
-			if tt.wantErr != nil {
-				assert.Equal(t, tt.wantErr.Error(), err.Error())
-				return
-			} else {
-				require.NoError(t, err)
-			}
+			require.ErrorIs(t, err, tt.wantErr)
 			assert.Equal(t, tt.want, file)
 		})
 	}

@@ -6,13 +6,14 @@ package mirrors
 import (
 	"bytes"
 	_ "embed"
+	"errors"
 	"fmt"
 	"net/url"
 	"path"
-	"slices"
 	"strings"
 	"text/template"
 
+	"github.com/samber/lo"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
@@ -194,12 +195,17 @@ type containerdConfigFile struct {
 	caCert       string
 }
 
+var ErrConflictingRegistryCACertificates = errors.New(
+	"conflicting CA certificate specified for registry host",
+)
+
 // registryCACertFiles returns a list of CA certificate files
 // that should be generated for the given containerd configurations.
 // If any of the provided configurations share the same url.Host only a single file will be generated.
 // An error will be returned, if the CA certificate content for the same URL.Host do not match.
 func registryCACertFiles(configs []containerdConfig) ([]containerdConfigFile, error) {
-	filesToGenerate := make([]containerdConfigFile, 0)
+	filesToGenerate := make([]containerdConfigFile, 0, len(configs))
+
 	for _, config := range configs {
 		// Skip if CA certificate is not provided.
 		if config.CASecretName == "" {
@@ -210,27 +216,35 @@ func registryCACertFiles(configs []containerdConfig) ([]containerdConfigFile, er
 			return nil, fmt.Errorf("failed generating CA certificate file path from URL: %w", err)
 		}
 
-		foundIndex := slices.IndexFunc(filesToGenerate, func(f containerdConfigFile) bool {
-			return registryCACertPathOnRemote == f.path
-		})
-		// File not already found and needs to be generated.
-		if foundIndex == -1 {
-			filesToGenerate = append(filesToGenerate, containerdConfigFile{
-				path:         registryCACertPathOnRemote,
-				url:          config.URL,
-				caSecretName: config.CASecretName,
-				caCert:       config.CACert,
-			})
+		existingFileToGenerate, existing := lo.Find(
+			filesToGenerate,
+			func(f containerdConfigFile) bool {
+				return registryCACertPathOnRemote == f.path
+			},
+		)
+		// File exists and needs to be checked for conflicts.
+		if existing {
+			if config.CACert != existingFileToGenerate.caCert {
+				return nil, fmt.Errorf(
+					"%w: %q (from secrets %q and %q)",
+					ErrConflictingRegistryCACertificates,
+					config.URL,
+					config.CASecretName,
+					existingFileToGenerate.caSecretName,
+				)
+			}
+
+			// File already found with matching content - skipping.
 			continue
 		}
-		// File is already in the list, check if the CA certificate content matches.
-		if config.CACert != filesToGenerate[foundIndex].caCert {
-			return nil, fmt.Errorf(
-				"CA certificate content for %q does not match one for %q",
-				config.URL,
-				filesToGenerate[foundIndex].url,
-			)
-		}
+
+		// File not already found and needs to be generated.
+		filesToGenerate = append(filesToGenerate, containerdConfigFile{
+			path:         registryCACertPathOnRemote,
+			url:          config.URL,
+			caSecretName: config.CASecretName,
+			caCert:       config.CACert,
+		})
 	}
 
 	return filesToGenerate, nil
