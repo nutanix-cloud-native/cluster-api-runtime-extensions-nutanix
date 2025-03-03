@@ -4,12 +4,19 @@
 package controlplanevirtualip
 
 import (
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/controlplanevirtualip"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/generic/mutation/controlplanevirtualip"
 )
 
-func NewPatch() *controlplanevirtualip.ControlPlaneVirtualIP {
+func NewPatch(
+	cl ctrlclient.Client,
+	cfg *controlplanevirtualip.Config,
+) *controlplanevirtualip.ControlPlaneVirtualIP {
 	return controlplanevirtualip.NewControlPlaneVirtualIP(
+		cl,
+		cfg,
 		v1alpha1.ClusterConfigVariableName,
 		v1alpha1.NutanixVariableName,
 		controlplanevirtualip.VariableName,
