@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.27.4 (2025-03-03)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.27.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: correctly handle multiple registries with the same Host [Backport v0.27.x] by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1064
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.27.3...v0.27.4
+
 ## 0.27.3 (2025-02-21)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.27.x -->
