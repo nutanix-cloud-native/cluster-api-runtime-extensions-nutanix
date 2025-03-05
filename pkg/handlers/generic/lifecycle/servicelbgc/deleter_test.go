@@ -4,7 +4,6 @@
 package servicelbgc
 
 import (
-	"context"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -204,13 +203,13 @@ func Test_deleteServicesWithLoadBalancer(t *testing.T) {
 				svc := &tt.startServices[i]
 				require.NoError(
 					t,
-					fakeClient.Create(context.Background(), svc),
+					fakeClient.Create(t.Context(), svc),
 					"error creating Service",
 				)
 			}
 
 			for {
-				err := deleteServicesWithLoadBalancer(context.TODO(), fakeClient, logr.Discard())
+				err := deleteServicesWithLoadBalancer(t.Context(), fakeClient, logr.Discard())
 				if err == nil {
 					break
 				}
@@ -225,7 +224,7 @@ func Test_deleteServicesWithLoadBalancer(t *testing.T) {
 			services := &corev1.ServiceList{}
 			require.NoError(
 				t,
-				fakeClient.List(context.Background(), services),
+				fakeClient.List(t.Context(), services),
 				"error listing Services",
 			)
 			assert.Equal(t, tt.endServices, services.Items)

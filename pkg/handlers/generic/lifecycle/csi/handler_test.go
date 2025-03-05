@@ -155,7 +155,7 @@ func Test_AfterControlPlaneInitialized(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := t.Context()
 			client := fake.NewClientBuilder().Build()
 			handler := New(client, testProviderHandlers)
 			resp := &runtimehooksv1.AfterControlPlaneInitializedResponse{}

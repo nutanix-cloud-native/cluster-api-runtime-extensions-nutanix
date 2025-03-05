@@ -4,7 +4,6 @@
 package capitest
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -41,7 +40,7 @@ func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 	h := handlerCreator()
 	resp := &runtimehooksv1.DiscoverVariablesResponse{}
 	h.DiscoverVariables(
-		context.Background(),
+		t.Context(),
 		&runtimehooksv1.DiscoverVariablesRequest{},
 		resp,
 	)
