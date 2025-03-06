@@ -248,7 +248,7 @@ func Test_runHooksInParallel(t *testing.T) {
 
 			gotResponse := &runtimehooksv1.BeforeClusterUpgradeResponse{}
 			runHooksInParallel(
-				t.Context(),
+				context.Background(),
 				hookFuncs,
 				&runtimehooksv1.BeforeClusterUpgradeRequest{},
 				gotResponse,

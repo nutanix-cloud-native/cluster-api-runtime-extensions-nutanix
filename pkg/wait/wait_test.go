@@ -166,7 +166,7 @@ func TestWait(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ForObject(
-				t.Context(),
+				context.Background(),
 				tt.input,
 			)
 			if !tt.errCheck(err) {

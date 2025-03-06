@@ -4,6 +4,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -114,7 +115,7 @@ func Test_EnsureOwnerReferenceForSecret(t *testing.T) {
 			t.Parallel()
 
 			err := EnsureClusterOwnerReferenceForObject(
-				t.Context(),
+				context.Background(),
 				tt.client,
 				corev1.TypedLocalObjectReference{
 					Kind: "Secret",
@@ -133,7 +134,7 @@ func Test_EnsureOwnerReferenceForSecret(t *testing.T) {
 			// verify that the owner reference was added
 			secret := &corev1.Secret{}
 			err = tt.client.Get(
-				t.Context(),
+				context.Background(),
 				client.ObjectKey{Namespace: tt.cluster.Namespace, Name: tt.secretName},
 				secret,
 			)

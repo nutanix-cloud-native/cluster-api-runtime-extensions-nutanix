@@ -223,7 +223,7 @@ func TestMetaGeneratePatches(t *testing.T) {
 			h := NewMetaGeneratePatchesHandler("", nil, tt.mutaters...).(GeneratePatches)
 
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
-			h.GeneratePatches(t.Context(), &runtimehooksv1.GeneratePatchesRequest{
+			h.GeneratePatches(context.Background(), &runtimehooksv1.GeneratePatchesRequest{
 				Items: []runtimehooksv1.GeneratePatchesRequestItem{
 					request.NewKubeadmConfigTemplateRequestItem("kubeadm-config"),
 					request.NewKubeadmControlPlaneTemplateRequestItem("kubeadm-control-plane"),

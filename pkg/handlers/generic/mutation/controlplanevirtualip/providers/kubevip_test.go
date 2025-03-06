@@ -4,6 +4,7 @@
 package providers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -191,7 +192,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 			}
 
 			files, preKubeadmCommands, postKubeadmCommands, err := provider.GenerateFilesAndCommands(
-				t.Context(),
+				context.Background(),
 				tt.controlPlaneEndpointSpec,
 				tt.cluster,
 			)
@@ -271,7 +272,7 @@ func Test_getTemplateFromConfigMap(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(tt.configMap).Build()
 
 			data, err := getTemplateFromConfigMap(
-				t.Context(),
+				context.Background(),
 				fakeClient,
 				client.ObjectKeyFromObject(tt.configMap),
 			)

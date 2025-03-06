@@ -3,7 +3,7 @@
 
 module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api
 
-go 1.24
+go 1.23
 
 toolchain go1.24.1
 
