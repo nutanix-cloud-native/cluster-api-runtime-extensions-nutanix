@@ -210,7 +210,11 @@ func Test_deleteServicesWithLoadBalancer(t *testing.T) {
 			}
 
 			for {
-				err := deleteServicesWithLoadBalancer(context.TODO(), fakeClient, logr.Discard())
+				err := deleteServicesWithLoadBalancer(
+					context.Background(),
+					fakeClient,
+					logr.Discard(),
+				)
 				if err == nil {
 					break
 				}

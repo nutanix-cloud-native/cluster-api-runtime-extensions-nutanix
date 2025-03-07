@@ -10,31 +10,6 @@
     flake-utils.lib.eachDefaultSystem (system:
       with nixpkgs.legacyPackages.${system}; rec {
         packages = rec {
-          govulncheck = pkgs.govulncheck.override { buildGoModule = buildGo124Module; };
-
-          golangci-lint = buildGo124Module rec {
-            pname = "golangci-lint";
-            version = "1.64.5";
-
-            src = fetchFromGitHub {
-              owner = "golangci";
-              repo = "golangci-lint";
-              rev = "v${version}";
-              hash = "sha256-PRI82Ia2R2GH9xV/UZvfXTmCrfsxvHfysXuAek/4a+0=";
-            };
-
-            vendorHash = "sha256-oCaVXjflmOMUDEDynbnUwA9KOPNDcEwI4WqOi2KoCG4=";
-
-            subPackages = [ "cmd/golangci-lint" ];
-
-            ldflags = [
-              "-s"
-              "-X main.version=${version}"
-              "-X main.commit=v${version}"
-              "-X main.date=19700101-00:00:00"
-            ];
-          };
-
           goprintconst = buildGo124Module rec {
             name = "goprintconst";
             version = "0.0.1-dev";
@@ -83,26 +58,26 @@
 
           release-please = buildNpmPackage rec {
             pname = "release-please";
-            version = "16.15.0";
+            version = "16.18.0";
             src = fetchFromGitHub {
               owner = "googleapis";
               repo = "release-please";
               rev = "v${version}";
-              hash = "sha256-AUKyBjUD77uoymSDrIQ1YMv00KL4ay5pqoaIsIuYT2o=";
+              hash = "sha256-iY1EblSMCvw6iy8DFJnQRNCST7wycWSV8vdsq+XNpRU=";
             };
-            npmDepsHash = "sha256-boD+mNuf/SSBJtVyNWe561rjmaoxrhJQUxl4IzFvtN8=";
+            npmDepsHash = "sha256-HDi7dFG/jNsszyvrb7ravVKQ7XO7NegnbX9MITcS1eE=";
             dontNpmBuild = true;
           };
 
           helm-schema = buildGo124Module rec {
             pname = "helm-schema";
-            version = "1.6.4";
+            version = "1.7.0";
 
             src = fetchFromGitHub {
               owner = "losisin";
               repo = "helm-values-schema-json";
               rev = "v${version}";
-              hash = "sha256-9UD9bEepXNjDTJl1ghEj/BQoEOySd2b3mPLXxMhDFeM=";
+              hash = "sha256-P/3EcVBo11XxY+S8FyDiSUPQNfgTTqLDmbbc7Up5LNc=";
             };
             doCheck = false;
             vendorHash = "sha256-mT2A6xXlTFYrA6yNpz9jaa69vdetY/OgjNtTvG4jAYs=";

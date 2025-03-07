@@ -5,6 +5,7 @@ run:
   timeout: 10m
   build-tags:
     - e2e
+  go: "1.23"
 
 linters:
   disable-all: true

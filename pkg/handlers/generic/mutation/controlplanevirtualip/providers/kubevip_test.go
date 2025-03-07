@@ -192,7 +192,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 			}
 
 			files, preKubeadmCommands, postKubeadmCommands, err := provider.GenerateFilesAndCommands(
-				context.TODO(),
+				context.Background(),
 				tt.controlPlaneEndpointSpec,
 				tt.cluster,
 			)
@@ -272,7 +272,7 @@ func Test_getTemplateFromConfigMap(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(tt.configMap).Build()
 
 			data, err := getTemplateFromConfigMap(
-				context.TODO(),
+				context.Background(),
 				fakeClient,
 				client.ObjectKeyFromObject(tt.configMap),
 			)
