@@ -55,7 +55,7 @@ func (p *kubeVIPFromKCPTemplateProvider) Name() string {
 }
 
 // GenerateFilesAndCommands returns files and pre/post kubeadm commands for kube-vip.
-// It reads kube-vip template from a ConfigMap and returns the content a File, templating the required variables.
+// It reads kube-vip template from the KCPTemplate and returns a File, templating the required variables.
 // If required, it also returns a script file and pre/post kubeadm commands to change the kube-vip Pod to use the new
 // super-admin.conf file.
 func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
