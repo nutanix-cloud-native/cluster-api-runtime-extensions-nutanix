@@ -104,9 +104,12 @@ func (h *ControlPlaneVirtualIP) Mutate(
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
 			if controlPlaneEndpointVar.VirtualIPSpec == nil {
 				log.V(5).Info("ControlPlane VirtualIP not set")
-				// if VirtualIPSpec is not set, delete all template files
+				// if VirtualIPSpec is not set, delete all VirtualIP providers' template files
 				// as we do not want them to end up in the generated KCP
-				deleteFiles(obj, providers.TemplateFileNames...)
+				obj.Spec.Template.Spec.KubeadmConfigSpec.Files = deleteFiles(
+					obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+					providers.VirtualIPProviderFileNames...,
+				)
 				return nil
 			}
 
@@ -133,7 +136,10 @@ func (h *ControlPlaneVirtualIP) Mutate(
 				virtualIPProvider.Name(),
 			))
 
-			mergeFiles(obj, files...)
+			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = mergeFiles(
+				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+				files...,
+			)
 
 			if len(preKubeadmCommands) > 0 {
 				log.WithValues(
@@ -168,35 +174,34 @@ func (h *ControlPlaneVirtualIP) Mutate(
 	)
 }
 
-func deleteFiles(obj *controlplanev1.KubeadmControlPlaneTemplate, filePathsToDelete ...string) {
-	for i := len(obj.Spec.Template.Spec.KubeadmConfigSpec.Files) - 1; i >= 0; i-- {
+func deleteFiles(files []bootstrapv1.File, filePathsToDelete ...string) []bootstrapv1.File {
+	for i := len(files) - 1; i >= 0; i-- {
 		for _, path := range filePathsToDelete {
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.Files[i].Path == path {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.Files = slices.Delete(
-					obj.Spec.Template.Spec.KubeadmConfigSpec.Files, i, i+1,
-				)
+			if files[i].Path == path {
+				files = slices.Delete(files, i, i+1)
 				break
 			}
 		}
 	}
+
+	return files
 }
 
 // mergeFiles will merge the files into the KubeadmControlPlaneTemplate,
 // overriding any file with the same path and appending the rest.
-func mergeFiles(obj *controlplanev1.KubeadmControlPlaneTemplate, filesToMerge ...bootstrapv1.File) {
+func mergeFiles(files []bootstrapv1.File, filesToMerge ...bootstrapv1.File) []bootstrapv1.File {
 	// replace any existing files with the same path
 	for i := len(filesToMerge) - 1; i >= 0; i-- {
-		for j := range obj.Spec.Template.Spec.KubeadmConfigSpec.Files {
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.Files[j].Path == filesToMerge[i].Path {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.Files[j] = filesToMerge[i]
+		for j := range files {
+			if files[j].Path == filesToMerge[i].Path {
+				files[j] = filesToMerge[i]
 				filesToMerge = slices.Delete(filesToMerge, i, i+1)
 				break
 			}
 		}
 	}
 	// append the remaining files
-	obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
-		obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-		filesToMerge...,
-	)
+	files = append(files, filesToMerge...)
+
+	return files
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-var TemplateFileNames = []string{
+var VirtualIPProviderFileNames = []string{
 	kubeVIPFilePath,
 }
 

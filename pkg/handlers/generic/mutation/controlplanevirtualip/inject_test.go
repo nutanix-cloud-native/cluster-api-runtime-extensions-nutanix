@@ -368,8 +368,11 @@ func Test_deleteFiles(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			deleteFiles(tt.obj, tt.filesToDelete...)
-			assert.Equal(t, tt.expectedFiles, tt.obj.Spec.Template.Spec.KubeadmConfigSpec.Files)
+			updatedFiles := deleteFiles(
+				tt.obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+				tt.filesToDelete...,
+			)
+			assert.Equal(t, tt.expectedFiles, updatedFiles)
 		})
 	}
 }
@@ -514,8 +517,11 @@ func Test_mergeFiles(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			mergeFiles(tt.obj, tt.files...)
-			assert.Equal(t, tt.expectedFiles, tt.obj.Spec.Template.Spec.KubeadmConfigSpec.Files)
+			updatedFiles := mergeFiles(
+				tt.obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+				tt.files...,
+			)
+			assert.Equal(t, tt.expectedFiles, updatedFiles)
 		})
 	}
 }
