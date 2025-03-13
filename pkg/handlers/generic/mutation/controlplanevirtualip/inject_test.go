@@ -9,19 +9,21 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -31,6 +33,12 @@ func TestControlPlaneEndpointPatch(t *testing.T) {
 }
 
 var _ = Describe("Generate ControlPlane virtual IP patches", func() {
+	requestItemBuilder := request.KubeadmControlPlaneTemplateRequestItemBuilder{}
+	requestItem := requestItemBuilder.WithFiles(bootstrapv1.File{
+		Path:    "/etc/kubernetes/manifests/kube-vip.yaml",
+		Content: validKubeVIPTemplate,
+	}).NewRequest("")
+
 	testDefs := []struct {
 		capitest.PatchTestDef
 		virtualIPTemplate string
@@ -52,28 +60,24 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 						VariableName,
 					),
 				},
-				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				RequestItem: requestItem,
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 					{
-						Operation: "add",
-						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-						ValueMatcher: gomega.ContainElements(
-							gomega.SatisfyAll(
-								gomega.HaveKeyWithValue(
-									"content",
-									gomega.ContainSubstring("value: \"10.20.100.10\""),
-								),
-								gomega.HaveKeyWithValue(
-									"content",
-									gomega.ContainSubstring("value: \"6443\""),
-								),
-								gomega.HaveKey("owner"),
-								gomega.HaveKeyWithValue(
-									"path",
-									gomega.ContainSubstring("kube-vip"),
-								),
-								gomega.HaveKey("permissions"),
-							),
+						Operation:    "add",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/files/0/owner",
+						ValueMatcher: gomega.Equal("root:root"),
+					},
+					{
+						Operation:    "add",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/files/0/permissions",
+						ValueMatcher: gomega.Equal("0600"),
+					},
+					{
+						Operation: "replace",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/files/0/content",
+						ValueMatcher: gomega.SatisfyAll(
+							gomega.ContainSubstring("value: \"10.20.100.10\""),
+							gomega.ContainSubstring("value: \"6443\""),
 						),
 					},
 				},
@@ -123,52 +127,24 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 						VariableName,
 					),
 				},
-				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(
-					"",
-				),
+				RequestItem: requestItem,
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 					{
-						Operation: "add",
-						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-						ValueMatcher: gomega.ContainElements(
-							gomega.SatisfyAll(
-								gomega.HaveKeyWithValue(
-									"content",
-									gomega.ContainSubstring("value: \"10.20.100.10\""),
-								),
-								gomega.HaveKeyWithValue(
-									"content",
-									gomega.ContainSubstring("value: \"6443\""),
-								),
-								gomega.HaveKey("owner"),
-								gomega.HaveKeyWithValue(
-									"path",
-									gomega.ContainSubstring("kube-vip"),
-								),
-								gomega.HaveKey("permissions"),
-							),
-							gomega.SatisfyAll(
-								gomega.HaveKey("content"),
-								gomega.HaveKeyWithValue(
-									"path",
-									gomega.ContainSubstring("configure-for-kube-vip.sh"),
-								),
-								gomega.HaveKey("permissions"),
-							),
-						),
+						Operation:    "add",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/files/0/owner",
+						ValueMatcher: gomega.Equal("root:root"),
 					},
 					{
-						Operation: "add",
-						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
-						ValueMatcher: gomega.ContainElements(
-							"/bin/bash /etc/caren/configure-for-kube-vip.sh set-host-aliases use-super-admin.conf",
-						),
+						Operation:    "add",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/files/0/permissions",
+						ValueMatcher: gomega.Equal("0600"),
 					},
 					{
-						Operation: "add",
-						Path:      "/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands",
-						ValueMatcher: gomega.ContainElements(
-							"/bin/bash /etc/caren/configure-for-kube-vip.sh use-admin.conf",
+						Operation: "replace",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/files/0/content",
+						ValueMatcher: gomega.SatisfyAll(
+							gomega.ContainSubstring("value: \"10.20.100.10\""),
+							gomega.ContainSubstring("value: \"6443\""),
 						),
 					},
 				},
@@ -182,6 +158,41 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
 						Version: "v1.29.0",
+					},
+				},
+			},
+		},
+		{
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "template file should be removed when virtual IP is not set",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						v1alpha1.ControlPlaneEndpointSpec{
+							Host: "10.20.100.10",
+							Port: 6443,
+						},
+						VariableName,
+					),
+				},
+				RequestItem: requestItem,
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation:    "remove",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/files",
+						ValueMatcher: gomega.BeNil(),
+					},
+				},
+			},
+			virtualIPTemplate: validKubeVIPTemplate,
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: request.Namespace,
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "v1.28.100",
 					},
 				},
 			},
@@ -230,15 +241,11 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				}()
 			}
 
-			cfg := &Config{
-				GlobalOptions:               options.NewGlobalOptions(),
-				defaultKubeVIPConfigMapName: cm.Name,
-			}
 			patchGenerator := func() mutation.GeneratePatches {
 				return mutation.NewMetaGeneratePatchesHandler(
 					"",
 					client,
-					NewControlPlaneVirtualIP(client, cfg, v1alpha1.ClusterConfigVariableName, VariableName),
+					NewControlPlaneVirtualIP(v1alpha1.ClusterConfigVariableName, VariableName),
 				).(mutation.GeneratePatches)
 			}
 
@@ -268,3 +275,253 @@ spec:
         - name: port
           value: "{{ .Port }}"
 `
+
+func Test_deleteFiles(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name          string
+		obj           *controlplanev1.KubeadmControlPlaneTemplate
+		filesToDelete []string
+		expectedFiles []bootstrapv1.File
+	}{
+		{
+			name: "should delete files from the template",
+			obj: &controlplanev1.KubeadmControlPlaneTemplate{
+				Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
+					Template: controlplanev1.KubeadmControlPlaneTemplateResource{
+						Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
+							KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
+								Files: []bootstrapv1.File{
+									{
+										Path: "file-1",
+									},
+									{
+										Path: "file-2",
+									},
+									{
+										Path: "file-3",
+									},
+									{
+										Path: "file-4",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			filesToDelete: []string{"file-2", "file-3", "file-5"},
+			expectedFiles: []bootstrapv1.File{
+				{
+					Path: "file-1",
+				},
+				{
+					Path: "file-4",
+				},
+			},
+		},
+		{
+			name: "should keep all files",
+			obj: &controlplanev1.KubeadmControlPlaneTemplate{
+				Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
+					Template: controlplanev1.KubeadmControlPlaneTemplateResource{
+						Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
+							KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
+								Files: []bootstrapv1.File{
+									{
+										Path: "file-1",
+									},
+									{
+										Path: "file-2",
+									},
+									{
+										Path: "file-3",
+									},
+									{
+										Path: "file-4",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			filesToDelete: []string{"file-5"},
+			expectedFiles: []bootstrapv1.File{
+				{
+					Path: "file-1",
+				},
+				{
+					Path: "file-2",
+				},
+				{
+					Path: "file-3",
+				},
+				{
+					Path: "file-4",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			updatedFiles := deleteFiles(
+				tt.obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+				tt.filesToDelete...,
+			)
+			assert.Equal(t, tt.expectedFiles, updatedFiles)
+		})
+	}
+}
+
+func Test_mergeFiles(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name          string
+		obj           *controlplanev1.KubeadmControlPlaneTemplate
+		files         []bootstrapv1.File
+		expectedFiles []bootstrapv1.File
+	}{
+		{
+			name: "should merge files",
+			obj: &controlplanev1.KubeadmControlPlaneTemplate{
+				Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
+					Template: controlplanev1.KubeadmControlPlaneTemplateResource{
+						Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
+							KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
+								Files: []bootstrapv1.File{
+									{
+										Path:    "file-1",
+										Content: "old",
+									},
+									{
+										Path:    "file-2",
+										Content: "old",
+									},
+									{
+										Path:    "file-3",
+										Content: "old",
+									},
+									{
+										Path:    "file-4",
+										Content: "old",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			files: []bootstrapv1.File{
+				{
+					Path:    "file-1",
+					Content: "new",
+				},
+				{
+					Path:    "file-4",
+					Content: "new",
+				},
+				{
+					Path:    "file-5",
+					Content: "new",
+				},
+			},
+			expectedFiles: []bootstrapv1.File{
+				{
+					Path:    "file-1",
+					Content: "new",
+				},
+				{
+					Path:    "file-2",
+					Content: "old",
+				},
+				{
+					Path:    "file-3",
+					Content: "old",
+				},
+				{
+					Path:    "file-4",
+					Content: "new",
+				},
+				{
+					Path:    "file-5",
+					Content: "new",
+				},
+			},
+		},
+		{
+			name: "should add a new file",
+			obj: &controlplanev1.KubeadmControlPlaneTemplate{
+				Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
+					Template: controlplanev1.KubeadmControlPlaneTemplateResource{
+						Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
+							KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
+								Files: []bootstrapv1.File{
+									{
+										Path:    "file-1",
+										Content: "old",
+									},
+									{
+										Path:    "file-2",
+										Content: "old",
+									},
+									{
+										Path:    "file-3",
+										Content: "old",
+									},
+									{
+										Path:    "file-4",
+										Content: "old",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			files: []bootstrapv1.File{
+				{
+					Path:    "file-5",
+					Content: "new",
+				},
+			},
+			expectedFiles: []bootstrapv1.File{
+				{
+					Path:    "file-1",
+					Content: "old",
+				},
+				{
+					Path:    "file-2",
+					Content: "old",
+				},
+				{
+					Path:    "file-3",
+					Content: "old",
+				},
+				{
+					Path:    "file-4",
+					Content: "old",
+				},
+				{
+					Path:    "file-5",
+					Content: "new",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			updatedFiles := mergeFiles(
+				tt.obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+				tt.files...,
+			)
+			assert.Equal(t, tt.expectedFiles, updatedFiles)
+		})
+	}
+}

@@ -11,6 +11,9 @@ readonly SCRIPT_DIR
 
 trap 'find "${SCRIPT_DIR}" -name kustomization.yaml -delete' EXIT
 
+KUBE_VIP_CONTENT=$(cat hack/examples/files/kube-vip.yaml)
+export KUBE_VIP_CONTENT
+
 # For details why the exec command is structured like this , see
 # https://www.shellcheck.net/wiki/SC2156.
 find "${SCRIPT_DIR}" -name kustomization.yaml.tmpl \

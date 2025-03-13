@@ -9,9 +9,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -23,7 +26,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 		name                        string
 		controlPlaneEndpointSpec    v1alpha1.ControlPlaneEndpointSpec
 		cluster                     *clusterv1.Cluster
-		kcp                         *controlplanev1.KubeadmControlPlaneTemplate
+		configMap                   *corev1.ConfigMap
 		expectedFiles               []bootstrapv1.File
 		expectedPreKubeadmCommands  []string
 		expectedPostKubeadmCommands []string
@@ -35,11 +38,15 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				Host: "10.20.100.10",
 				Port: 6443,
 			},
-			kcp: kubeadmControlPlaneTemplateWithFiles(
-				t, []bootstrapv1.File{{
-					Path:    kubeVIPFilePath,
-					Content: validKubeVIPTemplate,
-				}}),
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data": validKubeVIPTemplate,
+				},
+			},
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
@@ -73,11 +80,15 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				Host: "10.20.100.10",
 				Port: 6443,
 			},
-			kcp: kubeadmControlPlaneTemplateWithFiles(
-				t, []bootstrapv1.File{{
-					Path:    kubeVIPFilePath,
-					Content: validKubeVIPTemplate,
-				}}),
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data": validKubeVIPTemplate,
+				},
+			},
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
@@ -106,11 +117,15 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 					},
 				},
 			},
-			kcp: kubeadmControlPlaneTemplateWithFiles(
-				t, []bootstrapv1.File{{
-					Path:    kubeVIPFilePath,
-					Content: validKubeVIPTemplate,
-				}}),
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data": validKubeVIPTemplate,
+				},
+			},
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
@@ -138,11 +153,15 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 					},
 				},
 			},
-			kcp: kubeadmControlPlaneTemplateWithFiles(
-				t, []bootstrapv1.File{{
-					Path:    kubeVIPFilePath,
-					Content: validKubeVIPTemplate,
-				}}),
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data": validKubeVIPTemplate,
+				},
+			},
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
@@ -165,13 +184,15 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 		tt := tests[idx] // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			fakeClient := fake.NewClientBuilder().WithObjects(tt.configMap).Build()
 
-			provider := kubeVIPFromKCPTemplateProvider{
-				template: tt.kcp,
+			provider := kubeVIPFromConfigMapProvider{
+				client:       fakeClient,
+				configMapKey: client.ObjectKeyFromObject(tt.configMap),
 			}
 
 			files, preKubeadmCommands, postKubeadmCommands, err := provider.GenerateFilesAndCommands(
-				context.Background(),
+				context.TODO(),
 				tt.controlPlaneEndpointSpec,
 				tt.cluster,
 			)
@@ -183,33 +204,63 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 	}
 }
 
-func Test_getTemplate(t *testing.T) {
+func Test_getTemplateFromConfigMap(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name         string
-		kcp          *controlplanev1.KubeadmControlPlaneTemplate
+		configMap    *corev1.ConfigMap
 		expectedData string
 		expectedErr  error
 	}{
 		{
-			name: "should return data from the only file",
-			kcp: kubeadmControlPlaneTemplateWithFiles(
-				t, []bootstrapv1.File{{
-					Path:    kubeVIPFilePath,
-					Content: "kube-vip-template",
-				}}),
+			name: "should return data from the only key",
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data": "kube-vip-template",
+				},
+			},
 			expectedData: "kube-vip-template",
 		},
 		{
-			name: "should fail with missingTemplateError",
-			kcp: kubeadmControlPlaneTemplateWithFiles(
-				t, []bootstrapv1.File{{
-					Path:    "some-other-file",
-					Content: "content",
-				}}),
-			expectedErr: missingTemplateError{
-				path: kubeVIPFilePath,
+			name: "should fail with multipleKeysError",
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data":           "kube-vip-template",
+					"unexpected-key": "unexpected-value",
+				},
+			},
+			expectedErr: multipleKeysError{
+				configMapKey: client.ObjectKey{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+			},
+		},
+		{
+			name: "should fail with emptyValuesError",
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
+				Data: map[string]string{
+					"data": "",
+				},
+			},
+			expectedErr: emptyValuesError{
+				configMapKey: client.ObjectKey{
+					Name:      "default-kube-vip-template",
+					Namespace: "default",
+				},
 			},
 		},
 	}
@@ -218,28 +269,16 @@ func Test_getTemplate(t *testing.T) {
 		tt := tests[idx] // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			fakeClient := fake.NewClientBuilder().WithObjects(tt.configMap).Build()
 
-			data, err := getTemplate(tt.kcp)
+			data, err := getTemplateFromConfigMap(
+				context.TODO(),
+				fakeClient,
+				client.ObjectKeyFromObject(tt.configMap),
+			)
 			require.Equal(t, tt.expectedErr, err)
 			assert.Equal(t, tt.expectedData, data)
 		})
-	}
-}
-
-func kubeadmControlPlaneTemplateWithFiles(
-	t *testing.T, files []bootstrapv1.File,
-) *controlplanev1.KubeadmControlPlaneTemplate {
-	t.Helper()
-	return &controlplanev1.KubeadmControlPlaneTemplate{
-		Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
-			Template: controlplanev1.KubeadmControlPlaneTemplateResource{
-				Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
-					KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
-						Files: files,
-					},
-				},
-			},
-		},
 	}
 }
 

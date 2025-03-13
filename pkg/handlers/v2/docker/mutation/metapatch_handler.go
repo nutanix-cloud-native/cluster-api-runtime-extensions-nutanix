@@ -1,4 +1,4 @@
-// Copyright 2023 Nutanix. All rights reserved.
+// Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package mutation
@@ -21,21 +21,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"dockerClusterV3ConfigPatch",
-		mgr.GetClient(),
-		patchHandlers...,
-	)
-}
-
-// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
-func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := []mutation.MetaMutator{
-		customimage.NewWorkerPatch(),
-	}
-	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
-
-	return mutation.NewMetaGeneratePatchesHandler(
-		"dockerWorkerConfigPatch",
+		"dockerClusterV2ConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

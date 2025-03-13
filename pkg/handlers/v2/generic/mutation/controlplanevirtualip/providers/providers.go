@@ -16,10 +16,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-var VirtualIPProviderFileNames = []string{
-	kubeVIPFilePath,
-}
-
 // Provider is an interface for getting the virtual IP provider static Pod as a file.
 type Provider interface {
 	Name() string

@@ -9,9 +9,10 @@ import (
 	"fmt"
 
 	"github.com/blang/semver/v4"
+	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
@@ -38,32 +39,39 @@ var (
 //go:embed templates/configure-for-kube-vip.sh
 var configureForKubeVIPScript []byte
 
-type kubeVIPFromKCPTemplateProvider struct {
-	template *controlplanev1.KubeadmControlPlaneTemplate
+type kubeVIPFromConfigMapProvider struct {
+	client client.Reader
+
+	configMapKey client.ObjectKey
 }
 
-func NewKubeVIPFromKCPTemplateProvider(
-	template *controlplanev1.KubeadmControlPlaneTemplate,
-) *kubeVIPFromKCPTemplateProvider {
-	return &kubeVIPFromKCPTemplateProvider{
-		template: template,
+func NewKubeVIPFromConfigMapProvider(
+	cl client.Reader,
+	name, namespace string,
+) *kubeVIPFromConfigMapProvider {
+	return &kubeVIPFromConfigMapProvider{
+		client: cl,
+		configMapKey: client.ObjectKey{
+			Name:      name,
+			Namespace: namespace,
+		},
 	}
 }
 
-func (p *kubeVIPFromKCPTemplateProvider) Name() string {
+func (p *kubeVIPFromConfigMapProvider) Name() string {
 	return "kube-vip"
 }
 
 // GenerateFilesAndCommands returns files and pre/post kubeadm commands for kube-vip.
-// It reads kube-vip template from the KCPTemplate and returns a File, templating the required variables.
+// It reads kube-vip template from a ConfigMap and returns the content a File, templating the required variables.
 // If required, it also returns a script file and pre/post kubeadm commands to change the kube-vip Pod to use the new
 // super-admin.conf file.
-func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
-	_ context.Context,
+func (p *kubeVIPFromConfigMapProvider) GenerateFilesAndCommands(
+	ctx context.Context,
 	spec v1alpha1.ControlPlaneEndpointSpec,
 	cluster *clusterv1.Cluster,
 ) (files []bootstrapv1.File, preKubeadmCommands, postKubeadmCommands []string, err error) {
-	data, err := getTemplate(p.template)
+	data, err := getTemplateFromConfigMap(ctx, p.client, p.configMapKey)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed getting template data: %w", err)
 	}
@@ -128,25 +136,51 @@ func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
 	return files, preKubeadmCommands, postKubeadmCommands, nil
 }
 
-type missingTemplateError struct {
-	path string
+type multipleKeysError struct {
+	configMapKey client.ObjectKey
 }
 
-func (e missingTemplateError) Error() string {
+func (e multipleKeysError) Error() string {
 	return fmt.Sprintf(
-		"did not find kube-vip template file %q in KubeadmControlPlaneTemplate",
-		e.path,
+		"found multiple keys in ConfigMap %q, when only 1 is expected",
+		e.configMapKey,
 	)
 }
 
-func getTemplate(kcp *controlplanev1.KubeadmControlPlaneTemplate) (string, error) {
-	for _, file := range kcp.Spec.Template.Spec.KubeadmConfigSpec.Files {
-		if file.Path == kubeVIPFilePath && file.Content != "" {
-			return file.Content, nil
+type emptyValuesError struct {
+	configMapKey client.ObjectKey
+}
+
+func (e emptyValuesError) Error() string {
+	return fmt.Sprintf(
+		"could not find any keys with non-empty vaules in ConfigMap %q",
+		e.configMapKey,
+	)
+}
+
+func getTemplateFromConfigMap(
+	ctx context.Context,
+	cl client.Reader,
+	configMapKey client.ObjectKey,
+) (string, error) {
+	configMap := &corev1.ConfigMap{}
+	err := cl.Get(ctx, configMapKey, configMap)
+	if err != nil {
+		return "", fmt.Errorf("failed to get template ConfigMap %q: %w", configMapKey, err)
+	}
+
+	if len(configMap.Data) > 1 {
+		return "", multipleKeysError{configMapKey: configMapKey}
+	}
+
+	// at this point there should only be 1 key ConfigMap, return on the first non-empty value
+	for _, data := range configMap.Data {
+		if data != "" {
+			return data, nil
 		}
 	}
 
-	return "", missingTemplateError{path: kubeVIPFilePath}
+	return "", emptyValuesError{configMapKey: configMapKey}
 }
 
 func needHackCommands(cluster *clusterv1.Cluster) (bool, error) {
