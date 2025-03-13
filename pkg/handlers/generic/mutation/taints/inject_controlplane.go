@@ -85,10 +85,10 @@ func (h *taintsControlPlanePatchHandler) Mutate(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding taints to worker node kubeadm config template")
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration != nil {
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1.InitConfiguration{}
 			}
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration != nil {
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
 			}
 			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints = toCoreTaints(
