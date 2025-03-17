@@ -3,19 +3,19 @@
 
 export CALICO_VERSION := v3.29.2
 export CILIUM_VERSION := 1.17.1
-export NODE_FEATURE_DISCOVERY_VERSION := 0.17.1
-export CLUSTER_AUTOSCALER_CHART_VERSION := 9.46.0
-export AWS_EBS_CSI_CHART_VERSION := 2.39.3
-export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.2.0
+export NODE_FEATURE_DISCOVERY_VERSION := 0.17.2
+export CLUSTER_AUTOSCALER_CHART_VERSION := 9.46.3
+export AWS_EBS_CSI_CHART_VERSION := 2.40.3
+export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.3.0
 export LOCAL_PATH_CSI_CHART_VERSION := 0.0.31
 export SNAPSHOT_CONTROLLER_CHART_VERSION := 4.0.1
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
 # be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
 export AWS_CCM_CHART_VERSION := 0.0.8
 # A map of AWS CCM versions.
-export AWS_CCM_VERSION_130 := v1.30.6
-export AWS_CCM_VERSION_131 := v1.31.4
-export AWS_CCM_VERSION_132 := v1.32.0
+export AWS_CCM_VERSION_130 := v1.30.8
+export AWS_CCM_VERSION_131 := v1.31.5
+export AWS_CCM_VERSION_132 := v1.32.1
 
 export NUTANIX_CCM_CHART_VERSION := 0.5.0
 
