@@ -235,18 +235,26 @@ var _ = Describe("Generate Image registry patches", func() {
 						),
 					},
 					{
-						Operation: "add",
-						Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs",
-						ValueMatcher: gomega.HaveKeyWithValue(
-							"image-credential-provider-bin-dir",
-							"/etc/kubernetes/image-credential-provider/",
-						),
+						Operation:    "add",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-bin-dir", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal("/etc/kubernetes/image-credential-provider/"),
 					},
 					{
 						Operation: "add",
-						Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
-						ValueMatcher: gomega.HaveKeyWithValue(
-							"image-credential-provider-config",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-config", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal(
+							"/etc/kubernetes/image-credential-provider-config.yaml",
+						),
+					},
+					{
+						Operation:    "add",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-bin-dir", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal("/etc/kubernetes/image-credential-provider/"),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-config", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal(
 							"/etc/kubernetes/image-credential-provider-config.yaml",
 						),
 					},
@@ -298,18 +306,26 @@ var _ = Describe("Generate Image registry patches", func() {
 						),
 					},
 					{
-						Operation: "add",
-						Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs",
-						ValueMatcher: gomega.HaveKeyWithValue(
-							"image-credential-provider-bin-dir",
-							"/etc/kubernetes/image-credential-provider/",
-						),
+						Operation:    "add",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-bin-dir", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal("/etc/kubernetes/image-credential-provider/"),
 					},
 					{
 						Operation: "add",
-						Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
-						ValueMatcher: gomega.HaveKeyWithValue(
-							"image-credential-provider-config",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-config", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal(
+							"/etc/kubernetes/image-credential-provider-config.yaml",
+						),
+					},
+					{
+						Operation:    "add",
+						Path:         "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-bin-dir", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal("/etc/kubernetes/image-credential-provider/"),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-config", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal(
 							"/etc/kubernetes/image-credential-provider-config.yaml",
 						),
 					},
@@ -362,12 +378,9 @@ var _ = Describe("Generate Image registry patches", func() {
 						),
 					},
 					{
-						Operation: "add",
-						Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
-						ValueMatcher: gomega.HaveKeyWithValue(
-							"image-credential-provider-bin-dir",
-							"/etc/kubernetes/image-credential-provider/",
-						),
+						Operation:    "add",
+						Path:         "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-bin-dir", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal("/etc/kubernetes/image-credential-provider/"),
 					},
 				},
 			},
@@ -425,11 +438,15 @@ var _ = Describe("Generate Image registry patches", func() {
 						),
 					},
 					{
+						Operation:    "add",
+						Path:         "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-bin-dir", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal("/etc/kubernetes/image-credential-provider/"),
+					},
+					{
 						Operation: "add",
-						Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs",
-						ValueMatcher: gomega.HaveKeyWithValue(
-							"image-credential-provider-bin-dir",
-							"/etc/kubernetes/image-credential-provider/",
+						Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs/image-credential-provider-config", //nolint:lll // Just a long line.
+						ValueMatcher: gomega.Equal(
+							"/etc/kubernetes/image-credential-provider-config.yaml",
 						),
 					},
 				},

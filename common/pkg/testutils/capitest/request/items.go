@@ -69,7 +69,11 @@ func NewKubeadmConfigTemplateRequest(
 					Spec: bootstrapv1.KubeadmConfigSpec{
 						PostKubeadmCommands: []string{"initial-post-kubeadm"},
 						JoinConfiguration: &bootstrapv1.JoinConfiguration{
-							NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
+							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
+								KubeletExtraArgs: map[string]string{
+									"cloud-provider": "external",
+								},
+							},
 						},
 					},
 				},
@@ -112,10 +116,18 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 					Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
 						KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
 							InitConfiguration: &bootstrapv1.InitConfiguration{
-								NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
+								NodeRegistration: bootstrapv1.NodeRegistrationOptions{
+									KubeletExtraArgs: map[string]string{
+										"cloud-provider": "external",
+									},
+								},
 							},
 							JoinConfiguration: &bootstrapv1.JoinConfiguration{
-								NodeRegistration: bootstrapv1.NodeRegistrationOptions{},
+								NodeRegistration: bootstrapv1.NodeRegistrationOptions{
+									KubeletExtraArgs: map[string]string{
+										"cloud-provider": "external",
+									},
+								},
 							},
 							Files: b.files,
 						},
