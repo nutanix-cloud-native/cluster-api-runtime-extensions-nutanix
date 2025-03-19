@@ -24,7 +24,7 @@ require (
 	github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4 v4.0.1-beta.2
 	github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4 v4.0.2-beta.1
 	github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.0.1-beta.1
-	github.com/onsi/ginkgo/v2 v2.23.0
+	github.com/onsi/ginkgo/v2 v2.23.1
 	github.com/onsi/gomega v1.36.2
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
@@ -40,8 +40,8 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubelet v0.31.7
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
-	sigs.k8s.io/cluster-api v1.9.5
-	sigs.k8s.io/cluster-api/test v1.9.5
+	sigs.k8s.io/cluster-api v1.9.6
+	sigs.k8s.io/cluster-api/test v1.9.6
 	sigs.k8s.io/controller-runtime v0.19.7
 	sigs.k8s.io/yaml v1.4.0
 )
