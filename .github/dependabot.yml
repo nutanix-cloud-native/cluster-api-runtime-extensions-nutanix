@@ -13,6 +13,7 @@ updates:
       - "/"
       - "/common"
       - "/api"
+      - "/hack/tools"
     schedule:
       interval: "weekly"
     groups:
