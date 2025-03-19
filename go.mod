@@ -38,7 +38,7 @@ require (
 	k8s.io/client-go v0.31.7
 	k8s.io/component-base v0.31.7
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubelet v0.30.11
+	k8s.io/kubelet v0.31.7
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/cluster-api v1.9.5
 	sigs.k8s.io/cluster-api/test v1.9.5
