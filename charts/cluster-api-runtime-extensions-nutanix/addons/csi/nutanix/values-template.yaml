@@ -12,3 +12,27 @@ tolerations:
     tolerationSeconds: 300
   - effect: NoSchedule
     operator: Exists
+
+# Override these with latest versions to pick up CVE fixes
+sidecars:
+  registrar:
+    # https://github.com/kubernetes-csi/node-driver-registrar
+    image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.13.0
+  provisioner:
+    # https://github.com/kubernetes-csi/external-provisioner
+    image: registry.k8s.io/sig-storage/csi-provisioner:v5.2.0
+  attacher:
+    # https://github.com/kubernetes-csi/external-attacher
+    image: registry.k8s.io/sig-storage/csi-attacher:v4.8.1
+  snapshotter:
+    # https://github.com/kubernetes-csi/external-snapshotter
+    image: registry.k8s.io/sig-storage/csi-snapshotter:v8.2.0
+  resizer:
+    # https://github.com/kubernetes-csi/external-resizer
+    image: registry.k8s.io/sig-storage/csi-resizer:v1.13.2
+  livenessprobe:
+    # https://github.com/kubernetes-csi/livenessprobe
+    image: registry.k8s.io/sig-storage/livenessprobe:v2.15.0
+  healthmonitor:
+    # https://github.com/kubernetes-csi/external-health-monitor
+    image: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.14.0
