@@ -11,6 +11,10 @@ hubble:
       schedule: "0 0 1 * *"       # schedule on the 1st day regeneration of each month
   relay:
     enabled: true
+    tls:
+      server:
+        enabled: true
+        mtls: true
     image:
       useDigest: false
     priorityClassName: system-cluster-critical
