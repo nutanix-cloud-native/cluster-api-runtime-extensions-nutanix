@@ -64,15 +64,15 @@ jobs:
     strategy:
       matrix:
         config:
-          - {"provider": "Nutanix", "kubernetesVersion": "v1.30.5", "osImage": "nkp-rocky-9.5-release-1.30.5-20241204003513"}
-          - {"provider": "Nutanix", "kubernetesVersion": "v1.31.4", "osImage": "nkp-rocky-9.5-release-1.31.4-20250205191544"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.30.10"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.31.6"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.32.2"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.30", "kubernetesVersion": "v1.30.5", "osImage": "nkp-rocky-9.5-release-1.30.5-20241204003513"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.31", "kubernetesVersion": "v1.31.4", "osImage": "nkp-rocky-9.5-release-1.31.4-20250205191544"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.30", "kubernetesVersion": "v1.30.11"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.31", "kubernetesVersion": "v1.31.7"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.3"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
-          # - {"provider": "AWS", "kubernetesVersion": "v1.29.6"}
+          # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
-    name: e2e-quick-start (${{ matrix.config.provider }}, ${{ matrix.config.kubernetesVersion }})
+    name: e2e-quick-start (${{ matrix.config.provider }} provider, Kubernetes ${{ matrix.config.kubernetesMinor }})
     uses: ./.github/workflows/e2e.yml
     with:
       focus: Quick start
@@ -95,13 +95,14 @@ jobs:
     strategy:
       matrix:
         config:
-          - {"provider": "Docker", "kubernetesVersion": "v1.30.10"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.31.6"}
-          - {"provider": "Docker", "kubernetesVersion": "v1.32.2"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.30", "kubernetesVersion": "v1.30.11"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.31", "kubernetesVersion": "v1.31.7"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.3"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
-          # - {"provider": "Nutanix", "kubernetesVersion": "v1.29.6"}
-          # - {"provider": "AWS", "kubernetesVersion": "v1.29.6"}
+          # - {"provider": "Nutanix", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
+          # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
+    name: e2e-self-hosted (${{ matrix.config.provider }} provider, Kubernetes ${{ matrix.config.kubernetesMinor }})
     uses: ./.github/workflows/e2e.yml
     with:
       focus: Self-hosted
