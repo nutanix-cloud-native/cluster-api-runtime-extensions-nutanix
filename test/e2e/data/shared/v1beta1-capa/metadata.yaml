@@ -9,5 +9,5 @@
 apiVersion: clusterctl.cluster.x-k8s.io/v1alpha3
 releaseSeries:
   - major: 2
-    minor: 7
+    minor: 8
     contract: v1beta1
