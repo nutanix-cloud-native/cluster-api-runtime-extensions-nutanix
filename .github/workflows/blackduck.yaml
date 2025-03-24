@@ -24,6 +24,8 @@ jobs:
   security:
     if: github.repository == 'nutanix-cloud-native/cluster-api-runtime-extensions-nutanix'
     runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
