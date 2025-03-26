@@ -95,6 +95,42 @@ func EnsureClusterOwnerReferenceForObject(
 	return nil
 }
 
+// EnsureClusterOwnerReferenceForObject ensures that OwnerReference of the cluster is added on provided object.
+func EnsureTypedObjectOwnerReference(
+	ctx context.Context,
+	cl ctrlclient.Client,
+	targetObj corev1.TypedLocalObjectReference,
+	ownerObj metav1.Object) error {
+	resourceObj, err := GetResourceFromTypedLocalObjectReference(
+		ctx,
+		cl,
+		targetObj,
+		ownerObj.GetNamespace(),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = controllerutil.SetOwnerReference(
+		ownerObj,
+		resourceObj,
+		cl.Scheme(),
+		controllerutil.WithBlockOwnerDeletion(true)) // block deletion of owner object
+	if err != nil {
+		return fmt.Errorf("failed to set owner reference on object %s: %w", ownerObj.GetName(), err)
+	}
+
+	err = cl.Update(ctx, resourceObj)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to update owner reference on object %s: %w",
+			resourceObj.GetName(),
+			err,
+		)
+	}
+	return nil
+}
+
 // GetResourceFromTypedLocalObjectReference gets the resource from the provided TypedLocalObjectReference.
 func GetResourceFromTypedLocalObjectReference(
 	ctx context.Context,

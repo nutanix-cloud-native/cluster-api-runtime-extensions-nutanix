@@ -45,7 +45,7 @@ type NutanixPrismCentralEndpointSpec struct {
 	AdditionalTrustBundle string `json:"additionalTrustBundle,omitempty"`
 
 	// A reference to the Secret for credential information for the target Prism Central instance.
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	Credentials NutanixPrismCentralEndpointCredentials `json:"credentials"`
 }
 
