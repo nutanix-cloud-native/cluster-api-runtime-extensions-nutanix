@@ -22,6 +22,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	k8sClient "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -30,12 +32,14 @@ const (
 )
 
 type nutanixPrismCentralEndpoint struct {
+	cl                ctrlclient.Client
 	variableName      string
 	variableFieldPath []string
 }
 
-func NewPatch() *nutanixPrismCentralEndpoint {
+func NewPatch(client ctrlclient.Client) *nutanixPrismCentralEndpoint {
 	return newNutanixPrismCentralEndpoint(
+		client,
 		v1alpha1.ClusterConfigVariableName,
 		v1alpha1.NutanixVariableName,
 		VariableName,
@@ -43,10 +47,12 @@ func NewPatch() *nutanixPrismCentralEndpoint {
 }
 
 func newNutanixPrismCentralEndpoint(
+	client ctrlclient.Client,
 	variableName string,
 	variableFieldPath ...string,
 ) *nutanixPrismCentralEndpoint {
 	return &nutanixPrismCentralEndpoint{
+		cl:                client,
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -104,13 +110,29 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 			if err != nil {
 				return err
 			}
+
+			pcCredSecretName := prismCentralEndpointVar.Credentials.SecretRef.Name
+			if prismCentralEndpointVar.Credentials.SecretRef.Name == "" {
+				pcCredSecretName = NutanixPCCredentialsSecretName(clusterKey.Name)
+				pcCredRequestObj := NutanixPCCreentialsRequest(
+					clusterKey.Name,
+					pcCredSecretName,
+					clusterKey.Namespace,
+				)
+				if err := k8sClient.ServerSideApply(ctx, h.cl, pcCredRequestObj, client.ForceOwnership); err != nil {
+					return fmt.Errorf(
+						"error creating Nutanix Prism Central Credentials Request: %w",
+						err,
+					)
+				}
+			}
 			prismCentral := &credentials.NutanixPrismEndpoint{
 				Address:  address,
 				Port:     int32(port),
 				Insecure: prismCentralEndpointVar.Insecure,
 				CredentialRef: &credentials.NutanixCredentialReference{
 					Kind: credentials.SecretKind,
-					Name: prismCentralEndpointVar.Credentials.SecretRef.Name,
+					Name: pcCredSecretName,
 					// Assume the secret is in the same namespace as Cluster
 					Namespace: clusterKey.Namespace,
 				},

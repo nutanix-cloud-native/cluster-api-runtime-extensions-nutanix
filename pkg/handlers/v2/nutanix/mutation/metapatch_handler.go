@@ -21,7 +21,7 @@ func MetaPatchHandler(mgr manager.Manager, cfg *controlplanevirtualip.Config) ha
 	patchHandlers := []mutation.MetaMutator{
 		controlplaneendpoint.NewPatch(),
 		nutanixcontrolplanevirtualip.NewPatch(mgr.GetClient(), cfg),
-		prismcentralendpoint.NewPatch(),
+		prismcentralendpoint.NewPatch(mgr.GetClient()),
 		machinedetails.NewControlPlanePatch(),
 	}
 	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)

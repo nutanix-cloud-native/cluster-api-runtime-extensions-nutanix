@@ -710,7 +710,6 @@ spec:
                           pattern: ^https://
                           type: string
                       required:
-                        - credentials
                         - url
                       type: object
                   required:

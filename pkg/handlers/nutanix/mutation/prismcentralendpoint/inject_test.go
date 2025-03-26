@@ -28,7 +28,7 @@ func TestPrismCentralEndpointPatch(t *testing.T) {
 
 var _ = Describe("Generate Nutanix Prism Central Endpoint patches", func() {
 	patchGenerator := func() mutation.GeneratePatches {
-		return mutation.NewMetaGeneratePatchesHandler("", helpers.TestEnv.Client, NewPatch()).(mutation.GeneratePatches)
+		return mutation.NewMetaGeneratePatchesHandler("", helpers.TestEnv.Client, NewPatch(helpers.TestEnv.Client)).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{

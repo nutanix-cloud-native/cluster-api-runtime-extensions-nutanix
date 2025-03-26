@@ -16,4 +16,13 @@ resources:
   kind: ClusterConfig
   path: github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: nutanix.com
+  group: caren.nutanix.com
+  kind: CredentialsRequest
+  path: github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1
+  version: v1alpha1
 version: "3"

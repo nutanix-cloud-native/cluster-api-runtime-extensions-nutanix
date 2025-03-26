@@ -30,8 +30,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/credentials"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/namespacesync"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/features"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
@@ -52,6 +54,7 @@ func main() {
 	utilruntime.Must(crsv1.AddToScheme(clientScheme))
 	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
 	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
+	utilruntime.Must(carenv1.AddToScheme(clientScheme))
 
 	webhookOptions := webhook.Options{
 		Port:    9444,
@@ -210,6 +213,18 @@ func main() {
 			)
 			os.Exit(1)
 		}
+	}
+
+	if err := (&credentials.CredentialsRequestReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(signalCtx, mgr, &controller.Options{}); err != nil {
+		setupLog.Error(
+			err,
+			"unable to create controller",
+			"controller",
+			"CredentialsRequestReconciler",
+		)
+		os.Exit(1)
 	}
 
 	mgr.GetWebhookServer().Register("/mutate-v1beta1-cluster", &webhook.Admission{
