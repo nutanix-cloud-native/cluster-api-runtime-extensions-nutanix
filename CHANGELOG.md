@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.23.3 (2025-03-27)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.23.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix(deps): Update Nutanix CCM Version (#1016) by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1049
+* fix(deps): update devbox.lock by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1091
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.23.2...v0.23.3
+
 ## 0.23.2 (2025-01-28)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.23.x -->
