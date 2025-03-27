@@ -597,6 +597,9 @@
         }
       }
     },
+    "github:NixOS/nixpkgs/nixpkgs-unstable": {
+      "resolved": "github:NixOS/nixpkgs/25d1b84f5c90632a623c48d83a2faf156451e6b1?lastModified=1742923925&narHash=sha256-biPjLws6FiBVUUDHEMFq5pUQL84Wf7PntPYdo3oKkFw%3D"
+    },
     "gnumake@latest": {
       "last_modified": "2024-10-13T23:44:06Z",
       "resolved": "github:NixOS/nixpkgs/d4f247e89f6e10120f911e2e2d2254a050d0f732#gnumake",
