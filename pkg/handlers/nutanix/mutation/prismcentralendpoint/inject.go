@@ -22,7 +22,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	k8sClient "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -116,15 +116,10 @@ func (h *nutanixPrismCentralEndpoint) Mutate(
 				pcCredSecretName = NutanixPCCredentialsSecretName(clusterKey.Name)
 				pcCredRequestObj := NutanixPCCreentialsRequest(
 					clusterKey.Name,
-					pcCredSecretName,
 					clusterKey.Namespace,
+					pcCredSecretName,
 				)
-				if err := k8sClient.ServerSideApply(ctx, h.cl, pcCredRequestObj, client.ForceOwnership); err != nil {
-					return fmt.Errorf(
-						"error creating Nutanix Prism Central Credentials Request: %w",
-						err,
-					)
-				}
+				handlersutils.CreateNutanixCredentialsRequest(ctx, h.cl, pcCredRequestObj)
 			}
 			prismCentral := &credentials.NutanixPrismEndpoint{
 				Address:  address,

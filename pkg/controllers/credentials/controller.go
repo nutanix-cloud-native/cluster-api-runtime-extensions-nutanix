@@ -2,13 +2,13 @@ package credentials
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	credsv1alpha1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -37,35 +37,32 @@ func (r *CredentialsRequestReconciler) Reconcile(
 	}
 	log.Info("Reconciling credentials request", "Name", credRequest.Name)
 
-	clusters := &clusterv1.ClusterList{}
-	selector, err := metav1.LabelSelectorAsSelector(&credRequest.Spec.ClusterSelector)
-	if err != nil {
-		log.Error(err, "Failed to create cluster selector")
-		return ctrl.Result{}, err
-	}
-	if err := r.List(ctx, clusters, &client.ListOptions{
-		LabelSelector: selector,
-	}); err != nil {
-		log.Error(err, "Failed to list clusters")
-		return ctrl.Result{}, err
-	}
-	if len(clusters.Items) == 0 {
-		log.Info("No clusters found for the selector", "selector", selector)
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
-	}
-
-	errs := []error{}
-	for _, cluster := range clusters.Items {
-		err := r.reconcileCredentialsSecret(ctx, &credRequest, &cluster)
-		if err != nil {
-			errs = append(errs, err)
+	// find the referenced cluster
+	cluster := &clusterv1.Cluster{}
+	if err := r.Get(ctx,
+		client.ObjectKey{
+			Name:      credRequest.Spec.ClusterRef.Name,
+			Namespace: credRequest.Spec.ClusterRef.Namespace,
+		},
+		cluster); err != nil {
+		if errors.Is(err, client.IgnoreNotFound(err)) {
+			log.Info(
+				"referenced cluster not found or created yet",
+				"Name",
+				credRequest.Spec.ClusterRef.Name,
+			)
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
+		log.Info("failed to get cluster", "Name", credRequest.Spec.ClusterRef.Name, "Error", err)
+		return ctrl.Result{RequeueAfter: time.Second * 10}, err
 	}
-	if len(errs) > 0 {
-		log.Info("failed to reconcile credentials", credRequest.Name, errs)
+	err := r.reconcileCredentialsSecret(ctx, &credRequest, cluster)
+	if err != nil {
+		log.Info("failed to reconcile credentials", credRequest.Name, err)
 		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
-	return ctrl.Result{}, nil
+	// regular forced reconciliation
+	return ctrl.Result{RequeueAfter: time.Minute * 1}, nil
 }
 
 // reconcileCredentialsSecret creates or updates secret with credentials for a cluster
@@ -80,6 +77,12 @@ func (r *CredentialsRequestReconciler) reconcileCredentialsSecret(
 	case credsv1alpha1.ComponentNutanixCluster:
 		log.Info("creating secret", "SecretName", credRequest.Spec.SecretRef.Name)
 		err := r.reconcileNutanixClusterCredentials(ctx, credRequest, cluster)
+		if err != nil {
+			return err
+		}
+	case credsv1alpha1.ComponentNutanixCCM:
+		log.Info("creating secret", "SecretName", credRequest.Spec.SecretRef.Name)
+		err := r.reconcileNutanixCCMCredentials(ctx, credRequest, cluster)
 		if err != nil {
 			return err
 		}
@@ -136,7 +139,7 @@ func rootSecretPredicates(ctx context.Context) predicate.Funcs {
 			if !ok {
 				return false
 			}
-			return SecretHasCredentialsRootKey(secret)
+			return SecretHasCredentialsType(secret)
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			newSecret, ok := e.ObjectNew.(*corev1.Secret)
@@ -147,7 +150,7 @@ func rootSecretPredicates(ctx context.Context) predicate.Funcs {
 			if !resourceVersionChangedPredicate.Update(e) {
 				return false
 			}
-			return SecretHasCredentialsRootKey(newSecret)
+			return SecretHasCredentialsType(newSecret)
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// if root secret is deleted, it should not affect management or workload clusters
@@ -159,10 +162,6 @@ func rootSecretPredicates(ctx context.Context) predicate.Funcs {
 	}
 }
 
-func SecretHasCredentialsRootKey(secret *corev1.Secret) bool {
-	if secret.Labels == nil {
-		return false
-	}
-	_, ok := secret.Labels[credsv1alpha1.LabelRootSecretWatchKey]
-	return ok
+func SecretHasCredentialsType(secret *corev1.Secret) bool {
+	return secret.Type == credsv1alpha1.CredentialsSecretType
 }

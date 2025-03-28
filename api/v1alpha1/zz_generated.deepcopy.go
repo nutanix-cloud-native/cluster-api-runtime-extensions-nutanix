@@ -683,7 +683,7 @@ func (in *CredentialsRequest) DeepCopyInto(out *CredentialsRequest) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	in.Spec.DeepCopyInto(&out.Spec)
+	out.Spec = in.Spec
 	in.Status.DeepCopyInto(&out.Status)
 }
 
@@ -741,7 +741,7 @@ func (in *CredentialsRequestList) DeepCopyObject() runtime.Object {
 func (in *CredentialsRequestSpec) DeepCopyInto(out *CredentialsRequestSpec) {
 	*out = *in
 	out.SecretRef = in.SecretRef
-	in.ClusterSelector.DeepCopyInto(&out.ClusterSelector)
+	out.ClusterRef = in.ClusterRef
 	out.Rotation = in.Rotation
 }
 

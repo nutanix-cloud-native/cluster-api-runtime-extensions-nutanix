@@ -81,7 +81,7 @@ spec:
 */
 
 func NutanixPCCreentialsRequest(
-	clusterName, secretName, clusterNamespace string,
+	clusterName, clusterNamespace, secretName string,
 ) *carenv1.CredentialsRequest {
 	return &carenv1.CredentialsRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -89,27 +89,25 @@ func NutanixPCCreentialsRequest(
 			Kind:       "CredentialsRequest",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      NutanixPCCredentialsRequestName(clusterName),
-			Namespace: "default", // it should be same namespace as the CAREN. This is a placeholder.
+			Name: NutanixPCCredentialsRequestName(clusterName),
+			// it should be same namespace as root credentials. This is a placeholder.
+			// we are creating root secret in `kube-system` for POC
+			Namespace: "kube-system",
 			Finalizers: []string{
 				"foregroundDeletion",
 			}, // ensure that it is not deleted if the root credentials are not deleted.
 		},
 		Spec: carenv1.CredentialsRequestSpec{
-			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"cluster.x-k8s.io/provider":     "nutanix",
-					"cluster.x-k8s.io/cluster-name": clusterName,
-				},
+			ClusterRef: corev1.ObjectReference{
+				Name:      clusterName,
+				Namespace: clusterNamespace,
 			},
 			SecretRef: corev1.SecretReference{
 				Name:      secretName,
 				Namespace: clusterNamespace,
 			},
-			Mode:               carenv1.CredentialsModePassthorugh,
-			Component:          carenv1.ComponentNutanixCluster,
-			Infrastructure:     carenv1.InfrastructureNutanix,
-			RootCredentialsKey: carenv1.RootCredentialsKeyPCEndpoint,
+			Mode:      carenv1.CredentialsModePassthorugh,
+			Component: carenv1.ComponentNutanixCluster,
 		},
 	}
 }
