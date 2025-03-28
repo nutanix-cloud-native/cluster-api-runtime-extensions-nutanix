@@ -3,11 +3,10 @@ package credentials
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	credsv1alpha1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/prismcentralendpoint"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,21 +24,14 @@ func (r *CredentialsRequestReconciler) reconcileNutanixClusterCredentials(
 	cluster *clusterv1.Cluster,
 ) error {
 	log := ctrl.LoggerFrom(ctx)
-	rootSecret, err := r.GetRootCredentialSecret(
-		ctx,
-		string(credRequest.Spec.RootCredentialsKey),
-		cluster,
-	)
+	rootSecret, err := r.GetRootCredentialSecret(ctx, cluster)
 	if err != nil {
 		return err
 	}
 	if rootSecret == nil {
 		return fmt.Errorf("root secret not found for credentials secret: %s", credRequest.Name)
 	}
-	rootUser, rootPassword, _, err := decodeRootCredentialsBasicAuth(
-		rootSecret,
-		string(credRequest.Spec.RootCredentialsKey),
-	)
+	rootUser, rootPassword, _, err := decodeNutanixRootCredentialsBasicAuth(rootSecret)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to decode basic auth for root secret %s: %w",
@@ -98,15 +90,17 @@ func (r *CredentialsRequestReconciler) reconcileNutanixClusterCredentials(
 
 func (r *CredentialsRequestReconciler) GetRootCredentialSecret(
 	ctx context.Context,
-	rootCredentialsKey string,
 	cluster *clusterv1.Cluster,
 ) (*corev1.Secret, error) {
 	log := ctrl.LoggerFrom(ctx)
+
+	//TODO: hardcode to nutanix for now. it cane be made dynamic in future using cluster.spec.infrastructureRef
+	clusterInfra := "nutanix"
 	rootSecrets := &corev1.SecretList{}
 	selector, err := metav1.LabelSelectorAsSelector(
 		&metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				credsv1alpha1.LabelRootSecretWatchKey: rootCredentialsKey,
+				credsv1alpha1.LabelRootCredentialsInfra: clusterInfra,
 			},
 		},
 	)
@@ -124,66 +118,31 @@ func (r *CredentialsRequestReconciler) GetRootCredentialSecret(
 		log.Info("No root secrets found for the selector", "selector", selector)
 		return nil, nil
 	}
-	rootCredentialsValueFromCluster, err := r.GetRootCredentialValueFromCluster(ctx, cluster)
-	if err != nil {
-		return nil, err
-	}
+	clusterNamespace := cluster.GetNamespace()
 	filteredRootSecrets := []corev1.Secret{}
 	for _, secret := range rootSecrets.Items {
-		_, _, rootValueFromSecret, err := decodeRootCredentialsBasicAuth(
-			&secret,
-			rootCredentialsKey,
-		)
-		if err != nil {
-			log.Error(err, "Failed to decode root secret", "SecretName", secret.Name)
+		allowedNamespacesList, ok := secret.Labels[credsv1alpha1.LabelRootCredentialsAllowedNamespaces]
+		if !ok {
 			continue
 		}
-		if rootCredentialsValueFromCluster == rootValueFromSecret {
+		allowedNamespaces := strings.SplitN(allowedNamespacesList, ",", -1)
+		if slices.Contains(allowedNamespaces, clusterNamespace) {
 			filteredRootSecrets = append(filteredRootSecrets, secret)
 		}
+
 	}
 
-	if len(filteredRootSecrets) != 1 {
-		log.Info("unable to find root secret for the cluster", cluster.GetName())
-		return nil, fmt.Errorf(
-			"unable to find root secret  for the cluster.Ensure single root secret is present for: %s",
-			cluster.GetName(),
-		)
+	if len(filteredRootSecrets) == 0 {
+		log.Info("no root credentials found for cluster", "cluster", cluster.GetName())
+		return nil, nil
+	}
+	if len(filteredRootSecrets) > 1 {
+		log.Info("multiple root credentials found. picking first one", "cluster", cluster.GetName())
 	}
 	return &filteredRootSecrets[0], nil
 }
 
-func (r *CredentialsRequestReconciler) GetRootCredentialValueFromCluster(
-	ctx context.Context,
-	cluster *clusterv1.Cluster) (string, error) {
-
-	if cluster.Spec.InfrastructureRef == nil {
-		return "", fmt.Errorf("infrastructure ref not found for cluster: %s", cluster.GetName())
-	}
-	switch cluster.Spec.InfrastructureRef.Kind {
-	case "NutanixCluster":
-		prismCentralEndpointVar, err := variables.Get[v1alpha1.NutanixPrismCentralEndpointSpec](
-			variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables),
-			v1alpha1.ClusterConfigVariableName,
-			v1alpha1.NutanixVariableName,
-			prismcentralendpoint.VariableName,
-		)
-		if err != nil {
-			return "", err
-		}
-		return prismCentralEndpointVar.URL, nil
-	default:
-	}
-	return "", fmt.Errorf(
-		"unsupported infrastructure ref kind: %s",
-		cluster.Spec.InfrastructureRef.Kind,
-	)
-}
-
-func decodeRootCredentialsBasicAuth(
-	secret *corev1.Secret,
-	rootCredentialsKey string,
-) (string, string, string, error) {
+func decodeNutanixRootCredentialsBasicAuth(secret *corev1.Secret) (string, string, string, error) {
 	username, ok := secret.Data["username"]
 	if !ok {
 		return "", "", "", fmt.Errorf("username field not found in secret")
@@ -194,10 +153,10 @@ func decodeRootCredentialsBasicAuth(
 		return "", "", "", fmt.Errorf("password field not found in secret")
 	}
 
-	rootValue, ok := secret.Data[rootCredentialsKey]
+	pcEndpoint, ok := secret.Data["pcEndpoint"]
 	if !ok {
-		return "", "", "", fmt.Errorf("root value field not found in secret")
+		return "", "", "", fmt.Errorf("pc endpoint field not found in secret")
 	}
 
-	return string(username), string(password), string(rootValue), nil
+	return string(username), string(password), string(pcEndpoint), nil
 }

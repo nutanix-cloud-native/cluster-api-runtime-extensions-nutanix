@@ -8,9 +8,11 @@ import (
 type CredentialsMode string
 
 const (
-	CredentialsModePassthorugh CredentialsMode = "passthrough"
-	CredentialsModeMint        CredentialsMode = "mint"
-	LabelRootSecretWatchKey    string          = "caren.nutanix.com/credentials-root"
+	CredentialsModePassthorugh            CredentialsMode   = "passthrough"
+	CredentialsModeMint                   CredentialsMode   = "mint"
+	LabelRootCredentialsInfra             string            = "caren.nutanix.com/root-credentials-infrastructure"
+	LabelRootCredentialsAllowedNamespaces string            = "caren.nutanix.com/root-credentials-allowed-namespaces"
+	CredentialsSecretType                 corev1.SecretType = "caren.nutanix.com/root-credentials"
 )
 
 type RootCredentialsKey string
@@ -29,17 +31,16 @@ type Component string
 
 const (
 	ComponentNutanixCluster Component = "nutanix-cluster"
+	ComponentNutanixCCM     Component = "nutanix-ccm"
 )
 
 // CredentialsRequestSpec defines the desired state of CredentialsRequest.
 type CredentialsRequestSpec struct {
-	SecretRef          corev1.SecretReference `json:"secretRef"`
-	ClusterSelector    metav1.LabelSelector   `json:"clusterSelector"`
-	RootCredentialsKey RootCredentialsKey     `json:"rootCredentialsKey"`
-	Mode               CredentialsMode        `json:"mode"`
-	Infrastructure     Infrastructure         `json:"infrastructure"`
-	Component          Component              `json:"component"`
-	Rotation           RotationSpec           `json:"rotation,omitempty"`
+	SecretRef  corev1.SecretReference `json:"secretRef"`
+	ClusterRef corev1.ObjectReference `json:"clusterRef"`
+	Mode       CredentialsMode        `json:"mode"`
+	Component  Component              `json:"component"`
+	Rotation   RotationSpec           `json:"rotation,omitempty"`
 }
 
 type FrequencyType string
@@ -76,8 +77,8 @@ type CredentialsRequest struct {
 
 // CredentialsRequestList contains a list of CredentialsRequest.
 type CredentialsRequestList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `                     json:",inline"`
+	metav1.ListMeta `                     json:"metadata,omitempty"`
 	Items           []CredentialsRequest `json:"items"`
 }
 

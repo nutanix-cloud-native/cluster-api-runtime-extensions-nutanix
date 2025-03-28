@@ -78,7 +78,14 @@ func (p *provider) Apply(
 ) error {
 	// No need to check for nil values in the struct, this function will only be called if CCM is not nil
 	if clusterConfig.Addons.CCM.Credentials == nil {
-		return ErrMissingCredentials
+		ccmCredentialsRequest := NutanixCCMCreentialsRequest(
+			cluster.Name,
+			cluster.Namespace,
+			defaultCredentialsSecretName,
+			defaultHelmReleaseNamespace)
+		if err := handlersutils.CreateNutanixCredentialsRequest(ctx, p.client, ccmCredentialsRequest); err != nil {
+			return fmt.Errorf("error creating Nutanix CCM Credentials Request: %w", err)
+		}
 	}
 
 	// It's possible to have the credentials Secret be created by the Helm chart.

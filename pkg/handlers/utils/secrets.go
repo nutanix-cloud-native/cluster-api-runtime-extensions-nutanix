@@ -47,13 +47,24 @@ func CopySecretToRemoteCluster(
 		StringData: sourceSecret.StringData,
 	}
 
+	return CreateSecretOnRemoteCluster(ctx, cl, credentialsOnRemote, cluster)
+
+}
+
+func CreateSecretOnRemoteCluster(
+	ctx context.Context,
+	cl ctrlclient.Client,
+	credentialsOnRemote *corev1.Secret,
+	cluster *clusterv1.Cluster,
+) error {
+
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 	remoteClient, err := remote.NewClusterClient(ctx, "", cl, clusterKey)
 	if err != nil {
 		return fmt.Errorf("error creating client for remote cluster: %w", err)
 	}
 
-	err = EnsureNamespaceWithName(ctx, remoteClient, dstSecretKey.Namespace)
+	err = EnsureNamespaceWithName(ctx, remoteClient, credentialsOnRemote.Namespace)
 	if err != nil {
 		return fmt.Errorf("error creating namespace on the remote cluster: %w", err)
 	}
