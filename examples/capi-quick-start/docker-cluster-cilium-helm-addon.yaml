@@ -21,7 +21,11 @@ spec:
     variables:
     - name: clusterConfig
       value:
+        globalImageRegistryMirror:
+          url: http://10.128.0.20
         addons:
+          inClusterRegistry:
+            provider: Mindthegap
           clusterAutoscaler: {}
           cni:
             provider: Cilium
