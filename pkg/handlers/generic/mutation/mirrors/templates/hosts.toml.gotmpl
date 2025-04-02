@@ -1,10 +1,6 @@
-{{- range . }}
-[host."{{ .URL }}"]
-  capabilities = ["pull", "resolve"]
-  {{- if .CACertPath }}
-  ca = "{{ .CACertPath }}"
-  {{- end }}
-  # don't rely on Containerd to add the v2/ suffix
-  # there is a bug where it is added incorrectly for mirrors with a path
-  override_path = true
-{{- end }}
+# Force images to be pulled only from mirror
+server = "{{(index . 0).URL}}"
+
+# See https://github.com/containerd/containerd/issues/10027 for containerd bug that requires this workaround,
+# having an empty host tree here.
+[host]
