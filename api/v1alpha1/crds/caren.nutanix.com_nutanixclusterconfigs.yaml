@@ -232,6 +232,18 @@ spec:
                         - defaultStorage
                         - providers
                       type: object
+                    inClusterRegistry:
+                      properties:
+                        provider:
+                          description: |-
+                            The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
+                            the CCM acts as the provider.
+                          enum:
+                            - Mindthegap
+                          type: string
+                      required:
+                        - provider
+                      type: object
                     nfd:
                       description: NFD tells us to enable or disable the node feature discovery addon.
                       properties:

@@ -29,6 +29,8 @@ const (
 	// ServiceLoadBalancerVariableName is the Service LoadBalancer config patch variable name.
 	ServiceLoadBalancerVariableName = "serviceLoadBalancer"
 
+	InClusterRegistryVariableName = "inClusterRegistry"
+
 	// GlobalMirrorVariableName is the global image registry mirror patch variable name.
 	GlobalMirrorVariableName = "globalImageRegistryMirror"
 	// ImageRegistriesVariableName is the image registries patch variable name.
@@ -38,4 +40,7 @@ const (
 	DNSVariableName = "dns"
 
 	ClusterUUIDAnnotationKey = APIGroup + "/cluster-uuid"
+
+	// DefaultServicesSubnet defines default service subnet range
+	DefaultServicesSubnet = "10.96.0.0/12"
 )

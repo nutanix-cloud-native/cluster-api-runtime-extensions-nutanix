@@ -1,0 +1,63 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: kube-system
+  name: {{ .PodName }}
+  labels:
+    app: {{ .PodName }}
+spec:
+  tolerations:
+    - operator: Exists
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+  hostNetwork: true
+  initContainers:
+    - name: {{ .WaitContainerName }}
+      image: ghcr.io/mesosphere/wait-for-file-to-exist:v1.19.0
+      args:
+        - {{ .BundleDirectoryName }}/{{ .BundleFileName }}
+      volumeMounts:
+        - name: shared
+          mountPath: {{ .BundleDirectoryName }}
+  containers:
+    - name: registry
+      image: ghcr.io/mesosphere/mindthegap:v1.19.0
+      args:
+        - serve
+        - bundle
+        - --bundle
+        - {{ .BundleDirectoryName }}/{{ .BundleFileName }}
+        - --listen-address
+        - "0.0.0.0"
+        - --listen-port
+        - "5000"
+      volumeMounts:
+        - name: shared
+          mountPath: {{ .BundleDirectoryName }}
+      ports:
+        - name: http
+          containerPort: 5000
+  restartPolicy: Never
+  volumes:
+    - name: shared
+      emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: kube-system
+  name: registry
+spec:
+  selector:
+    app: {{ .PodName }}
+  clusterIP: {{ .ServiceIP }}
+  ports:
+    - name: registry
+      port: 80
+      targetPort: http
