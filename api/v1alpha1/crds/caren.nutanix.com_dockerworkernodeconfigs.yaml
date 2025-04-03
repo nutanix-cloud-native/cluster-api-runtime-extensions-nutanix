@@ -65,6 +65,21 @@ spec:
                     pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*(:[\w][\w.-]{0,127})?(@[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,})?$
                     type: string
                 type: object
+              nodeRegistration:
+                description: NodeRegistration holds fields that relate to registering
+                  the new control-plane node to the cluster.
+                properties:
+                  ignorePreflightErrors:
+                    description: |-
+                      IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
+                      when the current node is registered.
+                    items:
+                      maxLength: 512
+                      minLength: 1
+                      type: string
+                    maxItems: 50
+                    type: array
+                type: object
               taints:
                 description: Taints specifies the taints the Node API object should
                   be registered with.

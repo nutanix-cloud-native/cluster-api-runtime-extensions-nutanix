@@ -90,6 +90,21 @@ spec:
                     description: The AWS instance type to use for the cluster Machines.
                     type: string
                 type: object
+              nodeRegistration:
+                description: NodeRegistration holds fields that relate to registering
+                  the new control-plane node to the cluster.
+                properties:
+                  ignorePreflightErrors:
+                    description: |-
+                      IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
+                      when the current node is registered.
+                    items:
+                      maxLength: 512
+                      minLength: 1
+                      type: string
+                    maxItems: 50
+                    type: array
+                type: object
               taints:
                 description: Taints specifies the taints the Node API object should
                   be registered with.
