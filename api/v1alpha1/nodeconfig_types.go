@@ -19,13 +19,17 @@ var (
 	awsNodeConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_nutanixworkernodeconfigs.yaml
 	nutanixNodeConfigCRDDefinition []byte
-
+	//go:embed crds/caren.nutanix.com_vsphereworkernodeconfigs.yaml
+	vsphereNodeConfigCRDDefinition []byte
 	dockerNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		dockerNodeConfigCRDDefinition,
 	)
 	awsWorkerNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(awsNodeConfigCRDDefinition)
 	nutanixNodeConfigVariableSchema   = variables.MustSchemaFromCRDYAML(
 		nutanixNodeConfigCRDDefinition,
+	)
+	vsphereNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		vsphereNodeConfigCRDDefinition,
 	)
 )
 
@@ -102,6 +106,29 @@ type NutanixWorkerNodeConfigSpec struct {
 	GenericNodeSpec `json:",inline"`
 }
 
+// +kubebuilder:object:root=true
+
+// VSphereWorkerNodeConfig is the Schema for the vsphereworkernodeconfigs API.
+type VSphereWorkerNodeConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Spec VSphereWorkerNodeConfigSpec `json:"spec,omitempty"`
+}
+
+func (s VSphereWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return vsphereNodeConfigVariableSchema
+}
+
+// VSphereWorkerNodeConfigSpec defines the desired state of VsphereNodeSpec.
+type VSphereWorkerNodeConfigSpec struct {
+	// +kubebuilder:validation:Optional
+	VSphere *VSphereNodeSpec `json:"vsphere,omitempty"`
+
+	GenericNodeSpec `json:",inline"`
+}
+
 type GenericNodeSpec struct {
 	// Taints specifies the taints the Node API object should be registered with.
 	// +kubebuilder:validation:Optional
@@ -152,5 +179,6 @@ func init() {
 		&AWSWorkerNodeConfig{},
 		&DockerWorkerNodeConfig{},
 		&NutanixWorkerNodeConfig{},
+		&VSphereWorkerNodeConfig{},
 	)
 }

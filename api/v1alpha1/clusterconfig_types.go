@@ -32,6 +32,8 @@ var (
 	awsClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_nutanixclusterconfigs.yaml
 	nutanixClusterConfigCRDDefinition []byte
+	//go:embed crds/caren.nutanix.com_vsphereclusterconfigs.yaml
+	vsphereClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_genericclusterconfigs.yaml
 	genericClusterConfigCRDDefinition []byte
 
@@ -43,6 +45,9 @@ var (
 	)
 	nutanixClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		nutanixClusterConfigCRDDefinition,
+	)
+	vsphereClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		vsphereClusterConfigCRDDefinition,
 	)
 	genericClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		genericClusterConfigCRDDefinition,
@@ -152,6 +157,45 @@ type NutanixClusterConfigSpec struct {
 
 	// +kubebuilder:validation:Optional
 	ControlPlane *NutanixControlPlaneSpec `json:"controlPlane,omitempty"`
+
+	// Subject Alternative Names for the API Server signing cert.
+	// For the Nutanix provider, the following default SANs will always be added:
+	// - localhost
+	// - 127.0.0.1
+	// - 0.0.0.0
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// VSphereClusterConfig is the Schema for the VSphereclusterconfigs API.
+type VSphereClusterConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Spec VSphereClusterConfigSpec `json:"spec,omitempty"`
+}
+
+func (s VSphereClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return vsphereClusterConfigVariableSchema
+}
+
+// VSphereClusterConfigSpec defines the desired state of VSphereClusterConfig.
+type VSphereClusterConfigSpec struct {
+	// +kubebuilder:validation:Optional
+	VSphere *VSphereSpec `json:"vsphere,omitempty"`
+
+	GenericClusterConfigSpec `json:",inline"`
+
+	// +kubebuilder:validation:Optional
+	Addons *VSphereAddons `json:"addons,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	ControlPlane *VSphereControlPlaneSpec `json:"controlPlane,omitempty"`
 
 	// Subject Alternative Names for the API Server signing cert.
 	// For the Nutanix provider, the following default SANs will always be added:
@@ -334,5 +378,6 @@ func init() {
 		&AWSClusterConfig{},
 		&DockerClusterConfig{},
 		&NutanixClusterConfig{},
+		&VSphereClusterConfig{},
 	)
 }

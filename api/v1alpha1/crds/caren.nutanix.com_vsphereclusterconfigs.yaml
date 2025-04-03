@@ -1,0 +1,439 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.1
+  name: vsphereclusterconfigs.caren.nutanix.com
+spec:
+  group: caren.nutanix.com
+  names:
+    kind: VSphereClusterConfig
+    listKind: VSphereClusterConfigList
+    plural: vsphereclusterconfigs
+    singular: vsphereclusterconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: VSphereClusterConfig is the Schema for the VSphereclusterconfigs
+          API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: VSphereClusterConfigSpec defines the desired state of VSphereClusterConfig.
+            properties:
+              addons:
+                properties:
+                  ccm:
+                    description: CCM tells us to enable or disable the cloud provider
+                      interface.
+                    properties:
+                      credentials:
+                        description: A reference to the Secret for credential information
+                          for the target Prism Central instance
+                        properties:
+                          secretRef:
+                            description: A reference to the Secret containing the
+                              credentials used by the CCM provider.
+                            properties:
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        required:
+                        - secretRef
+                        type: object
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy the CCM to the
+                          workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  clusterAutoscaler:
+                    description: ClusterAutoscaler tells us to enable or disable the
+                      cluster-autoscaler addon.
+                    properties:
+                      strategy:
+                        default: HelmAddon
+                        description: |-
+                          Addon strategy used to deploy cluster-autoscaler to the management cluster
+                          targeting the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  cni:
+                    description: CNI required for providing CNI configuration.
+                    properties:
+                      provider:
+                        description: CNI provider to deploy.
+                        enum:
+                        - Calico
+                        - Cilium
+                        type: string
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy the CNI provider
+                          to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                      values:
+                        description: Values contains the helm values for the CNI when
+                          HelmAddon is the strategy.
+                        properties:
+                          sourceRef:
+                            description: |-
+                              SourceRef is an object reference to Configmap/Secret inside the same namespace
+                              which contains inline YAML representing the values for the Helm chart.
+                            properties:
+                              kind:
+                                description: Kind is the type of resource being referenced,
+                                  valid values are ('ConfigMap').
+                                enum:
+                                - ConfigMap
+                                type: string
+                              name:
+                                description: Name is the name of resource being referenced.
+                                minLength: 1
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                        type: object
+                    required:
+                    - provider
+                    type: object
+                  nfd:
+                    description: NFD tells us to enable or disable the node feature
+                      discovery addon.
+                    properties:
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy Node Feature Discovery
+                          (NFD) to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  serviceLoadBalancer:
+                    properties:
+                      configuration:
+                        description: Configuration for the chosen ServiceLoadBalancer
+                          provider.
+                        properties:
+                          addressRanges:
+                            description: |-
+                              AddressRanges is a list of IPv4 address ranges the
+                              provider uses to choose an address for a load balancer.
+                            items:
+                              description: AddressRange defines an IPv4 range.
+                              properties:
+                                end:
+                                  format: ipv4
+                                  type: string
+                                start:
+                                  format: ipv4
+                                  type: string
+                              required:
+                              - end
+                              - start
+                              type: object
+                            minItems: 1
+                            type: array
+                        required:
+                        - addressRanges
+                        type: object
+                      provider:
+                        description: |-
+                          The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
+                          the CCM acts as the provider.
+                        enum:
+                        - MetalLB
+                        type: string
+                    required:
+                    - provider
+                    type: object
+                type: object
+              controlPlane:
+                properties:
+                  autoRenewCertificates:
+                    description: |-
+                      AutoRenewCertificates specifies the configuration for auto-renewing the
+                      certificates of the control plane.
+                    properties:
+                      daysBeforeExpiry:
+                        description: |-
+                          DaysBeforeExpiry indicates a rollout needs to be performed if the
+                          certificates of the control plane will expire within the specified days.
+                        format: int32
+                        minimum: 7
+                        type: integer
+                    required:
+                    - daysBeforeExpiry
+                    type: object
+                  taints:
+                    description: Taints specifies the taints the Node API object should
+                      be registered with.
+                    items:
+                      description: |-
+                        The node this Taint is attached to has the "effect" on
+                        any pod that does not tolerate the Taint.
+                      properties:
+                        effect:
+                          default: NoSchedule
+                          description: |-
+                            The effect of the taint on pods that do not tolerate the taint.
+                            Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                          enum:
+                          - NoSchedule
+                          - PreferNoSchedule
+                          - NoExecute
+                          type: string
+                        key:
+                          description: The taint key to be applied to a node.
+                          type: string
+                        value:
+                          description: The taint value corresponding to the taint
+                            key.
+                          type: string
+                      required:
+                      - effect
+                      - key
+                      type: object
+                    type: array
+                  vsphere:
+                    description: // +kubebuilder:validation:Optional
+                    type: object
+                type: object
+              dns:
+                description: DNS defines the DNS configuration for the cluster.
+                properties:
+                  coreDNS:
+                    description: CoreDNS defines the CoreDNS configuration for the
+                      cluster.
+                    properties:
+                      image:
+                        description: |-
+                          Image required for overriding Kubernetes DNS image details.
+                          If the image version is not specified,
+                          the default version based on the cluster's Kubernetes version will be used.
+                        properties:
+                          repository:
+                            description: Repository is used to override the image
+                              repository to pull from.
+                            pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                            type: string
+                          tag:
+                            description: Tag is used to override the default image
+                              tag.
+                            pattern: ^[\w][\w.-]{0,127}$
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              encryptionAtRest:
+                description: |-
+                  EncryptionAtRest defines the configuration to enable encryption at REST
+                  This configuration is used by API server to encrypt data before storing it in ETCD.
+                  Currently the encryption only enabled for secrets and configmaps.
+                properties:
+                  providers:
+                    default:
+                    - aescbc: {}
+                    description: Encryption providers
+                    items:
+                      properties:
+                        aescbc:
+                          type: object
+                        secretbox:
+                          type: object
+                      type: object
+                    maxItems: 1
+                    type: array
+                type: object
+              etcd:
+                properties:
+                  image:
+                    description: Image required for overriding etcd image details.
+                    properties:
+                      repository:
+                        description: Repository is used to override the image repository
+                          to pull from.
+                        pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                        type: string
+                      tag:
+                        description: Tag is used to override the default image tag.
+                        pattern: ^[\w][\w.-]{0,127}$
+                        type: string
+                    type: object
+                type: object
+              extraAPIServerCertSANs:
+                description: |-
+                  Subject Alternative Names for the API Server signing cert.
+                  For the Nutanix provider, the following default SANs will always be added:
+                  - localhost
+                  - 127.0.0.1
+                  - 0.0.0.0
+                items:
+                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  type: string
+                type: array
+                uniqueItems: true
+              globalImageRegistryMirror:
+                description: GlobalImageRegistryMirror sets default mirror configuration
+                  for all the image registries.
+                properties:
+                  credentials:
+                    description: Credentials and CA certificate for the image registry
+                      mirror
+                    properties:
+                      secretRef:
+                        description: |-
+                          A reference to the Secret containing the registry credentials and optional CA certificate
+                          using the keys `username`, `password` and `ca.crt`.
+                          This credentials Secret is not required for some registries, e.g. ECR.
+                        properties:
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            minLength: 1
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    type: object
+                  url:
+                    description: Registry mirror URL.
+                    format: uri
+                    pattern: ^https?://
+                    type: string
+                required:
+                - url
+                type: object
+              imageRegistries:
+                items:
+                  properties:
+                    credentials:
+                      description: Credentials and CA certificate for the image registry
+                      properties:
+                        secretRef:
+                          description: |-
+                            A reference to the Secret containing the registry credentials and optional CA certificate
+                            using the keys `username`, `password` and `ca.crt`.
+                            This credentials Secret is not required for some registries, e.g. ECR.
+                          properties:
+                            name:
+                              description: |-
+                                Name of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              minLength: 1
+                              type: string
+                          required:
+                          - name
+                          type: object
+                      type: object
+                    url:
+                      description: Registry URL.
+                      format: uri
+                      pattern: ^https?://
+                      type: string
+                  required:
+                  - url
+                  type: object
+                type: array
+              kubernetesImageRepository:
+                description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
+                pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                type: string
+              proxy:
+                description: HTTPProxy required for providing proxy configuration.
+                properties:
+                  additionalNo:
+                    description: |-
+                      AdditionalNo Proxy list that will be added to the automatically calculated
+                      values that will apply no_proxy configuration for cluster internal network.
+                      Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
+                        ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
+                    items:
+                      type: string
+                    type: array
+                  http:
+                    description: HTTP proxy value.
+                    type: string
+                  https:
+                    description: HTTPS proxy value.
+                    type: string
+                type: object
+              users:
+                items:
+                  description: User defines the input for a generated user in cloud-init.
+                  properties:
+                    hashedPassword:
+                      description: |-
+                        HashedPassword is a hashed password for the user, formatted as described
+                        by the crypt(5) man page. See your distribution's documentation for
+                        instructions to create a hashed password.
+                        An empty string is not marshalled, because it is not a valid value.
+                      type: string
+                    name:
+                      description: Name specifies the user name.
+                      type: string
+                    sshAuthorizedKeys:
+                      description: |-
+                        SSHAuthorizedKeys is a list of public SSH keys to write to the
+                        machine. Use the corresponding private SSH keys to authenticate. See SSH
+                        documentation for instructions to create a key pair.
+                      items:
+                        type: string
+                      type: array
+                    sudo:
+                      description: |-
+                        Sudo is a sudo user specification, formatted as described in the sudo
+                        documentation.
+                        An empty string is not marshalled, because it is not a valid value.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+              vsphere:
+                description: VSphereSpec defines the desired state of VSphereCluster.
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true

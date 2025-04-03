@@ -1,0 +1,6 @@
+# Copyright 2023 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if and .Values.deployDefaultClusterClasses (.Capabilities.APIVersions.Has "infrastructure.cluster.x-k8s.io/v1beta1/VSphereClusterTemplate") }}
+{{ .Files.Get "defaultclusterclasses/vsphere-cluster-class.yaml" }}
+{{- end}}

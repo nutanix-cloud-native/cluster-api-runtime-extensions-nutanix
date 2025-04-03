@@ -38,6 +38,15 @@ type NutanixControlPlaneSpec struct {
 	GenericNodeSpec `json:",inline"`
 }
 
+type VSphereControlPlaneSpec struct {
+	// // +kubebuilder:validation:Optional
+	VSphere *VSphereNodeSpec `json:"vsphere,omitempty"`
+
+	GenericControlPlaneSpec `json:",inline"`
+
+	GenericNodeSpec `json:",inline"`
+}
+
 // AWSControlPlaneSpec defines the desired state of the control plane for an AWS cluster.
 type AWSControlPlaneSpec struct {
 	// +kubebuilder:validation:Optional

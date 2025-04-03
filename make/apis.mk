@@ -33,11 +33,14 @@ PROVIDER_MODULE_capx := github.com/nutanix-cloud-native/cluster-api-provider-nut
 PROVIDER_API_PATH_capx := api
 PROVIDER_API_VERSION_capx := v1beta1
 
+PROVIDER_MODULE_capv := sigs.k8s.io/cluster-api-provider-vsphere
+PROVIDER_API_PATH_capv := apis
+PROVIDER_API_VERSION_capv := v1beta1
 # Add third-party CAPI provider types above
 
 .PHONY: apis.sync
 apis.sync: ## Syncs third-party CAPI providers' types
-apis.sync: $(addprefix api.sync.,capa caaph capx) mod-tidy.api # go-fix.api
+apis.sync: $(addprefix api.sync.,capa caaph capx capv) mod-tidy.api # go-fix.api
 
 .PHONY: api.sync.%
 api.sync.%: ## Syncs a third-party CAPI provider's API types

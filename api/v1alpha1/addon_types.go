@@ -85,6 +85,10 @@ type NutanixAddons struct {
 	COSI *NutanixCOSI `json:"cosi,omitempty"`
 }
 
+type VSphereAddons struct {
+	GenericAddons `json:",inline"`
+}
+
 type GenericAddons struct {
 	// +kubebuilder:validation:Optional
 	CNI *CNI `json:"cni,omitempty"`
