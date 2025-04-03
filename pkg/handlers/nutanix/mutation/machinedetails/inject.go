@@ -94,7 +94,11 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 
 			spec.BootType = nutanixMachineDetailsVar.BootType
 			spec.Cluster = nutanixMachineDetailsVar.Cluster
-			spec.Image = nutanixMachineDetailsVar.Image
+			if nutanixMachineDetailsVar.Image != nil {
+				spec.Image = nutanixMachineDetailsVar.Image
+			} else if nutanixMachineDetailsVar.ImageLookup != nil {
+				spec.ImageLookup = nutanixMachineDetailsVar.ImageLookup
+			}
 
 			spec.VCPUSockets = nutanixMachineDetailsVar.VCPUSockets
 			spec.VCPUsPerSocket = nutanixMachineDetailsVar.VCPUsPerSocket
