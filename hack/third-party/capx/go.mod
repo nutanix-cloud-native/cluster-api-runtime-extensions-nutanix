@@ -5,7 +5,7 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/ex
 
 go 1.22.1
 
-require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.5.3
+require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.6.0
 
 require (
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
@@ -24,8 +24,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nutanix-cloud-native/prism-go-client v0.5.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/net v0.27.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

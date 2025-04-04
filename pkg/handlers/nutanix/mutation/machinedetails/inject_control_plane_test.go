@@ -23,7 +23,7 @@ var (
 		BootType:       capxv1.NutanixBootTypeLegacy,
 		VCPUSockets:    2,
 		VCPUsPerSocket: 1,
-		Image: capxv1.NutanixResourceIdentifier{
+		Image: &capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-image"),
 		},
@@ -65,6 +65,79 @@ var (
 		},
 	}
 
+	variableWithImageTemplating = v1alpha1.NutanixMachineDetails{
+		BootType:       capxv1.NutanixBootTypeLegacy,
+		VCPUSockets:    2,
+		VCPUsPerSocket: 1,
+		ImageLookup: &capxv1.NutanixImageLookup{
+			BaseOS: "rockylinux-9",
+		},
+		Cluster: capxv1.NutanixResourceIdentifier{
+			Type: capxv1.NutanixIdentifierName,
+			Name: ptr.To("fake-pe-cluster"),
+		},
+		MemorySize:     resource.MustParse("8Gi"),
+		SystemDiskSize: resource.MustParse("40Gi"),
+		Subnets: []capxv1.NutanixResourceIdentifier{
+			{
+				Type: capxv1.NutanixIdentifierName,
+				Name: ptr.To("fake-subnet"),
+			},
+		},
+	}
+	matchersForAllImageTemplating = []capitest.JSONPatchMatcher{
+		// boot type
+		{
+			Operation:    "add",
+			Path:         "/spec/template/spec/bootType",
+			ValueMatcher: gomega.BeEquivalentTo(capxv1.NutanixBootTypeLegacy),
+		},
+		// cluster
+		{
+			Operation:    "add",
+			Path:         "/spec/template/spec/cluster/name",
+			ValueMatcher: gomega.BeEquivalentTo("fake-pe-cluster"),
+		},
+		{
+			Operation:    "replace",
+			Path:         "/spec/template/spec/cluster/type",
+			ValueMatcher: gomega.BeEquivalentTo(capxv1.NutanixIdentifierName),
+		},
+
+		{
+			Operation:    "replace",
+			Path:         "/spec/template/spec/vcpuSockets",
+			ValueMatcher: gomega.BeEquivalentTo(2),
+		},
+		{
+			Operation:    "replace",
+			Path:         "/spec/template/spec/vcpusPerSocket",
+			ValueMatcher: gomega.BeEquivalentTo(1),
+		},
+		{
+			Operation:    "replace",
+			Path:         "/spec/template/spec/memorySize",
+			ValueMatcher: gomega.BeEquivalentTo("8Gi"),
+		},
+		{
+			Operation:    "replace",
+			Path:         "/spec/template/spec/systemDiskSize",
+			ValueMatcher: gomega.BeEquivalentTo("40Gi"),
+		},
+		{
+			Operation:    "replace",
+			Path:         "/spec/template/spec/subnet",
+			ValueMatcher: gomega.HaveLen(1),
+		},
+		{
+			Operation: "add",
+			Path:      "/spec/template/spec/imageLookup",
+			ValueMatcher: gomega.SatisfyAll(
+				gomega.HaveKeyWithValue("baseOS", "rockylinux-9"),
+			),
+		},
+	}
+
 	matchersForAllFieldsSet = []capitest.JSONPatchMatcher{
 		{
 			Operation: "add",
@@ -84,16 +157,6 @@ var (
 			Operation:    "add",
 			Path:         "/spec/template/spec/bootType",
 			ValueMatcher: gomega.BeEquivalentTo(capxv1.NutanixBootTypeLegacy),
-		},
-		{
-			Operation:    "add",
-			Path:         "/spec/template/spec/image/name",
-			ValueMatcher: gomega.BeEquivalentTo("fake-image"),
-		},
-		{
-			Operation:    "replace",
-			Path:         "/spec/template/spec/image/type",
-			ValueMatcher: gomega.BeEquivalentTo(capxv1.NutanixIdentifierName),
 		},
 		{
 			Operation:    "add",
@@ -129,6 +192,14 @@ var (
 			Operation:    "replace",
 			Path:         "/spec/template/spec/subnet",
 			ValueMatcher: gomega.HaveLen(1),
+		},
+		{
+			Operation: "add",
+			Path:      "/spec/template/spec/image",
+			ValueMatcher: gomega.SatisfyAll(
+				gomega.HaveKeyWithValue("type", "name"),
+				gomega.HaveKeyWithValue("name", "fake-image"),
+			),
 		},
 		{
 			Operation: "add",
@@ -181,6 +252,20 @@ var _ = Describe("Generate Nutanix Machine Details patches for ControlPlane", fu
 			},
 			RequestItem:           request.NewCPNutanixMachineTemplateRequestItem(""),
 			ExpectedPatchMatchers: matchersForAllFieldsSet,
+		},
+		{
+			Name: "image templating set for control-plane",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					variableWithImageTemplating,
+					v1alpha1.ControlPlaneConfigVariableName,
+					v1alpha1.NutanixVariableName,
+					VariableName,
+				),
+			},
+			RequestItem:           request.NewCPNutanixMachineTemplateRequestItem(""),
+			ExpectedPatchMatchers: matchersForAllImageTemplating,
 		},
 	}
 

@@ -13,6 +13,7 @@ type NutanixNodeSpec struct {
 	MachineDetails NutanixMachineDetails `json:"machineDetails"`
 }
 
+// +kubebuilder:validation:XValidation:rule="has(self.image) != has(self.imageLookup)",message="Either 'image' or 'imageLookup' must be set, but not both"
 type NutanixMachineDetails struct {
 	// vcpusPerSocket is the number of vCPUs per socket of the VM
 	// +kubebuilder:validation:Required
@@ -28,8 +29,14 @@ type NutanixMachineDetails struct {
 
 	// image identifies the image uploaded to Prism Central (PC). The identifier
 	// (uuid or name) can be obtained from the console or API.
-	// +kubebuilder:validation:Required
-	Image capxv1.NutanixResourceIdentifier `json:"image"`
+	// +kubebuilder:validation:Optional
+	// +optional
+	Image *capxv1.NutanixResourceIdentifier `json:"image,omitempty"`
+
+	// imageLookup is a container that holds how to look up vm images for the cluster.
+	// +kubebuilder:validation:Optional
+	// +optional
+	ImageLookup *capxv1.NutanixImageLookup `json:"imageLookup,omitempty"`
 
 	// cluster identifies the Prism Element in which the machine will be created.
 	// The identifier (uuid or name) can be obtained from the console or API.
