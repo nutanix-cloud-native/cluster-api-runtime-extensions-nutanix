@@ -17,6 +17,8 @@ const (
 	DockerVariableName = "docker"
 	// NutanixVariableName is the Nutanix config patch variable name.
 	NutanixVariableName = "nutanix"
+	// VsphereVariableName is the Vsphere config patch variable name.
+	VsphereVariableName = "vsphere"
 
 	// CNIVariableName is the CNI external patch variable name.
 	CNIVariableName = "cni"

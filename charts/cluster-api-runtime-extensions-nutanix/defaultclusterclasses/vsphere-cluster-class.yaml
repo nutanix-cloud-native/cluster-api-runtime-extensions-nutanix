@@ -9,7 +9,7 @@ metadata:
     caren.nutanix.com/version: v0.27.4
   labels:
     cluster.x-k8s.io/provider: vsphere
-  name: vsphere-quickstart-worker-v2.16.0-dev
+  name: vsphere-quickstart-kcfg-0
 spec:
   template:
     spec:
@@ -67,16 +67,16 @@ spec:
       ref:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: VSphereMachineTemplate
-        name: vsphere-quickstart-control-plane-v2.16.0-dev
+        name: vsphere-quickstart-cp-vmt
     ref:
       apiVersion: controlplane.cluster.x-k8s.io/v1beta1
       kind: KubeadmControlPlaneTemplate
-      name: vsphere-quickstart-v2.16.0-dev
+      name: vsphere-quickstart-kcpt
   infrastructure:
     ref:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-      kind: VSphereMachineTemplate
-      name: vsphere-quickstart-v2.16.0-dev
+      kind: VSphereClusterTemplate
+      name: vsphere-quickstart-vct
   patches:
   - external:
       discoverVariablesExtension: vsphereclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
@@ -116,12 +116,12 @@ spec:
           ref:
             apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
             kind: KubeadmConfigTemplate
-            name: vsphere-quickstart-worker-v2.16.0-dev
+            name: vsphere-quickstart-kcfg-0
         infrastructure:
           ref:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
             kind: VSphereMachineTemplate
-            name: vsphere-quickstart-worker-v2.16.0-dev
+            name: vsphere-quickstart-md-vmt
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlaneTemplate
@@ -130,7 +130,7 @@ metadata:
     caren.nutanix.com/version: v0.27.4
   labels:
     cluster.x-k8s.io/provider: vsphere
-  name: vsphere-quickstart-v2.16.0-dev
+  name: vsphere-quickstart-kcpt
 spec:
   template:
     spec:
@@ -179,14 +179,17 @@ metadata:
     caren.nutanix.com/version: v0.27.4
   labels:
     cluster.x-k8s.io/provider: vsphere
-  name: vsphere-quickstart-v2.16.0-dev
+  name: vsphere-quickstart-vct
 spec:
   template:
     spec:
       controlPlaneEndpoint:
-        host: PLACEHOLDER
+        host: 10.22.195.147
         port: 6443
-      server: PLACEHOLDER
+      server: vcenter.infra.nkp.sh
+      identityRef:
+        kind: Secret
+        name: capv-cluster-credentials
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: VSphereMachineTemplate
@@ -195,15 +198,25 @@ metadata:
     caren.nutanix.com/version: v0.27.4
   labels:
     cluster.x-k8s.io/provider: vsphere
-  name: vsphere-quickstart-control-plane-v2.16.0-dev
+  name: vsphere-quickstart-cp-vmt
 spec:
   template:
     spec:
+      cloneMode: fullClone
+      datacenter: dc1
+      datastore: users-ksphere-platform
+      diskGiB: 80
+      folder: /dc1/vm/users/users-ksphere-platform
+      memoryMiB: 16384
       network:
         devices:
         - dhcp4: true
-          networkName: PLACEHOLDER
-      template: PLACEHOLDER
+          networkName: VMs
+      numCPUs: 4
+      powerOffMode: hard
+      resourcePool: users-ksphere-platform
+      server: vcenter.infra.nkp.sh
+      template: konvoy-ubuntu-2204-1.31.4-20250403174550
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: VSphereMachineTemplate
@@ -212,12 +225,22 @@ metadata:
     caren.nutanix.com/version: v0.27.4
   labels:
     cluster.x-k8s.io/provider: vsphere
-  name: vsphere-quickstart-worker-v2.16.0-dev
+  name: vsphere-quickstart-md-vmt
 spec:
   template:
     spec:
+      cloneMode: fullClone
+      datacenter: dc1
+      datastore: users-ksphere-platform
+      diskGiB: 80
+      folder: /dc1/vm/users/users-ksphere-platform
+      memoryMiB: 16384
       network:
         devices:
         - dhcp4: true
-          networkName: PLACEHOLDER
-      template: PLACEHOLDER
+          networkName: VMs
+      numCPUs: 4
+      powerOffMode: hard
+      resourcePool: users-ksphere-platform
+      server: vcenter.infra.nkp.sh
+      template: konvoy-ubuntu-2204-1.31.4-20250403174550

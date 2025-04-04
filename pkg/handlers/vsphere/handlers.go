@@ -1,7 +1,7 @@
 // Copyright 2023 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package nutanix
+package vsphere
 
 import (
 	"github.com/spf13/pflag"
@@ -12,7 +12,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	vsphereclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/vsphere/clusterconfig"
 
-	//vspheremutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/vsphere/mutation"
+	vspheremutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/vsphere/mutation"
 	vsphereworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/vsphere/workerconfig"
 )
 
@@ -33,8 +33,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	return []handlers.Named{
 		vsphereclusterconfig.NewVariable(),
 		vsphereworkerconfig.NewVariable(),
-		// vspheremutation.MetaPatchHandler(mgr, h.controlPlaneVirtualIPConfig),
-		// vspheremutation.MetaWorkerPatchHandler(mgr),
+		vspheremutation.MetaPatchHandler(mgr, h.controlPlaneVirtualIPConfig),
+		vspheremutation.MetaWorkerPatchHandler(mgr),
 	}
 }
 

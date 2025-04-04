@@ -40,6 +40,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/vsphere"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/cluster"
 )
 
@@ -111,6 +112,10 @@ func main() {
 	// It allows to specify configuration under a single variable.
 	nutanixMetaHandlers := nutanix.New(globalOptions)
 
+	// vsphereMetaHandlers combines all Nutanix patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	vsphereMetaHandlers := vsphere.New(globalOptions)
+
 	// genericMetaHandlers combines all generic patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
 	genericMetaHandlers := generic.New()
@@ -126,6 +131,7 @@ func main() {
 	awsMetaHandlers.AddFlags(pflag.CommandLine)
 	dockerMetaHandlers.AddFlags(pflag.CommandLine)
 	nutanixMetaHandlers.AddFlags(pflag.CommandLine)
+	vsphereMetaHandlers.AddFlags(pflag.CommandLine)
 	namespacesyncOptions.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -161,6 +167,7 @@ func main() {
 	allHandlers = append(allHandlers, awsMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, dockerMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, nutanixMetaHandlers.AllHandlers(mgr)...)
+	allHandlers = append(allHandlers, vsphereMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, genericMetaHandlers.AllHandlers(mgr)...)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
