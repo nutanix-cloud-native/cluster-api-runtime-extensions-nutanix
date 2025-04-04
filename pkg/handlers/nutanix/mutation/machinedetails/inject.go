@@ -95,9 +95,9 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			spec.BootType = nutanixMachineDetailsVar.BootType
 			spec.Cluster = nutanixMachineDetailsVar.Cluster
 			if nutanixMachineDetailsVar.Image != nil {
-				spec.Image = nutanixMachineDetailsVar.Image
+				spec.Image = nutanixMachineDetailsVar.Image.DeepCopy()
 			} else if nutanixMachineDetailsVar.ImageLookup != nil {
-				spec.ImageLookup = nutanixMachineDetailsVar.ImageLookup
+				spec.ImageLookup = nutanixMachineDetailsVar.ImageLookup.DeepCopy()
 			}
 
 			spec.VCPUSockets = nutanixMachineDetailsVar.VCPUSockets
