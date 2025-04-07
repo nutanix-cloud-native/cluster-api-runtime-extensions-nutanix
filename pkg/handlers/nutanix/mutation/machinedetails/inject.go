@@ -5,6 +5,7 @@ package machinedetails
 
 import (
 	"context"
+	"errors"
 	"slices"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -31,6 +32,9 @@ type nutanixMachineDetailsPatchHandler struct {
 	variableFieldPath []string
 	patchSelector     clusterv1.PatchSelector
 }
+
+// ErrNoImageOrImageLookupSet is an error that gets returned only if image and lookup are both set.
+var ErrNoImageOrImageLookupSet = errors.New("image or image lookup must be set")
 
 func newNutanixMachineDetailsPatchHandler(
 	metaVariableName string,
@@ -94,10 +98,14 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 
 			spec.BootType = nutanixMachineDetailsVar.BootType
 			spec.Cluster = nutanixMachineDetailsVar.Cluster
-			if nutanixMachineDetailsVar.Image != nil {
+
+			switch {
+			case nutanixMachineDetailsVar.Image != nil:
 				spec.Image = nutanixMachineDetailsVar.Image.DeepCopy()
-			} else if nutanixMachineDetailsVar.ImageLookup != nil {
+			case nutanixMachineDetailsVar.ImageLookup != nil:
 				spec.ImageLookup = nutanixMachineDetailsVar.ImageLookup.DeepCopy()
+			default:
+				return ErrNoImageOrImageLookupSet
 			}
 
 			spec.VCPUSockets = nutanixMachineDetailsVar.VCPUSockets
