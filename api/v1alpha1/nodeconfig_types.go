@@ -109,6 +109,7 @@ type GenericNodeSpec struct {
 
 	// NodeRegistration holds fields that relate to registering the new control-plane node to the cluster.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={}
 	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
 }
 
@@ -156,6 +157,7 @@ type NodeRegistrationOptions struct {
 	// IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
 	// when the current node is registered.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={"SystemVerification"}
 	// +kubebuilder:validation:MaxItems=50
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=512
