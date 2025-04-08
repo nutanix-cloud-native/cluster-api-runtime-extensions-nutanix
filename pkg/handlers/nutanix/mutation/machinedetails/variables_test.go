@@ -105,7 +105,7 @@ func minimumClusterConfigSpec() v1alpha1.NutanixClusterConfigSpec {
 					BootType:       capxv1.NutanixBootTypeLegacy,
 					VCPUSockets:    2,
 					VCPUsPerSocket: 1,
-					Image: capxv1.NutanixResourceIdentifier{
+					Image: &capxv1.NutanixResourceIdentifier{
 						Type: capxv1.NutanixIdentifierName,
 						Name: ptr.To("fake-image"),
 					},
