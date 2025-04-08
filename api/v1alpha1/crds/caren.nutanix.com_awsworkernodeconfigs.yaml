@@ -91,10 +91,13 @@ spec:
                     type: string
                 type: object
               nodeRegistration:
+                default: {}
                 description: NodeRegistration holds fields that relate to registering
                   the new control-plane node to the cluster.
                 properties:
                   ignorePreflightErrors:
+                    default:
+                    - SystemVerification
                     description: |-
                       IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
                       when the current node is registered.

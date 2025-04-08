@@ -84,3 +84,35 @@ Applying this configuration will result in the following value being set:
           ignorePreflightErrors:
             - SystemVerification
     ```
+
+By default, the following value will be set for both control plane and worker nodes:
+
+```yaml
+    variables:
+      - name: clusterConfig
+        value:
+          controlPlane:
+            nodeRegistration:
+              ignorePreflightErrors:
+                - SystemVerification
+      - name: workerConfig
+        value:
+          nodeRegistration:
+            ignorePreflightErrors:
+              - SystemVerification
+```
+
+This can be enabled by setting `ignorePreflightErrors` to an empty list:
+
+```yaml
+    variables:
+      - name: clusterConfig
+        value:
+          controlPlane:
+            nodeRegistration:
+              ignorePreflightErrors: []
+      - name: workerConfig
+        value:
+          nodeRegistration:
+            ignorePreflightErrors: []
+```
