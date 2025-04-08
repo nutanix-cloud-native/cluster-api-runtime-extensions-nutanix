@@ -85,21 +85,33 @@ func (h *nodeRegistrationControlPlanePatchHandler) Mutate(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding nodeRegistration to control-plane node kubeadm config template")
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1.InitConfiguration{}
-			}
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
-			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.IgnorePreflightErrors = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.IgnorePreflightErrors,
-				nodeRegistrationVar.IgnorePreflightErrors...,
-			)
-			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors,
-				nodeRegistrationVar.IgnorePreflightErrors...,
-			)
+
+			setIgnorePreflightErrorsForControlPlane(obj, nodeRegistrationVar.IgnorePreflightErrors)
 
 			return nil
 		})
+}
+
+func setIgnorePreflightErrorsForControlPlane(
+	obj *controlplanev1.KubeadmControlPlaneTemplate,
+	ignorePreflightErrors []string,
+) {
+	if len(ignorePreflightErrors) == 0 {
+		return
+	}
+
+	if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
+		obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1.InitConfiguration{}
+	}
+	if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration == nil {
+		obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
+	}
+	obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.IgnorePreflightErrors = append(
+		obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.IgnorePreflightErrors,
+		ignorePreflightErrors...,
+	)
+	obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors = append(
+		obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors,
+		ignorePreflightErrors...,
+	)
 }

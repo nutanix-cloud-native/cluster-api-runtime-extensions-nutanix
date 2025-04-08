@@ -85,14 +85,26 @@ func (h *nodeRegistrationWorkerPatchHandler) Mutate(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding nodeRegistration options to worker node kubeadm config template")
-			if obj.Spec.Template.Spec.JoinConfiguration == nil {
-				obj.Spec.Template.Spec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
-			}
-			obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors = append(
-				obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors,
-				nodeRegistrationVar.IgnorePreflightErrors...,
-			)
+
+			setIgnorePreflightErrorsForWorkers(obj, nodeRegistrationVar.IgnorePreflightErrors)
 
 			return nil
 		})
+}
+
+func setIgnorePreflightErrorsForWorkers(
+	obj *bootstrapv1.KubeadmConfigTemplate,
+	ignorePreflightErrors []string,
+) {
+	if len(ignorePreflightErrors) == 0 {
+		return
+	}
+
+	if obj.Spec.Template.Spec.JoinConfiguration == nil {
+		obj.Spec.Template.Spec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
+	}
+	obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors = append(
+		obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors,
+		ignorePreflightErrors...,
+	)
 }

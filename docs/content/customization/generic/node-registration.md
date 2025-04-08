@@ -51,7 +51,7 @@ Applying this configuration will result in the following value being set:
 
 #### Worker node
 
-Taints for individual nodepools can be configured similarly:
+`ignorePreflightErrors` for individual nodepools can be configured similarly:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
