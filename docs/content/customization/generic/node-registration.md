@@ -11,6 +11,12 @@ This customization will be available when the
 
 ### ignorePreflightErrors
 
+Kubeadm runs preflight checks to ensure the machine is compatible with Kubernetes and its dependencies.
+The `SystemVerification` check is known to result in false positives.
+For example, it fails when the Linux Kernel version is not supported by kubeadm,
+even if the kernel has all the required features.
+For this reason, we skip the check by default.
+
 #### Control plane
 
 To configure `ignorePreflightErrors` for the control plane nodes, specify the following configuration:
