@@ -6,6 +6,7 @@
   value:
     - name: "clusterConfig"
       value:
+        controlPlane: {}
         addons:
           clusterAutoscaler: {}
           nfd: {}

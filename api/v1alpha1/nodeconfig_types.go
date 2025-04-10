@@ -106,6 +106,11 @@ type GenericNodeSpec struct {
 	// Taints specifies the taints the Node API object should be registered with.
 	// +kubebuilder:validation:Optional
 	Taints []Taint `json:"taints,omitempty"`
+
+	// NodeRegistration holds fields that relate to registering the new control-plane node to the cluster.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={}
+	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
 }
 
 // The node this Taint is attached to has the "effect" on
@@ -145,6 +150,19 @@ const (
 	// Currently enforced by NodeController.
 	TaintEffectNoExecute TaintEffect = "NoExecute"
 )
+
+// NodeRegistrationOptions holds fields that relate to registering a new control-plane or node to the cluster,
+// either via "kubeadm init" or "kubeadm join".
+type NodeRegistrationOptions struct {
+	// IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
+	// when the current node is registered.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={"SystemVerification"}
+	// +kubebuilder:validation:MaxItems=50
+	// +kubebuilder:validation:items:MinLength=1
+	// +kubebuilder:validation:items:MaxLength=512
+	IgnorePreflightErrors []string `json:"ignorePreflightErrors,omitempty"`
+}
 
 //nolint:gochecknoinits // Idiomatic to use init functions to register APIs with scheme.
 func init() {
