@@ -5,9 +5,11 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +29,7 @@ type Repository struct {
 
 type HelmChartsConfig struct {
 	Repositories map[string]Repository `yaml:"repositories,omitempty"`
+	ChartURLs    []string              `yaml:"chartURLs,omitempty"`
 }
 
 func main() {
@@ -71,6 +74,7 @@ func main() {
 	}
 	out := HelmChartsConfig{
 		map[string]Repository{},
+		[]string{},
 	}
 	for _, info := range cm.Data {
 		var settings HelmChartFromConfigMap
@@ -78,13 +82,18 @@ func main() {
 		if err != nil {
 			log.Fatalln("failed to unmarshal settings:", err)
 		}
-		out.Repositories[settings.Name] = Repository{
-			RepoURL: settings.Repository,
-			Charts: map[string][]string{
-				settings.Name: {
-					settings.Version,
+		if strings.HasPrefix(settings.Repository, "oci://") {
+			url := fmt.Sprintf("%s/%s:%s", settings.Repository, settings.Name, settings.Version)
+			out.ChartURLs = append(out.ChartURLs, url)
+		} else {
+			out.Repositories[settings.Name] = Repository{
+				RepoURL: settings.Repository,
+				Charts: map[string][]string{
+					settings.Name: {
+						settings.Version,
+					},
 				},
-			},
+			}
 		}
 	}
 	b, err := yaml.Marshal(out)
