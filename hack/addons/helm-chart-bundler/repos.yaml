@@ -66,3 +66,5 @@ repositories:
     charts:
       tigera-operator:
       - v3.29.3
+chartURLs:
+- oci://ghcr.io/dkoshkin/docker-registry.helm/docker-registry:2.6.0

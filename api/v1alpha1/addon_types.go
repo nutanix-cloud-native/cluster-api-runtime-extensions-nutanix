@@ -27,7 +27,8 @@ const (
 
 	ServiceLoadBalancerProviderMetalLB = "MetalLB"
 
-	ServiceLoadBalancerProviderMindthegap = "Mindthegap"
+	RegistryProviderMindthegap   = "Mindthegap"
+	RegistryProviderDistribution = "Distribution"
 
 	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
 	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
@@ -344,7 +345,7 @@ type AddressRange struct {
 type InClusterRegistry struct {
 	// The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
 	// the CCM acts as the provider.
-	// +kubebuilder:validation:Enum=Mindthegap
+	// +kubebuilder:validation:Enum=Mindthegap;Distribution
 	// +kubebuilder:validation:Required
 	Provider string `json:"provider"`
 }

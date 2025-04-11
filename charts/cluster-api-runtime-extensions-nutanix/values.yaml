@@ -111,6 +111,11 @@ hooks:
         defaultValueTemplateConfigMap:
           create: true
           name: default-cosi-controller-helm-values-template
+  registry:
+    distribution:
+      defaultValueTemplateConfigMap:
+        create: true
+        name: default-registry-distribution-helm-values-template
 
 helmAddonsConfigMap: default-helm-addons-config
 

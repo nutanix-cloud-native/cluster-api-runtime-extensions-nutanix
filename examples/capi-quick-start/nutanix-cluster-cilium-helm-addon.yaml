@@ -66,7 +66,7 @@ spec:
           url: http://10.96.0.20
         addons:
           inClusterRegistry:
-            provider: Mindthegap
+            provider: Distribution
           ccm:
             credentials:
               secretRef:
@@ -96,10 +96,8 @@ spec:
           serviceLoadBalancer:
             configuration:
               addressRanges:
-              - end: 198.18.1.10
-                start: 198.18.1.1
-              - end: 198.18.1.30
-                start: 198.18.1.21
+              - end: 10.22.203.2
+                start: 10.22.203.2
             provider: MetalLB
         controlPlane:
           nutanix:

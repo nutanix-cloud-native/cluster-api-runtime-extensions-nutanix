@@ -47,6 +47,10 @@ data:
     ChartName: nutanix-csi-storage
     ChartVersion: 3.3.0
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}'
+  registry-distribution: |
+    ChartName: docker-registry
+    ChartVersion: 2.6.0
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}oci://ghcr.io/dkoshkin/docker-registry.helm{{ end }}'
   snapshot-controller: |
     ChartName: snapshot-controller
     ChartVersion: 4.0.1

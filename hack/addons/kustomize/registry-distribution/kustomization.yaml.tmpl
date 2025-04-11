@@ -1,0 +1,27 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# NOTE This file is used by the tool in `hack/tools/helm-cm` to add
+# metallb chart metadata to the "helm-addons" ConfigMap. The tool takes
+# a kustomization as input. We do not use this file with kustomize.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: registry-distribution
+
+sortOptions:
+  order: fifo
+
+helmCharts:
+- name: docker-registry
+  repo: oci://ghcr.io/dkoshkin/docker-registry.helm
+  releaseName: in-cluster
+  version: 2.6.0
+  valuesFile: helm-values.yaml
+  includeCRDs: true
+  skipTests: true
+  namespace: registry-system
+
+namespace: registry-system

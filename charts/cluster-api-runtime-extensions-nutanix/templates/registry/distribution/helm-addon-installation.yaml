@@ -5,8 +5,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: '{{ .Values.hooks.registry.distribution.defaultValueTemplateConfigMap.name }}'
+  name: '{{ .Values.hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/registry/distribution/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/serviceloadbalancer/metallb/values-template.yaml" | nindent 4 }}
 {{- end -}}

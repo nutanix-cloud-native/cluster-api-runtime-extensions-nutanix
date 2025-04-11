@@ -29,6 +29,7 @@ const (
 	AWSEBSCSI               Component = "aws-ebs-csi"
 	AWSCCM                  Component = "aws-ccm"
 	COSIController          Component = "cosi-controller"
+	RegistryDistribution    Component = "registry-distribution"
 )
 
 type HelmChartGetter struct {

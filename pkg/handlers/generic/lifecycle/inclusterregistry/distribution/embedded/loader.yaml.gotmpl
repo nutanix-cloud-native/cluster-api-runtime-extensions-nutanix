@@ -1,0 +1,37 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: kube-system
+  name: {{ .PodName }}
+  labels:
+    app: {{ .PodName }}
+spec:
+  tolerations:
+    - operator: Exists
+  initContainers:
+    - name: {{ .WaitContainerName }}
+      image: ghcr.io/mesosphere/wait-for-file-to-exist:v1.19.0
+      args:
+        - {{ .BundleDirectoryName }}/{{ .BundleFileName }}
+      volumeMounts:
+        - name: shared
+          mountPath: {{ .BundleDirectoryName }}
+  containers:
+    - name: loader
+      image: ghcr.io/mesosphere/mindthegap:v1.19.0
+      args:
+        - push
+        - bundle
+        - --bundle
+        - {{ .BundleDirectoryName }}/{{ .BundleFileName }}
+        - --to-registry
+        - {{ .ServiceIP }}
+        - --to-registry-insecure-skip-tls-verify
+      volumeMounts:
+        - name: shared
+          mountPath: {{ .BundleDirectoryName }}
+  restartPolicy: OnFailure
+  volumes:
+    - name: shared
+      emptyDir: {}

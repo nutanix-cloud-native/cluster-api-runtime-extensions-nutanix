@@ -240,6 +240,7 @@ spec:
                             the CCM acts as the provider.
                           enum:
                             - Mindthegap
+                            - Distribution
                           type: string
                       required:
                         - provider

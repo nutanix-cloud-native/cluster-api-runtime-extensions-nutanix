@@ -25,6 +25,7 @@ import (
 	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/snapshotcontroller"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry/distribution"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry/mindthegap"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/servicelbgc"
@@ -48,6 +49,7 @@ type Handlers struct {
 	snapshotControllerConfig *snapshotcontroller.Config
 	cosiControllerConfig     *cosi.ControllerConfig
 	mindthegapConfig         *mindthegap.Config
+	distributionConfig       *distribution.Config
 }
 
 func New(
@@ -70,6 +72,7 @@ func New(
 		snapshotControllerConfig: snapshotcontroller.NewConfig(globalOptions),
 		cosiControllerConfig:     cosi.NewControllerConfig(globalOptions),
 		mindthegapConfig:         &mindthegap.Config{GlobalOptions: globalOptions},
+		distributionConfig:       &distribution.Config{GlobalOptions: globalOptions},
 	}
 }
 
@@ -105,9 +108,14 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		),
 	}
 	inClusterRegistryHandlers := map[string]inclusterregistry.InClusterRegistryProvider{
-		v1alpha1.ServiceLoadBalancerProviderMindthegap: mindthegap.New(
+		v1alpha1.RegistryProviderMindthegap: mindthegap.New(
 			mgr.GetClient(),
 			h.mindthegapConfig,
+		),
+		v1alpha1.RegistryProviderDistribution: distribution.New(
+			mgr.GetClient(),
+			h.distributionConfig,
+			helmChartInfoGetter,
 		),
 	}
 	serviceLoadBalancerHandlers := map[string]serviceloadbalancer.ServiceLoadBalancerProvider{
@@ -229,4 +237,5 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.nutanixCCMConfig.AddFlags("ccm.nutanix", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
 	h.cosiControllerConfig.AddFlags("cosi.controller", flagSet)
+	h.distributionConfig.AddFlags("registry.distribution", flagSet)
 }

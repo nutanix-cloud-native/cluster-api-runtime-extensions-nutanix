@@ -25,7 +25,7 @@ spec:
           url: http://10.128.0.20
         addons:
           inClusterRegistry:
-            provider: Mindthegap
+            provider: Distribution
           clusterAutoscaler: {}
           cni:
             provider: Cilium
