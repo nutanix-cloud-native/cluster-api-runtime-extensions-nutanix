@@ -35,7 +35,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"dockerWorkerConfigPatch",
+		"dockerWorkerV3ConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

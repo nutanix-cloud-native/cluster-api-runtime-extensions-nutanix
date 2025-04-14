@@ -24,5 +24,6 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		genericmutation.MetaPatchHandler(mgr),
 		v2genericmutation.MetaPatchHandler(mgr),
 		genericmutation.MetaWorkerPatchHandler(mgr),
+		v2genericmutation.MetaWorkerPatchHandler(mgr),
 	}
 }

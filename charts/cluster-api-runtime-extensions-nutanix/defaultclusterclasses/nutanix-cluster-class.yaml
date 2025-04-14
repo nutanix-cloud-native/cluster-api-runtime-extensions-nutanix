@@ -71,7 +71,7 @@ spec:
     name: cluster-config
   - external:
       discoverVariablesExtension: nutanixworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: nutanixworkerconfigpatch-gp.cluster-api-runtime-extensions-nutanix
+      generateExtension: nutanixworkerv3configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: worker-config
   workers:
     machineDeployments:

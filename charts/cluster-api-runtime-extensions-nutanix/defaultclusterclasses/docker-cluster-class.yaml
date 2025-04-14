@@ -35,7 +35,7 @@ spec:
     name: cluster-config
   - external:
       discoverVariablesExtension: dockerworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: dockerworkerconfigpatch-gp.cluster-api-runtime-extensions-nutanix
+      generateExtension: dockerworkerv3configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: worker-config
   workers:
     machineDeployments:

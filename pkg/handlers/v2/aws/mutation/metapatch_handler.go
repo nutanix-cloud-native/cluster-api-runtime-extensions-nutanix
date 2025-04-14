@@ -16,7 +16,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/network"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/region"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/securitygroups"
-	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
+	genericmutationv2 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/generic/mutation"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
@@ -31,11 +31,29 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 		ami.NewControlPlanePatch(),
 		securitygroups.NewControlPlanePatch(),
 	}
-	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
-	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
+	patchHandlers = append(patchHandlers, genericmutationv2.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, genericmutationv2.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"awsClusterV2ConfigPatch",
+		mgr.GetClient(),
+		patchHandlers...,
+	)
+}
+
+// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
+func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
+	patchHandlers := []mutation.MetaMutator{
+		iaminstanceprofile.NewWorkerPatch(),
+		instancetype.NewWorkerPatch(),
+		ami.NewWorkerPatch(),
+		securitygroups.NewWorkerPatch(),
+	}
+	patchHandlers = append(patchHandlers, genericmutationv2.WorkerMetaMutators()...)
+
+	// The previous handler did not have "v2" in the name.
+	return mutation.NewMetaGeneratePatchesHandler(
+		"awsWorkerConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

@@ -30,6 +30,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		dockermutation.MetaPatchHandler(mgr),
 		v2dockermutation.MetaPatchHandler(mgr),
 		dockermutation.MetaWorkerPatchHandler(mgr),
+		v2dockermutation.MetaWorkerPatchHandler(mgr),
 	}
 }
 
