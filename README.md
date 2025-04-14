@@ -11,6 +11,24 @@ See [upstream documentation](https://cluster-api.sigs.k8s.io/tasks/experimental-
 
 ## Development
 
+### Implementing Topology Mutation Handler
+
+See examples of existing [topology mutation handlers] in the `pkg/handlers/../mutation/` directory.
+When adding a new handler, or modifying an existing one, pay close attention to what happens to existing clusters
+when a new version of this extension is deployed in the management cluster,
+and avoid rollouts of Machines in those existing clusters.
+
+During CAPI provider upgrades, and periodically, all managed clusters are reconciled and mutation handler patches
+are applied.
+Any new handlers that return a new set of patches, or updated handlers that return a different set of patches,
+will be applied causing a rollout of Machines in all managed clusters.
+
+For example, when adding a new handler, a handler that is enabled by default and returns CAPI resources patches,
+will cause a rollout of Machines.
+Similarly, if a handler is modified to return a different set of patches, it will also cause a rollout of Machines.
+
+### Run Locally
+
 Install tools
 
 - [Devbox](https://github.com/jetpack-io/devbox?tab=readme-ov-file#installing-devbox)
@@ -153,3 +171,5 @@ To delete the dev KinD cluster, run:
 ```shell
 make kind.delete
 ```
+
+[topology mutation handlers]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/implement-topology-mutation-hook#implementing-topology-mutation-hook-runtime-extensions

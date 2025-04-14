@@ -21,6 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries/credentials"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubernetesimagerepository"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/mirrors"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/taints"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/users"
 )
 
@@ -52,5 +53,23 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		// We want to keep patch independent of each other and not share any state.
 		// Therefore, We must always apply this patch regardless any other patch modified containerd configuration.
 		containerdapplypatchesandrestart.NewPatch(),
+	}
+}
+
+func ControlPlaneMetaMutators() []mutation.MetaMutator {
+	return []mutation.MetaMutator{
+		taints.NewControlPlanePatch(),
+		// Intentionally not include this patch as it was not available in previous version the hook,
+		// and it uses an API is on by default, which causes a rollout of all Machines in all managed clusters.
+		// noderegistration.NewControlPlanePatch(),
+	}
+}
+
+func WorkerMetaMutators() []mutation.MetaMutator {
+	return []mutation.MetaMutator{
+		taints.NewWorkerPatch(),
+		// Intentionally not include this patch as it was not available in previous version the hook,
+		// and it uses an API is on by default, which causes a rollout of all Machines in all managed clusters.
+		// noderegistration.NewControlPlanePatch(),
 	}
 }

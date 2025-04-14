@@ -52,7 +52,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsWorkerConfigPatch",
+		"awsWorkerv3ConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

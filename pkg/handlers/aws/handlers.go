@@ -30,6 +30,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		awsmutation.MetaPatchHandler(mgr),
 		v2awsmutation.MetaPatchHandler(mgr),
 		awsmutation.MetaWorkerPatchHandler(mgr),
+		v2awsmutation.MetaWorkerPatchHandler(mgr),
 	}
 }
 

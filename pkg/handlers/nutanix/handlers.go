@@ -36,6 +36,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		nutanixmutation.MetaPatchHandler(mgr),
 		v2nutanixmutation.MetaPatchHandler(mgr, h.controlPlaneVirtualIPConfig),
 		nutanixmutation.MetaWorkerPatchHandler(mgr),
+		v2nutanixmutation.MetaWorkerPatchHandler(mgr),
 	}
 }
 
