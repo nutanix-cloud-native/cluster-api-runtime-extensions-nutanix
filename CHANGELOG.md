@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.28.1 (2025-04-14)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: use a new version for control-plane and worker mutation handlers by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1104
+### Other Changes
+* build: use correct frr image for metallb by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1102
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.28.0...v0.28.1
+
 ## 0.28.0 (2025-04-10)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
