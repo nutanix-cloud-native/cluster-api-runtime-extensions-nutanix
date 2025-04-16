@@ -6,7 +6,6 @@ package distribution
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"text/template"
 
@@ -15,16 +14,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	netutils "k8s.io/utils/net"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -65,6 +63,15 @@ func New(
 		config:              cfg,
 		helmChartInfoGetter: helmChartInfoGetter,
 	}
+}
+
+func (n *Distribution) RegistryDetails(cluster *clusterv1.Cluster) (string, error) {
+	serviceIP, err := utils.ServiceIPForCluster(cluster)
+	if err != nil {
+		return "", fmt.Errorf("error getting service IP for the registry: %w", err)
+	}
+
+	return fmt.Sprintf("http://%s", serviceIP), nil
 }
 
 func (n *Distribution) Apply(
@@ -165,9 +172,9 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	serviceIP, err := getServiceIP(cluster.Spec.ClusterNetwork.Services.CIDRBlocks)
+	serviceIP, err := utils.ServiceIPForCluster(cluster)
 	if err != nil {
-		return "", fmt.Errorf("error getting service IP for the mindthegap registry: %w", err)
+		return "", fmt.Errorf("error getting service IP for the distribution registry: %w", err)
 	}
 
 	type input struct {
@@ -188,28 +195,6 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	return b.String(), nil
-}
-
-func getServiceIP(serviceSubnetStrings []string) (string, error) {
-	if len(serviceSubnetStrings) == 0 {
-		serviceSubnetStrings = []string{v1alpha1.DefaultServicesSubnet}
-	}
-
-	serviceSubnets, err := netutils.ParseCIDRs(serviceSubnetStrings)
-	if err != nil {
-		return "", fmt.Errorf("unable to parse service Subnets: %w", err)
-	}
-	if len(serviceSubnets) == 0 {
-		return "", errors.New("unexpected empty service Subnets")
-	}
-
-	// Selects the 20th IP in service subnet CIDR range as the Service IP
-	serviceIP, err := netutils.GetIndexedIP(serviceSubnets[0], 20)
-	if err != nil {
-		return "", fmt.Errorf("unable to get internal Kubernetes Service IP from the given service Subnets")
-	}
-
-	return serviceIP.String(), nil
 }
 
 func applyObjs(ctx context.Context, cl ctrlclient.Client, objs []unstructured.Unstructured) error {

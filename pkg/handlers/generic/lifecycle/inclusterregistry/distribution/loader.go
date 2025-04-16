@@ -10,7 +10,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry/utils"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -41,11 +42,10 @@ type LoaderInput struct {
 }
 
 func RegistryLoaderObjects(input *LoaderInput) ([]unstructured.Unstructured, error) {
-	serviceIP, err := getServiceIP(input.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks)
+	serviceIP, err := utils.ServiceIPForCluster(input.Cluster)
 	if err != nil {
-		return nil, fmt.Errorf("error getting service IP for the registry: %w", err)
+		return nil, fmt.Errorf("error getting service IP for the distribution registry: %w", err)
 	}
-
 	var b bytes.Buffer
 	templateInput := struct {
 		PodName           string
@@ -68,7 +68,7 @@ func RegistryLoaderObjects(input *LoaderInput) ([]unstructured.Unstructured, err
 		return nil, fmt.Errorf("error templaling registry loader objects: %w", err)
 	}
 
-	return utils.UnstructuredFromBytes(b.Bytes(), namespace)
+	return handlersutils.UnstructuredFromBytes(b.Bytes(), namespace)
 }
 
 func ManagementClusterObjects(input *LoaderInput) ([]unstructured.Unstructured, error) {
@@ -99,7 +99,7 @@ func ManagementClusterObjects(input *LoaderInput) ([]unstructured.Unstructured, 
 		return nil, fmt.Errorf("error templaling copier objects: %w", err)
 	}
 
-	return utils.UnstructuredFromBytes(b.Bytes(), input.Cluster.Namespace)
+	return handlersutils.UnstructuredFromBytes(b.Bytes(), input.Cluster.Namespace)
 }
 
 func copierJobNameForCluster(cluster *clusterv1.Cluster) string {

@@ -3,16 +3,15 @@ package mindthegap
 import (
 	"bytes"
 	_ "embed"
-	"errors"
 	"fmt"
 	"text/template"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	netutils "k8s.io/utils/net"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry/utils"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -43,11 +42,10 @@ type ConfigurationInput struct {
 }
 
 func RemoteClusterObjects(input *ConfigurationInput) ([]unstructured.Unstructured, error) {
-	serviceIP, err := getServiceIP(input.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks)
+	serviceIP, err := utils.ServiceIPForCluster(input.Cluster)
 	if err != nil {
-		return nil, fmt.Errorf("error getting service IP for the mindthegap registry: %w", err)
+		return nil, fmt.Errorf("error getting service IP for the distribution registry: %w", err)
 	}
-
 	var b bytes.Buffer
 	templateInput := struct {
 		PodName           string
@@ -70,29 +68,7 @@ func RemoteClusterObjects(input *ConfigurationInput) ([]unstructured.Unstructure
 		return nil, fmt.Errorf("error templaling mindthegap registry objects: %w", err)
 	}
 
-	return utils.UnstructuredFromBytes(b.Bytes(), namespace)
-}
-
-func getServiceIP(serviceSubnetStrings []string) (string, error) {
-	if len(serviceSubnetStrings) == 0 {
-		serviceSubnetStrings = []string{v1alpha1.DefaultServicesSubnet}
-	}
-
-	serviceSubnets, err := netutils.ParseCIDRs(serviceSubnetStrings)
-	if err != nil {
-		return "", fmt.Errorf("unable to parse service Subnets: %w", err)
-	}
-	if len(serviceSubnets) == 0 {
-		return "", errors.New("unexpected empty service Subnets")
-	}
-
-	// Selects the 20th IP in service subnet CIDR range as the Service IP
-	serviceIP, err := netutils.GetIndexedIP(serviceSubnets[0], 20)
-	if err != nil {
-		return "", fmt.Errorf("unable to get internal Kubernetes Service IP from the given service Subnets")
-	}
-
-	return serviceIP.String(), nil
+	return handlersutils.UnstructuredFromBytes(b.Bytes(), namespace)
 }
 
 func ManagementClusterObjects(input *ConfigurationInput) ([]unstructured.Unstructured, error) {
@@ -123,7 +99,7 @@ func ManagementClusterObjects(input *ConfigurationInput) ([]unstructured.Unstruc
 		return nil, fmt.Errorf("error templaling seeder objects: %w", err)
 	}
 
-	return utils.UnstructuredFromBytes(b.Bytes(), input.Cluster.Namespace)
+	return handlersutils.UnstructuredFromBytes(b.Bytes(), input.Cluster.Namespace)
 }
 
 func seederJobNameForCluster(cluster *clusterv1.Cluster) string {

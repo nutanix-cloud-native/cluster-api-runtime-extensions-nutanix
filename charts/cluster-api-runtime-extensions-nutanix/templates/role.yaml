@@ -90,6 +90,7 @@ rules:
     verbs:
       - get
       - list
+      - update
       - watch
   - apiGroups:
       - storage.k8s.io

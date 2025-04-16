@@ -17,6 +17,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -40,6 +41,15 @@ func New(
 		client: c,
 		config: cfg,
 	}
+}
+
+func (n *Mindthegap) RegistryDetails(cluster *clusterv1.Cluster) (string, error) {
+	serviceIP, err := utils.ServiceIPForCluster(cluster)
+	if err != nil {
+		return "", fmt.Errorf("error getting service IP for the registry: %w", err)
+	}
+
+	return fmt.Sprintf("http://%s", serviceIP), nil
 }
 
 func (n *Mindthegap) Apply(

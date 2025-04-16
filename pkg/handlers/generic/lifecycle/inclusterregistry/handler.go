@@ -20,6 +20,8 @@ import (
 )
 
 type InClusterRegistryProvider interface {
+	RegistryDetails(cluster *clusterv1.Cluster) (string, error)
+
 	Apply(
 		ctx context.Context,
 		cluster *clusterv1.Cluster,
@@ -37,6 +39,7 @@ type InClusterRegistryHandler struct {
 var (
 	_ commonhandlers.Named                   = &InClusterRegistryHandler{}
 	_ lifecycle.AfterControlPlaneInitialized = &InClusterRegistryHandler{}
+	_ lifecycle.BeforeClusterCreate          = &InClusterRegistryHandler{}
 )
 
 func New(
