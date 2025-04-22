@@ -26,7 +26,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/snapshotcontroller"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry/distribution"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry/mindthegap"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/servicelbgc"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer"
@@ -48,7 +47,6 @@ type Handlers struct {
 	localPathCSIConfig       *localpath.Config
 	snapshotControllerConfig *snapshotcontroller.Config
 	cosiControllerConfig     *cosi.ControllerConfig
-	mindthegapConfig         *mindthegap.Config
 	distributionConfig       *distribution.Config
 }
 
@@ -71,7 +69,6 @@ func New(
 		localPathCSIConfig:       localpath.NewConfig(globalOptions),
 		snapshotControllerConfig: snapshotcontroller.NewConfig(globalOptions),
 		cosiControllerConfig:     cosi.NewControllerConfig(globalOptions),
-		mindthegapConfig:         &mindthegap.Config{GlobalOptions: globalOptions},
 		distributionConfig:       &distribution.Config{GlobalOptions: globalOptions},
 	}
 }
@@ -108,10 +105,6 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		),
 	}
 	inClusterRegistryHandlers := map[string]inclusterregistry.InClusterRegistryProvider{
-		v1alpha1.RegistryProviderMindthegap: mindthegap.New(
-			mgr.GetClient(),
-			h.mindthegapConfig,
-		),
 		v1alpha1.RegistryProviderDistribution: distribution.New(
 			mgr.GetClient(),
 			h.distributionConfig,

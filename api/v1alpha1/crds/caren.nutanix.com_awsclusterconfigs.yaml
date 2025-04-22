@@ -267,7 +267,6 @@ spec:
                             The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
                             the CCM acts as the provider.
                           enum:
-                            - Mindthegap
                             - Distribution
                           type: string
                       required:
