@@ -24,6 +24,7 @@ type InClusterRegistryProvider interface {
 
 	Apply(
 		ctx context.Context,
+		registryVar v1alpha1.InClusterRegistry,
 		cluster *clusterv1.Cluster,
 		log logr.Logger,
 	) error
@@ -123,6 +124,7 @@ func (s *InClusterRegistryHandler) apply(
 	log.Info(fmt.Sprintf("Deploying InClusterRegistry provider %s", registryVar.Provider))
 	err = handler.Apply(
 		ctx,
+		registryVar,
 		cluster,
 		log,
 	)

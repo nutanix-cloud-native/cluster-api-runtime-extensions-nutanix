@@ -348,4 +348,43 @@ type InClusterRegistry struct {
 	// +kubebuilder:validation:Enum=Mindthegap;Distribution
 	// +kubebuilder:validation:Required
 	Provider string `json:"provider"`
+
+	// Configuration for the chosen InClusterRegistry provider.
+	// +kubebuilder:validation:Optional
+	Configuration *InClusterRegistryConfiguration `json:"configuration,omitempty"`
+}
+
+type InClusterRegistryConfiguration struct {
+	// BundleLoader will deploy a pair of additional components,
+	// one on the management cluster to upload OCI bundles,
+	// to a second component on the workload cluster to wait for those bundles and push those bundles to the registry.
+	// +kubebuilder:validation:Optional
+	BundleLoader *RegistryBundleLoader `json:"bundleLoader,omitempty"`
+}
+
+type RegistryBundleLoader struct {
+	// FromVolumes is a list of VolumeSources that will be pushed to the registry.
+	// +kubebuilder:validation:Optional
+	FromVolumes []RegistryBundleVolumeSource `json:"fromVolumes,omitempty"`
+}
+
+type RegistryBundleVolumeSource struct {
+	// HostPath represents a pre-existing file or directory on the host
+	// machine that is directly exposed to the container.
+	// +kubebuilder:validation:Optional
+	HostPath *HostPathVolumeSource `json:"hostPath,omitempty"`
+}
+
+// HostPathVolumeSource represents a host path mapped into a pod.
+// Copied from corev1
+type HostPathVolumeSource struct {
+	// path of the directory on the host.
+	// If the path is a symlink, it will follow the link to the real path.
+	// More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+	Path string `json:"path"`
+	// type for HostPath Volume
+	// More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+	// +kubebuilder:default=File
+	// +kubebuilder:validation:Optional
+	Type *string `json:"type,omitempty"`
 }

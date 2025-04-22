@@ -1,37 +1,133 @@
----
-apiVersion: v1
-kind: Pod
+kind: Job
+apiVersion: batch/v1
 metadata:
-  namespace: kube-system
-  name: {{ .PodName }}
-  labels:
-    app: {{ .PodName }}
+  name: {{ .JobName }}
 spec:
-  tolerations:
-    - operator: Exists
-  initContainers:
-    - name: {{ .WaitContainerName }}
-      image: ghcr.io/mesosphere/wait-for-file-to-exist:v1.19.0
-      args:
-        - {{ .BundleDirectoryName }}/{{ .BundleFileName }}
-      volumeMounts:
-        - name: shared
-          mountPath: {{ .BundleDirectoryName }}
-  containers:
-    - name: loader
-      image: ghcr.io/mesosphere/mindthegap:v1.19.0
-      args:
-        - push
-        - bundle
-        - --bundle
-        - {{ .BundleDirectoryName }}/{{ .BundleFileName }}
-        - --to-registry
-        - {{ .ServiceIP }}
-        - --to-registry-insecure-skip-tls-verify
-      volumeMounts:
-        - name: shared
-          mountPath: {{ .BundleDirectoryName }}
-  restartPolicy: OnFailure
-  volumes:
-    - name: shared
-      emptyDir: {}
+  template:
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+      initContainers:
+      - name: create-loader-pod
+        image: ghcr.io/d2iq-labs/kubectl-betterwait:v1.32.2
+        command:
+        - /bin/kubectl
+        args:
+          - apply
+          - -f=/registry-loader/pod.yaml
+          - --kubeconfig=/kubeconfig/admin.conf
+        volumeMounts:
+          - mountPath: /kubeconfig
+            name: kubeconfig
+            readOnly: true
+          - mountPath: /registry-loader
+            name: registry-loader
+            readOnly: true
+      - name: wait-for-loader-pod
+        image: ghcr.io/d2iq-labs/kubectl-betterwait:{{ .KubernetesVersion }}
+        args:
+          - --for=condition=PodReadyToStartContainers
+          - --timeout=-1s # a negative number here means wait forever
+          - --interval=5s # poll every 5 seconds to the resources to be created
+          - --namespace={{ .DestinationNamespace }}
+          - --kubeconfig=/kubeconfig/admin.conf
+          - pod/{{ .DestinationPodName }}
+        volumeMounts:
+          - mountPath: /kubeconfig
+            name: kubeconfig
+            readOnly: true
+      containers:
+      - args:
+        - --namespace={{ .DestinationNamespace }}
+        - --kubeconfig=/kubeconfig/admin.conf
+        - --container={{ .DestinationContainerName }}
+        {{- range $i, $_ := .BundleFiles }}
+        - /bundles-to-upload/bundle-{{ add $i 1 }}.tar
+        - {{ $.DestinationPodName }}:/bundles-to-push/bundle-{{ add $i 1 }}.tar
+        {{- end }}
+        image: ghcr.io/mesosphere/copy-file-to-pod:v1.19.0
+        imagePullPolicy: IfNotPresent
+        name: copy
+        volumeMounts:
+        {{- range $i, $_ := .BundleFiles }}
+        - mountPath: /bundles-to-upload/bundle-{{ add $i 1 }}.tar
+          name: bundle-{{ add $i 1 }}
+        {{- end }}
+        - mountPath: /kubeconfig
+          name: kubeconfig
+          readOnly: true
+        - mountPath: /registry-loader
+          name: registry-loader
+          readOnly: true
+      restartPolicy: OnFailure
+      tolerations:
+      - operator: Exists
+      volumes:
+      {{- range $i, $volume := .BundleFiles }}
+      - name: bundle-{{ add $i 1 }}
+      {{- toYAML $volume | nindent 8 -}}
+      {{- end }}
+      - name: kubeconfig
+        secret:
+          defaultMode: 420
+          items:
+          - key: value
+            path: admin.conf
+          secretName: {{ .ClusterName }}-kubeconfig
+      - name: registry-loader
+        configMap:
+          items:
+            - key: value
+              path: pod.yaml
+          name: {{ .ConfigMapName }}
+  backoffLimit: 10
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .ConfigMapName }}
+data:
+  value: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: {{ .DestinationPodName }}
+      namespace: {{ .DestinationNamespace }}
+    spec:
+      containers:
+        - args:
+            - push
+            - bundle
+            - --bundle
+            - /bundles-to-push/bundle-*.tar
+            - --to-registry
+            - {{ .RegistryAddress}}
+            - --to-registry-insecure-skip-tls-verify
+          image: ghcr.io/mesosphere/mindthegap:v1.19.0
+          imagePullPolicy: IfNotPresent
+          name: loader
+          volumeMounts:
+            - mountPath: /bundles-to-push
+              name: shared
+      initContainers:
+        - args:
+            {{- range $i, $_ := .BundleFiles }}
+            - /bundles-to-push/bundle-{{ add $i 1 }}.tar
+            {{- end }}
+          image: ghcr.io/mesosphere/wait-for-file-to-exist:v1.19.0
+          imagePullPolicy: IfNotPresent
+          name: {{ .DestinationContainerName }}
+          volumeMounts:
+            - mountPath: /bundles-to-push
+              name: shared
+      restartPolicy: OnFailure
+      tolerations:
+        - operator: Exists
+      volumes:
+        - emptyDir: {}
+          name: shared

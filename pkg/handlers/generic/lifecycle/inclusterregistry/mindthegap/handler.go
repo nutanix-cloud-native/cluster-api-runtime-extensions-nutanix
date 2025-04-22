@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/inclusterregistry/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -54,6 +55,7 @@ func (n *Mindthegap) RegistryDetails(cluster *clusterv1.Cluster) (string, error)
 
 func (n *Mindthegap) Apply(
 	ctx context.Context,
+	_ v1alpha1.InClusterRegistry,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {

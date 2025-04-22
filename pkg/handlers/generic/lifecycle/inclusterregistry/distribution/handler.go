@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
@@ -76,6 +77,7 @@ func (n *Distribution) RegistryDetails(cluster *clusterv1.Cluster) (string, erro
 
 func (n *Distribution) Apply(
 	ctx context.Context,
+	registryVar v1alpha1.InClusterRegistry,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
@@ -125,42 +127,39 @@ func (n *Distribution) Apply(
 		return fmt.Errorf("failed to apply distribution registry addon: %w", err)
 	}
 
-	// FIXME: All of should be behind some API
+	if registryVar.Configuration == nil ||
+		registryVar.Configuration.BundleLoader == nil ||
+		registryVar.Configuration.BundleLoader.FromVolumes == nil {
+		// Nothing more to do.
+		return nil
+	}
+
+	// TODO: is CAREN the right place for this?
 	log.Info(
 		fmt.Sprintf("Applying distribution registry loader objects to cluster %s",
 			ctrlclient.ObjectKeyFromObject(cluster),
 		),
 	)
+	registryDetails, err := n.RegistryDetails(cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get registry details: %w", err)
+	}
 	configurationInput := &LoaderInput{
-		Cluster: cluster,
+		Cluster:         cluster,
+		Config:          registryVar.Configuration,
+		RegistryAddress: registryDetails,
 	}
-	cos, err := RegistryLoaderObjects(configurationInput)
+	cos, err := BundleLoaderObjects(configurationInput)
 	if err != nil {
-		return fmt.Errorf("failed to generate distribution registry loader objects: %w", err)
-	}
-	err = applyObjs(ctx, remoteClient, cos)
-	if err != nil {
-		return fmt.Errorf("failed to apply distribution registry configuration: %w", err)
-	}
-
-	log.Info(
-		fmt.Sprintf("Applying utility to seed image bundles for cluster %s",
-			ctrlclient.ObjectKeyFromObject(cluster),
-		),
-	)
-
-	// FIXME: CAREN is probably not the right place to do this
-	cos, err = ManagementClusterObjects(configurationInput)
-	if err != nil {
-		return fmt.Errorf("failed to generate utility to seed image configuration: %w", err)
+		return fmt.Errorf("failed to generate specs for utility to push bundles: %w", err)
 	}
 	err = applyObjs(ctx, n.client, cos)
 	if err != nil {
-		return fmt.Errorf("failed to apply utility to seed image configuration: %w", err)
+		return fmt.Errorf("failed to apply specs for utility to push bundles: %w", err)
 	}
 	err = addClusterOwnerReferenceToObjs(ctx, n.client, cluster, cos)
 	if err != nil {
-		return fmt.Errorf("failed to add owner to seed image configuration: %w", err)
+		return fmt.Errorf("failed to add owner to specs for utility to push bundles: %w", err)
 	}
 
 	return nil

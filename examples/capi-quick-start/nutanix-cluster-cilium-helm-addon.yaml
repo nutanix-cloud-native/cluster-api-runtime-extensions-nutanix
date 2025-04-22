@@ -65,6 +65,12 @@ spec:
         addons:
           inClusterRegistry:
             provider: Distribution
+            configuration:
+              bundleLoader:
+                fromVolumes:
+                - hostPath:
+                    path: /registry-data/bundle.tar
+                    type: File
           ccm:
             credentials:
               secretRef:
