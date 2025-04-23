@@ -99,6 +99,8 @@ data:
       name: {{ .DestinationPodName }}
       namespace: {{ .DestinationNamespace }}
     spec:
+      tolerations:
+        - operator: Exists
       containers:
         - args:
             - push
