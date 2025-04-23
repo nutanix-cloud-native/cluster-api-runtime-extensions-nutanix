@@ -18,10 +18,10 @@ func (s *InClusterRegistryHandler) BeforeClusterCreate(
 	req *runtimehooksv1.BeforeClusterCreateRequest,
 	resp *runtimehooksv1.BeforeClusterCreateResponse,
 ) {
-	commonResponse := &runtimehooksv1.CommonResponse{}
-	s.setGlobalImageRegistryMirror(ctx, &req.Cluster, commonResponse)
-	resp.Status = commonResponse.GetStatus()
-	resp.Message = commonResponse.GetMessage()
+	// commonResponse := &runtimehooksv1.CommonResponse{}
+	// s.setGlobalImageRegistryMirror(ctx, &req.Cluster, commonResponse)
+	// resp.Status = commonResponse.GetStatus()
+	// resp.Message = commonResponse.GetMessage()
 }
 
 // Get a Service IP based on the Cluster's Service CIDR.
@@ -41,8 +41,8 @@ func (s *InClusterRegistryHandler) setGlobalImageRegistryMirror(
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 	registryVar, err := variables.Get[v1alpha1.InClusterRegistry](
 		varMap,
-		s.variableName,
-		s.variablePath...)
+		v1alpha1.ClusterConfigVariableName,
+		[]string{"addons", v1alpha1.InClusterRegistryVariableName}...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).

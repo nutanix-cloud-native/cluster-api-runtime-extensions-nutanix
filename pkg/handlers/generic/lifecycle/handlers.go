@@ -128,7 +128,10 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		snapshotcontroller.New(mgr.GetClient(), h.snapshotControllerConfig, helmChartInfoGetter),
 		cosi.New(mgr.GetClient(), h.cosiControllerConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
-		inclusterregistry.New(mgr.GetClient(), inClusterRegistryHandlers), // InClusterRegistryProvider is not implemented yet.
+		inclusterregistry.New(
+			mgr.GetClient(),
+			inClusterRegistryHandlers,
+		), // InClusterRegistryProvider is not implemented yet.
 		// The order of the handlers in the list is important and are called consecutively.
 		// The MetalLB provider may be configured to create a IPAddressPool on the remote cluster.
 		// However, the MetalLB provider also has a webhook that validates IPAddressPool requests.

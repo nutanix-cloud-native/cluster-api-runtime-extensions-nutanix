@@ -111,7 +111,10 @@ func BundleLoaderObjects(input *LoaderInput) ([]unstructured.Unstructured, error
 }
 
 func copierJobNameForCluster(cluster *clusterv1.Cluster) string {
-	return fmt.Sprintf("registry-bundle-copier-%s", cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey])
+	return fmt.Sprintf(
+		"registry-bundle-copier-%s",
+		cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
+	)
 }
 
 func loaderConfigMapNameForCluster(cluster *clusterv1.Cluster) string {

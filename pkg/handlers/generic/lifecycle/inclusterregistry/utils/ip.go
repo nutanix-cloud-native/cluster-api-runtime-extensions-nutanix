@@ -35,7 +35,9 @@ func getServiceIP(serviceSubnetStrings []string) (string, error) {
 	// Selects the 20th IP in service subnet CIDR range as the Service IP
 	serviceIP, err := netutils.GetIndexedIP(serviceSubnets[0], 20)
 	if err != nil {
-		return "", fmt.Errorf("unable to get internal Kubernetes Service IP from the given service Subnets")
+		return "", fmt.Errorf(
+			"unable to get internal Kubernetes Service IP from the given service Subnets",
+		)
 	}
 
 	return serviceIP.String(), nil
