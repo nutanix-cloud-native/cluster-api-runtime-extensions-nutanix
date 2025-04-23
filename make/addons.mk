@@ -19,7 +19,7 @@ export AWS_CCM_VERSION_132 := v1.32.1
 
 export NUTANIX_CCM_CHART_VERSION := 0.5.0
 
-export KUBE_VIP_VERSION := v0.8.9
+export KUBE_VIP_VERSION := v0.8.10
 
 export METALLB_CHART_VERSION := 0.14.9
 
