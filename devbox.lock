@@ -1140,51 +1140,51 @@
         }
       }
     },
-    "hugo@latest": {
-      "last_modified": "2025-04-12T07:19:22Z",
-      "resolved": "github:NixOS/nixpkgs/2349f9de17183971db12ae9e0123dab132023bd7#hugo",
+    "hugo@0.145.0": {
+      "last_modified": "2025-03-11T17:52:14Z",
+      "resolved": "github:NixOS/nixpkgs/0d534853a55b5d02a4ababa1d71921ce8f0aee4c#hugo",
       "source": "devbox-search",
-      "version": "0.146.1",
+      "version": "0.145.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/3z8xfjnp5s8gznhbivf5dznwv9ny160d-hugo-0.146.1",
+              "path": "/nix/store/xsz57dr37w8zkf3vzh80cmkcf3s2r3q7-hugo-0.145.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/3z8xfjnp5s8gznhbivf5dznwv9ny160d-hugo-0.146.1"
+          "store_path": "/nix/store/xsz57dr37w8zkf3vzh80cmkcf3s2r3q7-hugo-0.145.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/qq5z7f37pgff9bf74k1z3c7jk5xkqc84-hugo-0.146.1",
+              "path": "/nix/store/rk3lzll69hh196h4sr2ghbvs4n5qzjd2-hugo-0.145.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/qq5z7f37pgff9bf74k1z3c7jk5xkqc84-hugo-0.146.1"
+          "store_path": "/nix/store/rk3lzll69hh196h4sr2ghbvs4n5qzjd2-hugo-0.145.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/5h1dp9nwgp4a13grjmda0yclpl9cy8lw-hugo-0.146.1",
+              "path": "/nix/store/7dcl3rqhx1fbpx9n4zcxfgaldj3ykw8m-hugo-0.145.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/5h1dp9nwgp4a13grjmda0yclpl9cy8lw-hugo-0.146.1"
+          "store_path": "/nix/store/7dcl3rqhx1fbpx9n4zcxfgaldj3ykw8m-hugo-0.145.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/zchv87pwsy5q53p9wg9vxlafqlsda3aw-hugo-0.146.1",
+              "path": "/nix/store/jq24aijwi1jkcmq1gv5f7ry4nyj7zk6f-hugo-0.145.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/zchv87pwsy5q53p9wg9vxlafqlsda3aw-hugo-0.146.1"
+          "store_path": "/nix/store/jq24aijwi1jkcmq1gv5f7ry4nyj7zk6f-hugo-0.145.0"
         }
       }
     },
