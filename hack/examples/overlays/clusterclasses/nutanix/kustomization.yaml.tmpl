@@ -30,4 +30,13 @@ patches:
   - target:
       kind: KubeadmControlPlaneTemplate
     path: ../../../patches/disable-kubeadmcontrolplane-profiling.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize-postkubeadmcommands.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/kubelet-file-permissions.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../patches/kubelet-file-permissions.yaml
   # END CIS patches

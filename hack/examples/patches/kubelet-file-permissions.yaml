@@ -1,0 +1,9 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: add
+  path: /spec/template/spec/postKubeadmCommands/-
+  value: chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+- op: add
+  path: /spec/template/spec/postKubeadmCommands/-
+  value: chmod 600 /var/lib/kubelet/config.yaml

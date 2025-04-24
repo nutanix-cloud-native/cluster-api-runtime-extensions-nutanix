@@ -103,6 +103,9 @@ spec:
             kubeletExtraArgs:
               cloud-provider: external
             name: '{{ ds.meta_data.local_hostname }}'
+      postKubeadmCommands:
+      - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+      - chmod 600 /var/lib/kubelet/config.yaml
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: AWSMachineTemplate
@@ -142,3 +145,6 @@ spec:
           kubeletExtraArgs:
             cloud-provider: external
           name: '{{ ds.meta_data.local_hostname }}'
+      postKubeadmCommands:
+      - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+      - chmod 600 /var/lib/kubelet/config.yaml
