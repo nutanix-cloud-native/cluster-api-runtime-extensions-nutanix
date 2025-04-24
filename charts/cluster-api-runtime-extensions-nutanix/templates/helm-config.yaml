@@ -17,7 +17,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/aws-ebs-csi-driver{{ end }}'
   cilium: |
     ChartName: cilium
-    ChartVersion: 1.17.1
+    ChartVersion: 1.17.3
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}'
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
