@@ -27,16 +27,16 @@
 
           clusterctl-aws = buildGo124Module rec {
             name = "clusterctl-aws";
-            version = "2.7.1";
+            version = "2.8.2";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-l2ZCylr47vRYw/HyYaeKfSvH1Kt9YQPwLoHLU2h+AE4=";
+              hash = "sha256-utqzHBtYujaZHg7yHKaddOammFRbI3J82DD4sQKigc4=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
-            vendorHash = "sha256-iAheoh9VMSdTVvJzhXZBFpGDoDsGO8OV/sYjDEsf8qw=";
+            vendorHash = "sha256-Cd8nb7cnTjHl48BkYVlyNIqTdJCT127W8ug2Y01gErw=";
             ldflags = let modPrefix = "sigs.k8s.io/cluster-api-provider-aws/v2";
                           v = "${modPrefix}/version";
                           c = "${modPrefix}/cmd/clusterawsadm/cmd/version"; in [
@@ -58,26 +58,26 @@
 
           release-please = buildNpmPackage rec {
             pname = "release-please";
-            version = "16.18.0";
+            version = "17.0.0";
             src = fetchFromGitHub {
               owner = "googleapis";
               repo = "release-please";
               rev = "v${version}";
-              hash = "sha256-iY1EblSMCvw6iy8DFJnQRNCST7wycWSV8vdsq+XNpRU=";
+              hash = "sha256-/d02gnrKyFJ0rc3Tr6MEOw8hx5ab1xNIfmy0dpiVnIs=";
             };
-            npmDepsHash = "sha256-HDi7dFG/jNsszyvrb7ravVKQ7XO7NegnbX9MITcS1eE=";
+            npmDepsHash = "sha256-xLG+he/kFJrS24WdPzUiqO3hYynZYy5HGhFpsVopIOA=";
             dontNpmBuild = true;
           };
 
           helm-schema = buildGo124Module rec {
             pname = "helm-schema";
-            version = "1.7.0";
+            version = "1.8.0";
 
             src = fetchFromGitHub {
               owner = "losisin";
               repo = "helm-values-schema-json";
               rev = "v${version}";
-              hash = "sha256-P/3EcVBo11XxY+S8FyDiSUPQNfgTTqLDmbbc7Up5LNc=";
+              hash = "sha256-HvVOnDpIP1tjdpSOkWl8qhwVl87s8JYRJsYGqWhICr8=";
             };
             doCheck = false;
             vendorHash = "sha256-mT2A6xXlTFYrA6yNpz9jaa69vdetY/OgjNtTvG4jAYs=";
