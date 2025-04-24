@@ -25,3 +25,9 @@ patches:
             external:
               generateExtension: "nutanixworkerv3configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "nutanixworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
+
+  # BEGIN CIS patches
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/disable-kubeadmcontrolplane-profiling.yaml
+  # END CIS patches
