@@ -137,7 +137,7 @@ jobs:
       - name: Export golang and golangci-lint versions
         id: versions
         run: |
-          echo "golangci-lint=$(devbox run -- golangci-lint version --format short)" >>"${GITHUB_OUTPUT}"
+          echo "golangci-lint=$(devbox run -- golangci-lint version --short)" >>"${GITHUB_OUTPUT}"
           echo "golang=$(devbox run -- go version | grep -o "[[:digit:]]\+.[[:digit:]]\+\(.[[:digit:]]\+\)\?")" >>"${GITHUB_OUTPUT}"
 
       - name: golangci-lint
