@@ -126,6 +126,21 @@ endif
 
 GOLANGCI_CONFIG_FILE ?= $(wildcard $(REPO_ROOT)/.golangci.y*ml)
 
+.PHONY:fmt
+fmt: ## Runs golangci-lint fmt for all modules in repository
+ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
+fmt: fmt.root
+endif
+ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
+fmt: $(addprefix fmt.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
+endif
+
+.PHONY: fmt.%
+fmt.%: ## Runs golangci-lint fmt for a specific module
+fmt.%: ; $(info $(M) formatting $* module)
+	$(if $(filter-out root,$*),cd $* && )golangci-lint fmt --config=$(GOLANGCI_CONFIG_FILE)
+	$(MAKE) go-fix.$*
+
 .PHONY: lint
 lint: ## Runs golangci-lint for all modules in repository
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
@@ -136,24 +151,9 @@ lint: $(addprefix lint.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
 .PHONY: lint.%
-lint.%: ## Runs golangci-lint for a specific module
-lint.%: golines.% ; $(info $(M) linting $* module)
+lint.%: ## Runs golangci-lint run for a specific module
+lint.%: fmt.% ; $(info $(M) linting $* module)
 	$(if $(filter-out root,$*),cd $* && )golangci-lint run --fix --config=$(GOLANGCI_CONFIG_FILE)
-	$(MAKE) golines.$*
-
-.PHONY: golines
-golines: ## Runs golines for all modules in repository
-ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
-golines: golines.root
-endif
-ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
-golines: $(addprefix golines.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
-endif
-
-.PHONY: golines.%
-golines.%: ## Runs golines for a specific module
-golines.%:
-	$(if $(filter-out root,$*),cd $* && )golines -w --ignored-dirs external $$(GOWORK=off go list -tags e2e ./... | sed "s|^$$(GOWORK=off go list -m)|.|")
 
 .PHONY: mod-tidy
 mod-tidy: ## Run go mod tidy for all modules
@@ -223,7 +223,7 @@ go-generate: ; $(info $(M) running go generate)
 	yq --inplace \
 	  --from-file=hack/update-webhook-configurations.yq \
 	  charts/cluster-api-runtime-extensions-nutanix/templates/webhooks.yaml
-	$(MAKE) go-fix golines
+	$(MAKE) go-fix fmt
 	$(MAKE) configure-csi-providers
 	# Update anyOf schemas for resource.Quantity fields to only accept strings
 	# until CAPI ClusterClass variables support anyOf schemas.
@@ -233,7 +233,7 @@ go-generate: ; $(info $(M) running go generate)
 	    {} \;
 
 .PHONY: govulncheck
-govulncheck: ## Runs go fix for all modules in repository
+govulncheck: ## Runs govulncheck for all modules in repository
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
 govulncheck: govulncheck.root
 endif
@@ -242,7 +242,7 @@ govulncheck: $(addprefix govulncheck.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 
 .PHONY: govulncheck.%
-govulncheck.%: ## Runs golangci-lint for a specific module
+govulncheck.%: ## Runs govulncheck for a specific module
 govulncheck.%: ; $(info $(M) running govulncheck on $* module)
 	$(if $(filter-out root .,$*),cd $* && )govulncheck ./...
 

@@ -272,11 +272,11 @@ func (e *Environment) start(ctx context.Context) {
 
 	go func() {
 		fmt.Println("Starting the test environment manager")
-		if err := e.Manager.Start(ctx); err != nil {
+		if err := e.Start(ctx); err != nil {
 			panic(fmt.Sprintf("Failed to start the test environment manager: %v", err))
 		}
 	}()
-	<-e.Manager.Elected()
+	<-e.Elected()
 }
 
 // stop stops the test environment.
@@ -301,7 +301,7 @@ func (e *Environment) CreateKubeconfigSecret(
 func (e *Environment) Cleanup(ctx context.Context, objs ...client.Object) error {
 	errs := []error{}
 	for _, o := range objs {
-		err := e.Client.Delete(ctx, o)
+		err := e.Delete(ctx, o)
 		if apierrors.IsNotFound(err) {
 			continue
 		}
@@ -364,7 +364,7 @@ func (e *Environment) CreateAndWait(
 	obj client.Object,
 	opts ...client.CreateOption,
 ) error {
-	if err := e.Client.Create(ctx, obj, opts...); err != nil {
+	if err := e.Create(ctx, obj, opts...); err != nil {
 		return err
 	}
 
@@ -410,7 +410,7 @@ func (e *Environment) PatchAndWait(
 	// Store old resource version, empty string if not found.
 	oldResourceVersion := objCopy.GetResourceVersion()
 
-	if err := e.Client.Patch(ctx, obj, client.Apply, opts...); err != nil {
+	if err := e.Patch(ctx, obj, client.Apply, opts...); err != nil {
 		return err
 	}
 
@@ -456,7 +456,7 @@ func (e *Environment) CreateNamespace(
 			Labels:       labels,
 		},
 	}
-	if err := e.Client.Create(ctx, ns); err != nil {
+	if err := e.Create(ctx, ns); err != nil {
 		return nil, err
 	}
 

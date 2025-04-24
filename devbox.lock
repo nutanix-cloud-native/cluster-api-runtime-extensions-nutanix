@@ -900,54 +900,6 @@
         }
       }
     },
-    "golines@latest": {
-      "last_modified": "2025-03-28T03:27:31Z",
-      "resolved": "github:NixOS/nixpkgs/398f1f1892a56d1e058d21b0d279512fcc181d3e#golines",
-      "source": "devbox-search",
-      "version": "0.12.2",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/khyyl3cwf0wym3vrkndszi6i8471ni0c-golines-0.12.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/khyyl3cwf0wym3vrkndszi6i8471ni0c-golines-0.12.2"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/9wszy7gdcl5zz7wh3fra8pxnwax61yci-golines-0.12.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/9wszy7gdcl5zz7wh3fra8pxnwax61yci-golines-0.12.2"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/1skn4iy5y568xi4mqcjzkf3w468zc19c-golines-0.12.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/1skn4iy5y568xi4mqcjzkf3w468zc19c-golines-0.12.2"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/fn67csd7s4rm621ixay1rqqsp39jv2p8-golines-0.12.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/fn67csd7s4rm621ixay1rqqsp39jv2p8-golines-0.12.2"
-        }
-      }
-    },
     "gomplate@latest": {
       "last_modified": "2025-03-23T05:31:05Z",
       "resolved": "github:NixOS/nixpkgs/dd613136ee91f67e5dba3f3f41ac99ae89c5406b#gomplate",

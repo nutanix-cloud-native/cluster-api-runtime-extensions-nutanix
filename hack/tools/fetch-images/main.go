@@ -174,7 +174,13 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 			if err != nil {
 				return nil, err
 			}
-			awsImages, found, err := unstructured.NestedStringMap(values, "hooks", "ccm", "aws", "k8sMinorVersionToCCMVersion")
+			awsImages, found, err := unstructured.NestedStringMap(
+				values,
+				"hooks",
+				"ccm",
+				"aws",
+				"k8sMinorVersionToCCMVersion",
+			)
 			if !found {
 				return images, fmt.Errorf("failed to find k8sMinorVersionToCCMVersion from file %s",
 					filepath.Join(carenChartDirectory, "values.yaml"))

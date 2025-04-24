@@ -228,7 +228,7 @@ func waitToBeReady(
 			Reader: client,
 			Target: hcp.DeepCopy(),
 			Check: func(_ context.Context, obj *caaphv1.HelmChartProxy) (bool, error) {
-				if obj.ObjectMeta.Generation != obj.Status.ObservedGeneration {
+				if obj.Generation != obj.Status.ObservedGeneration {
 					return false, nil
 				}
 				return conditions.IsTrue(obj, caaphv1.HelmReleaseProxiesReadyCondition), nil

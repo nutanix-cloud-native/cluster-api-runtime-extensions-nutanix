@@ -146,11 +146,11 @@ func EnsureNamespaceWithMetadata(ctx context.Context,
 
 // EnsureNamespace will create the namespace if it does not exist.
 func EnsureNamespace(ctx context.Context, c ctrlclient.Client, ns *corev1.Namespace) error {
-	if ns.TypeMeta.APIVersion == "" {
-		ns.TypeMeta.APIVersion = corev1.SchemeGroupVersion.String()
+	if ns.APIVersion == "" {
+		ns.APIVersion = corev1.SchemeGroupVersion.String()
 	}
-	if ns.TypeMeta.Kind == "" {
-		ns.TypeMeta.Kind = "Namespace"
+	if ns.Kind == "" {
+		ns.Kind = "Namespace"
 	}
 	err := client.ServerSideApply(ctx, c, ns)
 	if err != nil {

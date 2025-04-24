@@ -1,14 +1,12 @@
-# Copyright 2021-2023 Nutanix. All rights reserved.
+# Copyright 2025 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+version: "2"
 run:
-  timeout: 10m
   build-tags:
     - e2e
-  go: "1.23"
-
 linters:
-  disable-all: true
+  default: none
   enable:
     - containedctx
     - contextcheck
@@ -17,23 +15,19 @@ linters:
     - errchkjson
     - errname
     - gochecknoinits
-    - gci
     - goconst
     - gocritic
     - gocyclo
     - godot
-    - gofumpt
     - gosec
-    - gosimple
     - govet
-    - ineffassign
     - importas
+    - ineffassign
     - lll
     - misspell
     - nolintlint
     - prealloc
     - staticcheck
-    - stylecheck
     - testifylint
     - thelper
     - tparallel
@@ -42,84 +36,98 @@ linters:
     - unused
     - usetesting
     - whitespace
-
-linters-settings:
-  depguard:
+  settings:
+    depguard:
+      rules:
+        main:
+          list-mode: lax
+          deny:
+            - pkg: k8s.io/kubernetes
+              desc: do not use k8s.io/kubernetes directly
+            - pkg: sigs.k8s.io/cluster-api-provider-
+              desc: do not use CAPI providers directly, instead vendor necessary APIs
+            - pkg: sigs.k8s.io/cluster-api-addon-provider-
+              desc: do not use CAPI providers directly, instead vendor necessary APIs
+    errcheck:
+      exclude-functions:
+        - encoding/json.Marshal
+        - encoding/json.MarshalIndent
+    errchkjson:
+      check-error-free-encoding: true
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    importas:
+      alias:
+        - pkg: sigs.k8s.io/cluster-api/api/v1beta1
+          alias: clusterv1
+      no-unaliased: false
+    lll:
+      line-length: 120
+    staticcheck:
+      dot-import-whitelist:
+        - github.com/onsi/ginkgo/v2
+        - github.com/onsi/gomega
+    testifylint:
+      enable-all: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      main:
-        list-mode: lax # Allow everything unless explicitly denied below.
-        deny:
-          - pkg: k8s.io/kubernetes
-            desc: "do not use k8s.io/kubernetes directly"
-          - pkg: sigs.k8s.io/cluster-api-provider-
-            desc: "do not use CAPI providers directly, instead vendor necessary APIs"
-          - pkg: sigs.k8s.io/cluster-api-addon-provider-
-            desc: "do not use CAPI providers directly, instead vendor necessary APIs"
-  errcheck:
-    exclude-functions:
-      - encoding/json.Marshal
-      - encoding/json.MarshalIndent
-  errchkjson:
-    check-error-free-encoding: true
-  gci:
-    sections:
-      - Standard
-      - Default
-      - Prefix(github.com/nutanix-cloud-native)
-      - Prefix(github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix)
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-  gofumpt:
-    extra-rules: true
-  importas:
-    no-unaliased: false
-    alias:
-      - pkg: "sigs.k8s.io/cluster-api/api/v1beta1"
-        alias: clusterv1
-  lll:
-    line-length: 120
-  stylecheck:
-    # https://staticcheck.io/docs/configuration/options/#dot_import_whitelist
-    dot-import-whitelist:
-      - github.com/onsi/ginkgo/v2
-      - github.com/onsi/gomega
-  testifylint:
-    enable-all: true
-
-issues:
-  exclude-dirs:
-    # Although this is actually in api/external, api is a go module
-    # and so need to specify the dir relative to the module root.
-    - external
-  exclude-rules:
-    # ignore errcheck for flags.Parse (it is expected that we flag.ExitOnError)
-    # ignore response.WriteError as it always returns the err it was passed
-    - source: "flags.Parse|response.WriteError"
-      linters:
-        - errcheck
-    - source: "// \\+kubebuilder:"
-      linters:
-        - lll
-    # Idiomatic to use pass holderRef by value
-    - text: "hugeParam: holderRef is heavy"
-      linters:
-        - gocritic
-    # Admission request interface is defined by k8s
-    - path: pkg/webhook
-      text: "hugeParam: req is heavy"
-      linters:
-        - gocritic
-    # This is not a problem in tests
-    - path: internal/test/envtest
-      text: "hugeParam: webhookInstallOptions is heavy"
-      linters:
-        - gocritic
-    - path: internal/test/envtest
-      text: "hugeParam: input is heavy"
-      linters:
-        - gocritic
+      - linters:
+          - errcheck
+        source: flags.Parse|response.WriteError
+      - linters:
+          - lll
+        source: '// \+kubebuilder:'
+      - linters:
+          - gocritic
+        text: 'hugeParam: holderRef is heavy'
+      - linters:
+          - gocritic
+        path: pkg/webhook
+        text: 'hugeParam: req is heavy'
+      - linters:
+          - gocritic
+        path: internal/test/envtest
+        text: 'hugeParam: webhookInstallOptions is heavy'
+      - linters:
+          - gocritic
+        path: internal/test/envtest
+        text: 'hugeParam: input is heavy'
+    paths:
+      - external
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofumpt
+    - golines
+  settings:
+    gci:
+      sections:
+        - Standard
+        - Default
+        - Prefix(github.com/nutanix-cloud-native)
+        - Prefix(github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix)
+    gofumpt:
+      extra-rules: true
+    golines:
+      max-len: 120
+  exclusions:
+    generated: lax
+    paths:
+      - external
+      - third_party$
+      - builtin$
+      - examples$

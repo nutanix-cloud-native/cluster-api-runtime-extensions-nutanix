@@ -15,7 +15,6 @@
     "go@latest",
     "gojq@latest",
     "golangci-lint@latest",
-    "golines@latest",
     "gomplate@latest",
     "goreleaser@latest",
     "gotestsum@latest",

@@ -60,7 +60,7 @@ func CreateStorageClass(
 		AllowVolumeExpansion: ptr.To(storageClassConfig.AllowExpansion),
 	}
 	if isDefault {
-		sc.ObjectMeta.Annotations = defaultStorageClassMap
+		sc.Annotations = defaultStorageClassMap
 	}
 	return &sc
 }
