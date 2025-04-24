@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.28.2 (2025-04-24)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* build(deps): Update CAPX to v1.6.1 by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1106
+* fix: update addon versions by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1107
+### Other Changes
+* ci: Update Kubernetes versions for e2e tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1111
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.28.1...v0.28.2
+
 ## 0.28.1 (2025-04-14)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
