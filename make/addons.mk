@@ -91,4 +91,4 @@ list-images:
 	  -chart-directory=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/ \
 	  -helm-chart-configmap=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml \
 	  -caren-version=$(CAREN_VERSION) \
-	  -additional-yaml-files=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/templates/virtual-ip/kube-vip/manifests/kube-vip-configmap.yaml
+	  -additional-yaml-files=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/nutanix-cluster-class.yaml
