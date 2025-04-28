@@ -24,8 +24,6 @@ patches:
     - op: "replace"
       path: "/spec/topology/class"
       value: "docker-quick-start"
-    - op: "remove"
-      path: "/spec/topology/workers/machinePools"
 - target:
     kind: Cluster
   path: ../../../patches/initialize-variables.yaml
