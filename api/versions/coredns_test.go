@@ -24,13 +24,13 @@ func TestReturnsCorrectCoreDNSVersionForValidKubernetesVersionWithoutVPrefix(t *
 func TestReturnsFalseForInvalidKubernetesVersion(t *testing.T) {
 	version, found := GetCoreDNSVersion("v2.99")
 	assert.False(t, found)
-	assert.Equal(t, "", version)
+	assert.Empty(t, version)
 }
 
 func TestReturnsFalseForMalformedKubernetesVersion(t *testing.T) {
 	version, found := GetCoreDNSVersion("invalid-version")
 	assert.False(t, found)
-	assert.Equal(t, "", version)
+	assert.Empty(t, version)
 }
 
 func TestReturnsCorrectMappingForGetKubernetesToCoreDNSVersionMap(t *testing.T) {

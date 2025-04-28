@@ -61,7 +61,7 @@ type TestEnvironment struct {
 func (t *TestEnvironment) Cleanup(ctx context.Context, objs ...client.Object) error {
 	errs := []error{}
 	for _, o := range objs {
-		err := t.Client.Delete(ctx, o)
+		err := t.Delete(ctx, o)
 		if apierrors.IsNotFound(err) {
 			continue
 		}
@@ -83,7 +83,7 @@ func (t *TestEnvironment) CreateNamespace(
 			},
 		},
 	}
-	if err := t.Client.Create(ctx, ns); err != nil {
+	if err := t.Create(ctx, ns); err != nil {
 		return nil, err
 	}
 
@@ -136,19 +136,19 @@ func (t *TestEnvironmentConfiguration) Build() (*TestEnvironment, error) {
 // If a test is writing an object, they are not immediately available to read since controller caches
 // are not synchronized yet.
 func (t *TestEnvironment) GetK8sClient() (client.Client, error) {
-	return client.New(t.Manager.GetConfig(), client.Options{Scheme: scheme.Scheme})
+	return client.New(t.GetConfig(), client.Options{Scheme: scheme.Scheme})
 }
 
 // GetK8sClientWithScheme - same as GetK8sClient but can pass in a configurable scheme.
 func (t *TestEnvironment) GetK8sClientWithScheme(
 	clientScheme *runtime.Scheme,
 ) (client.Client, error) {
-	return client.New(t.Manager.GetConfig(), client.Options{Scheme: clientScheme})
+	return client.New(t.GetConfig(), client.Options{Scheme: clientScheme})
 }
 
 // StartManager starts the test controller against the local API server.
 func (t *TestEnvironment) StartManager(ctx context.Context) error {
-	return t.Manager.Start(ctx)
+	return t.Start(ctx)
 }
 
 // Stop stops the test environment.

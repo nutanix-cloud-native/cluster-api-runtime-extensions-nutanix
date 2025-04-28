@@ -25,7 +25,11 @@ import (
 var (
 	// Command-line flags
 	outputFile           = flag.String("output", "api/versions/coredns.go", "Output file path")
-	minKubernetesVersion = flag.String("min-kubernetes-version", "v1.22.0", "Minimum Kubernetes version to include (semver format)")
+	minKubernetesVersion = flag.String(
+		"min-kubernetes-version",
+		"v1.22.0",
+		"Minimum Kubernetes version to include (semver format)",
+	)
 )
 
 const (
@@ -163,7 +167,8 @@ func fetchKubernetesVersions(minVersion semver.Version) ([]semver.Version, error
 
 				// Store the highest patch version for each minor version
 				minorVersion := fmt.Sprintf("v%d.%d", v.Major, v.Minor)
-				if existingPatchVersionForMinor, exists := minorVersionToPatchVersion[minorVersion]; !exists || v.GT(existingPatchVersionForMinor) {
+				if existingPatchVersionForMinor, exists := minorVersionToPatchVersion[minorVersion]; !exists ||
+					v.GT(existingPatchVersionForMinor) {
 					minorVersionToPatchVersion[minorVersion] = v
 				}
 			}
@@ -229,7 +234,12 @@ func fetchCoreDNSVersions(versions []semver.Version) (map[string]string, error) 
 		// Parse and normalize CoreDNS version
 		v, err := semver.ParseTolerant(coreDNSVersionStr)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Invalid CoreDNS version '%s' for Kubernetes %s\n", coreDNSVersionStr, k8sVersion)
+			fmt.Fprintf(
+				os.Stderr,
+				"Warning: Invalid CoreDNS version '%s' for Kubernetes %s\n",
+				coreDNSVersionStr,
+				k8sVersion,
+			)
 			continue
 		}
 

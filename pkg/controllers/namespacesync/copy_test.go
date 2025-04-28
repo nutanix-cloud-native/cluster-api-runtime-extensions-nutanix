@@ -54,7 +54,7 @@ func TestDoNotUpdateIfTargetExists(t *testing.T) {
 	}()
 
 	source := &clusterv1.ClusterClass{}
-	err = env.Client.Get(
+	err = env.Get(
 		ctx,
 		client.ObjectKey{
 			Namespace: sourceClusterClassNamespace,
