@@ -106,7 +106,10 @@ func TestMain(m *testing.M) {
 						Namespace: metav1.NamespaceDefault,
 					},
 					Spec: clusterv1.ClusterSpec{
-						Topology: &clusterv1.Topology{},
+						Topology: &clusterv1.Topology{
+							Class:   "dummy-class",
+							Version: "v1.29.0",
+						},
 					},
 				},
 			),
