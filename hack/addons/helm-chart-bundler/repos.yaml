@@ -66,3 +66,8 @@ repositories:
     charts:
       tigera-operator:
       - v3.29.1
+  vsphere-cpi:
+    repoURL: https://kubernetes.github.io/cloud-provider-vsphere
+    charts:
+      vsphere-cpi:
+      - v1.32.1

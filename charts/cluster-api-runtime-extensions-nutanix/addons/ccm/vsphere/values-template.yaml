@@ -1,0 +1,14 @@
+config:
+  enabled: true
+  name: vsphere-cloud-config
+  vcenter: vcenter.infra.nkp.sh #{{ .VcenterServer }}
+  datacenter: dc1  #{{ .VSphereDatacenter }}
+  region: ""
+  zone: ""
+  thumbprint: "" #{{ .VcenterThumbprint }}
+  secret:
+    # Specifies whether Secret should be created from config values
+    create: false
+    # The name of the Secret referred to in the vsphere-cloud-config ConfigMap
+    # If your Kubernetes platform provides this secret, set create to false and adjust the secret name
+    name: "cloud-provider-vsphere-credentials"

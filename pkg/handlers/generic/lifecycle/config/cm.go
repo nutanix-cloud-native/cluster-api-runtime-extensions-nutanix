@@ -24,6 +24,7 @@ const (
 	NutanixStorageCSI       Component = "nutanix-storage-csi"
 	SnapshotController      Component = "snapshot-controller"
 	NutanixCCM              Component = "nutanix-ccm"
+	VsphereCCM              Component = "vsphere-ccm"
 	MetalLB                 Component = "metallb"
 	LocalPathProvisionerCSI Component = "local-path-provisioner-csi"
 	AWSEBSCSI               Component = "aws-ebs-csi"

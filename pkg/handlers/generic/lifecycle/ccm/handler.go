@@ -145,6 +145,8 @@ func (c *CCMHandler) apply(
 		handler = c.ProviderHandler[v1alpha1.CCMProviderAWS]
 	case strings.Contains(strings.ToLower(infraKind), v1alpha1.CCMProviderNutanix):
 		handler = c.ProviderHandler[v1alpha1.CCMProviderNutanix]
+	case strings.Contains(strings.ToLower(infraKind), v1alpha1.CCMProviderVsphere):
+		handler = c.ProviderHandler[v1alpha1.CCMProviderVsphere]
 	default:
 		log.Info(fmt.Sprintf("No CCM handler provided for infra kind %s", infraKind))
 		return

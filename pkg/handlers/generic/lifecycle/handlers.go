@@ -14,6 +14,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm"
 	awsccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/aws"
 	nutanixccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/nutanix"
+	vsphereccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/vsphere"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/clusterautoscaler"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/calico"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/cilium"
@@ -41,6 +42,7 @@ type Handlers struct {
 	nutanixCSIConfig         *nutanixcsi.Config
 	awsccmConfig             *awsccm.AWSCCMConfig
 	nutanixCCMConfig         *nutanixccm.Config
+	vsphereCCMConfig         *vsphereccm.Config
 	metalLBConfig            *metallb.Config
 	localPathCSIConfig       *localpath.Config
 	snapshotControllerConfig *snapshotcontroller.Config
@@ -62,6 +64,7 @@ func New(
 		awsccmConfig:             awsccm.NewConfig(globalOptions),
 		nutanixCSIConfig:         nutanixcsi.NewConfig(globalOptions),
 		nutanixCCMConfig:         &nutanixccm.Config{GlobalOptions: globalOptions},
+		vsphereCCMConfig:         &vsphereccm.Config{GlobalOptions: globalOptions},
 		metalLBConfig:            &metallb.Config{GlobalOptions: globalOptions},
 		localPathCSIConfig:       localpath.NewConfig(globalOptions),
 		snapshotControllerConfig: snapshotcontroller.NewConfig(globalOptions),
@@ -97,6 +100,11 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		v1alpha1.CCMProviderNutanix: nutanixccm.New(
 			mgr.GetClient(),
 			h.nutanixCCMConfig,
+			helmChartInfoGetter,
+		),
+		v1alpha1.CCMProviderVsphere: vsphereccm.New(
+			mgr.GetClient(),
+			h.vsphereCCMConfig,
 			helmChartInfoGetter,
 		),
 	}
@@ -216,6 +224,7 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.snapshotControllerConfig.AddFlags("csi.snapshot-controller", flagSet)
 	h.awsccmConfig.AddFlags("ccm.aws", pflag.CommandLine)
 	h.nutanixCCMConfig.AddFlags("ccm.nutanix", flagSet)
+	h.vsphereCCMConfig.AddFlags("ccm.vsphere", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
 	h.cosiControllerConfig.AddFlags("cosi.controller", flagSet)
 }

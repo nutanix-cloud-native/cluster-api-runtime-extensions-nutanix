@@ -70,6 +70,11 @@ hooks:
         defaultValueTemplateConfigMap:
           create: true
           name: default-nutanix-ccm-helm-values-template
+    vsphere:
+      helmAddonStrategy:
+        defaultValueTemplateConfigMap:
+          create: true
+          name: default-vsphere-ccm-helm-values-template
     aws:
       k8sMinorVersionToCCMVersion:
         "1.27": "v1.27.10"

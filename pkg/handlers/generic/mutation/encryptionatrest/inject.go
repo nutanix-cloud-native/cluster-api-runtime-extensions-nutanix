@@ -36,8 +36,8 @@ import (
 const (
 	// VariableName is the external patch variable name.
 	VariableName                        = "encryptionAtRest"
-	SecretKeyForEtcdEncryption          = "config"
-	defaultEncryptionSecretNameTemplate = "%s-encryption-config" //nolint:gosec // Does not contain hard coded credentials.
+	SecretKeyForEtcdEncryption          = "value"
+	defaultEncryptionSecretNameTemplate = "%s-etcd-encryption-config" //nolint:gosec // Does not contain hard coded credentials.
 	encryptionConfigurationOnRemote     = "/etc/kubernetes/pki/encryptionconfig.yaml"
 	apiServerEncryptionConfigArg        = "encryption-provider-config"
 )

@@ -56,6 +56,7 @@ const (
 const (
 	CCMProviderAWS     = "aws"
 	CCMProviderNutanix = "nutanix"
+	CCMProviderVsphere = "vsphere"
 )
 
 type AWSAddons struct {

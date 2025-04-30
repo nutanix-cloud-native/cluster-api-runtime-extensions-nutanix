@@ -7,8 +7,11 @@ kind: KubeadmConfigTemplate
 metadata:
   annotations:
     caren.nutanix.com/version: v0.27.4
+    meta.helm.sh/release-name: cluster-api-runtime-extensions-nutanix
+    meta.helm.sh/release-namespace: default
   labels:
     cluster.x-k8s.io/provider: vsphere
+    app.kubernetes.io/managed-by: Helm
   name: vsphere-quickstart-kcfg-0
 spec:
   template:
@@ -18,7 +21,7 @@ spec:
           kubeletExtraArgs:
             cloud-provider: external
             eviction-hard: nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<15%,memory.available<100Mi,imagefs.inodesFree<10%
-            tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+#            tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
           name: '{{ ds.meta_data.hostname }}'
       postKubeadmCommands:
       - echo "after kubeadm call" > /var/log/postkubeadm.log
@@ -139,27 +142,27 @@ spec:
           apiServer:
             extraArgs:
               cloud-provider: external
-              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+ #             tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
           controllerManager:
             extraArgs:
               cloud-provider: external
-              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+ #             tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
           scheduler:
-            extraArgs:
-              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+            extraArgs: {}
+ #             tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
         files: []
         initConfiguration:
           nodeRegistration:
             kubeletExtraArgs:
               cloud-provider: external
               eviction-hard: nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<15%,memory.available<100Mi,imagefs.inodesFree<10%
-              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+#              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
         joinConfiguration:
           nodeRegistration:
             kubeletExtraArgs:
               cloud-provider: external
               eviction-hard: nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<15%,memory.available<100Mi,imagefs.inodesFree<10%
-              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+#              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
         postKubeadmCommands:
         - echo export KUBECONFIG=/etc/kubernetes/admin.conf >> /root/.bashrc
         - echo "after kubeadm call" > /var/log/postkubeadm.log
@@ -169,6 +172,7 @@ spec:
         - echo "::1         ipv6-localhost ipv6-loopback" >/etc/hosts
         - echo "127.0.0.1   localhost" >>/etc/hosts
         - echo "127.0.0.1   {{ ds.meta_data.hostname }}" >> /etc/hosts
+        - echo "{{ ds.meta_data.hostname }}" >/etc/hostname
         useExperimentalRetryJoin: true
         verbosity: 10
 ---
@@ -184,7 +188,7 @@ spec:
   template:
     spec:
       controlPlaneEndpoint:
-        host: 10.22.195.147
+        host: 10.22.195.1
         port: 6443
       server: vcenter.infra.nkp.sh
       identityRef:
@@ -216,7 +220,7 @@ spec:
       powerOffMode: hard
       resourcePool: users-ksphere-platform
       server: vcenter.infra.nkp.sh
-      template: konvoy-ubuntu-2204-1.31.4-20250403174550
+      template: konvoy-ubuntu-2204-release-1.32.3-20250418190535
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: VSphereMachineTemplate
@@ -243,4 +247,4 @@ spec:
       powerOffMode: hard
       resourcePool: users-ksphere-platform
       server: vcenter.infra.nkp.sh
-      template: konvoy-ubuntu-2204-1.31.4-20250403174550
+      template: konvoy-ubuntu-2204-release-1.32.3-20250418190535

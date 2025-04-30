@@ -20,6 +20,8 @@ type ClusterConfigSpec struct {
 
 	Nutanix *carenv1.NutanixSpec `json:"nutanix,omitempty"`
 
+	Vsphere *carenv1.VSphereSpec `json:"vsphere,omitempty"`
+
 	carenv1.GenericClusterConfigSpec `json:",inline"`
 
 	Addons *Addons `json:"addons,omitempty"`

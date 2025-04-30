@@ -55,6 +55,10 @@ data:
     ChartName: tigera-operator
     ChartVersion: v3.29.1
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}'
+  vsphere-ccm: |
+    ChartName: vsphere-cpi
+    ChartVersion: v1.32.1
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/cloud-provider-vsphere{{ end }}'
 kind: ConfigMap
 metadata:
   creationTimestamp: null
