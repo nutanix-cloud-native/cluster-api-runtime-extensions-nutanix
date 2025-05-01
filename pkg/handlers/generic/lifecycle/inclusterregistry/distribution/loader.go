@@ -16,9 +16,7 @@ import (
 )
 
 const (
-	namespace         = DefaultHelmReleaseNamespace
-	podName           = "registry-loader"
-	waitContainerName = "wait"
+	namespace = DefaultHelmReleaseNamespace
 )
 
 var (
@@ -83,23 +81,21 @@ func BundleLoaderObjects(input *LoaderInput) ([]unstructured.Unstructured, error
 		ClusterName       string
 		KubernetesVersion string
 
-		DestinationNamespace     string
-		DestinationPodName       string
-		DestinationContainerName string
+		DestinationNamespace string
+		DestinationPodName   string
 
 		RegistryAddress string
 
 		BundleFiles []v1alpha1.RegistryBundleVolumeSource
 	}{
-		JobName:                  copierJobNameForCluster(input.Cluster),
-		ConfigMapName:            loaderConfigMapNameForCluster(input.Cluster),
-		ClusterName:              input.Cluster.Name,
-		KubernetesVersion:        input.Cluster.Spec.Topology.Version,
-		DestinationNamespace:     namespace,
-		DestinationPodName:       podName,
-		DestinationContainerName: waitContainerName,
-		RegistryAddress:          input.RegistryAddress,
-		BundleFiles:              input.Config.BundleLoader.FromVolumes,
+		JobName:              copierJobNameForCluster(input.Cluster),
+		ConfigMapName:        loaderConfigMapNameForCluster(input.Cluster),
+		ClusterName:          input.Cluster.Name,
+		KubernetesVersion:    input.Cluster.Spec.Topology.Version,
+		DestinationNamespace: namespace,
+		DestinationPodName:   "in-cluster-docker-registry-0",
+		RegistryAddress:      input.RegistryAddress,
+		BundleFiles:          input.Config.BundleLoader.FromVolumes,
 	}
 
 	err := loaderObjsTemplate.Execute(&b, templateInput)
