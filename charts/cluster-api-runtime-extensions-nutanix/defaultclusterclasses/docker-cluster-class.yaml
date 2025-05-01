@@ -80,7 +80,16 @@ spec:
   template:
     spec:
       kubeadmConfigSpec:
-        clusterConfiguration: {}
+        clusterConfiguration:
+          apiServer:
+            extraArgs:
+              profiling: "false"
+          controllerManager:
+            extraArgs:
+              profiling: "false"
+          scheduler:
+            extraArgs:
+              profiling: "false"
         initConfiguration:
           nodeRegistration: {}
         joinConfiguration:

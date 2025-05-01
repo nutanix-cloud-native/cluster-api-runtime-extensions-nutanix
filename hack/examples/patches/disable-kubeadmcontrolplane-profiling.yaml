@@ -1,0 +1,21 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlaneTemplate
+metadata:
+  name: not-used
+spec:
+  template:
+    spec:
+      kubeadmConfigSpec:
+        clusterConfiguration:
+          apiServer:
+            extraArgs:
+              profiling: "false"
+          controllerManager:
+            extraArgs:
+              profiling: "false"
+          scheduler:
+            extraArgs:
+              profiling: "false"

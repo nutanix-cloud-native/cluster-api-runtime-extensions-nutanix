@@ -60,7 +60,13 @@ patches:
         path: "/spec/template/spec/instanceType"
         value: "PLACEHOLDER"
   - target:
-        kind: AWSMachineTemplate
+      kind: AWSMachineTemplate
     patch: |-
       - op: "remove"
         path: "/spec/template/spec/iamInstanceProfile"
+
+  # BEGIN CIS patches
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/disable-kubeadmcontrolplane-profiling.yaml
+  # END CIS patches

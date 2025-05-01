@@ -85,9 +85,14 @@ spec:
           apiServer:
             extraArgs:
               cloud-provider: external
+              profiling: "false"
           controllerManager:
             extraArgs:
               cloud-provider: external
+              profiling: "false"
+          scheduler:
+            extraArgs:
+              profiling: "false"
         initConfiguration:
           nodeRegistration:
             kubeletExtraArgs:
