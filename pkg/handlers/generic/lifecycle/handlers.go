@@ -25,6 +25,8 @@ import (
 	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/snapshotcontroller"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registrymirror"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registrymirror/distribution"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/servicelbgc"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer/metallb"
@@ -45,6 +47,7 @@ type Handlers struct {
 	localPathCSIConfig       *localpath.Config
 	snapshotControllerConfig *snapshotcontroller.Config
 	cosiControllerConfig     *cosi.ControllerConfig
+	distributionConfig       *distribution.Config
 }
 
 func New(
@@ -66,6 +69,7 @@ func New(
 		localPathCSIConfig:       localpath.NewConfig(globalOptions),
 		snapshotControllerConfig: snapshotcontroller.NewConfig(globalOptions),
 		cosiControllerConfig:     cosi.NewControllerConfig(globalOptions),
+		distributionConfig:       &distribution.Config{GlobalOptions: globalOptions},
 	}
 }
 
@@ -100,6 +104,13 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 			helmChartInfoGetter,
 		),
 	}
+	registryMirrorHandlers := map[string]registrymirror.RegistryMirrorProvider{
+		v1alpha1.RegistryMirrorProviderDistribution: distribution.New(
+			mgr.GetClient(),
+			h.distributionConfig,
+			helmChartInfoGetter,
+		),
+	}
 	serviceLoadBalancerHandlers := map[string]serviceloadbalancer.ServiceLoadBalancerProvider{
 		v1alpha1.ServiceLoadBalancerProviderMetalLB: metallb.New(
 			mgr.GetClient(),
@@ -117,6 +128,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		snapshotcontroller.New(mgr.GetClient(), h.snapshotControllerConfig, helmChartInfoGetter),
 		cosi.New(mgr.GetClient(), h.cosiControllerConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
+		registrymirror.New(mgr.GetClient(), registryMirrorHandlers),
 		// The order of the handlers in the list is important and are called consecutively.
 		// The MetalLB provider may be configured to create a IPAddressPool on the remote cluster.
 		// However, the MetalLB provider also has a webhook that validates IPAddressPool requests.
@@ -218,4 +230,5 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.nutanixCCMConfig.AddFlags("ccm.nutanix", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
 	h.cosiControllerConfig.AddFlags("cosi.controller", flagSet)
+	h.distributionConfig.AddFlags("registry.distribution", flagSet)
 }
