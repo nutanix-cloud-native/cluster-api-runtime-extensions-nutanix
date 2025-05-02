@@ -36,6 +36,7 @@ spec:
                   default: {}
             snapshotController: {}
           nfd: {}
+          registryMirror: {}
           serviceLoadBalancer:
             configuration:
               addressRanges:
