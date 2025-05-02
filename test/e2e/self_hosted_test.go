@@ -47,13 +47,13 @@ var _ = Describe("Self-hosted", Serial, func() {
 							default:
 								Fail("unknown addon strategy: " + addonStrategy)
 							}
-							flavour := fmt.Sprintf(
+							flavor := fmt.Sprintf(
 								"topology-%s-%s",
 								strings.ToLower(cniProvider),
 								strategy,
 							)
 							Context(
-								flavour,
+								flavor,
 								func() {
 									framework.SelfHostedSpec(
 										ctx,
@@ -83,7 +83,7 @@ var _ = Describe("Self-hosted", Serial, func() {
 												BootstrapClusterProxy:  bootstrapClusterProxy,
 												ArtifactFolder:         artifactFolder,
 												SkipCleanup:            skipCleanup,
-												Flavor:                 flavour,
+												Flavor:                 flavor,
 												InfrastructureProvider: ptr.To(lowercaseProvider),
 												ClusterName: ptr.To(clusterNamePrefix +
 													util.RandomString(
@@ -120,23 +120,23 @@ var _ = Describe("Self-hosted", Serial, func() {
 															ClusterProxy:    proxy,
 															WorkloadCluster: workloadCluster,
 															DeploymentIntervals: e2eConfig.GetIntervals(
-																flavour,
+																flavor,
 																"wait-deployment",
 															),
 															DaemonSetIntervals: e2eConfig.GetIntervals(
-																flavour,
+																flavor,
 																"wait-daemonset",
 															),
 															HelmReleaseIntervals: e2eConfig.GetIntervals(
-																flavour,
+																flavor,
 																"wait-helmrelease",
 															),
 															ClusterResourceSetIntervals: e2eConfig.GetIntervals(
-																flavour,
+																flavor,
 																"wait-clusterresourceset",
 															),
 															ResourceIntervals: e2eConfig.GetIntervals(
-																flavour,
+																flavor,
 																"wait-resource",
 															),
 														},
@@ -148,7 +148,7 @@ var _ = Describe("Self-hosted", Serial, func() {
 															WorkloadCluster: workloadCluster,
 															ClusterProxy:    proxy,
 															DeploymentIntervals: e2eConfig.GetIntervals(
-																flavour,
+																flavor,
 																"wait-deployment",
 															),
 														},
@@ -159,7 +159,7 @@ var _ = Describe("Self-hosted", Serial, func() {
 															WorkloadCluster: workloadCluster,
 															ClusterProxy:    proxy,
 															DeploymentIntervals: e2eConfig.GetIntervals(
-																flavour,
+																flavor,
 																"wait-deployment",
 															),
 														},
