@@ -11,6 +11,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -22,6 +23,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	registrymirrorutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registrymirror/utils"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
@@ -62,8 +64,8 @@ func (h *globalMirrorPatchHandler) Mutate(
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
-	clusterKey ctrlclient.ObjectKey,
-	_ mutation.ClusterGetter,
+	_ ctrlclient.ObjectKey,
+	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
@@ -82,14 +84,24 @@ func (h *globalMirrorPatchHandler) Mutate(
 		v1alpha1.ImageRegistriesVariableName,
 	)
 
+	_, registryMirrorErr := variables.Get[v1alpha1.RegistryMirror](
+		vars,
+		v1alpha1.ClusterConfigVariableName,
+		[]string{"addons", v1alpha1.RegistryMirrorVariableName}...)
+
 	switch {
-	case variables.IsNotFoundError(imageRegistriesErr) && variables.IsNotFoundError(globalMirrorErr):
-		log.V(5).Info("Image Registry Credentials and Global Registry Mirror variable not defined")
+	case variables.IsNotFoundError(imageRegistriesErr) &&
+		variables.IsNotFoundError(globalMirrorErr) &&
+		variables.IsNotFoundError(registryMirrorErr):
+		log.V(5).
+			Info("Image Registry Credentials and Global Registry Mirror and Registry Mirror Addon variable not defined")
 		return nil
 	case imageRegistriesErr != nil && !variables.IsNotFoundError(imageRegistriesErr):
 		return imageRegistriesErr
 	case globalMirrorErr != nil && !variables.IsNotFoundError(globalMirrorErr):
 		return globalMirrorErr
+	case registryMirrorErr != nil && !variables.IsNotFoundError(registryMirrorErr):
+		return registryMirrorErr
 	}
 
 	var registriesWithOptionalCA []containerdConfig //nolint:prealloc // We don't know the size of the slice yet.
@@ -120,6 +132,26 @@ func (h *globalMirrorPatchHandler) Mutate(
 			registriesWithOptionalCA,
 			registryWithOptionalCredentials,
 		)
+	}
+	if registryMirrorErr == nil {
+		cluster, err := clusterGetter(ctx)
+		if err != nil {
+			log.Error(
+				err,
+				"failed to get cluster from Global Mirror mutation handler",
+			)
+			return err
+		}
+
+		registryConfig, err := containerdConfigFromRegistryMirrorAddon(
+			ctx,
+			h.client,
+			cluster,
+		)
+		if err != nil {
+			return err
+		}
+		registriesWithOptionalCA = append(registriesWithOptionalCA, registryConfig)
 	}
 
 	needConfiguration := needContainerdConfiguration(
@@ -232,6 +264,25 @@ func containerdConfigFromImageRegistry(
 	}
 
 	return configWithOptionalCACert, nil
+}
+
+func containerdConfigFromRegistryMirrorAddon(
+	_ context.Context,
+	_ ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+) (containerdConfig, error) {
+	serviceIP, err := registrymirrorutils.ServiceIPForCluster(cluster)
+	if err != nil {
+		return containerdConfig{}, fmt.Errorf("error getting service IP for the registry mirror addon: %w", err)
+	}
+
+	config := containerdConfig{
+		// FIXME: Generate a self-signed CA.
+		URL:    fmt.Sprintf("http://%s", serviceIP),
+		Mirror: true,
+	}
+
+	return config, nil
 }
 
 func generateFiles(

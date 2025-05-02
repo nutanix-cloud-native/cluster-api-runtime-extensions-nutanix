@@ -11,7 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -32,6 +36,10 @@ func TestMirrorsPatch(t *testing.T) {
 }
 
 var _ = Describe("Generate Global mirror patches", func() {
+	clientScheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+
 	patchGenerator := func() mutation.GeneratePatches {
 		// Always initialize the testEnv variable in the closure.
 		// This will allow ginkgo to initialize testEnv variable during test execution time.
@@ -40,7 +48,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 		// that are written by the tests.
 		// Test cases writes credentials secret that the mutator handler reads.
 		// Using direct client will enable reading it immediately.
-		client, err := testEnv.GetK8sClient()
+		client, err := testEnv.GetK8sClientWithScheme(clientScheme)
 		gomega.Expect(err).To(gomega.BeNil())
 		return mutation.NewMetaGeneratePatchesHandler("", client, NewPatch(client)).(mutation.GeneratePatches)
 	}
@@ -330,11 +338,69 @@ var _ = Describe("Generate Global mirror patches", func() {
 				},
 			},
 		},
+		{
+			Name: "files added in KubeadmControlPlaneTemplate for registry mirror addon",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.RegistryMirror{},
+					[]string{"addons", v1alpha1.RegistryMirrorVariableName}...,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+					ValueMatcher: gomega.HaveExactElements(
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
+						),
+					),
+				},
+			},
+		},
+		{
+			Name: "files added in KubeadmConfigTemplate for registry mirror addon",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.RegistryMirror{},
+					[]string{"addons", v1alpha1.RegistryMirrorVariableName}...,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					map[string]any{
+						"machineDeployment": map[string]any{
+							"class": names.SimpleNameGenerator.GenerateName("worker-"),
+						},
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/files",
+					ValueMatcher: gomega.HaveExactElements(
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/_default/hosts.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
+						),
+					),
+				},
+			},
+		},
 	}
 
 	// Create credentials secret before each test
 	BeforeEach(func(ctx SpecContext) {
-		client, err := helpers.TestEnv.GetK8sClient()
+		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		gomega.Expect(err).To(gomega.BeNil())
 		gomega.Expect(client.Create(
 			ctx,
@@ -343,12 +409,22 @@ var _ = Describe("Generate Global mirror patches", func() {
 		gomega.Expect(client.Create(
 			ctx,
 			newMirrorSecretWithoutCA(validMirrorNoCASecretName, request.Namespace),
+		)).To(gomega.BeNil())
+
+		gomega.Expect(client.Create(
+			ctx,
+			&clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: request.Namespace,
+				},
+			},
 		)).To(gomega.BeNil())
 	})
 
 	// Delete credentials secret after each test
 	AfterEach(func(ctx SpecContext) {
-		client, err := helpers.TestEnv.GetK8sClient()
+		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		gomega.Expect(err).To(gomega.BeNil())
 		gomega.Expect(client.Delete(
 			ctx,
@@ -357,6 +433,16 @@ var _ = Describe("Generate Global mirror patches", func() {
 		gomega.Expect(client.Delete(
 			ctx,
 			newMirrorSecretWithoutCA(validMirrorNoCASecretName, request.Namespace),
+		)).To(gomega.BeNil())
+
+		gomega.Expect(client.Delete(
+			ctx,
+			&clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: request.Namespace,
+				},
+			},
 		)).To(gomega.BeNil())
 	})
 
