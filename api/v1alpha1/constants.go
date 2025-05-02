@@ -28,6 +28,8 @@ const (
 	ClusterAutoscalerVariableName = "clusterAutoscaler"
 	// ServiceLoadBalancerVariableName is the Service LoadBalancer config patch variable name.
 	ServiceLoadBalancerVariableName = "serviceLoadBalancer"
+	// RegistryMirrorVariableName is the OCI registry config patch variable name.
+	RegistryMirrorVariableName = "registryMirror"
 
 	// GlobalMirrorVariableName is the global image registry mirror patch variable name.
 	GlobalMirrorVariableName = "globalImageRegistryMirror"
@@ -38,4 +40,7 @@ const (
 	DNSVariableName = "dns"
 
 	ClusterUUIDAnnotationKey = APIGroup + "/cluster-uuid"
+
+	// DefaultServicesSubnet defines default service subnet range used by kubeadm in CAPI
+	DefaultServicesSubnet = "10.96.0.0/12"
 )
