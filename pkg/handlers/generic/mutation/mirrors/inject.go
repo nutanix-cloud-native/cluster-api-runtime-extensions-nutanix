@@ -143,11 +143,7 @@ func (h *globalMirrorPatchHandler) Mutate(
 			return err
 		}
 
-		registryConfig, err := containerdConfigFromRegistryMirrorAddon(
-			ctx,
-			h.client,
-			cluster,
-		)
+		registryConfig, err := containerdConfigFromRegistryMirrorAddon(cluster)
 		if err != nil {
 			return err
 		}
@@ -266,11 +262,7 @@ func containerdConfigFromImageRegistry(
 	return configWithOptionalCACert, nil
 }
 
-func containerdConfigFromRegistryMirrorAddon(
-	_ context.Context,
-	_ ctrlclient.Client,
-	cluster *clusterv1.Cluster,
-) (containerdConfig, error) {
+func containerdConfigFromRegistryMirrorAddon(cluster *clusterv1.Cluster) (containerdConfig, error) {
 	serviceIP, err := registrymirrorutils.ServiceIPForCluster(cluster)
 	if err != nil {
 		return containerdConfig{}, fmt.Errorf("error getting service IP for the registry mirror addon: %w", err)
