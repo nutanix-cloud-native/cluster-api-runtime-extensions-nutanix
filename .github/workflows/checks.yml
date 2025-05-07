@@ -66,7 +66,7 @@ jobs:
         config:
           - {"provider": "Nutanix", "kubernetesMinor": "v1.30", "kubernetesVersion": "v1.30.10", "osImage": "nkp-rocky-9.5-release-1.30.10-20250417212833"}
           - {"provider": "Nutanix", "kubernetesMinor": "v1.31", "kubernetesVersion": "v1.31.4", "osImage": "nkp-rocky-9.5-release-1.31.4-20250409153435"}
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.3", "osImage": "nkp-rocky-9.5-release-1.32.3-20250404225535"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.3", "osImage": "nkp-rocky-9.5-release-1.32.3-20250430150550"}
           - {"provider": "Docker", "kubernetesMinor": "v1.30", "kubernetesVersion": "v1.30.12"}
           - {"provider": "Docker", "kubernetesMinor": "v1.31", "kubernetesVersion": "v1.31.8"}
           - {"provider": "Docker", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.4"}
