@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.29.0 (2025-05-07)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Explicitly disable profiling for CP components by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1109
+### Fixes 🔧
+* fix: uses consistent spelling by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1115
+### Other Changes
+* ci: include correct kube-vip version when listing images by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1113
+* build: Update all tools and fix up for golangci-lint v2 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1108
+* test(e2e): Disable Calico tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1120
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.28.2...v0.29.0
+
 ## 0.28.2 (2025-04-24)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
