@@ -54,13 +54,13 @@ var _ = Describe("Quick start", func() {
 							default:
 								Fail("unknown addon strategy: " + addonStrategy)
 							}
-							flavour := fmt.Sprintf(
+							flavor := fmt.Sprintf(
 								"topology-%s-%s",
 								strings.ToLower(cniProvider),
 								strategy,
 							)
 							Context(
-								flavour,
+								flavor,
 								func() {
 									var (
 										testE2EConfig                    *clusterctl.E2EConfig
@@ -159,7 +159,7 @@ var _ = Describe("Quick start", func() {
 											BootstrapClusterProxy:  bootstrapClusterProxy,
 											ArtifactFolder:         artifactFolder,
 											SkipCleanup:            skipCleanup,
-											Flavor:                 ptr.To(flavour),
+											Flavor:                 ptr.To(flavor),
 											InfrastructureProvider: ptr.To(lowercaseProvider),
 											PostMachinesProvisioned: func(proxy capiframework.ClusterProxy, namespace, clusterName string) {
 												capiframework.AssertOwnerReferences(
@@ -232,7 +232,7 @@ var _ = Describe("Quick start", func() {
 														),
 														Count: nodeCount,
 														WaitForNodesReady: testE2EConfig.GetIntervals(
-															flavour,
+															flavor,
 															"wait-nodes-ready",
 														),
 													},
@@ -258,23 +258,23 @@ var _ = Describe("Quick start", func() {
 														WorkloadCluster:        workloadCluster,
 														InfrastructureProvider: lowercaseProvider,
 														DeploymentIntervals: testE2EConfig.GetIntervals(
-															flavour,
+															flavor,
 															"wait-deployment",
 														),
 														DaemonSetIntervals: testE2EConfig.GetIntervals(
-															flavour,
+															flavor,
 															"wait-daemonset",
 														),
 														HelmReleaseIntervals: testE2EConfig.GetIntervals(
-															flavour,
+															flavor,
 															"wait-helmrelease",
 														),
 														ClusterResourceSetIntervals: testE2EConfig.GetIntervals(
-															flavour,
+															flavor,
 															"wait-clusterresourceset",
 														),
 														ResourceIntervals: testE2EConfig.GetIntervals(
-															flavour,
+															flavor,
 															"wait-resource",
 														),
 													},
@@ -286,7 +286,7 @@ var _ = Describe("Quick start", func() {
 														WorkloadCluster: workloadCluster,
 														ClusterProxy:    proxy,
 														DeploymentIntervals: testE2EConfig.GetIntervals(
-															flavour,
+															flavor,
 															"wait-deployment",
 														),
 													},
@@ -298,7 +298,7 @@ var _ = Describe("Quick start", func() {
 														WorkloadCluster: workloadCluster,
 														ClusterProxy:    proxy,
 														DeploymentIntervals: testE2EConfig.GetIntervals(
-															flavour,
+															flavor,
 															"wait-deployment",
 														),
 													},
