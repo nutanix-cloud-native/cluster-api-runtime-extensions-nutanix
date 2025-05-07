@@ -12,7 +12,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -20,7 +19,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registrymirror/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
-	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -68,31 +66,6 @@ func (n *Distribution) Apply(
 	log logr.Logger,
 ) error {
 	log.Info("Applying Distribution registry mirror installation")
-
-	remoteClient, err := remote.NewClusterClient(
-		ctx,
-		"",
-		n.client,
-		ctrlclient.ObjectKeyFromObject(cluster),
-	)
-	if err != nil {
-		return fmt.Errorf("error creating remote cluster client: %w", err)
-	}
-
-	err = handlersutils.EnsureNamespaceWithMetadata(
-		ctx,
-		remoteClient,
-		DefaultHelmReleaseNamespace,
-		nil,
-		nil,
-	)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to ensure release namespace %q exists: %w",
-			DefaultHelmReleaseName,
-			err,
-		)
-	}
 
 	helmChartInfo, err := n.helmChartInfoGetter.For(ctx, log, config.DistributionRegistryMirror)
 	if err != nil {
