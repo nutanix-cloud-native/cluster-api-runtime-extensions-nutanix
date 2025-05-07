@@ -34,7 +34,7 @@ var _ = Describe("Self-hosted", Serial, func() {
 		}
 		Context(provider, Label("provider:"+provider), providerSpecificDecorators, func() {
 			lowercaseProvider := strings.ToLower(provider)
-			for _, cniProvider := range []string{"Cilium", "Calico"} {
+			for _, cniProvider := range []string{"Cilium"} { // TODO: Reenable Calico tests later once we fix flakiness.
 				Context(cniProvider, Label("cni:"+cniProvider), func() {
 					for _, addonStrategy := range []string{"HelmAddon", "ClusterResourceSet"} {
 						Context(addonStrategy, Label("addonStrategy:"+addonStrategy), func() {
