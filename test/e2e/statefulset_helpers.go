@@ -40,5 +40,5 @@ func WaitForStatefulSetsAvailable(
 		}
 		return false
 	}, intervals...).Should(BeTrue())
-	Logf("Deployment %s is now available, took %v", key, time.Since(start))
+	Logf("StatefulSet %s is now available, took %v", key, time.Since(start))
 }
