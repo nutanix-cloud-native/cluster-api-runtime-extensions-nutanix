@@ -339,12 +339,12 @@ var _ = Describe("Generate Global mirror patches", func() {
 			},
 		},
 		{
-			Name: "files added in KubeadmControlPlaneTemplate for registry mirror addon",
+			Name: "files added in KubeadmControlPlaneTemplate for registry addon",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.RegistryMirror{},
-					[]string{"addons", v1alpha1.RegistryMirrorVariableName}...,
+					v1alpha1.RegistryAddon{},
+					[]string{"addons", v1alpha1.RegistryAddonVariableName}...,
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -364,12 +364,12 @@ var _ = Describe("Generate Global mirror patches", func() {
 			},
 		},
 		{
-			Name: "files added in KubeadmConfigTemplate for registry mirror addon",
+			Name: "files added in KubeadmConfigTemplate for registry addon",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.RegistryMirror{},
-					[]string{"addons", v1alpha1.RegistryMirrorVariableName}...,
+					v1alpha1.RegistryAddon{},
+					[]string{"addons", v1alpha1.RegistryAddonVariableName}...,
 				),
 				capitest.VariableWithValue(
 					"builtin",
@@ -417,6 +417,13 @@ var _ = Describe("Generate Global mirror patches", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
+				},
+				Spec: clusterv1.ClusterSpec{
+					ClusterNetwork: &clusterv1.ClusterNetwork{
+						Services: &clusterv1.NetworkRanges{
+							CIDRBlocks: []string{"192.168.0.1/16"},
+						},
+					},
 				},
 			},
 		)).To(gomega.BeNil())
