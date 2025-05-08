@@ -92,6 +92,7 @@ jobs:
           NUTANIX_SUBNET_NAME: ${{ vars.NUTANIX_SUBNET_NAME }}
           NUTANIX_STORAGE_CONTAINER_NAME: ${{ vars.NUTANIX_STORAGE_CONTAINER_NAME }}
           NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME: ${{ inputs.os-image }}
+          KUBERNETES_VERSION_NUTANIX: ${{ inputs.kubernetes-version }}
           KINDEST_IMAGE_TAG: ${{ inputs.kubernetes-version }}
           E2E_KUBERNETES_VERSION: ${{ inputs.kubernetes-version }}
 
