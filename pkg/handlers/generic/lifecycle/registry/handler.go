@@ -1,7 +1,7 @@
 // Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package registrymirror
+package registry
 
 import (
 	"context"
@@ -19,45 +19,45 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
-type RegistryMirrorProvider interface {
+type RegistryProvider interface {
 	Apply(
 		ctx context.Context,
-		registryVar v1alpha1.RegistryMirror,
+		registryVar v1alpha1.RegistryAddon,
 		cluster *clusterv1.Cluster,
 		log logr.Logger,
 	) error
 }
 
-type RegistryMirrorHandler struct {
+type RegistryHandler struct {
 	client          ctrlclient.Client
 	variableName    string
 	variablePath    []string
-	ProviderHandler map[string]RegistryMirrorProvider
+	ProviderHandler map[string]RegistryProvider
 }
 
 var (
-	_ commonhandlers.Named                   = &RegistryMirrorHandler{}
-	_ lifecycle.AfterControlPlaneInitialized = &RegistryMirrorHandler{}
-	_ lifecycle.BeforeClusterUpgrade         = &RegistryMirrorHandler{}
+	_ commonhandlers.Named                   = &RegistryHandler{}
+	_ lifecycle.AfterControlPlaneInitialized = &RegistryHandler{}
+	_ lifecycle.BeforeClusterUpgrade         = &RegistryHandler{}
 )
 
 func New(
 	c ctrlclient.Client,
-	handlers map[string]RegistryMirrorProvider,
-) *RegistryMirrorHandler {
-	return &RegistryMirrorHandler{
+	handlers map[string]RegistryProvider,
+) *RegistryHandler {
+	return &RegistryHandler{
 		client:          c,
 		variableName:    v1alpha1.ClusterConfigVariableName,
-		variablePath:    []string{"addons", v1alpha1.RegistryMirrorVariableName},
+		variablePath:    []string{"addons", v1alpha1.RegistryAddonVariableName},
 		ProviderHandler: handlers,
 	}
 }
 
-func (r *RegistryMirrorHandler) Name() string {
-	return "RegistryMirrorHandler"
+func (r *RegistryHandler) Name() string {
+	return "RegistryHandler"
 }
 
-func (r *RegistryMirrorHandler) AfterControlPlaneInitialized(
+func (r *RegistryHandler) AfterControlPlaneInitialized(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
@@ -68,7 +68,7 @@ func (r *RegistryMirrorHandler) AfterControlPlaneInitialized(
 	resp.Message = commonResponse.GetMessage()
 }
 
-func (r *RegistryMirrorHandler) BeforeClusterUpgrade(
+func (r *RegistryHandler) BeforeClusterUpgrade(
 	ctx context.Context,
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
@@ -79,7 +79,7 @@ func (r *RegistryMirrorHandler) BeforeClusterUpgrade(
 	resp.Message = commonResponse.GetMessage()
 }
 
-func (r *RegistryMirrorHandler) apply(
+func (r *RegistryHandler) apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	resp *runtimehooksv1.CommonResponse,
@@ -92,7 +92,7 @@ func (r *RegistryMirrorHandler) apply(
 	)
 
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	registryVar, err := variables.Get[v1alpha1.RegistryMirror](
+	registryVar, err := variables.Get[v1alpha1.RegistryAddon](
 		varMap,
 		r.variableName,
 		r.variablePath...)
@@ -100,7 +100,7 @@ func (r *RegistryMirrorHandler) apply(
 		if variables.IsNotFoundError(err) {
 			log.V(5).
 				Info(
-					"Skipping RegistryMirror, field is not specified",
+					"Skipping RegistryAddon, field is not specified",
 					"error",
 					err,
 				)
@@ -108,11 +108,11 @@ func (r *RegistryMirrorHandler) apply(
 		}
 		log.Error(
 			err,
-			"failed to read RegistryMirror provider from cluster definition",
+			"failed to read RegistryAddon provider from cluster definition",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to read RegistryMirror provider from cluster definition: %v",
+			fmt.Sprintf("failed to read RegistryAddon provider from cluster definition: %v",
 				err,
 			),
 		)
@@ -121,7 +121,7 @@ func (r *RegistryMirrorHandler) apply(
 
 	handler, ok := r.ProviderHandler[registryVar.Provider]
 	if !ok {
-		err = fmt.Errorf("unknown RegistryMirror Provider")
+		err = fmt.Errorf("unknown RegistryAddon Provider")
 		log.Error(err, "provider", registryVar.Provider)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
@@ -130,7 +130,7 @@ func (r *RegistryMirrorHandler) apply(
 		return
 	}
 
-	log.Info(fmt.Sprintf("Deploying RegistryMirror provider %s", registryVar.Provider))
+	log.Info(fmt.Sprintf("Deploying RegistryAddon provider %s", registryVar.Provider))
 	err = handler.Apply(
 		ctx,
 		registryVar,
@@ -141,14 +141,14 @@ func (r *RegistryMirrorHandler) apply(
 		log.Error(
 			err,
 			fmt.Sprintf(
-				"failed to deploy RegistryMirror provider %s",
+				"failed to deploy RegistryAddon provider %s",
 				registryVar.Provider,
 			),
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
 			fmt.Sprintf(
-				"failed to deploy RegistryMirror provider: %v",
+				"failed to deploy RegistryAddon provider: %v",
 				err,
 			),
 		)
@@ -158,7 +158,7 @@ func (r *RegistryMirrorHandler) apply(
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	resp.SetMessage(
 		fmt.Sprintf(
-			"Deployed RegistryMirror provider %s",
+			"Deployed RegistryAddon provider %s",
 			registryVar.Provider,
 		),
 	)

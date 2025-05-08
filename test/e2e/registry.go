@@ -16,19 +16,19 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-type WaitForRegistryMirrorToBeReadyInWorkloadClusterInput struct {
-	RegistryMirror       *v1alpha1.RegistryMirror
+type WaitForRegistryAddonToBeReadyInWorkloadClusterInput struct {
+	Registry             *v1alpha1.RegistryAddon
 	WorkloadCluster      *clusterv1.Cluster
 	ClusterProxy         framework.ClusterProxy
 	StatefulSetIntervals []interface{}
 	HelmReleaseIntervals []interface{}
 }
 
-func WaitForRegistryMirrorToBeReadyInWorkloadCluster(
+func WaitForRegistryAddonToBeReadyInWorkloadCluster(
 	ctx context.Context,
-	input WaitForRegistryMirrorToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
+	input WaitForRegistryAddonToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
 ) {
-	if input.RegistryMirror == nil {
+	if input.Registry == nil {
 		return
 	}
 
@@ -37,7 +37,7 @@ func WaitForRegistryMirrorToBeReadyInWorkloadCluster(
 		WaitForHelmReleaseProxyReadyForClusterInput{
 			GetLister:       input.ClusterProxy.GetClient(),
 			Cluster:         input.WorkloadCluster,
-			HelmReleaseName: "registry-mirror",
+			HelmReleaseName: "cncf-distribution-registry",
 		},
 		input.HelmReleaseIntervals...,
 	)
@@ -50,8 +50,8 @@ func WaitForRegistryMirrorToBeReadyInWorkloadCluster(
 		Getter: workloadClusterClient,
 		StatefulSet: &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "registry-mirror-docker-registry",
-				Namespace: "registry-mirror-system",
+				Name:      "cncf-distribution-registry-docker-registry",
+				Namespace: "registry-system",
 			},
 		},
 	}, input.StatefulSetIntervals...)

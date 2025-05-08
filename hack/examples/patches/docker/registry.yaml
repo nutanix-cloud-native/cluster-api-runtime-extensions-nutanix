@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 - op: "add"
-  path: "/spec/topology/variables/0/value/addons/registryMirror"
+  path: "/spec/topology/variables/0/value/addons/registry"
   value: {}

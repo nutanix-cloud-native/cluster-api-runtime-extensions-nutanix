@@ -23,14 +23,14 @@ data:
     ChartName: cluster-autoscaler
     ChartVersion: 9.46.3
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}'
+  cncf-distribution-registry: |
+    ChartName: docker-registry
+    ChartVersion: 2.3.1
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/staging/{{ end }}'
   cosi-controller: |
     ChartName: cosi
     ChartVersion: 0.0.1-alpha.5
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/stable/{{ end }}'
-  distribution-registry-mirror: |
-    ChartName: docker-registry
-    ChartVersion: 2.3.1
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/staging/{{ end }}'
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
     ChartVersion: 0.0.31

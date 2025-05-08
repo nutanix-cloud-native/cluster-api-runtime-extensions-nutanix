@@ -28,8 +28,8 @@ const (
 	ClusterAutoscalerVariableName = "clusterAutoscaler"
 	// ServiceLoadBalancerVariableName is the Service LoadBalancer config patch variable name.
 	ServiceLoadBalancerVariableName = "serviceLoadBalancer"
-	// RegistryMirrorVariableName is the OCI registry config patch variable name.
-	RegistryMirrorVariableName = "registryMirror"
+	// RegistryAddonVariableName is the OCI registry config patch variable name.
+	RegistryAddonVariableName = "registry"
 
 	// GlobalMirrorVariableName is the global image registry mirror patch variable name.
 	GlobalMirrorVariableName = "globalImageRegistryMirror"

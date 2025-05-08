@@ -504,9 +504,9 @@
                     },
                     "type": "object"
                 },
-                "registryMirror": {
+                "registry": {
                     "properties": {
-                        "distribution": {
+                        "cncfDistribution": {
                             "properties": {
                                 "defaultValueTemplateConfigMap": {
                                     "properties": {

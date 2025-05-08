@@ -121,10 +121,10 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 		},
 	)
 
-	WaitForRegistryMirrorToBeReadyInWorkloadCluster(
+	WaitForRegistryAddonToBeReadyInWorkloadCluster(
 		ctx,
-		WaitForRegistryMirrorToBeReadyInWorkloadClusterInput{
-			RegistryMirror:       input.AddonsConfig.RegistryMirror,
+		WaitForRegistryAddonToBeReadyInWorkloadClusterInput{
+			Registry:             input.AddonsConfig.Registry,
 			WorkloadCluster:      input.WorkloadCluster,
 			ClusterProxy:         input.ClusterProxy,
 			StatefulSetIntervals: input.StatefulSetIntervals,
