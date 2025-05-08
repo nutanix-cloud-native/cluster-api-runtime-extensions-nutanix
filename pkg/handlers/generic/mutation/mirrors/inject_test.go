@@ -343,8 +343,8 @@ var _ = Describe("Generate Global mirror patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.RegistryMirror{},
-					[]string{"addons", v1alpha1.RegistryMirrorVariableName}...,
+					v1alpha1.RegistryAddon{},
+					[]string{"addons", v1alpha1.RegistryAddonVariableName}...,
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -368,8 +368,8 @@ var _ = Describe("Generate Global mirror patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.RegistryMirror{},
-					[]string{"addons", v1alpha1.RegistryMirrorVariableName}...,
+					v1alpha1.RegistryAddon{},
+					[]string{"addons", v1alpha1.RegistryAddonVariableName}...,
 				),
 				capitest.VariableWithValue(
 					"builtin",

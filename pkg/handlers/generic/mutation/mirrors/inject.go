@@ -23,7 +23,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	registrymirrorutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registrymirror/utils"
+	registryutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registry/utils"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
@@ -84,10 +84,10 @@ func (h *globalMirrorPatchHandler) Mutate(
 		v1alpha1.ImageRegistriesVariableName,
 	)
 
-	_, registryMirrorErr := variables.Get[v1alpha1.RegistryMirror](
+	_, registryMirrorErr := variables.Get[v1alpha1.RegistryAddon](
 		vars,
 		v1alpha1.ClusterConfigVariableName,
-		[]string{"addons", v1alpha1.RegistryMirrorVariableName}...)
+		[]string{"addons", v1alpha1.RegistryAddonVariableName}...)
 
 	switch {
 	case variables.IsNotFoundError(imageRegistriesErr) &&
@@ -143,7 +143,7 @@ func (h *globalMirrorPatchHandler) Mutate(
 			return err
 		}
 
-		registryConfig, err := containerdConfigFromRegistryMirrorAddon(cluster)
+		registryConfig, err := containerdConfigFromRegistryAddon(cluster)
 		if err != nil {
 			return err
 		}
@@ -262,8 +262,8 @@ func containerdConfigFromImageRegistry(
 	return configWithOptionalCACert, nil
 }
 
-func containerdConfigFromRegistryMirrorAddon(cluster *clusterv1.Cluster) (containerdConfig, error) {
-	serviceIP, err := registrymirrorutils.ServiceIPForCluster(cluster)
+func containerdConfigFromRegistryAddon(cluster *clusterv1.Cluster) (containerdConfig, error) {
+	serviceIP, err := registryutils.ServiceIPForCluster(cluster)
 	if err != nil {
 		return containerdConfig{}, fmt.Errorf("error getting service IP for the registry mirror addon: %w", err)
 	}
