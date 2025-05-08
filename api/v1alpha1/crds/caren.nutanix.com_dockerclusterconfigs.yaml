@@ -243,6 +243,17 @@ spec:
                             - HelmAddon
                           type: string
                       type: object
+                    registry:
+                      properties:
+                        provider:
+                          default: CNCF Distribution
+                          description: The OCI registry provider to deploy.
+                          enum:
+                            - CNCF Distribution
+                          type: string
+                      required:
+                        - provider
+                      type: object
                     serviceLoadBalancer:
                       properties:
                         configuration:

@@ -127,6 +127,10 @@ var _ = Describe("Self-hosted", Serial, func() {
 																flavor,
 																"wait-daemonset",
 															),
+															StatefulSetIntervals: e2eConfig.GetIntervals(
+																flavor,
+																"wait-statefulset",
+															),
 															HelmReleaseIntervals: e2eConfig.GetIntervals(
 																flavor,
 																"wait-helmrelease",

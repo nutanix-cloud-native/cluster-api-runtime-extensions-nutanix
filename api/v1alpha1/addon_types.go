@@ -27,6 +27,8 @@ const (
 
 	ServiceLoadBalancerProviderMetalLB = "MetalLB"
 
+	RegistryProviderCNCFDistribution = "CNCF Distribution"
+
 	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
 	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
 
@@ -100,6 +102,9 @@ type GenericAddons struct {
 
 	// +kubebuilder:validation:Optional
 	ServiceLoadBalancer *ServiceLoadBalancer `json:"serviceLoadBalancer,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Registry *RegistryAddon `json:"registry,omitempty"`
 }
 
 type AddonStrategy string
@@ -334,4 +339,11 @@ type AddressRange struct {
 
 	// +kubebuilder:validation:Format=ipv4
 	End string `json:"end"`
+}
+
+type RegistryAddon struct {
+	// The OCI registry provider to deploy.
+	// +kubebuilder:default="CNCF Distribution"
+	// +kubebuilder:validation:Enum="CNCF Distribution"
+	Provider string `json:"provider"`
 }

@@ -41,6 +41,7 @@ spec:
               strategy: ClusterResourceSet
           nfd:
             strategy: ClusterResourceSet
+          registry: {}
           serviceLoadBalancer:
             configuration:
               addressRanges:
