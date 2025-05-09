@@ -107,9 +107,9 @@ spec:
               cluster:
                 name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
                 type: name
-              image:
-                name: ${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
-                type: name
+              imageLookup:
+                baseOS: ${NUTANIX_MACHINE_TEMPLATE_BASE_OS}
+                format: ${NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT}
               memorySize: 4Gi
               subnets:
               - name: ${NUTANIX_SUBNET_NAME}
@@ -147,9 +147,9 @@ spec:
             cluster:
               name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
               type: name
-            image:
-              name: ${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
-              type: name
+            imageLookup:
+              baseOS: ${NUTANIX_MACHINE_TEMPLATE_BASE_OS}
+              format: ${NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT}
             memorySize: 4Gi
             subnets:
             - name: ${NUTANIX_SUBNET_NAME}
