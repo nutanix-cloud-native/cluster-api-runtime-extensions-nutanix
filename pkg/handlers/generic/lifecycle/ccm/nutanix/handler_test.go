@@ -209,5 +209,7 @@ func moduleRootDir() string {
 				out),
 		)
 	}
-	return strings.TrimSpace(string(out))
+	modules := strings.Split(string(out), "\n")
+	rootModule := strings.TrimSpace(modules[0])
+	return rootModule
 }
