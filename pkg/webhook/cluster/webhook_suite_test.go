@@ -29,14 +29,14 @@ var (
 func TestMain(m *testing.M) {
 	mutatingWebhook := &admissionv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster-defaulter.caren.nutanix.com",
+			Name: "default.nutanix.cluster.caren.nutanix.com",
 		},
 		Webhooks: []admissionv1.MutatingWebhook{
 			{
-				Name: "cluster-defaulter.caren.nutanix.com",
+				Name: "default.nutanix.cluster.caren.nutanix.com",
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
-						Path: ptr.To("/mutate-v1beta1-cluster"),
+						Path: ptr.To("/mutate-v1beta1-cluster-nutanix"),
 					},
 				},
 				Rules: []admissionv1.RuleWithOperations{{
@@ -59,14 +59,14 @@ func TestMain(m *testing.M) {
 	}
 	validatingWebhook := &admissionv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster-validator.caren.nutanix.com",
+			Name: "validate.nutanix.cluster.caren.nutanix.com",
 		},
 		Webhooks: []admissionv1.ValidatingWebhook{
 			{
-				Name: "cluster-validator.caren.nutanix.com",
+				Name: "validate.nutanix.cluster.caren.nutanix.com",
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
-						Path: ptr.To("/validate-v1beta1-cluster"),
+						Path: ptr.To("/validate-v1beta1-cluster-nutanix"),
 					},
 				},
 				Rules: []admissionv1.RuleWithOperations{{
@@ -120,11 +120,11 @@ func TestMain(m *testing.M) {
 			},
 		},
 		SetupEnv: func(e *envtest.Environment) {
-			e.GetWebhookServer().Register("/mutate-v1beta1-cluster", &webhook.Admission{
-				Handler: NewDefaulter(e.GetClient(), admission.NewDecoder(e.GetScheme())),
+			e.GetWebhookServer().Register("/mutate-v1beta1-cluster-nutanix", &webhook.Admission{
+				Handler: NewClusterUUIDLabeler(e.GetClient(), admission.NewDecoder(e.GetScheme())).Defaulter(),
 			})
-			e.GetWebhookServer().Register("/validate-v1beta1-cluster", &webhook.Admission{
-				Handler: NewValidator(e.GetClient(), admission.NewDecoder(e.GetScheme())),
+			e.GetWebhookServer().Register("/validate-v1beta1-cluster-nutanix", &webhook.Admission{
+				Handler: NewClusterUUIDLabeler(e.GetClient(), admission.NewDecoder(e.GetScheme())).Validator(),
 			})
 
 			// The webhooks are initially installed with Ignore failure policy above to allow creating objects before

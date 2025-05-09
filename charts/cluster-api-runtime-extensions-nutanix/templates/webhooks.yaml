@@ -16,7 +16,27 @@ webhooks:
         namespace: '{{ .Release.Namespace }}'
         path: /mutate-v1beta1-cluster
     failurePolicy: Fail
-    name: cluster-defaulter.caren.nutanix.com
+    name: default.cluster.caren.nutanix.com
+    rules:
+      - apiGroups:
+          - cluster.x-k8s.io
+        apiVersions:
+          - '*'
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - clusters
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: '{{ include "chart.name" . }}-admission'
+        namespace: '{{ .Release.Namespace }}'
+        path: /mutate-v1beta1-cluster-nutanix
+    failurePolicy: Fail
+    name: default.nutanix.cluster.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
@@ -44,7 +64,27 @@ webhooks:
         namespace: '{{ .Release.Namespace }}'
         path: /validate-v1beta1-cluster
     failurePolicy: Fail
-    name: cluster-validator.caren.nutanix.com
+    name: validate.cluster.caren.nutanix.com
+    rules:
+      - apiGroups:
+          - cluster.x-k8s.io
+        apiVersions:
+          - '*'
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - clusters
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: '{{ include "chart.name" . }}-admission'
+        namespace: '{{ .Release.Namespace }}'
+        path: /validate-v1beta1-cluster-nutanix
+    failurePolicy: Fail
+    name: validate.nutanix.cluster.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
