@@ -209,7 +209,8 @@ func moduleRootDir() string {
 				out),
 		)
 	}
-	modules := strings.Split(string(out), "\n")
-	rootModule := strings.TrimSpace(modules[0])
-	return rootModule
+	// The first line is the module root directory. When go workspaces are used,
+	// the first line is the "root" module root directory.
+	dir, _, _ := strings.Cut(string(out), "\n")
+	return dir, nil
 }
