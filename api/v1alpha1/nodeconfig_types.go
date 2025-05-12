@@ -166,7 +166,7 @@ type NodeRegistrationOptions struct {
 
 //nolint:gochecknoinits // Idiomatic to use init functions to register APIs with scheme.
 func init() {
-	SchemeBuilder.Register(
+	objectTypes = append(objectTypes,
 		&AWSWorkerNodeConfig{},
 		&DockerWorkerNodeConfig{},
 		&NutanixWorkerNodeConfig{},
