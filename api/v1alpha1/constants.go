@@ -40,7 +40,4 @@ const (
 	DNSVariableName = "dns"
 
 	ClusterUUIDAnnotationKey = APIGroup + "/cluster-uuid"
-
-	// DefaultServicesSubnet defines default service subnet range used by kubeadm in CAPI
-	DefaultServicesSubnet = "10.96.0.0/12"
 )

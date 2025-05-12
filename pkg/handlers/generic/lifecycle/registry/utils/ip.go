@@ -9,8 +9,6 @@ import (
 
 	netutils "k8s.io/utils/net"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
 const ipIndex = 20
@@ -29,10 +27,6 @@ func ServiceIPForCluster(cluster *clusterv1.Cluster) (string, error) {
 }
 
 func getServiceIP(serviceSubnetStrings []string) (string, error) {
-	if len(serviceSubnetStrings) == 0 {
-		serviceSubnetStrings = []string{v1alpha1.DefaultServicesSubnet}
-	}
-
 	serviceSubnets, err := netutils.ParseCIDRs(serviceSubnetStrings)
 	if err != nil {
 		return "", fmt.Errorf("unable to parse service Subnets: %w", err)

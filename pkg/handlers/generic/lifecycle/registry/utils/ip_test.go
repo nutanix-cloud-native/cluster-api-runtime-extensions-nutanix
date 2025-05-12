@@ -4,6 +4,7 @@
 package utils
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,7 @@ func Test_ServiceIPForCluster(t *testing.T) {
 		name    string
 		cluster *clusterv1.Cluster
 		want    string
+		wantErr error
 	}{
 		{
 			name: "Cluster with nil service CIDR",
@@ -25,7 +27,7 @@ func Test_ServiceIPForCluster(t *testing.T) {
 					ClusterNetwork: &clusterv1.ClusterNetwork{},
 				},
 			},
-			want: "10.96.0.20",
+			wantErr: errors.New("error getting a service IP for a cluster: unexpected empty service Subnets"),
 		},
 		{
 			name: "Cluster with empty service CIDR slice",
@@ -38,7 +40,7 @@ func Test_ServiceIPForCluster(t *testing.T) {
 					},
 				},
 			},
-			want: "10.96.0.20",
+			wantErr: errors.New("error getting a service IP for a cluster: unexpected empty service Subnets"),
 		},
 		{
 			name: "Cluster with a single service CIDR",
@@ -76,7 +78,11 @@ func Test_ServiceIPForCluster(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got, err := ServiceIPForCluster(tt.cluster)
-			require.NoError(t, err)
+			if tt.wantErr != nil {
+				require.EqualError(t, err, tt.wantErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
 			assert.Equal(t, tt.want, got)
 		})
 	}
