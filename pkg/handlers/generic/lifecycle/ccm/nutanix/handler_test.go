@@ -55,15 +55,21 @@ secretName: nutanix-ccm-credentials
 `
 )
 
-var valuesTemplateFile = filepath.Join(
-	moduleRootDir(),
-	"charts",
-	"cluster-api-runtime-extensions-nutanix",
-	"addons",
-	"ccm",
-	"nutanix",
-	"values-template.yaml",
-)
+var valuesTemplateFile = func() string {
+	dir, err := moduleRootDir()
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Join(
+		dir,
+		"charts",
+		"cluster-api-runtime-extensions-nutanix",
+		"addons",
+		"ccm",
+		"nutanix",
+		"values-template.yaml",
+	)
+}()
 
 func Test_templateValues(t *testing.T) {
 	t.Parallel()
@@ -194,20 +200,18 @@ func readCCMValuesTemplateFromProjectHelmChart(t *testing.T) string {
 	return string(bs)
 }
 
-func moduleRootDir() string {
+func moduleRootDir() (string, error) {
 	cmd := exec.Command("go", "list", "-m", "-f", "{{ .Dir }}")
 	out, err := cmd.CombinedOutput()
-	if err != nil {
+	if err != nil || len(out) == 0 {
 		// We include the combined output because the error is usually
 		// an exit code, which does not explain why the command failed.
-		panic(
-			fmt.Sprintf("cmd.Dir=%q, cmd.Env=%q, cmd.Args=%q, err=%q, output=%q",
-				cmd.Dir,
-				cmd.Env,
-				cmd.Args,
-				err,
-				out),
-		)
+		return "", fmt.Errorf("cmd.Dir=%q, cmd.Env=%q, cmd.Args=%q, err=%q, output=%q",
+			cmd.Dir,
+			cmd.Env,
+			cmd.Args,
+			err,
+			out)
 	}
 	// The first line is the module root directory. When go workspaces are used,
 	// the first line is the "root" module root directory.
