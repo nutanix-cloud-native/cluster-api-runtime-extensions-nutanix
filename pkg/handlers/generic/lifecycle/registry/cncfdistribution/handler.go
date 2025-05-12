@@ -41,7 +41,7 @@ func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
 	)
 }
 
-type Distribution struct {
+type CNCFDistribution struct {
 	client              ctrlclient.Client
 	config              *Config
 	helmChartInfoGetter *config.HelmChartGetter
@@ -51,15 +51,15 @@ func New(
 	c ctrlclient.Client,
 	cfg *Config,
 	helmChartInfoGetter *config.HelmChartGetter,
-) *Distribution {
-	return &Distribution{
+) *CNCFDistribution {
+	return &CNCFDistribution{
 		client:              c,
 		config:              cfg,
 		helmChartInfoGetter: helmChartInfoGetter,
 	}
 }
 
-func (n *Distribution) Apply(
+func (n *CNCFDistribution) Apply(
 	ctx context.Context,
 	_ v1alpha1.RegistryAddon,
 	cluster *clusterv1.Cluster,
