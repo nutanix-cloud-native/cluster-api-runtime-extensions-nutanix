@@ -122,7 +122,7 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 
 		// Use KubernetesVersion if no upgrade step is defined by test input.
 		Expect(input.E2EConfig.Variables).To(HaveKey(capie2e.KubernetesVersion))
-		kubernetesVersion = input.E2EConfig.GetVariable(capie2e.KubernetesVersion)
+		kubernetesVersion = input.E2EConfig.MustGetVariable(capie2e.KubernetesVersion)
 
 		// Setup a Namespace where to host objects for this spec and create a watcher for the namespace events.
 		namespace, cancelWatches = setupSpecNamespace(
@@ -501,8 +501,8 @@ func dumpSpecResourcesAndCleanup(
 		capie2eframework.DeleteAllClustersAndWait(
 			ctx,
 			capie2eframework.DeleteAllClustersAndWaitInput{
-				Client:    clusterProxy.GetClient(),
-				Namespace: namespace.Name,
+				ClusterProxy: clusterProxy,
+				Namespace:    namespace.Name,
 			},
 			intervalsGetter(specName, "wait-delete-cluster")...)
 
