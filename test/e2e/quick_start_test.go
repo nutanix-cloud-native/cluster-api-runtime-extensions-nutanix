@@ -265,6 +265,10 @@ var _ = Describe("Quick start", func() {
 															flavor,
 															"wait-daemonset",
 														),
+														StatefulSetIntervals: testE2EConfig.GetIntervals(
+															flavor,
+															"wait-statefulset",
+														),
 														HelmReleaseIntervals: testE2EConfig.GetIntervals(
 															flavor,
 															"wait-helmrelease",

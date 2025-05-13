@@ -1,0 +1,12 @@
+replicaCount: 2
+persistence:
+  enabled: true
+  size: 50Gi
+service:
+  type: ClusterIP
+  clusterIP: {{ .ServiceIP }}
+  port: 80
+statefulSet:
+  enabled: true
+  syncer:
+    interval: 2m
