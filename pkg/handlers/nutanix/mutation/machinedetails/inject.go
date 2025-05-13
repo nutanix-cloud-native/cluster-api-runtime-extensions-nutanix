@@ -102,8 +102,10 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			switch {
 			case nutanixMachineDetailsVar.Image != nil:
 				spec.Image = nutanixMachineDetailsVar.Image.DeepCopy()
+				spec.ImageLookup = nil
 			case nutanixMachineDetailsVar.ImageLookup != nil:
 				spec.ImageLookup = nutanixMachineDetailsVar.ImageLookup.DeepCopy()
+				spec.Image = nil
 			default:
 				return ErrNoImageOrImageLookupSet
 			}

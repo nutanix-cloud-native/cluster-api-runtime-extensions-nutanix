@@ -22,7 +22,7 @@ on:
         description: The version of Kubernetes to test with
         type: string
         required: true
-      os-image:
+      base-os:
         description: The OS image to use for the machine template
         type: string
         required: false
@@ -91,7 +91,7 @@ jobs:
           NUTANIX_PRISM_ELEMENT_CLUSTER_NAME: ${{ vars.NUTANIX_PRISM_ELEMENT_CLUSTER_NAME }}
           NUTANIX_SUBNET_NAME: ${{ vars.NUTANIX_SUBNET_NAME }}
           NUTANIX_STORAGE_CONTAINER_NAME: ${{ vars.NUTANIX_STORAGE_CONTAINER_NAME }}
-          NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME: ${{ inputs.os-image }}
+          NUTANIX_MACHINE_TEMPLATE_BASE_OS: ${{ inputs.base-os }}
           KUBERNETES_VERSION_NUTANIX: ${{ inputs.kubernetes-version }}
           KINDEST_IMAGE_TAG: ${{ inputs.kubernetes-version }}
           E2E_KUBERNETES_VERSION: ${{ inputs.kubernetes-version }}
