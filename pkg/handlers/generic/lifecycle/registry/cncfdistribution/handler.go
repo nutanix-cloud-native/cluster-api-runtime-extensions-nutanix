@@ -24,6 +24,11 @@ import (
 const (
 	DefaultHelmReleaseName      = "cncf-distribution-registry"
 	DefaultHelmReleaseNamespace = "registry-system"
+
+	stsName                = "cncf-distribution-registry-docker-registry"
+	stsHeadlessServiceName = "cncf-distribution-registry-docker-registry-headless"
+	stsReplicas            = 2
+	tlsSecretName          = "registry-tls"
 )
 
 type Config struct {
@@ -59,14 +64,64 @@ func New(
 	}
 }
 
+func (n *CNCFDistribution) Setup(
+	ctx context.Context,
+	_ v1alpha1.RegistryAddon,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	serviceIP, err := utils.ServiceIPForCluster(cluster)
+	if err != nil {
+		return fmt.Errorf("error getting service IP for the CNCF distribution registry: %w", err)
+	}
+
+	log.Info("Setting up TLS for CNCF Distribution registry")
+	opts := &utils.EnsureCertificateOpts{
+		RemoteSecretName:      tlsSecretName,
+		RemoteSecretNamespace: DefaultHelmReleaseNamespace,
+		Spec: utils.CertificateSpec{
+			CommonName:  stsName,
+			DNSNames:    dnsNames(),
+			IPAddresses: ipAddresses(serviceIP),
+		},
+	}
+	err = utils.EnsureCertificate(
+		ctx,
+		n.client,
+		cluster,
+		opts,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to ensure certificate secret for CNCF Distribution registry addon: %w", err)
+	}
+	return nil
+}
+
 func (n *CNCFDistribution) Apply(
 	ctx context.Context,
 	_ v1alpha1.RegistryAddon,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
-	log.Info("Applying CNCF Distribution registry installation")
+	log.Info("Copying TLS Certificate for CNCF Distribution registry to remote cluster")
+	remoteCertificateSecretKey := ctrlclient.ObjectKey{
+		Name:      tlsSecretName,
+		Namespace: DefaultHelmReleaseNamespace,
+	}
+	err := utils.EnsureCertificateOnRemoteCluster(
+		ctx,
+		n.client,
+		cluster,
+		remoteCertificateSecretKey,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to copy certificate secret for CNCF Distribution registry addon to remote cluster: %w",
+			err,
+		)
+	}
 
+	log.Info("Applying CNCF Distribution registry installation")
 	helmChartInfo, err := n.helmChartInfoGetter.For(ctx, log, config.CNCFDistributionRegistry)
 	if err != nil {
 		return fmt.Errorf("failed to get CNCF Distribution registry helm chart: %w", err)
@@ -102,9 +157,11 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 
 	type input struct {
 		ServiceIP string
+		Replicas  int32
 	}
 
 	templateInput := input{
+		Replicas:  stsReplicas,
 		ServiceIP: serviceIP,
 	}
 
@@ -118,4 +175,35 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	return b.String(), nil
+}
+
+func dnsNames() []string {
+	names := []string{
+		stsName,
+		fmt.Sprintf("%s.%s", stsName, DefaultHelmReleaseNamespace),
+		fmt.Sprintf("%s.%s.svc", stsName, DefaultHelmReleaseNamespace),
+		fmt.Sprintf("%s.%s.svc.cluster.local", stsName, DefaultHelmReleaseNamespace),
+	}
+	for i := 0; i < stsReplicas; i++ {
+		names = append(names,
+			[]string{
+				fmt.Sprintf("%s-%d", stsName, i),
+				fmt.Sprintf("%s-%d.%s.%s", stsName, i, stsHeadlessServiceName, DefaultHelmReleaseNamespace),
+				fmt.Sprintf("%s-%d.%s.%s.svc", stsName, i, stsHeadlessServiceName, DefaultHelmReleaseNamespace),
+				fmt.Sprintf(
+					"%s-%d.%s.%s.svc.cluster.local",
+					stsName, i, stsHeadlessServiceName, DefaultHelmReleaseNamespace,
+				),
+			}...,
+		)
+	}
+
+	return names
+}
+
+func ipAddresses(serviceIP string) []string {
+	return []string{
+		serviceIP,
+		"127.0.0.1",
+	}
 }

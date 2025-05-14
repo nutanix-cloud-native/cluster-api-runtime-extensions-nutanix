@@ -1,12 +1,13 @@
-replicaCount: 2
+replicaCount: {{ .Replicas }}
 persistence:
   enabled: true
   size: 50Gi
 service:
   type: ClusterIP
   clusterIP: {{ .ServiceIP }}
-  port: 80
+  port: 443
 statefulSet:
   enabled: true
   syncer:
     interval: 2m
+tlsSecretName: registry-tls

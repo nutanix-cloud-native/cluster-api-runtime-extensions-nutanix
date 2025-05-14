@@ -1,0 +1,21 @@
+# 4. Leaf Certificate for the Docker registry
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .CertificateName }}
+spec:
+  secretName: {{ .SecretName }}
+  issuerRef:
+    name:  registry-addon-certificate-issuer
+    kind: ClusterIssuer
+  commonName: {{ .CommonName }}
+  dnsNames:
+{{- range .DNSNames }}
+  - {{ . }}
+{{- end }}
+  ipAddresses:
+{{- range .IPAddresses }}
+  - {{ . }}
+{{- end }}
+  duration: {{ .Duration }}
+  renewBefore: {{ .RenewBefore }}

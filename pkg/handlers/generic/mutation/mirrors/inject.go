@@ -143,7 +143,11 @@ func (h *globalMirrorPatchHandler) Mutate(
 			return err
 		}
 
-		registryConfig, err := containerdConfigFromRegistryAddon(cluster)
+		registryConfig, err := containerdConfigFromRegistryAddon(
+			ctx,
+			h.client,
+			cluster,
+		)
 		if err != nil {
 			return err
 		}
@@ -262,16 +266,26 @@ func containerdConfigFromImageRegistry(
 	return configWithOptionalCACert, nil
 }
 
-func containerdConfigFromRegistryAddon(cluster *clusterv1.Cluster) (containerdConfig, error) {
+func containerdConfigFromRegistryAddon(
+	ctx context.Context,
+	c ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+) (containerdConfig, error) {
 	serviceIP, err := registryutils.ServiceIPForCluster(cluster)
 	if err != nil {
 		return containerdConfig{}, fmt.Errorf("error getting service IP for the registry addon: %w", err)
 	}
-
+	secret, err := registryutils.GetTLSSecretForCluster(ctx, c, cluster)
+	if err != nil {
+		return containerdConfig{}, fmt.Errorf("error getting TLS secret for registry addon: %w", err)
+	}
 	config := containerdConfig{
-		// FIXME: Generate a self-signed CA.
-		URL:    fmt.Sprintf("http://%s", serviceIP),
+		URL:    fmt.Sprintf("https://%s", serviceIP),
 		Mirror: true,
+	}
+	if secretHasCACert(secret) {
+		config.CASecretName = secret.Name
+		config.CACert = string(secret.Data[secretKeyForCACert])
 	}
 
 	return config, nil

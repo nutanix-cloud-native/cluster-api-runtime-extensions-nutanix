@@ -1,0 +1,31 @@
+# 1. SelfSigned Issuer for creating the CA
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: registry-addon-selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+# 2. Self-signed CA Certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: registry-addon-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: registry-addon-ca
+  secretName: registry-addon-ca
+  issuerRef:
+    name: registry-addon-selfsigned-issuer
+    kind: ClusterIssuer
+  duration: 87600h  # 10 years
+---
+# 3. CA Issuer that uses the CA Secret
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: registry-addon-certificate-issuer
+spec:
+  ca:
+    secretName: registry-addon-ca
