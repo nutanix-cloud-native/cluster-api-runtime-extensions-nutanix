@@ -8,6 +8,8 @@ package e2e
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -307,6 +309,34 @@ var _ = Describe("Quick start", func() {
 														),
 													},
 												)
+
+												if os.Getenv("RUN_CIS_BENCHMARK") == "true" {
+													By("Running CIS benchmark against workload cluster")
+
+													trivyCmd := exec.Command( //nolint:gosec // Only used for testing so safe here.
+														"trivy",
+														"k8s",
+														"--compliance=k8s-cis-1.23",
+														"--disable-node-collector",
+														"--report=summary",
+														fmt.Sprintf(
+															"--output=%s",
+															filepath.Join(
+																os.Getenv("GIT_REPO_ROOT"),
+																"cis-benchmark-report.txt",
+															),
+														),
+														fmt.Sprintf(
+															"--kubeconfig=%s",
+															workloadProxy.GetKubeconfigPath(),
+														),
+													)
+
+													trivyCmd.Stdout = GinkgoWriter
+													trivyCmd.Stderr = GinkgoWriter
+
+													Expect(trivyCmd.Run()).To(Succeed(), "CIS benchmark failed")
+												}
 											},
 										}
 									})
