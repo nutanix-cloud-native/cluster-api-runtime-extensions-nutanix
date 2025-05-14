@@ -15,6 +15,8 @@ spec:
             tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
       postKubeadmCommands:
       - echo "after kubeadm call" > /var/log/postkubeadm.log
+      - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+      - chmod 600 /var/lib/kubelet/config.yaml
       preKubeadmCommands:
       - echo "before kubeadm call" > /var/log/prekubeadm.log
       - hostnamectl set-hostname "{{ ds.meta_data.hostname }}"
@@ -223,6 +225,9 @@ spec:
         - echo "127.0.0.1   {{ ds.meta_data.hostname }}" >> /etc/hosts
         useExperimentalRetryJoin: true
         verbosity: 10
+      postKubeadmCommands:
+      - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+      - chmod 600 /var/lib/kubelet/config.yaml
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: NutanixClusterTemplate
