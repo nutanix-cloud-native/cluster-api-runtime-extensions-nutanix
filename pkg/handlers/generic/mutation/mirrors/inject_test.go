@@ -4,11 +4,13 @@
 package mirrors
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -496,6 +498,67 @@ func newMirrorSecretWithoutCA(name, namespace string) *corev1.Secret {
 		},
 		Data: secretData,
 		Type: corev1.SecretTypeOpaque,
+	}
+}
+
+func Test_containerdConfigFromRegistryAddon(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		cluster *clusterv1.Cluster
+		want    containerdConfig
+		wantErr error
+	}{
+		{
+			name: "valid input",
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: request.Namespace,
+				},
+				Spec: clusterv1.ClusterSpec{
+					ClusterNetwork: &clusterv1.ClusterNetwork{
+						Services: &clusterv1.NetworkRanges{
+							CIDRBlocks: []string{"192.168.0.1/16"},
+						},
+					},
+				},
+			},
+			want: containerdConfig{
+				URL:    "http://192.168.0.20",
+				Mirror: true,
+			},
+		},
+		{
+			name: "missing Services CIDR",
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.ClusterName,
+					Namespace: request.Namespace,
+				},
+				Spec: clusterv1.ClusterSpec{
+					ClusterNetwork: &clusterv1.ClusterNetwork{},
+				},
+			},
+			wantErr: fmt.Errorf(
+				"error getting service IP for the registry addon: " +
+					"error getting a service IP for a cluster: " +
+					"unexpected empty service Subnets",
+			),
+		},
+	}
+	for idx := range tests {
+		tt := tests[idx]
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := containerdConfigFromRegistryAddon(tt.cluster)
+			if tt.wantErr != nil {
+				require.EqualError(t, err, tt.wantErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+			assert.Equal(t, tt.want, got)
+		})
 	}
 }
 
