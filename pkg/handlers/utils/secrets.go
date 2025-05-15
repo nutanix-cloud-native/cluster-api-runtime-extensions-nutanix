@@ -9,12 +9,9 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -64,62 +61,6 @@ func CopySecretToRemoteCluster(
 	}
 
 	return nil
-}
-
-// EnsureClusterOwnerReferenceForObject ensures that OwnerReference of the cluster is added on provided object.
-func EnsureClusterOwnerReferenceForObject(
-	ctx context.Context,
-	cl ctrlclient.Client,
-	objectRef corev1.TypedLocalObjectReference,
-	cluster *clusterv1.Cluster,
-) error {
-	targetObj, err := GetResourceFromTypedLocalObjectReference(
-		ctx,
-		cl,
-		objectRef,
-		cluster.Namespace,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = controllerutil.SetOwnerReference(cluster, targetObj, cl.Scheme())
-	if err != nil {
-		return fmt.Errorf("failed to set cluster's owner reference on object: %w", err)
-	}
-
-	err = cl.Update(ctx, targetObj)
-	if err != nil {
-		return fmt.Errorf("failed to update object with cluster's owner reference: %w", err)
-	}
-	return nil
-}
-
-// GetResourceFromTypedLocalObjectReference gets the resource from the provided TypedLocalObjectReference.
-func GetResourceFromTypedLocalObjectReference(
-	ctx context.Context,
-	cl ctrlclient.Client,
-	typedLocalObjectRef corev1.TypedLocalObjectReference,
-	ns string,
-) (*unstructured.Unstructured, error) {
-	apiVersion := corev1.SchemeGroupVersion.String()
-	if typedLocalObjectRef.APIGroup != nil {
-		apiVersion = *typedLocalObjectRef.APIGroup
-	}
-
-	objectRef := &corev1.ObjectReference{
-		APIVersion: apiVersion,
-		Kind:       typedLocalObjectRef.Kind,
-		Name:       typedLocalObjectRef.Name,
-		Namespace:  ns,
-	}
-
-	targetObj, err := external.Get(ctx, cl, objectRef)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get resource from object reference: %w", err)
-	}
-
-	return targetObj, nil
 }
 
 func getSecretForCluster(
