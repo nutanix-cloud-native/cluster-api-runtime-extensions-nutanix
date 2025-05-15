@@ -31,6 +31,7 @@
     "rsync@latest",
     "setup-envtest@latest",
     "shfmt@latest",
+    "trivy@latest",
     "yamale@latest",
     "yamllint@latest",
     "yq-go@latest",
