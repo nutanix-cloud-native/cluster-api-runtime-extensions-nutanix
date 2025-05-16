@@ -20,11 +20,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/util/kubeconfig"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -144,6 +148,36 @@ func (t *TestEnvironment) GetK8sClientWithScheme(
 	clientScheme *runtime.Scheme,
 ) (client.Client, error) {
 	return client.New(t.GetConfig(), client.Options{Scheme: clientScheme})
+}
+
+// WithFakeRemoteClusterClient creates a fake remote cluster client Secret pointing to the test API server.
+func (t *TestEnvironment) WithFakeRemoteClusterClient(cluster *clusterv1.Cluster) error {
+	clientScheme := runtime.NewScheme()
+	utilruntime.Must(scheme.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+
+	cfg := t.GetConfig()
+	c, err := client.New(cfg, client.Options{Scheme: clientScheme})
+	if err != nil {
+		return err
+	}
+
+	kubeconfigBytes := kubeconfig.FromEnvTestConfig(cfg, cluster)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-kubeconfig", cluster.Name),
+			Namespace: cluster.Namespace,
+		},
+		Data: map[string][]byte{
+			"value": kubeconfigBytes,
+		},
+	}
+	err = controllerutil.SetOwnerReference(cluster, secret, c.Scheme())
+	if err != nil {
+		return fmt.Errorf("failed to set cluster's owner reference on kubeconfig secret: %w", err)
+	}
+
+	return c.Create(context.Background(), secret)
 }
 
 // StartManager starts the test controller against the local API server.
