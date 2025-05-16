@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.29.0 (2025-05-16)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Explicitly disable profiling for CP components by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1109
+* feat: add registry addon by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1116
+* feat: use registryMirror addon as Containerd mirror by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1117
+### Fixes 🔧
+* fix: uses consistent spelling by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1115
+### Other Changes
+* ci: include correct kube-vip version when listing images by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1113
+* build: Update all tools and fix up for golangci-lint v2 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1108
+* test(e2e): Disable Calico tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1120
+* test(e2e): Update Nutanix images by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1121
+* refactor: Register types with scheme using pattern from Cluster API by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1124
+* ci: use templating for capx tests by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1123
+* test: Return root module root dir when using go.work by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1125
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.28.2...v0.29.0
+
 ## 0.28.2 (2025-04-24)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
