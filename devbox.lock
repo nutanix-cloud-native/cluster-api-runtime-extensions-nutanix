@@ -1721,54 +1721,6 @@
         }
       }
     },
-    "trivy@latest": {
-      "last_modified": "2025-04-28T01:45:31Z",
-      "resolved": "github:NixOS/nixpkgs/29335f23bea5e34228349ea739f31ee79e267b88#trivy",
-      "source": "devbox-search",
-      "version": "0.61.1",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/4s34i0ml8hxficr4v7csyigg4dy2pxhp-trivy-0.61.1",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/4s34i0ml8hxficr4v7csyigg4dy2pxhp-trivy-0.61.1"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/7ggs35rbylfxapxswngs0pvpisqj3cjz-trivy-0.61.1",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/7ggs35rbylfxapxswngs0pvpisqj3cjz-trivy-0.61.1"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/fs9lzjqj925m9kqvlgvvrs4q4lq6f0ps-trivy-0.61.1",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/fs9lzjqj925m9kqvlgvvrs4q4lq6f0ps-trivy-0.61.1"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/vcqkzvwxzxij69i2jaxmfkx4zl0ywlv6-trivy-0.61.1",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/vcqkzvwxzxij69i2jaxmfkx4zl0ywlv6-trivy-0.61.1"
-        }
-      }
-    },
     "yamale@latest": {
       "last_modified": "2025-05-16T20:19:48Z",
       "resolved": "github:NixOS/nixpkgs/12a55407652e04dcf2309436eb06fef0d3713ef3#yamale",
