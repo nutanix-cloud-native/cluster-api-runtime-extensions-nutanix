@@ -80,7 +80,7 @@ var _ = Describe("Quick start", func() {
 											lowercaseProvider,
 										)
 										if testE2EConfig.HasVariable(varName) {
-											testE2EConfig.Variables[capie2e.KubernetesVersion] = testE2EConfig.GetVariable(
+											testE2EConfig.Variables[capie2e.KubernetesVersion] = testE2EConfig.MustGetVariable(
 												varName,
 											)
 										}
@@ -97,8 +97,10 @@ var _ = Describe("Quick start", func() {
 											Expect(err).ToNot(HaveOccurred())
 
 											controlPlaneEndpointIP, unreserveControlPlaneEndpointIP, err := nutanix.ReserveIP(
-												testE2EConfig.GetVariable("NUTANIX_SUBNET_NAME"),
-												testE2EConfig.GetVariable(
+												testE2EConfig.MustGetVariable(
+													"NUTANIX_SUBNET_NAME",
+												),
+												testE2EConfig.MustGetVariable(
 													"NUTANIX_PRISM_ELEMENT_CLUSTER_NAME",
 												),
 												nutanixClient,
@@ -227,7 +229,7 @@ var _ = Describe("Quick start", func() {
 													ctx,
 													capiframework.WaitForNodesReadyInput{
 														Lister: workloadClient,
-														KubernetesVersion: testE2EConfig.GetVariable(
+														KubernetesVersion: testE2EConfig.MustGetVariable(
 															capie2e.KubernetesVersion,
 														),
 														Count: nodeCount,
