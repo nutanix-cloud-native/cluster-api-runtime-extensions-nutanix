@@ -126,7 +126,6 @@ jobs:
       matrix:
         config:
           - {"provider": "Nutanix", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.3", "baseOS": "rocky-9.5"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.0"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
