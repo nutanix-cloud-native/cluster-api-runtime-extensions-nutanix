@@ -25,7 +25,13 @@ type CheckResult struct {
 type Check = func(ctx context.Context) CheckResult
 
 type Checker interface {
-	Checks(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) ([]Check, error)
+	// Init decides which of its checks should run for the cluster. It then initializes the checks
+	// with common dependencies, such as an infrastructure client. Finally, it returns the initialized checks,
+	// ready to be run.
+	//
+	// Init should not store the context `ctx`, because each check will accept its own context.
+	// Checks may use both the client and the cluster.
+	Init(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) ([]Check, error)
 }
 
 type WebhookHandler struct {
@@ -79,7 +85,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	for _, checker := range h.checkers {
 		wg.Add(1)
 		result := ChecksResult{}
-		result.checks, result.err = checker.Checks(ctx, h.client, cluster)
+		result.checks, result.err = checker.Init(ctx, h.client, cluster)
 		checksResultCh <- result
 		wg.Done()
 	}

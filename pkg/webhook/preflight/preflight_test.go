@@ -27,7 +27,7 @@ type mockChecker struct {
 	err    error
 }
 
-func (m *mockChecker) Checks(_ context.Context, _ ctrlclient.Client, _ *clusterv1.Cluster) ([]Check, error) {
+func (m *mockChecker) Init(_ context.Context, _ ctrlclient.Client, _ *clusterv1.Cluster) ([]Check, error) {
 	return m.checks, m.err
 }
 
