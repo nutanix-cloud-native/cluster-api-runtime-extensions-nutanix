@@ -5,6 +5,7 @@ package preflight
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,10 +98,20 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	}
 
 	// Run all checks and collect results.
-	// TODO Parallelize	checks.
+	resultCh := make(chan CheckResult, len(checks))
+	wg := &sync.WaitGroup{}
 	for _, check := range checks {
-		result := check(ctx)
+		wg.Add(1)
+		go func(ctx context.Context, check Check) {
+			result := check(ctx)
+			resultCh <- result
+			wg.Done()
+		}(ctx, check)
+	}
+	wg.Wait()
+	close(resultCh)
 
+	for result := range resultCh {
 		if result.Error {
 			resp.Allowed = false
 			resp.Result.Code = http.StatusForbidden
