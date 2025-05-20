@@ -23,17 +23,12 @@ import (
 )
 
 type mockChecker struct {
-	provider string
-	checks   []Check
-	err      error
+	checks []Check
+	err    error
 }
 
 func (m *mockChecker) Checks(_ context.Context, _ ctrlclient.Client, _ *clusterv1.Cluster) ([]Check, error) {
 	return m.checks, m.err
-}
-
-func (m *mockChecker) Provider() string {
-	return m.provider
 }
 
 func TestHandle(t *testing.T) {
@@ -44,7 +39,7 @@ func TestHandle(t *testing.T) {
 	tests := []struct {
 		name             string
 		cluster          *clusterv1.Cluster
-		checker          *mockChecker
+		checkers         []Checker
 		checks           []Check
 		expectedResponse admission.Response
 	}{
@@ -81,27 +76,9 @@ func TestHandle(t *testing.T) {
 				},
 			},
 		},
+
 		{
-			name: "allow unknown provider",
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "unknown-provider",
-					},
-				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-				},
-			},
-			expectedResponse: admission.Response{
-				AdmissionResponse: admissionv1.AdmissionResponse{
-					Allowed: true,
-				},
-			},
-		},
-		{
-			name: "checker error",
+			name: "if no checks, then allowed",
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
@@ -113,53 +90,51 @@ func TestHandle(t *testing.T) {
 					Topology: &clusterv1.Topology{},
 				},
 			},
-			checker: &mockChecker{
-				provider: "test-provider",
-				err:      fmt.Errorf("checker error"),
+			checkers: []Checker{
+				&mockChecker{
+					checks: []Check{},
+				},
 			},
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
-					Allowed: false,
-					Result: &metav1.Status{
-						Code:    http.StatusInternalServerError,
-						Message: "failed to initialize preflight checks",
-						Details: &metav1.StatusDetails{
-							Causes: []metav1.StatusCause{
-								{
-									Type:    metav1.CauseTypeInternal,
-									Message: "checker error",
-								},
-							},
+					Allowed: true,
+				},
+			},
+		},
+		{
+			name: "if all checks pass, then allowed",
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-cluster",
+					Labels: map[string]string{
+						clusterv1.ProviderNameLabel: "test-provider",
+					},
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{},
+				},
+			},
+			checkers: []Checker{
+				&mockChecker{
+					checks: []Check{
+						func(ctx context.Context) CheckResult {
+							return CheckResult{Allowed: true}
+						},
+						func(ctx context.Context) CheckResult {
+							return CheckResult{Allowed: true}
 						},
 					},
 				},
 			},
-		},
-		{
-			name: "no checks returns allowed",
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
-				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-				},
-			},
-			checker: &mockChecker{
-				provider: "test-provider",
-				checks:   []Check{},
-			},
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: true,
 				},
 			},
 		},
+
 		{
-			name: "all checks pass",
+			name: "if any check fails, then not allowed",
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
@@ -171,45 +146,16 @@ func TestHandle(t *testing.T) {
 					Topology: &clusterv1.Topology{},
 				},
 			},
-			checker: &mockChecker{
-				provider: "test-provider",
-				checks: []Check{
-					func(ctx context.Context) CheckResult {
-						return CheckResult{Allowed: true}
-					},
-					func(ctx context.Context) CheckResult {
-						return CheckResult{Allowed: true}
-					},
-				},
-			},
-			expectedResponse: admission.Response{
-				AdmissionResponse: admissionv1.AdmissionResponse{
-					Allowed: true,
-				},
-			},
-		},
-		{
-			name: "failing check",
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
-				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-				},
-			},
-			checker: &mockChecker{
-				provider: "test-provider",
-				checks: []Check{
-					func(ctx context.Context) CheckResult {
-						return CheckResult{
-							Allowed: false,
-							Field:   "spec.test",
-							Message: "test failed",
-						}
+			checkers: []Checker{
+				&mockChecker{
+					checks: []Check{
+						func(ctx context.Context) CheckResult {
+							return CheckResult{
+								Allowed: false,
+								Field:   "spec.test",
+								Message: "test failed",
+							}
+						},
 					},
 				},
 			},
@@ -233,7 +179,7 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "check with warning",
+			name: "return warnings from checks",
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
@@ -245,14 +191,15 @@ func TestHandle(t *testing.T) {
 					Topology: &clusterv1.Topology{},
 				},
 			},
-			checker: &mockChecker{
-				provider: "test-provider",
-				checks: []Check{
-					func(ctx context.Context) CheckResult {
-						return CheckResult{
-							Allowed: true,
-							Warning: "test warning",
-						}
+			checkers: []Checker{
+				&mockChecker{
+					checks: []Check{
+						func(ctx context.Context) CheckResult {
+							return CheckResult{
+								Allowed: true,
+								Warning: "test warning",
+							}
+						},
 					},
 				},
 			},
@@ -266,18 +213,87 @@ func TestHandle(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "run other checks, despite checker initialization error",
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-cluster",
+					Labels: map[string]string{
+						clusterv1.ProviderNameLabel: "test-provider",
+					},
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{},
+				},
+			},
+			checkers: []Checker{
+				&mockChecker{
+					checks: []Check{
+						func(ctx context.Context) CheckResult {
+							return CheckResult{
+								Allowed: true,
+							}
+						},
+					},
+				},
+				&mockChecker{
+					checks: []Check{
+						func(ctx context.Context) CheckResult {
+							return CheckResult{
+								Allowed: false,
+								Message: "check failed",
+							}
+						},
+					},
+				},
+				&mockChecker{
+					checks: []Check{
+						func(ctx context.Context) CheckResult {
+							return CheckResult{
+								Allowed: false,
+								Error:   true,
+								Message: "check result error",
+							}
+						},
+					},
+				},
+				&mockChecker{
+					err: fmt.Errorf("checker initialization error"),
+				},
+			},
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: false,
+					Result: &metav1.Status{
+						Code:    http.StatusForbidden,
+						Message: "preflight checks failed",
+						Details: &metav1.StatusDetails{
+							Causes: []metav1.StatusCause{
+								{
+									Type:    metav1.CauseTypeInternal,
+									Message: "checker initialization error",
+								},
+								{
+									Type:    metav1.CauseTypeInternal,
+									Message: "check result error",
+								},
+								{
+									Type:    metav1.CauseTypeFieldValueInvalid,
+									Message: "check failed",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			decoder := admission.NewDecoder(scheme)
 
-			checkers := []Checker{}
-			if tt.checker != nil {
-				checkers = append(checkers, tt.checker)
-			}
-
-			handler := New(fake.NewClientBuilder().Build(), decoder, checkers...)
+			handler := New(fake.NewClientBuilder().Build(), decoder, tt.checkers...)
 
 			ctx := context.TODO()
 
@@ -338,7 +354,6 @@ func TestHandleCancelledContext(t *testing.T) {
 	}
 
 	checker := &mockChecker{
-		provider: "test-provider",
 		checks: []Check{
 			func(ctx context.Context) CheckResult {
 				select {
@@ -446,7 +461,6 @@ func TestHandleParallelChecks(t *testing.T) {
 	// Test that checks run in parallel by using atomic counter
 	var counter int32
 	checker := &mockChecker{
-		provider: "test-provider",
 		checks: []Check{
 			func(ctx context.Context) CheckResult {
 				current := atomic.AddInt32(&counter, 1)

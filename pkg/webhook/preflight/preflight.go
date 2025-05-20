@@ -12,8 +12,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 type CheckResult struct {
@@ -28,23 +26,19 @@ type Check = func(ctx context.Context) CheckResult
 
 type Checker interface {
 	Checks(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) ([]Check, error)
-	Provider() string
 }
 
 type WebhookHandler struct {
-	client             ctrlclient.Client
-	decoder            admission.Decoder
-	checkersByProvider map[string]Checker
+	client   ctrlclient.Client
+	decoder  admission.Decoder
+	checkers []Checker
 }
 
 func New(client ctrlclient.Client, decoder admission.Decoder, checkers ...Checker) *WebhookHandler {
 	h := &WebhookHandler{
-		client:             client,
-		decoder:            decoder,
-		checkersByProvider: make(map[string]Checker, len(checkers)),
-	}
-	for _, checker := range checkers {
-		h.checkersByProvider[checker.Provider()] = checker
+		client:   client,
+		decoder:  decoder,
+		checkers: checkers,
 	}
 	return h
 }
@@ -65,12 +59,6 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	// Checks run only for the known infrastructure providers.
-	checker, ok := h.checkersByProvider[utils.GetProvider(cluster)]
-	if !ok {
-		return admission.Allowed("")
-	}
-
 	resp := admission.Response{
 		AdmissionResponse: admissionv1.AdmissionResponse{
 			Allowed: true,
@@ -80,26 +68,43 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		},
 	}
 
-	checks, err := checker.Checks(ctx, h.client, cluster)
-	if err != nil {
-		resp.Allowed = false
-		resp.Result.Code = http.StatusInternalServerError
-		resp.Result.Message = "failed to initialize preflight checks"
-		resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
-			Type:    metav1.CauseTypeInternal,
-			Message: err.Error(),
-			Field:   "", // This concerns the whole cluster.
-		})
-		return resp
+	// Initialize checkers in parallel.
+	type ChecksResult struct {
+		checks []Check
+		err    error
 	}
+	checksResultCh := make(chan ChecksResult, len(h.checkers))
 
-	if len(checks) == 0 {
-		return admission.Allowed("")
-	}
-
-	// Run all checks and collect results.
-	resultCh := make(chan CheckResult, len(checks))
 	wg := &sync.WaitGroup{}
+	for _, checker := range h.checkers {
+		wg.Add(1)
+		result := ChecksResult{}
+		result.checks, result.err = checker.Checks(ctx, h.client, cluster)
+		checksResultCh <- result
+		wg.Done()
+	}
+	wg.Wait()
+	close(checksResultCh)
+
+	// Collect all checks.
+	checks := make([]Check, 0)
+	for checksResult := range checksResultCh {
+		if checksResult.err != nil {
+			resp.Allowed = false
+			resp.Result.Code = http.StatusInternalServerError
+			resp.Result.Message = "failed to initialize preflight checks"
+			resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
+				Type:    metav1.CauseTypeInternal,
+				Message: checksResult.err.Error(),
+				Field:   "", // This concerns the whole cluster.
+			})
+			continue
+		}
+		checks = append(checks, checksResult.checks...)
+	}
+
+	// Run all checks in parallel.
+	resultCh := make(chan CheckResult, len(checks))
 	for _, check := range checks {
 		wg.Add(1)
 		go func(ctx context.Context, check Check) {
@@ -111,6 +116,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	wg.Wait()
 	close(resultCh)
 
+	// Collect check results.
 	for result := range resultCh {
 		if result.Error {
 			resp.Allowed = false
