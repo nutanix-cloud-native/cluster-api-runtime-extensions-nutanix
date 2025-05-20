@@ -20,15 +20,9 @@ import (
 type Checker struct {
 	client        ctrlclient.Client
 	nutanixClient *prismv4.Client
-	cluster       *clusterv1.Cluster
-	clusterConfig *variables.ClusterConfigSpec
 }
 
-func (n *Checker) Provider() string {
-	return "nutanix"
-}
-
-func (n *Checker) Checks(
+func (n *Checker) Init(
 	ctx context.Context,
 	client ctrlclient.Client,
 	cluster *clusterv1.Cluster,
@@ -54,7 +48,10 @@ func (n *Checker) Checks(
 	if clusterConfig.ControlPlane != nil && clusterConfig.ControlPlane.Nutanix != nil {
 		checks = append(
 			checks,
-			n.VMImageCheck(clusterConfig.ControlPlane.Nutanix.MachineDetails, "controlPlane.nutanix.machineDetails"),
+			n.VMImageCheck(
+				&clusterConfig.ControlPlane.Nutanix.MachineDetails,
+				"controlPlane.nutanix.machineDetails",
+			),
 		)
 	}
 
@@ -79,7 +76,7 @@ func (n *Checker) Checks(
 			}
 
 			n.VMImageCheck(
-				workerConfig.Nutanix.MachineDetails,
+				&workerConfig.Nutanix.MachineDetails,
 				fmt.Sprintf(
 					"workers.machineDeployments[.name=%s].variables.overrides[.name=workerConfig].value.nutanix.machineDetails",
 					md.Name,

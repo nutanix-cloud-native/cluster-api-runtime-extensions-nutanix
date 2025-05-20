@@ -13,7 +13,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func (n *Checker) VMImageCheck(details carenv1.NutanixMachineDetails, field string) preflight.Check {
+func (n *Checker) VMImageCheck(details *carenv1.NutanixMachineDetails, field string) preflight.Check {
 	return func(ctx context.Context) preflight.CheckResult {
 		result := preflight.CheckResult{
 			Allowed: true,

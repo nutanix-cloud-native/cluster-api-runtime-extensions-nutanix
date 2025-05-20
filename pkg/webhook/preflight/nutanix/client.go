@@ -25,7 +25,7 @@ func newV4Client(
 	error,
 ) {
 	if clusterConfig.Nutanix.PrismCentralEndpoint.Credentials.SecretRef.Name == "" {
-		return nil, fmt.Errorf("Prism Central credentials reference SecretRef.Name has no value")
+		return nil, fmt.Errorf("prism Central credentials reference SecretRef.Name has no value")
 	}
 
 	credentialsSecret := &corev1.Secret{}
@@ -56,6 +56,5 @@ func newV4Client(
 		Username: credentials.Username,
 		Password: credentials.Password,
 		Insecure: clusterConfig.Nutanix.PrismCentralEndpoint.Insecure,
-		// TODO AdditionalTrustBundle
 	})
 }
