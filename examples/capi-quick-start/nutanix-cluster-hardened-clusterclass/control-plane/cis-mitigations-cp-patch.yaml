@@ -1,0 +1,106 @@
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlaneTemplate
+metadata:
+  name: nkp-nutanix-<VERSION>
+spec:
+  template:
+    spec:
+      kubeadmConfigSpec:
+        clusterConfiguration:
+          apiServer:
+            extraArgs:
+              #1.2.15 Ensure that the --profiling argument is set to false
+              profiling: "false"
+              #1.2.21 Ensure that the --service-account-lookup argument is set to true
+              service-account-lookup: "true"
+              #1.2.3 Ensure that the DenyServiceExternalIPs is set
+              #1.2.9 Ensure that the admission control plugin EventRateLimit is set
+              #1.2.11 Ensure that the admission control plugin AlwaysPullImages is set
+              #1.2.14 Ensure that the admission control plugin NodeRestriction is set
+              enable-admission-plugins: AlwaysPullImages,EventRateLimit,DenyServiceExternalIPs,NodeRestriction
+              #1.2.9 Ensure that the admission control plugin EventRateLimit is set
+              admission-control-config-file: /etc/kubernetes/admission/admissionConfiguration.yaml
+              #1.2.5 Ensure that the --kubelet-certificate-authority argument is set as appropriate
+              #This requires https://github.com/postfinance/kubelet-csr-approver to be installed. Install using the below helm command.
+              #helm upgrade --install kubelet-csr-approver kubelet-csr-approver/kubelet-csr-approver -n kube-system --create-namespace --set maxExpirationSeconds=2592000 --set leaderElection=true --set bypassDnsResolution=true --set rbac.create=true
+              #If kubelet-csr-approver is not installed, ensure the below flag is omitted using a #
+              kubelet-certificate-authority: /etc/kubernetes/pki/ca.crt
+            extraVolumes:
+              #1.2.9 Ensure that the admission control plugin EventRateLimit is set
+            - name: admission-config
+              hostPath: /etc/kubernetes/admission
+              mountPath: /etc/kubernetes/admission
+              readOnly: true
+              pathType: DirectoryOrCreate
+          controllerManager:
+            extraArgs:
+              #1.3.1 Ensure that the --terminated-pod-gc-threshold argument is set as appropriate
+              terminated-pod-gc-threshold: "10000"
+              #1.3.2 Ensure that the --profiling argument is set to false
+              profiling: "false"
+              #1.3.6 Ensure that the RotateKubeletServerCertificate argument is set to true
+              #This requires https://github.com/postfinance/kubelet-csr-approver to be installed. Install using the below helm command.
+              #helm upgrade --install kubelet-csr-approver kubelet-csr-approver/kubelet-csr-approver -n kube-system --create-namespace --set maxExpirationSeconds=2592000 --set leaderElection=true --set bypassDnsResolution=true --set rbac.create=true
+              #If kubelet-csr-approver is not installed, ensure the below flag is omitted using a #
+              feature-gates: RotateKubeletServerCertificate=true
+          scheduler:
+            extraArgs:
+              #1.4.1 Ensure that the --profiling argument is set to false
+              profiling: "false"
+        files:
+          #1.2.9 Ensure that the admission control plugin EventRateLimit is set
+        - content: |
+            apiVersion: apiserver.config.k8s.io/v1
+            kind: AdmissionConfiguration
+            plugins:
+              - name: EventRateLimit
+                path: /etc/kubernetes/admission/eventRateLimit.yaml
+          path: /etc/kubernetes/admission/admissionConfiguration.yaml
+          permissions: "0600"
+          #1.2.9 Ensure that the admission control plugin EventRateLimit is set
+        - content: |
+            apiVersion: eventratelimit.admission.k8s.io/v1alpha1
+            kind: Configuration
+            limits:
+            - type: Server
+              qps: 5000
+              burst: 20000
+            - type: Namespace
+              qps: 500
+              burst: 2000
+              cacheSize: 1000
+            - type: User
+              qps: 100
+              burst: 400
+              cacheSize: 2000
+            - type: SourceAndObject
+              qps: 50
+              burst: 100
+              cacheSize: 5000
+          path: /etc/kubernetes/admission/eventRateLimit.yaml
+          permissions: "0600"
+        initConfiguration:
+          nodeRegistration:
+            kubeletExtraArgs:
+              #1.2.5 Ensure that the --kubelet-certificate-authority argument is set as appropriate
+              #1.3.6 Ensure that the RotateKubeletServerCertificate argument is set to true
+              #This requires https://github.com/postfinance/kubelet-csr-approver to be installed. Install using the below helm command.
+              #helm upgrade --install kubelet-csr-approver kubelet-csr-approver/kubelet-csr-approver -n kube-system --create-namespace --set maxExpirationSeconds=2592000 --set leaderElection=true --set bypassDnsResolution=true --set rbac.create=true
+              #If kubelet-csr-approver is not installed, ensure the below flag is omitted using a #
+              rotate-server-certificates: "true"
+        joinConfiguration:
+          nodeRegistration:
+            kubeletExtraArgs:
+              #1.2.5 Ensure that the --kubelet-certificate-authority argument is set as appropriate
+              #1.3.6 Ensure that the RotateKubeletServerCertificate argument is set to true
+              #This requires https://github.com/postfinance/kubelet-csr-approver to be installed. Install using the below helm command.
+              #helm upgrade --install kubelet-csr-approver kubelet-csr-approver/kubelet-csr-approver -n kube-system --create-namespace --set maxExpirationSeconds=2592000 --set leaderElection=true --set bypassDnsResolution=true --set rbac.create=true
+              #If kubelet-csr-approver is not installed, ensure the below flag is omitted using a #
+              rotate-server-certificates: "true"
+        postKubeadmCommands:
+        - echo export KUBECONFIG=/etc/kubernetes/admin.conf >> /root/.bashrc
+        - echo "after kubeadm call" > /var/log/postkubeadm.log
+        #4.1.1 Ensure that the kubelet service file permissions are set to 600 or more restrictive
+        - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+        - chmod 600 /var/lib/kubelet/config.yaml
+        - chmod 600 /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
