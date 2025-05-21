@@ -23,12 +23,28 @@ import (
 )
 
 type mockChecker struct {
+	name   string
 	checks []Check
-	err    error
 }
 
-func (m *mockChecker) Init(_ context.Context, _ ctrlclient.Client, _ *clusterv1.Cluster) ([]Check, error) {
-	return m.checks, m.err
+func (m *mockChecker) Name() string {
+	return m.name
+}
+
+func (m *mockChecker) Init(_ context.Context, _ ctrlclient.Client, _ *clusterv1.Cluster) []Check {
+	return m.checks
+}
+
+type mockDecoder struct {
+	err error
+}
+
+func (m *mockDecoder) Decode(_ admission.Request, _ runtime.Object) error {
+	return m.err
+}
+
+func (m *mockDecoder) DecodeRaw(_ runtime.RawExtension, _ runtime.Object) error {
+	return m.err
 }
 
 func TestHandle(t *testing.T) {
@@ -38,13 +54,16 @@ func TestHandle(t *testing.T) {
 
 	tests := []struct {
 		name             string
+		operation        admissionv1.Operation
+		decoder          admission.Decoder
 		cluster          *clusterv1.Cluster
 		checkers         []Checker
 		checks           []Check
 		expectedResponse admission.Response
 	}{
 		{
-			name: "skip delete operations",
+			name:      "skip delete operations",
+			operation: admissionv1.Delete,
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
@@ -76,7 +95,29 @@ func TestHandle(t *testing.T) {
 				},
 			},
 		},
-
+		{
+			name: "handle decoder error",
+			decoder: &mockDecoder{
+				err: fmt.Errorf("decode error"),
+			},
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-cluster",
+					Labels: map[string]string{
+						clusterv1.ProviderNameLabel: "test-provider",
+					},
+				},
+			},
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: false,
+					Result: &metav1.Status{
+						Code:    http.StatusBadRequest,
+						Message: "decode error",
+					},
+				},
+			},
+		},
 		{
 			name: "if no checks, then allowed",
 			cluster: &clusterv1.Cluster{
@@ -214,7 +255,7 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "run other checks, despite checker initialization error",
+			name: "internal error takes precedence in response",
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
@@ -231,7 +272,9 @@ func TestHandle(t *testing.T) {
 					checks: []Check{
 						func(ctx context.Context) CheckResult {
 							return CheckResult{
-								Allowed: true,
+								Allowed: false,
+								Error:   true,
+								Message: "internal error",
 							}
 						},
 					},
@@ -250,36 +293,28 @@ func TestHandle(t *testing.T) {
 					checks: []Check{
 						func(ctx context.Context) CheckResult {
 							return CheckResult{
-								Allowed: false,
-								Error:   true,
-								Message: "check result error",
+								Allowed: true,
 							}
 						},
 					},
-				},
-				&mockChecker{
-					err: fmt.Errorf("checker initialization error"),
 				},
 			},
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: false,
 					Result: &metav1.Status{
-						Code:    http.StatusForbidden,
+						Code:    http.StatusInternalServerError,
+						Reason:  metav1.StatusReasonInternalError,
 						Message: "preflight checks failed",
 						Details: &metav1.StatusDetails{
 							Causes: []metav1.StatusCause{
 								{
-									Type:    metav1.CauseTypeInternal,
-									Message: "checker initialization error",
-								},
-								{
-									Type:    metav1.CauseTypeInternal,
-									Message: "check result error",
-								},
-								{
 									Type:    metav1.CauseTypeFieldValueInvalid,
 									Message: "check failed",
+								},
+								{
+									Type:    metav1.CauseTypeInternal,
+									Message: "internal error",
 								},
 							},
 						},
@@ -291,7 +326,11 @@ func TestHandle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Default the decoder.
 			decoder := admission.NewDecoder(scheme)
+			if tt.decoder != nil {
+				decoder = tt.decoder
+			}
 
 			handler := New(fake.NewClientBuilder().Build(), decoder, tt.checkers...)
 
@@ -301,9 +340,15 @@ func TestHandle(t *testing.T) {
 			jsonCluster, err := json.Marshal(tt.cluster)
 			require.NoError(t, err)
 
+			// Default the operation.
+			operation := admissionv1.Create
+			if tt.operation != "" {
+				operation = tt.operation
+			}
+
 			admissionReq := admission.Request{
 				AdmissionRequest: admissionv1.AdmissionRequest{
-					Operation: admissionv1.Create,
+					Operation: operation,
 					Object: runtime.RawExtension{
 						Raw: jsonCluster,
 					},
@@ -321,13 +366,7 @@ func TestHandle(t *testing.T) {
 
 				if tt.expectedResponse.Result.Details != nil {
 					require.NotNil(t, got.Result.Details)
-					assert.Len(t, got.Result.Details.Causes, len(tt.expectedResponse.Result.Details.Causes))
-
-					for i, expectedCause := range tt.expectedResponse.Result.Details.Causes {
-						assert.Equal(t, expectedCause.Type, got.Result.Details.Causes[i].Type)
-						assert.Equal(t, expectedCause.Field, got.Result.Details.Causes[i].Field)
-						assert.Equal(t, expectedCause.Message, got.Result.Details.Causes[i].Message)
-					}
+					assert.ElementsMatch(t, tt.expectedResponse.Result.Details.Causes, got.Result.Details.Causes)
 				}
 			}
 			assert.Equal(t, tt.expectedResponse.Warnings, got.Warnings)
@@ -388,7 +427,8 @@ func TestHandleCancelledContext(t *testing.T) {
 		AdmissionResponse: admissionv1.AdmissionResponse{
 			Allowed: false,
 			Result: &metav1.Status{
-				Code:    http.StatusForbidden,
+				Code:    http.StatusInternalServerError,
+				Reason:  metav1.StatusReasonInternalError,
 				Message: "preflight checks failed",
 				Details: &metav1.StatusDetails{
 					Causes: []metav1.StatusCause{
@@ -439,13 +479,7 @@ func TestHandleCancelledContext(t *testing.T) {
 
 		if expectedResponse.Result.Details != nil {
 			require.NotNil(t, got.Result.Details)
-			assert.Len(t, got.Result.Details.Causes, len(expectedResponse.Result.Details.Causes))
-
-			for i, expectedCause := range expectedResponse.Result.Details.Causes {
-				assert.Equal(t, expectedCause.Type, got.Result.Details.Causes[i].Type)
-				assert.Equal(t, expectedCause.Field, got.Result.Details.Causes[i].Field)
-				assert.Equal(t, expectedCause.Message, got.Result.Details.Causes[i].Message)
-			}
+			assert.ElementsMatch(t, expectedResponse.Result.Details.Causes, got.Result.Details.Causes)
 		}
 	}
 	assert.Equal(t, expectedResponse.Warnings, got.Warnings)

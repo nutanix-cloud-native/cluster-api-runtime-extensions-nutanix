@@ -31,7 +31,7 @@ type Checker interface {
 	//
 	// Init should not store the context `ctx`, because each check will accept its own context.
 	// Checks may use both the client and the cluster.
-	Init(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) ([]Check, error)
+	Init(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) []Check
 }
 
 type WebhookHandler struct {
@@ -74,43 +74,34 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		},
 	}
 
-	// Initialize checkers in parallel.
-	type ChecksResult struct {
-		checks []Check
-		err    error
-	}
-	checksResultCh := make(chan ChecksResult, len(h.checkers))
-
+	// Initialize checkers in parallel and collect all checks.
+	checkCh := make(chan Check)
 	wg := &sync.WaitGroup{}
 	for _, checker := range h.checkers {
 		wg.Add(1)
-		result := ChecksResult{}
-		result.checks, result.err = checker.Init(ctx, h.client, cluster)
-		checksResultCh <- result
-		wg.Done()
+		go func(ctx context.Context, checker Checker) {
+			checks := checker.Init(ctx, h.client, cluster)
+			for _, check := range checks {
+				checkCh <- check
+			}
+			wg.Done()
+		}(ctx, checker)
 	}
-	wg.Wait()
-	close(checksResultCh)
 
-	// Collect all checks.
-	checks := make([]Check, 0)
-	for checksResult := range checksResultCh {
-		if checksResult.err != nil {
-			resp.Allowed = false
-			resp.Result.Code = http.StatusInternalServerError
-			resp.Result.Message = "failed to initialize preflight checks"
-			resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
-				Type:    metav1.CauseTypeInternal,
-				Message: checksResult.err.Error(),
-				Field:   "", // This concerns the whole cluster.
-			})
-			continue
-		}
-		checks = append(checks, checksResult.checks...)
+	// Close the channel when all checkers are done.
+	go func(wg *sync.WaitGroup, checkCh chan Check) {
+		wg.Wait()
+		close(checkCh)
+	}(wg, checkCh)
+
+	// Collect all checks from the channel.
+	checks := []Check{}
+	for check := range checkCh {
+		checks = append(checks, check)
 	}
 
 	// Run all checks in parallel.
-	resultCh := make(chan CheckResult, len(checks))
+	resultCh := make(chan CheckResult)
 	for _, check := range checks {
 		wg.Add(1)
 		go func(ctx context.Context, check Check) {
@@ -119,27 +110,29 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 			wg.Done()
 		}(ctx, check)
 	}
-	wg.Wait()
-	close(resultCh)
 
-	// Collect check results.
+	// Close the channel when all checks are done.
+	go func(wg *sync.WaitGroup, resultCh chan CheckResult) {
+		wg.Wait()
+		close(resultCh)
+	}(wg, resultCh)
+
+	// Collect all check results from the channel.
+	internalError := false
 	for result := range resultCh {
 		if result.Error {
 			resp.Allowed = false
-			resp.Result.Code = http.StatusForbidden
-			resp.Result.Message = "preflight checks failed"
 			resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
 				Type:    metav1.CauseTypeInternal,
 				Field:   result.Field,
 				Message: result.Message,
 			})
+			internalError = true
 			continue
 		}
 
 		if !result.Allowed {
 			resp.Allowed = false
-			resp.Result.Code = http.StatusForbidden
-			resp.Result.Message = "preflight checks failed"
 			resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
 				Type:    metav1.CauseTypeFieldValueInvalid,
 				Field:   result.Field,
@@ -150,6 +143,20 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		if result.Warning != "" {
 			resp.Warnings = append(resp.Warnings, result.Warning)
 		}
+	}
+
+	if len(resp.Result.Details.Causes) == 0 {
+		return resp
+	}
+
+	// Because we have some causes, we construct the response message and code.
+	resp.Result.Message = "preflight checks failed"
+	resp.Result.Code = http.StatusForbidden
+	resp.Result.Reason = metav1.StatusReasonForbidden
+	if internalError {
+		// Internal errors take precedence over check failures.
+		resp.Result.Code = http.StatusInternalServerError
+		resp.Result.Reason = metav1.StatusReasonInternalError
 	}
 
 	return resp
