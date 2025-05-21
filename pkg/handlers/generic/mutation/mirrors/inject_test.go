@@ -4,6 +4,7 @@
 package mirrors
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -19,6 +20,8 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -30,6 +33,8 @@ import (
 const (
 	validMirrorCASecretName   = "myregistry-mirror-cacert"
 	validMirrorNoCASecretName = "myregistry-mirror-no-cacert"
+
+	registryAddonCAForCluster = "test-cluster-registry-addon-ca"
 )
 
 func TestMirrorsPatch(t *testing.T) {
@@ -359,6 +364,9 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/192.168.0.20/ca.crt",
+						),
+						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
 						),
 					),
@@ -392,6 +400,9 @@ var _ = Describe("Generate Global mirror patches", func() {
 							"path", "/etc/containerd/certs.d/_default/hosts.toml",
 						),
 						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/192.168.0.20/ca.crt",
+						),
+						gomega.HaveKeyWithValue(
 							"path", "/etc/caren/containerd/patches/registry-config.toml",
 						),
 					),
@@ -406,11 +417,15 @@ var _ = Describe("Generate Global mirror patches", func() {
 		gomega.Expect(err).To(gomega.BeNil())
 		gomega.Expect(client.Create(
 			ctx,
-			newMirrorSecretWithCA(validMirrorCASecretName, request.Namespace),
+			newRegistrySecretWithCA(validMirrorCASecretName),
 		)).To(gomega.BeNil())
 		gomega.Expect(client.Create(
 			ctx,
-			newMirrorSecretWithoutCA(validMirrorNoCASecretName, request.Namespace),
+			newRegistrySecretWithoutCA(validMirrorNoCASecretName),
+		)).To(gomega.BeNil())
+		gomega.Expect(client.Create(
+			ctx,
+			newRegistrySecretWithCA(registryAddonCAForCluster),
 		)).To(gomega.BeNil())
 
 		gomega.Expect(client.Create(
@@ -437,11 +452,15 @@ var _ = Describe("Generate Global mirror patches", func() {
 		gomega.Expect(err).To(gomega.BeNil())
 		gomega.Expect(client.Delete(
 			ctx,
-			newMirrorSecretWithCA(validMirrorCASecretName, request.Namespace),
+			newRegistrySecretWithCA(validMirrorCASecretName),
 		)).To(gomega.BeNil())
 		gomega.Expect(client.Delete(
 			ctx,
-			newMirrorSecretWithoutCA(validMirrorNoCASecretName, request.Namespace),
+			newRegistrySecretWithoutCA(validMirrorNoCASecretName),
+		)).To(gomega.BeNil())
+		gomega.Expect(client.Delete(
+			ctx,
+			newRegistrySecretWithCA(registryAddonCAForCluster),
 		)).To(gomega.BeNil())
 
 		gomega.Expect(client.Delete(
@@ -464,57 +483,24 @@ var _ = Describe("Generate Global mirror patches", func() {
 	}
 })
 
-func newMirrorSecretWithCA(name, namespace string) *corev1.Secret {
-	secretData := map[string][]byte{
-		"ca.crt": []byte("myCACert"),
-	}
-	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: secretData,
-		Type: corev1.SecretTypeOpaque,
-	}
-}
-
-func newMirrorSecretWithoutCA(name, namespace string) *corev1.Secret {
-	secretData := map[string][]byte{
-		"username": []byte("user"),
-		"password": []byte("pass"),
-	}
-	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: secretData,
-		Type: corev1.SecretTypeOpaque,
-	}
-}
-
 func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
+		c       ctrlclient.Client
 		cluster *clusterv1.Cluster
 		want    containerdConfig
 		wantErr error
 	}{
 		{
-			name: "valid input",
+			name: "valid input with a CA certificate",
+			c: fake.NewClientBuilder().WithObjects(
+				newRegistrySecretWithCA(registryAddonCAForCluster),
+			).Build(),
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      request.ClusterName,
-					Namespace: request.Namespace,
+					Name:      "test-cluster",
+					Namespace: corev1.NamespaceDefault,
 				},
 				Spec: clusterv1.ClusterSpec{
 					ClusterNetwork: &clusterv1.ClusterNetwork{
@@ -525,16 +511,19 @@ func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 				},
 			},
 			want: containerdConfig{
-				URL:    "http://192.168.0.20",
-				Mirror: true,
+				URL:          "https://192.168.0.20",
+				Mirror:       true,
+				CASecretName: "test-cluster-registry-addon-ca",
+				CACert:       "myCACert",
 			},
 		},
 		{
-			name: "missing Services CIDR",
+			name: "error: missing Services CIDR",
+			c:    fake.NewClientBuilder().Build(),
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      request.ClusterName,
-					Namespace: request.Namespace,
+					Name:      "test-cluster",
+					Namespace: corev1.NamespaceDefault,
 				},
 				Spec: clusterv1.ClusterSpec{
 					ClusterNetwork: &clusterv1.ClusterNetwork{},
@@ -546,12 +535,32 @@ func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 					"unexpected empty service Subnets",
 			),
 		},
+		{
+			name: "error: missing certificate in the secret",
+			// The suffix "-ca" is misleading here because we expect the generated secret to always have a CA.
+			c: fake.NewClientBuilder().WithObjects(
+				newRegistrySecretWithoutCA("test-cluster-registry-addon-ca"),
+			).Build(),
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: corev1.NamespaceDefault,
+				},
+				Spec: clusterv1.ClusterSpec{
+					ClusterNetwork: &clusterv1.ClusterNetwork{
+						Services: &clusterv1.NetworkRanges{
+							CIDRBlocks: []string{"192.168.0.1/16"},
+						},
+					},
+				},
+			},
+			wantErr: fmt.Errorf("CA certificate not found in the secret"),
+		},
 	}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := containerdConfigFromRegistryAddon(tt.cluster)
+			got, err := containerdConfigFromRegistryAddon(context.Background(), tt.c, tt.cluster)
 			if tt.wantErr != nil {
 				require.EqualError(t, err, tt.wantErr.Error())
 			} else {
@@ -635,5 +644,42 @@ func Test_needContainerdConfiguration(t *testing.T) {
 			got := needContainerdConfiguration(tt.configs)
 			assert.Equal(t, tt.want, got)
 		})
+	}
+}
+
+func newRegistrySecretWithCA(name string) *corev1.Secret {
+	secretData := map[string][]byte{
+		"ca.crt": []byte("myCACert"),
+	}
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: corev1.NamespaceDefault,
+		},
+		Data: secretData,
+		Type: corev1.SecretTypeOpaque,
+	}
+}
+
+func newRegistrySecretWithoutCA(name string) *corev1.Secret {
+	secretData := map[string][]byte{
+		"username": []byte("user"),
+		"password": []byte("pass"),
+	}
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: corev1.NamespaceDefault,
+		},
+		Data: secretData,
+		Type: corev1.SecretTypeOpaque,
 	}
 }
