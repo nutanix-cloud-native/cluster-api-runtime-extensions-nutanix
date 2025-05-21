@@ -70,7 +70,7 @@ I0EWIHsyNzyT3eqsXIO2ZIFKtqN83bPEFmVkKXAUV6lb0/nVSLrRTppFWlNyg1o5
 FYnq6/jDVxCbWmmP2u4TT557gMqao0DaJstf/NSXlK0bhA2B64M=
 -----END RSA PRIVATE KEY-----`)
 
-	testSecretNameForGlobalRegistryAddonTLS = "registry-addon-tls"
+	testSecretNameForGlobalRegistryAddonTLS = "registry-addon-root-ca"
 )
 
 var _ = Describe("Test EnsureCASecretForCluster", func() {
@@ -128,7 +128,7 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 
 		Expect(EnsureCASecretForCluster(ctx, c, cluster)).To(
 			MatchError("failed to get global registry addon CA secret: " +
-				"secrets \"registry-addon-tls\" not found",
+				"secrets \"registry-addon-root-ca\" not found",
 			),
 		)
 		caSecretKey := ctrlclient.ObjectKey{
@@ -147,7 +147,7 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 		Expect(c.Delete(ctx, globalSecret)).To(
 			Or(
 				Succeed(),
-				MatchError("secrets \"registry-addon-tls\" not found"),
+				MatchError("secrets \"registry-addon-root-ca\" not found"),
 			),
 		)
 	})
@@ -239,7 +239,7 @@ var _ = Describe("Test EnsureTLSCertificateSecretOnRemoteCluster", func() {
 		// Expect this to fail because the global CA secret is missing.
 		Expect(EnsureTLSCertificateSecretOnRemoteCluster(ctx, c, cluster, nil)).To(
 			MatchError("failed to get TLS secret used to sign the certificate: " +
-				"secrets \"registry-addon-tls\" not found"),
+				"secrets \"registry-addon-root-ca\" not found"),
 		)
 	})
 
@@ -251,7 +251,7 @@ var _ = Describe("Test EnsureTLSCertificateSecretOnRemoteCluster", func() {
 		Expect(c.Delete(ctx, globalSecret)).To(
 			Or(
 				Succeed(),
-				MatchError("secrets \"registry-addon-tls\" not found"),
+				MatchError("secrets \"registry-addon-root-ca\" not found"),
 			),
 		)
 	})

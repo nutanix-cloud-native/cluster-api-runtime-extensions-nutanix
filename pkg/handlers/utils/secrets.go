@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	secretNameForGlobalRegistryAddonTLS = "registry-addon-tls"
+	secretNameForGlobalRegistryAddonTLS = "registry-addon-root-ca"
 )
 
 // CopySecretToRemoteCluster will get the Secret from srcSecretName

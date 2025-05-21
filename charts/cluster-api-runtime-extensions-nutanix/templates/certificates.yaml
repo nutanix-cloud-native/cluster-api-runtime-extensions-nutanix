@@ -37,14 +37,14 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: registry-addon-tls
+  name: registry-addon-root-ca
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "chart.labels" . | nindent 4 }}
 spec:
   isCA: true
   commonName: registry-addon
-  secretName: registry-addon-tls
+  secretName: registry-addon-root-ca
   issuerRef:
     kind: {{ .Values.certificates.issuer.kind }}
     name: {{ template "chart.issuerName" . }}
