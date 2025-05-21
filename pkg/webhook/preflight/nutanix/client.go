@@ -4,26 +4,40 @@ import (
 	"context"
 	"fmt"
 
+	prism "github.com/nutanix-cloud-native/prism-go-client"
+	prismcredentials "github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
+	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	prism "github.com/nutanix-cloud-native/prism-go-client"
-	prismcredentials "github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
-
-	carenvariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
-func newV4Client(
+func (n *Checker) v4client(
 	ctx context.Context,
 	client ctrlclient.Client,
 	clusterNamespace string,
-	clusterConfig *carenvariables.ClusterConfigSpec,
 ) (
 	*prismv4.Client,
 	error,
 ) {
+	n.clientMutex.Lock()
+	defer n.clientMutex.Unlock()
+	if n.nutanixClient != nil {
+		return n.nutanixClient, nil
+	}
+
+	clusterConfig, err := variables.UnmarshalClusterConfigVariable(n.cluster.Spec.Topology.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal cluster variable %q: %w", carenv1.ClusterConfigVariableName, err)
+	}
+
+	if clusterConfig.Nutanix == nil {
+		return nil, fmt.Errorf("missing Nutanix configuration in cluster topology")
+	}
+
 	if clusterConfig.Nutanix.PrismCentralEndpoint.Credentials.SecretRef.Name == "" {
 		return nil, fmt.Errorf("prism Central credentials reference SecretRef.Name has no value")
 	}
