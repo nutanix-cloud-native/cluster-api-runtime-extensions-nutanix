@@ -8,6 +8,7 @@ package e2e
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"slices"
 	"strconv"
 	"strings"
@@ -307,6 +308,49 @@ var _ = Describe("Quick start", func() {
 														),
 													},
 												)
+
+												if os.Getenv("RUN_CIS_BENCHMARK") == "true" {
+													By("Running CIS benchmark against workload cluster")
+
+													kubescapeInstallCmd := exec.Command( //nolint:gosec // Only used for testing so safe here.
+														"helm",
+														"upgrade",
+														"--install",
+														"kubescape",
+														"--repo=https://kubescape.github.io/helm-charts/",
+														"kubescape-operator",
+														"--namespace=kubescape",
+														"--create-namespace",
+														"--wait",
+														"--wait-for-jobs",
+														fmt.Sprintf(
+															"--kubeconfig=%s",
+															workloadProxy.GetKubeconfigPath(),
+														),
+													)
+													kubescapeInstallCmd.Stdout = GinkgoWriter
+													kubescapeInstallCmd.Stderr = GinkgoWriter
+													Expect(
+														kubescapeInstallCmd.Run(),
+													).To(Succeed(), "kubescape operator installation failed")
+
+													kubescapeScanCmd := exec.Command( //nolint:gosec // Only used for testing so safe here.
+														"kubescape",
+														"scan",
+														"framework",
+														"cis-v1.10.0",
+														"--compliance-threshold=100",
+														"--output=cis-benchmark-report.txt",
+														"--kubeconfig",
+														workloadProxy.GetKubeconfigPath(),
+													)
+													kubescapeScanCmd.Stdout = GinkgoWriter
+													kubescapeScanCmd.Stderr = GinkgoWriter
+
+													Expect(
+														kubescapeScanCmd.Run(),
+													).To(Succeed(), "CIS benchmark scan failed")
+												}
 											},
 										}
 									})
