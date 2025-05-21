@@ -194,8 +194,13 @@ func TestHandle(t *testing.T) {
 						func(ctx context.Context) CheckResult {
 							return CheckResult{
 								Allowed: false,
-								Field:   "spec.test",
-								Message: "test failed",
+								Causes: []metav1.StatusCause{
+									{
+										Type:    metav1.CauseTypeFieldValueInvalid,
+										Field:   "spec.test",
+										Message: "test failed",
+									},
+								},
 							}
 						},
 					},
@@ -239,7 +244,9 @@ func TestHandle(t *testing.T) {
 						func(ctx context.Context) CheckResult {
 							return CheckResult{
 								Allowed: true,
-								Warning: "test warning",
+								Warnings: []string{
+									"test warning",
+								},
 							}
 						},
 					},
@@ -275,7 +282,13 @@ func TestHandle(t *testing.T) {
 							return CheckResult{
 								Allowed: false,
 								Error:   true,
-								Message: "internal error",
+
+								Causes: []metav1.StatusCause{
+									{
+										Type:    metav1.CauseTypeInternal,
+										Message: "internal error",
+									},
+								},
 							}
 						},
 					},
@@ -285,7 +298,12 @@ func TestHandle(t *testing.T) {
 						func(ctx context.Context) CheckResult {
 							return CheckResult{
 								Allowed: false,
-								Message: "check failed",
+								Causes: []metav1.StatusCause{
+									{
+										Type:    metav1.CauseTypeFieldValueInvalid,
+										Message: "check failed",
+									},
+								},
 							}
 						},
 					},
@@ -401,7 +419,12 @@ func TestHandleCancelledContext(t *testing.T) {
 					return CheckResult{
 						Allowed: false,
 						Error:   true,
-						Message: "context cancelled",
+						Causes: []metav1.StatusCause{
+							{
+								Type:    metav1.CauseTypeInternal,
+								Message: "context cancelled",
+							},
+						},
 					}
 				case <-time.After(100 * time.Millisecond):
 					return CheckResult{Allowed: true}
@@ -413,7 +436,12 @@ func TestHandleCancelledContext(t *testing.T) {
 					return CheckResult{
 						Allowed: false,
 						Error:   true,
-						Message: "context cancelled",
+						Causes: []metav1.StatusCause{
+							{
+								Type:    metav1.CauseTypeInternal,
+								Message: "context cancelled",
+							},
+						},
 					}
 				case <-time.After(100 * time.Millisecond):
 					return CheckResult{Allowed: true}

@@ -16,10 +16,10 @@ import (
 
 type CheckResult struct {
 	Allowed bool
-	Field   string
-	Message string
-	Warning string
 	Error   bool
+
+	Causes   []metav1.StatusCause
+	Warnings []string
 }
 
 type Check = func(ctx context.Context) CheckResult
@@ -121,28 +121,15 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	internalError := false
 	for result := range resultCh {
 		if result.Error {
-			resp.Allowed = false
-			resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
-				Type:    metav1.CauseTypeInternal,
-				Field:   result.Field,
-				Message: result.Message,
-			})
 			internalError = true
-			continue
 		}
 
 		if !result.Allowed {
 			resp.Allowed = false
-			resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
-				Type:    metav1.CauseTypeFieldValueInvalid,
-				Field:   result.Field,
-				Message: result.Message,
-			})
 		}
 
-		if result.Warning != "" {
-			resp.Warnings = append(resp.Warnings, result.Warning)
-		}
+		resp.Result.Details.Causes = append(resp.Result.Details.Causes, result.Causes...)
+		resp.Warnings = append(resp.Warnings, result.Warnings...)
 	}
 
 	if len(resp.Result.Details.Causes) == 0 {
