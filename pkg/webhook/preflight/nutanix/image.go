@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -20,79 +21,55 @@ func (n *Checker) VMImageCheck(ctx context.Context) preflight.CheckResult {
 	}
 
 	// Check control plane VM image.
-	clusterConfig, err := variables.UnmarshalClusterConfigVariable(n.cluster.Spec.Topology.Variables)
+	clusterConfig, err := n.getClusterConfig()
 	if err != nil {
 		result.Error = true
 		result.Causes = append(result.Causes, metav1.StatusCause{
-			Type: "VMImageCheck",
-			Message: fmt.Sprintf(
-				"failed to unmarshal topology variable %q: %s",
-				carenv1.ClusterConfigVariableName,
-				err,
-			),
-			Field: "cluster.spec.topology.variables",
+			Type:    "VMImageCheck",
+			Message: fmt.Sprintf("failed to read clusterConfig variable: %s", err),
+			Field:   "cluster.spec.topology.variables",
 		})
-	} else if clusterConfig != nil {
-		if clusterConfig.ControlPlane == nil || clusterConfig.ControlPlane.Nutanix == nil {
-			result.Causes = append(result.Causes, metav1.StatusCause{
-				Type:    "VMImageCheck",
-				Message: "missing Nutanix configuration in cluster topology",
-				Field:   "cluster.spec.topology.controlPlane.nutanix",
-			})
-		}
-
+	}
+	if clusterConfig != nil && clusterConfig.ControlPlane != nil && clusterConfig.ControlPlane.Nutanix != nil {
 		n.vmImageCheckForMachineDetails(
 			ctx,
+			clusterConfig,
 			&clusterConfig.ControlPlane.Nutanix.MachineDetails,
-			"controlPlane.nutanix.machineDetails",
+			"cluster.spec.topology.variables[.name=clusterConfig].controlPlane.nutanix.machineDetails",
 			&result,
 		)
 	}
 
-	// Check worker VM images.
+	// If there is no worker topology, return early.
 	if n.cluster.Spec.Topology.Workers == nil {
 		return result
 	}
 
+	// Check worker VM images.
 	for _, md := range n.cluster.Spec.Topology.Workers.MachineDeployments {
-		if md.Variables == nil {
-			continue
-		}
-
-		workerConfig, err := variables.UnmarshalWorkerConfigVariable(md.Variables.Overrides)
+		workerConfig, err := n.getWorkerConfigForMachineDeployment(md)
 		if err != nil {
 			result.Error = true
 			result.Causes = append(result.Causes, metav1.StatusCause{
-				Type: "VMImageCheck",
-				Message: fmt.Sprintf(
-					"failed to unmarshal topology variable %q: %s",
-					carenv1.WorkerConfigVariableName,
-					err,
-				),
+				Type:    "VMImageCheck",
+				Message: fmt.Sprintf("failed to read workerConfig variable: %s", err),
 				Field: fmt.Sprintf(
 					"cluster.spec.topology.workers.machineDeployments[.name=%s].variables.overrides",
 					md.Name,
 				),
 			})
-		} else if workerConfig != nil {
-			if workerConfig.Nutanix == nil {
-				result.Causes = append(result.Causes, metav1.StatusCause{
-					Type:    "VMImageCheck",
-					Message: "missing Nutanix configuration in worker machine deployment",
-					Field: fmt.Sprintf("cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-						".variables.overrides[.name=workerConfig].value.nutanix", md.Name),
-				})
-			} else {
-				n.vmImageCheckForMachineDetails(
-					ctx,
-					&workerConfig.Nutanix.MachineDetails,
-					fmt.Sprintf(
-						"workers.machineDeployments[.name=%s].variables.overrides[.name=workerConfig].value.nutanix.machineDetails",
-						md.Name,
-					),
-					&result,
-				)
-			}
+		}
+		if workerConfig != nil && workerConfig.Nutanix != nil {
+			n.vmImageCheckForMachineDetails(
+				ctx,
+				clusterConfig,
+				&workerConfig.Nutanix.MachineDetails,
+				fmt.Sprintf(
+					"workers.machineDeployments[.name=%s].variables.overrides[.name=workerConfig].value.nutanix.machineDetails",
+					md.Name,
+				),
+				&result,
+			)
 		}
 	}
 
@@ -101,6 +78,7 @@ func (n *Checker) VMImageCheck(ctx context.Context) preflight.CheckResult {
 
 func (n *Checker) vmImageCheckForMachineDetails(
 	ctx context.Context,
+	clusterConfig *variables.ClusterConfigSpec,
 	details *carenv1.NutanixMachineDetails,
 	field string,
 	result *preflight.CheckResult,
@@ -117,7 +95,7 @@ func (n *Checker) vmImageCheckForMachineDetails(
 	}
 
 	if details.Image != nil {
-		client, err := n.v4client(ctx, n.client, n.cluster.Namespace)
+		client, err := n.clientV4(ctx, clusterConfig)
 		if err != nil {
 			result.Allowed = false
 			result.Error = true
