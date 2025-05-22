@@ -21,7 +21,7 @@ func (n *Checker) VMImageCheck(ctx context.Context) preflight.CheckResult {
 	}
 
 	// Check control plane VM image.
-	clusterConfig, err := n.getClusterConfig()
+	clusterConfig, err := n.variablesGetter.ClusterConfig()
 	if err != nil {
 		result.Error = true
 		result.Causes = append(result.Causes, metav1.StatusCause{
@@ -47,7 +47,7 @@ func (n *Checker) VMImageCheck(ctx context.Context) preflight.CheckResult {
 
 	// Check worker VM images.
 	for _, md := range n.cluster.Spec.Topology.Workers.MachineDeployments {
-		workerConfig, err := n.getWorkerConfigForMachineDeployment(md)
+		workerConfig, err := n.variablesGetter.WorkerConfigForMachineDeployment(md)
 		if err != nil {
 			result.Error = true
 			result.Causes = append(result.Causes, metav1.StatusCause{
@@ -95,7 +95,7 @@ func (n *Checker) vmImageCheckForMachineDetails(
 	}
 
 	if details.Image != nil {
-		client, err := n.clientV4(ctx, clusterConfig)
+		client, err := n.clientGetter.V4(ctx, clusterConfig)
 		if err != nil {
 			result.Allowed = false
 			result.Error = true
