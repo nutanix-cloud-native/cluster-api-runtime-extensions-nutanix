@@ -39,6 +39,7 @@ type mockDecoder struct {
 	err error
 }
 
+//nolint:gocritic // These parameters are required, because this mock implements a third-party interface.
 func (m *mockDecoder) Decode(_ admission.Request, _ runtime.Object) error {
 	return m.err
 }
