@@ -5,25 +5,20 @@ package nutanix
 
 import (
 	"context"
-	"sync"
 
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
+	preflightutil "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/util"
 )
 
 type Checker struct {
 	client  ctrlclient.Client
 	cluster *clusterv1.Cluster
 
-	nutanixClient *prismv4.Client
-
-	workerConfigGetterByMachineDeploymentName      map[string]func() (*variables.WorkerNodeConfigSpec, error)
-	workerConfigGetterByMachineDeploymentNameMutex sync.Mutex
+	clientGetter    *ClientGetter
+	variablesGetter *preflightutil.VariablesGetter
 }
 
 func (n *Checker) Init(
@@ -33,10 +28,10 @@ func (n *Checker) Init(
 ) []preflight.Check {
 	n.client = client
 	n.cluster = cluster
+	n.clientGetter = &ClientGetter{client: client, cluster: cluster}
+	n.variablesGetter = preflightutil.NewVariablesGetter(cluster)
 
-	checks := []preflight.Check{
+	return []preflight.Check{
 		n.VMImageCheck,
 	}
-
-	return checks
 }

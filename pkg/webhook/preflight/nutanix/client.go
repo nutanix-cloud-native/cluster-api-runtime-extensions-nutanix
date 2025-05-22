@@ -7,6 +7,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	prism "github.com/nutanix-cloud-native/prism-go-client"
 	prismcredentials "github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
@@ -15,12 +17,18 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
 
-// clientV4 creates a new Prism V4 client for the Nutanix cluster.
-// It retrieves the Prism Central credentials from the provided client and
-// uses them to create the client. The client is cached for future use.
-// The function returns an error if the credentials cannot be retrieved or
-// if the Prism Central endpoint cannot be parsed.
-func (n *Checker) clientV4(ctx context.Context, clusterConfig *variables.ClusterConfigSpec) (*prismv4.Client, error) {
+// ClientGetter provides methods to create Prism Central clients.
+// These methods are thread-safe and cache the results for efficiency.
+type ClientGetter struct {
+	client        ctrlclient.Client
+	cluster       *clusterv1.Cluster
+	nutanixClient *prismv4.Client
+}
+
+// V4 creates a new Prism V4 client for the Nutanix cluster using Prism Central credentials
+// referenced in the clusterConfig. The client is cached for future use. The function returns an
+// error if the credentials cannot be retrieved or if the Prism Central endpoint cannot be parsed.
+func (g *ClientGetter) V4(ctx context.Context, clusterConfig *variables.ClusterConfigSpec) (*prismv4.Client, error) {
 	return sync.OnceValues(func() (*prismv4.Client, error) {
 		if clusterConfig == nil || clusterConfig.Nutanix == nil {
 			return nil, fmt.Errorf("clusterConfig variable is nil or does not contain Nutanix config")
@@ -31,10 +39,10 @@ func (n *Checker) clientV4(ctx context.Context, clusterConfig *variables.Cluster
 		}
 
 		credentialsSecret := &corev1.Secret{}
-		if err := n.client.Get(
+		if err := g.client.Get(
 			ctx,
 			types.NamespacedName{
-				Namespace: n.cluster.Namespace,
+				Namespace: g.cluster.Namespace,
 				Name:      clusterConfig.Nutanix.PrismCentralEndpoint.Credentials.SecretRef.Name,
 			},
 			credentialsSecret,
@@ -62,7 +70,7 @@ func (n *Checker) clientV4(ctx context.Context, clusterConfig *variables.Cluster
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Prism V4 client: %w", err)
 		}
-		n.nutanixClient = nutanixClient
-		return n.nutanixClient, nil
+		g.nutanixClient = nutanixClient
+		return g.nutanixClient, nil
 	})()
 }
