@@ -4,6 +4,7 @@ package preflight
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -14,11 +15,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+type Cause struct {
+	Message string
+	Field   string
+}
+
 type CheckResult struct {
+	Name string
+
 	Allowed bool
 	Error   bool
 
-	Causes   []metav1.StatusCause
+	Causes   []Cause
 	Warnings []string
 }
 
@@ -117,7 +125,14 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 			resp.Allowed = false
 		}
 
-		resp.Result.Details.Causes = append(resp.Result.Details.Causes, result.Causes...)
+		for _, cause := range result.Causes {
+			resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
+				Type:    metav1.CauseType(fmt.Sprintf("FailedPreflight%s", result.Name)),
+				Message: cause.Message,
+				Field:   cause.Field,
+			})
+		}
+
 		resp.Warnings = append(resp.Warnings, result.Warnings...)
 	}
 

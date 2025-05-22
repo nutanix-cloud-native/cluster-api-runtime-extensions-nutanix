@@ -193,10 +193,10 @@ func TestHandle(t *testing.T) {
 					checks: []Check{
 						func(ctx context.Context) CheckResult {
 							return CheckResult{
+								Name:    "Test1",
 								Allowed: false,
-								Causes: []metav1.StatusCause{
+								Causes: []Cause{
 									{
-										Type:    metav1.CauseTypeFieldValueInvalid,
 										Field:   "spec.test",
 										Message: "test failed",
 									},
@@ -215,7 +215,7 @@ func TestHandle(t *testing.T) {
 						Details: &metav1.StatusDetails{
 							Causes: []metav1.StatusCause{
 								{
-									Type:    metav1.CauseTypeFieldValueInvalid,
+									Type:    "FailedPreflightTest1",
 									Field:   "spec.test",
 									Message: "test failed",
 								},
@@ -280,12 +280,12 @@ func TestHandle(t *testing.T) {
 					checks: []Check{
 						func(ctx context.Context) CheckResult {
 							return CheckResult{
+								Name:    "Test1",
 								Allowed: false,
 								Error:   true,
 
-								Causes: []metav1.StatusCause{
+								Causes: []Cause{
 									{
-										Type:    metav1.CauseTypeInternal,
 										Message: "internal error",
 									},
 								},
@@ -297,10 +297,10 @@ func TestHandle(t *testing.T) {
 					checks: []Check{
 						func(ctx context.Context) CheckResult {
 							return CheckResult{
+								Name:    "Test2",
 								Allowed: false,
-								Causes: []metav1.StatusCause{
+								Causes: []Cause{
 									{
-										Type:    metav1.CauseTypeFieldValueInvalid,
 										Message: "check failed",
 									},
 								},
@@ -312,6 +312,7 @@ func TestHandle(t *testing.T) {
 					checks: []Check{
 						func(ctx context.Context) CheckResult {
 							return CheckResult{
+								Name:    "Test3",
 								Allowed: true,
 							}
 						},
@@ -328,11 +329,11 @@ func TestHandle(t *testing.T) {
 						Details: &metav1.StatusDetails{
 							Causes: []metav1.StatusCause{
 								{
-									Type:    metav1.CauseTypeFieldValueInvalid,
+									Type:    "FailedPreflightTest2",
 									Message: "check failed",
 								},
 								{
-									Type:    metav1.CauseTypeInternal,
+									Type:    "FailedPreflightTest1",
 									Message: "internal error",
 								},
 							},
@@ -417,11 +418,11 @@ func TestHandleCancelledContext(t *testing.T) {
 				select {
 				case <-ctx.Done():
 					return CheckResult{
+						Name:    "Test1",
 						Allowed: false,
 						Error:   true,
-						Causes: []metav1.StatusCause{
+						Causes: []Cause{
 							{
-								Type:    metav1.CauseTypeInternal,
 								Message: "context cancelled",
 							},
 						},
@@ -434,11 +435,11 @@ func TestHandleCancelledContext(t *testing.T) {
 				select {
 				case <-ctx.Done():
 					return CheckResult{
+						Name:    "Test2",
 						Allowed: false,
 						Error:   true,
-						Causes: []metav1.StatusCause{
+						Causes: []Cause{
 							{
-								Type:    metav1.CauseTypeInternal,
 								Message: "context cancelled",
 							},
 						},
@@ -462,11 +463,11 @@ func TestHandleCancelledContext(t *testing.T) {
 				Details: &metav1.StatusDetails{
 					Causes: []metav1.StatusCause{
 						{
-							Type:    metav1.CauseTypeInternal,
+							Type:    "FailedPreflightTest1",
 							Message: "context cancelled",
 						},
 						{
-							Type:    metav1.CauseTypeInternal,
+							Type:    "FailedPreflightTest2",
 							Message: "context cancelled",
 						},
 					},
