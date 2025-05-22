@@ -46,6 +46,16 @@ patches:
     - op: "remove"
       path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/certSANs"
 
+# TODO: Remove once https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/pull/519 is
+# merged and released.
+# Delete the API server cloud-provider flag from the template.
+# They will be added by the handler for k8s < 1.33.
+- target:
+    kind: KubeadmControlPlaneTemplate
+  patch: |-
+    - op: "remove"
+      path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/cloud-provider"
+
 # Template the kube-vip file.
 # The handler will set the variables if needed, or remove it.
 - target:

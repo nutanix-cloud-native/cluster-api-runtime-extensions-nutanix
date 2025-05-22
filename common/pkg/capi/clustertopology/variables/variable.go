@@ -33,6 +33,10 @@ func IsNotFoundError(err error) bool {
 	return topologymutation.IsNotFoundError(err) || errors.As(err, &fieldNotFoundError{})
 }
 
+func IsFieldNotFoundError(err error) bool {
+	return errors.As(err, &fieldNotFoundError{})
+}
+
 // Get finds and parses variable to given type.
 func Get[T any](
 	variables map[string]apiextensionsv1.JSON,
