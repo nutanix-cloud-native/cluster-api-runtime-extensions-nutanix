@@ -74,48 +74,37 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		},
 	}
 
-	// Initialize checkers in parallel and collect all checks.
-	checkCh := make(chan Check)
-	wg := &sync.WaitGroup{}
+	// Collect all checks in parallel.
+	checkerWG := &sync.WaitGroup{}
+	resultCh := make(chan CheckResult)
 	for _, checker := range h.checkers {
-		wg.Add(1)
-		go func(ctx context.Context, checker Checker) {
+		checkerWG.Add(1)
+
+		go func(ctx context.Context, checker Checker, resultCh chan CheckResult) {
+			// Initialize the checker.
 			checks := checker.Init(ctx, h.client, cluster)
+
+			// Run its checks in parallel.
+			checksWG := &sync.WaitGroup{}
 			for _, check := range checks {
-				checkCh <- check
+				checksWG.Add(1)
+				go func(ctx context.Context, check Check, resultCh chan CheckResult) {
+					result := check(ctx)
+					resultCh <- result
+					checksWG.Done()
+				}(ctx, check, resultCh)
 			}
-			wg.Done()
-		}(ctx, checker)
+			checksWG.Wait()
+
+			checkerWG.Done()
+		}(ctx, checker, resultCh)
 	}
 
 	// Close the channel when all checkers are done.
-	go func(wg *sync.WaitGroup, checkCh chan Check) {
-		wg.Wait()
-		close(checkCh)
-	}(wg, checkCh)
-
-	// Collect all checks from the channel.
-	checks := []Check{}
-	for check := range checkCh {
-		checks = append(checks, check)
-	}
-
-	// Run all checks in parallel.
-	resultCh := make(chan CheckResult)
-	for _, check := range checks {
-		wg.Add(1)
-		go func(ctx context.Context, check Check) {
-			result := check(ctx)
-			resultCh <- result
-			wg.Done()
-		}(ctx, check)
-	}
-
-	// Close the channel when all checks are done.
 	go func(wg *sync.WaitGroup, resultCh chan CheckResult) {
 		wg.Wait()
 		close(resultCh)
-	}(wg, resultCh)
+	}(checkerWG, resultCh)
 
 	// Collect all check results from the channel.
 	internalError := false
