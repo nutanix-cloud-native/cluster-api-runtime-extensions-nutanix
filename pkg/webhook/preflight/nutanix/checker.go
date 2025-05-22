@@ -7,19 +7,23 @@ import (
 	"context"
 	"sync"
 
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
 type Checker struct {
-	client        ctrlclient.Client
-	nutanixClient *prismv4.Client
-	cluster       *clusterv1.Cluster
+	client  ctrlclient.Client
+	cluster *clusterv1.Cluster
 
-	clientMutex sync.Mutex
+	nutanixClient *prismv4.Client
+
+	workerConfigGetterByMachineDeploymentName      map[string]func() (*variables.WorkerNodeConfigSpec, error)
+	workerConfigGetterByMachineDeploymentNameMutex sync.Mutex
 }
 
 func (n *Checker) Init(
