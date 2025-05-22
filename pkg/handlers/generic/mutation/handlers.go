@@ -16,6 +16,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/coredns"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/encryptionatrest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/etcd"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/externalcloudprovider"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/extraapiservercertsans"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/httpproxy"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries/credentials"
@@ -61,6 +62,7 @@ func ControlPlaneMetaMutators() []mutation.MetaMutator {
 	return []mutation.MetaMutator{
 		taints.NewControlPlanePatch(),
 		noderegistration.NewControlPlanePatch(),
+		externalcloudprovider.NewControlPlanePatch(),
 	}
 }
 

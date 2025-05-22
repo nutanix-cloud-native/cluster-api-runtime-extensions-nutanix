@@ -84,7 +84,6 @@ spec:
         clusterConfiguration:
           apiServer:
             extraArgs:
-              cloud-provider: external
               profiling: "false"
           controllerManager:
             extraArgs:
