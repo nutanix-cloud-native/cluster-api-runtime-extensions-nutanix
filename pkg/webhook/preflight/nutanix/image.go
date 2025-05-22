@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
+	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -15,8 +13,9 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func (n *Checker) VMImageCheck(ctx context.Context) preflight.CheckResult {
+func (n *Checker) VMImages(ctx context.Context) preflight.CheckResult {
 	result := preflight.CheckResult{
+		Name:    "VMImages",
 		Allowed: true,
 	}
 
@@ -24,8 +23,8 @@ func (n *Checker) VMImageCheck(ctx context.Context) preflight.CheckResult {
 	clusterConfig, err := n.variablesGetter.ClusterConfig()
 	if err != nil {
 		result.Error = true
-		result.Causes = append(result.Causes, metav1.StatusCause{
-			Type:    "VMImageCheck",
+		result.Allowed = false
+		result.Causes = append(result.Causes, preflight.Cause{
 			Message: fmt.Sprintf("failed to read clusterConfig variable: %s", err),
 			Field:   "cluster.spec.topology.variables",
 		})
@@ -40,36 +39,32 @@ func (n *Checker) VMImageCheck(ctx context.Context) preflight.CheckResult {
 		)
 	}
 
-	// If there is no worker topology, return early.
-	if n.cluster.Spec.Topology.Workers == nil {
-		return result
-	}
-
 	// Check worker VM images.
-	for _, md := range n.cluster.Spec.Topology.Workers.MachineDeployments {
-		workerConfig, err := n.variablesGetter.WorkerConfigForMachineDeployment(md)
-		if err != nil {
-			result.Error = true
-			result.Causes = append(result.Causes, metav1.StatusCause{
-				Type:    "VMImageCheck",
-				Message: fmt.Sprintf("failed to read workerConfig variable: %s", err),
-				Field: fmt.Sprintf(
-					"cluster.spec.topology.workers.machineDeployments[.name=%s].variables.overrides",
-					md.Name,
-				),
-			})
-		}
-		if workerConfig != nil && workerConfig.Nutanix != nil {
-			n.vmImageCheckForMachineDetails(
-				ctx,
-				clusterConfig,
-				&workerConfig.Nutanix.MachineDetails,
-				fmt.Sprintf(
-					"workers.machineDeployments[.name=%s].variables.overrides[.name=workerConfig].value.nutanix.machineDetails",
-					md.Name,
-				),
-				&result,
-			)
+	if n.cluster.Spec.Topology.Workers != nil {
+		for _, md := range n.cluster.Spec.Topology.Workers.MachineDeployments {
+			workerConfig, err := n.variablesGetter.WorkerConfigForMachineDeployment(md)
+			if err != nil {
+				result.Error = true
+				result.Causes = append(result.Causes, preflight.Cause{
+					Message: fmt.Sprintf("failed to read workerConfig variable: %s", err),
+					Field: fmt.Sprintf(
+						"cluster.spec.topology.workers.machineDeployments[.name=%s].variables.overrides",
+						md.Name,
+					),
+				})
+			}
+			if workerConfig != nil && workerConfig.Nutanix != nil {
+				n.vmImageCheckForMachineDetails(
+					ctx,
+					clusterConfig,
+					&workerConfig.Nutanix.MachineDetails,
+					fmt.Sprintf(
+						"workers.machineDeployments[.name=%s].variables.overrides[.name=workerConfig].value.nutanix.machineDetails",
+						md.Name,
+					),
+					&result,
+				)
+			}
 		}
 	}
 
@@ -86,8 +81,7 @@ func (n *Checker) vmImageCheckForMachineDetails(
 	if details.ImageLookup != nil {
 		result.Allowed = false
 		result.Error = true
-		result.Causes = append(result.Causes, metav1.StatusCause{
-			Type:    "VMImageCheck",
+		result.Causes = append(result.Causes, preflight.Cause{
 			Message: "ImageLookup is not yet supported",
 			Field:   field,
 		})
@@ -99,8 +93,7 @@ func (n *Checker) vmImageCheckForMachineDetails(
 		if err != nil {
 			result.Allowed = false
 			result.Error = true
-			result.Causes = append(result.Causes, metav1.StatusCause{
-				Type:    "VMImageCheck",
+			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf("failed to get Nutanix client: %s", err),
 				Field:   field,
 			})
@@ -111,8 +104,7 @@ func (n *Checker) vmImageCheckForMachineDetails(
 		if err != nil {
 			result.Allowed = false
 			result.Error = true
-			result.Causes = append(result.Causes, metav1.StatusCause{
-				Type:    "VMImageCheck",
+			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf("failed to count matching VM Images: %s", err),
 				Field:   field,
 			})
@@ -121,8 +113,7 @@ func (n *Checker) vmImageCheckForMachineDetails(
 
 		if len(images) != 1 {
 			result.Allowed = false
-			result.Causes = append(result.Causes, metav1.StatusCause{
-				Type:    "VMImageCheck",
+			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf("expected to find 1 VM Image, found %d", len(images)),
 				Field:   field,
 			})

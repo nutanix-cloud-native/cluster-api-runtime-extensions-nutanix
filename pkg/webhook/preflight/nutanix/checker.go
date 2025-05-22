@@ -30,8 +30,7 @@ func (n *Checker) Init(
 	n.cluster = cluster
 	n.clientGetter = &ClientGetter{client: client, cluster: cluster}
 	n.variablesGetter = preflightutil.NewVariablesGetter(cluster)
-
 	return []preflight.Check{
-		n.VMImageCheck,
+		n.VMImages,
 	}
 }
