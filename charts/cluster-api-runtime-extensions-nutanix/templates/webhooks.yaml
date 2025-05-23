@@ -72,7 +72,6 @@ webhooks:
           - '*'
         operations:
           - CREATE
-          - UPDATE
         resources:
           - clusters
     sideEffects: None
