@@ -220,7 +220,7 @@ func main() {
 		Handler: cluster.NewValidator(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme())),
 	})
 
-	mgr.GetWebhookServer().Register("/preflight-v1beta1", &webhook.Admission{
+	mgr.GetWebhookServer().Register("/preflight-v1beta1-cluster", &webhook.Admission{
 		Handler: preflight.New(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme()),
 			[]preflight.Checker{
 				// Add your preflight checkers here.
