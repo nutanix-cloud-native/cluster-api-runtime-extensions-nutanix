@@ -6,6 +6,22 @@ resources:
 
 patches:
 - path: cis-mitigations-worker-patch.yaml
+- target:
+    group: bootstrap.cluster.x-k8s.io
+    version: v1beta1
+    kind: KubeadmConfigTemplate
+    name: nkp-nutanix-worker-<VERSION>
+  # 4.1.1 Ensure that the kubelet service file permissions are set to 600 or more restrictive
+  patch: |
+    - op: add
+      path: /spec/template/spec/postKubeadmCommands/-
+      value: 'chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"'
+    - op: add
+      path: /spec/template/spec/postKubeadmCommands/-
+      value: 'chmod 600 /var/lib/kubelet/config.yaml'
+    - op: add
+      path: /spec/template/spec/postKubeadmCommands/-
+      value: 'chmod 600 /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf'
 
 namePrefix: ""
 nameSuffix: "-hardened"
