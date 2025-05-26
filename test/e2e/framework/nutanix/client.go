@@ -29,10 +29,10 @@ const (
 
 func CredentialsFromCAPIE2EConfig(e2eConfig *clusterctl.E2EConfig) *prismgoclient.Credentials {
 	return &prismgoclient.Credentials{
-		Endpoint: e2eConfig.GetVariable(prismEndpointVariableName),
-		Port:     e2eConfig.GetVariable(prismPortVariableName),
-		Username: e2eConfig.GetVariable(prismUsernameVariableName),
-		Password: e2eConfig.GetVariable(prismPasswordVariableName),
+		Endpoint: e2eConfig.MustGetVariable(prismEndpointVariableName),
+		Port:     e2eConfig.MustGetVariable(prismPortVariableName),
+		Username: e2eConfig.MustGetVariable(prismUsernameVariableName),
+		Password: e2eConfig.MustGetVariable(prismPasswordVariableName),
 		Insecure: false,
 	}
 }

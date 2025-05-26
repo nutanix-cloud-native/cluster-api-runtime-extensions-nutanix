@@ -102,6 +102,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "v1.28.100",
 					},
 				},
@@ -181,6 +182,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "v1.29.0",
 					},
 				},
