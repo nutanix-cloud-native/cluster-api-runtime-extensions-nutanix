@@ -37,8 +37,7 @@ type Checker interface {
 	// with common dependencies, such as an infrastructure client. Finally, it returns the initialized checks,
 	// ready to be run.
 	//
-	// Init should not store the context `ctx`, because each check will accept its own context.
-	// Checks may use both the client and the cluster.
+	// Init can store the client and cluster, but not the context, because each check will accept its own context.
 	Init(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) []Check
 }
 
