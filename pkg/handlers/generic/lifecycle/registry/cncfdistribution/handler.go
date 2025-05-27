@@ -64,6 +64,9 @@ func New(
 	}
 }
 
+// Setup ensures any pre-requisites for the CNCF Distribution registry addon are met.
+// It is expected to be called before the cluster is created.
+// Specifically, it ensures that the CA secret for the registry is created in the cluster's namespace.
 func (n *CNCFDistribution) Setup(
 	ctx context.Context,
 	_ v1alpha1.RegistryAddon,
@@ -82,23 +85,13 @@ func (n *CNCFDistribution) Setup(
 	return nil
 }
 
+// Apply applies the CNCF Distribution registry addon to the cluster.
 func (n *CNCFDistribution) Apply(
 	ctx context.Context,
 	_ v1alpha1.RegistryAddon,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
-	log.Info("Copying TLS Certificate for CNCF Distribution registry to remote cluster")
-	// Ensure the CA secret exists and is up to date in the cluster's namespace before trying to use it.
-	err := utils.EnsureCASecretForCluster(
-		ctx,
-		n.client,
-		cluster,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to ensure CA secret for CNCF Distribution registry addon: %w", err)
-	}
-
 	// Copy the TLS secret to the remote cluster.
 	serviceIP, err := utils.ServiceIPForCluster(cluster)
 	if err != nil {

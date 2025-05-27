@@ -92,7 +92,6 @@ func (r *RegistryHandler) BeforeClusterUpgrade(
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
 	commonResponse := &runtimehooksv1.CommonResponse{}
-	r.setup(ctx, &req.Cluster, commonResponse)
 	r.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
