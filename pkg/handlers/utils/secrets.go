@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	secretNameForGlobalRegistryAddonTLS = "registry-addon-root-ca"
+	registryAddonRootCASecretName = "registry-addon-root-ca"
 )
 
 // CopySecretToRemoteCluster will get the Secret from srcSecretName
@@ -153,13 +153,13 @@ func SecretNameForImageRegistryCredentials(credentials *v1alpha1.RegistryCredent
 	return credentials.SecretRef.Name
 }
 
-func SecretForGlobalRegistryAddonTLSCertificate(
+func SecretForRegistryAddonRootCA(
 	ctx context.Context,
 	c ctrlclient.Reader,
 ) (*corev1.Secret, error) {
-	secret, err := getSecret(ctx, c, secretNameForGlobalRegistryAddonTLS, GetDeploymentNamespace())
+	secret, err := getSecret(ctx, c, registryAddonRootCASecretName, GetDeploymentNamespace())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting registry addon root CA secret: %w", err)
 	}
 	return secret, nil
 }

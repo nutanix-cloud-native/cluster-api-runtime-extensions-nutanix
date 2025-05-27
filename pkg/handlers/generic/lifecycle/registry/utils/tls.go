@@ -62,9 +62,9 @@ func EnsureCASecretForCluster(
 	c ctrlclient.Client,
 	cluster *clusterv1.Cluster,
 ) error {
-	globalTLSCertificateSecret, err := handlersutils.SecretForGlobalRegistryAddonTLSCertificate(ctx, c)
+	globalTLSCertificateSecret, err := handlersutils.SecretForRegistryAddonRootCA(ctx, c)
 	if err != nil {
-		return fmt.Errorf("failed to get global registry addon CA secret: %w", err)
+		return err
 	}
 
 	clusterCASecret := buildClusterCASecret(globalTLSCertificateSecret, cluster)
@@ -93,7 +93,7 @@ func EnsureTLSCertificateSecretOnRemoteCluster(
 	cluster *clusterv1.Cluster,
 	opts *EnsureCertificateOpts,
 ) error {
-	globalTLSCertificateSecret, err := handlersutils.SecretForGlobalRegistryAddonTLSCertificate(ctx, c)
+	globalTLSCertificateSecret, err := handlersutils.SecretForRegistryAddonRootCA(ctx, c)
 	if err != nil {
 		return fmt.Errorf("failed to get TLS secret used to sign the certificate: %w", err)
 	}
@@ -121,6 +121,8 @@ func buildClusterCASecret(
 	globalTLSCertificateSecret *corev1.Secret,
 	cluster *clusterv1.Cluster,
 ) *corev1.Secret {
+	// The root CA will have, tls.crt, tls.key, and ca.crt.
+	// We only copy the ca.crt from the global TLS secret to the cluster CA secret.
 	data := map[string][]byte{
 		caCrtKey: globalTLSCertificateSecret.Data[caCrtKey],
 	}
@@ -142,13 +144,15 @@ func generateCertificateData(
 	opts *EnsureCertificateOpts,
 ) (serverCertPEM, serverKeyPEM, caCertPEM []byte, err error) {
 	// 1. load CA PEMs from Secret
-	caCertPEM, ok := globalCASecret.Data["tls.crt"]
+	caCertPEM, ok := globalCASecret.Data[corev1.TLSCertKey]
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("tls.crt not found in Secret")
+		return nil, nil, nil,
+			fmt.Errorf("%s not found in Secret", corev1.TLSCertKey)
 	}
-	caKeyPEM, ok := globalCASecret.Data["tls.key"]
+	caKeyPEM, ok := globalCASecret.Data[corev1.TLSPrivateKeyKey]
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("tls.key not found in Secret")
+		return nil, nil, nil,
+			fmt.Errorf("%s not found in Secret", corev1.TLSPrivateKeyKey)
 	}
 
 	// 2. parse CA cert
@@ -173,7 +177,7 @@ func generateCertificateData(
 	case "PRIVATE KEY":
 		caPriv, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 	default:
-		err = fmt.Errorf("unsupported private key type %q", keyBlock.Type)
+		err = fmt.Errorf("unsupported private key encoding type %q", keyBlock.Type)
 	}
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to parse CA private key: %w", err)
@@ -248,9 +252,9 @@ func buildRegistryTLSCertificateSecret(
 	certPEM, keyPEM, caPEM []byte,
 ) *corev1.Secret {
 	data := map[string][]byte{
-		"tls.crt": certPEM,
-		"tls.key": keyPEM,
-		caCrtKey:  caPEM,
+		corev1.TLSCertKey:       certPEM,
+		corev1.TLSPrivateKeyKey: keyPEM,
+		caCrtKey:                caPEM,
 	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{

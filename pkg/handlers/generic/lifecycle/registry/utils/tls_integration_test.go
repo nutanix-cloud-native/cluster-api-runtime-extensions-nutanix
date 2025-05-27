@@ -70,7 +70,7 @@ I0EWIHsyNzyT3eqsXIO2ZIFKtqN83bPEFmVkKXAUV6lb0/nVSLrRTppFWlNyg1o5
 FYnq6/jDVxCbWmmP2u4TT557gMqao0DaJstf/NSXlK0bhA2B64M=
 -----END RSA PRIVATE KEY-----`)
 
-	testSecretNameForGlobalRegistryAddonTLS = "registry-addon-root-ca"
+	testRegistryAddonRootCASecretName = "registry-addon-root-ca"
 )
 
 var _ = Describe("Test EnsureCASecretForCluster", func() {
@@ -111,8 +111,8 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 			),
 		)
 		Expect(caSecret.Data["ca.crt"]).To(Equal(testCrt))
-		Expect(caSecret.Data["tls.crt"]).To(BeEmpty())
-		Expect(caSecret.Data["tls.key"]).To(BeEmpty())
+		Expect(caSecret.Data[corev1.TLSCertKey]).To(BeEmpty())
+		Expect(caSecret.Data[corev1.TLSPrivateKeyKey]).To(BeEmpty())
 	})
 	It("CA Secret should not be created when missing global CA Secret", func(ctx SpecContext) {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
@@ -127,7 +127,7 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 		Expect(c.Create(ctx, cluster)).To(Succeed())
 
 		Expect(EnsureCASecretForCluster(ctx, c, cluster)).To(
-			MatchError("failed to get global registry addon CA secret: " +
+			MatchError("error getting registry addon root CA secret: " +
 				"secrets \"registry-addon-root-ca\" not found",
 			),
 		)
@@ -239,6 +239,7 @@ var _ = Describe("Test EnsureTLSCertificateSecretOnRemoteCluster", func() {
 		// Expect this to fail because the global CA secret is missing.
 		Expect(EnsureTLSCertificateSecretOnRemoteCluster(ctx, c, cluster, nil)).To(
 			MatchError("failed to get TLS secret used to sign the certificate: " +
+				"error getting registry addon root CA secret: " +
 				"secrets \"registry-addon-root-ca\" not found"),
 		)
 	})
@@ -269,7 +270,7 @@ func testGlobalRegistryAddonTLSCertificate() *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      testSecretNameForGlobalRegistryAddonTLS,
+			Name:      testRegistryAddonRootCASecretName,
 			Namespace: corev1.NamespaceDefault,
 		},
 		Data: secretData,
