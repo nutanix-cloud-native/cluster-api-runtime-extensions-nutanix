@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
+
+	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
@@ -32,7 +32,6 @@ func (n *Checker) VMImages(ctx context.Context) preflight.CheckResult {
 	if clusterConfig != nil && clusterConfig.ControlPlane != nil && clusterConfig.ControlPlane.Nutanix != nil {
 		n.vmImageCheckForMachineDetails(
 			ctx,
-			clusterConfig,
 			&clusterConfig.ControlPlane.Nutanix.MachineDetails,
 			"cluster.spec.topology.variables[.name=clusterConfig].controlPlane.nutanix.machineDetails",
 			&result,
@@ -56,7 +55,6 @@ func (n *Checker) VMImages(ctx context.Context) preflight.CheckResult {
 			if workerConfig != nil && workerConfig.Nutanix != nil {
 				n.vmImageCheckForMachineDetails(
 					ctx,
-					clusterConfig,
 					&workerConfig.Nutanix.MachineDetails,
 					fmt.Sprintf(
 						"workers.machineDeployments[.name=%s].variables.overrides[.name=workerConfig].value.nutanix.machineDetails",
@@ -73,7 +71,6 @@ func (n *Checker) VMImages(ctx context.Context) preflight.CheckResult {
 
 func (n *Checker) vmImageCheckForMachineDetails(
 	ctx context.Context,
-	clusterConfig *variables.ClusterConfigSpec,
 	details *carenv1.NutanixMachineDetails,
 	field string,
 	result *preflight.CheckResult,
@@ -89,18 +86,7 @@ func (n *Checker) vmImageCheckForMachineDetails(
 	}
 
 	if details.Image != nil {
-		client, err := n.clientGetter.V4(ctx, clusterConfig)
-		if err != nil {
-			result.Allowed = false
-			result.Error = true
-			result.Causes = append(result.Causes, preflight.Cause{
-				Message: fmt.Sprintf("failed to get Nutanix client: %s", err),
-				Field:   field,
-			})
-			return
-		}
-
-		images, err := getVMImages(client, details.Image)
+		images, err := getVMImages(n.nutanixClient, details.Image)
 		if err != nil {
 			result.Allowed = false
 			result.Error = true
