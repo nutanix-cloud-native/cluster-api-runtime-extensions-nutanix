@@ -20,7 +20,7 @@
     "gotestsum@latest",
     "govulncheck@latest",
     "helm-docs@latest",
-    "hugo@0.145.0",
+    "hugo@latest",
     "kind@latest",
     "ko@latest",
     "kubebuilder@latest",
