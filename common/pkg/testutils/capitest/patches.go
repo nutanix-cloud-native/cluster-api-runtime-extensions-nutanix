@@ -66,6 +66,7 @@ func AssertGeneratePatches[T mutation.GeneratePatches](
 	if tt.ExpectedFailure {
 		g.Expect(resp.Status).
 			To(gomega.Equal(runtimehooksv1.ResponseStatusFailure), fmt.Sprintf("Message: %s", resp.Message))
+		g.Expect(resp.Items).To(gomega.BeEmpty())
 		return
 	}
 

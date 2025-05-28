@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	versionGreatOrEqualTo133Range = semver.MustParseRange(">=1.33.0-0")
+	versionGreaterOrEqualTo133Range = semver.MustParseRange(">=1.33.0-0")
 )
 
 type externalCloudProviderPatchHandler struct{}
@@ -61,7 +61,7 @@ func (h *externalCloudProviderPatchHandler) Mutate(
 		return fmt.Errorf("failed to get control plane Kubernetes version from builtin variable: %w", err)
 	}
 
-	cpK8sVersion, err := semver.ParseTolerant(cpVersion)
+	kubernetesVersion, err := semver.ParseTolerant(cpVersion)
 	if err != nil {
 		log.WithValues(
 			"kubernetesVersion",
@@ -70,9 +70,9 @@ func (h *externalCloudProviderPatchHandler) Mutate(
 		return fmt.Errorf("failed to parse control plane Kubernetes version: %w", err)
 	}
 
-	if versionGreatOrEqualTo133Range(cpK8sVersion) {
+	if versionGreaterOrEqualTo133Range(kubernetesVersion) {
 		log.V(5).Info(
-			"skipping external cloud-provider flag to control plane kubeadm config template because Kubernetes < 1.33.0",
+			"skipping external cloud-provider flag to control plane kubeadm config template because Kubernetes >= 1.33.0",
 		)
 		return nil
 	}
@@ -86,7 +86,9 @@ func (h *externalCloudProviderPatchHandler) Mutate(
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs = make(map[string]string, 1)
 			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs["cloud-provider"] = "external"
+			if _, ok := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs["cloud-provider"]; !ok {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs["cloud-provider"] = "external"
+			}
 
 			return nil
 		}); err != nil {
