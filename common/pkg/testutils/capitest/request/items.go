@@ -160,9 +160,8 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 		if cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
 			cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
 		}
-		cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs = maps.Clone(
-			b.apiServerExtraArgs,
-		)
+		clusterConfiguration := cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration
+		clusterConfiguration.APIServer.ExtraArgs = maps.Clone(b.apiServerExtraArgs)
 	}
 
 	requestItem := NewRequestItem(
