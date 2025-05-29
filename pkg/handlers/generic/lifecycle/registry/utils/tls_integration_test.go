@@ -153,7 +153,7 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 	})
 })
 
-var _ = Describe("Test EnsureTLSCertificateSecretOnRemoteCluster", func() {
+var _ = Describe("Test EnsureRegistryServerCertificateSecretOnRemoteCluster", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
 	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
@@ -198,7 +198,7 @@ var _ = Describe("Test EnsureTLSCertificateSecretOnRemoteCluster", func() {
 		Expect(err).To(BeNil())
 
 		// Create the initial TLS secret on the remote cluster.
-		Expect(EnsureTLSCertificateSecretOnRemoteCluster(ctx, c, cluster, opts)).To(Succeed())
+		Expect(EnsureRegistryServerCertificateSecretOnRemoteCluster(ctx, c, cluster, opts)).To(Succeed())
 		err = remoteClient.Get(ctx, ctrlclient.ObjectKeyFromObject(remoteTLSSecret), remoteTLSSecret)
 		Expect(err).To(BeNil())
 
@@ -210,7 +210,7 @@ var _ = Describe("Test EnsureTLSCertificateSecretOnRemoteCluster", func() {
 		Expect(initialKey).ToNot(BeEmpty())
 
 		// Run the function again to update the TLS secret.
-		Expect(EnsureTLSCertificateSecretOnRemoteCluster(ctx, c, cluster, opts)).To(Succeed())
+		Expect(EnsureRegistryServerCertificateSecretOnRemoteCluster(ctx, c, cluster, opts)).To(Succeed())
 		err = remoteClient.Get(ctx, ctrlclient.ObjectKeyFromObject(remoteTLSSecret), remoteTLSSecret)
 		Expect(err).To(BeNil())
 
@@ -237,7 +237,7 @@ var _ = Describe("Test EnsureTLSCertificateSecretOnRemoteCluster", func() {
 		Expect(c.Create(ctx, cluster)).To(Succeed())
 
 		// Expect this to fail because the global CA secret is missing.
-		Expect(EnsureTLSCertificateSecretOnRemoteCluster(ctx, c, cluster, nil)).To(
+		Expect(EnsureRegistryServerCertificateSecretOnRemoteCluster(ctx, c, cluster, nil)).To(
 			MatchError("failed to get TLS secret used to sign the certificate: " +
 				"error getting registry addon root CA secret: " +
 				"secrets \"registry-addon-root-ca\" not found"),

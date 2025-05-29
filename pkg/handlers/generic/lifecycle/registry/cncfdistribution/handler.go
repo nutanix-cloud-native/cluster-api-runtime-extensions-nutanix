@@ -108,7 +108,7 @@ func (n *CNCFDistribution) Apply(
 			IPAddresses: certificateIPAddresses(serviceIP),
 		},
 	}
-	err = utils.EnsureTLSCertificateSecretOnRemoteCluster(
+	err = utils.EnsureRegistryServerCertificateSecretOnRemoteCluster(
 		ctx,
 		n.client,
 		cluster,

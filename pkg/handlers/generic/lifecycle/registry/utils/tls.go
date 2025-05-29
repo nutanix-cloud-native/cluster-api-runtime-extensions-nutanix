@@ -78,8 +78,8 @@ func EnsureCASecretForCluster(
 	return nil
 }
 
-// EnsureTLSCertificateSecretOnRemoteCluster ensures that a registry TLS certificate is signed by the global CA
-// and is created as secret on the remote cluster.
+// EnsureRegistryServerCertificateSecretOnRemoteCluster ensures that a registry TLS certificate is signed
+// by the global CA and is created as secret on the remote cluster.
 //
 // The high level flow is as follows:
 // 1. Create a new TLS certificate and sign it with the global CA.
@@ -87,7 +87,7 @@ func EnsureCASecretForCluster(
 //
 // Intentionally not using cert-manager to create the certificate,
 // as we want to avoid automatic renewal and instead recreate the certificate each time with a new expiration date.
-func EnsureTLSCertificateSecretOnRemoteCluster(
+func EnsureRegistryServerCertificateSecretOnRemoteCluster(
 	ctx context.Context,
 	c ctrlclient.Client,
 	cluster *clusterv1.Cluster,
