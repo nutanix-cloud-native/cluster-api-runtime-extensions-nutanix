@@ -1,6 +1,7 @@
 package nutanix
 
 import (
+	"context"
 	"fmt"
 
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
@@ -12,7 +13,38 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func (n *Checker) vmImageCheckForMachineDetails(
+func vmImageCheck(
+	client *prismv4.Client,
+	nutanixNodeSpec *carenv1.NutanixNodeSpec,
+	nutanixNodeSpecField string,
+) preflight.Check {
+	if nutanixNodeSpec == nil {
+		return func(ctx context.Context) preflight.CheckResult {
+			return preflight.CheckResult{
+				Name:    "VMImage",
+				Allowed: false,
+				Error:   true,
+				Causes: []preflight.Cause{
+					{
+						Message: fmt.Sprintf("NutanixNodeSpec is missing"),
+						Field:   nutanixNodeSpecField,
+					},
+				},
+			}
+		}
+	}
+
+	return func(ctx context.Context) preflight.CheckResult {
+		return vmImageCheckForMachineDetails(
+			client,
+			&nutanixNodeSpec.MachineDetails,
+			fmt.Sprintf("%s.machineDetails", nutanixNodeSpecField),
+		)
+	}
+}
+
+func vmImageCheckForMachineDetails(
+	client *prismv4.Client,
 	details *carenv1.NutanixMachineDetails,
 	field string,
 ) preflight.CheckResult {
@@ -36,7 +68,7 @@ func (n *Checker) vmImageCheckForMachineDetails(
 		errCh := make(chan error)
 		defer close(errCh)
 
-		images, err := getVMImages(n.v4client, details.Image)
+		images, err := getVMImages(client, details.Image)
 		if err != nil {
 			result.Allowed = false
 			result.Error = true
