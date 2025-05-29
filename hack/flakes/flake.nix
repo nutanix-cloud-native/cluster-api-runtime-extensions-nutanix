@@ -27,12 +27,12 @@
 
           clusterctl-aws = buildGo124Module rec {
             name = "clusterctl-aws";
-            version = "2.8.2";
+            version = "2.8.3";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-utqzHBtYujaZHg7yHKaddOammFRbI3J82DD4sQKigc4=";
+              hash = "sha256-x8gRIzORZcHYVdaa4mEq1bkUJcbpXawICD4r498aaBg=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];

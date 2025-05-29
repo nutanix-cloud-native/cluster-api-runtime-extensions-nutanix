@@ -100,7 +100,7 @@ builds:
 
 archives:
   - name_template: '{{ .ProjectName }}_v{{ trimprefix .Version "v" }}_{{ .Os }}_{{ .Arch }}'
-    builds:
+    ids:
       - cluster-api-runtime-extensions-nutanix
 
 dockers:
