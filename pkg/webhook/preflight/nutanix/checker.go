@@ -12,135 +12,83 @@ import (
 
 	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 
-	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-type Checker struct {
-	client                                 ctrlclient.Client
-	cluster                                *clusterv1.Cluster
-	nutanixSpec                            *carenv1.NutanixSpec
-	nutanixControlPlaneNodeSpec            *carenv1.NutanixNodeSpec
-	nutanixNodeSpecByMachineDeploymentName map[string]*carenv1.NutanixNodeSpec
-	v4client                               *prismv4.Client
-}
+type Checker struct{}
 
 func (n *Checker) Init(
 	ctx context.Context,
-	client ctrlclient.Client,
+	kclient ctrlclient.Client,
 	cluster *clusterv1.Cluster,
 ) []preflight.Check {
-	n.client = client
-	n.cluster = cluster
-
-	var err error
-
-	n.nutanixSpec, n.nutanixControlPlaneNodeSpec, n.nutanixNodeSpecByMachineDeploymentName, err = getData(cluster)
-	if err != nil {
-		return []preflight.Check{
-			errorCheck("TBD", "TBD"),
-		}
+	prismCentralEndpointSpec,
+		controlPlaneNutanixNodeSpec,
+		nutanixNodeSpecByMachineDeploymentName,
+		errCauses := readNutanixSpecs(cluster)
+	if len(errCauses) > 0 {
+		return initErrorCheck(errCauses...)
 	}
 
-	credentials, err := getCredentials(ctx, client, cluster, n.nutanixSpec)
-	if err != nil {
-		return []preflight.Check{
-			errorCheck(
-				fmt.Sprintf("failed to get Nutanix credentials: %s", err),
-				"cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials",
-			),
-		}
+	if controlPlaneNutanixNodeSpec == nil && len(nutanixNodeSpecByMachineDeploymentName) == 0 {
+		// No Nutanix specs found, no checks to run.
+		return nil
 	}
 
-	n.v4client, err = v4client(credentials, n.nutanixSpec)
+	// At least one Nutanix spec is defined. Get credentials and create a client,
+	// because all checks require them.
+	credentials, errCauses := getCredentials(ctx, kclient, cluster, prismCentralEndpointSpec)
+	if len(errCauses) > 0 {
+		return initErrorCheck(errCauses...)
+	}
+
+	nv4client, err := prismv4.NewV4Client(*credentials)
 	if err != nil {
-		return []preflight.Check{
-			errorCheck(
-				fmt.Sprintf("failed to initialize Nutanix v4 client: %s", err),
-				"cluster.spec.topology.variables[.name=clusterConfig].nutanix",
-			),
-		}
+		return initErrorCheck(
+			preflight.Cause{
+				Message: fmt.Sprintf("failed to initialize Nutanix v4 client: %s", err),
+				Field:   "",
+			})
 	}
 
 	// Initialize checks.
 	checks := []preflight.Check{}
-	if n.nutanixControlPlaneNodeSpec != nil {
+	if controlPlaneNutanixNodeSpec != nil {
 		checks = append(checks,
-			func(ctx context.Context) preflight.CheckResult {
-				return n.vmImageCheckForMachineDetails(
-					&n.nutanixControlPlaneNodeSpec.MachineDetails,
-					"cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix.machineDetails",
-				)
-			},
+			vmImageCheck(
+				nv4client,
+				controlPlaneNutanixNodeSpec,
+				"cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix",
+			),
 		)
 	}
-	for mdName, nodeSpec := range n.nutanixNodeSpecByMachineDeploymentName {
+	for _, md := range cluster.Spec.Topology.Workers.MachineDeployments {
+		if nutanixNodeSpecByMachineDeploymentName[md.Name] == nil {
+			continue
+		}
 		checks = append(checks,
-			func(ctx context.Context) preflight.CheckResult {
-				return n.vmImageCheckForMachineDetails(
-					&nodeSpec.MachineDetails,
-					fmt.Sprintf(
-						"cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-							".overrides[.name=workerConfig].value.nutanix.machineDetails",
-						mdName,
-					),
-				)
-			},
+			vmImageCheck(
+				nv4client,
+				nutanixNodeSpecByMachineDeploymentName[md.Name],
+				fmt.Sprintf(
+					"cluster.spec.topology.workers.machineDeployments[.name=%s].variables[.name=workerConfig].value.nutanix",
+					md.Name,
+				),
+			),
 		)
 	}
 	return checks
 }
 
-func errorCheck(msg, field string) preflight.Check {
-	return func(ctx context.Context) preflight.CheckResult {
-		return preflight.CheckResult{
-			Name:    "Nutanix",
-			Allowed: false,
-			Error:   true,
-			Causes: []preflight.Cause{
-				{
-					Message: msg,
-					Field:   field,
-				},
-			},
-		}
-	}
-}
-
-func getData(
-	cluster *clusterv1.Cluster,
-) (*carenv1.NutanixSpec, *carenv1.NutanixNodeSpec, map[string]*carenv1.NutanixNodeSpec, error) {
-	nutanixSpec := &carenv1.NutanixSpec{}
-	controlPlaneNutanixNodeSpec := &carenv1.NutanixNodeSpec{}
-	nutanixNodeSpecByMachineDeploymentName := make(map[string]*carenv1.NutanixNodeSpec)
-
-	clusterConfig, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to unmarshal .variables[.name=clusterConfig]: %w", err)
-	}
-	if clusterConfig != nil && clusterConfig.Nutanix != nil {
-		nutanixSpec = clusterConfig.Nutanix
-	}
-
-	if clusterConfig.ControlPlane != nil && clusterConfig.ControlPlane.Nutanix != nil {
-		controlPlaneNutanixNodeSpec = clusterConfig.ControlPlane.Nutanix
-	}
-
-	if cluster.Spec.Topology.Workers != nil {
-		for _, md := range cluster.Spec.Topology.Workers.MachineDeployments {
-			workerConfig, err := variables.UnmarshalWorkerConfigVariable(md.Variables.Overrides)
-			if err != nil {
-				return nil, nil, nil, fmt.Errorf(
-					"failed to unmarshal .variables[.name=workerConfig] for machine deployment %s: %w",
-					md.Name, err,
-				)
+func initErrorCheck(causes ...preflight.Cause) []preflight.Check {
+	return []preflight.Check{
+		func(ctx context.Context) preflight.CheckResult {
+			return preflight.CheckResult{
+				Name:    "Nutanix",
+				Allowed: false,
+				Error:   true,
+				Causes:  causes,
 			}
-			if workerConfig != nil && workerConfig.Nutanix != nil {
-				nutanixNodeSpecByMachineDeploymentName[md.Name] = workerConfig.Nutanix
-			}
-		}
+		},
 	}
-
-	return nutanixSpec, controlPlaneNutanixNodeSpec, nutanixNodeSpecByMachineDeploymentName, nil
 }
