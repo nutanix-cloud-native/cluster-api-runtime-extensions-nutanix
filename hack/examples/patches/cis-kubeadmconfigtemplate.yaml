@@ -1,0 +1,26 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: not-used
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            # 4.2.4 Ensure that the --read-only-port argument is set to 0
+            read-only-port: "0"
+            # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+            # Recommendation: Set to 5m instead of 4h as per CIS guidelines
+            streaming-connection-idle-timeout: "5m"
+            # 4.2.6 Ensure that the --make-iptables-util-chains argument is set to true
+            make-iptables-util-chains: "true"
+            # 4.2.8 Ensure that the event-qps argument is set to a level which ensures appropriate event capture
+            event-qps: "5"
+            # 4.2.12 Updated with recommended strong cipher suites
+            tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256
+            # 4.2.13 Ensure that a limit is set on pod PIDs
+            pod-max-pids: "4096"

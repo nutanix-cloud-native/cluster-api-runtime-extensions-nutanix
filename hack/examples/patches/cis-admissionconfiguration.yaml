@@ -1,0 +1,47 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: add
+  path: /spec/template/spec/kubeadmConfigSpec/files/-
+  value:
+    path: /etc/kubernetes/admission.yaml
+    permissions: "0600"
+    content: |
+      apiVersion: apiserver.config.k8s.io/v1
+      kind: AdmissionConfiguration
+      plugins:
+      - name: EventRateLimit
+        path: /etc/kubernetes/eventratelimit-config.yaml
+- op: add
+  path: /spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraVolumes/-
+  value:
+    name: admission-config
+    hostPath: /etc/kubernetes/admission.yaml
+    mountPath: /etc/kubernetes/admission.yaml
+    readOnly: true
+    pathType: File
+- op: add
+  path: /spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/admission-control-config-file
+  value: /etc/kubernetes/admission.yaml
+
+# 1.2.9 Ensure that the EventRateLimit admission controller is enabled
+- op: add
+  path: /spec/template/spec/kubeadmConfigSpec/files/-
+  value:
+    path: /etc/kubernetes/eventratelimit-config.yaml
+    permissions: "0600"
+    content: |
+      apiVersion: eventratelimit.admission.k8s.io/v1alpha1
+      kind: Configuration
+      limits:
+      - type: Server
+        qps: 10000
+        burst: 40000
+- op: add
+  path: /spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraVolumes/-
+  value:
+    name: eventratelimit-config
+    hostPath: /etc/kubernetes/eventratelimit-config.yaml
+    mountPath: /etc/kubernetes/eventratelimit-config.yaml
+    readOnly: true
+    pathType: File
