@@ -10,7 +10,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func readNutanixSpecs(
+func specsFromCluster(
 	cluster *clusterv1.Cluster,
 ) (*carenv1.NutanixPrismCentralEndpointSpec, *carenv1.NutanixNodeSpec, map[string]*carenv1.NutanixNodeSpec, []preflight.Cause) {
 	var prismCentralEndpointSpec *carenv1.NutanixPrismCentralEndpointSpec
