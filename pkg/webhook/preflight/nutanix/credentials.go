@@ -1,3 +1,6 @@
+// Copyright 2025 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package nutanix
 
 import (
@@ -22,7 +25,10 @@ func newV4Client(ctx context.Context,
 	client ctrlclient.Client,
 	clusterNamespace string,
 	prismCentralEndpointSpec *carenv1.NutanixPrismCentralEndpointSpec,
-) (*prismv4.Client, []preflight.Cause) {
+) (
+	*prismv4.Client,
+	[]preflight.Cause,
+) {
 	credentials, causes := getCredentials(ctx, client, clusterNamespace, prismCentralEndpointSpec)
 	if len(causes) > 0 {
 		return nil, causes
@@ -46,7 +52,10 @@ func getCredentials(
 	client ctrlclient.Client,
 	clusterNamespace string,
 	prismCentralEndpointSpec *carenv1.NutanixPrismCentralEndpointSpec,
-) (*prismgoclient.Credentials, []preflight.Cause) {
+) (
+	*prismgoclient.Credentials,
+	[]preflight.Cause,
+) {
 	if prismCentralEndpointSpec == nil {
 		return nil, []preflight.Cause{
 			{
@@ -59,8 +68,9 @@ func getCredentials(
 	if prismCentralEndpointSpec.Credentials.SecretRef.Name == "" {
 		return nil, []preflight.Cause{
 			{
-				Message: "Prism Central credentials reference is missing the name",
-				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials.secretRef.name",
+				Message: "Prism Central credentials zreference is missing the name",
+				Field: "cluster.spec.topology.variables[.name=clusterConfig]" +
+					".nutanix.prismCentralEndpoint.credentials.secretRef.name",
 			},
 		}
 	}
@@ -85,7 +95,7 @@ func getCredentials(
 	if len(credentialsSecret.Data) == 0 {
 		return nil, []preflight.Cause{
 			{
-				Message: fmt.Sprintf("credentials Secret has no data"),
+				Message: "credentials Secret has no data",
 				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials.secretRef",
 			},
 		}
