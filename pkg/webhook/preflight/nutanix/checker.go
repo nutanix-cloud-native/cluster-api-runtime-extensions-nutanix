@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
