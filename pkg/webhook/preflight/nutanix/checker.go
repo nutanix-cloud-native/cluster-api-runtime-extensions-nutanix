@@ -10,8 +10,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
-
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
@@ -22,40 +20,31 @@ func (n *Checker) Init(
 	kclient ctrlclient.Client,
 	cluster *clusterv1.Cluster,
 ) []preflight.Check {
+	// Read Nutanix specs from the cluster.
 	prismCentralEndpointSpec,
 		controlPlaneNutanixNodeSpec,
 		nutanixNodeSpecByMachineDeploymentName,
-		errCauses := readNutanixSpecs(cluster)
+		errCauses := specsFromCluster(cluster)
 	if len(errCauses) > 0 {
 		return initErrorCheck(errCauses...)
 	}
 
+	// If no Nutanix specs are found, no checks need to run.
 	if controlPlaneNutanixNodeSpec == nil && len(nutanixNodeSpecByMachineDeploymentName) == 0 {
-		// No Nutanix specs found, no checks to run.
 		return nil
 	}
 
-	// At least one Nutanix spec is defined. Get credentials and create a client,
-	// because all checks require them.
-	credentials, errCauses := getCredentials(ctx, kclient, cluster, prismCentralEndpointSpec)
+	// Create a Nutanix client, because all checks require it.
+	nv4client, errCauses := newV4Client(ctx, kclient, cluster.Namespace, prismCentralEndpointSpec)
 	if len(errCauses) > 0 {
 		return initErrorCheck(errCauses...)
-	}
-
-	nv4client, err := prismv4.NewV4Client(*credentials)
-	if err != nil {
-		return initErrorCheck(
-			preflight.Cause{
-				Message: fmt.Sprintf("failed to initialize Nutanix v4 client: %s", err),
-				Field:   "",
-			})
 	}
 
 	// Initialize checks.
 	checks := []preflight.Check{}
 	if controlPlaneNutanixNodeSpec != nil {
 		checks = append(checks,
-			vmImageCheck(
+			newVMImageCheck(
 				nv4client,
 				controlPlaneNutanixNodeSpec,
 				"cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix",
@@ -67,7 +56,7 @@ func (n *Checker) Init(
 			continue
 		}
 		checks = append(checks,
-			vmImageCheck(
+			newVMImageCheck(
 				nv4client,
 				nutanixNodeSpecByMachineDeploymentName[md.Name],
 				fmt.Sprintf(

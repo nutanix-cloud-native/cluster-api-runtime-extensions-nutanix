@@ -13,7 +13,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func vmImageCheck(
+func newVMImageCheck(
 	client *prismv4.Client,
 	nutanixNodeSpec *carenv1.NutanixNodeSpec,
 	nutanixNodeSpecField string,
