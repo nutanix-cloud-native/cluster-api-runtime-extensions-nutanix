@@ -19,7 +19,7 @@ defaults:
 jobs:
   enable-automerge:
     if: ${{ github.event.pull_request.user.login == 'dependabot[bot]'}}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Dependabot metadata
         id: dependabot-metadata
