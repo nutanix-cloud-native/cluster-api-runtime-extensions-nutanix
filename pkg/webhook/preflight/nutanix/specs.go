@@ -1,3 +1,6 @@
+// Copyright 2025 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package nutanix
 
 import (
@@ -12,7 +15,12 @@ import (
 
 func specsFromCluster(
 	cluster *clusterv1.Cluster,
-) (*carenv1.NutanixPrismCentralEndpointSpec, *carenv1.NutanixNodeSpec, map[string]*carenv1.NutanixNodeSpec, []preflight.Cause) {
+) (
+	*carenv1.NutanixPrismCentralEndpointSpec,
+	*carenv1.NutanixNodeSpec,
+	map[string]*carenv1.NutanixNodeSpec,
+	[]preflight.Cause,
+) {
 	var prismCentralEndpointSpec *carenv1.NutanixPrismCentralEndpointSpec
 	var controlPlaneNutanixNodeSpec *carenv1.NutanixNodeSpec
 	nutanixNodeSpecByMachineDeploymentName := make(map[string]*carenv1.NutanixNodeSpec)

@@ -1,3 +1,6 @@
+// Copyright 2025 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package nutanix
 
 import (
@@ -26,7 +29,7 @@ func newVMImageCheck(
 				Error:   true,
 				Causes: []preflight.Cause{
 					{
-						Message: fmt.Sprintf("NutanixNodeSpec is missing"),
+						Message: "NutanixNodeSpec is missing",
 						Field:   nutanixNodeSpecField,
 					},
 				},
