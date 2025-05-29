@@ -1,7 +1,7 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-export CALICO_VERSION := v3.30.0
+export CALICO_VERSION := v3.29.3
 export CILIUM_VERSION := 1.17.4
 export NODE_FEATURE_DISCOVERY_VERSION := 0.17.3
 export CLUSTER_AUTOSCALER_CHART_VERSION := 9.46.6
