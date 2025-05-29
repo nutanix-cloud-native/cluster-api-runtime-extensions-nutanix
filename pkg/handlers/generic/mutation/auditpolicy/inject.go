@@ -7,6 +7,7 @@ import (
 	"context"
 	_ "embed"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
@@ -25,7 +26,7 @@ type auditPolicyPatchHandler struct{}
 //go:embed embedded/apiserver-audit-policy.yaml
 var auditPolicy string
 
-const auditPolicyPath = "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml"
+const auditPolicyPath = "/etc/kubernetes/audit-policy.yaml"
 
 func NewPatch() *auditPolicyPatchHandler {
 	return &auditPolicyPatchHandler{}
@@ -82,14 +83,16 @@ func (h *auditPolicyPatchHandler) Mutate(
 				apiServer.ExtraVolumes,
 				bootstrapv1.HostPathMount{
 					Name:      "audit-policy",
-					HostPath:  "/etc/kubernetes/audit-policy/",
-					MountPath: "/etc/kubernetes/audit-policy/",
+					HostPath:  auditPolicyPath,
+					MountPath: auditPolicyPath,
 					ReadOnly:  true,
+					PathType:  corev1.HostPathFile,
 				},
 				bootstrapv1.HostPathMount{
 					Name:      "audit-logs",
 					HostPath:  "/var/log/kubernetes/audit",
 					MountPath: "/var/log/audit/",
+					PathType:  corev1.HostPathDirectoryOrCreate,
 				},
 			)
 
