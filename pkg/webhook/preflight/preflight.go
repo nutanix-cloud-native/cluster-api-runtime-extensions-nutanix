@@ -72,6 +72,9 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
+	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, h.checkers)
+
+	// Summarize the results.
 	resp := admission.Response{
 		AdmissionResponse: admissionv1.AdmissionResponse{
 			Allowed: true,
@@ -80,26 +83,24 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 			},
 		},
 	}
-
-	results := run(ctx, h.client, cluster, h.checkers)
-
-	// Summarize the results.
 	internalError := false
-	for _, result := range results {
-		if result.Error {
-			internalError = true
+	for _, results := range resultsOrderedByCheckerAndCheck {
+		for _, result := range results {
+			if result.Error {
+				internalError = true
+			}
+			if !result.Allowed {
+				resp.Allowed = false
+			}
+			for _, cause := range result.Causes {
+				resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
+					Type:    metav1.CauseType(fmt.Sprintf("FailedPreflight%s", result.Name)),
+					Message: cause.Message,
+					Field:   cause.Field,
+				})
+			}
+			resp.Warnings = append(resp.Warnings, result.Warnings...)
 		}
-		if !result.Allowed {
-			resp.Allowed = false
-		}
-		for _, cause := range result.Causes {
-			resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
-				Type:    metav1.CauseType(fmt.Sprintf("FailedPreflight%s", result.Name)),
-				Message: cause.Message,
-				Field:   cause.Field,
-			})
-		}
-		resp.Warnings = append(resp.Warnings, result.Warnings...)
 	}
 
 	switch {
@@ -118,7 +119,13 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	return resp
 }
 
-func run(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster, checkers []Checker) []CheckResult {
+// run runs all checks for the cluster, concurrently, and returns the results ordered by checker and check.
+// Checker are initialized concurrently, and checks runs concurrently as well.
+func run(ctx context.Context,
+	client ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+	checkers []Checker,
+) [][]CheckResult {
 	resultsOrderedByCheckerAndCheck := make([][]CheckResult, len(checkers))
 
 	checkersWG := sync.WaitGroup{}
@@ -139,14 +146,11 @@ func run(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Clust
 			}
 			checksWG.Wait()
 			resultsOrderedByCheckerAndCheck[i] = resultsOrderedByCheck
+
 			checkersWG.Done()
 		}(ctx, client, cluster, checker, i)
 	}
 	checkersWG.Wait()
 
-	results := []CheckResult{}
-	for _, resultsByCheck := range resultsOrderedByCheckerAndCheck {
-		results = append(results, resultsByCheck...)
-	}
-	return results
+	return resultsOrderedByCheckerAndCheck
 }

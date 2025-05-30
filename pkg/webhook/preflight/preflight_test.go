@@ -530,7 +530,11 @@ func TestRun_SingleCheckerSingleCheck(t *testing.T) {
 			},
 		},
 	}
-	results := run(ctx, nil, nil, []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
+	if len(resultsOrderedByCheckerAndCheck) != 1 {
+		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
+	}
+	results := resultsOrderedByCheckerAndCheck[0]
 	if len(results) != 1 {
 		t.Fatalf("expected 1 result, got %d", len(results))
 	}
@@ -560,15 +564,19 @@ func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 			},
 		},
 	}
-	results := run(ctx, nil, nil, []Checker{checker1, checker2})
-	if len(results) != 3 {
-		t.Fatalf("expected 3 results, got %d", len(results))
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker1, checker2})
+	if len(resultsOrderedByCheckerAndCheck) != 2 {
+		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
-	names := []string{results[0].Name, results[1].Name, results[2].Name}
+
 	expected := []string{"c1-check1", "c1-check2", "c2-check1"}
-	for i, name := range expected {
-		if names[i] != name {
-			t.Errorf("expected result %d to have name %q, got %q", i, name, names[i])
+	expectedIdx := 0
+	for _, results := range resultsOrderedByCheckerAndCheck {
+		for _, result := range results {
+			if result.Name != expected[expectedIdx] {
+				t.Errorf("expected result %d to be %q, got %q", expectedIdx, expected[expectedIdx], result.Name)
+			}
+			expectedIdx++
 		}
 	}
 }
@@ -595,7 +603,9 @@ func TestRun_ChecksRunInParallel(t *testing.T) {
 			},
 		},
 	}
-	results := run(ctx, nil, nil, []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
+
+	results := resultsOrderedByCheckerAndCheck[0]
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
@@ -670,7 +680,10 @@ func TestRun_ContextCancellation(t *testing.T) {
 		cancel()
 	}()
 
-	results := run(ctx, nil, nil, []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
+	if len(resultsOrderedByCheckerAndCheck) != 1 {
+		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
+	}
 
 	select {
 	case <-completed:
@@ -679,6 +692,7 @@ func TestRun_ContextCancellation(t *testing.T) {
 		// This is expected - the check was cancelled
 	}
 
+	results := resultsOrderedByCheckerAndCheck[0]
 	if len(results) != 1 {
 		t.Fatalf("expected 1 result, got %d", len(results))
 	}
@@ -717,18 +731,21 @@ func TestRun_OrderOfResults(t *testing.T) {
 		},
 	}
 
-	results := run(ctx, nil, nil, []Checker{checker1, checker2})
-
-	if len(results) != 4 {
-		t.Fatalf("expected 4 results, got %d", len(results))
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker1, checker2})
+	if len(resultsOrderedByCheckerAndCheck) != 2 {
+		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
 
 	// The order should be all checks from checker1 followed by all checks from checker2,
 	// regardless of their completion time
 	expected := []string{"c1-check1", "c1-check2", "c2-check1", "c2-check2"}
-	for i, name := range expected {
-		if results[i].Name != name {
-			t.Errorf("result[%d]: expected %q, got %q", i, name, results[i].Name)
+	expectedIdx := 0
+	for _, results := range resultsOrderedByCheckerAndCheck {
+		for _, result := range results {
+			if result.Name != expected[expectedIdx] {
+				t.Errorf("expected result %d to be %q, got %q", expectedIdx, expected[expectedIdx], result.Name)
+			}
+			expectedIdx++
 		}
 	}
 }
@@ -761,11 +778,16 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 	}
 
 	start := time.Now()
-	results := run(ctx, nil, nil, checkers)
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, checkers)
 	duration := time.Since(start)
 
-	if len(results) != expectedTotal {
-		t.Errorf("expected %d results, got %d", expectedTotal, len(results))
+	resultTotal := 0
+	for _, results := range resultsOrderedByCheckerAndCheck {
+		resultTotal += len(results)
+	}
+
+	if resultTotal != expectedTotal {
+		t.Errorf("expected %d results, got %d", expectedTotal, resultTotal)
 	}
 
 	t.Logf("Completed %d checks in %v", expectedTotal, duration)
@@ -799,8 +821,13 @@ func TestRun_ErrorHandlingInChecks(t *testing.T) {
 		},
 	}
 
-	results := run(ctx, nil, nil, []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
 
+	if len(resultsOrderedByCheckerAndCheck) != 1 {
+		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
+	}
+
+	results := resultsOrderedByCheckerAndCheck[0]
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
@@ -840,13 +867,23 @@ func TestRun_ZeroChecksFromChecker(t *testing.T) {
 		},
 	}
 
-	results := run(ctx, nil, nil, []Checker{emptyChecker, normalChecker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{emptyChecker, normalChecker})
 
-	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
+	if len(resultsOrderedByCheckerAndCheck) != 2 {
+		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
 
-	if results[0].Name != "check1" {
-		t.Errorf("expected result from normal checker, got %s", results[0].Name)
+	emptyResults := resultsOrderedByCheckerAndCheck[0] // We expect no results from the empty checker
+	if len(emptyResults) != 0 {
+		t.Fatalf("expected 0 results from empty checker, got %d", len(emptyResults))
+	}
+
+	normalResults := resultsOrderedByCheckerAndCheck[1] // We expect results from the normal checker
+	if len(normalResults) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(normalResults))
+	}
+
+	if normalResults[0].Name != "check1" {
+		t.Errorf("expected result from normal checker, got %s", normalResults[0].Name)
 	}
 }
