@@ -20,7 +20,7 @@ defaults:
 
 jobs:
   release-please:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: googleapis/release-please-action@v4
         id: release-please

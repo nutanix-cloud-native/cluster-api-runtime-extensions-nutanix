@@ -19,7 +19,7 @@ defaults:
 jobs:
   devbox-update:
     if: github.ref_type == 'branch'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       DESTINATION_BRANCH: scheduled-devbox-update-${{ github.ref_name }}
     steps:

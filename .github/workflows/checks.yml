@@ -25,7 +25,7 @@ defaults:
 
 jobs:
   unit-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
       focus: Quick start
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
-      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-22.04' }}
+      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-24.04' }}
       base-os:  ${{ matrix.config.provider == 'Nutanix' && matrix.config.baseOS || '' }}
     secrets: inherit
     permissions:
@@ -109,14 +109,14 @@ jobs:
       focus: Self-hosted
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
-      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-22.04' }}
+      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-24.04' }}
     secrets: inherit
     permissions:
       contents: read
       checks: write
 
   lint-go:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         module: [api, common, .]
@@ -149,7 +149,7 @@ jobs:
           golangci_lint_flags: "--config=${{ github.workspace }}/.golangci.yml"
 
   lint-gha:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
     steps:
@@ -163,7 +163,7 @@ jobs:
           reporter: github-pr-review
 
   pre-commit:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -197,7 +197,7 @@ jobs:
           SKIP: no-commit-to-branch,golangci-lint,actionlint-system
 
   lint-test-helm:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       KIND_CLUSTER_NAME: chart-testing
       KIND_KUBECONFIG: ct-kind-kubeconfig

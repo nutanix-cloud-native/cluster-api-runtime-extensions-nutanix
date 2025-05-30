@@ -47,6 +47,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.30" | string | `"v1.30.8"` |  |
 | hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.31" | string | `"v1.31.5"` |  |
 | hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.32" | string | `"v1.32.1"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.33" | string | `"v1.33.0"` |  |
 | hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-ccm-helm-values-template"` |  |
 | hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name | string | `"cluster-autoscaler"` |  |

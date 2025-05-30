@@ -13,15 +13,15 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/cloud-provider-aws{{ end }}'
   aws-ebs-csi: |
     ChartName: aws-ebs-csi-driver
-    ChartVersion: 2.40.3
+    ChartVersion: 2.44.0
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/aws-ebs-csi-driver{{ end }}'
   cilium: |
     ChartName: cilium
-    ChartVersion: 1.17.3
+    ChartVersion: 1.17.4
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}'
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
-    ChartVersion: 9.46.3
+    ChartVersion: 9.46.6
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}'
   cncf-distribution-registry: |
     ChartName: docker-registry
@@ -41,7 +41,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://metallb.github.io/metallb{{ end }}'
   nfd: |
     ChartName: node-feature-discovery
-    ChartVersion: 0.17.2
+    ChartVersion: 0.17.3
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/node-feature-discovery/charts{{ end }}'
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
@@ -49,11 +49,11 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}'
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
-    ChartVersion: 3.3.0
+    ChartVersion: 3.3.3
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}'
   snapshot-controller: |
     ChartName: snapshot-controller
-    ChartVersion: 4.0.1
+    ChartVersion: 4.0.2
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://piraeus.io/helm-charts/{{ end }}'
   tigera-operator: |
     ChartName: tigera-operator
