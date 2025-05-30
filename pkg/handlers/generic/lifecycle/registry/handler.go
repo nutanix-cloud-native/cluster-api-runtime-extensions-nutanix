@@ -20,6 +20,12 @@ import (
 )
 
 type RegistryProvider interface {
+	Setup(
+		ctx context.Context,
+		registryVar v1alpha1.RegistryAddon,
+		cluster *clusterv1.Cluster,
+		log logr.Logger,
+	) error
 	Apply(
 		ctx context.Context,
 		registryVar v1alpha1.RegistryAddon,
@@ -37,6 +43,7 @@ type RegistryHandler struct {
 
 var (
 	_ commonhandlers.Named                   = &RegistryHandler{}
+	_ lifecycle.BeforeClusterCreate          = &RegistryHandler{}
 	_ lifecycle.AfterControlPlaneInitialized = &RegistryHandler{}
 	_ lifecycle.BeforeClusterUpgrade         = &RegistryHandler{}
 )
@@ -55,6 +62,17 @@ func New(
 
 func (r *RegistryHandler) Name() string {
 	return "RegistryHandler"
+}
+
+func (r *RegistryHandler) BeforeClusterCreate(
+	ctx context.Context,
+	req *runtimehooksv1.BeforeClusterCreateRequest,
+	resp *runtimehooksv1.BeforeClusterCreateResponse,
+) {
+	commonResponse := &runtimehooksv1.CommonResponse{}
+	r.setup(ctx, &req.Cluster, commonResponse)
+	resp.Status = commonResponse.GetStatus()
+	resp.Message = commonResponse.GetMessage()
 }
 
 func (r *RegistryHandler) AfterControlPlaneInitialized(
@@ -77,6 +95,91 @@ func (r *RegistryHandler) BeforeClusterUpgrade(
 	r.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
+}
+
+func (r *RegistryHandler) setup(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	resp *runtimehooksv1.CommonResponse,
+) {
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"cluster",
+		clusterKey,
+	)
+
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	registryVar, err := variables.Get[v1alpha1.RegistryAddon](
+		varMap,
+		r.variableName,
+		r.variablePath...)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).
+				Info(
+					"Skipping RegistryAddon, field is not specified",
+					"error",
+					err,
+				)
+			return
+		}
+		log.Error(
+			err,
+			"failed to read RegistryAddon provider from cluster definition",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("failed to read RegistryAddon provider from cluster definition: %v",
+				err,
+			),
+		)
+		return
+	}
+
+	handler, ok := r.ProviderHandler[registryVar.Provider]
+	if !ok {
+		err = fmt.Errorf("unknown RegistryAddon Provider")
+		log.Error(err, "provider", registryVar.Provider)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("%s %s", err, registryVar.Provider),
+		)
+		return
+	}
+
+	log.Info(fmt.Sprintf("Setting up RegistryAddon provider prerequisites %s", registryVar.Provider))
+	err = handler.Setup(
+		ctx,
+		registryVar,
+		cluster,
+		log,
+	)
+	if err != nil {
+		log.Error(
+			err,
+			fmt.Sprintf(
+				"failed to set up RegistryAddon provider prerequisites %s",
+				registryVar.Provider,
+			),
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf(
+				"failed to set up RegistryAddon provider prerequisites: %v",
+				err,
+			),
+		)
+		return
+	}
+
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+	resp.SetMessage(
+		fmt.Sprintf(
+			"Set up RegistryAddon provider prerequisites %s",
+			registryVar.Provider,
+		),
+	)
 }
 
 func (r *RegistryHandler) apply(

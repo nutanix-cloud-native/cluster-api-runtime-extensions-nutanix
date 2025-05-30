@@ -200,17 +200,21 @@ func RetrieveValuesTemplate(
 }
 
 func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
-	// this is set as an environment variable from the downward API on deployment
-	deploymentNS := os.Getenv("POD_NAMESPACE")
-	if deploymentNS == "" {
-		deploymentNS = metav1.NamespaceDefault
-	}
 	if strings.Contains(hcp.Spec.RepoURL, "helm-repository") {
 		hcp.Spec.TLSConfig = &caaphv1.TLSConfig{
 			CASecretRef: &corev1.SecretReference{
 				Name:      "helm-repository-tls",
-				Namespace: deploymentNS,
+				Namespace: GetDeploymentNamespace(),
 			},
 		}
 	}
+}
+
+func GetDeploymentNamespace() string {
+	// this is set as an environment variable from the downward API on deployment
+	deploymentNamespace := os.Getenv("POD_NAMESPACE")
+	if deploymentNamespace == "" {
+		deploymentNamespace = metav1.NamespaceDefault
+	}
+	return deploymentNamespace
 }

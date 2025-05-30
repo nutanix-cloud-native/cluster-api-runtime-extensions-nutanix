@@ -9,15 +9,17 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
+)
+
+const (
+	registryAddonRootCASecretName = "registry-addon-root-ca"
 )
 
 // CopySecretToRemoteCluster will get the Secret from srcSecretName
@@ -34,7 +36,7 @@ func CopySecretToRemoteCluster(
 		return err
 	}
 
-	credentialsOnRemote := &corev1.Secret{
+	secretOnRemote := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Secret",
@@ -58,7 +60,7 @@ func CopySecretToRemoteCluster(
 		return fmt.Errorf("error creating namespace on the remote cluster: %w", err)
 	}
 
-	err = client.ServerSideApply(ctx, remoteClient, credentialsOnRemote, client.ForceOwnership)
+	err = client.ServerSideApply(ctx, remoteClient, secretOnRemote, client.ForceOwnership)
 	if err != nil {
 		return fmt.Errorf("error creating Secret on the remote cluster: %w", err)
 	}
@@ -66,79 +68,58 @@ func CopySecretToRemoteCluster(
 	return nil
 }
 
-// EnsureClusterOwnerReferenceForObject ensures that OwnerReference of the cluster is added on provided object.
-func EnsureClusterOwnerReferenceForObject(
+// EnsureSecretOnRemoteCluster ensures that the given Secret exists on the remote cluster.
+func EnsureSecretOnRemoteCluster(
 	ctx context.Context,
 	cl ctrlclient.Client,
-	objectRef corev1.TypedLocalObjectReference,
+	secret *corev1.Secret,
 	cluster *clusterv1.Cluster,
 ) error {
-	targetObj, err := GetResourceFromTypedLocalObjectReference(
-		ctx,
-		cl,
-		objectRef,
-		cluster.Namespace,
-	)
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+	remoteClient, err := remote.NewClusterClient(ctx, "", cl, clusterKey)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating client for remote cluster: %w", err)
 	}
 
-	err = controllerutil.SetOwnerReference(cluster, targetObj, cl.Scheme())
+	err = EnsureNamespaceWithName(ctx, remoteClient, secret.Namespace)
 	if err != nil {
-		return fmt.Errorf("failed to set cluster's owner reference on object: %w", err)
+		return fmt.Errorf("error creating namespace on the remote cluster: %w", err)
 	}
 
-	err = cl.Update(ctx, targetObj)
+	err = client.ServerSideApply(ctx, remoteClient, secret, client.ForceOwnership)
 	if err != nil {
-		return fmt.Errorf("failed to update object with cluster's owner reference: %w", err)
+		return fmt.Errorf("error creating Secret on the remote cluster: %w", err)
 	}
+
 	return nil
 }
 
-// GetResourceFromTypedLocalObjectReference gets the resource from the provided TypedLocalObjectReference.
-func GetResourceFromTypedLocalObjectReference(
+func EnsureSecretForLocalCluster(
 	ctx context.Context,
 	cl ctrlclient.Client,
-	typedLocalObjectRef corev1.TypedLocalObjectReference,
-	ns string,
-) (*unstructured.Unstructured, error) {
-	apiVersion := corev1.SchemeGroupVersion.String()
-	if typedLocalObjectRef.APIGroup != nil {
-		apiVersion = *typedLocalObjectRef.APIGroup
-	}
-
-	objectRef := &corev1.ObjectReference{
-		APIVersion: apiVersion,
-		Kind:       typedLocalObjectRef.Kind,
-		Name:       typedLocalObjectRef.Name,
-		Namespace:  ns,
-	}
-
-	targetObj, err := external.Get(ctx, cl, objectRef)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get resource from object reference: %w", err)
-	}
-
-	return targetObj, nil
-}
-
-func getSecretForCluster(
-	ctx context.Context,
-	c ctrlclient.Client,
-	secretName string,
+	secret *corev1.Secret,
 	cluster *clusterv1.Cluster,
-) (*corev1.Secret, error) {
-	secret := &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: cluster.Namespace,
-		},
+) error {
+	if secret.Namespace != "" &&
+		secret.Namespace != cluster.Namespace {
+		return fmt.Errorf(
+			"secret namespace %q does not match cluster namespace %q",
+			secret.Namespace,
+			cluster.Namespace,
+		)
 	}
-	return secret, c.Get(ctx, ctrlclient.ObjectKeyFromObject(secret), secret)
+
+	err := controllerutil.SetOwnerReference(cluster, secret, cl.Scheme())
+	if err != nil {
+		return fmt.Errorf("failed to set cluster's owner reference on Secret: %w", err)
+	}
+
+	err = client.ServerSideApply(ctx, cl, secret, client.ForceOwnership)
+	if err != nil {
+		return fmt.Errorf("error creating Secret for cluster: %w", err)
+	}
+
+	return nil
 }
 
 // SecretForImageRegistryCredentials returns the Secret for the given ImageRegistryCredentials.
@@ -170,4 +151,60 @@ func SecretNameForImageRegistryCredentials(credentials *v1alpha1.RegistryCredent
 		return ""
 	}
 	return credentials.SecretRef.Name
+}
+
+func SecretForRegistryAddonRootCA(
+	ctx context.Context,
+	c ctrlclient.Reader,
+) (*corev1.Secret, error) {
+	secret, err := getSecret(ctx, c, registryAddonRootCASecretName, GetDeploymentNamespace())
+	if err != nil {
+		return nil, fmt.Errorf("error getting registry addon root CA secret: %w", err)
+	}
+	return secret, nil
+}
+
+func SecretForClusterRegistryAddonCA(
+	ctx context.Context,
+	c ctrlclient.Reader,
+	cluster *clusterv1.Cluster,
+) (*corev1.Secret, error) {
+	secret, err := getSecretForCluster(ctx, c, SecretNameForRegistryAddonCA(cluster), cluster)
+	if err != nil {
+		return nil, fmt.Errorf("error getting registry addon CA secret for cluster: %w", err)
+	}
+	return secret, nil
+}
+
+// SecretNameForRegistryAddonCA returns the name of the registry addon CA Secret.
+func SecretNameForRegistryAddonCA(cluster *clusterv1.Cluster) string {
+	return fmt.Sprintf("%s-registry-addon-ca", cluster.Name)
+}
+
+func getSecretForCluster(
+	ctx context.Context,
+	c ctrlclient.Reader,
+	secretName string,
+	cluster *clusterv1.Cluster,
+) (*corev1.Secret, error) {
+	return getSecret(ctx, c, secretName, cluster.Namespace)
+}
+
+func getSecret(
+	ctx context.Context,
+	c ctrlclient.Reader,
+	secretName string,
+	secretNamespace string,
+) (*corev1.Secret, error) {
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: secretNamespace,
+		},
+	}
+	return secret, c.Get(ctx, ctrlclient.ObjectKeyFromObject(secret), secret)
 }
