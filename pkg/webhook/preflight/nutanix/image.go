@@ -24,7 +24,7 @@ func newVMImageCheck(
 	if nutanixNodeSpec == nil {
 		return func(ctx context.Context) preflight.CheckResult {
 			return preflight.CheckResult{
-				Name:    "VMImage",
+				Name:    "NutanixVMImage",
 				Allowed: false,
 				Error:   true,
 				Causes: []preflight.Cause{
@@ -52,7 +52,7 @@ func vmImageCheckForMachineDetails(
 	field string,
 ) preflight.CheckResult {
 	result := preflight.CheckResult{
-		Name:    "VMImage",
+		Name:    "NutanixVMImage",
 		Allowed: false,
 	}
 	if details.ImageLookup != nil {
