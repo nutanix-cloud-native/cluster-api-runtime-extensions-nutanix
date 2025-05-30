@@ -4,11 +4,16 @@
 package request
 
 import (
+	"encoding/json"
+	"maps"
+
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
@@ -88,7 +93,9 @@ func NewKubeadmConfigTemplateRequest(
 }
 
 type KubeadmControlPlaneTemplateRequestItemBuilder struct {
-	files []bootstrapv1.File
+	files              []bootstrapv1.File
+	version            *string
+	apiServerExtraArgs map[string]string
 }
 
 func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithFiles(
@@ -98,43 +105,67 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithFiles(
 	return b
 }
 
+func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithKubernetesVersion(
+	version string,
+) *KubeadmControlPlaneTemplateRequestItemBuilder {
+	b.version = ptr.To(version)
+	return b
+}
+
+func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithAPIServerExtraArgs(
+	extraArgs map[string]string,
+) *KubeadmControlPlaneTemplateRequestItemBuilder {
+	b.apiServerExtraArgs = extraArgs
+	return b
+}
+
 func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 	uid types.UID,
 ) runtimehooksv1.GeneratePatchesRequestItem {
-	return NewRequestItem(
-		&controlplanev1.KubeadmControlPlaneTemplate{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: controlplanev1.GroupVersion.String(),
-				Kind:       "KubeadmControlPlaneTemplate",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      kubeadmControlPlaneTemplateRequestObjectName,
-				Namespace: Namespace,
-			},
-			Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
-				Template: controlplanev1.KubeadmControlPlaneTemplateResource{
-					Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
-						KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
-							InitConfiguration: &bootstrapv1.InitConfiguration{
-								NodeRegistration: bootstrapv1.NodeRegistrationOptions{
-									KubeletExtraArgs: map[string]string{
-										"cloud-provider": "external",
-									},
+	cpTemplate := &controlplanev1.KubeadmControlPlaneTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: controlplanev1.GroupVersion.String(),
+			Kind:       "KubeadmControlPlaneTemplate",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      kubeadmControlPlaneTemplateRequestObjectName,
+			Namespace: Namespace,
+		},
+		Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
+			Template: controlplanev1.KubeadmControlPlaneTemplateResource{
+				Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
+					KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
+						InitConfiguration: &bootstrapv1.InitConfiguration{
+							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
+								KubeletExtraArgs: map[string]string{
+									"cloud-provider": "external",
 								},
 							},
-							JoinConfiguration: &bootstrapv1.JoinConfiguration{
-								NodeRegistration: bootstrapv1.NodeRegistrationOptions{
-									KubeletExtraArgs: map[string]string{
-										"cloud-provider": "external",
-									},
-								},
-							},
-							Files: b.files,
 						},
+						JoinConfiguration: &bootstrapv1.JoinConfiguration{
+							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
+								KubeletExtraArgs: map[string]string{
+									"cloud-provider": "external",
+								},
+							},
+						},
+						Files: b.files,
 					},
 				},
 			},
 		},
+	}
+
+	if b.apiServerExtraArgs != nil {
+		if cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
+			cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
+		}
+		clusterConfiguration := cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration
+		clusterConfiguration.APIServer.ExtraArgs = maps.Clone(b.apiServerExtraArgs)
+	}
+
+	requestItem := NewRequestItem(
+		cpTemplate,
 		&runtimehooksv1.HolderReference{
 			APIVersion: clusterv1.GroupVersion.String(),
 			Kind:       "Cluster",
@@ -144,6 +175,22 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 		},
 		uid,
 	)
+
+	if b.version != nil {
+		marshaledBuiltin, _ := json.Marshal( //nolint:errchkjson // Marshalling is guaranteed to succeed.
+			map[string]interface{}{
+				"controlPlane": map[string]interface{}{
+					"version": *b.version,
+				},
+			},
+		)
+		requestItem.Variables = append(requestItem.Variables, runtimehooksv1.Variable{
+			Name:  runtimehooksv1.BuiltinsName,
+			Value: apiextensionsv1.JSON{Raw: marshaledBuiltin},
+		})
+	}
+
+	return requestItem
 }
 
 func NewKubeadmControlPlaneTemplateRequestItem(

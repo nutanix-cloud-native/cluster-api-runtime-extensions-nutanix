@@ -63,17 +63,16 @@ func AssertGeneratePatches[T mutation.GeneratePatches](
 	}
 	resp := &runtimehooksv1.GeneratePatchesResponse{}
 	h.GeneratePatches(context.Background(), req, resp)
-	expectedStatus := runtimehooksv1.ResponseStatusSuccess
 	if tt.ExpectedFailure {
-		expectedStatus = runtimehooksv1.ResponseStatusFailure
-	}
-	g.Expect(resp.Status).
-		To(gomega.Equal(expectedStatus), fmt.Sprintf("Message: %s", resp.Message))
-
-	if len(tt.ExpectedPatchMatchers) == 0 {
+		g.Expect(resp.Status).
+			To(gomega.Equal(runtimehooksv1.ResponseStatusFailure), fmt.Sprintf("Message: %s", resp.Message))
 		g.Expect(resp.Items).To(gomega.BeEmpty())
 		return
 	}
+
+	g.Expect(resp.Status).
+		To(gomega.Equal(runtimehooksv1.ResponseStatusSuccess), fmt.Sprintf("Message: %s", resp.Message))
+
 	g.Expect(resp.Items).To(containPatches(&tt.RequestItem, tt.ExpectedPatchMatchers...))
 
 	if len(tt.UnexpectedPatchMatchers) > 0 {
@@ -111,6 +110,17 @@ func containPatches(
 	requestItem *runtimehooksv1.GeneratePatchesRequestItem,
 	jsonMatchers ...JSONPatchMatcher,
 ) gomega.OmegaMatcher {
+	if len(jsonMatchers) == 0 {
+		return gomega.SatisfyAny(
+			gomega.BeEmpty(),
+			gomega.ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+				"UID":       gomega.Equal(requestItem.UID),
+				"PatchType": gomega.Equal(runtimehooksv1.JSONPatchType),
+				"Patch":     gomega.Equal([]byte("[]")),
+			})),
+		)
+	}
+
 	patchMatchers := make([]interface{}, 0, len(jsonMatchers))
 	for patchIdx := range jsonMatchers {
 		unexpectedPatch := jsonMatchers[patchIdx]

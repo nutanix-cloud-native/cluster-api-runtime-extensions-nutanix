@@ -35,9 +35,6 @@ patches:
     kind: KubeadmControlPlaneTemplate
   patch: |-
     - op: "replace"
-      path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/cloud-provider"
-      value: "external"
-    - op: "replace"
       path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/controllerManager/extraArgs/cloud-provider"
       value: "external"
     - op: "replace"
@@ -52,6 +49,13 @@ patches:
     - op: "replace"
       path: "/spec/template/spec/joinConfiguration/nodeRegistration/kubeletExtraArgs/cloud-provider"
       value: "external"
+# Delete the API server cloud-provider flag from the template.
+# They will be added by the handler for k8s < 1.33.
+- target:
+    kind: KubeadmControlPlaneTemplate
+  patch: |-
+    - op: "remove"
+      path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/cloud-provider"
 
 # Delete the cluster-specific resources.
 - target:
