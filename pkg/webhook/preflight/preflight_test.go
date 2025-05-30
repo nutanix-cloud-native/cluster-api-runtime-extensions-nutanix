@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync/atomic"
+	"sync"
 	"testing"
 	"time"
 
@@ -25,10 +25,6 @@ import (
 type mockChecker struct {
 	name   string
 	checks []Check
-}
-
-func (m *mockChecker) Name() string {
-	return m.name
 }
 
 func (m *mockChecker) Init(_ context.Context, _ ctrlclient.Client, _ *clusterv1.Cluster) []Check {
@@ -210,7 +206,8 @@ func TestHandle(t *testing.T) {
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: false,
 					Result: &metav1.Status{
-						Code:    http.StatusForbidden,
+						Code:    http.StatusUnprocessableEntity,
+						Reason:  metav1.StatusReasonInvalid,
 						Message: "preflight checks failed",
 						Details: &metav1.StatusDetails{
 							Causes: []metav1.StatusCause{
@@ -325,7 +322,7 @@ func TestHandle(t *testing.T) {
 					Result: &metav1.Status{
 						Code:    http.StatusInternalServerError,
 						Reason:  metav1.StatusReasonInternalError,
-						Message: "preflight checks failed",
+						Message: "preflight checks failed due to an internal error",
 						Details: &metav1.StatusDetails{
 							Causes: []metav1.StatusCause{
 								{
@@ -459,7 +456,7 @@ func TestHandleCancelledContext(t *testing.T) {
 			Result: &metav1.Status{
 				Code:    http.StatusInternalServerError,
 				Reason:  metav1.StatusReasonInternalError,
-				Message: "preflight checks failed",
+				Message: "preflight checks failed due to an internal error",
 				Details: &metav1.StatusDetails{
 					Causes: []metav1.StatusCause{
 						{
@@ -515,66 +512,341 @@ func TestHandleCancelledContext(t *testing.T) {
 	assert.Equal(t, expectedResponse.Warnings, got.Warnings)
 }
 
-func TestHandleParallelChecks(t *testing.T) {
-	scheme := runtime.NewScheme()
-	err := clusterv1.AddToScheme(scheme)
-	require.NoError(t, err)
+func TestRun_NoCheckers(t *testing.T) {
+	ctx := context.Background()
+	results := run(ctx, nil, nil, nil)
+	if len(results) != 0 {
+		t.Errorf("expected 0 results, got %d", len(results))
+	}
+}
 
-	decoder := admission.NewDecoder(scheme)
-
-	// Test that checks run in parallel by using atomic counter
-	var counter int32
+func TestRun_SingleCheckerSingleCheck(t *testing.T) {
+	ctx := context.Background()
 	checker := &mockChecker{
+		name: "checker1",
 		checks: []Check{
 			func(ctx context.Context) CheckResult {
-				current := atomic.AddInt32(&counter, 1)
-				// Sleep to ensure other goroutines can increment counter if running in parallel
-				time.Sleep(50 * time.Millisecond)
-				if current == 2 {
-					return CheckResult{Allowed: true}
-				}
-				return CheckResult{Allowed: true}
+				return CheckResult{Name: "check1", Allowed: true}
+			},
+		},
+	}
+	results := run(ctx, nil, nil, []Checker{checker})
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if results[0].Name != "check1" || !results[0].Allowed {
+		t.Errorf("unexpected result: %+v", results[0])
+	}
+}
+
+func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
+	ctx := context.Background()
+	checker1 := &mockChecker{
+		name: "checker1",
+		checks: []Check{
+			func(ctx context.Context) CheckResult {
+				return CheckResult{Name: "c1-check1", Allowed: true}
 			},
 			func(ctx context.Context) CheckResult {
-				current := atomic.AddInt32(&counter, 1)
-				if current == 2 {
-					return CheckResult{Allowed: true}
+				return CheckResult{Name: "c1-check2", Allowed: false}
+			},
+		},
+	}
+	checker2 := &mockChecker{
+		name: "checker2",
+		checks: []Check{
+			func(ctx context.Context) CheckResult {
+				return CheckResult{Name: "c2-check1", Error: true}
+			},
+		},
+	}
+	results := run(ctx, nil, nil, []Checker{checker1, checker2})
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
+	}
+	names := []string{results[0].Name, results[1].Name, results[2].Name}
+	expected := []string{"c1-check1", "c1-check2", "c2-check1"}
+	for i, name := range expected {
+		if names[i] != name {
+			t.Errorf("expected result %d to have name %q, got %q", i, name, names[i])
+		}
+	}
+}
+
+func TestRun_ChecksRunInParallel(t *testing.T) {
+	ctx := context.Background()
+	var mu sync.Mutex
+	order := []string{}
+	checker := &mockChecker{
+		name: "checker",
+		checks: []Check{
+			func(ctx context.Context) CheckResult {
+				time.Sleep(50 * time.Millisecond)
+				mu.Lock()
+				order = append(order, "slow")
+				mu.Unlock()
+				return CheckResult{Name: "slow"}
+			},
+			func(ctx context.Context) CheckResult {
+				mu.Lock()
+				order = append(order, "fast")
+				mu.Unlock()
+				return CheckResult{Name: "fast"}
+			},
+		},
+	}
+	results := run(ctx, nil, nil, []Checker{checker})
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+	// Both checks should have run, order in 'order' should be "fast", "slow" if parallel.
+	if order[0] != "fast" || order[1] != "slow" {
+		t.Errorf("expected order [fast slow], got %v", order)
+	}
+}
+
+func TestRun_CheckersRunInParallel(t *testing.T) {
+	ctx := context.Background()
+	var mu sync.Mutex
+	order := []string{}
+	checker1 := &mockChecker{
+		name: "checker1",
+		checks: []Check{
+			func(ctx context.Context) CheckResult {
+				time.Sleep(50 * time.Millisecond)
+				mu.Lock()
+				order = append(order, "slow-checker")
+				mu.Unlock()
+				return CheckResult{Name: "slow-checker"}
+			},
+		},
+	}
+	checker2 := &mockChecker{
+		name: "checker2",
+		checks: []Check{
+			func(ctx context.Context) CheckResult {
+				mu.Lock()
+				order = append(order, "fast-checker")
+				mu.Unlock()
+				return CheckResult{Name: "fast-checker"}
+			},
+		},
+	}
+	results := run(ctx, nil, nil, []Checker{checker1, checker2})
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+	// Both checkers should have run, order in 'order' should be "fast-checker", "slow-checker" if parallel.
+	if order[0] != "fast-checker" || order[1] != "slow-checker" {
+		t.Errorf("expected order [fast-checker slow-checker], got %v", order)
+	}
+}
+
+func TestRun_ContextCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Use a channel to synchronize and ensure the check started
+	started := make(chan struct{})
+	completed := make(chan struct{})
+
+	checker := &mockChecker{
+		name: "checker",
+		checks: []Check{
+			func(ctx context.Context) CheckResult {
+				close(started)
+				select {
+				case <-ctx.Done():
+					return CheckResult{Name: "cancelled", Error: true}
+				case <-time.After(2 * time.Second):
+					close(completed)
+					return CheckResult{Name: "completed", Allowed: true}
 				}
-				return CheckResult{Allowed: true}
 			},
 		},
 	}
 
-	handler := New(fake.NewClientBuilder().Build(), decoder, checker)
+	go func() {
+		<-started
+		cancel()
+	}()
 
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-cluster",
-			Labels: map[string]string{
-				clusterv1.ProviderNameLabel: "test-provider",
+	results := run(ctx, nil, nil, []Checker{checker})
+
+	select {
+	case <-completed:
+		t.Error("check should have been cancelled but completed")
+	case <-time.After(50 * time.Millisecond):
+		// This is expected - the check was cancelled
+	}
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if !results[0].Error {
+		t.Errorf("expected error result after cancellation, got: %+v", results[0])
+	}
+}
+
+func TestRun_OrderOfResults(t *testing.T) {
+	ctx := context.Background()
+
+	checker1 := &mockChecker{
+		name: "checker1",
+		checks: []Check{
+			func(ctx context.Context) CheckResult {
+				time.Sleep(30 * time.Millisecond)
+				return CheckResult{Name: "c1-check1"}
 			},
-		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{},
+			func(ctx context.Context) CheckResult {
+				time.Sleep(10 * time.Millisecond)
+				return CheckResult{Name: "c1-check2"}
+			},
 		},
 	}
 
-	jsonCluster, err := json.Marshal(cluster)
-	require.NoError(t, err)
-
-	admissionReq := admission.Request{
-		AdmissionRequest: admissionv1.AdmissionRequest{
-			Operation: admissionv1.Create,
-			Object: runtime.RawExtension{
-				Raw: jsonCluster,
+	checker2 := &mockChecker{
+		name: "checker2",
+		checks: []Check{
+			func(ctx context.Context) CheckResult {
+				return CheckResult{Name: "c2-check1"}
+			},
+			func(ctx context.Context) CheckResult {
+				time.Sleep(20 * time.Millisecond)
+				return CheckResult{Name: "c2-check2"}
 			},
 		},
 	}
 
-	got := handler.Handle(context.Background(), admissionReq)
-	assert.True(t, got.Allowed)
+	results := run(ctx, nil, nil, []Checker{checker1, checker2})
 
-	// If counter reached 2 before the first check finished its sleep,
-	// it means the checks ran in parallel
-	assert.Equal(t, int32(2), atomic.LoadInt32(&counter))
+	if len(results) != 4 {
+		t.Fatalf("expected 4 results, got %d", len(results))
+	}
+
+	// The order should be all checks from checker1 followed by all checks from checker2,
+	// regardless of their completion time
+	expected := []string{"c1-check1", "c1-check2", "c2-check1", "c2-check2"}
+	for i, name := range expected {
+		if results[i].Name != name {
+			t.Errorf("result[%d]: expected %q, got %q", i, name, results[i].Name)
+		}
+	}
+}
+
+func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
+	ctx := context.Background()
+
+	checkerCount := 10
+	checksPerChecker := 50
+
+	checkers := make([]Checker, checkerCount)
+	expectedTotal := checkerCount * checksPerChecker
+
+	for i := 0; i < checkerCount; i++ {
+		checks := make([]Check, checksPerChecker)
+		for j := 0; j < checksPerChecker; j++ {
+			checkerIndex := i
+			checkIndex := j
+			checks[j] = func(ctx context.Context) CheckResult {
+				return CheckResult{
+					Name:    fmt.Sprintf("checker%d-check%d", checkerIndex, checkIndex),
+					Allowed: true,
+				}
+			}
+		}
+		checkers[i] = &mockChecker{
+			name:   fmt.Sprintf("checker%d", i),
+			checks: checks,
+		}
+	}
+
+	start := time.Now()
+	results := run(ctx, nil, nil, checkers)
+	duration := time.Since(start)
+
+	if len(results) != expectedTotal {
+		t.Errorf("expected %d results, got %d", expectedTotal, len(results))
+	}
+
+	t.Logf("Completed %d checks in %v", expectedTotal, duration)
+}
+
+func TestRun_ErrorHandlingInChecks(t *testing.T) {
+	ctx := context.Background()
+
+	panicCheck := func(ctx context.Context) CheckResult {
+		// This function should never panic since we recover in the test,
+		// but in real code the goroutine would crash
+		panic("simulated error in check")
+	}
+
+	// Wrap the check with panic recovery
+	safeCheck := func(ctx context.Context) CheckResult {
+		defer func() {
+			if r := recover(); r != nil { //nolint:staticcheck // This is a test, we want to recover from panic
+			}
+		}()
+		return panicCheck(ctx)
+	}
+
+	checker := &mockChecker{
+		name: "error-checker",
+		checks: []Check{
+			safeCheck,
+			func(ctx context.Context) CheckResult {
+				return CheckResult{Name: "normal-check", Allowed: true}
+			},
+		},
+	}
+
+	results := run(ctx, nil, nil, []Checker{checker})
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	// The normal check should have succeeded
+	found := false
+	for _, result := range results {
+		if result.Name == "normal-check" {
+			found = true
+			if !result.Allowed {
+				t.Errorf("expected normal-check to be allowed")
+			}
+		}
+	}
+
+	if !found {
+		t.Errorf("normal-check result not found")
+	}
+}
+
+func TestRun_ZeroChecksFromChecker(t *testing.T) {
+	ctx := context.Background()
+
+	// Checker that returns no checks
+	emptyChecker := &mockChecker{
+		name:   "empty-checker",
+		checks: []Check{},
+	}
+
+	// Checker that returns some checks
+	normalChecker := &mockChecker{
+		name: "normal-checker",
+		checks: []Check{
+			func(ctx context.Context) CheckResult {
+				return CheckResult{Name: "check1", Allowed: true}
+			},
+		},
+	}
+
+	results := run(ctx, nil, nil, []Checker{emptyChecker, normalChecker})
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Name != "check1" {
+		t.Errorf("expected result from normal checker, got %s", results[0].Name)
+	}
 }

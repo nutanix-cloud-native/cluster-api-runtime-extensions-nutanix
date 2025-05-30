@@ -81,49 +81,17 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		},
 	}
 
-	// Collect all checks in parallel.
-	checkerWG := &sync.WaitGroup{}
-	resultCh := make(chan CheckResult)
-	for _, checker := range h.checkers {
-		checkerWG.Add(1)
+	results := run(ctx, h.client, cluster, h.checkers)
 
-		go func(ctx context.Context, checker Checker, resultCh chan CheckResult) {
-			// Initialize the checker.
-			checks := checker.Init(ctx, h.client, cluster)
-
-			// Run its checks in parallel.
-			checksWG := &sync.WaitGroup{}
-			for _, check := range checks {
-				checksWG.Add(1)
-				go func(ctx context.Context, check Check, resultCh chan CheckResult) {
-					result := check(ctx)
-					resultCh <- result
-					checksWG.Done()
-				}(ctx, check, resultCh)
-			}
-			checksWG.Wait()
-
-			checkerWG.Done()
-		}(ctx, checker, resultCh)
-	}
-
-	// Close the channel when all checkers are done.
-	go func(wg *sync.WaitGroup, resultCh chan CheckResult) {
-		wg.Wait()
-		close(resultCh)
-	}(checkerWG, resultCh)
-
-	// Collect all check results from the channel.
+	// Summarize the results.
 	internalError := false
-	for result := range resultCh {
+	for _, result := range results {
 		if result.Error {
 			internalError = true
 		}
-
 		if !result.Allowed {
 			resp.Allowed = false
 		}
-
 		for _, cause := range result.Causes {
 			resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
 				Type:    metav1.CauseType(fmt.Sprintf("FailedPreflight%s", result.Name)),
@@ -131,23 +99,54 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 				Field:   cause.Field,
 			})
 		}
-
 		resp.Warnings = append(resp.Warnings, result.Warnings...)
 	}
 
-	if len(resp.Result.Details.Causes) == 0 {
-		return resp
-	}
-
-	// Because we have some causes, we construct the response message and code.
-	resp.Result.Message = "preflight checks failed"
-	resp.Result.Code = http.StatusForbidden
-	resp.Result.Reason = metav1.StatusReasonForbidden
-	if internalError {
+	switch {
+	case internalError:
 		// Internal errors take precedence over check failures.
+		resp.Result.Message = "preflight checks failed due to an internal error"
 		resp.Result.Code = http.StatusInternalServerError
 		resp.Result.Reason = metav1.StatusReasonInternalError
+	case !resp.Allowed:
+		// Because the response is not allowed, preflights must have failed.
+		resp.Result.Message = "preflight checks failed"
+		resp.Result.Code = http.StatusUnprocessableEntity
+		resp.Result.Reason = metav1.StatusReasonInvalid
 	}
 
 	return resp
+}
+
+func run(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster, checkers []Checker) []CheckResult {
+	resultsOrderedByCheckerAndCheck := make([][]CheckResult, len(checkers))
+
+	checkersWG := sync.WaitGroup{}
+	for i, checker := range checkers {
+		checkersWG.Add(1)
+		go func(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster, checker Checker, i int) {
+			checks := checker.Init(ctx, client, cluster)
+			resultsOrderedByCheck := make([]CheckResult, len(checks))
+
+			checksWG := sync.WaitGroup{}
+			for j, check := range checks {
+				checksWG.Add(1)
+				go func(ctx context.Context, check Check, j int) {
+					result := check(ctx)
+					resultsOrderedByCheck[j] = result
+					checksWG.Done()
+				}(ctx, check, j)
+			}
+			checksWG.Wait()
+			resultsOrderedByCheckerAndCheck[i] = resultsOrderedByCheck
+			checkersWG.Done()
+		}(ctx, client, cluster, checker, i)
+	}
+	checkersWG.Wait()
+
+	results := []CheckResult{}
+	for _, resultsByCheck := range resultsOrderedByCheckerAndCheck {
+		results = append(results, resultsByCheck...)
+	}
+	return results
 }
