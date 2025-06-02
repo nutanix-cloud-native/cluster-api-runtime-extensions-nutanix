@@ -8,7 +8,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/controlplanevirtualip"
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 	nutanixmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation"
 	nutanixworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/workerconfig"
@@ -16,17 +15,12 @@ import (
 	nutanixmutationvprev "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v3/nutanix/mutation"
 )
 
-type Handlers struct {
-	// kubeVIPConfig holds the configuration for the kube-vip control-plane virtual IP.
-	controlPlaneVirtualIPConfig *controlplanevirtualip.Config
-}
+type Handlers struct{}
 
 func New(
-	globalOptions *options.GlobalOptions,
+	_ *options.GlobalOptions,
 ) *Handlers {
-	return &Handlers{
-		controlPlaneVirtualIPConfig: &controlplanevirtualip.Config{GlobalOptions: globalOptions},
-	}
+	return &Handlers{}
 }
 
 func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
@@ -40,6 +34,4 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	}
 }
 
-func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
-	h.controlPlaneVirtualIPConfig.AddFlags(flagSet)
-}
+func (h *Handlers) AddFlags(_ *pflag.FlagSet) {}
