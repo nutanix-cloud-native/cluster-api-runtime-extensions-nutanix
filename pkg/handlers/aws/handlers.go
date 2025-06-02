@@ -12,7 +12,7 @@ import (
 	awsmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation"
 	awsworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
-	v2awsmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/aws/mutation"
+	awsmutationvprev "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v3/aws/mutation"
 )
 
 type Handlers struct{}
@@ -28,9 +28,9 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		awsclusterconfig.NewVariable(),
 		awsworkerconfig.NewVariable(),
 		awsmutation.MetaPatchHandler(mgr),
-		v2awsmutation.MetaPatchHandler(mgr),
+		awsmutationvprev.MetaPatchHandler(mgr),
 		awsmutation.MetaWorkerPatchHandler(mgr),
-		v2awsmutation.MetaWorkerPatchHandler(mgr),
+		awsmutationvprev.MetaWorkerPatchHandler(mgr),
 	}
 }
 

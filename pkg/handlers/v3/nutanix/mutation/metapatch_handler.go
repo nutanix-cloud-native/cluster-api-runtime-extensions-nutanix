@@ -12,7 +12,7 @@ import (
 	nutanixcontrolplanevirtualip "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/controlplanevirtualip"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/machinedetails"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/prismcentralendpoint"
-	genericmutationv2 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/generic/mutation"
+	genericmutationvprev "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v3/generic/mutation"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPX clusters.
@@ -23,11 +23,11 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 		prismcentralendpoint.NewPatch(),
 		machinedetails.NewControlPlanePatch(),
 	}
-	patchHandlers = append(patchHandlers, genericmutationv2.MetaMutators(mgr)...)
-	patchHandlers = append(patchHandlers, genericmutationv2.ControlPlaneMetaMutators()...)
+	patchHandlers = append(patchHandlers, genericmutationvprev.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, genericmutationvprev.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixClusterV2ConfigPatch",
+		"nutanixClusterV3ConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -38,7 +38,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		machinedetails.NewWorkerPatch(),
 	}
-	patchHandlers = append(patchHandlers, genericmutationv2.WorkerMetaMutators()...)
+	patchHandlers = append(patchHandlers, genericmutationvprev.WorkerMetaMutators()...)
 
 	// The previous handler did not have "v2" in the name.
 	return mutation.NewMetaGeneratePatchesHandler(

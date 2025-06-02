@@ -21,11 +21,11 @@ The required values are shown below per provider.
   patches:
   - external:
       discoverVariablesExtension: awsclusterconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: awsclusterv3configpatch.cluster-api-runtime-extensions-nutanix
+      generateExtension: awsclusterv4configpatch.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
       discoverVariablesExtension: awsworkerconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: awsworkerv3configpatch.cluster-api-runtime-extensions-nutanix
+      generateExtension: awsworkerv4configpatch.cluster-api-runtime-extensions-nutanix
     name: worker-config
 ```
 
@@ -35,11 +35,11 @@ The required values are shown below per provider.
   patches:
   - external:
       discoverVariablesExtension: nutanixclusterconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: nutanixclusterv3configpatch.cluster-api-runtime-extensions-nutanix
+      generateExtension: nutanixclusterv4configpatch.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
       discoverVariablesExtension: nutanixworkerconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: nutanixworkerv3configpatch.cluster-api-runtime-extensions-nutanix
+      generateExtension: nutanixworkerv4configpatch.cluster-api-runtime-extensions-nutanix
     name: worker-config
 ```
 
@@ -49,11 +49,11 @@ The required values are shown below per provider.
   patches:
   - external:
       discoverVariablesExtension: dockerclusterconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: dockerclusterv3configpatch.cluster-api-runtime-extensions-nutanix
+      generateExtension: dockerclusterv4configpatch.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
       discoverVariablesExtension: dockerworkerconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: dockerworkerv3configpatch.cluster-api-runtime-extensions-nutanix
+      generateExtension: dockerworkerv4configpatch.cluster-api-runtime-extensions-nutanix
     name: worker-config
 ```
 
@@ -63,7 +63,7 @@ The required values are shown below per provider.
   patches:
   - external:
       discoverVariablesExtension: genericclusterconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: genericclusterv3configpatch.cluster-api-runtime-extensions-nutanix
+      generateExtension: genericclusterv4configpatch.cluster-api-runtime-extensions-nutanix
     name: cluster-config
 ```
 
