@@ -40,9 +40,8 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	}
 	patchHandlers = append(patchHandlers, genericmutationvprev.WorkerMetaMutators()...)
 
-	// The previous handler did not have "v2" in the name.
 	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixWorkerConfigPatch",
+		"nutanixWorkerV3ConfigPatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
