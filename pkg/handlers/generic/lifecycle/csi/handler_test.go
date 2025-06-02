@@ -57,6 +57,7 @@ func testReq(csi *apivariables.CSI) (*runtimehooksv1.AfterControlPlaneInitialize
 		Cluster: clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
 				Topology: &clusterv1.Topology{
+					Class: "dummy-class",
 					Variables: []clusterv1.ClusterVariable{
 						*cv,
 					},

@@ -58,6 +58,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "1.30.100",
 					},
 				},
@@ -84,6 +85,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "1.30.100",
 					},
 				},
@@ -122,6 +124,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "1.30.100",
 					},
 				},
@@ -166,6 +169,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "1.30.100",
 					},
 				},
@@ -209,6 +213,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "1.30.100",
 					},
 				},
@@ -251,6 +256,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "1.30.100",
 					},
 				},
@@ -280,6 +286,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "1.100.100",
 					},
 				},
@@ -324,6 +331,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 				},
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "1.100.100",
 					},
 				},

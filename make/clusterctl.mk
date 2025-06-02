@@ -12,7 +12,6 @@ export CAAPH_VERSION := $(shell cd hack/third-party/caaph && GOWORK=off go list 
 clusterctl.init:
 	env CLUSTER_TOPOLOGY=true \
 	    EXP_RUNTIME_SDK=true \
-	    EXP_CLUSTER_RESOURCE_SET=true \
 	    EXP_MACHINE_POOL=true \
 	    AWS_B64ENCODED_CREDENTIALS=$$(clusterctl-aws bootstrap credentials encode-as-profile) \
 	    NUTANIX_ENDPOINT="" NUTANIX_PASSWORD="" NUTANIX_USER="" \
