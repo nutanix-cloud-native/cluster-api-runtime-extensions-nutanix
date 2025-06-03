@@ -15,43 +15,41 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-type Cause struct {
-	Message string
-	Field   string
-}
+type (
+	// CheckerFactory returns a Checker for a given cluster.
+	CheckerFactory func(client ctrlclient.Client, cluster *clusterv1.Cluster) Checker
+	Checker        interface {
+		// Init returns the checks that should run for the cluster.
+		Init(ctx context.Context) []Check
+	}
 
-type CheckResult struct {
-	Name string
+	Check       = func(ctx context.Context) CheckResult
+	CheckResult struct {
+		Name string
 
-	Allowed bool
-	Error   bool
+		Allowed bool
+		Error   bool
 
-	Causes   []Cause
-	Warnings []string
-}
-
-type Check = func(ctx context.Context) CheckResult
-
-type Checker interface {
-	// Init decides which of its checks should run for the cluster. It then initializes the checks
-	// with common dependencies, such as an infrastructure client. Finally, it returns the initialized checks,
-	// ready to be run.
-	//
-	// Init can store the client and cluster, but not the context, because each check will accept its own context.
-	Init(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) []Check
-}
+		Causes   []Cause
+		Warnings []string
+	}
+	Cause struct {
+		Message string
+		Field   string
+	}
+)
 
 type WebhookHandler struct {
-	client   ctrlclient.Client
-	decoder  admission.Decoder
-	checkers []Checker
+	client    ctrlclient.Client
+	decoder   admission.Decoder
+	factories []CheckerFactory
 }
 
-func New(client ctrlclient.Client, decoder admission.Decoder, checkers ...Checker) *WebhookHandler {
+func New(client ctrlclient.Client, decoder admission.Decoder, factories ...CheckerFactory) *WebhookHandler {
 	h := &WebhookHandler{
-		client:   client,
-		decoder:  decoder,
-		checkers: checkers,
+		client:    client,
+		decoder:   decoder,
+		factories: factories,
 	}
 	return h
 }
@@ -72,7 +70,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, h.checkers)
+	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, h.factories)
 
 	// Summarize the results.
 	resp := admission.Response{
@@ -124,15 +122,17 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 func run(ctx context.Context,
 	client ctrlclient.Client,
 	cluster *clusterv1.Cluster,
-	checkers []Checker,
+	factories []CheckerFactory,
 ) [][]CheckResult {
-	resultsOrderedByCheckerAndCheck := make([][]CheckResult, len(checkers))
+	resultsOrderedByCheckerAndCheck := make([][]CheckResult, len(factories))
 
 	checkersWG := sync.WaitGroup{}
-	for i, checker := range checkers {
+	for i, factory := range factories {
 		checkersWG.Add(1)
-		go func(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster, checker Checker, i int) {
-			checks := checker.Init(ctx, client, cluster)
+		go func(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster, factory CheckerFactory, i int) {
+			checker := factory(client, cluster)
+
+			checks := checker.Init(ctx)
 			resultsOrderedByCheck := make([]CheckResult, len(checks))
 
 			checksWG := sync.WaitGroup{}
@@ -148,7 +148,13 @@ func run(ctx context.Context,
 			resultsOrderedByCheckerAndCheck[i] = resultsOrderedByCheck
 
 			checkersWG.Done()
-		}(ctx, client, cluster, checker, i)
+		}(
+			ctx,
+			client,
+			cluster,
+			factory,
+			i,
+		)
 	}
 	checkersWG.Wait()
 
