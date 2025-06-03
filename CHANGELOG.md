@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.29.0 (2025-06-03)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Explicitly disable profiling for CP components by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1109
+* feat: add registry addon by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1116
+* feat: use registryMirror addon as Containerd mirror by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1117
+* feat: Add k8s version logic for external cloud-provider flag by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1134
+* feat: Update all addon versions by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1139
+* feat: generate a self-signed cert for registry addon by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1127
+* feat: CIS benchmark improvements by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1137
+* feat: update handler version by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1144
+### Fixes 🔧
+* fix: uses consistent spelling by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1115
+* fix: Ensure metallb speaker runs on tainted nodepools by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1138
+* fix: Avoid rollout due to updated auditpolicy handler by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1147
+### Other Changes
+* ci: include correct kube-vip version when listing images by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1113
+* build: Update all tools and fix up for golangci-lint v2 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1108
+* test(e2e): Disable Calico tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1120
+* test(e2e): Update Nutanix images by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1121
+* refactor: Register types with scheme using pattern from Cluster API by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1124
+* ci: use templating for capx tests by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1123
+* test: Return root module root dir when using go.work by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1125
+* build: Update Docker k8s versions by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1133
+* refactor: Remove unnecessary loop vars by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1146
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.28.2...v0.29.0
+
 ## 0.28.2 (2025-04-24)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
