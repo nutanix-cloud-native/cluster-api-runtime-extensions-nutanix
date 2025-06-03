@@ -24,6 +24,11 @@ func New(kclient ctrlclient.Client, cluster *clusterv1.Cluster) preflight.Checke
 
 		v3clientFactory: newV3Client,
 		v4clientFactory: newV4Client,
+
+		vmImageCheckFunc:             vmImageCheck,
+		initNutanixConfigurationFunc: initNutanixConfiguration,
+		initCredentialsCheckFunc:     initCredentialsCheck,
+		initVMImageChecksFunc:        initVMImageChecks,
 	}
 }
 
@@ -42,6 +47,25 @@ type nutanixChecker struct {
 	v4client        v4client
 	v4clientFactory func(prismgoclient.Credentials) (v4client, error)
 
+	vmImageCheckFunc func(
+		n *nutanixChecker,
+		machineDetails *carenv1.NutanixMachineDetails,
+		field string,
+	) preflight.Check
+
+	initNutanixConfigurationFunc func(
+		n *nutanixChecker,
+	) preflight.Check
+
+	initCredentialsCheckFunc func(
+		ctx context.Context,
+		n *nutanixChecker,
+	) preflight.Check
+
+	initVMImageChecksFunc func(
+		n *nutanixChecker,
+	) []preflight.Check
+
 	log logr.Logger
 }
 
@@ -53,11 +77,11 @@ func (n *nutanixChecker) Init(
 	checks := []preflight.Check{
 		// The configuration check must run first, because it initializes data used by all other checks,
 		// and the credentials check second, because it initializes the Nutanix clients used by other checks.
-		n.initNutanixConfiguration(),
-		n.initCredentialsCheck(ctx),
+		n.initNutanixConfigurationFunc(n),
+		n.initCredentialsCheckFunc(ctx, n),
 	}
 
-	checks = append(checks, n.initVMImageChecks()...)
+	checks = append(checks, n.initVMImageChecksFunc(n)...)
 
 	// Add more checks here as needed.
 
