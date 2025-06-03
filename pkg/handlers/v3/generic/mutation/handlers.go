@@ -1,4 +1,4 @@
-// Copyright 2023 Nutanix. All rights reserved.
+// Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package mutation
@@ -8,7 +8,6 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/cni/calico"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/auditpolicy"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/autorenewcerts"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdapplypatchesandrestart"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/containerdmetrics"
@@ -23,6 +22,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/mirrors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/taints"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/users"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v3/generic/mutation/auditpolicy"
 )
 
 // MetaMutators returns all generic patch handlers.
@@ -59,17 +59,11 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 func ControlPlaneMetaMutators() []mutation.MetaMutator {
 	return []mutation.MetaMutator{
 		taints.NewControlPlanePatch(),
-		// Intentionally not include this patch as it was not available in previous version the hook,
-		// and it uses an API is on by default, which causes a rollout of all Machines in all managed clusters.
-		// noderegistration.NewControlPlanePatch(),
 	}
 }
 
 func WorkerMetaMutators() []mutation.MetaMutator {
 	return []mutation.MetaMutator{
 		taints.NewWorkerPatch(),
-		// Intentionally not include this patch as it was not available in previous version the hook,
-		// and it uses an API is on by default, which causes a rollout of all Machines in all managed clusters.
-		// noderegistration.NewControlPlanePatch(),
 	}
 }
