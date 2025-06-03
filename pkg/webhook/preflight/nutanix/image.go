@@ -9,8 +9,6 @@ import (
 
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
-
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
@@ -118,12 +116,12 @@ func (n *nutanixChecker) vmImageCheck(
 }
 
 func getVMImages(
-	client *prismv4.Client,
+	client v4client,
 	id *capxv1.NutanixResourceIdentifier,
 ) ([]vmmv4.Image, error) {
 	switch {
 	case id.IsUUID():
-		resp, err := client.ImagesApiInstance.GetImageById(id.UUID)
+		resp, err := client.GetImageById(id.UUID)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +132,7 @@ func getVMImages(
 		return []vmmv4.Image{image}, nil
 	case id.IsName():
 		filter_ := fmt.Sprintf("name eq '%s'", *id.Name)
-		resp, err := client.ImagesApiInstance.ListImages(nil, nil, &filter_, nil, nil)
+		resp, err := client.ListImages(nil, nil, &filter_, nil, nil)
 		if err != nil {
 			return nil, err
 		}
