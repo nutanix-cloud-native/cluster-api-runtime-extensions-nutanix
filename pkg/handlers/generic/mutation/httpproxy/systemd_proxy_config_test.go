@@ -97,8 +97,7 @@ Environment="no_proxy=localhost,127.0.0.1,no-proxy.example.com,no-proxy-1.exampl
 		},
 	}
 
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

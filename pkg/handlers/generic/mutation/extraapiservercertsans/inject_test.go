@@ -169,8 +169,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 	}
 
 	// create test node for each case
-	for testIdx := range testDefs {
-		tt := testDefs[testIdx]
+	for _, tt := range testDefs {
 		It(tt.patchTest.Name, func() {
 			clientScheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))

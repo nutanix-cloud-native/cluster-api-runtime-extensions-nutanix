@@ -180,9 +180,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}}
 
-	for idx := range testCases {
-		tt := testCases[idx]
-
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

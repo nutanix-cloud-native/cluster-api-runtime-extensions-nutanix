@@ -475,8 +475,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 	})
 
 	// create test node for each case
-	for testIdx := range testDefs {
-		tt := testDefs[testIdx]
+	for _, tt := range testDefs {
 		It(tt.Name, func() {
 			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt)
 		})
@@ -637,8 +636,7 @@ func Test_needContainerdConfiguration(t *testing.T) {
 			want: false,
 		},
 	}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got := needContainerdConfiguration(tt.configs)

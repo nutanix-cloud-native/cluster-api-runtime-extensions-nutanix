@@ -98,8 +98,7 @@ func Test_shouldDeleteServicesWithLoadBalancer(t *testing.T) {
 		},
 		shouldDelete: false,
 	}}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			shouldDelete, err := shouldDeleteServicesWithLoadBalancer(tt.cluster)
@@ -195,8 +194,7 @@ func Test_deleteServicesWithLoadBalancer(t *testing.T) {
 		}},
 	}}
 
-	for idx := range tests {
-		tt := tests[idx] // Capture range variable
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			fakeClient := fake.NewClientBuilder().Build()
@@ -280,8 +278,7 @@ func Test_needsDelete(t *testing.T) {
 		},
 		shouldDelete: false,
 	}}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			del := needsDelete(tt.service)

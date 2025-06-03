@@ -56,9 +56,7 @@ func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 		"Schema":   gomega.Equal(*variableSchema),
 	}))
 
-	for idx := range variableTestDefs {
-		tt := variableTestDefs[idx]
-
+	for _, tt := range variableTestDefs {
 		t.Run(tt.Name, func(t *testing.T) {
 			t.Parallel()
 

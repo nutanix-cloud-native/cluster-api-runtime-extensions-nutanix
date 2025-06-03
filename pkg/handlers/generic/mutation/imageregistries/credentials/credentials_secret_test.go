@@ -59,8 +59,7 @@ func Test_generateCredentialsSecretFile(t *testing.T) {
 		},
 	}
 
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -136,8 +135,7 @@ func Test_generateCredentialsSecret(t *testing.T) {
 		},
 	}
 
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -217,8 +215,7 @@ func Test_kubeletStaticCredentialProviderSecretContents(t *testing.T) {
 }`,
 		},
 	}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

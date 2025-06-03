@@ -77,8 +77,7 @@ var _ = Describe("Generate AWS ControlPlane LoadBalancer patches", func() {
 	}
 
 	// create test node for each case
-	for testIdx := range testDefs {
-		tt := testDefs[testIdx]
+	for _, tt := range testDefs {
 		It(tt.Name, func() {
 			capitest.AssertGeneratePatches(
 				GinkgoT(),

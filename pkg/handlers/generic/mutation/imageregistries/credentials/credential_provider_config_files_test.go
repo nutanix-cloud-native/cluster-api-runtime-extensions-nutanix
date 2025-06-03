@@ -161,8 +161,7 @@ providers:
 			},
 		},
 	}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			file, err := templateKubeletCredentialProviderConfig(tt.credentials)
@@ -401,8 +400,7 @@ credentialProviders:
 			},
 		},
 	}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			file, err := templateDynamicCredentialProviderConfig(tt.credentials)

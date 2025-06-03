@@ -179,8 +179,7 @@ func Test_templateValues(t *testing.T) {
 			expected: expectedWithVirtualIPSet,
 		},
 	}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			out, err := templateValuesFunc(tt.clusterConfig.Nutanix)(nil, tt.in)

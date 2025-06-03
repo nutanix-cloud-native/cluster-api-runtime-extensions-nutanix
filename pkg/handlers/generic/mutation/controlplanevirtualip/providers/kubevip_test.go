@@ -165,8 +165,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 		},
 	}
 
-	for idx := range tests {
-		tt := tests[idx] // Capture range variable
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -218,8 +217,7 @@ func Test_getTemplate(t *testing.T) {
 		},
 	}
 
-	for idx := range tests {
-		tt := tests[idx] // Capture range variable
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
