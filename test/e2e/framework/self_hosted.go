@@ -122,7 +122,7 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 
 		// Use KubernetesVersion if no upgrade step is defined by test input.
 		Expect(input.E2EConfig.Variables).To(HaveKey(capie2e.KubernetesVersion))
-		kubernetesVersion = input.E2EConfig.GetVariable(capie2e.KubernetesVersion)
+		kubernetesVersion = input.E2EConfig.MustGetVariable(capie2e.KubernetesVersion)
 
 		// Setup a Namespace where to host objects for this spec and create a watcher for the namespace events.
 		namespace, cancelWatches = setupSpecNamespace(
@@ -331,6 +331,7 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 			dumpAllResources(
 				ctx,
 				selfHostedClusterProxy,
+				input.ClusterctlConfigPath,
 				input.ArtifactFolder,
 				namespace,
 				clusterResources.Cluster,
@@ -384,6 +385,7 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 			ctx,
 			specName,
 			input.BootstrapClusterProxy,
+			input.ClusterctlConfigPath,
 			input.ArtifactFolder,
 			namespace,
 			cancelWatches,
@@ -429,6 +431,7 @@ func setupSpecNamespace(
 func dumpAllResources(
 	ctx context.Context,
 	clusterProxy capie2eframework.ClusterProxy,
+	clusterctlConfigPath string,
 	artifactFolder string,
 	namespace *corev1.Namespace,
 	cluster *clusterv1.Cluster,
@@ -447,9 +450,11 @@ func dumpAllResources(
 
 	// Dump all Cluster API related resources to artifacts.
 	capie2eframework.DumpAllResources(ctx, capie2eframework.DumpAllResourcesInput{
-		Lister:    clusterProxy.GetClient(),
-		Namespace: namespace.Name,
-		LogPath:   filepath.Join(artifactFolder, "clusters", clusterProxy.GetName(), "resources"),
+		Lister:               clusterProxy.GetClient(),
+		KubeConfigPath:       clusterProxy.GetKubeconfigPath(),
+		ClusterctlConfigPath: clusterctlConfigPath,
+		Namespace:            namespace.Name,
+		LogPath:              filepath.Join(artifactFolder, "clusters", clusterProxy.GetName(), "resources"),
 	})
 
 	// If the cluster still exists, dump pods and nodes of the workload cluster.
@@ -483,6 +488,7 @@ func dumpSpecResourcesAndCleanup(
 	ctx context.Context,
 	specName string,
 	clusterProxy capie2eframework.ClusterProxy,
+	clusterctlConfigPath string,
 	artifactFolder string,
 	namespace *corev1.Namespace,
 	cancelWatches context.CancelFunc,
@@ -491,7 +497,7 @@ func dumpSpecResourcesAndCleanup(
 	skipCleanup bool,
 ) {
 	// Dump all the resources in the spec namespace and the workload cluster.
-	dumpAllResources(ctx, clusterProxy, artifactFolder, namespace, cluster)
+	dumpAllResources(ctx, clusterProxy, clusterctlConfigPath, artifactFolder, namespace, cluster)
 
 	if !skipCleanup {
 		capie2e.Byf("Deleting cluster %s", klog.KObj(cluster))
@@ -501,8 +507,9 @@ func dumpSpecResourcesAndCleanup(
 		capie2eframework.DeleteAllClustersAndWait(
 			ctx,
 			capie2eframework.DeleteAllClustersAndWaitInput{
-				Client:    clusterProxy.GetClient(),
-				Namespace: namespace.Name,
+				ClusterProxy:         clusterProxy,
+				ClusterctlConfigPath: clusterctlConfigPath,
+				Namespace:            namespace.Name,
 			},
 			intervalsGetter(specName, "wait-delete-cluster")...)
 

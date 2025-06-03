@@ -120,7 +120,7 @@ func Test_deleteServicesWithLoadBalancer(t *testing.T) {
 	}{{
 		name:          "no services",
 		startServices: []corev1.Service(nil),
-		endServices:   []corev1.Service(nil),
+		endServices:   []corev1.Service{},
 	}, {
 		name: "should not delete, all services with ClusterIP",
 		startServices: []corev1.Service{{

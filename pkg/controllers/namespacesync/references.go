@@ -67,7 +67,9 @@ func walkReferences(
 		}
 	}
 
-	for _, md := range cc.Spec.Workers.MachineDeployments {
+	for mdIdx := range cc.Spec.Workers.MachineDeployments {
+		md := &cc.Spec.Workers.MachineDeployments[mdIdx]
+
 		for _, ref := range []*corev1.ObjectReference{
 			md.Template.Infrastructure.Ref,
 			md.Template.Bootstrap.Ref,

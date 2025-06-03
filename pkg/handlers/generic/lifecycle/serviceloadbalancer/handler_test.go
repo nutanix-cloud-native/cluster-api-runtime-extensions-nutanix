@@ -133,6 +133,7 @@ func TestAfterControlPlaneInitialized(t *testing.T) {
 				Cluster: clusterv1.Cluster{
 					Spec: clusterv1.ClusterSpec{
 						Topology: &clusterv1.Topology{
+							Class: "dummy-class",
 							Variables: []clusterv1.ClusterVariable{
 								*tt.clusterVariable,
 							},
@@ -165,6 +166,7 @@ func TestBeforeClusterUpgrade(t *testing.T) {
 				Cluster: clusterv1.Cluster{
 					Spec: clusterv1.ClusterSpec{
 						Topology: &clusterv1.Topology{
+							Class: "dummy-class",
 							Variables: []clusterv1.ClusterVariable{
 								*tt.clusterVariable,
 							},

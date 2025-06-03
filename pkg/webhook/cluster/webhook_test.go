@@ -22,7 +22,10 @@ func TestWebhookBehaviour(t *testing.T) {
 			GenerateName: "test-cluster-",
 			Namespace:    metav1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{Topology: &clusterv1.Topology{}},
+		Spec: clusterv1.ClusterSpec{Topology: &clusterv1.Topology{
+			Class:   "dummy-class",
+			Version: "dummy-version",
+		}},
 	}
 
 	g.Expect(env.Client.Create(ctx, cluster)).To(Succeed())
@@ -81,7 +84,10 @@ func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsAdded(t *testing.T) {
 	g.Expect(cluster.Annotations).ToNot(HaveKey(v1alpha1.ClusterUUIDAnnotationKey))
 
 	// Validate that the webhook does assign a UUID to the cluster if the Cluster has topology added.
-	cluster.Spec.Topology = &clusterv1.Topology{}
+	cluster.Spec.Topology = &clusterv1.Topology{
+		Class:   "dummy-class",
+		Version: "dummy-version",
+	}
 	g.Expect(env.Client.Update(ctx, cluster)).To(Succeed())
 	g.Expect(cluster.Annotations).
 		To(HaveKeyWithValue(v1alpha1.ClusterUUIDAnnotationKey, Not(BeEmpty())))

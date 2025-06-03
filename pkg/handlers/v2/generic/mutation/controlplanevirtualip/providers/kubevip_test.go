@@ -50,6 +50,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "v1.29.0",
 					},
 				},
@@ -92,6 +93,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "v1.28.0",
 					},
 				},
@@ -129,6 +131,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "v1.28.0",
 					},
 				},
@@ -165,6 +168,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
 					Topology: &clusterv1.Topology{
+						Class:   "dummy-class",
 						Version: "v1.28.0",
 					},
 				},
