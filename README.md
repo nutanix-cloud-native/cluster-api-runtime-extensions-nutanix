@@ -18,6 +18,14 @@ When adding a new handler, or modifying an existing one, pay close attention to 
 when a new version of this extension is deployed in the management cluster,
 and avoid rollouts of Machines in those existing clusters.
 
+If a change to a handler is unavoidable, you must:
+
+1. Update the version of the handlers, e.g. from `v4` to `v5`.
+   This is done by updating the `..ClusterV4ConfigPatch` in the handler files in `pkg/handlers/../mutation/`.
+   And `..clusterv4configpatch` in `hack/examples/overlays/clusterclasses/../kustomization.yaml.tmpl`
+2. Update the version of the handler in the `pkg/handlers/v3` package, e.g. from `v3` to `v4`.
+3. Copy the existing implementation of the handler to `pkg/handlers/../v4/`.
+
 During CAPI provider upgrades, and periodically, all managed clusters are reconciled and mutation handler patches
 are applied.
 Any new handlers that return a new set of patches, or updated handlers that return a different set of patches,

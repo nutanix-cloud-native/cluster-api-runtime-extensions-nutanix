@@ -9,7 +9,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	genericclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/clusterconfig"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
-	v2genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/generic/mutation"
+	genericmutationvprev "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v3/generic/mutation"
 )
 
 type Handlers struct{}
@@ -22,8 +22,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	return []handlers.Named{
 		genericclusterconfig.NewVariable(),
 		genericmutation.MetaPatchHandler(mgr),
-		v2genericmutation.MetaPatchHandler(mgr),
+		genericmutationvprev.MetaPatchHandler(mgr),
 		genericmutation.MetaWorkerPatchHandler(mgr),
-		v2genericmutation.MetaWorkerPatchHandler(mgr),
+		genericmutationvprev.MetaWorkerPatchHandler(mgr),
 	}
 }

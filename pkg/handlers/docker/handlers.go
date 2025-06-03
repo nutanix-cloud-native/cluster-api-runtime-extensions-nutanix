@@ -12,7 +12,7 @@ import (
 	dockermutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/mutation"
 	dockerworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
-	v2dockermutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v2/docker/mutation"
+	dockermutationvprev "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v3/docker/mutation"
 )
 
 type Handlers struct{}
@@ -28,9 +28,9 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		dockerclusterconfig.NewVariable(),
 		dockerworkerconfig.NewVariable(),
 		dockermutation.MetaPatchHandler(mgr),
-		v2dockermutation.MetaPatchHandler(mgr),
+		dockermutationvprev.MetaPatchHandler(mgr),
 		dockermutation.MetaWorkerPatchHandler(mgr),
-		v2dockermutation.MetaWorkerPatchHandler(mgr),
+		dockermutationvprev.MetaWorkerPatchHandler(mgr),
 	}
 }
 
