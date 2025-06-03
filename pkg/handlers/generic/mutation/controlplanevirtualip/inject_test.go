@@ -203,8 +203,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 	}
 
 	// create test node for each case
-	for idx := range testDefs {
-		tt := testDefs[idx]
+	for _, tt := range testDefs {
 		It(tt.Name, func() {
 			clientScheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))

@@ -79,9 +79,7 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 
-	for idx := range s.hooks {
-		h := s.hooks[idx]
-
+	for _, h := range s.hooks {
 		if t, ok := h.(lifecycle.BeforeClusterCreate); ok {
 			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterCreate,

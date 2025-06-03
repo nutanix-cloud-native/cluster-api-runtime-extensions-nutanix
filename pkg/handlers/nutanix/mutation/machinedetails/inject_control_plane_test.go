@@ -270,8 +270,7 @@ var _ = Describe("Generate Nutanix Machine Details patches for ControlPlane", fu
 	}
 
 	// create test node for each case
-	for testIdx := range testDefs {
-		tt := testDefs[testIdx]
+	for _, tt := range testDefs {
 		It(tt.Name, func() {
 			capitest.AssertGeneratePatches(
 				GinkgoT(),

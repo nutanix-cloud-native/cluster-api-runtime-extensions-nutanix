@@ -133,8 +133,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 			want: nil,
 		},
 	}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			file, err := generateContainerdDefaultHostsFile(tt.configs)
@@ -257,8 +256,7 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 			wantErr: ErrConflictingRegistryCACertificates,
 		},
 	}
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			file, err := generateRegistryCACertFiles(tt.configs)

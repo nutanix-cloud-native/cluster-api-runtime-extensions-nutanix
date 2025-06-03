@@ -139,8 +139,7 @@ metadata:
 func runUnstructuredTests(t *testing.T, fn func([]string) ([]client.Object, error)) {
 	t.Helper()
 	t.Parallel()
-	for idx := range tests {
-		tt := tests[idx]
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got, err := fn(tt.inputs)

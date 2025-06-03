@@ -53,8 +53,7 @@ var _ = Describe("Generate Kubernetes Image Repository patches", func() {
 	}
 
 	// create test node for each case
-	for testIdx := range testDefs {
-		tt := testDefs[testIdx]
+	for _, tt := range testDefs {
 		It(tt.Name, func() {
 			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt)
 		})
