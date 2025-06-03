@@ -12,8 +12,6 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
-	prismv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
@@ -23,6 +21,9 @@ func New(kclient ctrlclient.Client, cluster *clusterv1.Cluster) preflight.Checke
 	return &nutanixChecker{
 		kclient: kclient,
 		cluster: cluster,
+
+		v3clientFactory: newV3Client,
+		v4clientFactory: newV4Client,
 	}
 }
 
@@ -34,8 +35,12 @@ type nutanixChecker struct {
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
 
 	credentials prismgoclient.Credentials
-	v3client    *prismv3.Client
-	v4client    *prismv4.Client
+
+	v3client        v3client
+	v3clientFactory func(prismgoclient.Credentials) (v3client, error)
+
+	v4client        v4client
+	v4clientFactory func(prismgoclient.Credentials) (v4client, error)
 
 	log logr.Logger
 }
