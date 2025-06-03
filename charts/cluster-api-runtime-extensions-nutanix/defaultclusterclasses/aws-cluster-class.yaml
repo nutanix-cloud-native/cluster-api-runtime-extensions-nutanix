@@ -84,24 +84,73 @@ spec:
         clusterConfiguration:
           apiServer:
             extraArgs:
+              admission-control-config-file: /etc/kubernetes/admission.yaml
+              enable-admission-plugins: DenyServiceExternalIPs,EventRateLimit,NodeRestriction
               profiling: "false"
+              service-account-lookup: "true"
+            extraVolumes:
+            - hostPath: /etc/kubernetes/admission.yaml
+              mountPath: /etc/kubernetes/admission.yaml
+              name: admission-config
+              pathType: File
+              readOnly: true
+            - hostPath: /etc/kubernetes/eventratelimit-config.yaml
+              mountPath: /etc/kubernetes/eventratelimit-config.yaml
+              name: eventratelimit-config
+              pathType: File
+              readOnly: true
           controllerManager:
             extraArgs:
               cloud-provider: external
               profiling: "false"
+              terminated-pod-gc-threshold: "10000"
           scheduler:
             extraArgs:
               profiling: "false"
+        files:
+        - content: |
+            apiVersion: apiserver.config.k8s.io/v1
+            kind: AdmissionConfiguration
+            plugins:
+            - name: EventRateLimit
+              path: /etc/kubernetes/eventratelimit-config.yaml
+          path: /etc/kubernetes/admission.yaml
+          permissions: "0600"
+        - content: |
+            apiVersion: eventratelimit.admission.k8s.io/v1alpha1
+            kind: Configuration
+            limits:
+            - type: Server
+              qps: 10000
+              burst: 40000
+          path: /etc/kubernetes/eventratelimit-config.yaml
+          permissions: "0600"
         initConfiguration:
           nodeRegistration:
             kubeletExtraArgs:
               cloud-provider: external
+              event-qps: "5"
+              make-iptables-util-chains: "true"
+              pod-max-pids: "4096"
+              read-only-port: "0"
+              streaming-connection-idle-timeout: 5m
+              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
             name: '{{ ds.meta_data.local_hostname }}'
         joinConfiguration:
           nodeRegistration:
             kubeletExtraArgs:
               cloud-provider: external
+              event-qps: "5"
+              make-iptables-util-chains: "true"
+              pod-max-pids: "4096"
+              read-only-port: "0"
+              streaming-connection-idle-timeout: 5m
+              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
             name: '{{ ds.meta_data.local_hostname }}'
+        postKubeadmCommands:
+        - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+        - chmod 600 $(systemctl show -P DropInPaths kubelet.service)
+        - chmod 600 /var/lib/kubelet/config.yaml
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: AWSMachineTemplate
@@ -140,4 +189,13 @@ spec:
         nodeRegistration:
           kubeletExtraArgs:
             cloud-provider: external
+            event-qps: "5"
+            pod-max-pids: "4096"
+            read-only-port: "0"
+            streaming-connection-idle-timeout: 5m
+            tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
           name: '{{ ds.meta_data.local_hostname }}'
+      postKubeadmCommands:
+      - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+      - chmod 600 $(systemctl show -P DropInPaths kubelet.service)
+      - chmod 600 /var/lib/kubelet/config.yaml

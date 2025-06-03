@@ -1,0 +1,64 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlaneTemplate
+metadata:
+  name: not-used
+spec:
+  template:
+    spec:
+      kubeadmConfigSpec:
+        initConfiguration:
+          nodeRegistration:
+            kubeletExtraArgs:
+              # 4.2.4 Ensure that the --read-only-port argument is set to 0
+              read-only-port: "0"
+              # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+              # Recommendation: Set to 5m instead of 4h as per CIS guidelines
+              streaming-connection-idle-timeout: "5m"
+              # 4.2.6 Ensure that the --make-iptables-util-chains argument is set to true
+              make-iptables-util-chains: "true"
+              # 4.2.8 Ensure that the event-qps argument is set to a level which ensures appropriate event capture
+              event-qps: "5"
+              # 4.2.12 Updated with recommended strong cipher suites
+              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+              # 4.2.13 Ensure that a limit is set on pod PIDs
+              pod-max-pids: "4096"
+        joinConfiguration:
+          nodeRegistration:
+            kubeletExtraArgs:
+              # 4.2.4 Ensure that the --read-only-port argument is set to 0
+              read-only-port: "0"
+              # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+              # Recommendation: Set to 5m instead of 4h as per CIS guidelines
+              streaming-connection-idle-timeout: "5m"
+              # 4.2.6 Ensure that the --make-iptables-util-chains argument is set to true
+              make-iptables-util-chains: "true"
+              # 4.2.8 Ensure that the event-qps argument is set to a level which ensures appropriate event capture
+              event-qps: "5"
+              # 4.2.12 Updated with recommended strong cipher suites
+              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+              # 4.2.13 Ensure that a limit is set on pod PIDs
+              pod-max-pids: "4096"
+        clusterConfiguration:
+          apiServer:
+            extraArgs:
+              # 1.2.15 Ensure that the --profiling argument is set to false
+              profiling: "false"
+              # 1.2.21 Ensure that the --service-account-lookup argument is set to true
+              service-account-lookup: "true"
+              # 1.2.3 Ensure that the DenyServiceExternalIPs is set
+              # 1.2.9 Ensure that the admission control plugin EventRateLimit is set
+              # 1.2.14 Ensure that the admission control plugin NodeRestriction is set
+              enable-admission-plugins: DenyServiceExternalIPs,EventRateLimit,NodeRestriction
+          controllerManager:
+            extraArgs:
+              #1.3.1 Ensure that the --terminated-pod-gc-threshold argument is set as appropriate
+              terminated-pod-gc-threshold: "10000"
+              #1.3.2 Ensure that the --profiling argument is set to false
+              profiling: "false"
+          scheduler:
+            extraArgs:
+              #1.4.1 Ensure that the --profiling argument is set to false
+              profiling: "false"

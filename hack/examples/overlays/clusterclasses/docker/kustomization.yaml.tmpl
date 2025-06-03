@@ -29,5 +29,29 @@ patches:
   # BEGIN CIS patches
   - target:
       kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/disable-kubeadmcontrolplane-profiling.yaml
+    path: ../../../patches/cis-kubeadmcontrolplanetemplate.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../patches/cis-kubeadmconfigtemplate.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize-kubeadmcontrolplanetemplate-postkubeadmcommands.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/cis-kubeadmcontrolplanetemplate-kubelet-file-permissions.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../patches/initialize-kubeadmconfigtemplate-postkubeadmcommands.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../patches/cis-kubeadmconfigtemplate-kubelet-file-permissions.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize-files.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize-extravolumes.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/cis-admissionconfiguration.yaml
   # END CIS patches

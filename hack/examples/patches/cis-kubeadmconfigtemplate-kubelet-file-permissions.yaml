@@ -1,0 +1,14 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# 4.1.1 Ensure that the kubelet service file has appropriate permissions.
+- op: add
+  path: /spec/template/spec/postKubeadmCommands/-
+  value: chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+- op: add
+  path: /spec/template/spec/postKubeadmCommands/-
+  value: chmod 600 $(systemctl show -P DropInPaths kubelet.service)
+# 4.1.9 Ensure that the kubelet configuration file has appropriate permissions.
+- op: add
+  path: /spec/template/spec/postKubeadmCommands/-
+  value: chmod 600 /var/lib/kubelet/config.yaml
