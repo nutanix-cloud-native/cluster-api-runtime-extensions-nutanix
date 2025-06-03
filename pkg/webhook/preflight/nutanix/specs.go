@@ -12,7 +12,9 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func (n *nutanixChecker) initNutanixConfiguration() preflight.Check {
+func initNutanixConfiguration(
+	n *nutanixChecker,
+) preflight.Check {
 	n.log.V(5).Info("Initializing Nutanix configuration check")
 
 	result := preflight.CheckResult{
@@ -70,7 +72,11 @@ func (n *nutanixChecker) initNutanixConfiguration() preflight.Check {
 							carenv1.WorkerConfigVariableName,
 							err,
 						),
-						Field: "cluster.spec.topology.variables[.name=clusterConfig].nutanix",
+						Field: fmt.Sprintf(
+							"cluster.spec.topology.workers.machineDeployments[.name=%s]"+
+								".variables[.name=workerConfig].value.nutanix.machineDetails",
+							md.Name,
+						),
 					},
 				)
 			}

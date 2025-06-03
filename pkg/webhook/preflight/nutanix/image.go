@@ -14,13 +14,16 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func (n *nutanixChecker) initVMImageChecks() []preflight.Check {
+func initVMImageChecks(
+	n *nutanixChecker,
+) []preflight.Check {
 	checks := []preflight.Check{}
 
 	if n.nutanixClusterConfigSpec != nil && n.nutanixClusterConfigSpec.ControlPlane != nil &&
 		n.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,
-			n.vmImageCheck(
+			n.vmImageCheckFunc(
+				n,
 				&n.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
 				"cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix.machineDetails",
 			),
@@ -30,7 +33,8 @@ func (n *nutanixChecker) initVMImageChecks() []preflight.Check {
 	for mdName, nutanixWorkerNodeConfigSpec := range n.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
 			checks = append(checks,
-				n.vmImageCheck(
+				n.vmImageCheckFunc(
+					n,
 					&nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
 					fmt.Sprintf(
 						"cluster.spec.topology.workers.machineDeployments[.name=%s]"+
@@ -45,7 +49,8 @@ func (n *nutanixChecker) initVMImageChecks() []preflight.Check {
 	return checks
 }
 
-func (n *nutanixChecker) vmImageCheck(
+func vmImageCheck(
+	n *nutanixChecker,
 	machineDetails *carenv1.NutanixMachineDetails,
 	field string,
 ) preflight.Check {
