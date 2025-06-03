@@ -18,7 +18,10 @@ import (
 
 const credentialsSecretDataKey = "credentials"
 
-func (n *nutanixChecker) initCredentialsCheck(ctx context.Context) preflight.Check {
+func initCredentialsCheck(
+	ctx context.Context,
+	n *nutanixChecker,
+) preflight.Check {
 	n.log.V(5).Info("Initializing Nutanix credentials check")
 
 	result := preflight.CheckResult{
@@ -142,23 +145,13 @@ func (n *nutanixChecker) initCredentialsCheck(ctx context.Context) preflight.Che
 		}
 	}
 
-	if !result.Allowed || result.Error {
-		// If any error has happened, we should not try to initialize the credentials or clients, so we return early.
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
-	}
-
 	// Initialize the credentials.
 	n.credentials = prismgoclient.Credentials{
 		Endpoint: fmt.Sprintf("%s:%d", host, port),
 		URL:      fmt.Sprintf("https://%s:%d", host, port),
 		Username: usernamePassword.Username,
 		Password: usernamePassword.Password,
-	}
-	if prismCentralEndpointSpec.Insecure {
-		n.credentials.Insecure = true
-		n.credentials.URL = fmt.Sprintf("http://%s:%d", host, port)
+		Insecure: prismCentralEndpointSpec.Insecure,
 	}
 
 	// Initialize the clients.
@@ -168,7 +161,7 @@ func (n *nutanixChecker) initCredentialsCheck(ctx context.Context) preflight.Che
 		result.Error = true
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to initialize Nutanix V4 client: %s", err),
+				Message: fmt.Sprintf("failed to initialize Nutanix v4 client: %s", err),
 				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials",
 			},
 		)
@@ -180,21 +173,23 @@ func (n *nutanixChecker) initCredentialsCheck(ctx context.Context) preflight.Che
 		result.Error = true
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to initialize Nutanix V3 client: %s", err),
+				Message: fmt.Sprintf("failed to initialize Nutanix v3 client: %s", err),
 				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials",
 			},
 		)
-	}
-	_, err = n.v3client.GetCurrentLoggedInUser(ctx)
-	if err != nil {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
-			preflight.Cause{
-				Message: fmt.Sprintf("failed to validate credentials using the v3 API client: %s", err),
-				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials",
-			},
-		)
+	} else {
+		// Validate the credentials using an API call.
+		_, err = n.v3client.GetCurrentLoggedInUser(ctx)
+		if err != nil {
+			result.Allowed = false
+			result.Error = true
+			result.Causes = append(result.Causes,
+				preflight.Cause{
+					Message: fmt.Sprintf("failed to validate credentials using the v3 API client: %s", err),
+					Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials",
+				},
+			)
+		}
 	}
 
 	return func(ctx context.Context) preflight.CheckResult {
