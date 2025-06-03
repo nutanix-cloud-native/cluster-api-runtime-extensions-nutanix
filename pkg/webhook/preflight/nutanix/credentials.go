@@ -12,8 +12,6 @@ import (
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 	prismcredentials "github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
-	prismv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
@@ -164,7 +162,7 @@ func (n *nutanixChecker) initCredentialsCheck(ctx context.Context) preflight.Che
 	}
 
 	// Initialize the clients.
-	n.v4client, err = prismv4.NewV4Client(n.credentials)
+	n.v4client, err = n.v4clientFactory(n.credentials)
 	if err != nil {
 		result.Allowed = false
 		result.Error = true
@@ -176,7 +174,7 @@ func (n *nutanixChecker) initCredentialsCheck(ctx context.Context) preflight.Che
 		)
 	}
 
-	n.v3client, err = prismv3.NewV3Client(n.credentials)
+	n.v3client, err = n.v3clientFactory(n.credentials)
 	if err != nil {
 		result.Allowed = false
 		result.Error = true
@@ -187,7 +185,7 @@ func (n *nutanixChecker) initCredentialsCheck(ctx context.Context) preflight.Che
 			},
 		)
 	}
-	_, err = n.v3client.V3.GetCurrentLoggedInUser(ctx)
+	_, err = n.v3client.GetCurrentLoggedInUser(ctx)
 	if err != nil {
 		result.Allowed = false
 		result.Error = true
