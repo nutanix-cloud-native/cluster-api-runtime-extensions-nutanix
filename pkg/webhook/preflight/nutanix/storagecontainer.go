@@ -7,9 +7,10 @@ import (
 	"context"
 	"fmt"
 
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	"k8s.io/utils/ptr"
+
+	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -62,7 +63,7 @@ func (n *nutanixChecker) storageContainerCheck(
 	)
 
 	return func(ctx context.Context) preflight.CheckResult {
-		result := &preflight.CheckResult{}
+		result := preflight.CheckResult{}
 		if csiSpec == nil {
 			result.Allowed = false
 			result.Error = true
@@ -74,7 +75,7 @@ func (n *nutanixChecker) storageContainerCheck(
 				Field: field,
 			})
 
-			return *result
+			return result
 		}
 
 		if csiSpec.StorageClassConfigs == nil {
@@ -87,7 +88,7 @@ func (n *nutanixChecker) storageContainerCheck(
 				Field: field,
 			})
 
-			return *result
+			return result
 		}
 
 		for _, storageClassConfig := range csiSpec.StorageClassConfigs {
@@ -114,11 +115,11 @@ func (n *nutanixChecker) storageContainerCheck(
 					Field: field,
 				})
 
-				return *result
+				return result
 			}
 		}
 
-		return *result
+		return result
 	}
 }
 
