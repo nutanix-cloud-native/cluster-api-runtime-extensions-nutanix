@@ -330,6 +330,29 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (strin
 			"metallb",
 			defaultHelmAddonFilename,
 		), nil
+	case "docker-registry":
+		f := filepath.Join(carenChartDirectory, "addons", "registry", "cncf-distribution", defaultHelmAddonFilename)
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+
+		templateInput := struct {
+			Replicas      int
+			ServiceIP     string
+			TLSSecretName string
+		}{
+			Replicas:      1,
+			ServiceIP:     "127.0.0.1",
+			TLSSecretName: "registry-tls",
+		}
+
+		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
+		if err != nil {
+			return "", fmt.Errorf("failed to execute helm values template %w", err)
+		}
+
+		return tempFile.Name(), nil
 	default:
 		return "", nil
 	}
