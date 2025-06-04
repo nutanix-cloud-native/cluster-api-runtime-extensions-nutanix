@@ -20,6 +20,13 @@ import (
 func (n *nutanixChecker) initStorageContainerChecks() []preflight.Check {
 	checks := []preflight.Check{}
 
+	// If there is no CSI configuration, there is no need to check for storage containers.
+	if n.nutanixClusterConfigSpec == nil ||
+		n.nutanixClusterConfigSpec.Addons == nil ||
+		n.nutanixClusterConfigSpec.Addons.CSI == nil {
+		return checks
+	}
+
 	if n.nutanixClusterConfigSpec != nil && n.nutanixClusterConfigSpec.ControlPlane != nil &&
 		n.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,
