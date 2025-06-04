@@ -82,6 +82,7 @@ func (n *nutanixChecker) Init(
 	}
 
 	checks = append(checks, n.initVMImageChecksFunc(n)...)
+	checks = append(checks, n.initStorageContainerChecks()...)
 
 	// Add more checks here as needed.
 
