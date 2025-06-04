@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
@@ -29,6 +30,24 @@ type client interface {
 		*vmmv4.ListImagesApiResponse,
 		error,
 	)
+	GetClusterById(id *string) (*clustermgmtv4.GetClusterApiResponse, error)
+	ListClusters(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		apply_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (*clustermgmtv4.ListClustersApiResponse, error)
+	ListStorageContainers(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (*clustermgmtv4.ListStorageContainersApiResponse, error)
 }
 
 // clientWrapper implements the client interface and wraps both v3 and v4 clients.
@@ -90,3 +109,59 @@ func (c *clientWrapper) ListImages(page_ *int,
 	}
 	return resp, nil
 }
+
+func (c *clientWrapper) GetClusterById(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+	resp, err := c.v4client.ClustersApiInstance.GetClusterById(id)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *clientWrapper) ListClusters(
+	page_ *int,
+	limit_ *int,
+	filter_ *string,
+	orderby_ *string,
+	apply_ *string,
+	select_ *string,
+	args ...map[string]interface{},
+) (*clustermgmtv4.ListClustersApiResponse, error) {
+	resp, err := c.v4client.ClustersApiInstance.ListClusters(
+		page_,
+		limit_,
+		filter_,
+		orderby_,
+		apply_,
+		select_,
+		args...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *clientWrapper) ListStorageContainers(
+	page_ *int,
+	limit_ *int,
+	filter_ *string,
+	orderby_ *string,
+	select_ *string,
+	args ...map[string]interface{},
+) (*clustermgmtv4.ListStorageContainersApiResponse, error) {
+	resp, err := c.v4client.StorageContainerAPI.ListStorageContainers(
+		page_,
+		limit_,
+		filter_,
+		orderby_,
+		select_,
+		args...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+
