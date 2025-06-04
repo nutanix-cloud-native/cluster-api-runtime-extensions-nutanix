@@ -73,12 +73,11 @@ func (n *nutanixChecker) vmImageCheck(
 		}
 
 		if machineDetails.ImageLookup != nil {
-			result.Allowed = false
-			result.Error = true
-			result.Causes = append(result.Causes, preflight.Cause{
-				Message: "ImageLookup is not yet supported",
-				Field:   field,
-			})
+			result.Allowed = true
+			result.Warnings = append(
+				result.Warnings,
+				fmt.Sprintf("%s uses imageLookup, which is not yet supported by checks", field),
+			)
 			return result
 		}
 
