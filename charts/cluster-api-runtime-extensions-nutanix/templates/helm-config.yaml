@@ -45,7 +45,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}'
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
-    ChartVersion: 3.2.0
+    ChartVersion: 3.3.3
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}'
   snapshot-controller: |
     ChartName: snapshot-controller
