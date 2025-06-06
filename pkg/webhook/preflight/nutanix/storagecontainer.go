@@ -144,7 +144,7 @@ func getStorageContainer(
 		return nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
-	fltr := fmt.Sprintf("name eq %q and clusterExtId eq %q", storageContainerName, *cluster.ExtId)
+	fltr := fmt.Sprintf("name eq '%s' and clusterExtId eq '%s'", storageContainerName, *cluster.ExtId)
 	resp, err := client.ListStorageContainers(nil, nil, &fltr, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list storage containers: %w", err)

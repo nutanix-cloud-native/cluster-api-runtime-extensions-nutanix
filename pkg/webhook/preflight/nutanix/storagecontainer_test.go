@@ -826,16 +826,16 @@ func TestStorageContainerCheck(t *testing.T) {
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
 				) {
-					// Simply return a container with the requested name
+					require.NotNil(t, filter)
+					// Extract name from filter
 					containerName := ""
-					if filter != nil {
-						// Extract name from filter
-						switch *filter {
-						case "name eq \"valid-container\" and clusterExtId eq \"cluster-uuid-123\"":
-							containerName = "valid-container"
-						case "name eq \"another-valid-container\" and clusterExtId eq \"cluster-uuid-123\"":
-							containerName = "another-valid-container"
-						}
+					switch *filter {
+					case "name eq 'valid-container' and clusterExtId eq 'cluster-uuid-123'":
+						containerName = "valid-container"
+					case "name eq 'another-valid-container' and clusterExtId eq 'cluster-uuid-123'":
+						containerName = "another-valid-container"
+					default:
+						return nil, fmt.Errorf("filter %q does not match any storage container", *filter)
 					}
 
 					resp := &clustermgmtv4.ListStorageContainersApiResponse{
