@@ -7,7 +7,6 @@ import (
 	"context"
 	"testing"
 
-	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
-	prismv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -232,30 +230,4 @@ func validNutanixChecker() *nutanixChecker {
 		},
 		nutanixWorkerNodeConfigSpecByMachineDeploymentName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 	}
-}
-
-type mockv3client struct {
-	user *prismv3.UserIntentResponse
-	err  error
-}
-
-func (m *mockv3client) GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error) {
-	return m.user, m.err
-}
-
-type mockv4client struct {
-	image  *vmmv4.GetImageApiResponse
-	images *vmmv4.ListImagesApiResponse
-}
-
-func (m *mockv4client) GetImageById(id *string) (*vmmv4.GetImageApiResponse, error) {
-	return m.image, nil
-}
-
-func (m *mockv4client) ListImages(
-	_, _ *int,
-	_, _, _ *string,
-	_ ...map[string]interface{},
-) (*vmmv4.ListImagesApiResponse, error) {
-	return m.images, nil
 }

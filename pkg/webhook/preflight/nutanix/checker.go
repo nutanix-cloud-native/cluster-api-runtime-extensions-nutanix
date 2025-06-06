@@ -25,10 +25,12 @@ func New(kclient ctrlclient.Client, cluster *clusterv1.Cluster) preflight.Checke
 		v3clientFactory: newV3Client,
 		v4clientFactory: newV4Client,
 
-		vmImageCheckFunc:             vmImageCheck,
-		initNutanixConfigurationFunc: initNutanixConfiguration,
-		initCredentialsCheckFunc:     initCredentialsCheck,
-		initVMImageChecksFunc:        initVMImageChecks,
+		vmImageCheckFunc:               vmImageCheck,
+		storageContainerCheckFunc:      storageContainerCheck,
+		initNutanixConfigurationFunc:   initNutanixConfiguration,
+		initCredentialsCheckFunc:       initCredentialsCheck,
+		initVMImageChecksFunc:          initVMImageChecks,
+		initStorageContainerChecksFunc: initStorageContainerChecks,
 	}
 }
 
@@ -53,6 +55,13 @@ type nutanixChecker struct {
 		field string,
 	) preflight.Check
 
+	storageContainerCheckFunc func(
+		n *nutanixChecker,
+		nodeSpec *carenv1.NutanixNodeSpec,
+		field string,
+		csiSpec *carenv1.CSIProvider,
+	) preflight.Check
+
 	initNutanixConfigurationFunc func(
 		n *nutanixChecker,
 	) preflight.Check
@@ -63,6 +72,10 @@ type nutanixChecker struct {
 	) preflight.Check
 
 	initVMImageChecksFunc func(
+		n *nutanixChecker,
+	) []preflight.Check
+
+	initStorageContainerChecksFunc func(
 		n *nutanixChecker,
 	) []preflight.Check
 
@@ -82,7 +95,7 @@ func (n *nutanixChecker) Init(
 	}
 
 	checks = append(checks, n.initVMImageChecksFunc(n)...)
-	checks = append(checks, n.initStorageContainerChecks()...)
+	checks = append(checks, n.initStorageContainerChecksFunc(n)...)
 
 	// Add more checks here as needed.
 

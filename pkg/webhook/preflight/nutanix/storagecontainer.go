@@ -10,14 +10,12 @@ import (
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	"k8s.io/utils/ptr"
 
-	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
-
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func (n *nutanixChecker) initStorageContainerChecks() []preflight.Check {
+func initStorageContainerChecks(n *nutanixChecker) []preflight.Check {
 	checks := []preflight.Check{}
 
 	// If there is no CSI configuration, there is no need to check for storage containers.
@@ -30,7 +28,8 @@ func (n *nutanixChecker) initStorageContainerChecks() []preflight.Check {
 	if n.nutanixClusterConfigSpec != nil && n.nutanixClusterConfigSpec.ControlPlane != nil &&
 		n.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,
-			n.storageContainerCheck(
+			n.storageContainerCheckFunc(
+				n,
 				n.nutanixClusterConfigSpec.ControlPlane.Nutanix,
 				"cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix",
 				&n.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
@@ -41,7 +40,8 @@ func (n *nutanixChecker) initStorageContainerChecks() []preflight.Check {
 	for mdName, nutanixWorkerNodeConfigSpec := range n.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
 			checks = append(checks,
-				n.storageContainerCheck(
+				n.storageContainerCheckFunc(
+					n,
 					nutanixWorkerNodeConfigSpec.Nutanix,
 					fmt.Sprintf(
 						"cluster.spec.topology.workers.machineDeployments[.name=%s]"+
@@ -60,7 +60,8 @@ func (n *nutanixChecker) initStorageContainerChecks() []preflight.Check {
 // storageContainerCheck checks if the storage container specified in the CSIProvider's StorageClassConfigs exists.
 // It admits the NodeSpec instead of the MachineDetails because the failure domains will be specified in the NodeSpec
 // and the MachineDetails.Cluster will be nil in that case.
-func (n *nutanixChecker) storageContainerCheck(
+func storageContainerCheck(
+	n *nutanixChecker,
 	nodeSpec *carenv1.NutanixNodeSpec,
 	field string,
 	csiSpec *carenv1.CSIProvider,
@@ -70,7 +71,10 @@ func (n *nutanixChecker) storageContainerCheck(
 	)
 
 	return func(ctx context.Context) preflight.CheckResult {
-		result := preflight.CheckResult{}
+		result := preflight.CheckResult{
+			Name:    "NutanixStorageContainer",
+			Allowed: true,
+		}
 		if csiSpec == nil {
 			result.Allowed = false
 			result.Error = true
@@ -131,7 +135,7 @@ func (n *nutanixChecker) storageContainerCheck(
 }
 
 func getStorageContainer(
-	client *prismv4.Client,
+	client v4client,
 	nodeSpec *carenv1.NutanixNodeSpec,
 	storageContainerName string,
 ) (*clustermgmtv4.StorageContainer, error) {
@@ -141,7 +145,7 @@ func getStorageContainer(
 	}
 
 	fltr := fmt.Sprintf("name eq %q and clusterExtId eq %q", storageContainerName, *cluster.ExtId)
-	resp, err := client.StorageContainerAPI.ListStorageContainers(nil, nil, &fltr, nil, nil)
+	resp, err := client.ListStorageContainers(nil, nil, &fltr, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list storage containers: %w", err)
 	}
@@ -171,12 +175,12 @@ func getStorageContainer(
 }
 
 func getCluster(
-	client *prismv4.Client,
+	client v4client,
 	clusterIdentifier *v1beta1.NutanixResourceIdentifier,
 ) (*clustermgmtv4.Cluster, error) {
-	switch clusterIdentifier.Type {
-	case v1beta1.NutanixIdentifierUUID:
-		resp, err := client.ClustersApiInstance.GetClusterById(clusterIdentifier.UUID)
+	switch {
+	case clusterIdentifier.IsUUID():
+		resp, err := client.GetClusterById(clusterIdentifier.UUID)
 		if err != nil {
 			return nil, err
 		}
@@ -187,9 +191,9 @@ func getCluster(
 		}
 
 		return &cluster, nil
-	case v1beta1.NutanixIdentifierName:
+	case clusterIdentifier.IsName():
 		filter := fmt.Sprintf("name eq '%s'", *clusterIdentifier.Name)
-		resp, err := client.ClustersApiInstance.ListClusters(nil, nil, &filter, nil, nil, nil)
+		resp, err := client.ListClusters(nil, nil, &filter, nil, nil, nil)
 		if err != nil {
 			return nil, err
 		}
