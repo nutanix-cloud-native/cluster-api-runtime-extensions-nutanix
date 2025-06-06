@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.27.5 (2025-06-06)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.27.x -->
+### Fixes 🔧
+* fix(compatibility): Support Cluster deployments on PC v7.3 by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1149
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.27.4...v0.27.5
+
 ## 0.27.4 (2025-03-03)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.27.x -->
