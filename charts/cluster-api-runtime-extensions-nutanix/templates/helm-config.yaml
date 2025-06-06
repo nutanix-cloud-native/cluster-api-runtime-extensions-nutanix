@@ -25,7 +25,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}'
   cncf-distribution-registry: |
     ChartName: docker-registry
-    ChartVersion: 2.3.2
+    ChartVersion: 2.3.4
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/staging/{{ end }}'
   cosi-controller: |
     ChartName: cosi
