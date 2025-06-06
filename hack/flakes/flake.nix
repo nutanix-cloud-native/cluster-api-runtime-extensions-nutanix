@@ -106,6 +106,23 @@
               helm-schema
             ];
           };
+
+          kubescape = buildGo124Module rec {
+            name = "kubescape";
+            version = "3.0.34";
+            src = fetchFromGitHub {
+              owner = "kubescape";
+              repo = "kubescape";
+              tag = "v${version}";
+              hash = "sha256-dZPSnq2kLbgD/QxdDpYnAiIvXOXAgO2dXWWG6ijRUsQ=";
+              fetchSubmodules = true;
+            };
+            doCheck = false;
+            subPackages = [ "." ];
+            proxyVendor = true;
+            vendorHash = "sha256-+HMT8MnBc5N/19+hYtY8A4mw3IaXyvjx2a2+GnksV/4=";
+            ldflags = [ "-s" "-w" "-X=github.com/kubescape/kubescape/v3/core/cautils.BuildNumber=v${version}" ];
+          };
         };
 
         formatter = alejandra;
