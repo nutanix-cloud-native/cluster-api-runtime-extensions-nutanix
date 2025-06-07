@@ -2,6 +2,7 @@ apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlaneTemplate
 metadata:
   name: nkp-nutanix-<VERSION>
+  namespace: <NAMESPACE>
 spec:
   template:
     spec:

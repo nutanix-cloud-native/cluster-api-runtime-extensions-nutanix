@@ -11,6 +11,7 @@ patches:
     version: v1beta1
     kind: KubeadmConfigTemplate
     name: nkp-nutanix-worker-<VERSION>
+    namespace: <NAMESPACE>
   # 4.1.1 Ensure that the kubelet service file permissions are set to 600 or more restrictive
   patch: |
     - op: add
@@ -19,6 +20,9 @@ patches:
     - op: add
       path: /spec/template/spec/postKubeadmCommands/-
       value: 'chmod 600 /var/lib/kubelet/config.yaml'
+    - op: add
+      path: /spec/template/spec/postKubeadmCommands/-
+      value: 'echo "serverTLSBootstrap: true" >> /var/lib/kubelet/config.yaml'
     - op: add
       path: /spec/template/spec/postKubeadmCommands/-
       value: 'chmod 600 /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf'

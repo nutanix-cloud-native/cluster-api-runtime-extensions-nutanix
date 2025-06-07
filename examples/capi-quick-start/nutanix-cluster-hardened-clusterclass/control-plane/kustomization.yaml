@@ -12,6 +12,7 @@ patches:
     kind: KubeadmControlPlaneTemplate
     #target <2.15.0
     name: nkp-nutanix-v2.1[0-4].*
+    namespace: <NAMESPACE>
   patch: |
     #so that it works in v2.14.0. Make sure to remove after to 2.14.0
     - op: add
@@ -60,6 +61,9 @@ patches:
       value: 'chmod 600 /var/lib/kubelet/config.yaml'
     - op: add
       path: /spec/template/spec/kubeadmConfigSpec/postKubeadmCommands/-
+      value: 'echo "serverTLSBootstrap: true" >> /var/lib/kubelet/config.yaml'
+    - op: add
+      path: /spec/template/spec/kubeadmConfigSpec/postKubeadmCommands/-
       value: 'chmod 600 /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf'
 
 - target:
@@ -68,6 +72,7 @@ patches:
     kind: KubeadmControlPlaneTemplate
     #target only NKP => v2.15.0
     name: nkp-nutanix-v2.1[5-9].* 
+    namespace: <NAMESPACE>
   patch: |
     - op: add
       path: /spec/template/spec/kubeadmConfigSpec/files/-
@@ -110,6 +115,9 @@ patches:
     - op: add
       path: /spec/template/spec/kubeadmConfigSpec/postKubeadmCommands/-
       value: 'chmod 600 /var/lib/kubelet/config.yaml'
+    - op: add
+      path: /spec/template/spec/kubeadmConfigSpec/postKubeadmCommands/-
+      value: 'echo "serverTLSBootstrap: true" >> /var/lib/kubelet/config.yaml'
     - op: add
       path: /spec/template/spec/kubeadmConfigSpec/postKubeadmCommands/-
       value: 'chmod 600 /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf'
