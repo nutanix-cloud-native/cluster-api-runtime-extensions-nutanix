@@ -91,7 +91,7 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
 
-		err = EnsureRegistryAddonRootCASecret(ctx, c, cluster)
+		err = EnsureRegistryAddonRootCASecret(ctx, c)
 		Expect(err).To(Succeed())
 
 		// Verify the global TLS certificate secret is created.
@@ -124,7 +124,7 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
 
-		err = EnsureRegistryAddonRootCASecret(ctx, c, cluster)
+		err = EnsureRegistryAddonRootCASecret(ctx, c)
 		Expect(err).To(Succeed())
 
 		globalTLSCertificateSecret, err := handlersutils.SecretForRegistryAddonRootCA(ctx, c)
@@ -135,7 +135,7 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 		data := globalTLSCertificateSecret.Data
 
 		// Verify the data is not changed when running the function again.
-		err = EnsureRegistryAddonRootCASecret(ctx, c, cluster)
+		err = EnsureRegistryAddonRootCASecret(ctx, c)
 		Expect(err).To(Succeed())
 
 		globalTLSCertificateSecret, err = handlersutils.SecretForRegistryAddonRootCA(ctx, c)
@@ -163,6 +163,10 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 				MatchError("secrets \"registry-addon-root-ca\" not found"),
 			),
 		)
+
+		// Clean up any clusters created during the test.
+		err = c.DeleteAllOf(ctx, &clusterv1.Cluster{}, ctrlclient.InNamespace(corev1.NamespaceDefault))
+		Expect(err).To(Succeed())
 	})
 })
 
@@ -243,6 +247,10 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 				MatchError("secrets \"registry-addon-root-ca\" not found"),
 			),
 		)
+
+		// Clean up any clusters created during the test.
+		err = c.DeleteAllOf(ctx, &clusterv1.Cluster{}, ctrlclient.InNamespace(corev1.NamespaceDefault))
+		Expect(err).To(Succeed())
 	})
 })
 
@@ -348,6 +356,10 @@ var _ = Describe("Test EnsureRegistryServerCertificateSecretOnRemoteCluster", fu
 				MatchError("secrets \"registry-addon-root-ca\" not found"),
 			),
 		)
+
+		// Clean up any clusters created during the test.
+		err = c.DeleteAllOf(ctx, &clusterv1.Cluster{}, ctrlclient.InNamespace(corev1.NamespaceDefault))
+		Expect(err).To(Succeed())
 	})
 })
 
