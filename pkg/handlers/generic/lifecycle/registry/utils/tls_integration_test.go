@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -72,6 +73,98 @@ FYnq6/jDVxCbWmmP2u4TT557gMqao0DaJstf/NSXlK0bhA2B64M=
 
 	testRegistryAddonRootCASecretName = "registry-addon-root-ca"
 )
+
+var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
+	clientScheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+
+	It("new root CA Secret should be created", func(ctx SpecContext) {
+		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		Expect(err).To(BeNil())
+
+		cluster := &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-management-cluster-",
+				Namespace:    corev1.NamespaceDefault,
+			},
+		}
+		Expect(c.Create(ctx, cluster)).To(Succeed())
+
+		err = EnsureRegistryAddonRootCASecret(ctx, c, cluster)
+		Expect(err).To(Succeed())
+
+		// Verify the global TLS certificate secret is created.
+		globalTLSCertificateSecret, err := handlersutils.SecretForRegistryAddonRootCA(ctx, c)
+		Expect(err).To(Succeed())
+		Expect(globalTLSCertificateSecret.OwnerReferences).To(
+			ContainElement(
+				metav1.OwnerReference{
+					APIVersion: clusterv1.GroupVersion.String(),
+					Kind:       clusterv1.ClusterKind,
+					Name:       cluster.Name,
+					UID:        cluster.UID,
+				},
+			),
+		)
+		Expect(globalTLSCertificateSecret.Data["ca.crt"]).ToNot(BeEmpty())
+		Expect(globalTLSCertificateSecret.Data[corev1.TLSCertKey]).ToNot(BeEmpty())
+		Expect(globalTLSCertificateSecret.Data[corev1.TLSPrivateKeyKey]).ToNot(BeEmpty())
+	})
+
+	It("a root CA Secret should not be re-created", func(ctx SpecContext) {
+		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		Expect(err).To(BeNil())
+
+		cluster := &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-management-cluster-",
+				Namespace:    corev1.NamespaceDefault,
+			},
+		}
+		Expect(c.Create(ctx, cluster)).To(Succeed())
+
+		err = EnsureRegistryAddonRootCASecret(ctx, c, cluster)
+		Expect(err).To(Succeed())
+
+		globalTLSCertificateSecret, err := handlersutils.SecretForRegistryAddonRootCA(ctx, c)
+		Expect(err).To(Succeed())
+		Expect(globalTLSCertificateSecret.Data["ca.crt"]).ToNot(BeEmpty())
+		Expect(globalTLSCertificateSecret.Data[corev1.TLSCertKey]).ToNot(BeEmpty())
+		Expect(globalTLSCertificateSecret.Data[corev1.TLSPrivateKeyKey]).ToNot(BeEmpty())
+		data := globalTLSCertificateSecret.Data
+
+		// Verify the data is not changed when running the function again.
+		err = EnsureRegistryAddonRootCASecret(ctx, c, cluster)
+		Expect(err).To(Succeed())
+
+		globalTLSCertificateSecret, err = handlersutils.SecretForRegistryAddonRootCA(ctx, c)
+		Expect(err).To(Succeed())
+
+		Expect(globalTLSCertificateSecret.Data).To(Equal(data))
+	})
+	AfterEach(func(ctx SpecContext) {
+		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		Expect(err).To(BeNil())
+
+		globalSecret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: corev1.SchemeGroupVersion.String(),
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      handlersutils.RegistryAddonRootCASecretName,
+				Namespace: corev1.NamespaceDefault,
+			},
+		}
+		Expect(c.Delete(ctx, globalSecret)).To(
+			Or(
+				Succeed(),
+				MatchError("secrets \"registry-addon-root-ca\" not found"),
+			),
+		)
+	})
+})
 
 var _ = Describe("Test EnsureCASecretForCluster", func() {
 	clientScheme := runtime.NewScheme()

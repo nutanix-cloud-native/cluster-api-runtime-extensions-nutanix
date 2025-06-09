@@ -5,6 +5,7 @@ package utils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -19,7 +20,7 @@ import (
 )
 
 const (
-	registryAddonRootCASecretName = "registry-addon-root-ca"
+	RegistryAddonRootCASecretName = "registry-addon-root-ca"
 )
 
 // CopySecretToRemoteCluster will get the Secret from srcSecretName
@@ -157,7 +158,7 @@ func SecretForRegistryAddonRootCA(
 	ctx context.Context,
 	c ctrlclient.Reader,
 ) (*corev1.Secret, error) {
-	secret, err := getSecret(ctx, c, registryAddonRootCASecretName, GetDeploymentNamespace())
+	secret, err := findSecret(ctx, c, RegistryAddonRootCASecretName)
 	if err != nil {
 		return nil, fmt.Errorf("error getting registry addon root CA secret: %w", err)
 	}
@@ -207,4 +208,56 @@ func getSecret(
 		},
 	}
 	return secret, c.Get(ctx, ctrlclient.ObjectKeyFromObject(secret), secret)
+}
+
+type SecretNotFoundError struct {
+	name string
+}
+
+func (e *SecretNotFoundError) Error() string {
+	return fmt.Sprintf("secrets %q not found", e.name)
+}
+
+func IsSecretNotFoundError(err error) bool {
+	var e *SecretNotFoundError
+	return errors.As(err, &e)
+}
+
+type MultipleSecretsFoundError struct {
+	name string
+}
+
+func (e *MultipleSecretsFoundError) Error() string {
+	return fmt.Sprintf("multiple Secrets found with name %q", e.name)
+}
+
+// findSecret finds a Secret by name across all namespaces.
+// It returns an error if multiple Secrets with the same name are found.
+// Returns nil if no Secret is found.
+func findSecret(
+	ctx context.Context,
+	c ctrlclient.Reader,
+	secretName string,
+) (*corev1.Secret, error) {
+	secrets := &corev1.SecretList{}
+	err := c.List(ctx, secrets)
+	if err != nil {
+		return nil, fmt.Errorf("error listing secrets: %w", err)
+	}
+
+	matches := make([]corev1.Secret, 0)
+	for i := range secrets.Items {
+		secret := secrets.Items[i]
+		if secret.Name == secretName {
+			matches = append(matches, secret)
+		}
+	}
+	switch len(matches) {
+	case 1:
+		return &matches[0], nil
+	case 0:
+		return nil, &SecretNotFoundError{name: secretName}
+	default:
+		return nil, &MultipleSecretsFoundError{name: secretName}
+	}
 }

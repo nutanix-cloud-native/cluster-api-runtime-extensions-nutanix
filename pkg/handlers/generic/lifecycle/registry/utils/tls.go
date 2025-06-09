@@ -30,12 +30,104 @@ const (
 )
 
 var (
+	// Valid for 10 years.
+	defaultRootCADuration = 10 * 365 * 24 * time.Hour
+
 	// Similar to CAPI, set the NotBefore to a few minutes in the past to account for clock skew.
 	// This cert is being generated on the management cluster, but used by a workload cluster.
 	defaultCertificateNotBeforeSkew = 5 * time.Minute
 	// Valid for 2 years to avoid expiring before the cluster is upgraded.
 	defaultCertificateDuration = 2 * 365 * 24 * time.Hour
 )
+
+// EnsureRegistryAddonRootCASecret ensures that the registry addon root CA secret exists.
+// This Secret is used to sign the registry TLS certificates for the remote clusters.
+func EnsureRegistryAddonRootCASecret(
+	ctx context.Context,
+	c ctrlclient.Client,
+	managementCluster *clusterv1.Cluster,
+) error {
+	globalTLSCertificateSecret, err := handlersutils.SecretForRegistryAddonRootCA(ctx, c)
+	if err != nil && !handlersutils.IsSecretNotFoundError(err) {
+		return err
+	}
+	// If the secret already exists, we don't need to do anything.
+	if globalTLSCertificateSecret != nil {
+		return nil
+	}
+
+	certPEM, keyPEM, err := generateRegistryAddonRootCAData()
+	if err != nil {
+		return fmt.Errorf("failed to generate registry addon root CA data: %w", err)
+	}
+	rootCASecret := buildRegistryAddonRootCASecret(certPEM, keyPEM, managementCluster)
+
+	err = handlersutils.EnsureSecretForLocalCluster(ctx, c, rootCASecret, managementCluster)
+	if err != nil {
+		return fmt.Errorf("failed to ensure registry addon root CA secret: %w", err)
+	}
+
+	return nil
+}
+
+func generateRegistryAddonRootCAData() (certPEM, keyPEM []byte, err error) {
+	// 1. generate a new RSA private key.
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate private key: %w", err)
+	}
+
+	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
+	}
+
+	// 2. create a self-signed CA certificate.
+	template := &x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			CommonName: "registry-addon",
+		},
+		NotBefore:             time.Now().Add(-1 * defaultCertificateNotBeforeSkew),
+		NotAfter:              time.Now().Add(defaultRootCADuration),
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment | x509.KeyUsageCertSign,
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
+	}
+
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
+
+	return certPEM, keyPEM, nil
+}
+
+func buildRegistryAddonRootCASecret(
+	certPEM,
+	keyPEM []byte,
+	managementCluster *clusterv1.Cluster,
+) *corev1.Secret {
+	data := map[string][]byte{
+		caCrtKey:                certPEM,
+		corev1.TLSCertKey:       certPEM,
+		corev1.TLSPrivateKeyKey: keyPEM,
+	}
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      handlersutils.RegistryAddonRootCASecretName,
+			Namespace: managementCluster.Namespace,
+		},
+		Data: data,
+	}
+}
 
 type EnsureCertificateOpts struct {
 	// RemoteSecretKey is the name and namespace of the TLS secret to be created on the remote cluster.
