@@ -18,10 +18,12 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
@@ -45,10 +47,9 @@ var (
 func EnsureRegistryAddonRootCASecret(
 	ctx context.Context,
 	c ctrlclient.Client,
-	managementCluster *clusterv1.Cluster,
 ) error {
 	globalTLSCertificateSecret, err := handlersutils.SecretForRegistryAddonRootCA(ctx, c)
-	if err != nil && !handlersutils.IsSecretNotFoundError(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 	// If the secret already exists, we don't need to do anything.
@@ -56,12 +57,17 @@ func EnsureRegistryAddonRootCASecret(
 		return nil
 	}
 
+	// Otherwise, create it in the management cluster namespace.
+	managementCluster, err := utils.ManagementOrFutureManagementCluster(ctx, c)
+	if err != nil {
+		return fmt.Errorf("failed to get management cluster: %w", err)
+	}
+
 	certPEM, keyPEM, err := generateRegistryAddonRootCAData()
 	if err != nil {
 		return fmt.Errorf("failed to generate registry addon root CA data: %w", err)
 	}
-	rootCASecret := buildRegistryAddonRootCASecret(certPEM, keyPEM, managementCluster)
-
+	rootCASecret := buildRegistryAddonRootCASecret(certPEM, keyPEM, managementCluster.GetNamespace())
 	err = handlersutils.EnsureSecretForLocalCluster(ctx, c, rootCASecret, managementCluster)
 	if err != nil {
 		return fmt.Errorf("failed to ensure registry addon root CA secret: %w", err)
@@ -109,7 +115,7 @@ func generateRegistryAddonRootCAData() (certPEM, keyPEM []byte, err error) {
 func buildRegistryAddonRootCASecret(
 	certPEM,
 	keyPEM []byte,
-	managementCluster *clusterv1.Cluster,
+	namespace string,
 ) *corev1.Secret {
 	data := map[string][]byte{
 		caCrtKey:                certPEM,
@@ -123,7 +129,7 @@ func buildRegistryAddonRootCASecret(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      handlersutils.RegistryAddonRootCASecretName,
-			Namespace: managementCluster.Namespace,
+			Namespace: namespace,
 		},
 		Data: data,
 	}

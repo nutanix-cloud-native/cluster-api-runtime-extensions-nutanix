@@ -74,7 +74,7 @@ func (n *CNCFDistribution) Setup(
 	log logr.Logger,
 ) error {
 	log.Info("Setting up root CA for CNCF Distribution registry if not already present")
-	err := utils.EnsureRegistryAddonRootCASecret(ctx, n.client, cluster)
+	err := utils.EnsureRegistryAddonRootCASecret(ctx, n.client)
 	if err != nil {
 		return fmt.Errorf("failed to ensure root CA secret for CNCF Distribution registry addon: %w", err)
 	}
