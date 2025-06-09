@@ -15,7 +15,7 @@ import (
 )
 
 // ManagementCluster returns a Cluster object if c is pointing to a management cluster, otherwise returns nil.
-func ManagementCluster(ctx context.Context, c client.Client) (*clusterv1.Cluster, error) {
+func ManagementCluster(ctx context.Context, c client.Reader) (*clusterv1.Cluster, error) {
 	allNodes := &corev1.NodeList{}
 	err := c.List(ctx, allNodes)
 	if err != nil {
