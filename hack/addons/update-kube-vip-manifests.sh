@@ -22,17 +22,20 @@ docker container run --rm ghcr.io/kube-vip/kube-vip:"${KUBE_VIP_VERSION}" \
   --arp \
   --address='127.0.0.1' \
   --controlplane \
+  --enableLoadBalancer \
+  --lbForwardingMethod=masquerade \
   --leaderElection \
   --leaseDuration=15 \
   --leaseRenewDuration=10 \
   --leaseRetry=2 \
   --prometheusHTTPServer='' |
   gojq --yaml-input --yaml-output \
-    'del(.metadata.creationTimestamp, .status) |
-     .spec.containers[].imagePullPolicy |= "IfNotPresent" |
-     (.spec.containers[0].env[] | select(.name == "port").value) |= "{{ .Port }}" |
-     (.spec.containers[0].env[] | select(.name == "address").value) |= "{{ .Address }}"
-    ' >"${ASSETS_DIR}/${FILE_NAME}"
+    "del(.metadata.creationTimestamp, .status) |
+     .spec.containers[].imagePullPolicy |= \"IfNotPresent\" |
+     (.spec.containers[0].env[] | select(.name == \"port\").value) |= \"{{ .Port }}\" |
+     (.spec.containers[0].env[] | select(.name == \"address\").value) |= \"{{ .Address }}\" |
+     .spec.containers[0].image |= \"ghcr.io/kube-vip/kube-vip-iptables:${KUBE_VIP_VERSION}\"
+    " >"${ASSETS_DIR}/${FILE_NAME}"
 
 # add 8 spaces to each line so that the kustomize template can be properly indented
 sed -i -e 's/^/        /' "${ASSETS_DIR}/${FILE_NAME}"

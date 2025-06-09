@@ -34,20 +34,21 @@
                   value: "10"
                 - name: vip_retryperiod
                   value: "2"
+                - name: lb_enable
+                  value: "true"
+                - name: lb_port
+                  value: "6443"
+                - name: lb_fwdmethod
+                  value: masquerade
                 - name: address
                   value: '{{ .Address }}'
                 - name: prometheus_server
-              image: ghcr.io/kube-vip/kube-vip:v0.9.1
+              image: ghcr.io/kube-vip/kube-vip-iptables:v0.9.1
               imagePullPolicy: IfNotPresent
               name: kube-vip
               resources: {}
               securityContext:
-                capabilities:
-                  add:
-                    - NET_ADMIN
-                    - NET_RAW
-                  drop:
-                    - ALL
+                privileged: true
               volumeMounts:
                 - mountPath: /etc/kubernetes/admin.conf
                   name: kubeconfig
