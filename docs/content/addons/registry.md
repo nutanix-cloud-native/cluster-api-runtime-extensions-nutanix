@@ -31,6 +31,22 @@ spec:
             registry: {}
 ```
 
+## Registry in the workload cluster
+
+When the registry is enabled in the management cluster, it can also be automatically enabled in the workload cluster.
+To enable this behavior, set the following feature gate on the controller:
+
+```text
+  --feature-gates=AutoEnableWorkloadClusterRegistry=true
+```
+
+It is also possible to disable this behavior by setting the following annotation on the Cluster resource:
+
+```yaml
+annotations:
+   caren.nutanix.com/skip-auto-enabling-workload-cluster-registry: "true"
+```
+
 ## Registry Certificate
 
 1. A root CA Certificate is deployed in the provider's namespace.

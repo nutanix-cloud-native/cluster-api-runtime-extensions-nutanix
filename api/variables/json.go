@@ -78,3 +78,20 @@ func GetClusterVariableByName(
 	}
 	return nil
 }
+
+// UpdateClusterVariable updates the variable in the list of cluster variables.
+// If the variable does not exist, it appends it to the list.
+func UpdateClusterVariable(
+	variable *clusterv1.ClusterVariable,
+	clusterVariables []clusterv1.ClusterVariable,
+) []clusterv1.ClusterVariable {
+	name := variable.Name
+	for i := range clusterVariables {
+		if clusterVariables[i].Name == name {
+			clusterVariables[i] = *variable
+			return clusterVariables
+		}
+	}
+	clusterVariables = append(clusterVariables, *variable)
+	return clusterVariables
+}

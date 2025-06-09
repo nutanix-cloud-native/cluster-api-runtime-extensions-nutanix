@@ -40,6 +40,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/cluster"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 	preflightnutanix "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/nutanix"
@@ -235,6 +236,10 @@ func main() {
 	})
 	mgr.GetWebhookServer().Register("/validate-v1beta1-cluster", &webhook.Admission{
 		Handler: cluster.NewValidator(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme())),
+	})
+
+	mgr.GetWebhookServer().Register("/mutate-v1beta1-addons", &webhook.Admission{
+		Handler: addons.NewDefaulter(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme())),
 	})
 
 	mgr.GetWebhookServer().Register("/preflight-v1beta1-cluster", &webhook.Admission{

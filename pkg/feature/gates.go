@@ -20,8 +20,8 @@ var (
 	//   featuregatetesting "k8s.io/component-base/featuregate/testing"
 	//   featuregatetesting.SetFeatureGateDuringTest(
 	//     t,
-	//     features.Gates,
-	//     features.<FeatureName>,
+	//     feature.Gates,
+	//     feature.<FeatureName>,
 	//     <value>,
 	//   )()
 	MutableGates featuregate.MutableFeatureGate = featuregate.NewFeatureGate()
