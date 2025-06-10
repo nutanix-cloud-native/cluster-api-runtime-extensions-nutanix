@@ -15,6 +15,7 @@ import (
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/optout"
 )
 
 func New(kclient ctrlclient.Client, cluster *clusterv1.Cluster) preflight.Checker {
@@ -29,6 +30,8 @@ func New(kclient ctrlclient.Client, cluster *clusterv1.Cluster) preflight.Checke
 		initNutanixConfigurationFunc: initNutanixConfiguration,
 		initCredentialsCheckFunc:     initCredentialsCheck,
 		initVMImageChecksFunc:        initVMImageChecks,
+
+		optOut: optout.New(cluster),
 	}
 }
 
@@ -66,6 +69,8 @@ type nutanixChecker struct {
 		n *nutanixChecker,
 	) []preflight.Check
 
+	optOut *optout.Evaluator
+
 	log logr.Logger
 }
 
@@ -74,12 +79,19 @@ func (n *nutanixChecker) Init(
 ) []preflight.Check {
 	n.log = ctrl.LoggerFrom(ctx).WithName("preflight/nutanix")
 
-	checks := []preflight.Check{
-		// The configuration check must run first, because it initializes data used by all other checks,
-		// and the credentials check second, because it initializes the Nutanix clients used by other checks.
+	checks := []preflight.Check{}
+
+	if n.optOut.For("Nutanix") {
+		n.log.V(5).Info("Opted out of Nutanix checks")
+		return checks
+	}
+
+	// The configuration check must run first, because it initializes data used by all other checks,
+	// and the credentials check second, because it initializes the Nutanix clients used by other checks.
+	checks = append(checks,
 		n.initNutanixConfigurationFunc(n),
 		n.initCredentialsCheckFunc(ctx, n),
-	}
+	)
 
 	checks = append(checks, n.initVMImageChecksFunc(n)...)
 

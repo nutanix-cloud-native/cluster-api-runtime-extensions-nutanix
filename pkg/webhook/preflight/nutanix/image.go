@@ -19,6 +19,11 @@ func initVMImageChecks(
 ) []preflight.Check {
 	checks := []preflight.Check{}
 
+	if n.optOut.For("NutanixVMImage") {
+		n.log.V(5).Info("Opted out of Nutanix VM image checks")
+		return checks
+	}
+
 	if n.nutanixClusterConfigSpec != nil && n.nutanixClusterConfigSpec.ControlPlane != nil &&
 		n.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,

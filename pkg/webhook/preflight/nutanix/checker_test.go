@@ -9,10 +9,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/optout"
 )
 
 func TestNutanixChecker_Init(t *testing.T) {
@@ -24,9 +26,11 @@ func TestNutanixChecker_Init(t *testing.T) {
 		expectedFirstCheckName  string
 		expectedSecondCheckName string
 		vmImageCheckCount       int
+		cluster                 *clusterv1.Cluster
 	}{
 		{
 			name:                    "basic initialization with no configs",
+			cluster:                 &clusterv1.Cluster{},
 			nutanixConfig:           nil,
 			workerNodeConfigs:       nil,
 			expectedCheckCount:      2, // config check and credentials check
@@ -35,7 +39,8 @@ func TestNutanixChecker_Init(t *testing.T) {
 			vmImageCheckCount:       0,
 		},
 		{
-			name: "initialization with control plane config",
+			name:    "initialization with control plane config",
+			cluster: &clusterv1.Cluster{},
 			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
 					Nutanix: &carenv1.NutanixNodeSpec{},
@@ -49,6 +54,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 		},
 		{
 			name:          "initialization with worker node configs",
+			cluster:       &clusterv1.Cluster{},
 			nutanixConfig: nil,
 			workerNodeConfigs: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
 				"worker-1": {
@@ -64,7 +70,8 @@ func TestNutanixChecker_Init(t *testing.T) {
 			vmImageCheckCount:       2,
 		},
 		{
-			name: "initialization with both control plane and worker node configs",
+			name:    "initialization with both control plane and worker node configs",
+			cluster: &clusterv1.Cluster{},
 			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
 					Nutanix: &carenv1.NutanixNodeSpec{},
@@ -80,15 +87,32 @@ func TestNutanixChecker_Init(t *testing.T) {
 			expectedSecondCheckName: "NutanixCredentials",
 			vmImageCheckCount:       2,
 		},
+		{
+			name: "initialization with opt out of all checks",
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"preflight.cluster.caren.nutanix.com/opt-out": "Nutanix",
+					},
+				},
+			},
+			nutanixConfig:           nil,
+			workerNodeConfigs:       nil,
+			expectedCheckCount:      0, // No checks should run
+			expectedFirstCheckName:  "NutanixConfiguration",
+			expectedSecondCheckName: "NutanixCredentials",
+			vmImageCheckCount:       0,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create the checker
 			checker := &nutanixChecker{
-				cluster:                  &clusterv1.Cluster{},
+				cluster:                  tt.cluster,
 				nutanixClusterConfigSpec: tt.nutanixConfig,
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tt.workerNodeConfigs,
+				optOut: optout.New(tt.cluster),
 			}
 
 			// Mock the sub-check functions to track their calls
@@ -137,10 +161,12 @@ func TestNutanixChecker_Init(t *testing.T) {
 			// Verify correct number of checks
 			assert.Len(t, checks, tt.expectedCheckCount)
 
-			// Verify the sub-functions were called
-			assert.True(t, configCheckCalled, "initNutanixConfiguration should have been called")
-			assert.True(t, credsCheckCalled, "initCredentialsCheck should have been called")
-			assert.Equal(t, tt.vmImageCheckCount, vmImageCheckCount, "Wrong number of VM image checks")
+			// Verify the checks were called as expected
+			if len(checks) > 0 {
+				assert.True(t, configCheckCalled, "initNutanixConfiguration should have been called")
+				assert.True(t, credsCheckCalled, "initCredentialsCheck should have been called")
+				assert.Equal(t, tt.vmImageCheckCount, vmImageCheckCount, "Wrong number of VM image checks")
+			}
 
 			// Verify the first two checks when we have results
 			if len(checks) >= 2 {

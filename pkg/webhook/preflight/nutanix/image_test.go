@@ -12,11 +12,14 @@ import (
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/optout"
 )
 
 // mockV4Client is a mock implementation of the v4client interface for testing.
@@ -512,6 +515,7 @@ func TestGetVMImages(t *testing.T) {
 func TestInitVMImageChecks(t *testing.T) {
 	testCases := []struct {
 		name                                      string
+		cluster                                   *clusterv1.Cluster
 		nutanixClusterConfigSpec                  *carenv1.NutanixClusterConfigSpec
 		nutanixWorkerNodeConfigSpecByMDName       map[string]*carenv1.NutanixWorkerNodeConfigSpec
 		expectedChecks                            int
@@ -519,15 +523,17 @@ func TestInitVMImageChecks(t *testing.T) {
 		expectedWorkerNodeCheckFieldPatternExists bool
 	}{
 		{
-			name:                                      "no nutanix configuration",
-			nutanixClusterConfigSpec:                  nil,
-			nutanixWorkerNodeConfigSpecByMDName:       nil,
-			expectedChecks:                            0,
-			expectedControlPlaneCheckFieldIncluded:    false,
+			name:                                   "no nutanix configuration",
+			cluster:                                &clusterv1.Cluster{},
+			nutanixClusterConfigSpec:               nil,
+			nutanixWorkerNodeConfigSpecByMDName:    nil,
+			expectedChecks:                         0,
+			expectedControlPlaneCheckFieldIncluded: false,
 			expectedWorkerNodeCheckFieldPatternExists: false,
 		},
 		{
-			name: "control plane configuration only",
+			name:    "control plane configuration only",
+			cluster: &clusterv1.Cluster{},
 			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
 					Nutanix: &carenv1.NutanixNodeSpec{
@@ -547,6 +553,7 @@ func TestInitVMImageChecks(t *testing.T) {
 		},
 		{
 			name:                     "worker nodes configuration only",
+			cluster:                  &clusterv1.Cluster{},
 			nutanixClusterConfigSpec: nil,
 			nutanixWorkerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
 				"worker-1": {
@@ -565,7 +572,8 @@ func TestInitVMImageChecks(t *testing.T) {
 			expectedWorkerNodeCheckFieldPatternExists: true,
 		},
 		{
-			name: "both control plane and worker nodes configuration",
+			name:    "both control plane and worker nodes configuration",
+			cluster: &clusterv1.Cluster{},
 			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
 					Nutanix: &carenv1.NutanixNodeSpec{
@@ -605,7 +613,57 @@ func TestInitVMImageChecks(t *testing.T) {
 			expectedWorkerNodeCheckFieldPatternExists: true,
 		},
 		{
+			name: "opt out of vm image checks",
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "test-namespace",
+					Annotations: map[string]string{
+						optout.AnnotationKey: "NutanixVMImage",
+					},
+				},
+			},
+			// With complete nutanix configuration, the only reason to skip the check
+			// is because of the opt-out annotation.
+			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
+				ControlPlane: &carenv1.NutanixControlPlaneSpec{
+					Nutanix: &carenv1.NutanixNodeSpec{
+						MachineDetails: carenv1.NutanixMachineDetails{
+							Image: &capxv1.NutanixResourceIdentifier{
+								Type: capxv1.NutanixIdentifierUUID,
+								UUID: ptr.To("cp-uuid"),
+							},
+						},
+					},
+				},
+			},
+			nutanixWorkerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
+				"worker-1": {
+					Nutanix: &carenv1.NutanixNodeSpec{
+						MachineDetails: carenv1.NutanixMachineDetails{
+							Image: &capxv1.NutanixResourceIdentifier{
+								Type: capxv1.NutanixIdentifierName,
+								Name: ptr.To("worker1-image"),
+							},
+						},
+					},
+				},
+				"worker-2": {
+					Nutanix: &carenv1.NutanixNodeSpec{
+						MachineDetails: carenv1.NutanixMachineDetails{
+							Image: &capxv1.NutanixResourceIdentifier{
+								Type: capxv1.NutanixIdentifierName,
+								Name: ptr.To("worker2-image"),
+							},
+						},
+					},
+				},
+			},
+			expectedChecks: 0,
+		},
+		{
 			name:                     "worker with nil Nutanix config",
+			cluster:                  &clusterv1.Cluster{},
 			nutanixClusterConfigSpec: nil,
 			nutanixWorkerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
 				"worker-1": {
@@ -627,7 +685,8 @@ func TestInitVMImageChecks(t *testing.T) {
 			expectedWorkerNodeCheckFieldPatternExists: true,
 		},
 		{
-			name: "control plane with nil Nutanix config",
+			name:    "control plane with nil Nutanix config",
+			cluster: &clusterv1.Cluster{},
 			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
 					Nutanix: nil, // null nutanix config
@@ -639,7 +698,8 @@ func TestInitVMImageChecks(t *testing.T) {
 			expectedWorkerNodeCheckFieldPatternExists: false,
 		},
 		{
-			name: "null control plane config",
+			name:    "null control plane config",
+			cluster: &clusterv1.Cluster{},
 			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: nil, // null control plane
 			},
@@ -657,6 +717,7 @@ func TestInitVMImageChecks(t *testing.T) {
 				log:                      logger,
 				nutanixClusterConfigSpec: tc.nutanixClusterConfigSpec,
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tc.nutanixWorkerNodeConfigSpecByMDName,
+				optOut: optout.New(tc.cluster),
 			}
 
 			// Trap the vmImageCheck calls to verify field paths
