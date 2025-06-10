@@ -42,7 +42,7 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Name:    "NutanixCredentials",
+				Name:    "NutanixConfiguration",
 				Allowed: true,
 			},
 			expectedNutanixClusterConfigSpec:          true,
@@ -68,7 +68,7 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Name:    "NutanixCredentials",
+				Name:    "NutanixConfiguration",
 				Allowed: true,
 			},
 			expectedNutanixClusterConfigSpec:          true,
@@ -111,7 +111,7 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Name:    "NutanixCredentials",
+				Name:    "NutanixConfiguration",
 				Allowed: true,
 			},
 			expectedNutanixClusterConfigSpec:          false,
@@ -135,7 +135,7 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Name:    "NutanixCredentials",
+				Name:    "NutanixConfiguration",
 				Allowed: false,
 				Error:   true,
 				Causes: []preflight.Cause{
@@ -184,7 +184,7 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Name:    "NutanixCredentials",
+				Name:    "NutanixConfiguration",
 				Allowed: false,
 				Error:   true,
 				Causes: []preflight.Cause{
@@ -217,7 +217,7 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Name:    "NutanixCredentials",
+				Name:    "NutanixConfiguration",
 				Allowed: true,
 			},
 			expectedNutanixClusterConfigSpec:          false,
@@ -275,7 +275,7 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Name:    "NutanixCredentials",
+				Name:    "NutanixConfiguration",
 				Allowed: true,
 			},
 			expectedNutanixClusterConfigSpec:          false,
@@ -316,7 +316,7 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Name:    "NutanixCredentials",
+				Name:    "NutanixConfiguration",
 				Allowed: true,
 			},
 			expectedNutanixClusterConfigSpec:          false,
@@ -347,7 +347,7 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Name:    "NutanixCredentials",
+				Name:    "NutanixConfiguration",
 				Allowed: true,
 			},
 			expectedNutanixClusterConfigSpec:          false,
