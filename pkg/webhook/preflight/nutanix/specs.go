@@ -18,7 +18,7 @@ func initNutanixConfiguration(
 	n.log.V(5).Info("Initializing Nutanix configuration check")
 
 	result := preflight.CheckResult{
-		Name:    "NutanixCredentials",
+		Name:    "NutanixConfiguration",
 		Allowed: true,
 	}
 
