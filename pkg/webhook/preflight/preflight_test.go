@@ -20,6 +20,8 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/optout"
 )
 
 func mockCheckerFactory(checker Checker) CheckerFactory {
@@ -127,6 +129,33 @@ func TestHandle(t *testing.T) {
 					Name: "test-cluster",
 					Labels: map[string]string{
 						clusterv1.ProviderNameLabel: "test-provider",
+					},
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{},
+				},
+			},
+			checkers: []Checker{
+				&mockChecker{
+					checks: []Check{},
+				},
+			},
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: true,
+				},
+			},
+		},
+		{
+			name: "if cluster opts out of all checks, then allowed",
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-cluster",
+					Labels: map[string]string{
+						clusterv1.ProviderNameLabel: "test-provider",
+					},
+					Annotations: map[string]string{
+						optout.AnnotationKey: optout.OptOutAllChecksAnnotationValue,
 					},
 				},
 				Spec: clusterv1.ClusterSpec{
