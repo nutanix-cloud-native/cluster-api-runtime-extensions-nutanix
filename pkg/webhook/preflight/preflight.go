@@ -15,6 +15,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/optout"
 )
 
 type (
@@ -91,6 +93,11 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	// Checks run only for ClusterClass-based clusters.
 	if cluster.Spec.Topology == nil {
 		return admission.Allowed("")
+	}
+
+	if optout.New(cluster).ForAll() {
+		// If the cluster has opted out of all checks, return allowed.
+		return admission.Allowed("Cluster has opted out of all preflight checks")
 	}
 
 	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, h.checkers)
