@@ -174,7 +174,7 @@ func TestInitCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
 	result := check(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
-	assert.Contains(t, result.Causes[0].Message, "failed to validate credentials using the v3 API client")
+	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client.")
 }
 
 func validNutanixChecker() *nutanixChecker {

@@ -39,8 +39,6 @@ type nutanixChecker struct {
 	nutanixClusterConfigSpec                           *carenv1.NutanixClusterConfigSpec
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
 
-	credentials prismgoclient.Credentials
-
 	v3client        v3client
 	v3clientFactory func(prismgoclient.Credentials) (v3client, error)
 
