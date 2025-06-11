@@ -243,19 +243,35 @@ func (m *mockv3client) GetCurrentLoggedInUser(ctx context.Context) (*prismv3.Use
 	return m.user, m.err
 }
 
+// mockv4client is a mock implementation of the v4client interface for testing.
 type mockv4client struct {
-	image  *vmmv4.GetImageApiResponse
-	images *vmmv4.ListImagesApiResponse
+	getImageByIdFunc func(
+		uuid *string,
+	) (
+		*vmmv4.GetImageApiResponse, error,
+	)
+
+	listImagesFunc func(
+		page,
+		limit *int,
+		filter,
+		orderby,
+		select_ *string,
+		args ...map[string]interface{},
+	) (
+		*vmmv4.ListImagesApiResponse,
+		error,
+	)
 }
 
-func (m *mockv4client) GetImageById(id *string) (*vmmv4.GetImageApiResponse, error) {
-	return m.image, nil
+func (m *mockv4client) GetImageById(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+	return m.getImageByIdFunc(uuid)
 }
 
 func (m *mockv4client) ListImages(
-	_, _ *int,
-	_, _, _ *string,
-	_ ...map[string]interface{},
+	page, limit *int,
+	filter, orderby, select_ *string,
+	args ...map[string]interface{},
 ) (*vmmv4.ListImagesApiResponse, error) {
-	return m.images, nil
+	return m.listImagesFunc(page, limit, filter, orderby, select_)
 }

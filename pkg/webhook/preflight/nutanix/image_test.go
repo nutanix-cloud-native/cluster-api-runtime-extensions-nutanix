@@ -19,39 +19,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-// mockV4Client is a mock implementation of the v4client interface for testing.
-type mockV4Client struct {
-	getImageByIdFunc func(
-		uuid *string,
-	) (
-		*vmmv4.GetImageApiResponse, error,
-	)
-
-	listImagesFunc func(
-		page,
-		limit *int,
-		filter,
-		orderby,
-		select_ *string,
-		args ...map[string]interface{},
-	) (
-		*vmmv4.ListImagesApiResponse,
-		error,
-	)
-}
-
-func (m *mockV4Client) GetImageById(uuid *string) (*vmmv4.GetImageApiResponse, error) {
-	return m.getImageByIdFunc(uuid)
-}
-
-func (m *mockV4Client) ListImages(
-	page, limit *int,
-	filter, orderby, select_ *string,
-	args ...map[string]interface{},
-) (*vmmv4.ListImagesApiResponse, error) {
-	return m.listImagesFunc(page, limit, filter, orderby, select_)
-}
-
 func TestVMImageCheck(t *testing.T) {
 	testCases := []struct {
 		name           string
@@ -61,7 +28,7 @@ func TestVMImageCheck(t *testing.T) {
 	}{
 		{
 			name:     "imageLookup not yet supported",
-			v4client: &mockV4Client{},
+			v4client: &mockv4client{},
 			machineDetails: &carenv1.NutanixMachineDetails{
 				ImageLookup: &capxv1.NutanixImageLookup{
 					Format: ptr.To("test-format"),
@@ -78,7 +45,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "image found by uuid",
-			v4client: &mockV4Client{
+			v4client: &mockv4client{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
@@ -103,7 +70,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "image found by name",
-			v4client: &mockV4Client{
+			v4client: &mockv4client{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -137,7 +104,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "image not found by name",
-			v4client: &mockV4Client{
+			v4client: &mockv4client{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -170,7 +137,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "multiple images found by name",
-			v4client: &mockV4Client{
+			v4client: &mockv4client{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -213,7 +180,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "error getting image by id",
-			v4client: &mockV4Client{
+			v4client: &mockv4client{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					return nil, fmt.Errorf("api error")
 				},
@@ -238,7 +205,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "error listing images",
-			v4client: &mockV4Client{
+			v4client: &mockv4client{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -272,7 +239,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name:           "neither image nor imageLookup specified",
-			v4client:       &mockV4Client{},
+			v4client:       &mockv4client{},
 			machineDetails: &carenv1.NutanixMachineDetails{
 				// both Image and ImageLookup are nil
 			},
@@ -314,7 +281,7 @@ func TestVMImageCheck(t *testing.T) {
 func TestGetVMImages(t *testing.T) {
 	testCases := []struct {
 		name     string
-		client   *mockV4Client
+		client   *mockv4client
 		id       *capxv1.NutanixResourceIdentifier
 		want     []vmmv4.Image
 		wantErr  bool
@@ -322,7 +289,7 @@ func TestGetVMImages(t *testing.T) {
 	}{
 		{
 			name: "get image by uuid success",
-			client: &mockV4Client{
+			client: &mockv4client{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
@@ -348,7 +315,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "get image by name success",
-			client: &mockV4Client{
+			client: &mockv4client{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -384,7 +351,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "get image by uuid error",
-			client: &mockV4Client{
+			client: &mockv4client{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					return nil, fmt.Errorf("api error")
 				},
@@ -398,7 +365,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "get image by name error",
-			client: &mockV4Client{
+			client: &mockv4client{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -421,7 +388,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name:   "neither name nor uuid specified",
-			client: &mockV4Client{},
+			client: &mockv4client{},
 			id:     &capxv1.NutanixResourceIdentifier{
 				// Both Name and UUID are not set
 			},
@@ -430,7 +397,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "invalid data from GetImageById",
-			client: &mockV4Client{
+			client: &mockv4client{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					return &vmmv4.GetImageApiResponse{
 						Data: &vmmv4.OneOfGetImageApiResponseData{
@@ -448,7 +415,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "empty response from ListImages",
-			client: &mockV4Client{
+			client: &mockv4client{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
