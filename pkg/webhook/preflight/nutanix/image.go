@@ -19,6 +19,10 @@ func initVMImageChecks(
 ) []preflight.Check {
 	checks := []preflight.Check{}
 
+	if n.v4client == nil {
+		return checks
+	}
+
 	if n.nutanixClusterConfigSpec != nil && n.nutanixClusterConfigSpec.ControlPlane != nil &&
 		n.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,
@@ -60,19 +64,6 @@ func vmImageCheck(
 		result := preflight.CheckResult{
 			Name:    "NutanixVMImage",
 			Allowed: false,
-		}
-
-		// If the v4 client is not initialized, we cannot perform VM image checks.
-		if n.v4client == nil {
-			result.Allowed = false
-			result.Error = true
-			result.Causes = append(result.Causes,
-				preflight.Cause{
-					Message: "Nutanix v4 client is not initialized, cannot perform VM image checks",
-					Field:   "",
-				},
-			)
-			return result
 		}
 
 		if machineDetails.ImageLookup != nil {
