@@ -16,7 +16,9 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog/v2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -34,6 +36,19 @@ type mockChecker struct {
 
 func (m *mockChecker) Init(_ context.Context) []Check {
 	return m.checks
+}
+
+type mockCheck struct {
+	name   string
+	result CheckResult
+}
+
+func (m *mockCheck) Name() string {
+	return m.name
+}
+
+func (m *mockCheck) Run(_ context.Context) CheckResult {
+	return m.result
 }
 
 type mockDecoder struct {
@@ -60,9 +75,9 @@ func TestHandle(t *testing.T) {
 		decoder          admission.Decoder
 		cluster          *clusterv1.Cluster
 		checkers         []Checker
-		checks           []Check
 		expectedResponse admission.Response
 	}{
+		// Keeping the existing test cases that don't use checks
 		{
 			name:      "skip delete operations",
 			operation: admissionv1.Delete,
@@ -160,11 +175,17 @@ func TestHandle(t *testing.T) {
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
-						func(ctx context.Context) CheckResult {
-							return CheckResult{Allowed: true}
+						&mockCheck{
+							name: "Check1",
+							result: CheckResult{
+								Allowed: true,
+							},
 						},
-						func(ctx context.Context) CheckResult {
-							return CheckResult{Allowed: true}
+						&mockCheck{
+							name: "Check2",
+							result: CheckResult{
+								Allowed: true,
+							},
 						},
 					},
 				},
@@ -175,7 +196,6 @@ func TestHandle(t *testing.T) {
 				},
 			},
 		},
-
 		{
 			name: "if any check fails, then not allowed",
 			cluster: &clusterv1.Cluster{
@@ -192,8 +212,9 @@ func TestHandle(t *testing.T) {
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
-						func(ctx context.Context) CheckResult {
-							return CheckResult{
+						&mockCheck{
+							name: "Test1",
+							result: CheckResult{
 								Name:    "Test1",
 								Allowed: false,
 								Causes: []Cause{
@@ -202,7 +223,7 @@ func TestHandle(t *testing.T) {
 										Message: "test failed",
 									},
 								},
-							}
+							},
 						},
 					},
 				},
@@ -243,13 +264,14 @@ func TestHandle(t *testing.T) {
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
-						func(ctx context.Context) CheckResult {
-							return CheckResult{
+						&mockCheck{
+							name: "Test1",
+							result: CheckResult{
 								Allowed: true,
 								Warnings: []string{
 									"test warning",
 								},
-							}
+							},
 						},
 					},
 				},
@@ -280,25 +302,26 @@ func TestHandle(t *testing.T) {
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
-						func(ctx context.Context) CheckResult {
-							return CheckResult{
+						&mockCheck{
+							name: "Test1",
+							result: CheckResult{
 								Name:    "Test1",
 								Allowed: false,
 								Error:   true,
-
 								Causes: []Cause{
 									{
 										Message: "internal error",
 									},
 								},
-							}
+							},
 						},
 					},
 				},
 				&mockChecker{
 					checks: []Check{
-						func(ctx context.Context) CheckResult {
-							return CheckResult{
+						&mockCheck{
+							name: "Test2",
+							result: CheckResult{
 								Name:    "Test2",
 								Allowed: false,
 								Causes: []Cause{
@@ -306,17 +329,18 @@ func TestHandle(t *testing.T) {
 										Message: "check failed",
 									},
 								},
-							}
+							},
 						},
 					},
 				},
 				&mockChecker{
 					checks: []Check{
-						func(ctx context.Context) CheckResult {
-							return CheckResult{
+						&mockCheck{
+							name: "Test3",
+							result: CheckResult{
 								Name:    "Test3",
 								Allowed: true,
-							}
+							},
 						},
 					},
 				},
@@ -346,6 +370,7 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
+	// Test execution remains the same
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Default the decoder.
@@ -400,6 +425,41 @@ func TestHandle(t *testing.T) {
 	}
 }
 
+// Define a custom check that can be cancelled.
+type cancellableCheck struct {
+	name      string
+	delay     time.Duration
+	cancelled bool
+}
+
+// Implement the Check interface.
+func (c *cancellableCheck) Name() string {
+	return c.name
+}
+
+func (c *cancellableCheck) Run(ctx context.Context) CheckResult {
+	select {
+	case <-ctx.Done():
+		c.cancelled = true
+		return CheckResult{
+			Name:    c.name,
+			Allowed: false,
+			Error:   true,
+			Causes: []Cause{
+				{
+					Message: "context cancelled",
+				},
+			},
+		}
+	case <-time.After(c.delay):
+		return CheckResult{
+			Name:    c.name,
+			Allowed: true,
+		}
+	}
+}
+
+// TestHandleCancelledContext needs special treatment because it relies on context cancellation.
 func TestHandleCancelledContext(t *testing.T) {
 	scheme := runtime.NewScheme()
 	err := clusterv1.AddToScheme(scheme)
@@ -418,43 +478,18 @@ func TestHandleCancelledContext(t *testing.T) {
 		},
 	}
 
+	// Create cancellable checks
+	check1 := &cancellableCheck{
+		name:  "Test1",
+		delay: 100 * time.Millisecond,
+	}
+	check2 := &cancellableCheck{
+		name:  "Test2",
+		delay: 100 * time.Millisecond,
+	}
+
 	checker := &mockChecker{
-		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				select {
-				case <-ctx.Done():
-					return CheckResult{
-						Name:    "Test1",
-						Allowed: false,
-						Error:   true,
-						Causes: []Cause{
-							{
-								Message: "context cancelled",
-							},
-						},
-					}
-				case <-time.After(100 * time.Millisecond):
-					return CheckResult{Allowed: true}
-				}
-			},
-			func(ctx context.Context) CheckResult {
-				select {
-				case <-ctx.Done():
-					return CheckResult{
-						Name:    "Test2",
-						Allowed: false,
-						Error:   true,
-						Causes: []Cause{
-							{
-								Message: "context cancelled",
-							},
-						},
-					}
-				case <-time.After(100 * time.Millisecond):
-					return CheckResult{Allowed: true}
-				}
-			},
-		},
+		checks: []Check{check1, check2},
 	}
 
 	checkDelay := 50 * time.Millisecond
@@ -507,6 +542,10 @@ func TestHandleCancelledContext(t *testing.T) {
 	// Handle the request
 	got := handler.Handle(ctx, admissionReq)
 
+	// Verify checks were cancelled
+	assert.True(t, check1.cancelled, "Check1 should have been cancelled")
+	assert.True(t, check2.cancelled, "Check2 should have been cancelled")
+
 	// Check response fields
 	assert.Equal(t, expectedResponse.Allowed, got.Allowed)
 	if expectedResponse.Result != nil {
@@ -524,17 +563,19 @@ func TestHandleCancelledContext(t *testing.T) {
 func TestRun_NoCheckers(t *testing.T) {
 	ctx := context.Background()
 	results := run(ctx, nil, nil, nil)
-	if len(results) != 0 {
-		t.Errorf("expected 0 results, got %d", len(results))
-	}
+	assert.Empty(t, results, "expected no results when no checkers are provided")
 }
 
 func TestRun_SingleCheckerSingleCheck(t *testing.T) {
 	ctx := context.Background()
 	checker := &mockChecker{
 		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				return CheckResult{Name: "check1", Allowed: true}
+			&mockCheck{
+				name: "check1",
+				result: CheckResult{
+					Name:    "check1",
+					Allowed: true,
+				},
 			},
 		},
 	}
@@ -544,30 +585,39 @@ func TestRun_SingleCheckerSingleCheck(t *testing.T) {
 		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
 	results := resultsOrderedByCheckerAndCheck[0]
-	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
-	}
-	if results[0].Name != "check1" || !results[0].Allowed {
-		t.Errorf("unexpected result: %+v", results[0])
-	}
+	assert.Len(t, results, 1, "expected 1 result from the checker")
+	assert.Equal(t, "check1", results[0].Name, "expected result name to be 'check1'")
+	assert.True(t, results[0].Allowed, "expected result to be allowed")
 }
 
 func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 	ctx := context.Background()
 	checker1 := &mockChecker{
 		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				return CheckResult{Name: "c1-check1", Allowed: true}
+			&mockCheck{
+				name: "c1-check1",
+				result: CheckResult{
+					Name:    "c1-check1",
+					Allowed: true,
+				},
 			},
-			func(ctx context.Context) CheckResult {
-				return CheckResult{Name: "c1-check2", Allowed: false}
+			&mockCheck{
+				name: "c1-check2",
+				result: CheckResult{
+					Name:    "c1-check2",
+					Allowed: false,
+				},
 			},
 		},
 	}
 	checker2 := &mockChecker{
 		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				return CheckResult{Name: "c2-check1", Error: true}
+			&mockCheck{
+				name: "c2-check1",
+				result: CheckResult{
+					Name:  "c2-check1",
+					Error: true,
+				},
 			},
 		},
 	}
@@ -584,32 +634,56 @@ func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 	expectedIdx := 0
 	for _, results := range resultsOrderedByCheckerAndCheck {
 		for _, result := range results {
-			if result.Name != expected[expectedIdx] {
-				t.Errorf("expected result %d to be %q, got %q", expectedIdx, expected[expectedIdx], result.Name)
-			}
+			assert.Equal(t, expected[expectedIdx], result.Name, "expected result name to match")
 			expectedIdx++
 		}
 	}
+}
+
+// For tests that depend on execution timing, we'll need special implementations.
+type delayedCheck struct {
+	name  string
+	delay time.Duration
+	mu    *sync.Mutex
+	order *[]string
+}
+
+func (c *delayedCheck) Name() string {
+	return c.name
+}
+
+func (c *delayedCheck) Run(ctx context.Context) CheckResult {
+	if c.delay > 0 {
+		time.Sleep(c.delay)
+	}
+
+	if c.mu != nil && c.order != nil {
+		c.mu.Lock()
+		*c.order = append(*c.order, c.name)
+		c.mu.Unlock()
+	}
+
+	return CheckResult{Name: c.name, Allowed: true}
 }
 
 func TestRun_ChecksRunInParallel(t *testing.T) {
 	ctx := context.Background()
 	var mu sync.Mutex
 	order := []string{}
+
 	checker := &mockChecker{
 		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				time.Sleep(50 * time.Millisecond)
-				mu.Lock()
-				order = append(order, "slow")
-				mu.Unlock()
-				return CheckResult{Name: "slow"}
+			&delayedCheck{
+				name:  "slow-check",
+				delay: 50 * time.Millisecond,
+				mu:    &mu,
+				order: &order,
 			},
-			func(ctx context.Context) CheckResult {
-				mu.Lock()
-				order = append(order, "fast")
-				mu.Unlock()
-				return CheckResult{Name: "fast"}
+			&delayedCheck{
+				name:  "fast-check",
+				delay: 0,
+				mu:    &mu,
+				order: &order,
 			},
 		},
 	}
@@ -621,33 +695,32 @@ func TestRun_ChecksRunInParallel(t *testing.T) {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
 	// Both checks should have run, order in 'order' should be "fast", "slow" if parallel.
-	if order[0] != "fast" || order[1] != "slow" {
-		t.Errorf("expected order [fast slow], got %v", order)
-	}
+	assert.Equal(t, "fast-check", order[0], "expected first recorded result to be 'fast-check'")
+	assert.Equal(t, "slow-check", order[1], "expected second recorded result to be 'slow-check'")
 }
 
 func TestRun_CheckersRunInParallel(t *testing.T) {
 	ctx := context.Background()
 	var mu sync.Mutex
 	order := []string{}
+
 	checker1 := &mockChecker{
 		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				time.Sleep(50 * time.Millisecond)
-				mu.Lock()
-				order = append(order, "slow-checker")
-				mu.Unlock()
-				return CheckResult{Name: "slow-checker"}
+			&delayedCheck{
+				name:  "slow-checker",
+				delay: 50 * time.Millisecond,
+				mu:    &mu,
+				order: &order,
 			},
 		},
 	}
 	checker2 := &mockChecker{
 		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				mu.Lock()
-				order = append(order, "fast-checker")
-				mu.Unlock()
-				return CheckResult{Name: "fast-checker"}
+			&delayedCheck{
+				name:  "fast-checker",
+				delay: 0,
+				mu:    &mu,
+				order: &order,
 			},
 		},
 	}
@@ -660,43 +733,59 @@ func TestRun_CheckersRunInParallel(t *testing.T) {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
 	// Both checkers should have run, order in 'order' should be "fast-checker", "slow-checker" if parallel.
-	if order[0] != "fast-checker" || order[1] != "slow-checker" {
-		t.Errorf("expected order [fast-checker slow-checker], got %v", order)
+	assert.Equal(t, "fast-checker", order[0], "expected first recorded result to be 'fast-checker'")
+	assert.Equal(t, "slow-checker", order[1], "expected second recorded result to be 'slow-checker'")
+}
+
+type contextAwareCheck struct {
+	name      string
+	onCancel  func() CheckResult
+	onTimeout func() CheckResult
+}
+
+func (c *contextAwareCheck) Name() string {
+	return c.name
+}
+
+func (c *contextAwareCheck) Run(ctx context.Context) CheckResult {
+	select {
+	case <-ctx.Done():
+		return c.onCancel()
+	case <-time.After(2 * time.Second):
+		return c.onTimeout()
 	}
 }
 
 func TestRun_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Use a channel to synchronize and ensure the check started
+	// Use channels to synchronize test execution
 	started := make(chan struct{})
 	completed := make(chan struct{})
 
-	checker := &mockChecker{
-		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				close(started)
-				select {
-				case <-ctx.Done():
-					return CheckResult{Name: "cancelled", Error: true}
-				case <-time.After(2 * time.Second):
-					close(completed)
-					return CheckResult{Name: "completed", Allowed: true}
-				}
-			},
+	check := &contextAwareCheck{
+		name: "cancellable-check",
+		onCancel: func() CheckResult {
+			return CheckResult{Name: "cancelled", Error: true}
+		},
+		onTimeout: func() CheckResult {
+			close(completed)
+			return CheckResult{Name: "completed", Allowed: true}
 		},
 	}
 
+	checker := &mockChecker{
+		checks: []Check{check},
+	}
+
+	// Signal that the check has started and should be cancelled
 	go func() {
-		<-started
+		close(started)
 		cancel()
 	}()
 
 	factory := mockCheckerFactory(checker)
 	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []CheckerFactory{factory})
-	if len(resultsOrderedByCheckerAndCheck) != 1 {
-		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
-	}
 
 	select {
 	case <-completed:
@@ -705,13 +794,13 @@ func TestRun_ContextCancellation(t *testing.T) {
 		// This is expected - the check was cancelled
 	}
 
+	if len(resultsOrderedByCheckerAndCheck) != 1 {
+		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
+	}
+
 	results := resultsOrderedByCheckerAndCheck[0]
-	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
-	}
-	if !results[0].Error {
-		t.Errorf("expected error result after cancellation, got: %+v", results[0])
-	}
+	assert.Len(t, results, 1, "expected 1 result from the checker")
+	assert.True(t, results[0].Error, "expected result to be an error after cancellation")
 }
 
 func TestRun_OrderOfResults(t *testing.T) {
@@ -719,25 +808,26 @@ func TestRun_OrderOfResults(t *testing.T) {
 
 	checker1 := &mockChecker{
 		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				time.Sleep(30 * time.Millisecond)
-				return CheckResult{Name: "c1-check1"}
+			&delayedCheck{
+				name:  "c1-check1",
+				delay: 30 * time.Millisecond,
 			},
-			func(ctx context.Context) CheckResult {
-				time.Sleep(10 * time.Millisecond)
-				return CheckResult{Name: "c1-check2"}
+			&delayedCheck{
+				name:  "c1-check2",
+				delay: 10 * time.Millisecond,
 			},
 		},
 	}
 
 	checker2 := &mockChecker{
 		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				return CheckResult{Name: "c2-check1"}
+			&delayedCheck{
+				name:  "c2-check1",
+				delay: 0,
 			},
-			func(ctx context.Context) CheckResult {
-				time.Sleep(20 * time.Millisecond)
-				return CheckResult{Name: "c2-check2"}
+			&delayedCheck{
+				name:  "c2-check2",
+				delay: 20 * time.Millisecond,
 			},
 		},
 	}
@@ -757,9 +847,7 @@ func TestRun_OrderOfResults(t *testing.T) {
 	expectedIdx := 0
 	for _, results := range resultsOrderedByCheckerAndCheck {
 		for _, result := range results {
-			if result.Name != expected[expectedIdx] {
-				t.Errorf("expected result %d to be %q, got %q", expectedIdx, expected[expectedIdx], result.Name)
-			}
+			assert.Equal(t, expected[expectedIdx], result.Name, "expected result name to match")
 			expectedIdx++
 		}
 	}
@@ -779,11 +867,12 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 		for j := 0; j < checksPerChecker; j++ {
 			checkerIndex := i
 			checkIndex := j
-			checks[j] = func(ctx context.Context) CheckResult {
-				return CheckResult{
+			checks[j] = &mockCheck{
+				name: fmt.Sprintf("checker%d-check%d", checkerIndex, checkIndex),
+				result: CheckResult{
 					Name:    fmt.Sprintf("checker%d-check%d", checkerIndex, checkIndex),
 					Allowed: true,
-				}
+				},
 			}
 		}
 		checkers[i] = &mockChecker{
@@ -805,9 +894,7 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 		resultTotal += len(results)
 	}
 
-	if resultTotal != expectedTotal {
-		t.Errorf("expected %d results, got %d", expectedTotal, resultTotal)
-	}
+	assert.Equal(t, expectedTotal, resultTotal, "expected total results to match the number of checks")
 
 	t.Logf("Completed %d checks in %v", expectedTotal, duration)
 }
@@ -815,56 +902,109 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 func TestRun_ErrorHandlingInChecks(t *testing.T) {
 	ctx := context.Background()
 
-	panicCheck := func(ctx context.Context) CheckResult {
-		// This function should never panic since we recover in the test,
-		// but in real code the goroutine would crash
-		panic("simulated error in check")
-	}
-
-	// Wrap the check with panic recovery
-	safeCheck := func(ctx context.Context) CheckResult {
-		defer func() {
-			if r := recover(); r != nil { //nolint:staticcheck // This is a test, we want to recover from panic
-			}
-		}()
-		return panicCheck(ctx)
-	}
-
-	checker := &mockChecker{
-		checks: []Check{
-			safeCheck,
-			func(ctx context.Context) CheckResult {
-				return CheckResult{Name: "normal-check", Allowed: true}
+	// Create a checker with a check that returns an error
+	errorCheck := &mockCheck{
+		name: "error-check",
+		result: CheckResult{
+			Name:  "error-check",
+			Error: true,
+			Causes: []Cause{
+				{
+					Message: "simulated error in check",
+					Field:   "spec.errorField",
+				},
 			},
 		},
 	}
-
+	checker := &mockChecker{
+		checks: []Check{errorCheck},
+	}
 	factory := mockCheckerFactory(checker)
+
+	// Run the checks
 	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []CheckerFactory{factory})
+	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
+	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 1, "expected 1 result from the checker")
 
-	if len(resultsOrderedByCheckerAndCheck) != 1 {
-		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
+	wantErrorCheckResult := CheckResult{
+		Name:  "error-check",
+		Error: true,
+		Causes: []Cause{
+			{
+				Message: "simulated error in check",
+				Field:   "spec.errorField",
+			},
+		},
+	}
+	assert.Equal(t, wantErrorCheckResult, resultsOrderedByCheckerAndCheck[0][0], "expected error check result")
+}
+
+type panicCheck struct {
+	name string
+}
+
+func (c *panicCheck) Name() string {
+	return c.name
+}
+
+func (c *panicCheck) Run(_ context.Context) CheckResult {
+	// This should never cause the test to fail due to panic
+	panic("simulated panic in check")
+}
+
+func TestRun_PanicHandlingInChecks(t *testing.T) {
+	ctx := context.Background()
+
+	ctrl.SetLogger(klog.Background())
+
+	cluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-cluster",
+			Namespace: "test-namespace",
+		},
+		Spec: clusterv1.ClusterSpec{
+			Topology: &clusterv1.Topology{},
+		},
 	}
 
-	results := resultsOrderedByCheckerAndCheck[0]
-	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(results))
+	// Create a checker with a panicking check
+	normalCheck := &mockCheck{
+		name: "normal-check",
+		result: CheckResult{
+			Name:    "normal-check",
+			Allowed: true,
+		},
 	}
+	panicCheck := &panicCheck{name: "panicking-check"}
+	checker := &mockChecker{
+		checks: []Check{
+			normalCheck,
+			panicCheck,
+		},
+	}
+	factory := mockCheckerFactory(checker)
 
-	// The normal check should have succeeded
-	found := false
-	for _, result := range results {
-		if result.Name == "normal-check" {
-			found = true
-			if !result.Allowed {
-				t.Errorf("expected normal-check to be allowed")
-			}
-		}
-	}
+	// Run the checks
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, []CheckerFactory{factory})
+	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
+	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 2, "expected 2 results from the checker")
 
-	if !found {
-		t.Errorf("normal-check result not found")
+	wantNormalCheckResult := CheckResult{
+		Name:    "normal-check",
+		Allowed: true,
 	}
+	wantPanicCheckResult := CheckResult{
+		Name:  "panicking-check",
+		Error: true,
+		Causes: []Cause{
+			{
+				Message: "internal error (panic): simulated panic in check",
+				Field:   "",
+			},
+		},
+	}
+	assert.Equal(t, wantNormalCheckResult, resultsOrderedByCheckerAndCheck[0][0], "expected normal check result")
+	assert.Equal(t, wantPanicCheckResult, resultsOrderedByCheckerAndCheck[0][1], "expected panic check result")
 }
 
 func TestRun_ZeroChecksFromChecker(t *testing.T) {
@@ -878,8 +1018,12 @@ func TestRun_ZeroChecksFromChecker(t *testing.T) {
 	// Checker that returns some checks
 	normalChecker := &mockChecker{
 		checks: []Check{
-			func(ctx context.Context) CheckResult {
-				return CheckResult{Name: "check1", Allowed: true}
+			&mockCheck{
+				name: "check1",
+				result: CheckResult{
+					Name:    "check1",
+					Allowed: true,
+				},
 			},
 		},
 	}
@@ -904,7 +1048,5 @@ func TestRun_ZeroChecksFromChecker(t *testing.T) {
 		t.Fatalf("expected 1 result, got %d", len(normalResults))
 	}
 
-	if normalResults[0].Name != "check1" {
-		t.Errorf("expected result from normal checker, got %s", normalResults[0].Name)
-	}
+	assert.Equal(t, "check1", normalResults[0].Name, "expected result name to be 'check1'")
 }
