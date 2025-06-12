@@ -1,6 +1,6 @@
 // Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
-package optout
+package skip
 
 import (
 	"strings"
@@ -9,14 +9,15 @@ import (
 )
 
 const (
-	// AnnotationKey is the key of the annotation on the Cluster used to opt out preflight checks.
-	AnnotationKey = "preflight.cluster.caren.nutanix.com/opt-out"
+	// AnnotationKey is the key of the annotation on the Cluster used to skip preflight checks.
+	AnnotationKey = "preflight.cluster.caren.nutanix.com/skip"
 
-	// OptOutAllChecksAnnotationValue is the value used in the cluster's annotations to indicate
-	// that all checks are opted out.
-	OptOutAllChecksAnnotationValue = "all"
+	// SkipAllChecksAnnotationValue is the value used in the cluster's annotations to indicate
+	// that all checks are skipped.
+	SkipAllChecksAnnotationValue = "all"
 )
 
+// Evaluator is used to determine which checks should be skipped, based on the cluster's annotations.
 type Evaluator struct {
 	normalizedCheckNames map[string]struct{}
 	all                  bool
@@ -48,23 +49,23 @@ func New(cluster *clusterv1.Cluster) *Evaluator {
 		normalizedCheckName := strings.TrimSpace(strings.ToLower(checkName))
 		o.normalizedCheckNames[normalizedCheckName] = struct{}{}
 	}
-	if _, exists := o.normalizedCheckNames[OptOutAllChecksAnnotationValue]; exists && len(o.normalizedCheckNames) == 1 {
+	if _, exists := o.normalizedCheckNames[SkipAllChecksAnnotationValue]; exists && len(o.normalizedCheckNames) == 1 {
 		o.all = true
 	}
 	return o
 }
 
-// For checks if the cluster has opted out of a specific check.
-// It returns true if the cluster has opted out of the check with the given name.
+// For checks if the specific check should be skipped.
+// It returns true if the cluster skip annotation contains the check name.
 // The check name is case-insensitive, so "CheckName1" and "checkname1" will both match.
-// If the cluster has opted out of all checks, For will return true for any check name.
+// If the cluster has skipped all checks, For will return true for any check name.
 //
-// For example, if the cluster has opted out of "CheckName1", then calling
+// For example, if the cluster has skipped "CheckName1", then calling
 // For("CheckName1") or For("checkname1") will return true, but For("CheckName2") will
 // return false.
 func (o *Evaluator) For(checkName string) bool {
 	if o.all {
-		// If the cluster has opted out of all checks, return true for any check name.
+		// If the cluster has skipped all checks, return true for any check name.
 		return true
 	}
 	normalizedCheckName := strings.TrimSpace(strings.ToLower(checkName))
@@ -72,8 +73,8 @@ func (o *Evaluator) For(checkName string) bool {
 	return exists
 }
 
-// ForAll checks if the cluster has opted out of all checks.
-// It returns true if the cluster has a single prefix "all" in its opt-out annotations.
+// ForAll checks if all checks should be skipped.
+// It returns true if the cluster skip annotation contains "all".
 // The check is case-insensitive, so "all", "ALL", and "All" will all match.
 func (o *Evaluator) ForAll() bool {
 	return o.all

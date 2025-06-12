@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/optout"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/skip"
 )
 
 type mockChecker struct {
@@ -63,12 +63,12 @@ func (m *mockDecoder) DecodeRaw(_ runtime.RawExtension, _ runtime.Object) error 
 	return m.err
 }
 
-func topologyCluster(optoutCheckNames ...string) *clusterv1.Cluster {
+func topologyCluster(skippedCheckNames ...string) *clusterv1.Cluster {
 	return &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
 			Annotations: map[string]string{
-				optout.AnnotationKey: strings.Join(optoutCheckNames, ","),
+				skip.AnnotationKey: strings.Join(skippedCheckNames, ","),
 			},
 		},
 		Spec: clusterv1.ClusterSpec{
@@ -146,8 +146,8 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:    "if cluster opts out of all checks, then allowed, with a warning",
-			cluster: topologyCluster(optout.OptOutAllChecksAnnotationValue),
+			name:    "if cluster skips all checks, then allowed, with a warning",
+			cluster: topologyCluster(skip.SkipAllChecksAnnotationValue),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{},
@@ -157,19 +157,19 @@ func TestHandle(t *testing.T) {
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: true,
 					Warnings: []string{
-						"Cluster has opted out of all preflight checks",
+						"Cluster has skipped all preflight checks",
 					},
 				},
 			},
 		},
 		{
-			name:    "if cluster opts out of a check, then that check is not run",
-			cluster: topologyCluster("OptOutCheck"),
+			name:    "if cluster skips a check, then that check is not run",
+			cluster: topologyCluster("SkippedCheck"),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
 						&mockCheck{
-							name:   "OptOutCheck",
+							name:   "SkippedCheck",
 							result: CheckResult{},
 						},
 						&mockCheck{
@@ -185,7 +185,7 @@ func TestHandle(t *testing.T) {
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: true,
 					Warnings: []string{
-						"Cluster has opted out of preflight check \"OptOutCheck\"",
+						"Cluster has skipped preflight check \"SkippedCheck\"",
 					},
 				},
 			},
@@ -550,7 +550,7 @@ func TestRun_SingleCheckerSingleCheck(t *testing.T) {
 			},
 		},
 	}
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, skip.New(cluster), []Checker{checker})
 	if len(resultsOrderedByCheckerAndCheck) != 1 {
 		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
@@ -590,7 +590,7 @@ func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 		},
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker1, checker2})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, skip.New(cluster), []Checker{checker1, checker2})
 	if len(resultsOrderedByCheckerAndCheck) != 2 {
 		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
@@ -654,7 +654,7 @@ func TestRun_ChecksRunInParallel(t *testing.T) {
 			},
 		},
 	}
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, skip.New(cluster), []Checker{checker})
 
 	results := resultsOrderedByCheckerAndCheck[0]
 	if len(results) != 2 {
@@ -693,7 +693,7 @@ func TestRun_CheckersRunInParallel(t *testing.T) {
 		},
 	}
 
-	results := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker1, checker2})
+	results := run(ctx, nil, cluster, skip.New(cluster), []Checker{checker1, checker2})
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
@@ -750,7 +750,7 @@ func TestRun_ContextCancellation(t *testing.T) {
 		cancel()
 	}()
 
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, skip.New(cluster), []Checker{checker})
 
 	select {
 	case <-completed:
@@ -798,7 +798,7 @@ func TestRun_OrderOfResults(t *testing.T) {
 		},
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker1, checker2})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, skip.New(cluster), []Checker{checker1, checker2})
 	if len(resultsOrderedByCheckerAndCheck) != 2 {
 		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
@@ -843,7 +843,7 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 	}
 
 	start := time.Now()
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), checkers)
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, skip.New(cluster), checkers)
 	duration := time.Since(start)
 
 	resultTotal := 0
@@ -878,7 +878,7 @@ func TestRun_ErrorHandlingInChecks(t *testing.T) {
 	}
 
 	// Run the checks
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, skip.New(cluster), []Checker{checker})
 	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
 	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 1, "expected 1 result from the checker")
 
@@ -933,7 +933,7 @@ func TestRun_PanicHandlingInChecks(t *testing.T) {
 	}
 
 	// Run the checks
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, skip.New(cluster), []Checker{checker})
 	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
 	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 2, "expected 2 results from the checker")
 
@@ -980,7 +980,7 @@ func TestRun_ZeroChecksFromChecker(t *testing.T) {
 		},
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{emptyChecker, normalChecker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, skip.New(cluster), []Checker{emptyChecker, normalChecker})
 
 	if len(resultsOrderedByCheckerAndCheck) != 2 {
 		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))

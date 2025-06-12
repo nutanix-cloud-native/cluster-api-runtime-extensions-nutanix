@@ -1,7 +1,7 @@
 // Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package optout
+package skip
 
 import (
 	"testing"
@@ -35,7 +35,7 @@ func TestNew(t *testing.T) {
 			expectCheckNames: map[string]struct{}{},
 		},
 		{
-			name: "ignores empty opt-out value",
+			name: "ignores empty skip annotation value",
 			annotations: map[string]string{
 				AnnotationKey: "",
 			},
@@ -117,7 +117,7 @@ func TestEvaluator_For(t *testing.T) {
 			expectMatch: false,
 		},
 		{
-			name:        "no opt-out annotation",
+			name:        "no skip annotation",
 			annotations: map[string]string{},
 			checkName:   "InfraVMImage",
 			expectMatch: false,
@@ -131,7 +131,7 @@ func TestEvaluator_For(t *testing.T) {
 			expectMatch: false,
 		},
 		{
-			name: "opt out of InfraVMImage check",
+			name: "skip InfraVMImage check",
 			annotations: map[string]string{
 				AnnotationKey: "InfraVMImage,InfraCredentials",
 			},
@@ -139,7 +139,7 @@ func TestEvaluator_For(t *testing.T) {
 			expectMatch: true,
 		},
 		{
-			name: "opt out of credentials, but not image",
+			name: "skip credentials, but not image",
 			annotations: map[string]string{
 				AnnotationKey: "InfraCredentials",
 			},
@@ -147,7 +147,7 @@ func TestEvaluator_For(t *testing.T) {
 			expectMatch: false,
 		},
 		{
-			name: "opt out with spaces and case mixing",
+			name: "skip with spaces and case mixing",
 			annotations: map[string]string{
 				AnnotationKey: " infraVMImage , InfraCredentials ",
 			},
@@ -163,7 +163,7 @@ func TestEvaluator_For(t *testing.T) {
 			expectMatch: true,
 		},
 		{
-			name: "opt out of all checks",
+			name: "skip all checks",
 			annotations: map[string]string{
 				AnnotationKey: "all",
 			},
@@ -199,7 +199,7 @@ func TestEvaluator_ForAll(t *testing.T) {
 			expectMatch: false,
 		},
 		{
-			name:        "no opt-out annotation",
+			name:        "no skip annotation",
 			annotations: map[string]string{},
 			expectMatch: false,
 		},
@@ -210,28 +210,28 @@ func TestEvaluator_ForAll(t *testing.T) {
 			},
 		},
 		{
-			name: "opt out of all checks with spaces and case mixing",
+			name: "skip all checks with spaces and case mixing",
 			annotations: map[string]string{
 				AnnotationKey: " aLL ",
 			},
 			expectMatch: true,
 		},
 		{
-			name: "opt out of all checks with extra commas",
+			name: "skip all checks with extra commas",
 			annotations: map[string]string{
 				AnnotationKey: ",all,,",
 			},
 			expectMatch: true,
 		},
 		{
-			name: "opt out of all checks",
+			name: "skip all checks",
 			annotations: map[string]string{
 				AnnotationKey: "all",
 			},
 			expectMatch: true,
 		},
 		{
-			name: "opt out of some checks, but not all",
+			name: "skip some checks, but not all",
 			annotations: map[string]string{
 				AnnotationKey: "OneCheck,AnotherCheck",
 			},

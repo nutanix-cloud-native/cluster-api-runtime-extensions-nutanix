@@ -16,7 +16,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/optout"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/skip"
 )
 
 type (
@@ -95,16 +95,16 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	optoutEvaluator := optout.New(cluster)
+	skipEvaluator := skip.New(cluster)
 
-	if optoutEvaluator.ForAll() {
-		// If the cluster has opted out of all checks, return allowed.
+	if skipEvaluator.ForAll() {
+		// If the cluster has skipped all checks, return allowed.
 		return admission.Allowed("").WithWarnings(
-			"Cluster has opted out of all preflight checks",
+			"Cluster has skipped all preflight checks",
 		)
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, optoutEvaluator, h.checkers)
+	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, skipEvaluator, h.checkers)
 
 	// Summarize the results.
 	resp := admission.Response{
@@ -156,7 +156,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 func run(ctx context.Context,
 	client ctrlclient.Client,
 	cluster *clusterv1.Cluster,
-	optoutEvaluator *optout.Evaluator,
+	skipEvaluator *skip.Evaluator,
 	checkers []Checker,
 ) [][]namedResult {
 	resultsOrderedByCheckerAndCheck := make([][]namedResult, len(checkers))
@@ -168,7 +168,7 @@ func run(ctx context.Context,
 			ctx context.Context,
 			client ctrlclient.Client,
 			cluster *clusterv1.Cluster,
-			optoutEvaluator *optout.Evaluator,
+			skipEvaluator *skip.Evaluator,
 			checker Checker,
 			i int,
 		) {
@@ -179,8 +179,7 @@ func run(ctx context.Context,
 
 			checksWG := sync.WaitGroup{}
 			for j, check := range checks {
-				if optoutEvaluator.For(check.Name()) {
-					// If the cluster has opted out of this check, skip it.
+				if skipEvaluator.For(check.Name()) {
 					resultsOrderedByCheck[j] = namedResult{
 						Name: check.Name(),
 						CheckResult: CheckResult{
@@ -188,7 +187,7 @@ func run(ctx context.Context,
 							Error:   false,
 							Causes:  nil,
 							Warnings: []string{
-								fmt.Sprintf("Cluster has opted out of preflight check %q", check.Name()),
+								fmt.Sprintf("Cluster has skipped preflight check %q", check.Name()),
 							},
 						},
 					}
@@ -238,7 +237,7 @@ func run(ctx context.Context,
 			ctx,
 			client,
 			cluster,
-			optoutEvaluator,
+			skipEvaluator,
 			checker,
 			i,
 		)
