@@ -22,13 +22,13 @@ import (
 func TestVMImageCheck(t *testing.T) {
 	testCases := []struct {
 		name           string
-		v4client       v4client
+		nclient        client
 		machineDetails *carenv1.NutanixMachineDetails
 		want           preflight.CheckResult
 	}{
 		{
-			name:     "imageLookup not yet supported",
-			v4client: &mockv4client{},
+			name:    "imageLookup not yet supported",
+			nclient: &mocknclient{},
 			machineDetails: &carenv1.NutanixMachineDetails{
 				ImageLookup: &capxv1.NutanixImageLookup{
 					Format: ptr.To("test-format"),
@@ -45,7 +45,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "image found by uuid",
-			v4client: &mockv4client{
+			nclient: &mocknclient{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
@@ -70,7 +70,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "image found by name",
-			v4client: &mockv4client{
+			nclient: &mocknclient{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -104,7 +104,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "image not found by name",
-			v4client: &mockv4client{
+			nclient: &mocknclient{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -137,7 +137,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "multiple images found by name",
-			v4client: &mockv4client{
+			nclient: &mocknclient{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -180,7 +180,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "error getting image by id",
-			v4client: &mockv4client{
+			nclient: &mocknclient{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					return nil, fmt.Errorf("api error")
 				},
@@ -205,7 +205,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name: "error listing images",
-			v4client: &mockv4client{
+			nclient: &mocknclient{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -239,7 +239,7 @@ func TestVMImageCheck(t *testing.T) {
 		},
 		{
 			name:           "neither image nor imageLookup specified",
-			v4client:       &mockv4client{},
+			nclient:        &mocknclient{},
 			machineDetails: &carenv1.NutanixMachineDetails{
 				// both Image and ImageLookup are nil
 			},
@@ -255,8 +255,8 @@ func TestVMImageCheck(t *testing.T) {
 			logger := testr.New(t)
 
 			checker := &nutanixChecker{
-				log:      logger,
-				v4client: tc.v4client,
+				log:     logger,
+				nclient: tc.nclient,
 			}
 
 			// Create the check
@@ -281,7 +281,7 @@ func TestVMImageCheck(t *testing.T) {
 func TestGetVMImages(t *testing.T) {
 	testCases := []struct {
 		name     string
-		client   *mockv4client
+		client   *mocknclient
 		id       *capxv1.NutanixResourceIdentifier
 		want     []vmmv4.Image
 		wantErr  bool
@@ -289,7 +289,7 @@ func TestGetVMImages(t *testing.T) {
 	}{
 		{
 			name: "get image by uuid success",
-			client: &mockv4client{
+			client: &mocknclient{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
@@ -315,7 +315,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "get image by name success",
-			client: &mockv4client{
+			client: &mocknclient{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -351,7 +351,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "get image by uuid error",
-			client: &mockv4client{
+			client: &mocknclient{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					return nil, fmt.Errorf("api error")
 				},
@@ -365,7 +365,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "get image by name error",
-			client: &mockv4client{
+			client: &mocknclient{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -388,7 +388,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name:   "neither name nor uuid specified",
-			client: &mockv4client{},
+			client: &mocknclient{},
 			id:     &capxv1.NutanixResourceIdentifier{
 				// Both Name and UUID are not set
 			},
@@ -397,7 +397,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "invalid data from GetImageById",
-			client: &mockv4client{
+			client: &mocknclient{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					return &vmmv4.GetImageApiResponse{
 						Data: &vmmv4.OneOfGetImageApiResponseData{
@@ -415,7 +415,7 @@ func TestGetVMImages(t *testing.T) {
 		},
 		{
 			name: "empty response from ListImages",
-			client: &mockv4client{
+			client: &mocknclient{
 				listImagesFunc: func(page,
 					limit *int,
 					filter,
@@ -460,7 +460,7 @@ func TestInitVMImageChecks(t *testing.T) {
 		name                                      string
 		nutanixClusterConfigSpec                  *carenv1.NutanixClusterConfigSpec
 		nutanixWorkerNodeConfigSpecByMDName       map[string]*carenv1.NutanixWorkerNodeConfigSpec
-		v4client                                  v4client
+		nclient                                   client
 		expectedChecks                            int
 		expectedControlPlaneCheckFieldIncluded    bool
 		expectedWorkerNodeCheckFieldPatternExists bool
@@ -469,7 +469,7 @@ func TestInitVMImageChecks(t *testing.T) {
 			name:                                   "client not initialized",
 			nutanixClusterConfigSpec:               nil,
 			nutanixWorkerNodeConfigSpecByMDName:    nil,
-			v4client:                               nil,
+			nclient:                                nil,
 			expectedChecks:                         0,
 			expectedControlPlaneCheckFieldIncluded: false,
 			expectedWorkerNodeCheckFieldPatternExists: false,
@@ -478,7 +478,7 @@ func TestInitVMImageChecks(t *testing.T) {
 			name:                                   "no nutanix configuration",
 			nutanixClusterConfigSpec:               nil,
 			nutanixWorkerNodeConfigSpecByMDName:    nil,
-			v4client:                               &mockv4client{},
+			nclient:                                &mocknclient{},
 			expectedChecks:                         0,
 			expectedControlPlaneCheckFieldIncluded: false,
 			expectedWorkerNodeCheckFieldPatternExists: false,
@@ -498,7 +498,7 @@ func TestInitVMImageChecks(t *testing.T) {
 				},
 			},
 			nutanixWorkerNodeConfigSpecByMDName:       nil,
-			v4client:                                  &mockv4client{},
+			nclient:                                   &mocknclient{},
 			expectedChecks:                            1,
 			expectedControlPlaneCheckFieldIncluded:    true,
 			expectedWorkerNodeCheckFieldPatternExists: false,
@@ -518,7 +518,7 @@ func TestInitVMImageChecks(t *testing.T) {
 					},
 				},
 			},
-			v4client:                               &mockv4client{},
+			nclient:                                &mocknclient{},
 			expectedChecks:                         1,
 			expectedControlPlaneCheckFieldIncluded: false,
 			expectedWorkerNodeCheckFieldPatternExists: true,
@@ -559,7 +559,7 @@ func TestInitVMImageChecks(t *testing.T) {
 					},
 				},
 			},
-			v4client:                               &mockv4client{},
+			nclient:                                &mocknclient{},
 			expectedChecks:                         3, // 1 control plane + 2 workers
 			expectedControlPlaneCheckFieldIncluded: true,
 			expectedWorkerNodeCheckFieldPatternExists: true,
@@ -582,7 +582,7 @@ func TestInitVMImageChecks(t *testing.T) {
 					},
 				},
 			},
-			v4client:                               &mockv4client{},
+			nclient:                                &mocknclient{},
 			expectedChecks:                         1, // only worker-2
 			expectedControlPlaneCheckFieldIncluded: false,
 			expectedWorkerNodeCheckFieldPatternExists: true,
@@ -605,7 +605,7 @@ func TestInitVMImageChecks(t *testing.T) {
 				ControlPlane: nil, // null control plane
 			},
 			nutanixWorkerNodeConfigSpecByMDName:       nil,
-			v4client:                                  &mockv4client{},
+			nclient:                                   &mocknclient{},
 			expectedChecks:                            0,
 			expectedControlPlaneCheckFieldIncluded:    false,
 			expectedWorkerNodeCheckFieldPatternExists: false,
@@ -619,7 +619,7 @@ func TestInitVMImageChecks(t *testing.T) {
 				log:                      logger,
 				nutanixClusterConfigSpec: tc.nutanixClusterConfigSpec,
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tc.nutanixWorkerNodeConfigSpecByMDName,
-				v4client: tc.v4client,
+				nclient: tc.nclient,
 			}
 
 			// Trap the vmImageCheck calls to verify field paths

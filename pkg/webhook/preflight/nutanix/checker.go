@@ -22,8 +22,7 @@ func New(kclient ctrlclient.Client, cluster *clusterv1.Cluster) preflight.Checke
 		kclient: kclient,
 		cluster: cluster,
 
-		v3clientFactory: newV3Client,
-		v4clientFactory: newV4Client,
+		nclientFactory: newClient,
 
 		vmImageCheckFunc:             vmImageCheck,
 		initNutanixConfigurationFunc: initNutanixConfiguration,
@@ -39,11 +38,8 @@ type nutanixChecker struct {
 	nutanixClusterConfigSpec                           *carenv1.NutanixClusterConfigSpec
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
 
-	v3client        v3client
-	v3clientFactory func(prismgoclient.Credentials) (v3client, error)
-
-	v4client        v4client
-	v4clientFactory func(prismgoclient.Credentials) (v4client, error)
+	nclient        client
+	nclientFactory func(prismgoclient.Credentials) (client, error)
 
 	vmImageCheckFunc func(
 		n *nutanixChecker,

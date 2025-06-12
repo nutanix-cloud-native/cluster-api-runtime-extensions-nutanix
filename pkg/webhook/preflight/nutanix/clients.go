@@ -5,6 +5,7 @@ package nutanix
 
 import (
 	"context"
+	"fmt"
 
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 
@@ -13,29 +14,10 @@ import (
 	prismv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
 )
 
-type v3client interface {
+// client contains methods to interact with Nutanix Prism v3 and v4 APIs.
+type client interface {
 	GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error)
-}
 
-type v3clientWrapper struct {
-	prismv3.Service
-}
-
-var _ = v3client(&v3clientWrapper{})
-
-func newV3Client(
-	credentials prismgoclient.Credentials, //nolint:gocritic // hugeParam is fine
-) (v3client, error) {
-	client, err := prismv3.NewV3Client(credentials)
-	if err != nil {
-		return nil, err
-	}
-	return &v3clientWrapper{
-		client.V3,
-	}, nil
-}
-
-type v4client interface {
 	GetImageById(id *string) (*vmmv4.GetImageApiResponse, error)
 	ListImages(page_ *int,
 		limit_ *int,
@@ -49,28 +31,53 @@ type v4client interface {
 	)
 }
 
-type v4clientWrapper struct {
-	client *prismv4.Client
+// clientWrapper implements the client interface and wraps both v3 and v4 clients.
+type clientWrapper struct {
+	v3client *prismv3.Client
+	v4client *prismv4.Client
 }
 
-var _ = v4client(&v4clientWrapper{})
+var _ = client(&clientWrapper{})
 
-func (c *v4clientWrapper) GetImageById(id *string) (*vmmv4.GetImageApiResponse, error) {
-	resp, err := c.client.ImagesApiInstance.GetImageById(id)
+func newClient(
+	credentials prismgoclient.Credentials, //nolint:gocritic // hugeParam is fine
+) (client, error) {
+	v3c, err := prismv3.NewV3Client(credentials)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create v3 client: %w", err)
+	}
+
+	v4c, err := prismv4.NewV4Client(credentials)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create v4 client: %w", err)
+	}
+
+	return &clientWrapper{
+		v3client: v3c,
+		v4client: v4c,
+	}, nil
+}
+
+func (c *clientWrapper) GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error) {
+	return c.v3client.V3.GetCurrentLoggedInUser(ctx)
+}
+
+func (c *clientWrapper) GetImageById(id *string) (*vmmv4.GetImageApiResponse, error) {
+	resp, err := c.v4client.ImagesApiInstance.GetImageById(id)
 	if err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
 
-func (c *v4clientWrapper) ListImages(page_ *int,
+func (c *clientWrapper) ListImages(page_ *int,
 	limit_ *int,
 	filter_ *string,
 	orderby_ *string,
 	select_ *string,
 	args ...map[string]interface{},
 ) (*vmmv4.ListImagesApiResponse, error) {
-	resp, err := c.client.ImagesApiInstance.ListImages(
+	resp, err := c.v4client.ImagesApiInstance.ListImages(
 		page_,
 		limit_,
 		filter_,
@@ -82,16 +89,4 @@ func (c *v4clientWrapper) ListImages(page_ *int,
 		return nil, err
 	}
 	return resp, nil
-}
-
-func newV4Client(
-	credentials prismgoclient.Credentials, //nolint:gocritic // hugeParam is fine
-) (v4client, error) {
-	client, err := prismv4.NewV4Client(credentials)
-	if err != nil {
-		return nil, err
-	}
-	return &v4clientWrapper{
-		client: client,
-	}, nil
 }
