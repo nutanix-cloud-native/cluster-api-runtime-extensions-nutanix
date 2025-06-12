@@ -76,11 +76,6 @@ func vmImageCheck(
 		}
 
 		if machineDetails.Image != nil {
-			imagesCh := make(chan []vmmv4.Image)
-			defer close(imagesCh)
-			errCh := make(chan error)
-			defer close(errCh)
-
 			images, err := getVMImages(n.nclient, machineDetails.Image)
 			if err != nil {
 				result.Allowed = false
