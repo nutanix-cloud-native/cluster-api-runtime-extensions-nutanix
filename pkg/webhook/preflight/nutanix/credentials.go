@@ -154,39 +154,24 @@ func initCredentialsCheck(
 		Insecure: prismCentralEndpointSpec.Insecure,
 	}
 
-	// Initialize the clients.
-	v4client, err := n.v4clientFactory(credentials)
+	// Initialize the Nutanix client.
+	nclient, err := n.nclientFactory(credentials)
 	if err != nil {
 		result.Allowed = false
 		result.Error = true
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to initialize Nutanix v4 client: %s", err),
+				Message: fmt.Sprintf("Failed to initialize Nutanix client: %s", err),
 				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials",
 			},
 		)
-	}
-
-	v3client, err := n.v3clientFactory(credentials)
-	if err != nil {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
-			preflight.Cause{
-				Message: fmt.Sprintf("failed to initialize Nutanix v3 client: %s", err),
-				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials",
-			},
-		)
-	}
-
-	if v3client == nil || v4client == nil {
 		return func(ctx context.Context) preflight.CheckResult {
 			return result
 		}
 	}
 
 	// Validate the credentials using an API call.
-	_, err = v3client.GetCurrentLoggedInUser(ctx)
+	_, err = nclient.GetCurrentLoggedInUser(ctx)
 	if err != nil {
 		result.Allowed = false
 		result.Error = true
@@ -203,8 +188,7 @@ func initCredentialsCheck(
 	}
 
 	// We initialized both clients, and verified the credentials using the v3 client.
-	n.v3client = v3client
-	n.v4client = v4client
+	n.nclient = nclient
 
 	return func(ctx context.Context) preflight.CheckResult {
 		return result

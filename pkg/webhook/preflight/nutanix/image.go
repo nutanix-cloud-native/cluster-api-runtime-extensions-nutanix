@@ -19,7 +19,7 @@ func initVMImageChecks(
 ) []preflight.Check {
 	checks := []preflight.Check{}
 
-	if n.v4client == nil {
+	if n.nclient == nil {
 		return checks
 	}
 
@@ -81,7 +81,7 @@ func vmImageCheck(
 			errCh := make(chan error)
 			defer close(errCh)
 
-			images, err := getVMImages(n.v4client, machineDetails.Image)
+			images, err := getVMImages(n.nclient, machineDetails.Image)
 			if err != nil {
 				result.Allowed = false
 				result.Error = true
@@ -112,7 +112,7 @@ func vmImageCheck(
 }
 
 func getVMImages(
-	client v4client,
+	client client,
 	id *capxv1.NutanixResourceIdentifier,
 ) ([]vmmv4.Image, error) {
 	switch {
