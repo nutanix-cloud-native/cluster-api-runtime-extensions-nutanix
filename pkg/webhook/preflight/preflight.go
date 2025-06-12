@@ -95,12 +95,16 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	if optout.New(cluster).ForAll() {
+	optoutEvaluator := optout.New(cluster)
+
+	if optoutEvaluator.ForAll() {
 		// If the cluster has opted out of all checks, return allowed.
-		return admission.Allowed("Cluster has opted out of all preflight checks")
+		return admission.Allowed("").WithWarnings(
+			"Cluster has opted out of all preflight checks",
+		)
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, h.checkers)
+	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, optoutEvaluator, h.checkers)
 
 	// Summarize the results.
 	resp := admission.Response{
@@ -152,6 +156,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 func run(ctx context.Context,
 	client ctrlclient.Client,
 	cluster *clusterv1.Cluster,
+	optoutEvaluator *optout.Evaluator,
 	checkers []Checker,
 ) [][]namedResult {
 	resultsOrderedByCheckerAndCheck := make([][]namedResult, len(checkers))
@@ -159,7 +164,14 @@ func run(ctx context.Context,
 	checkersWG := sync.WaitGroup{}
 	for i, checker := range checkers {
 		checkersWG.Add(1)
-		go func(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster, checker Checker, i int) {
+		go func(
+			ctx context.Context,
+			client ctrlclient.Client,
+			cluster *clusterv1.Cluster,
+			optoutEvaluator *optout.Evaluator,
+			checker Checker,
+			i int,
+		) {
 			defer checkersWG.Done()
 
 			checks := checker.Init(ctx, client, cluster)
@@ -167,8 +179,27 @@ func run(ctx context.Context,
 
 			checksWG := sync.WaitGroup{}
 			for j, check := range checks {
+				if optoutEvaluator.For(check.Name()) {
+					// If the cluster has opted out of this check, skip it.
+					resultsOrderedByCheck[j] = namedResult{
+						Name: check.Name(),
+						CheckResult: CheckResult{
+							Allowed: true,
+							Error:   false,
+							Causes:  nil,
+							Warnings: []string{
+								fmt.Sprintf("Cluster has opted out of preflight check %q", check.Name()),
+							},
+						},
+					}
+					continue
+				}
 				checksWG.Add(1)
-				go func(ctx context.Context, check Check, j int) {
+				go func(
+					ctx context.Context,
+					check Check,
+					j int,
+				) {
 					defer checksWG.Done()
 					defer func() {
 						if r := recover(); r != nil {
@@ -207,6 +238,7 @@ func run(ctx context.Context,
 			ctx,
 			client,
 			cluster,
+			optoutEvaluator,
 			checker,
 			i,
 		)

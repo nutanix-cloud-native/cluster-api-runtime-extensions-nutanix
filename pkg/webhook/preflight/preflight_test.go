@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -37,6 +38,7 @@ func (m *mockChecker) Init(_ context.Context, _ ctrlclient.Client, _ *clusterv1.
 type mockCheck struct {
 	name   string
 	result CheckResult
+	run    bool
 }
 
 func (m *mockCheck) Name() string {
@@ -44,6 +46,7 @@ func (m *mockCheck) Name() string {
 }
 
 func (m *mockCheck) Run(_ context.Context) CheckResult {
+	m.run = true
 	return m.result
 }
 
@@ -58,6 +61,20 @@ func (m *mockDecoder) Decode(_ admission.Request, _ runtime.Object) error {
 
 func (m *mockDecoder) DecodeRaw(_ runtime.RawExtension, _ runtime.Object) error {
 	return m.err
+}
+
+func topologyCluster(optoutCheckNames ...string) *clusterv1.Cluster {
+	return &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-cluster",
+			Annotations: map[string]string{
+				optout.AnnotationKey: strings.Join(optoutCheckNames, ","),
+			},
+		},
+		Spec: clusterv1.ClusterSpec{
+			Topology: &clusterv1.Topology{},
+		},
+	}
 }
 
 func TestHandle(t *testing.T) {
@@ -77,14 +94,7 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "skip delete operations",
 			operation: admissionv1.Delete,
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
-				},
-			},
+			cluster:   topologyCluster(),
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: true,
@@ -96,9 +106,6 @@ func TestHandle(t *testing.T) {
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
 				},
 				Spec: clusterv1.ClusterSpec{},
 			},
@@ -113,14 +120,7 @@ func TestHandle(t *testing.T) {
 			decoder: &mockDecoder{
 				err: fmt.Errorf("decode error"),
 			},
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
-				},
-			},
+			cluster: topologyCluster(),
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: false,
@@ -132,18 +132,8 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "if no checks, then allowed",
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
-				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-				},
-			},
+			name:    "if no checks, then allowed",
+			cluster: topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{},
@@ -156,21 +146,8 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "if cluster opts out of all checks, then allowed",
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
-					Annotations: map[string]string{
-						optout.AnnotationKey: optout.OptOutAllChecksAnnotationValue,
-					},
-				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-				},
-			},
+			name:    "if cluster opts out of all checks, then allowed, with a warning",
+			cluster: topologyCluster(optout.OptOutAllChecksAnnotationValue),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{},
@@ -179,22 +156,43 @@ func TestHandle(t *testing.T) {
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: true,
+					Warnings: []string{
+						"Cluster has opted out of all preflight checks",
+					},
 				},
 			},
 		},
 		{
-			name: "if all checks pass, then allowed",
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
+			name:    "if cluster opts out of a check, then that check is not run",
+			cluster: topologyCluster("OptOutCheck"),
+			checkers: []Checker{
+				&mockChecker{
+					checks: []Check{
+						&mockCheck{
+							name:   "OptOutCheck",
+							result: CheckResult{},
+						},
+						&mockCheck{
+							name: "OtherCheck",
+							result: CheckResult{
+								Allowed: true,
+							},
+						},
 					},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
+			},
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: true,
+					Warnings: []string{
+						"Cluster has opted out of preflight check \"OptOutCheck\"",
+					},
 				},
 			},
+		},
+		{
+			name:    "if all checks pass, then allowed",
+			cluster: topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -220,18 +218,8 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "if any check fails, then not allowed",
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
-				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-				},
-			},
+			name:    "if any check fails, then not allowed",
+			cluster: topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -271,18 +259,8 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "return warnings from checks",
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
-				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-				},
-			},
+			name:    "return warnings from checks",
+			cluster: topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -309,18 +287,8 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "internal error takes precedence in response",
-			cluster: &clusterv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "test-provider",
-					},
-				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-				},
-			},
+			name:    "internal error takes precedence in response",
+			cluster: topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -479,17 +447,7 @@ func TestHandleCancelledContext(t *testing.T) {
 	require.NoError(t, err)
 	decoder := admission.NewDecoder(scheme)
 
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-cluster",
-			Labels: map[string]string{
-				clusterv1.ProviderNameLabel: "test-provider",
-			},
-		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{},
-		},
-	}
+	cluster := topologyCluster()
 
 	// Create cancellable checks
 	check1 := &cancellableCheck{
@@ -575,12 +533,13 @@ func TestHandleCancelledContext(t *testing.T) {
 
 func TestRun_NoCheckers(t *testing.T) {
 	ctx := context.Background()
-	results := run(ctx, nil, nil, nil)
+	results := run(ctx, nil, nil, nil, nil)
 	assert.Empty(t, results, "expected no results when no checkers are provided")
 }
 
 func TestRun_SingleCheckerSingleCheck(t *testing.T) {
 	ctx := context.Background()
+	cluster := topologyCluster()
 	checker := &mockChecker{
 		checks: []Check{
 			&mockCheck{
@@ -591,7 +550,7 @@ func TestRun_SingleCheckerSingleCheck(t *testing.T) {
 			},
 		},
 	}
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
 	if len(resultsOrderedByCheckerAndCheck) != 1 {
 		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
@@ -603,6 +562,7 @@ func TestRun_SingleCheckerSingleCheck(t *testing.T) {
 
 func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 	ctx := context.Background()
+	cluster := topologyCluster()
 	checker1 := &mockChecker{
 		checks: []Check{
 			&mockCheck{
@@ -630,7 +590,7 @@ func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 		},
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker1, checker2})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker1, checker2})
 	if len(resultsOrderedByCheckerAndCheck) != 2 {
 		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
@@ -673,6 +633,8 @@ func (c *delayedCheck) Run(ctx context.Context) CheckResult {
 
 func TestRun_ChecksRunInParallel(t *testing.T) {
 	ctx := context.Background()
+	cluster := topologyCluster()
+
 	var mu sync.Mutex
 	order := []string{}
 
@@ -692,7 +654,7 @@ func TestRun_ChecksRunInParallel(t *testing.T) {
 			},
 		},
 	}
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
 
 	results := resultsOrderedByCheckerAndCheck[0]
 	if len(results) != 2 {
@@ -705,6 +667,8 @@ func TestRun_ChecksRunInParallel(t *testing.T) {
 
 func TestRun_CheckersRunInParallel(t *testing.T) {
 	ctx := context.Background()
+	cluster := topologyCluster()
+
 	var mu sync.Mutex
 	order := []string{}
 
@@ -729,7 +693,7 @@ func TestRun_CheckersRunInParallel(t *testing.T) {
 		},
 	}
 
-	results := run(ctx, nil, nil, []Checker{checker1, checker2})
+	results := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker1, checker2})
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
@@ -759,6 +723,7 @@ func (c *contextAwareCheck) Run(ctx context.Context) CheckResult {
 
 func TestRun_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
+	cluster := topologyCluster()
 
 	// Use channels to synchronize test execution
 	started := make(chan struct{})
@@ -785,7 +750,7 @@ func TestRun_ContextCancellation(t *testing.T) {
 		cancel()
 	}()
 
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
 
 	select {
 	case <-completed:
@@ -805,6 +770,7 @@ func TestRun_ContextCancellation(t *testing.T) {
 
 func TestRun_OrderOfResults(t *testing.T) {
 	ctx := context.Background()
+	cluster := topologyCluster()
 
 	checker1 := &mockChecker{
 		checks: []Check{
@@ -832,7 +798,7 @@ func TestRun_OrderOfResults(t *testing.T) {
 		},
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker1, checker2})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker1, checker2})
 	if len(resultsOrderedByCheckerAndCheck) != 2 {
 		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
@@ -851,6 +817,7 @@ func TestRun_OrderOfResults(t *testing.T) {
 
 func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 	ctx := context.Background()
+	cluster := topologyCluster()
 
 	checkerCount := 10
 	checksPerChecker := 50
@@ -876,7 +843,7 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 	}
 
 	start := time.Now()
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, checkers)
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), checkers)
 	duration := time.Since(start)
 
 	resultTotal := 0
@@ -891,6 +858,7 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 
 func TestRun_ErrorHandlingInChecks(t *testing.T) {
 	ctx := context.Background()
+	cluster := topologyCluster()
 
 	// Create a checker with a check that returns an error
 	errorCheck := &mockCheck{
@@ -910,7 +878,7 @@ func TestRun_ErrorHandlingInChecks(t *testing.T) {
 	}
 
 	// Run the checks
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
 	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
 	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 1, "expected 1 result from the checker")
 
@@ -947,15 +915,7 @@ func TestRun_PanicHandlingInChecks(t *testing.T) {
 
 	ctrl.SetLogger(klog.Background())
 
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-cluster",
-			Namespace: "test-namespace",
-		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{},
-		},
-	}
+	cluster := topologyCluster()
 
 	// Create a checker with a panicking check
 	normalCheck := &mockCheck{
@@ -973,7 +933,7 @@ func TestRun_PanicHandlingInChecks(t *testing.T) {
 	}
 
 	// Run the checks
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, []Checker{checker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{checker})
 	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
 	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 2, "expected 2 results from the checker")
 
@@ -1001,6 +961,7 @@ func TestRun_PanicHandlingInChecks(t *testing.T) {
 
 func TestRun_ZeroChecksFromChecker(t *testing.T) {
 	ctx := context.Background()
+	cluster := topologyCluster()
 
 	// Checker that returns no checks
 	emptyChecker := &mockChecker{
@@ -1019,7 +980,7 @@ func TestRun_ZeroChecksFromChecker(t *testing.T) {
 		},
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{emptyChecker, normalChecker})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, optout.New(cluster), []Checker{emptyChecker, normalChecker})
 
 	if len(resultsOrderedByCheckerAndCheck) != 2 {
 		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
