@@ -163,5 +163,3 @@ func (c *clientWrapper) ListStorageContainers(
 	}
 	return resp, nil
 }
-
-

@@ -15,41 +15,119 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func initStorageContainerChecks(n *nutanixChecker) []preflight.Check {
+const (
+	csiParameterKeyStorageContainer = "storageContainer"
+)
+
+type storageContainerCheck struct {
+	nodeSpec *carenv1.NutanixNodeSpec
+	field    string
+	csiSpec  *carenv1.CSIProvider
+	nclient  client
+}
+
+func (c *storageContainerCheck) Name() string {
+	return "NutanixStorageContainer"
+}
+
+func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{
+		Allowed: true,
+	}
+
+	if c.csiSpec == nil {
+		result.Allowed = false
+		result.Error = true
+		result.Causes = append(result.Causes, preflight.Cause{
+			Message: fmt.Sprintf(
+				"no storage container found for cluster %q",
+				*c.nodeSpec.MachineDetails.Cluster.Name,
+			),
+			Field: c.field,
+		})
+
+		return result
+	}
+
+	if c.csiSpec.StorageClassConfigs == nil {
+		result.Allowed = false
+		result.Causes = append(result.Causes, preflight.Cause{
+			Message: fmt.Sprintf(
+				"no storage class configs found for cluster %q",
+				*c.nodeSpec.MachineDetails.Cluster.Name,
+			),
+			Field: c.field,
+		})
+
+		return result
+	}
+
+	for _, storageClassConfig := range c.csiSpec.StorageClassConfigs {
+		if storageClassConfig.Parameters == nil {
+			continue
+		}
+
+		storageContainer, ok := storageClassConfig.Parameters[csiParameterKeyStorageContainer]
+		if !ok {
+			continue
+		}
+
+		// TODO: check if cluster name is set, if not use uuid.
+		// If neither is set, use the cluster name from the NodeSpec failure domain.
+		if _, err := getStorageContainer(c.nclient, c.nodeSpec, storageContainer); err != nil {
+			result.Allowed = false
+			result.Error = true
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf(
+					"failed to check if storage container named %q exists: %s",
+					storageContainer,
+					err,
+				),
+				Field: c.field,
+			})
+
+			return result
+		}
+	}
+
+	return result
+}
+
+func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	checks := []preflight.Check{}
 
 	// If there is no CSI configuration, there is no need to check for storage containers.
-	if n.nutanixClusterConfigSpec == nil ||
-		n.nutanixClusterConfigSpec.Addons == nil ||
-		n.nutanixClusterConfigSpec.Addons.CSI == nil {
+	if cd.nutanixClusterConfigSpec == nil ||
+		cd.nutanixClusterConfigSpec.Addons == nil ||
+		cd.nutanixClusterConfigSpec.Addons.CSI == nil {
 		return checks
 	}
 
-	if n.nutanixClusterConfigSpec != nil && n.nutanixClusterConfigSpec.ControlPlane != nil &&
-		n.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
+	if cd.nutanixClusterConfigSpec != nil && cd.nutanixClusterConfigSpec.ControlPlane != nil &&
+		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,
-			n.storageContainerCheckFunc(
-				n,
-				n.nutanixClusterConfigSpec.ControlPlane.Nutanix,
-				"cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix",
-				&n.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-			),
+			&storageContainerCheck{
+				nodeSpec: cd.nutanixClusterConfigSpec.ControlPlane.Nutanix,
+				field:    "cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix",
+				csiSpec:  &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+				nclient:  cd.nclient,
+			},
 		)
 	}
 
-	for mdName, nutanixWorkerNodeConfigSpec := range n.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
+	for mdName, nutanixWorkerNodeConfigSpec := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
 			checks = append(checks,
-				n.storageContainerCheckFunc(
-					n,
-					nutanixWorkerNodeConfigSpec.Nutanix,
-					fmt.Sprintf(
+				&storageContainerCheck{
+					nodeSpec: nutanixWorkerNodeConfigSpec.Nutanix,
+					field: fmt.Sprintf(
 						"cluster.spec.topology.workers.machineDeployments[.name=%s]"+
 							".variables[.name=workerConfig].value.nutanix",
 						mdName,
 					),
-					&n.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-				),
+					csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+					nclient: cd.nclient,
+				},
 			)
 		}
 	}
@@ -57,85 +135,8 @@ func initStorageContainerChecks(n *nutanixChecker) []preflight.Check {
 	return checks
 }
 
-// storageContainerCheck checks if the storage container specified in the CSIProvider's StorageClassConfigs exists.
-// It admits the NodeSpec instead of the MachineDetails because the failure domains will be specified in the NodeSpec
-// and the MachineDetails.Cluster will be nil in that case.
-func storageContainerCheck(
-	n *nutanixChecker,
-	nodeSpec *carenv1.NutanixNodeSpec,
-	field string,
-	csiSpec *carenv1.CSIProvider,
-) preflight.Check {
-	const (
-		csiParameterKeyStorageContainer = "storageContainer"
-	)
-
-	return func(ctx context.Context) preflight.CheckResult {
-		result := preflight.CheckResult{
-			Name:    "NutanixStorageContainer",
-			Allowed: true,
-		}
-		if csiSpec == nil {
-			result.Allowed = false
-			result.Error = true
-			result.Causes = append(result.Causes, preflight.Cause{
-				Message: fmt.Sprintf(
-					"no storage container found for cluster %q",
-					*nodeSpec.MachineDetails.Cluster.Name,
-				),
-				Field: field,
-			})
-
-			return result
-		}
-
-		if csiSpec.StorageClassConfigs == nil {
-			result.Allowed = false
-			result.Causes = append(result.Causes, preflight.Cause{
-				Message: fmt.Sprintf(
-					"no storage class configs found for cluster %q",
-					*nodeSpec.MachineDetails.Cluster.Name,
-				),
-				Field: field,
-			})
-
-			return result
-		}
-
-		for _, storageClassConfig := range csiSpec.StorageClassConfigs {
-			if storageClassConfig.Parameters == nil {
-				continue
-			}
-
-			storageContainer, ok := storageClassConfig.Parameters[csiParameterKeyStorageContainer]
-			if !ok {
-				continue
-			}
-
-			// TODO: check if cluster name is set, if not use uuid.
-			// If neither is set, use the cluster name from the NodeSpec failure domain.
-			if _, err := getStorageContainer(n.v4client, nodeSpec, storageContainer); err != nil {
-				result.Allowed = false
-				result.Error = true
-				result.Causes = append(result.Causes, preflight.Cause{
-					Message: fmt.Sprintf(
-						"failed to check if storage container named %q exists: %s",
-						storageContainer,
-						err,
-					),
-					Field: field,
-				})
-
-				return result
-			}
-		}
-
-		return result
-	}
-}
-
 func getStorageContainer(
-	client v4client,
+	client client,
 	nodeSpec *carenv1.NutanixNodeSpec,
 	storageContainerName string,
 ) (*clustermgmtv4.StorageContainer, error) {
@@ -175,7 +176,7 @@ func getStorageContainer(
 }
 
 func getCluster(
-	client v4client,
+	client client,
 	clusterIdentifier *v1beta1.NutanixResourceIdentifier,
 ) (*clustermgmtv4.Cluster, error) {
 	switch {
