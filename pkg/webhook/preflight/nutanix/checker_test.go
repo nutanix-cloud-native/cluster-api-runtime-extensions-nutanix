@@ -151,15 +151,18 @@ func TestNutanixChecker_Init(t *testing.T) {
 				return checks
 			}
 
-			checker.initStorageContainerChecksFunc = func(n *nutanixChecker) []preflight.Check {
+			checker.storageContainerChecksFactory = func(cd *checkDependencies) []preflight.Check {
 				checks := []preflight.Check{}
 				for i := 0; i < tt.storageContainerCheckCount; i++ {
 					storageContainerCheckCount++
-					checks = append(checks, func(ctx context.Context) preflight.CheckResult {
-						return preflight.CheckResult{
-							Name: fmt.Sprintf("StorageContainerCheck-%d", i),
-						}
-					})
+					checks = append(checks,
+						&mockCheck{
+							name: fmt.Sprintf("NutanixStorageContainer-%d", i),
+							result: preflight.CheckResult{
+								Allowed: true,
+							},
+						},
+					)
 				}
 				return checks
 			}

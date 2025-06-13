@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr/testr"
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -218,65 +217,29 @@ func TestInitStorageContainerChecks(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := testr.New(t)
-
-			// Create checker
-			checker := &nutanixChecker{
-				log:                      logger,
-				nutanixClusterConfigSpec: tc.nutanixClusterConfigSpec,
+			cd := &checkDependencies{
+				nutanixClusterConfigSpec:                           tc.nutanixClusterConfigSpec,
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tc.workerNodeConfigSpecByMDName,
-				initStorageContainerChecksFunc:                     initStorageContainerChecks,
-			}
-
-			// Set up a tracing function to replace storageContainerCheck
-			var capturedFields []string
-			checker.storageContainerCheckFunc = func(
-				n *nutanixChecker,
-				nodeSpec *carenv1.NutanixNodeSpec,
-				field string,
-				csiSpec *carenv1.CSIProvider,
-			) preflight.Check {
-				capturedFields = append(capturedFields, field)
-				return func(ctx context.Context) preflight.CheckResult {
-					return preflight.CheckResult{Name: "StorageContainerCheck:" + field}
-				}
 			}
 
 			// Call the function under test
-			checks := checker.initStorageContainerChecksFunc(checker)
+			checks := newStorageContainerChecks(cd)
 
 			// Verify number of checks
 			assert.Len(t, checks, tc.expectedChecksCount, "Wrong number of checks created")
-
-			// Verify number of captured fields matches number of checks
-			assert.Len(t, capturedFields, tc.expectedChecksCount, "Wrong number of fields captured")
-
-			// Additional verification that each field is correctly formatted
-			for _, field := range capturedFields {
-				if tc.nutanixClusterConfigSpec != nil && tc.nutanixClusterConfigSpec.ControlPlane != nil &&
-					tc.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
-					expectedCPField := "cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix"
-					if field == expectedCPField {
-						continue
-					}
-				}
-				// If not CP field, should be worker field with MD name
-				assert.Contains(t, field, "cluster.spec.topology.workers.machineDeployments[.name=")
-				assert.Contains(t, field, "].variables[.name=workerConfig].value.nutanix")
-			}
 		})
 	}
 }
 
 func TestStorageContainerCheck(t *testing.T) {
 	clusterName := "test-cluster"
-	fieldPath := "test.field.path"
+	field := "test.field.path"
 
 	testCases := []struct {
 		name                 string
 		nodeSpec             *carenv1.NutanixNodeSpec
 		csiSpec              *carenv1.CSIProvider
-		mockv4client         *mockv4client
+		nclient              client
 		expectedResult       preflight.CheckResult
 		expectedAllowed      bool
 		expectedError        bool
@@ -293,7 +256,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				},
 			},
 			csiSpec:              nil,
-			mockv4client:         nil,
+			nclient:              nil,
 			expectedAllowed:      false,
 			expectedError:        true,
 			expectedCauseMessage: fmt.Sprintf("no storage container found for cluster %q", clusterName),
@@ -309,7 +272,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				},
 			},
 			csiSpec:              &carenv1.CSIProvider{StorageClassConfigs: nil},
-			mockv4client:         nil,
+			nclient:              nil,
 			expectedAllowed:      false,
 			expectedError:        false,
 			expectedCauseMessage: fmt.Sprintf("no storage class configs found for cluster %q", clusterName),
@@ -331,7 +294,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			mockv4client:    nil,
+			nclient:         nil,
 			expectedAllowed: true,
 			expectedError:   false,
 		},
@@ -354,7 +317,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			mockv4client:    nil,
+			nclient:         nil,
 			expectedAllowed: true,
 			expectedError:   false,
 		},
@@ -377,7 +340,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			mockv4client: &mockv4client{
+			nclient: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, nil
 				},
@@ -448,7 +411,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			mockv4client: &mockv4client{
+			nclient: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, nil
 				},
@@ -526,7 +489,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			mockv4client: &mockv4client{
+			nclient: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, nil
 				},
@@ -599,7 +562,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			mockv4client: &mockv4client{
+			nclient: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, fmt.Errorf("API error")
 				},
@@ -642,7 +605,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			mockv4client: &mockv4client{
+			nclient: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, nil
 				},
@@ -708,7 +671,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			mockv4client: &mockv4client{
+			nclient: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, nil
 				},
@@ -787,7 +750,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			mockv4client: &mockv4client{
+			nclient: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, nil
 				},
@@ -857,20 +820,17 @@ func TestStorageContainerCheck(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := testr.New(t)
-
-			// Create checker with mock v4 client
-			checker := &nutanixChecker{
-				log:      logger,
-				v4client: tc.mockv4client,
-			}
-
 			// Create the check function
-			checkFunc := storageContainerCheck(checker, tc.nodeSpec, fieldPath, tc.csiSpec)
+			check := storageContainerCheck{
+				nodeSpec: tc.nodeSpec,
+				csiSpec:  tc.csiSpec,
+				nclient:  tc.nclient,
+				field:    field,
+			}
 
 			// Run the check
 			ctx := context.Background()
-			result := checkFunc(ctx)
+			result := check.Run(ctx)
 
 			// Verify the result
 			assert.Equal(t, tc.expectedAllowed, result.Allowed)
@@ -879,7 +839,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			if tc.expectedCauseMessage != "" {
 				require.NotEmpty(t, result.Causes)
 				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
-				assert.Equal(t, fieldPath, result.Causes[0].Field)
+				assert.Equal(t, field, result.Causes[0].Field)
 			} else {
 				assert.Empty(t, result.Causes)
 			}
@@ -891,7 +851,7 @@ func TestGetCluster(t *testing.T) {
 	testCases := []struct {
 		name              string
 		clusterIdentifier *capxv1.NutanixResourceIdentifier
-		mockv4client      *mockv4client
+		client            client
 		expectError       bool
 		errorContains     string
 		expectedClusterID string
@@ -902,7 +862,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierUUID,
 				UUID: ptr.To("test-uuid-123"),
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					assert.Equal(t, "test-uuid-123", *id)
 					resp := &clustermgmtv4.GetClusterApiResponse{
@@ -928,7 +888,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierUUID,
 				UUID: ptr.To("test-uuid-error"),
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, fmt.Errorf("API error")
 				},
@@ -942,7 +902,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierUUID,
 				UUID: ptr.To("test-uuid-invalid"),
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					// Return an invalid data type
 					resp := &clustermgmtv4.GetClusterApiResponse{
@@ -960,7 +920,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster"),
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				listClustersFunc: func(page,
 					limit *int,
 					filter,
@@ -996,7 +956,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-error"),
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				listClustersFunc: func(page,
 					limit *int,
 					filter,
@@ -1020,7 +980,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-nil"),
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				listClustersFunc: func(page,
 					limit *int,
 					filter,
@@ -1044,7 +1004,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-nil-data"),
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				listClustersFunc: func(page,
 					limit *int,
 					filter,
@@ -1070,7 +1030,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-not-found"),
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				listClustersFunc: func(page,
 					limit *int,
 					filter,
@@ -1099,7 +1059,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-duplicate"),
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				listClustersFunc: func(page,
 					limit *int,
 					filter,
@@ -1136,7 +1096,7 @@ func TestGetCluster(t *testing.T) {
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: "invalid",
 			},
-			mockv4client:  &mockv4client{},
+			client:        &mocknclient{},
 			expectError:   true,
 			errorContains: "cluster identifier is missing both name and uuid",
 		},
@@ -1146,7 +1106,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierUUID,
 				UUID: nil,
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, fmt.Errorf("should not be called")
 				},
@@ -1160,7 +1120,7 @@ func TestGetCluster(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: nil,
 			},
-			mockv4client: &mockv4client{
+			client: &mocknclient{
 				listClustersFunc: func(page,
 					limit *int,
 					filter,
@@ -1182,7 +1142,7 @@ func TestGetCluster(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cluster, err := getCluster(tc.mockv4client, tc.clusterIdentifier)
+			cluster, err := getCluster(tc.client, tc.clusterIdentifier)
 
 			if tc.expectError {
 				require.Error(t, err)
