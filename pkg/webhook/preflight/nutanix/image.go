@@ -14,6 +14,60 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
+type imageCheck struct {
+	machineDetails *carenv1.NutanixMachineDetails
+	field          string
+	n              *nutanixChecker
+}
+
+func (c *imageCheck) Name() string {
+	return "NutanixVMImage"
+}
+
+func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{
+		Allowed: false,
+	}
+
+	if c.machineDetails.ImageLookup != nil {
+		result.Allowed = true
+		result.Warnings = append(
+			result.Warnings,
+			fmt.Sprintf("%s uses imageLookup, which is not yet supported by checks", c.field),
+		)
+		return result
+	}
+
+	if c.machineDetails.Image != nil {
+		images, err := getVMImages(c.n.nclient, c.machineDetails.Image)
+		if err != nil {
+			result.Allowed = false
+			result.Error = true
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf("failed to get VM Image: %s", err),
+				Field:   c.field,
+			})
+			return result
+		}
+
+		if len(images) != 1 {
+			result.Allowed = false
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf("expected to find 1 VM Image, found %d", len(images)),
+				Field:   c.field,
+			})
+			return result
+		}
+
+		// Found exactly one image.
+		result.Allowed = true
+		return result
+	}
+
+	// Neither ImageLookup nor Image is specified.
+	return result
+}
+
 func initVMImageChecks(
 	n *nutanixChecker,
 ) []preflight.Check {
@@ -26,84 +80,29 @@ func initVMImageChecks(
 	if n.nutanixClusterConfigSpec != nil && n.nutanixClusterConfigSpec.ControlPlane != nil &&
 		n.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,
-			n.vmImageCheckFunc(
-				n,
-				&n.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				"cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix.machineDetails",
-			),
+			&imageCheck{
+				machineDetails: &n.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
+				field: "cluster.spec.topology.variables[.name=clusterConfig]" +
+					".value.nutanix.controlPlane.machineDetails",
+				n: n,
+			},
 		)
 	}
 
 	for mdName, nutanixWorkerNodeConfigSpec := range n.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
 			checks = append(checks,
-				n.vmImageCheckFunc(
-					n,
-					&nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
-					fmt.Sprintf(
-						"cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-							".variables[.name=workerConfig].value.nutanix.machineDetails",
-						mdName,
-					),
-				),
+				&imageCheck{
+					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
+					field: fmt.Sprintf("cluster.spec.topology.workers.machineDeployments[.name=%s]"+
+						".variables[.name=workerConfig].value.nutanix.machineDetails", mdName),
+					n: n,
+				},
 			)
 		}
 	}
 
 	return checks
-}
-
-func vmImageCheck(
-	n *nutanixChecker,
-	machineDetails *carenv1.NutanixMachineDetails,
-	field string,
-) preflight.Check {
-	n.log.V(5).Info("Initializing Nutanix VM image check", "field", field)
-
-	return func(ctx context.Context) preflight.CheckResult {
-		result := preflight.CheckResult{
-			Name:    "NutanixVMImage",
-			Allowed: false,
-		}
-
-		if machineDetails.ImageLookup != nil {
-			result.Allowed = true
-			result.Warnings = append(
-				result.Warnings,
-				fmt.Sprintf("%s uses imageLookup, which is not yet supported by checks", field),
-			)
-			return result
-		}
-
-		if machineDetails.Image != nil {
-			images, err := getVMImages(n.nclient, machineDetails.Image)
-			if err != nil {
-				result.Allowed = false
-				result.Error = true
-				result.Causes = append(result.Causes, preflight.Cause{
-					Message: fmt.Sprintf("failed to get VM Image: %s", err),
-					Field:   field,
-				})
-				return result
-			}
-
-			if len(images) != 1 {
-				result.Allowed = false
-				result.Causes = append(result.Causes, preflight.Cause{
-					Message: fmt.Sprintf("expected to find 1 VM Image, found %d", len(images)),
-					Field:   field,
-				})
-				return result
-			}
-
-			// Found exactly one image.
-			result.Allowed = true
-			return result
-		}
-
-		// Neither ImageLookup nor Image is specified.
-		return result
-	}
 }
 
 func getVMImages(

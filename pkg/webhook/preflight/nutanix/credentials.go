@@ -18,38 +18,47 @@ import (
 
 const credentialsSecretDataKey = "credentials"
 
+type credentialsCheck struct {
+	result preflight.CheckResult
+}
+
+func (c *credentialsCheck) Name() string {
+	return "NutanixCredentials"
+}
+
+func (c *credentialsCheck) Run(_ context.Context) preflight.CheckResult {
+	return c.result
+}
+
 func initCredentialsCheck(
 	ctx context.Context,
 	n *nutanixChecker,
 ) preflight.Check {
 	n.log.V(5).Info("Initializing Nutanix credentials check")
 
-	result := preflight.CheckResult{
-		Name:    "NutanixCredentials",
-		Allowed: true,
+	credentialsCheck := &credentialsCheck{
+		result: preflight.CheckResult{
+			Allowed: true,
+		},
 	}
 
 	if n.nutanixClusterConfigSpec == nil && len(n.nutanixWorkerNodeConfigSpecByMachineDeploymentName) == 0 {
 		// If there is no Nutanix configuration at all, the credentials check is not needed.
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
+		return credentialsCheck
 	}
 
 	// There is some Nutanix configuration, so the credentials check is needed.
 	// However, the credentials configuration is missing, so we cannot perform the check.
 	if n.nutanixClusterConfigSpec == nil || n.nutanixClusterConfigSpec.Nutanix == nil {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.Error = true
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: "Nutanix cluster configuration is not defined in the cluster spec",
 				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix",
 			},
 		)
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
+		return credentialsCheck
 	}
 
 	// Get the credentials data in order to initialize the credentials and clients.
@@ -58,17 +67,15 @@ func initCredentialsCheck(
 	host, port, err := prismCentralEndpointSpec.ParseURL()
 	if err != nil {
 		// Should not happen if the cluster passed CEL validation rules.
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.Error = true
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("failed to parse Prism Central endpoint URL: %s", err),
 				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.url",
 			},
 		)
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
+		return credentialsCheck
 	}
 
 	credentialsSecret := &corev1.Secret{}
@@ -81,23 +88,21 @@ func initCredentialsCheck(
 		credentialsSecret,
 	)
 	if err != nil {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.Error = true
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("failed to get Prism Central credentials Secret: %s", err),
 				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials.secretRef",
 			},
 		)
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
+		return credentialsCheck
 	}
 
 	if len(credentialsSecret.Data) == 0 {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.Error = true
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
 					"credentials Secret '%s' is empty",
@@ -106,16 +111,14 @@ func initCredentialsCheck(
 				Field: "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials.secretRef",
 			},
 		)
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
+		return credentialsCheck
 	}
 
 	data, ok := credentialsSecret.Data[credentialsSecretDataKey]
 	if !ok {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.Error = true
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
 					"credentials Secret '%s' does not contain key '%s'",
@@ -125,24 +128,20 @@ func initCredentialsCheck(
 				Field: "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials.secretRef",
 			},
 		)
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
+		return credentialsCheck
 	}
 
 	usernamePassword, err := prismcredentials.ParseCredentials(data)
 	if err != nil {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.Error = true
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("failed to parse Prism Central credentials: %s", err),
 				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials",
 			},
 		)
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
+		return credentialsCheck
 	}
 
 	// Initialize the credentials.
@@ -157,40 +156,34 @@ func initCredentialsCheck(
 	// Initialize the Nutanix client.
 	nclient, err := n.nclientFactory(credentials)
 	if err != nil {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.Error = true
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to initialize Nutanix client: %s", err),
 				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials",
 			},
 		)
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
+		return credentialsCheck
 	}
 
 	// Validate the credentials using an API call.
 	_, err = nclient.GetCurrentLoggedInUser(ctx)
 	if err != nil {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.Error = true
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to validate credentials using the v3 API client. "+
 					"The URL and/or credentials may be incorrect. (Error: %q)", err),
 				Field: "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint",
 			},
 		)
-		return func(ctx context.Context) preflight.CheckResult {
-			return result
-		}
+		return credentialsCheck
 	}
 
 	// We initialized both clients, and verified the credentials using the v3 client.
 	n.nclient = nclient
 
-	return func(ctx context.Context) preflight.CheckResult {
-		return result
-	}
+	return credentialsCheck
 }

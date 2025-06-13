@@ -12,14 +12,27 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
+type configurationCheck struct {
+	result preflight.CheckResult
+}
+
+func (c *configurationCheck) Name() string {
+	return "NutanixConfiguration"
+}
+
+func (c *configurationCheck) Run(_ context.Context) preflight.CheckResult {
+	return c.result
+}
+
 func initNutanixConfiguration(
 	n *nutanixChecker,
 ) preflight.Check {
 	n.log.V(5).Info("Initializing Nutanix configuration check")
 
-	result := preflight.CheckResult{
-		Name:    "NutanixConfiguration",
-		Allowed: true,
+	configurationCheck := &configurationCheck{
+		result: preflight.CheckResult{
+			Allowed: true,
+		},
 	}
 
 	nutanixClusterConfigSpec := &carenv1.NutanixClusterConfigSpec{}
@@ -32,9 +45,9 @@ func initNutanixConfiguration(
 	)
 	if err != nil {
 		// Should not happen if the cluster passed CEL validation rules.
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
+		configurationCheck.result.Allowed = false
+		configurationCheck.result.Error = true
+		configurationCheck.result.Causes = append(configurationCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to unmarshal cluster variable %s: %s",
 					carenv1.ClusterConfigVariableName,
@@ -64,9 +77,9 @@ func initNutanixConfiguration(
 			)
 			if err != nil {
 				// Should not happen if the cluster passed CEL validation rules.
-				result.Allowed = false
-				result.Error = true
-				result.Causes = append(result.Causes,
+				configurationCheck.result.Allowed = false
+				configurationCheck.result.Error = true
+				configurationCheck.result.Causes = append(configurationCheck.result.Causes,
 					preflight.Cause{
 						Message: fmt.Sprintf("Failed to unmarshal topology machineDeployment variable %s: %s",
 							carenv1.WorkerConfigVariableName,
@@ -91,7 +104,5 @@ func initNutanixConfiguration(
 		n.nutanixWorkerNodeConfigSpecByMachineDeploymentName = nutanixWorkerNodeConfigSpecByMachineDeploymentName
 	}
 
-	return func(ctx context.Context) preflight.CheckResult {
-		return result
-	}
+	return configurationCheck
 }

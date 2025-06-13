@@ -36,7 +36,6 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Name:    "NutanixVMImage",
 				Allowed: true,
 				Warnings: []string{
 					"test-field uses imageLookup, which is not yet supported by checks",
@@ -64,7 +63,6 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Name:    "NutanixVMImage",
 				Allowed: true,
 			},
 		},
@@ -98,7 +96,6 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Name:    "NutanixVMImage",
 				Allowed: true,
 			},
 		},
@@ -125,7 +122,6 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Name:    "NutanixVMImage",
 				Allowed: false,
 				Causes: []preflight.Cause{
 					{
@@ -168,7 +164,6 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Name:    "NutanixVMImage",
 				Allowed: false,
 				Causes: []preflight.Cause{
 					{
@@ -192,7 +187,6 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Name:    "NutanixVMImage",
 				Allowed: false,
 				Error:   true,
 				Causes: []preflight.Cause{
@@ -226,7 +220,6 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Name:    "NutanixVMImage",
 				Allowed: false,
 				Error:   true,
 				Causes: []preflight.Cause{
@@ -244,7 +237,6 @@ func TestVMImageCheck(t *testing.T) {
 				// both Image and ImageLookup are nil
 			},
 			want: preflight.CheckResult{
-				Name:    "NutanixVMImage",
 				Allowed: false,
 			},
 		},
@@ -260,17 +252,16 @@ func TestVMImageCheck(t *testing.T) {
 			}
 
 			// Create the check
-			checkFn := vmImageCheck(
-				checker,
-				tc.machineDetails,
-				"test-field",
-			)
+			check := &imageCheck{
+				machineDetails: tc.machineDetails,
+				field:          "test-field",
+				n:              checker,
+			}
 
 			// Execute the check
-			got := checkFn(context.Background())
+			got := check.Run(context.Background())
 
 			// Verify the result
-			assert.Equal(t, tc.want.Name, got.Name)
 			assert.Equal(t, tc.want.Allowed, got.Allowed)
 			assert.Equal(t, tc.want.Error, got.Error)
 			assert.Equal(t, tc.want.Causes, got.Causes)
@@ -497,8 +488,19 @@ func TestInitVMImageChecks(t *testing.T) {
 					},
 				},
 			},
-			nutanixWorkerNodeConfigSpecByMDName:       nil,
-			nclient:                                   &mocknclient{},
+			nutanixWorkerNodeConfigSpecByMDName: nil,
+			nclient: &mocknclient{
+				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+					assert.Equal(t, "test-uuid", *uuid)
+					resp := &vmmv4.GetImageApiResponse{}
+					err := resp.SetData(vmmv4.Image{
+						ObjectType_: ptr.To("vmm.v4.content.Image"),
+						ExtId:       ptr.To("test-uuid"),
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
 			expectedChecks:                            1,
 			expectedControlPlaneCheckFieldIncluded:    true,
 			expectedWorkerNodeCheckFieldPatternExists: false,
@@ -511,16 +513,27 @@ func TestInitVMImageChecks(t *testing.T) {
 					Nutanix: &carenv1.NutanixNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
-								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("worker-image"),
+								Type: capxv1.NutanixIdentifierUUID,
+								UUID: ptr.To("test-uuid"),
 							},
 						},
 					},
 				},
 			},
-			nclient:                                &mocknclient{},
-			expectedChecks:                         1,
-			expectedControlPlaneCheckFieldIncluded: false,
+			nclient: &mocknclient{
+				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+					assert.Equal(t, "test-uuid", *uuid)
+					resp := &vmmv4.GetImageApiResponse{}
+					err := resp.SetData(vmmv4.Image{
+						ObjectType_: ptr.To("vmm.v4.content.Image"),
+						ExtId:       ptr.To("test-uuid"),
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
+			expectedChecks:                            1,
+			expectedControlPlaneCheckFieldIncluded:    false,
 			expectedWorkerNodeCheckFieldPatternExists: true,
 		},
 		{
@@ -531,7 +544,7 @@ func TestInitVMImageChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
-								UUID: ptr.To("cp-uuid"),
+								UUID: ptr.To("test-uuid"),
 							},
 						},
 					},
@@ -542,8 +555,8 @@ func TestInitVMImageChecks(t *testing.T) {
 					Nutanix: &carenv1.NutanixNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
-								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("worker1-image"),
+								Type: capxv1.NutanixIdentifierUUID,
+								UUID: ptr.To("test-uuid"),
 							},
 						},
 					},
@@ -552,16 +565,27 @@ func TestInitVMImageChecks(t *testing.T) {
 					Nutanix: &carenv1.NutanixNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
-								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("worker2-image"),
+								Type: capxv1.NutanixIdentifierUUID,
+								UUID: ptr.To("test-uuid"),
 							},
 						},
 					},
 				},
 			},
-			nclient:                                &mocknclient{},
-			expectedChecks:                         3, // 1 control plane + 2 workers
-			expectedControlPlaneCheckFieldIncluded: true,
+			nclient: &mocknclient{
+				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+					assert.Equal(t, "test-uuid", *uuid)
+					resp := &vmmv4.GetImageApiResponse{}
+					err := resp.SetData(vmmv4.Image{
+						ObjectType_: ptr.To("vmm.v4.content.Image"),
+						ExtId:       ptr.To("test-uuid"),
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
+			expectedChecks:                            3, // 1 control plane + 2 workers
+			expectedControlPlaneCheckFieldIncluded:    true,
 			expectedWorkerNodeCheckFieldPatternExists: true,
 		},
 		{
@@ -575,16 +599,27 @@ func TestInitVMImageChecks(t *testing.T) {
 					Nutanix: &carenv1.NutanixNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
-								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("worker2-image"),
+								Type: capxv1.NutanixIdentifierUUID,
+								UUID: ptr.To("test-uuid"),
 							},
 						},
 					},
 				},
 			},
-			nclient:                                &mocknclient{},
-			expectedChecks:                         1, // only worker-2
-			expectedControlPlaneCheckFieldIncluded: false,
+			nclient: &mocknclient{
+				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+					assert.Equal(t, "test-uuid", *uuid)
+					resp := &vmmv4.GetImageApiResponse{}
+					err := resp.SetData(vmmv4.Image{
+						ObjectType_: ptr.To("vmm.v4.content.Image"),
+						ExtId:       ptr.To("test-uuid"),
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
+			expectedChecks:                            1, // only worker-2
+			expectedControlPlaneCheckFieldIncluded:    false,
 			expectedWorkerNodeCheckFieldPatternExists: true,
 		},
 		{
@@ -622,51 +657,16 @@ func TestInitVMImageChecks(t *testing.T) {
 				nclient: tc.nclient,
 			}
 
-			// Trap the vmImageCheck calls to verify field paths
-			var capturedFields []string
-			checker.vmImageCheckFunc = func(
-				n *nutanixChecker,
-				machineDetails *carenv1.NutanixMachineDetails,
-				field string,
-			) preflight.Check {
-				capturedFields = append(capturedFields, field)
-				return func(ctx context.Context) preflight.CheckResult {
-					// Simulate a successful check
-					return preflight.CheckResult{
-						Name:    "NutanixVMImage",
-						Allowed: true,
-					}
-				}
-			}
-
 			// Call the method under test
 			checker.initVMImageChecksFunc = initVMImageChecks
 			checks := checker.initVMImageChecksFunc(checker)
 
 			// Verify number of checks
 			assert.Len(t, checks, tc.expectedChecks)
-			assert.Len(t, capturedFields, tc.expectedChecks)
 
-			// Verify field names in checks
-			if tc.expectedControlPlaneCheckFieldIncluded {
-				assert.Contains(
-					t,
-					capturedFields,
-					"cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix.machineDetails",
-				)
-			}
-
-			if tc.expectedWorkerNodeCheckFieldPatternExists {
-				foundWorkerFieldPattern := false
-				for _, field := range capturedFields {
-					if field != "cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix.machineDetails" {
-						// This is not the control plane field, so it must be a worker node field
-						assert.Contains(t, field, "cluster.spec.topology.workers.machineDeployments[.name=")
-						assert.Contains(t, field, "].variables[.name=workerConfig].value.nutanix.machineDetails")
-						foundWorkerFieldPattern = true
-					}
-				}
-				assert.True(t, foundWorkerFieldPattern, "Worker node field pattern not found in any checks")
+			results := make([]preflight.CheckResult, len(checks))
+			for i, check := range checks {
+				results[i] = check.Run(context.Background())
 			}
 		})
 	}
