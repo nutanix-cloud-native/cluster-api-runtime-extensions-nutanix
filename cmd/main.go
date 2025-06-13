@@ -225,7 +225,7 @@ func main() {
 		Handler: preflight.New(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme()),
 			[]preflight.Checker{
 				// Add your preflight checkers here.
-				preflightnutanix.New,
+				preflightnutanix.Checker,
 			}...,
 		),
 	})

@@ -244,18 +244,11 @@ func TestVMImageCheck(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := testr.New(t)
-
-			checker := &nutanixChecker{
-				log:     logger,
-				nclient: tc.nclient,
-			}
-
 			// Create the check
 			check := &imageCheck{
 				machineDetails: tc.machineDetails,
 				field:          "test-field",
-				n:              checker,
+				nclient:        tc.nclient,
 			}
 
 			// Execute the check
@@ -446,7 +439,7 @@ func TestGetVMImages(t *testing.T) {
 	}
 }
 
-func TestInitVMImageChecks(t *testing.T) {
+func TestNewVMImageChecks(t *testing.T) {
 	testCases := []struct {
 		name                                      string
 		nutanixClusterConfigSpec                  *carenv1.NutanixClusterConfigSpec
@@ -649,17 +642,15 @@ func TestInitVMImageChecks(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := testr.New(t)
-			checker := &nutanixChecker{
-				log:                      logger,
-				nutanixClusterConfigSpec: tc.nutanixClusterConfigSpec,
+			cd := &checkDependencies{
+				nutanixClusterConfigSpec:                           tc.nutanixClusterConfigSpec,
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tc.nutanixWorkerNodeConfigSpecByMDName,
 				nclient: tc.nclient,
+				log:     testr.New(t),
 			}
 
 			// Call the method under test
-			checker.initVMImageChecksFunc = initVMImageChecks
-			checks := checker.initVMImageChecksFunc(checker)
+			checks := newVMImageChecks(cd)
 
 			// Verify number of checks
 			assert.Len(t, checks, tc.expectedChecks)

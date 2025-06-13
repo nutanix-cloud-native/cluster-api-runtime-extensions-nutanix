@@ -17,7 +17,7 @@ import (
 type imageCheck struct {
 	machineDetails *carenv1.NutanixMachineDetails
 	field          string
-	n              *nutanixChecker
+	nclient        client
 }
 
 func (c *imageCheck) Name() string {
@@ -39,7 +39,7 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 	}
 
 	if c.machineDetails.Image != nil {
-		images, err := getVMImages(c.n.nclient, c.machineDetails.Image)
+		images, err := getVMImages(c.nclient, c.machineDetails.Image)
 		if err != nil {
 			result.Allowed = false
 			result.Error = true
@@ -68,35 +68,35 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 	return result
 }
 
-func initVMImageChecks(
-	n *nutanixChecker,
+func newVMImageChecks(
+	cd *checkDependencies,
 ) []preflight.Check {
 	checks := []preflight.Check{}
 
-	if n.nclient == nil {
+	if cd.nclient == nil {
 		return checks
 	}
 
-	if n.nutanixClusterConfigSpec != nil && n.nutanixClusterConfigSpec.ControlPlane != nil &&
-		n.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
+	if cd.nutanixClusterConfigSpec != nil && cd.nutanixClusterConfigSpec.ControlPlane != nil &&
+		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,
 			&imageCheck{
-				machineDetails: &n.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
+				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
 				field: "cluster.spec.topology.variables[.name=clusterConfig]" +
 					".value.nutanix.controlPlane.machineDetails",
-				n: n,
+				nclient: cd.nclient,
 			},
 		)
 	}
 
-	for mdName, nutanixWorkerNodeConfigSpec := range n.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
+	for mdName, nutanixWorkerNodeConfigSpec := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
 			checks = append(checks,
 				&imageCheck{
 					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
 					field: fmt.Sprintf("cluster.spec.topology.workers.machineDeployments[.name=%s]"+
 						".variables[.name=workerConfig].value.nutanix.machineDetails", mdName),
-					n: n,
+					nclient: cd.nclient,
 				},
 			)
 		}

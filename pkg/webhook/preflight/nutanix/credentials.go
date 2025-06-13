@@ -30,11 +30,12 @@ func (c *credentialsCheck) Run(_ context.Context) preflight.CheckResult {
 	return c.result
 }
 
-func initCredentialsCheck(
+func newCredentialsCheck(
 	ctx context.Context,
-	n *nutanixChecker,
+	nclientFactory func(prismgoclient.Credentials) (client, error),
+	cd *checkDependencies,
 ) preflight.Check {
-	n.log.V(5).Info("Initializing Nutanix credentials check")
+	cd.log.V(5).Info("Initializing Nutanix credentials check")
 
 	credentialsCheck := &credentialsCheck{
 		result: preflight.CheckResult{
@@ -42,14 +43,14 @@ func initCredentialsCheck(
 		},
 	}
 
-	if n.nutanixClusterConfigSpec == nil && len(n.nutanixWorkerNodeConfigSpecByMachineDeploymentName) == 0 {
+	if cd.nutanixClusterConfigSpec == nil && len(cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName) == 0 {
 		// If there is no Nutanix configuration at all, the credentials check is not needed.
 		return credentialsCheck
 	}
 
 	// There is some Nutanix configuration, so the credentials check is needed.
 	// However, the credentials configuration is missing, so we cannot perform the check.
-	if n.nutanixClusterConfigSpec == nil || n.nutanixClusterConfigSpec.Nutanix == nil {
+	if cd.nutanixClusterConfigSpec == nil || cd.nutanixClusterConfigSpec.Nutanix == nil {
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.Error = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
@@ -62,7 +63,7 @@ func initCredentialsCheck(
 	}
 
 	// Get the credentials data in order to initialize the credentials and clients.
-	prismCentralEndpointSpec := n.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint
+	prismCentralEndpointSpec := cd.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint
 
 	host, port, err := prismCentralEndpointSpec.ParseURL()
 	if err != nil {
@@ -79,10 +80,10 @@ func initCredentialsCheck(
 	}
 
 	credentialsSecret := &corev1.Secret{}
-	err = n.kclient.Get(
+	err = cd.kclient.Get(
 		ctx,
 		types.NamespacedName{
-			Namespace: n.cluster.Namespace,
+			Namespace: cd.cluster.Namespace,
 			Name:      prismCentralEndpointSpec.Credentials.SecretRef.Name,
 		},
 		credentialsSecret,
@@ -154,7 +155,7 @@ func initCredentialsCheck(
 	}
 
 	// Initialize the Nutanix client.
-	nclient, err := n.nclientFactory(credentials)
+	nclient, err := nclientFactory(credentials)
 	if err != nil {
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.Error = true
@@ -183,7 +184,7 @@ func initCredentialsCheck(
 	}
 
 	// We initialized both clients, and verified the credentials using the v3 client.
-	n.nclient = nclient
+	cd.nclient = nclient
 
 	return credentialsCheck
 }

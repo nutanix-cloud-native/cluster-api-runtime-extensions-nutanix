@@ -16,7 +16,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
+func TestNewConfigurationCheck(t *testing.T) {
 	tests := []struct {
 		name                                      string
 		cluster                                   *clusterv1.Cluster
@@ -349,28 +349,26 @@ func TestNutanixChecker_initNutanixConfiguration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			logger := testr.New(t)
-
-			n := &nutanixChecker{
-				log:     logger,
+			cd := &checkDependencies{
 				cluster: tt.cluster,
+				log:     testr.New(t),
 			}
 
-			check := initNutanixConfiguration(n)
+			check := newConfigurationCheck(cd)
 			result := check.Run(context.Background())
 
 			assert.Equal(t, tt.expectedResult, result)
 
-			hasNutanixClusterConfigSpec := n.nutanixClusterConfigSpec != nil
+			hasNutanixClusterConfigSpec := cd.nutanixClusterConfigSpec != nil
 			assert.Equal(t, tt.expectedNutanixClusterConfigSpec, hasNutanixClusterConfigSpec)
 
-			hasWorkerNodeConfigSpecMap := n.nutanixWorkerNodeConfigSpecByMachineDeploymentName != nil
+			hasWorkerNodeConfigSpecMap := cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName != nil
 			assert.Equal(t, tt.expectedWorkerNodeConfigSpecMapNotEmpty, hasWorkerNodeConfigSpecMap)
 
 			if hasWorkerNodeConfigSpecMap {
 				assert.Len(
 					t,
-					n.nutanixWorkerNodeConfigSpecByMachineDeploymentName, tt.expectedWorkerNodeConfigSpecMapEntryCount,
+					cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName, tt.expectedWorkerNodeConfigSpecMapEntryCount,
 				)
 			}
 		})

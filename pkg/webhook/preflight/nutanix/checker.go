@@ -17,58 +17,58 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func New(kclient ctrlclient.Client, cluster *clusterv1.Cluster) preflight.Checker {
-	return &nutanixChecker{
-		kclient: kclient,
-		cluster: cluster,
-
-		nclientFactory: newClient,
-
-		initNutanixConfigurationFunc: initNutanixConfiguration,
-		initCredentialsCheckFunc:     initCredentialsCheck,
-		initVMImageChecksFunc:        initVMImageChecks,
-	}
+var Checker = &nutanixChecker{
+	configurationCheckFactory: newConfigurationCheck,
+	credentialsCheckFactory:   newCredentialsCheck,
+	vmImageChecksFactory:      newVMImageChecks,
 }
 
 type nutanixChecker struct {
+	configurationCheckFactory func(
+		cd *checkDependencies,
+	) preflight.Check
+
+	credentialsCheckFactory func(
+		ctx context.Context,
+		nclientFactory func(prismgoclient.Credentials) (client, error),
+		cd *checkDependencies,
+	) preflight.Check
+
+	vmImageChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+}
+
+type checkDependencies struct {
 	kclient ctrlclient.Client
 	cluster *clusterv1.Cluster
 
 	nutanixClusterConfigSpec                           *carenv1.NutanixClusterConfigSpec
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
 
-	nclient        client
-	nclientFactory func(prismgoclient.Credentials) (client, error)
-
-	initNutanixConfigurationFunc func(
-		n *nutanixChecker,
-	) preflight.Check
-
-	initCredentialsCheckFunc func(
-		ctx context.Context,
-		n *nutanixChecker,
-	) preflight.Check
-
-	initVMImageChecksFunc func(
-		n *nutanixChecker,
-	) []preflight.Check
-
-	log logr.Logger
+	nclient client
+	log     logr.Logger
 }
 
 func (n *nutanixChecker) Init(
 	ctx context.Context,
+	kclient ctrlclient.Client,
+	cluster *clusterv1.Cluster,
 ) []preflight.Check {
-	n.log = ctrl.LoggerFrom(ctx).WithName("preflight/nutanix")
+	cd := &checkDependencies{
+		kclient: kclient,
+		cluster: cluster,
+		log:     ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
+	}
 
 	checks := []preflight.Check{
 		// The configuration check must run first, because it initializes data used by all other checks,
 		// and the credentials check second, because it initializes the Nutanix clients used by other checks.
-		n.initNutanixConfigurationFunc(n),
-		n.initCredentialsCheckFunc(ctx, n),
+		n.configurationCheckFactory(cd),
+		n.credentialsCheckFactory(ctx, newClient, cd),
 	}
 
-	checks = append(checks, n.initVMImageChecksFunc(n)...)
+	checks = append(checks, n.vmImageChecksFactory(cd)...)
 
 	// Add more checks here as needed.
 

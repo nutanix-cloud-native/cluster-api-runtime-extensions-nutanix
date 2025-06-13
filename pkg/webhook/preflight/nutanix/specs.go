@@ -24,10 +24,10 @@ func (c *configurationCheck) Run(_ context.Context) preflight.CheckResult {
 	return c.result
 }
 
-func initNutanixConfiguration(
-	n *nutanixChecker,
+func newConfigurationCheck(
+	cd *checkDependencies,
 ) preflight.Check {
-	n.log.V(5).Info("Initializing Nutanix configuration check")
+	cd.log.V(5).Info("Initializing Nutanix configuration check")
 
 	configurationCheck := &configurationCheck{
 		result: preflight.CheckResult{
@@ -39,7 +39,7 @@ func initNutanixConfiguration(
 	err := variables.UnmarshalClusterVariable(
 		variables.GetClusterVariableByName(
 			carenv1.ClusterConfigVariableName,
-			n.cluster.Spec.Topology.Variables,
+			cd.cluster.Spec.Topology.Variables,
 		),
 		nutanixClusterConfigSpec,
 	)
@@ -61,12 +61,12 @@ func initNutanixConfiguration(
 	// Save the NutanixClusterConfigSpec only if it contains Nutanix configuration.
 	if nutanixClusterConfigSpec.Nutanix != nil ||
 		(nutanixClusterConfigSpec.ControlPlane != nil && nutanixClusterConfigSpec.ControlPlane.Nutanix != nil) {
-		n.nutanixClusterConfigSpec = nutanixClusterConfigSpec
+		cd.nutanixClusterConfigSpec = nutanixClusterConfigSpec
 	}
 
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName := make(map[string]*carenv1.NutanixWorkerNodeConfigSpec)
-	if n.cluster.Spec.Topology.Workers != nil {
-		for _, md := range n.cluster.Spec.Topology.Workers.MachineDeployments {
+	if cd.cluster.Spec.Topology.Workers != nil {
+		for _, md := range cd.cluster.Spec.Topology.Workers.MachineDeployments {
 			if md.Variables == nil {
 				continue
 			}
@@ -101,7 +101,7 @@ func initNutanixConfiguration(
 	}
 	// Save the NutanixWorkerNodeConfigSpecByMachineDeploymentName only if it contains at least one Nutanix configuration.
 	if len(nutanixWorkerNodeConfigSpecByMachineDeploymentName) > 0 {
-		n.nutanixWorkerNodeConfigSpecByMachineDeploymentName = nutanixWorkerNodeConfigSpecByMachineDeploymentName
+		cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName = nutanixWorkerNodeConfigSpecByMachineDeploymentName
 	}
 
 	return configurationCheck
