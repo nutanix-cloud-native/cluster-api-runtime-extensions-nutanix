@@ -15,11 +15,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
 const (
-	registryAddonRootCASecretName = "registry-addon-root-ca"
+	RegistryAddonRootCASecretName = "registry-addon-root-ca"
 )
 
 // CopySecretToRemoteCluster will get the Secret from srcSecretName
@@ -157,7 +158,12 @@ func SecretForRegistryAddonRootCA(
 	ctx context.Context,
 	c ctrlclient.Reader,
 ) (*corev1.Secret, error) {
-	secret, err := getSecret(ctx, c, registryAddonRootCASecretName, GetDeploymentNamespace())
+	managementCluster, err := utils.ManagementOrFutureManagementCluster(ctx, c)
+	if err != nil {
+		return nil, fmt.Errorf("error getting management cluster: %w", err)
+	}
+
+	secret, err := getSecret(ctx, c, RegistryAddonRootCASecretName, managementCluster.GetNamespace())
 	if err != nil {
 		return nil, fmt.Errorf("error getting registry addon root CA secret: %w", err)
 	}
