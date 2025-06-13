@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.30.0 (2025-06-13)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Build with Go 1.24.4 to fix CVEs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1157
+### Fixes 🔧
+* fix: update CNCF registry version to 2.3.4, app version 2.8.3 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1150
+### Other Changes
+* build: include regclient/regsync image for registry addon by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1148
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.29.0...v0.30.0
+
 ## 0.29.0 (2025-06-03)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
