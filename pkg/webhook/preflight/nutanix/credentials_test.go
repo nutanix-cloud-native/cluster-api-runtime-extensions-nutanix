@@ -21,7 +21,7 @@ import (
 func TestInitCredentialsCheck_Success(t *testing.T) {
 	nc := validNutanixChecker()
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.True(t, result.Allowed)
 	assert.False(t, result.Error)
 	assert.Empty(t, result.Causes)
@@ -32,7 +32,7 @@ func TestInitCredentialsCheck_NoNutanixConfig(t *testing.T) {
 	nc.nutanixClusterConfigSpec = nil
 	nc.nutanixWorkerNodeConfigSpecByMachineDeploymentName = map[string]*carenv1.NutanixWorkerNodeConfigSpec{}
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.True(t, result.Allowed)
 	assert.False(t, result.Error)
 	assert.Empty(t, result.Causes)
@@ -42,7 +42,7 @@ func TestInitCredentialsCheck_MissingNutanixField(t *testing.T) {
 	nc := validNutanixChecker()
 	nc.nutanixClusterConfigSpec.Nutanix = nil
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.NotEmpty(t, result.Causes)
@@ -53,7 +53,7 @@ func TestInitCredentialsCheck_InvalidURL(t *testing.T) {
 	nc := validNutanixChecker()
 	nc.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint.URL = "not-a-url"
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central endpoint URL")
@@ -63,7 +63,7 @@ func TestInitCredentialsCheck_SecretNotFound(t *testing.T) {
 	nc := validNutanixChecker()
 	nc.kclient = fake.NewClientBuilder().Build() // no secret
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "failed to get Prism Central credentials Secret")
@@ -81,7 +81,7 @@ func TestInitCredentialsCheck_SecretEmpty(t *testing.T) {
 	nc := validNutanixChecker()
 	nc.kclient = kclient
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "credentials Secret 'ntnx-creds' is empty")
@@ -101,7 +101,7 @@ func TestInitCredentialsCheck_SecretMissingKey(t *testing.T) {
 	nc := validNutanixChecker()
 	nc.kclient = kclient
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "does not contain key 'credentials'")
@@ -121,7 +121,7 @@ func TestInitCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 	nc := validNutanixChecker()
 	nc.kclient = kclient
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central credentials")
@@ -135,7 +135,7 @@ func TestInitCredentialsCheck_FailedToCreateClient(t *testing.T) {
 	}
 
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "Failed to initialize Nutanix client")
@@ -149,7 +149,7 @@ func TestInitCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
 	}
 
 	check := nc.initCredentialsCheckFunc(context.Background(), nc)
-	result := check(context.Background())
+	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client.")
@@ -189,7 +189,6 @@ func validNutanixChecker() *nutanixChecker {
 			return &mocknclient{}, nil
 		},
 
-		vmImageCheckFunc:             vmImageCheck,
 		initNutanixConfigurationFunc: initNutanixConfiguration,
 		initCredentialsCheckFunc:     initCredentialsCheck,
 

@@ -24,7 +24,6 @@ func New(kclient ctrlclient.Client, cluster *clusterv1.Cluster) preflight.Checke
 
 		nclientFactory: newClient,
 
-		vmImageCheckFunc:             vmImageCheck,
 		initNutanixConfigurationFunc: initNutanixConfiguration,
 		initCredentialsCheckFunc:     initCredentialsCheck,
 		initVMImageChecksFunc:        initVMImageChecks,
@@ -40,12 +39,6 @@ type nutanixChecker struct {
 
 	nclient        client
 	nclientFactory func(prismgoclient.Credentials) (client, error)
-
-	vmImageCheckFunc func(
-		n *nutanixChecker,
-		machineDetails *carenv1.NutanixMachineDetails,
-		field string,
-	) preflight.Check
 
 	initNutanixConfigurationFunc func(
 		n *nutanixChecker,

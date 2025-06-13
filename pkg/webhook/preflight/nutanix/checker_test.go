@@ -15,6 +15,19 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
+type mockCheck struct {
+	name   string
+	result preflight.CheckResult
+}
+
+func (m *mockCheck) Name() string {
+	return m.name
+}
+
+func (m *mockCheck) Run(ctx context.Context) preflight.CheckResult {
+	return m.result
+}
+
 func TestNutanixChecker_Init(t *testing.T) {
 	tests := []struct {
 		name                    string
@@ -98,19 +111,17 @@ func TestNutanixChecker_Init(t *testing.T) {
 
 			checker.initNutanixConfigurationFunc = func(n *nutanixChecker) preflight.Check {
 				configCheckCalled = true
-				return func(ctx context.Context) preflight.CheckResult {
-					return preflight.CheckResult{
-						Name: tt.expectedFirstCheckName,
-					}
+				return &mockCheck{
+					name:   tt.expectedFirstCheckName,
+					result: preflight.CheckResult{Allowed: true},
 				}
 			}
 
 			checker.initCredentialsCheckFunc = func(ctx context.Context, n *nutanixChecker) preflight.Check {
 				credsCheckCalled = true
-				return func(ctx context.Context) preflight.CheckResult {
-					return preflight.CheckResult{
-						Name: tt.expectedSecondCheckName,
-					}
+				return &mockCheck{
+					name:   tt.expectedSecondCheckName,
+					result: preflight.CheckResult{Allowed: true},
 				}
 			}
 
@@ -118,11 +129,14 @@ func TestNutanixChecker_Init(t *testing.T) {
 				checks := []preflight.Check{}
 				for i := 0; i < tt.vmImageCheckCount; i++ {
 					vmImageCheckCount++
-					checks = append(checks, func(ctx context.Context) preflight.CheckResult {
-						return preflight.CheckResult{
-							Name: fmt.Sprintf("VMImageCheck-%d", i),
-						}
-					})
+					checks = append(checks,
+						&mockCheck{
+							name: fmt.Sprintf("NutanixVMImage-%d", i),
+							result: preflight.CheckResult{
+								Allowed: true,
+							},
+						},
+					)
 				}
 				return checks
 			}
@@ -144,10 +158,8 @@ func TestNutanixChecker_Init(t *testing.T) {
 
 			// Verify the first two checks when we have results
 			if len(checks) >= 2 {
-				result1 := checks[0](ctx)
-				result2 := checks[1](ctx)
-				assert.Equal(t, tt.expectedFirstCheckName, result1.Name)
-				assert.Equal(t, tt.expectedSecondCheckName, result2.Name)
+				assert.Equal(t, tt.expectedFirstCheckName, checks[0].Name())
+				assert.Equal(t, tt.expectedSecondCheckName, checks[1].Name())
 			}
 		})
 	}
