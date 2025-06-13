@@ -18,30 +18,38 @@ import (
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-func TestInitCredentialsCheck_Success(t *testing.T) {
-	nc := validNutanixChecker()
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+func TestNewCredentialsCheck_Success(t *testing.T) {
+	cd := validCheckDependencies()
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.True(t, result.Allowed)
 	assert.False(t, result.Error)
 	assert.Empty(t, result.Causes)
 }
 
-func TestInitCredentialsCheck_NoNutanixConfig(t *testing.T) {
-	nc := validNutanixChecker()
-	nc.nutanixClusterConfigSpec = nil
-	nc.nutanixWorkerNodeConfigSpecByMachineDeploymentName = map[string]*carenv1.NutanixWorkerNodeConfigSpec{}
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+func TestNewCredentialsCheck_NoNutanixConfig(t *testing.T) {
+	cd := validCheckDependencies()
+	cd.nutanixClusterConfigSpec = nil
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.True(t, result.Allowed)
 	assert.False(t, result.Error)
 	assert.Empty(t, result.Causes)
 }
 
-func TestInitCredentialsCheck_MissingNutanixField(t *testing.T) {
-	nc := validNutanixChecker()
-	nc.nutanixClusterConfigSpec.Nutanix = nil
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+func TestNewCredentialsCheck_MissingNutanixField(t *testing.T) {
+	cd := validCheckDependencies()
+	cd.nutanixClusterConfigSpec.Nutanix = nil
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
@@ -49,27 +57,33 @@ func TestInitCredentialsCheck_MissingNutanixField(t *testing.T) {
 	assert.Contains(t, result.Causes[0].Message, "Nutanix cluster configuration is not defined")
 }
 
-func TestInitCredentialsCheck_InvalidURL(t *testing.T) {
-	nc := validNutanixChecker()
-	nc.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint.URL = "not-a-url"
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
+	cd := validCheckDependencies()
+	cd.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint.URL = "not-a-url"
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central endpoint URL")
 }
 
-func TestInitCredentialsCheck_SecretNotFound(t *testing.T) {
-	nc := validNutanixChecker()
-	nc.kclient = fake.NewClientBuilder().Build() // no secret
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+func TestNewCredentialsCheck_SecretNotFound(t *testing.T) {
+	cd := validCheckDependencies()
+	cd.kclient = fake.NewClientBuilder().Build() // no secret
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "failed to get Prism Central credentials Secret")
 }
 
-func TestInitCredentialsCheck_SecretEmpty(t *testing.T) {
+func TestNewCredentialsCheck_SecretEmpty(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ntnx-creds",
@@ -77,17 +91,19 @@ func TestInitCredentialsCheck_SecretEmpty(t *testing.T) {
 		},
 		Data: map[string][]byte{},
 	}
-	kclient := fake.NewClientBuilder().WithObjects(secret).Build()
-	nc := validNutanixChecker()
-	nc.kclient = kclient
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+	cd := validCheckDependencies()
+	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "credentials Secret 'ntnx-creds' is empty")
 }
 
-func TestInitCredentialsCheck_SecretMissingKey(t *testing.T) {
+func TestNewCredentialsCheck_SecretMissingKey(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ntnx-creds",
@@ -97,17 +113,16 @@ func TestInitCredentialsCheck_SecretMissingKey(t *testing.T) {
 			"not-credentials": []byte("foo"),
 		},
 	}
-	kclient := fake.NewClientBuilder().WithObjects(secret).Build()
-	nc := validNutanixChecker()
-	nc.kclient = kclient
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+	cd := validCheckDependencies()
+	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
+	check := newCredentialsCheck(context.Background(), nil, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "does not contain key 'credentials'")
 }
 
-func TestInitCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
+func TestNewCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ntnx-creds",
@@ -117,45 +132,45 @@ func TestInitCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 			"credentials": []byte("not-a-valid-format"),
 		},
 	}
-	kclient := fake.NewClientBuilder().WithObjects(secret).Build()
-	nc := validNutanixChecker()
-	nc.kclient = kclient
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+	cd := validCheckDependencies()
+	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central credentials")
 }
 
-func TestInitCredentialsCheck_FailedToCreateClient(t *testing.T) {
+func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
 	// Simulate a failure in creating the v4 client
-	nc := validNutanixChecker()
-	nc.nclientFactory = func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
 		return nil, assert.AnError
 	}
-
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+	cd := validCheckDependencies()
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "Failed to initialize Nutanix client")
 }
 
-func TestInitCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
+func TestNewCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
 	// Simulate a failure in getting the current logged-in user
-	nc := validNutanixChecker()
-	nc.nclientFactory = func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
 		return &mocknclient{err: assert.AnError}, nil
 	}
-
-	check := nc.initCredentialsCheckFunc(context.Background(), nc)
+	cd := validCheckDependencies()
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client.")
 }
 
-func validNutanixChecker() *nutanixChecker {
+func validCheckDependencies() *checkDependencies {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ntnx-creds",
@@ -175,23 +190,15 @@ func validNutanixChecker() *nutanixChecker {
 			]`),
 		},
 	}
-	kclient := fake.NewClientBuilder().WithObjects(secret).Build()
-	return &nutanixChecker{
-		kclient: kclient,
+
+	return &checkDependencies{
+		kclient: fake.NewClientBuilder().WithObjects(secret).Build(),
 		cluster: &clusterv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-cluster",
 				Namespace: "default",
 			},
 		},
-
-		nclientFactory: func(_ prismgoclient.Credentials) (client, error) {
-			return &mocknclient{}, nil
-		},
-
-		initNutanixConfigurationFunc: initNutanixConfiguration,
-		initCredentialsCheckFunc:     initCredentialsCheck,
-
 		nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 			Nutanix: &carenv1.NutanixSpec{
 				PrismCentralEndpoint: carenv1.NutanixPrismCentralEndpointSpec{

@@ -9,7 +9,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+
+	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
@@ -98,18 +101,14 @@ func TestNutanixChecker_Init(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create the checker
-			checker := &nutanixChecker{
-				cluster:                  &clusterv1.Cluster{},
-				nutanixClusterConfigSpec: tt.nutanixConfig,
-				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tt.workerNodeConfigs,
-			}
+			checker := &nutanixChecker{}
 
 			// Mock the sub-check functions to track their calls
 			configCheckCalled := false
 			credsCheckCalled := false
 			vmImageCheckCount := 0
 
-			checker.initNutanixConfigurationFunc = func(n *nutanixChecker) preflight.Check {
+			checker.configurationCheckFactory = func(cd *checkDependencies) preflight.Check {
 				configCheckCalled = true
 				return &mockCheck{
 					name:   tt.expectedFirstCheckName,
@@ -117,7 +116,11 @@ func TestNutanixChecker_Init(t *testing.T) {
 				}
 			}
 
-			checker.initCredentialsCheckFunc = func(ctx context.Context, n *nutanixChecker) preflight.Check {
+			checker.credentialsCheckFactory = func(
+				ctx context.Context,
+				nclientFactory func(prismgoclient.Credentials) (client, error),
+				cd *checkDependencies,
+			) preflight.Check {
 				credsCheckCalled = true
 				return &mockCheck{
 					name:   tt.expectedSecondCheckName,
@@ -125,7 +128,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 				}
 			}
 
-			checker.initVMImageChecksFunc = func(n *nutanixChecker) []preflight.Check {
+			checker.vmImageChecksFactory = func(cd *checkDependencies) []preflight.Check {
 				checks := []preflight.Check{}
 				for i := 0; i < tt.vmImageCheckCount; i++ {
 					vmImageCheckCount++
@@ -143,10 +146,12 @@ func TestNutanixChecker_Init(t *testing.T) {
 
 			// Call Init
 			ctx := context.Background()
-			checks := checker.Init(ctx)
-
-			// Verify the logger was set
-			assert.NotNil(t, checker.log)
+			checks := checker.Init(ctx, nil, &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "default",
+				},
+			})
 
 			// Verify correct number of checks
 			assert.Len(t, checks, tt.expectedCheckCount)
