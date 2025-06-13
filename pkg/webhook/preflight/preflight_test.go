@@ -24,17 +24,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func mockCheckerFactory(checker Checker) CheckerFactory {
-	return func(_ ctrlclient.Client, _ *clusterv1.Cluster) Checker {
-		return checker
-	}
-}
-
 type mockChecker struct {
 	checks []Check
 }
 
-func (m *mockChecker) Init(_ context.Context) []Check {
+func (m *mockChecker) Init(_ context.Context, _ ctrlclient.Client, _ *clusterv1.Cluster) []Check {
 	return m.checks
 }
 
@@ -375,11 +369,7 @@ func TestHandle(t *testing.T) {
 				decoder = tt.decoder
 			}
 
-			factories := make([]CheckerFactory, len(tt.checkers))
-			for i, checker := range tt.checkers {
-				factories[i] = mockCheckerFactory(checker)
-			}
-			handler := New(fake.NewClientBuilder().Build(), decoder, factories...)
+			handler := New(fake.NewClientBuilder().Build(), decoder, tt.checkers...)
 
 			ctx := context.TODO()
 
@@ -511,7 +501,7 @@ func TestHandleCancelledContext(t *testing.T) {
 		},
 	}
 
-	handler := New(fake.NewClientBuilder().Build(), decoder, mockCheckerFactory(checker))
+	handler := New(fake.NewClientBuilder().Build(), decoder, checker)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -572,8 +562,7 @@ func TestRun_SingleCheckerSingleCheck(t *testing.T) {
 			},
 		},
 	}
-	factory := mockCheckerFactory(checker)
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []CheckerFactory{factory})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
 	if len(resultsOrderedByCheckerAndCheck) != 1 {
 		t.Fatalf("expected results for 1 checker, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
@@ -611,11 +600,8 @@ func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 			},
 		},
 	}
-	factories := []CheckerFactory{
-		mockCheckerFactory(checker1),
-		mockCheckerFactory(checker2),
-	}
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, factories)
+
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker1, checker2})
 	if len(resultsOrderedByCheckerAndCheck) != 2 {
 		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
@@ -677,8 +663,7 @@ func TestRun_ChecksRunInParallel(t *testing.T) {
 			},
 		},
 	}
-	factory := mockCheckerFactory(checker)
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []CheckerFactory{factory})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
 
 	results := resultsOrderedByCheckerAndCheck[0]
 	if len(results) != 2 {
@@ -714,11 +699,8 @@ func TestRun_CheckersRunInParallel(t *testing.T) {
 			},
 		},
 	}
-	factories := []CheckerFactory{
-		mockCheckerFactory(checker1),
-		mockCheckerFactory(checker2),
-	}
-	results := run(ctx, nil, nil, factories)
+
+	results := run(ctx, nil, nil, []Checker{checker1, checker2})
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
@@ -774,8 +756,7 @@ func TestRun_ContextCancellation(t *testing.T) {
 		cancel()
 	}()
 
-	factory := mockCheckerFactory(checker)
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []CheckerFactory{factory})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
 
 	select {
 	case <-completed:
@@ -822,11 +803,7 @@ func TestRun_OrderOfResults(t *testing.T) {
 		},
 	}
 
-	factories := []CheckerFactory{
-		mockCheckerFactory(checker1),
-		mockCheckerFactory(checker2),
-	}
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, factories)
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker1, checker2})
 	if len(resultsOrderedByCheckerAndCheck) != 2 {
 		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))
 	}
@@ -869,13 +846,8 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 		}
 	}
 
-	factories := make([]CheckerFactory, checkerCount)
-	for i, checker := range checkers {
-		factories[i] = mockCheckerFactory(checker)
-	}
-
 	start := time.Now()
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, factories)
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, checkers)
 	duration := time.Since(start)
 
 	resultTotal := 0
@@ -907,10 +879,9 @@ func TestRun_ErrorHandlingInChecks(t *testing.T) {
 	checker := &mockChecker{
 		checks: []Check{errorCheck},
 	}
-	factory := mockCheckerFactory(checker)
 
 	// Run the checks
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []CheckerFactory{factory})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{checker})
 	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
 	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 1, "expected 1 result from the checker")
 
@@ -971,10 +942,9 @@ func TestRun_PanicHandlingInChecks(t *testing.T) {
 			panicCheck,
 		},
 	}
-	factory := mockCheckerFactory(checker)
 
 	// Run the checks
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, []CheckerFactory{factory})
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, cluster, []Checker{checker})
 	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
 	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 2, "expected 2 results from the checker")
 
@@ -1020,11 +990,7 @@ func TestRun_ZeroChecksFromChecker(t *testing.T) {
 		},
 	}
 
-	factories := []CheckerFactory{
-		mockCheckerFactory(emptyChecker),
-		mockCheckerFactory(normalChecker),
-	}
-	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, factories)
+	resultsOrderedByCheckerAndCheck := run(ctx, nil, nil, []Checker{emptyChecker, normalChecker})
 
 	if len(resultsOrderedByCheckerAndCheck) != 2 {
 		t.Fatalf("expected results for 2 checkers, got %d", len(resultsOrderedByCheckerAndCheck))

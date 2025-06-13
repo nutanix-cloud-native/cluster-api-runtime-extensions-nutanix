@@ -18,14 +18,11 @@ import (
 )
 
 type (
-	// CheckerFactory returns a Checker for a given cluster.
-	CheckerFactory func(client ctrlclient.Client, cluster *clusterv1.Cluster) Checker
-
 	// Checker returns a set of checks that have been initialized with common dependencies,
 	// such as an infrastructure API client.
 	Checker interface {
 		// Init returns the checks that should run for the cluster.
-		Init(ctx context.Context) []Check
+		Init(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) []Check
 	}
 
 	// Check represents a single preflight check that can be run against a cluster.
@@ -61,16 +58,16 @@ type (
 )
 
 type WebhookHandler struct {
-	client    ctrlclient.Client
-	decoder   admission.Decoder
-	factories []CheckerFactory
+	client   ctrlclient.Client
+	decoder  admission.Decoder
+	checkers []Checker
 }
 
-func New(client ctrlclient.Client, decoder admission.Decoder, factories ...CheckerFactory) *WebhookHandler {
+func New(client ctrlclient.Client, decoder admission.Decoder, checkers ...Checker) *WebhookHandler {
 	h := &WebhookHandler{
-		client:    client,
-		decoder:   decoder,
-		factories: factories,
+		client:   client,
+		decoder:  decoder,
+		checkers: checkers,
 	}
 	return h
 }
@@ -96,7 +93,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, h.factories)
+	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, h.checkers)
 
 	// Summarize the results.
 	resp := admission.Response{
@@ -148,18 +145,17 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 func run(ctx context.Context,
 	client ctrlclient.Client,
 	cluster *clusterv1.Cluster,
-	factories []CheckerFactory,
+	checkers []Checker,
 ) [][]namedResult {
-	resultsOrderedByCheckerAndCheck := make([][]namedResult, len(factories))
+	resultsOrderedByCheckerAndCheck := make([][]namedResult, len(checkers))
 
 	checkersWG := sync.WaitGroup{}
-	for i, factory := range factories {
+	for i, checker := range checkers {
 		checkersWG.Add(1)
-		go func(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster, factory CheckerFactory, i int) {
+		go func(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster, checker Checker, i int) {
 			defer checkersWG.Done()
-			checker := factory(client, cluster)
 
-			checks := checker.Init(ctx)
+			checks := checker.Init(ctx, client, cluster)
 			resultsOrderedByCheck := make([]namedResult, len(checks))
 
 			checksWG := sync.WaitGroup{}
@@ -204,7 +200,7 @@ func run(ctx context.Context,
 			ctx,
 			client,
 			cluster,
-			factory,
+			checker,
 			i,
 		)
 	}

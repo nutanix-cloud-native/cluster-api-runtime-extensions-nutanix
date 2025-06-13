@@ -222,7 +222,7 @@ func main() {
 
 	mgr.GetWebhookServer().Register("/preflight-v1beta1-cluster", &webhook.Admission{
 		Handler: preflight.New(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme()),
-			[]preflight.CheckerFactory{
+			[]preflight.Checker{
 				// Add your preflight checkers here.
 			}...,
 		),
