@@ -41,6 +41,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/cluster"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
 func main() {
@@ -219,6 +220,13 @@ func main() {
 		Handler: cluster.NewValidator(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme())),
 	})
 
+	mgr.GetWebhookServer().Register("/preflight-v1beta1-cluster", &webhook.Admission{
+		Handler: preflight.New(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme()),
+			[]preflight.Checker{
+				// Add your preflight checkers here.
+			}...,
+		),
+	})
 	if err := mgr.Start(signalCtx); err != nil {
 		setupLog.Error(err, "unable to start controller manager")
 		os.Exit(1)

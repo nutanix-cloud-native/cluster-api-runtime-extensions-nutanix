@@ -8,7 +8,7 @@ with(.metadata;
   .name = "{{ include \"chart.name\" . }}-" + .name,
   .annotations["cert-manager.io/inject-ca-from"] = "{{ .Release.Namespace}}/{{ template \"chart.name\" . }}-admission-tls"
 ),
-with(.webhooks[0].clientConfig.service;
+with(.webhooks[].clientConfig.service;
   .name = "{{ include \"chart.name\" . }}-admission",
   .namespace = "{{ .Release.Namespace }}"
 )
