@@ -1,0 +1,141 @@
+// Copyright 2025 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package nutanix
+
+import (
+	"context"
+	"fmt"
+
+	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
+
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
+)
+
+type imageCheck struct {
+	machineDetails *carenv1.NutanixMachineDetails
+	field          string
+	nclient        client
+}
+
+func (c *imageCheck) Name() string {
+	return "NutanixVMImage"
+}
+
+func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{
+		Allowed: false,
+	}
+
+	if c.machineDetails.ImageLookup != nil {
+		result.Allowed = true
+		result.Warnings = append(
+			result.Warnings,
+			fmt.Sprintf("%s uses imageLookup, which is not yet supported by checks", c.field),
+		)
+		return result
+	}
+
+	if c.machineDetails.Image != nil {
+		images, err := getVMImages(c.nclient, c.machineDetails.Image)
+		if err != nil {
+			result.Allowed = false
+			result.Error = true
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf("failed to get VM Image: %s", err),
+				Field:   c.field,
+			})
+			return result
+		}
+
+		if len(images) != 1 {
+			result.Allowed = false
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf("expected to find 1 VM Image, found %d", len(images)),
+				Field:   c.field,
+			})
+			return result
+		}
+
+		// Found exactly one image.
+		result.Allowed = true
+		return result
+	}
+
+	// Neither ImageLookup nor Image is specified.
+	return result
+}
+
+func newVMImageChecks(
+	cd *checkDependencies,
+) []preflight.Check {
+	checks := []preflight.Check{}
+
+	if cd.nclient == nil {
+		return checks
+	}
+
+	if cd.nutanixClusterConfigSpec != nil && cd.nutanixClusterConfigSpec.ControlPlane != nil &&
+		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
+		checks = append(checks,
+			&imageCheck{
+				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
+				field: "cluster.spec.topology.variables[.name=clusterConfig]" +
+					".value.nutanix.controlPlane.machineDetails",
+				nclient: cd.nclient,
+			},
+		)
+	}
+
+	for mdName, nutanixWorkerNodeConfigSpec := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
+		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
+			checks = append(checks,
+				&imageCheck{
+					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
+					field: fmt.Sprintf("cluster.spec.topology.workers.machineDeployments[.name=%s]"+
+						".variables[.name=workerConfig].value.nutanix.machineDetails", mdName),
+					nclient: cd.nclient,
+				},
+			)
+		}
+	}
+
+	return checks
+}
+
+func getVMImages(
+	client client,
+	id *capxv1.NutanixResourceIdentifier,
+) ([]vmmv4.Image, error) {
+	switch {
+	case id.IsUUID():
+		resp, err := client.GetImageById(id.UUID)
+		if err != nil {
+			return nil, err
+		}
+		image, ok := resp.GetData().(vmmv4.Image)
+		if !ok {
+			return nil, fmt.Errorf("failed to get data returned by GetImageById")
+		}
+		return []vmmv4.Image{image}, nil
+	case id.IsName():
+		filter_ := fmt.Sprintf("name eq '%s'", *id.Name)
+		resp, err := client.ListImages(nil, nil, &filter_, nil, nil)
+		if err != nil {
+			return nil, err
+		}
+		if resp == nil || resp.GetData() == nil {
+			// No images were returned.
+			return []vmmv4.Image{}, nil
+		}
+		images, ok := resp.GetData().([]vmmv4.Image)
+		if !ok {
+			return nil, fmt.Errorf("failed to get data returned by ListImages")
+		}
+		return images, nil
+	default:
+		return nil, fmt.Errorf("image identifier is missing both name and uuid")
+	}
+}
