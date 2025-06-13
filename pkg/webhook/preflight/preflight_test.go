@@ -215,7 +215,6 @@ func TestHandle(t *testing.T) {
 						&mockCheck{
 							name: "Test1",
 							result: CheckResult{
-								Name:    "Test1",
 								Allowed: false,
 								Causes: []Cause{
 									{
@@ -305,7 +304,6 @@ func TestHandle(t *testing.T) {
 						&mockCheck{
 							name: "Test1",
 							result: CheckResult{
-								Name:    "Test1",
 								Allowed: false,
 								Error:   true,
 								Causes: []Cause{
@@ -322,7 +320,6 @@ func TestHandle(t *testing.T) {
 						&mockCheck{
 							name: "Test2",
 							result: CheckResult{
-								Name:    "Test2",
 								Allowed: false,
 								Causes: []Cause{
 									{
@@ -338,7 +335,6 @@ func TestHandle(t *testing.T) {
 						&mockCheck{
 							name: "Test3",
 							result: CheckResult{
-								Name:    "Test3",
 								Allowed: true,
 							},
 						},
@@ -442,7 +438,6 @@ func (c *cancellableCheck) Run(ctx context.Context) CheckResult {
 	case <-ctx.Done():
 		c.cancelled = true
 		return CheckResult{
-			Name:    c.name,
 			Allowed: false,
 			Error:   true,
 			Causes: []Cause{
@@ -453,7 +448,6 @@ func (c *cancellableCheck) Run(ctx context.Context) CheckResult {
 		}
 	case <-time.After(c.delay):
 		return CheckResult{
-			Name:    c.name,
 			Allowed: true,
 		}
 	}
@@ -573,7 +567,6 @@ func TestRun_SingleCheckerSingleCheck(t *testing.T) {
 			&mockCheck{
 				name: "check1",
 				result: CheckResult{
-					Name:    "check1",
 					Allowed: true,
 				},
 			},
@@ -597,14 +590,12 @@ func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 			&mockCheck{
 				name: "c1-check1",
 				result: CheckResult{
-					Name:    "c1-check1",
 					Allowed: true,
 				},
 			},
 			&mockCheck{
 				name: "c1-check2",
 				result: CheckResult{
-					Name:    "c1-check2",
 					Allowed: false,
 				},
 			},
@@ -615,7 +606,6 @@ func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 			&mockCheck{
 				name: "c2-check1",
 				result: CheckResult{
-					Name:  "c2-check1",
 					Error: true,
 				},
 			},
@@ -663,7 +653,7 @@ func (c *delayedCheck) Run(ctx context.Context) CheckResult {
 		c.mu.Unlock()
 	}
 
-	return CheckResult{Name: c.name, Allowed: true}
+	return CheckResult{Allowed: true}
 }
 
 func TestRun_ChecksRunInParallel(t *testing.T) {
@@ -766,11 +756,11 @@ func TestRun_ContextCancellation(t *testing.T) {
 	check := &contextAwareCheck{
 		name: "cancellable-check",
 		onCancel: func() CheckResult {
-			return CheckResult{Name: "cancelled", Error: true}
+			return CheckResult{Error: true}
 		},
 		onTimeout: func() CheckResult {
 			close(completed)
-			return CheckResult{Name: "completed", Allowed: true}
+			return CheckResult{Allowed: true}
 		},
 	}
 
@@ -870,7 +860,6 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 			checks[j] = &mockCheck{
 				name: fmt.Sprintf("checker%d-check%d", checkerIndex, checkIndex),
 				result: CheckResult{
-					Name:    fmt.Sprintf("checker%d-check%d", checkerIndex, checkIndex),
 					Allowed: true,
 				},
 			}
@@ -906,7 +895,6 @@ func TestRun_ErrorHandlingInChecks(t *testing.T) {
 	errorCheck := &mockCheck{
 		name: "error-check",
 		result: CheckResult{
-			Name:  "error-check",
 			Error: true,
 			Causes: []Cause{
 				{
@@ -926,13 +914,15 @@ func TestRun_ErrorHandlingInChecks(t *testing.T) {
 	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
 	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 1, "expected 1 result from the checker")
 
-	wantErrorCheckResult := CheckResult{
-		Name:  "error-check",
-		Error: true,
-		Causes: []Cause{
-			{
-				Message: "simulated error in check",
-				Field:   "spec.errorField",
+	wantErrorCheckResult := namedResult{
+		Name: "error-check",
+		CheckResult: CheckResult{
+			Error: true,
+			Causes: []Cause{
+				{
+					Message: "simulated error in check",
+					Field:   "spec.errorField",
+				},
 			},
 		},
 	}
@@ -971,7 +961,6 @@ func TestRun_PanicHandlingInChecks(t *testing.T) {
 	normalCheck := &mockCheck{
 		name: "normal-check",
 		result: CheckResult{
-			Name:    "normal-check",
 			Allowed: true,
 		},
 	}
@@ -989,17 +978,21 @@ func TestRun_PanicHandlingInChecks(t *testing.T) {
 	assert.Len(t, resultsOrderedByCheckerAndCheck, 1, "expected results for 1 checker")
 	assert.Len(t, resultsOrderedByCheckerAndCheck[0], 2, "expected 2 results from the checker")
 
-	wantNormalCheckResult := CheckResult{
-		Name:    "normal-check",
-		Allowed: true,
+	wantNormalCheckResult := namedResult{
+		Name: "normal-check",
+		CheckResult: CheckResult{
+			Allowed: true,
+		},
 	}
-	wantPanicCheckResult := CheckResult{
-		Name:  "panicking-check",
-		Error: true,
-		Causes: []Cause{
-			{
-				Message: "internal error (panic): simulated panic in check",
-				Field:   "",
+	wantPanicCheckResult := namedResult{
+		Name: "panicking-check",
+		CheckResult: CheckResult{
+			Error: true,
+			Causes: []Cause{
+				{
+					Message: "internal error (panic): simulated panic in check",
+					Field:   "",
+				},
 			},
 		},
 	}
@@ -1021,7 +1014,6 @@ func TestRun_ZeroChecksFromChecker(t *testing.T) {
 			&mockCheck{
 				name: "check1",
 				result: CheckResult{
-					Name:    "check1",
 					Allowed: true,
 				},
 			},

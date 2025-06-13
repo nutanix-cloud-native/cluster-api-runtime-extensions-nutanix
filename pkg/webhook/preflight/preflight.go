@@ -44,8 +44,6 @@ type (
 	// list of causes for the failure. It also contains a list of warnings that were
 	// generated during the check.
 	CheckResult struct {
-		Name string
-
 		Allowed bool
 		Error   bool
 
@@ -75,6 +73,11 @@ func New(client ctrlclient.Client, decoder admission.Decoder, factories ...Check
 		factories: factories,
 	}
 	return h
+}
+
+type namedResult struct {
+	Name string
+	CheckResult
 }
 
 func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
@@ -146,8 +149,8 @@ func run(ctx context.Context,
 	client ctrlclient.Client,
 	cluster *clusterv1.Cluster,
 	factories []CheckerFactory,
-) [][]CheckResult {
-	resultsOrderedByCheckerAndCheck := make([][]CheckResult, len(factories))
+) [][]namedResult {
+	resultsOrderedByCheckerAndCheck := make([][]namedResult, len(factories))
 
 	checkersWG := sync.WaitGroup{}
 	for i, factory := range factories {
@@ -157,7 +160,7 @@ func run(ctx context.Context,
 			checker := factory(client, cluster)
 
 			checks := checker.Init(ctx)
-			resultsOrderedByCheck := make([]CheckResult, len(checks))
+			resultsOrderedByCheck := make([]namedResult, len(checks))
 
 			checksWG := sync.WaitGroup{}
 			for j, check := range checks {
@@ -166,13 +169,15 @@ func run(ctx context.Context,
 					defer checksWG.Done()
 					defer func() {
 						if r := recover(); r != nil {
-							resultsOrderedByCheck[j] = CheckResult{
-								Name:  check.Name(),
-								Error: true,
-								Causes: []Cause{
-									{
-										Message: fmt.Sprintf("internal error (panic): %s", r),
-										Field:   "",
+							resultsOrderedByCheck[j] = namedResult{
+								Name: check.Name(),
+								CheckResult: CheckResult{
+									Error: true,
+									Causes: []Cause{
+										{
+											Message: fmt.Sprintf("internal error (panic): %s", r),
+											Field:   "",
+										},
 									},
 								},
 							}
@@ -187,7 +192,10 @@ func run(ctx context.Context,
 						}
 					}()
 					result := check.Run(ctx)
-					resultsOrderedByCheck[j] = result
+					resultsOrderedByCheck[j] = namedResult{
+						Name:        check.Name(),
+						CheckResult: result,
+					}
 				}(ctx, check, j)
 			}
 			checksWG.Wait()
