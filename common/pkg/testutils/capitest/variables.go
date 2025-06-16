@@ -22,6 +22,7 @@ import (
 type VariableTestDef struct {
 	Name        string
 	Vals        any
+	OldVals     any
 	ExpectError bool
 }
 
@@ -65,14 +66,34 @@ func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 			encodedVals, err := json.Marshal(tt.Vals)
 			g.Expect(err).NotTo(gomega.HaveOccurred())
 
-			validateErr := openapi.ValidateClusterVariable(
-				&clusterv1.ClusterVariable{
-					Name:  variableName,
-					Value: apiextensionsv1.JSON{Raw: encodedVals},
-				},
-				&variable,
-				field.NewPath(variableName),
-			).ToAggregate()
+			var validateErr error
+
+			switch {
+			case tt.OldVals != nil:
+				encodedOldVals, err := json.Marshal(tt.OldVals)
+				g.Expect(err).NotTo(gomega.HaveOccurred())
+				validateErr = openapi.ValidateClusterVariableUpdate(
+					&clusterv1.ClusterVariable{
+						Name:  variableName,
+						Value: apiextensionsv1.JSON{Raw: encodedVals},
+					},
+					&clusterv1.ClusterVariable{
+						Name:  variableName,
+						Value: apiextensionsv1.JSON{Raw: encodedOldVals},
+					},
+					&variable,
+					field.NewPath(variableName),
+				).ToAggregate()
+			default:
+				validateErr = openapi.ValidateClusterVariable(
+					&clusterv1.ClusterVariable{
+						Name:  variableName,
+						Value: apiextensionsv1.JSON{Raw: encodedVals},
+					},
+					&variable,
+					field.NewPath(variableName),
+				).ToAggregate()
+			}
 
 			if tt.ExpectError {
 				g.Expect(validateErr).To(gomega.HaveOccurred())
