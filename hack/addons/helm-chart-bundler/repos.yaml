@@ -35,7 +35,7 @@ repositories:
     repoURL: https://mesosphere.github.io/charts/staging/
     charts:
       docker-registry:
-      - 2.3.4
+      - 2.3.5
   local-path-provisioner:
     repoURL: https://charts.containeroo.ch
     charts:
