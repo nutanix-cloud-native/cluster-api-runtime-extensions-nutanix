@@ -6,8 +6,22 @@ service:
   type: ClusterIP
   clusterIP: {{ .ServiceIP }}
   port: 443
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 250m
+    memory: 384Mi
 statefulSet:
   enabled: true
   syncer:
     interval: 2m
+    resources:
+      requests:
+        cpu: 25m
+        memory: 50Mi
+      limits:
+        cpu: 100m
+        memory: 75Mi
 tlsSecretName: {{ .TLSSecretName }}
