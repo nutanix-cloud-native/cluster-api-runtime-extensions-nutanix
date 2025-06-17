@@ -47,11 +47,9 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation: "add",
-				Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/skipPhases",
-				ValueMatcher: gomega.ConsistOf([]string{
-					"addon/kube-proxy",
-				}),
+				Operation:    "add",
+				Path:         "/spec/template/spec/kubeadmConfigSpec/initConfiguration/skipPhases",
+				ValueMatcher: gomega.ConsistOf("addon/kube-proxy"),
 			}},
 		},
 	}, {
@@ -71,11 +69,9 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation: "add",
-				Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/skipPhases",
-				ValueMatcher: gomega.ConsistOf([]string{
-					"addon/kube-proxy",
-				}),
+				Operation:    "add",
+				Path:         "/spec/template/spec/kubeadmConfigSpec/initConfiguration/skipPhases",
+				ValueMatcher: gomega.ConsistOf("addon/kube-proxy"),
 			}},
 		},
 	}, {
@@ -95,11 +91,9 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation: "add",
-				Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/skipPhases",
-				ValueMatcher: gomega.ConsistOf([]string{
-					"addon/kube-proxy",
-				}),
+				Operation:    "add",
+				Path:         "/spec/template/spec/kubeadmConfigSpec/initConfiguration/skipPhases",
+				ValueMatcher: gomega.ConsistOf("addon/kube-proxy"),
 			}},
 		},
 	}, {
@@ -118,6 +112,30 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ConsistOf(
+					gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
+						gomega.HaveKeyWithValue("owner", "root:root"),
+						gomega.HaveKeyWithValue("permissions", "0644"),
+						gomega.HaveKeyWithValue("content", `
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: iptables
+`,
+						),
+					),
+				),
+			}, {
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+				ValueMatcher: gomega.ConsistOf(
+					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+				),
+			}},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -135,23 +153,153 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ConsistOf(
+					gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
+						gomega.HaveKeyWithValue("owner", "root:root"),
+						gomega.HaveKeyWithValue("permissions", "0644"),
+						gomega.HaveKeyWithValue("content", `
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: iptables
+`,
+						),
+					),
+				),
+			}, {
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+				ValueMatcher: gomega.ConsistOf(
+					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+				),
+			}},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
-			Name: "kube proxy iptables mode with Nutanix",
+			Name: "kube proxy nftables mode with Nutanix",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.NutanixClusterConfigSpec{
 						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
 							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeIPTables,
+								Mode: v1alpha1.KubeProxyModeNFTables,
 							},
 						},
 					},
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ConsistOf(
+					gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
+						gomega.HaveKeyWithValue("owner", "root:root"),
+						gomega.HaveKeyWithValue("permissions", "0644"),
+						gomega.HaveKeyWithValue("content", `
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: nftables
+`,
+						),
+					),
+				),
+			}, {
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+				ValueMatcher: gomega.ConsistOf(
+					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+				),
+			}},
+		},
+	}, {
+		patchTest: capitest.PatchTestDef{
+			Name: "kube proxy nftables mode with AWS",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.AWSClusterConfigSpec{
+						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+							KubeProxy: &v1alpha1.KubeProxy{
+								Mode: v1alpha1.KubeProxyModeNFTables,
+							},
+						},
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ConsistOf(
+					gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
+						gomega.HaveKeyWithValue("owner", "root:root"),
+						gomega.HaveKeyWithValue("permissions", "0644"),
+						gomega.HaveKeyWithValue("content", `
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: nftables
+`,
+						),
+					),
+				),
+			}, {
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+				ValueMatcher: gomega.ConsistOf(
+					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+				),
+			}},
+		},
+	}, {
+		patchTest: capitest.PatchTestDef{
+			Name: "kube proxy nftables mode with Docker",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.DockerClusterConfigSpec{
+						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+							KubeProxy: &v1alpha1.KubeProxy{
+								Mode: v1alpha1.KubeProxyModeNFTables,
+							},
+						},
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ConsistOf(
+					gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
+						gomega.HaveKeyWithValue("owner", "root:root"),
+						gomega.HaveKeyWithValue("permissions", "0644"),
+						gomega.HaveKeyWithValue("content", `
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: nftables
+`,
+						),
+					),
+				),
+			}, {
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+				ValueMatcher: gomega.ConsistOf(
+					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+				),
+			}},
 		},
 	}}
 

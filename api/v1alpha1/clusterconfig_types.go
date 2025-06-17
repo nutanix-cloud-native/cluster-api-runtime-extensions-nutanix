@@ -340,14 +340,19 @@ const (
 	// KubeProxyModeIPTables indicates that kube-proxy should be installed in iptables
 	// mode.
 	KubeProxyModeIPTables KubeProxyMode = "iptables"
+	// KubeProxyModeNFTables indicates that kube-proxy should be installed in iptables
+	// mode.
+	KubeProxyModeNFTables KubeProxyMode = "nftables"
 )
 
 type KubeProxy struct {
-	// Mode specifies the mode for kube-proxy.
-	// Disabled means that kube-proxy is not installed.
-	// iptables means that kube-proxy is installed in iptables mode.
+	// Mode specifies the mode for kube-proxy:
+	//
+	// - Disabled means that kube-proxy is not installed.
+	// - iptables means that kube-proxy is installed in iptables mode.
+	// - nftables means that kube-proxy is installed in nftables mode.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Enum=Disabled;iptables
+	// +kubebuilder:validation:Enum=Disabled;iptables;nftables
 	// +kubebuilder:default=iptables
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
 	Mode KubeProxyMode `json:"mode,omitempty"`

@@ -33,6 +33,9 @@ func testDefs[T any](t *testing.T, clusterConfig T) []capitest.VariableTestDef {
 		Name: "kube-proxy iptables mode",
 		Vals: v1alpha1.KubeProxyModeIPTables,
 	}, {
+		Name: "kube-proxy nftables mode",
+		Vals: v1alpha1.KubeProxyModeNFTables,
+	}, {
 		Name:    "kube-proxy mode unchanged from disabled on update",
 		Vals:    v1alpha1.KubeProxyModeDisabled,
 		OldVals: v1alpha1.KubeProxyModeDisabled,
@@ -40,6 +43,10 @@ func testDefs[T any](t *testing.T, clusterConfig T) []capitest.VariableTestDef {
 		Name:    "kube-proxy mode unchanged from iptables on update",
 		Vals:    v1alpha1.KubeProxyModeIPTables,
 		OldVals: v1alpha1.KubeProxyModeIPTables,
+	}, {
+		Name:    "kube-proxy mode unchanged from nftables on update",
+		Vals:    v1alpha1.KubeProxyModeNFTables,
+		OldVals: v1alpha1.KubeProxyModeNFTables,
 	}, {
 		Name:        "kube-proxy mode changed from disabled to iptables on update",
 		Vals:        v1alpha1.KubeProxyModeDisabled,
@@ -49,6 +56,26 @@ func testDefs[T any](t *testing.T, clusterConfig T) []capitest.VariableTestDef {
 		Name:        "kube-proxy mode changed from iptables to disabled on update",
 		Vals:        v1alpha1.KubeProxyModeIPTables,
 		OldVals:     v1alpha1.KubeProxyModeDisabled,
+		ExpectError: true,
+	}, {
+		Name:        "kube-proxy mode changed from disabled to nftables on update",
+		Vals:        v1alpha1.KubeProxyModeDisabled,
+		OldVals:     v1alpha1.KubeProxyModeNFTables,
+		ExpectError: true,
+	}, {
+		Name:        "kube-proxy mode changed from nftables to disabled on update",
+		Vals:        v1alpha1.KubeProxyModeNFTables,
+		OldVals:     v1alpha1.KubeProxyModeDisabled,
+		ExpectError: true,
+	}, {
+		Name:        "kube-proxy mode changed from iptables to nftables on update",
+		Vals:        v1alpha1.KubeProxyModeIPTables,
+		OldVals:     v1alpha1.KubeProxyModeNFTables,
+		ExpectError: true,
+	}, {
+		Name:        "kube-proxy mode changed from nftables to iptables on update",
+		Vals:        v1alpha1.KubeProxyModeNFTables,
+		OldVals:     v1alpha1.KubeProxyModeIPTables,
 		ExpectError: true,
 	}}
 

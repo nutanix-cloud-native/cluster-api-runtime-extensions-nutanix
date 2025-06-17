@@ -25,6 +25,13 @@ import (
 const (
 	// VariableName is the external patch variable name.
 	VariableName = "kubeProxy"
+
+	kubeProxyConfigYAMLTemplate = `
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: %s
+`
 )
 
 type kubeProxyMode struct {
@@ -101,20 +108,33 @@ func (h *kubeProxyMode) Mutate(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("adding kube proxy mode to control plane kubeadm config spec")
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1.InitConfiguration{}
-			}
 
 			switch kubeProxyMode {
 			case v1alpha1.KubeProxyModeDisabled:
 				log.Info("kube proxy mode is set to disabled, skipping kube-proxy addon")
-				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.SkipPhases = append(
-					obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.SkipPhases,
+				if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
+					obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1.InitConfiguration{}
+				}
+				initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
+				initConfiguration.SkipPhases = append(
+					initConfiguration.SkipPhases,
 					"addon/kube-proxy",
 				)
-			case v1alpha1.KubeProxyModeIPTables:
-				log.Info(
-					"kube proxy mode is set to iptables, no patches required as this is the default mode configured by kubeadm",
+			case v1alpha1.KubeProxyModeIPTables, v1alpha1.KubeProxyModeNFTables:
+				kubeProxyConfig := bootstrapv1.File{
+					Path:        "/etc/kubernetes/kubeproxy-config.yaml",
+					Owner:       "root:root",
+					Permissions: "0644",
+					Content:     fmt.Sprintf(kubeProxyConfigYAMLTemplate, kubeProxyMode),
+				}
+				obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
+					obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+					kubeProxyConfig,
+				)
+				mergeKubeProxyConfigCmd := "/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'"
+				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
+					obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
+					mergeKubeProxyConfigCmd,
 				)
 			default:
 				return fmt.Errorf("unknown kube proxy mode %q", kubeProxyMode)
