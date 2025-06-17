@@ -340,7 +340,7 @@ const (
 	// KubeProxyModeIPTables indicates that kube-proxy should be installed in iptables
 	// mode.
 	KubeProxyModeIPTables KubeProxyMode = "iptables"
-	// KubeProxyModeNFTables indicates that kube-proxy should be installed in iptables
+	// KubeProxyModeNFTables indicates that kube-proxy should be installed in nftables
 	// mode.
 	KubeProxyModeNFTables KubeProxyMode = "nftables"
 )
