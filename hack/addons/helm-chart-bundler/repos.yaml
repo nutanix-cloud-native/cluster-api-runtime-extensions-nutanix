@@ -45,7 +45,7 @@ repositories:
     repoURL: https://metallb.github.io/metallb
     charts:
       metallb:
-      - 0.14.9
+      - 0.15.2
   node-feature-discovery:
     repoURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
     charts:
@@ -70,4 +70,4 @@ repositories:
     repoURL: https://docs.tigera.io/calico/charts
     charts:
       tigera-operator:
-      - v3.29.3
+      - v3.29.4
