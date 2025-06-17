@@ -66,7 +66,8 @@ func newConfigurationCheck(
 
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName := make(map[string]*carenv1.NutanixWorkerNodeConfigSpec)
 	if cd.cluster.Spec.Topology.Workers != nil {
-		for _, md := range cd.cluster.Spec.Topology.Workers.MachineDeployments {
+		for i := range cd.cluster.Spec.Topology.Workers.MachineDeployments {
+			md := &cd.cluster.Spec.Topology.Workers.MachineDeployments[i]
 			if md.Variables == nil {
 				continue
 			}
