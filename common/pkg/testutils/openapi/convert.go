@@ -208,5 +208,22 @@ func ConvertJSONSchemaPropsToAPIExtensions(
 		}
 	}
 
+	if schema.XValidations != nil {
+		props.XValidations = make([]apiextensions.ValidationRule, 0, len(schema.XValidations))
+		for _, v := range schema.XValidations {
+			var reason *apiextensions.FieldValueErrorReason
+			if v.Reason != "" {
+				reason = ptr.To(apiextensions.FieldValueErrorReason(v.Reason))
+			}
+			props.XValidations = append(props.XValidations, apiextensions.ValidationRule{
+				Rule:              v.Rule,
+				Message:           v.Message,
+				MessageExpression: v.MessageExpression,
+				Reason:            reason,
+				FieldPath:         v.FieldPath,
+			})
+		}
+	}
+
 	return props, allErrs
 }

@@ -4,16 +4,19 @@
 package openapi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	structuralschema "k8s.io/apiextensions-apiserver/pkg/apiserver/schema"
+	"k8s.io/apiextensions-apiserver/pkg/apiserver/schema/cel"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/schema/defaulting"
 	structuralpruning "k8s.io/apiextensions-apiserver/pkg/apiserver/schema/pruning"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	celconfig "k8s.io/apiserver/pkg/apis/cel"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -26,54 +29,15 @@ func ValidateClusterVariable(
 	definition *clusterv1.ClusterClassVariable,
 	fldPath *field.Path,
 ) field.ErrorList {
-	// Parse JSON value.
-	var variableValue interface{}
-	// Only try to unmarshal the clusterVariable if it is not nil, otherwise the variableValue is nil.
-	// Note: A clusterVariable with a nil value is the result of setting the variable value to "null" via YAML.
-	if value.Value.Raw != nil {
-		if err := json.Unmarshal(value.Value.Raw, &variableValue); err != nil {
-			return field.ErrorList{field.Invalid(fldPath.Child("value"), string(value.Value.Raw),
-				fmt.Sprintf("variable %q could not be parsed: %v", value.Name, err))}
-		}
-	}
-
-	// Convert schema to Kubernetes APIExtensions Schema.
-	apiExtensionsSchema, allErrs := ConvertJSONSchemaPropsToAPIExtensions(
-		&definition.Schema.OpenAPIV3Schema, field.NewPath("schema"),
-	)
-	if len(allErrs) > 0 {
-		return field.ErrorList{field.InternalError(fldPath,
-			fmt.Errorf(
-				"failed to convert schema definition for variable %q; ClusterClass should be checked: %v",
-				definition.Name,
-				allErrs,
-			),
-		)}
-	}
-
-	// Create validator for schema.
-	validator, _, err := validation.NewSchemaValidator(apiExtensionsSchema)
+	validator, apiExtensionsSchema, structuralSchema, err := validatorAndSchemas(fldPath, definition)
 	if err != nil {
-		return field.ErrorList{field.InternalError(fldPath,
-			fmt.Errorf(
-				"failed to create schema validator for variable %q; ClusterClass should be checked: %v",
-				value.Name,
-				err,
-			),
-		)}
+		return field.ErrorList{err}
 	}
 
-	s, err := structuralschema.NewStructural(apiExtensionsSchema)
+	variableValue, err := unmarshalAndDefaultVariableValue(fldPath, value, structuralSchema)
 	if err != nil {
-		return field.ErrorList{field.InternalError(fldPath,
-			fmt.Errorf(
-				"failed to create structural schema for variable %q; ClusterClass should be checked: %v",
-				value.Name,
-				err,
-			),
-		)}
+		return field.ErrorList{err}
 	}
-	defaulting.Default(variableValue, s)
 
 	// Validate variable against the schema.
 	// NOTE: We're reusing a library func used in CRD validation.
@@ -81,7 +45,117 @@ func ValidateClusterVariable(
 		return err
 	}
 
+	// Validate variable against the schema using CEL.
+	if err := validateCEL(fldPath, variableValue, nil, structuralSchema); err != nil {
+		return err
+	}
+
 	return validateUnknownFields(fldPath, value, variableValue, apiExtensionsSchema)
+}
+
+func unmarshalAndDefaultVariableValue(
+	fldPath *field.Path,
+	value *clusterv1.ClusterVariable,
+	s *structuralschema.Structural,
+) (any, *field.Error) {
+	// Parse JSON value.
+	var variableValue any
+	// Only try to unmarshal the clusterVariable if it is not nil, otherwise the variableValue is nil.
+	// Note: A clusterVariable with a nil value is the result of setting the variable value to "null" via YAML.
+	if value.Value.Raw != nil {
+		if err := json.Unmarshal(value.Value.Raw, &variableValue); err != nil {
+			return nil, field.Invalid(
+				fldPath.Child("value"), string(value.Value.Raw),
+				fmt.Sprintf("variable %q could not be parsed: %v", value.Name, err),
+			)
+		}
+	}
+
+	defaulting.Default(variableValue, s)
+
+	return variableValue, nil
+}
+
+func validatorAndSchemas(
+	fldPath *field.Path, definition *clusterv1.ClusterClassVariable,
+) (validation.SchemaValidator, *apiextensions.JSONSchemaProps, *structuralschema.Structural, *field.Error) {
+	// Convert schema to Kubernetes APIExtensions Schema.
+	apiExtensionsSchema, allErrs := ConvertJSONSchemaPropsToAPIExtensions(
+		&definition.Schema.OpenAPIV3Schema, field.NewPath("schema"),
+	)
+	if len(allErrs) > 0 {
+		return nil, nil, nil, field.InternalError(
+			fldPath,
+			fmt.Errorf(
+				"failed to convert schema definition for variable %q; ClusterClass should be checked: %v",
+				definition.Name,
+				allErrs,
+			),
+		)
+	}
+
+	// Create validator for schema.
+	validator, _, err := validation.NewSchemaValidator(apiExtensionsSchema)
+	if err != nil {
+		return nil, nil, nil, field.InternalError(
+			fldPath,
+			fmt.Errorf(
+				"failed to create schema validator for variable %q; ClusterClass should be checked: %v",
+				definition.Name,
+				err,
+			),
+		)
+	}
+
+	s, err := structuralschema.NewStructural(apiExtensionsSchema)
+	if err != nil {
+		return nil, nil, nil, field.InternalError(
+			fldPath,
+			fmt.Errorf(
+				"failed to create structural schema for variable %q; ClusterClass should be checked: %v",
+				definition.Name,
+				err,
+			),
+		)
+	}
+
+	return validator, apiExtensionsSchema, s, nil
+}
+
+func validateCEL(
+	fldPath *field.Path,
+	variableValue, oldVariableValue any,
+	structuralSchema *structuralschema.Structural,
+) field.ErrorList {
+	// Note: k/k CR validation also uses celconfig.PerCallLimit when creating the validator for a custom resource.
+	// The current PerCallLimit gives roughly 0.1 second for each expression validation call.
+	celValidator := cel.NewValidator(structuralSchema, false, celconfig.PerCallLimit)
+	// celValidation will be nil if there are no CEL validations specified in the schema
+	// under `x-kubernetes-validations`.
+	if celValidator == nil {
+		return nil
+	}
+
+	// Note: k/k CRD validation also uses celconfig.RuntimeCELCostBudget for the Validate call.
+	// The current RuntimeCELCostBudget gives roughly 1 second for the validation of a variable value.
+	if validationErrors, _ := celValidator.Validate(
+		context.Background(),
+		fldPath.Child("value"),
+		structuralSchema,
+		variableValue,
+		oldVariableValue,
+		celconfig.RuntimeCELCostBudget,
+	); len(validationErrors) > 0 {
+		var allErrs field.ErrorList
+		for _, validationError := range validationErrors {
+			// Set correct value in the field error. ValidateCustomResource sets the type instead of the value.
+			validationError.BadValue = variableValue
+			allErrs = append(allErrs, validationError)
+		}
+		return allErrs
+	}
+
+	return nil
 }
 
 // validateUnknownFields validates the given variableValue for unknown fields.
@@ -139,4 +213,39 @@ func validateUnknownFields(
 	}
 
 	return nil
+}
+
+// ValidateClusterVariable validates an update to a clusterVariable.
+func ValidateClusterVariableUpdate(
+	value, oldValue *clusterv1.ClusterVariable,
+	definition *clusterv1.ClusterClassVariable,
+	fldPath *field.Path,
+) field.ErrorList {
+	validator, apiExtensionsSchema, structuralSchema, err := validatorAndSchemas(fldPath, definition)
+	if err != nil {
+		return field.ErrorList{err}
+	}
+
+	variableValue, err := unmarshalAndDefaultVariableValue(fldPath, value, structuralSchema)
+	if err != nil {
+		return field.ErrorList{err}
+	}
+
+	oldVariableValue, err := unmarshalAndDefaultVariableValue(fldPath, oldValue, structuralSchema)
+	if err != nil {
+		return field.ErrorList{err}
+	}
+
+	// Validate variable against the schema.
+	// NOTE: We're reusing a library func used in CRD validation.
+	if err := validation.ValidateCustomResourceUpdate(fldPath, variableValue, oldVariableValue, validator); err != nil {
+		return err
+	}
+
+	// Validate variable against the schema using CEL.
+	if err := validateCEL(fldPath, variableValue, oldVariableValue, structuralSchema); err != nil {
+		return err
+	}
+
+	return validateUnknownFields(fldPath, value, variableValue, apiExtensionsSchema)
 }
