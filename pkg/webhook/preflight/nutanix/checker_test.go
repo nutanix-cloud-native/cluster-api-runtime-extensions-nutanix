@@ -33,22 +33,24 @@ func (m *mockCheck) Run(ctx context.Context) preflight.CheckResult {
 
 func TestNutanixChecker_Init(t *testing.T) {
 	tests := []struct {
-		name                    string
-		nutanixConfig           *carenv1.NutanixClusterConfigSpec
-		workerNodeConfigs       map[string]*carenv1.NutanixWorkerNodeConfigSpec
-		expectedCheckCount      int
-		expectedFirstCheckName  string
-		expectedSecondCheckName string
-		vmImageCheckCount       int
+		name                               string
+		nutanixConfig                      *carenv1.NutanixClusterConfigSpec
+		workerNodeConfigs                  map[string]*carenv1.NutanixWorkerNodeConfigSpec
+		expectedCheckCount                 int
+		expectedFirstCheckName             string
+		expectedSecondCheckName            string
+		vmImageCheckCount                  int
+		vmImageKubernetesVersionCheckCount int
 	}{
 		{
-			name:                    "basic initialization with no configs",
-			nutanixConfig:           nil,
-			workerNodeConfigs:       nil,
-			expectedCheckCount:      2, // config check and credentials check
-			expectedFirstCheckName:  "NutanixConfiguration",
-			expectedSecondCheckName: "NutanixCredentials",
-			vmImageCheckCount:       0,
+			name:                               "basic initialization with no configs",
+			nutanixConfig:                      nil,
+			workerNodeConfigs:                  nil,
+			expectedCheckCount:                 2, // config check and credentials check
+			expectedFirstCheckName:             "NutanixConfiguration",
+			expectedSecondCheckName:            "NutanixCredentials",
+			vmImageCheckCount:                  0,
+			vmImageKubernetesVersionCheckCount: 0,
 		},
 		{
 			name: "initialization with control plane config",
@@ -57,11 +59,12 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixNodeSpec{},
 				},
 			},
-			workerNodeConfigs:       nil,
-			expectedCheckCount:      3, // config check, credentials check, 1 VM image check
-			expectedFirstCheckName:  "NutanixConfiguration",
-			expectedSecondCheckName: "NutanixCredentials",
-			vmImageCheckCount:       1,
+			workerNodeConfigs:                  nil,
+			expectedCheckCount:                 4, // config check, credentials check, 1 VM image check
+			expectedFirstCheckName:             "NutanixConfiguration",
+			expectedSecondCheckName:            "NutanixCredentials",
+			vmImageCheckCount:                  1,
+			vmImageKubernetesVersionCheckCount: 1,
 		},
 		{
 			name:          "initialization with worker node configs",
@@ -74,10 +77,11 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixNodeSpec{},
 				},
 			},
-			expectedCheckCount:      4, // config check, credentials check, 2 VM image checks
-			expectedFirstCheckName:  "NutanixConfiguration",
-			expectedSecondCheckName: "NutanixCredentials",
-			vmImageCheckCount:       2,
+			expectedCheckCount:                 6, // config check, credentials check, 2 VM image checks
+			expectedFirstCheckName:             "NutanixConfiguration",
+			expectedSecondCheckName:            "NutanixCredentials",
+			vmImageCheckCount:                  2,
+			vmImageKubernetesVersionCheckCount: 2,
 		},
 		{
 			name: "initialization with both control plane and worker node configs",
@@ -91,10 +95,11 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixNodeSpec{},
 				},
 			},
-			expectedCheckCount:      4, // config check, credentials check, 2 VM image checks (1 CP + 1 worker)
-			expectedFirstCheckName:  "NutanixConfiguration",
-			expectedSecondCheckName: "NutanixCredentials",
-			vmImageCheckCount:       2,
+			expectedCheckCount:                 6, // config check, credentials check, 2 VM image checks (1 CP + 1 worker)
+			expectedFirstCheckName:             "NutanixConfiguration",
+			expectedSecondCheckName:            "NutanixCredentials",
+			vmImageCheckCount:                  2,
+			vmImageKubernetesVersionCheckCount: 2,
 		},
 	}
 
@@ -107,6 +112,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			configCheckCalled := false
 			credsCheckCalled := false
 			vmImageCheckCount := 0
+			vmImageKubernetesVersionCheckCount := 0
 
 			checker.configurationCheckFactory = func(cd *checkDependencies) preflight.Check {
 				configCheckCalled = true
@@ -135,6 +141,22 @@ func TestNutanixChecker_Init(t *testing.T) {
 					checks = append(checks,
 						&mockCheck{
 							name: fmt.Sprintf("NutanixVMImage-%d", i),
+							result: preflight.CheckResult{
+								Allowed: true,
+							},
+						},
+					)
+				}
+				return checks
+			}
+
+			checker.vmImageKubernetesVersionChecksFactory = func(cd *checkDependencies) []preflight.Check {
+				checks := []preflight.Check{}
+				for i := 0; i < tt.vmImageKubernetesVersionCheckCount; i++ {
+					vmImageKubernetesVersionCheckCount++
+					checks = append(checks,
+						&mockCheck{
+							name: fmt.Sprintf("NutanixVMImageKubernetesVersion-%d", i),
 							result: preflight.CheckResult{
 								Allowed: true,
 							},
