@@ -24,12 +24,21 @@ func TestInitStorageContainerChecks(t *testing.T) {
 		nutanixClusterConfigSpec     *carenv1.NutanixClusterConfigSpec
 		workerNodeConfigSpecByMDName map[string]*carenv1.NutanixWorkerNodeConfigSpec
 		expectedChecksCount          int
+		nclient                      client
 	}{
+		{
+			name:                         "client not initialized",
+			nutanixClusterConfigSpec:     nil,
+			workerNodeConfigSpecByMDName: nil,
+			expectedChecksCount:          0,
+			nclient:                      nil,
+		},
 		{
 			name:                         "nil cluster config",
 			nutanixClusterConfigSpec:     nil,
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
+			nclient:                      &mocknclient{},
 		},
 		{
 			name: "cluster config without addons",
@@ -40,6 +49,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
+			nclient:                      &mocknclient{},
 		},
 		{
 			name: "cluster config with addons but no CSI",
@@ -51,6 +61,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
+			nclient:                      &mocknclient{},
 		},
 		{
 			name: "cluster config with CSI but no control plane or worker nodes",
@@ -65,6 +76,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
+			nclient:                      &mocknclient{},
 		},
 		{
 			name: "cluster config with CSI and control plane",
@@ -97,6 +109,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          1,
+			nclient:                      &mocknclient{},
 		},
 		{
 			name: "cluster config with CSI and worker nodes",
@@ -122,6 +135,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				},
 			},
 			expectedChecksCount: 1,
+			nclient:             &mocknclient{},
 		},
 		{
 			name: "cluster config with CSI, control plane and worker nodes",
@@ -167,6 +181,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				},
 			},
 			expectedChecksCount: 3, // 1 for control plane, 2 for workers
+			nclient:             &mocknclient{},
 		},
 		{
 			name: "cluster config with CSI and null control plane nutanix",
@@ -184,6 +199,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
+			nclient:                      &mocknclient{},
 		},
 		{
 			name: "cluster config with CSI and some nutanix nil workers",
@@ -212,6 +228,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				},
 			},
 			expectedChecksCount: 1, // only for the defined worker-1
+			nclient:             &mocknclient{},
 		},
 	}
 
@@ -220,6 +237,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			cd := &checkDependencies{
 				nutanixClusterConfigSpec:                           tc.nutanixClusterConfigSpec,
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tc.workerNodeConfigSpecByMDName,
+				nclient: tc.nclient,
 			}
 
 			// Call the function under test

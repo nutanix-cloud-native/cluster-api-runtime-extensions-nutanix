@@ -96,6 +96,10 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	checks := []preflight.Check{}
 
+	if cd.nclient == nil {
+		return checks
+	}
+
 	// If there is no CSI configuration, there is no need to check for storage containers.
 	if cd.nutanixClusterConfigSpec == nil ||
 		cd.nutanixClusterConfigSpec.Addons == nil ||
