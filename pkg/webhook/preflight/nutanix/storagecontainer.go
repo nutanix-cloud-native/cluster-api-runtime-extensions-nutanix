@@ -72,8 +72,6 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			continue
 		}
 
-		// TODO: check if cluster name is set, if not use uuid.
-		// If neither is set, use the cluster name from the NodeSpec failure domain.
 		if _, err := getStorageContainer(c.nclient, c.nodeSpec, storageContainer); err != nil {
 			result.Allowed = false
 			result.Error = true
