@@ -81,3 +81,17 @@ Applying this configuration will result in the following configuration being app
               skipPhases:
                 - addon/kube-proxy
     ```
+
+**IMPORTANT**: If you are disabling kube-proxy in this way to manage kube-proxy yourself, then you will also need
+to add the following control plane annotation to your `Cluster` definition:
+
+```yaml
+spec:
+  topology:
+    controlPlane:
+      metadata:
+        annotations:
+          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
+```
+
+Without this, CAPI will attempt to upgrade kube-proxy when the cluster is upgraded.
