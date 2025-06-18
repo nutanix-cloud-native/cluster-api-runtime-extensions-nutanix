@@ -1,6 +1,8 @@
 # Copyright 2023 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+CAREN_FEATURE_GATES ?= ""
+
 .PHONY: dev.run-on-kind
 dev.run-on-kind: export KUBECONFIG := $(KIND_KUBECONFIG)
 dev.run-on-kind: kind.create clusterctl.init
@@ -16,6 +18,7 @@ dev.run-on-kind:
 		--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
 		--set-string image.tag=$(SNAPSHOT_VERSION) \
 		--set-string helmRepository.images.bundleInitializer.tag=$(SNAPSHOT_VERSION) \
+		--set extraArgs.feature-gates="$(CAREN_FEATURE_GATES)" \
 		--wait --wait-for-jobs
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
 	kubectl rollout restart deployment helm-repository
