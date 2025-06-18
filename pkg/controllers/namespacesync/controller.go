@@ -33,7 +33,6 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) SetupWithManager(
-	ctx context.Context,
 	mgr ctrl.Manager,
 	options *controller.Options,
 ) error {

@@ -33,6 +33,7 @@ spec:
         - --namespacesync-enabled={{ .Values.namespaceSync.enabled }}
         - --namespacesync-source-namespace={{ default .Release.Namespace .Values.namespaceSync.sourceNamespace }}
         - --namespacesync-target-namespace-label-key={{ .Values.namespaceSync.targetNamespaceLabelKey }}
+        - --enforce-clusterautoscaler-limits-enabled={{ .Values.enforceClusterAutoscalerLimits.enabled }}
         - --helm-addons-configmap={{ .Values.helmAddonsConfigMap }}
         - --cni.cilium.helm-addon.default-values-template-configmap-name={{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --nfd.helm-addon.default-values-template-configmap-name={{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}

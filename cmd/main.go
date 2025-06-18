@@ -31,6 +31,7 @@ import (
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/enforceclusterautoscalerlimits"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/namespacesync"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/feature"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
@@ -117,6 +118,7 @@ func main() {
 	genericMetaHandlers := generic.New()
 
 	namespacesyncOptions := namespacesync.Options{}
+	enforceClusterAutoscalerLimitsOptions := enforceclusterautoscalerlimits.Options{}
 
 	// Initialize and parse command line flags.
 	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())
@@ -128,6 +130,7 @@ func main() {
 	dockerMetaHandlers.AddFlags(pflag.CommandLine)
 	nutanixMetaHandlers.AddFlags(pflag.CommandLine)
 	namespacesyncOptions.AddFlags(pflag.CommandLine)
+	enforceClusterAutoscalerLimitsOptions.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 
@@ -197,7 +200,6 @@ func main() {
 			SourceClusterClassNamespace: namespacesyncOptions.SourceNamespace,
 			IsTargetNamespace:           namespacesync.NamespaceHasLabelKey(namespacesyncOptions.TargetNamespaceLabelKey),
 		}).SetupWithManager(
-			signalCtx,
 			mgr,
 			&controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},
 		); err != nil {
@@ -206,6 +208,23 @@ func main() {
 				"unable to create controller",
 				"controller",
 				"namespacesync.Reconciler",
+			)
+			os.Exit(1)
+		}
+	}
+
+	if enforceClusterAutoscalerLimitsOptions.Enabled {
+		if err := (&enforceclusterautoscalerlimits.Reconciler{
+			Client: mgr.GetClient(),
+		}).SetupWithManager(
+			mgr,
+			&controller.Options{MaxConcurrentReconciles: enforceClusterAutoscalerLimitsOptions.Concurrency},
+		); err != nil {
+			setupLog.Error(
+				err,
+				"unable to create controller",
+				"controller",
+				"enforceclusterautoscalerlimits.Reconciler",
 			)
 			os.Exit(1)
 		}
