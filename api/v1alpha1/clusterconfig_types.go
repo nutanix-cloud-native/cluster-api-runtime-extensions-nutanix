@@ -335,8 +335,6 @@ type CoreDNS struct {
 type KubeProxyMode string
 
 const (
-	// KubeProxyModeDisabled indicates that kube-proxy should not be installed.
-	KubeProxyModeDisabled KubeProxyMode = "Disabled"
 	// KubeProxyModeIPTables indicates that kube-proxy should be installed in iptables
 	// mode.
 	KubeProxyModeIPTables KubeProxyMode = "iptables"
@@ -348,12 +346,10 @@ const (
 type KubeProxy struct {
 	// Mode specifies the mode for kube-proxy:
 	//
-	// - Disabled means that kube-proxy is not installed.
 	// - iptables means that kube-proxy is installed in iptables mode.
 	// - nftables means that kube-proxy is installed in nftables mode.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Enum=Disabled;iptables;nftables
-	// +kubebuilder:default=iptables
+	// +kubebuilder:validation:Enum=iptables;nftables
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
 	Mode KubeProxyMode `json:"mode,omitempty"`
 }

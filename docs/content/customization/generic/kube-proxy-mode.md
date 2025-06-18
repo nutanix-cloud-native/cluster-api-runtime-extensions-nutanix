@@ -2,9 +2,8 @@
 title = "kube-proxy mode"
 +++
 
-This customization allows configuration of the `kube-proxy` proxy mode. Currently, only `iptables`, `nftables` or
-`Disabled` modes are supported. `Disabled` is useful when deploying a CNI implementation that can replace `kube-proxy`
-to avoid potential conflicts. By default, `kube-proxy` is enabled in `iptables` mode.
+This customization allows configuration of the `kube-proxy` proxy mode. Currently, only `iptables` and `nftables`
+modes are supported. By default, `kube-proxy` is enabled in `iptables` mode by `kubeadm`.
 
 ## Examples
 
@@ -52,7 +51,7 @@ is executed:
 
 ### Skipping kube-proxy installation
 
-To disable the deployment of `kube-proxy`, specify the following configuration:
+To disable the deployment and upgrade of `kube-proxy`, specify the following configuration:
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -61,11 +60,10 @@ metadata:
   name: <NAME>
 spec:
   topology:
-    variables:
-      - name: clusterConfig
-        value:
-          kubeProxy:
-            mode: Disabled
+    controlPlane:
+      metadata:
+        annotations:
+          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
 ```
 
 Applying this configuration will result in the following configuration being applied:
@@ -81,17 +79,3 @@ Applying this configuration will result in the following configuration being app
               skipPhases:
                 - addon/kube-proxy
     ```
-
-**IMPORTANT**: If you are disabling kube-proxy in this way to manage kube-proxy yourself, then you will also need
-to add the following control plane annotation to your `Cluster` definition:
-
-```yaml
-spec:
-  topology:
-    controlPlane:
-      metadata:
-        annotations:
-          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
-```
-
-Without this, CAPI will attempt to upgrade kube-proxy when the cluster is upgraded.

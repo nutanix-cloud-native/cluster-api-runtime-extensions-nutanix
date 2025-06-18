@@ -6,9 +6,11 @@ package kubeproxymode
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -76,17 +78,23 @@ func (h *kubeProxyMode) Mutate(
 		"holderRef", holderRef,
 	)
 
+	cluster, err := clusterGetter(ctx)
+	if err != nil {
+		log.Error(err, "failed to get cluster for kube proxy mode mutation")
+		return fmt.Errorf("failed to get cluster for kube proxy mode mutation: %w", err)
+	}
+
+	isSkipProxy := false
+	if cluster.Spec.Topology != nil {
+		_, isSkipProxy = cluster.Spec.Topology.ControlPlane.Metadata.Annotations[controlplanev1.SkipKubeProxyAnnotation]
+	}
+
 	kubeProxyMode, err := variables.Get[v1alpha1.KubeProxyMode](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
-	if err != nil {
-		if variables.IsNotFoundError(err) {
-			log.V(5).Info("kubeProxy mode variable not defined")
-			return nil
-		}
-
+	if err != nil && !variables.IsNotFoundError(err) {
 		return err
 	}
 
@@ -99,8 +107,8 @@ func (h *kubeProxyMode) Mutate(
 		kubeProxyMode,
 	)
 
-	if kubeProxyMode == "" {
-		log.V(5).Info("kube proxy mode is not set, skipping mutation")
+	if kubeProxyMode == "" && !isSkipProxy {
+		log.V(5).Info("kube proxy mode is not set or skipped, skipping mutation")
 		return nil
 	}
 
@@ -116,26 +124,28 @@ func (h *kubeProxyMode) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("adding kube proxy mode to control plane kubeadm config spec")
 
-			switch kubeProxyMode {
-			case v1alpha1.KubeProxyModeDisabled:
-				log.Info("kube proxy mode is set to disabled, skipping kube-proxy addon")
+			if isSkipProxy {
+				log.Info(
+					"cluster controlplane contains controlplane.cluster.x-k8s.io/skip-kube-proxy annotation, " +
+						"skipping kube-proxy addon",
+				)
 				if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
 					obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1.InitConfiguration{}
 				}
 				initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
-				initConfiguration.SkipPhases = append(
-					initConfiguration.SkipPhases,
-					"addon/kube-proxy",
-				)
-			case v1alpha1.KubeProxyModeIPTables, v1alpha1.KubeProxyModeNFTables:
-				kubeProxyConfigProviderTemplate, err := templateForClusterProvider(ctx, clusterGetter)
-				if err != nil {
-					log.Error(
-						err,
-						"failed to get kube proxy config template for cluster provider",
+				if !slices.Contains(initConfiguration.SkipPhases, "addon/kube-proxy") {
+					initConfiguration.SkipPhases = append(
+						initConfiguration.SkipPhases,
+						"addon/kube-proxy",
 					)
-					return fmt.Errorf("failed to get cluster for kube proxy mode mutation: %w", err)
 				}
+
+				return nil
+			}
+
+			switch kubeProxyMode {
+			case v1alpha1.KubeProxyModeIPTables, v1alpha1.KubeProxyModeNFTables:
+				kubeProxyConfigProviderTemplate := templateForClusterProvider(cluster)
 
 				kubeProxyConfig := bootstrapv1.File{
 					Path:        "/etc/kubernetes/kubeproxy-config.yaml",
@@ -162,16 +172,11 @@ func (h *kubeProxyMode) Mutate(
 }
 
 // templateForClusterProvider returns the kube-proxy config template based on the cluster provider.
-func templateForClusterProvider(ctx context.Context, clusterGetter mutation.ClusterGetter) (string, error) {
-	cluster, err := clusterGetter(ctx)
-	if err != nil {
-		return "", err
-	}
-
+func templateForClusterProvider(cluster *clusterv1.Cluster) string {
 	switch utils.GetProvider(cluster) {
 	case "docker":
-		return kubeProxyConfigYAMLTemplateForDockerProvider, nil
+		return kubeProxyConfigYAMLTemplateForDockerProvider
 	default:
-		return kubeProxyConfigYAMLTemplate, nil
+		return kubeProxyConfigYAMLTemplate
 	}
 }

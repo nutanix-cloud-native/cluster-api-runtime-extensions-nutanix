@@ -179,15 +179,12 @@ spec:
                 description: KubeProxy defines the configuration for kube-proxy.
                 properties:
                   mode:
-                    default: iptables
                     description: |-
                       Mode specifies the mode for kube-proxy:
 
-                      - Disabled means that kube-proxy is not installed.
                       - iptables means that kube-proxy is installed in iptables mode.
                       - nftables means that kube-proxy is installed in nftables mode.
                     enum:
-                    - Disabled
                     - iptables
                     - nftables
                     type: string

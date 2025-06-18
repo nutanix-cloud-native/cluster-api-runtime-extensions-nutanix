@@ -14,6 +14,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -49,13 +50,7 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.AWSClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeDisabled,
-							},
-						},
-					},
+					v1alpha1.AWSClusterConfigSpec{},
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -64,6 +59,28 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 				Path:         "/spec/template/spec/kubeadmConfigSpec/initConfiguration/skipPhases",
 				ValueMatcher: gomega.ConsistOf("addon/kube-proxy"),
 			}},
+		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "aws",
+				},
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: &clusterv1.Topology{
+					Version: "dummy-version",
+					Class:   "dummy-class",
+					ControlPlane: clusterv1.ControlPlaneTopology{
+						Metadata: clusterv1.ObjectMeta{
+							Annotations: map[string]string{
+								controlplanev1.SkipKubeProxyAnnotation: "",
+							},
+						},
+					},
+				},
+			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -71,13 +88,7 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.DockerClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeDisabled,
-							},
-						},
-					},
+					v1alpha1.DockerClusterConfigSpec{},
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -87,19 +98,35 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 				ValueMatcher: gomega.ConsistOf("addon/kube-proxy"),
 			}},
 		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "docker",
+				},
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: &clusterv1.Topology{
+					Version: "dummy-version",
+					Class:   "dummy-class",
+					ControlPlane: clusterv1.ControlPlaneTopology{
+						Metadata: clusterv1.ObjectMeta{
+							Annotations: map[string]string{
+								controlplanev1.SkipKubeProxyAnnotation: "",
+							},
+						},
+					},
+				},
+			},
+		},
 	}, {
 		patchTest: capitest.PatchTestDef{
 			Name: "disable kube proxy with Nutanix",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.NutanixClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeDisabled,
-							},
-						},
-					},
+					v1alpha1.NutanixClusterConfigSpec{},
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -115,6 +142,19 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 				Namespace: request.Namespace,
 				Labels: map[string]string{
 					clusterv1.ProviderNameLabel: "nutanix",
+				},
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: &clusterv1.Topology{
+					Version: "dummy-version",
+					Class:   "dummy-class",
+					ControlPlane: clusterv1.ControlPlaneTopology{
+						Metadata: clusterv1.ObjectMeta{
+							Annotations: map[string]string{
+								controlplanev1.SkipKubeProxyAnnotation: "",
+							},
+						},
+					},
 				},
 			},
 		},
