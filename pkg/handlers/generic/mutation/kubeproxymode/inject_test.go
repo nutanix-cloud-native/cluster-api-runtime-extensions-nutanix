@@ -4,16 +4,23 @@
 package kubeproxymode
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
 func TestKubeProxyModePatch(t *testing.T) {
@@ -23,11 +30,17 @@ func TestKubeProxyModePatch(t *testing.T) {
 
 type testObj struct {
 	patchTest capitest.PatchTestDef
+	cluster   *clusterv1.Cluster
 }
 
 var _ = Describe("Generate kube proxy mode patches", func() {
 	patchGenerator := func() mutation.GeneratePatches {
-		return mutation.NewMetaGeneratePatchesHandler("", nil, NewPatch()).(mutation.GeneratePatches)
+		clientScheme := runtime.NewScheme()
+		utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+		utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+		cl, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+		gomega.Expect(err).To(gomega.BeNil())
+		return mutation.NewMetaGeneratePatchesHandler("", cl, NewPatch()).(mutation.GeneratePatches)
 	}
 
 	testDefs := []testObj{{
@@ -96,6 +109,15 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 				ValueMatcher: gomega.ConsistOf("addon/kube-proxy"),
 			}},
 		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "nutanix",
+				},
+			},
+		},
 	}, {
 		patchTest: capitest.PatchTestDef{
 			Name: "kube proxy iptables mode with AWS",
@@ -137,6 +159,15 @@ mode: iptables
 				),
 			}},
 		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "aws",
+				},
+			},
+		},
 	}, {
 		patchTest: capitest.PatchTestDef{
 			Name: "kube proxy iptables mode with Docker",
@@ -162,9 +193,6 @@ mode: iptables
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
 						gomega.HaveKeyWithValue("content", `
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
 mode: iptables
 `,
 						),
@@ -177,6 +205,15 @@ mode: iptables
 					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
 				),
 			}},
+		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "docker",
+				},
+			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -219,6 +256,15 @@ mode: nftables
 				),
 			}},
 		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "nutanix",
+				},
+			},
+		},
 	}, {
 		patchTest: capitest.PatchTestDef{
 			Name: "kube proxy nftables mode with AWS",
@@ -260,6 +306,15 @@ mode: nftables
 				),
 			}},
 		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "aws",
+				},
+			},
+		},
 	}, {
 		patchTest: capitest.PatchTestDef{
 			Name: "kube proxy nftables mode with Docker",
@@ -285,9 +340,6 @@ mode: nftables
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
 						gomega.HaveKeyWithValue("content", `
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
 mode: nftables
 `,
 						),
@@ -301,11 +353,29 @@ mode: nftables
 				),
 			}},
 		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "docker",
+				},
+			},
+		},
 	}}
 
 	// create test node for each case
 	for _, tt := range testDefs {
 		It(tt.patchTest.Name, func() {
+			if tt.cluster != nil {
+				clientScheme := runtime.NewScheme()
+				utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
+				utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+				cl, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				gomega.Expect(cl.Create(context.Background(), tt.cluster)).To(gomega.Succeed())
+				DeferCleanup(cl.Delete, context.Background(), tt.cluster)
+			}
 			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt.patchTest)
 		})
 	}

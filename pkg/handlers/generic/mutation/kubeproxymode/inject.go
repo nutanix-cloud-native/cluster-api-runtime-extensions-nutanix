@@ -20,6 +20,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 const (
@@ -30,6 +31,12 @@ const (
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
+mode: %s
+`
+
+	// kubeProxyConfigYAMLTemplateForDockerProvider is the kube-proxy configuration template for Docker provider.
+	// CAPD already configures some stuff in KubeProxyConfiguration, so we only need to set the mode.
+	kubeProxyConfigYAMLTemplateForDockerProvider = `
 mode: %s
 `
 )
@@ -121,11 +128,20 @@ func (h *kubeProxyMode) Mutate(
 					"addon/kube-proxy",
 				)
 			case v1alpha1.KubeProxyModeIPTables, v1alpha1.KubeProxyModeNFTables:
+				kubeProxyConfigProviderTemplate, err := templateForClusterProvider(ctx, clusterGetter)
+				if err != nil {
+					log.Error(
+						err,
+						"failed to get kube proxy config template for cluster provider",
+					)
+					return fmt.Errorf("failed to get cluster for kube proxy mode mutation: %w", err)
+				}
+
 				kubeProxyConfig := bootstrapv1.File{
 					Path:        "/etc/kubernetes/kubeproxy-config.yaml",
 					Owner:       "root:root",
 					Permissions: "0644",
-					Content:     fmt.Sprintf(kubeProxyConfigYAMLTemplate, kubeProxyMode),
+					Content:     fmt.Sprintf(kubeProxyConfigProviderTemplate, kubeProxyMode),
 				}
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 					obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
@@ -143,4 +159,19 @@ func (h *kubeProxyMode) Mutate(
 			return nil
 		},
 	)
+}
+
+// templateForClusterProvider returns the kube-proxy config template based on the cluster provider.
+func templateForClusterProvider(ctx context.Context, clusterGetter mutation.ClusterGetter) (string, error) {
+	cluster, err := clusterGetter(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	switch utils.GetProvider(cluster) {
+	case "docker":
+		return kubeProxyConfigYAMLTemplateForDockerProvider, nil
+	default:
+		return kubeProxyConfigYAMLTemplate, nil
+	}
 }
