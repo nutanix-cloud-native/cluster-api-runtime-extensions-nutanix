@@ -31,6 +31,14 @@
             },
             "type": "object"
         },
+        "enforceClusterAutoscalerLimits": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "env": {
             "properties": {},
             "type": "object"

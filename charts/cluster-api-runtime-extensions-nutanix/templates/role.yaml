@@ -80,6 +80,16 @@ rules:
       - list
       - watch
   - apiGroups:
+      - cluster.x-k8s.io
+    resources:
+      - machinedeployments
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
       - storage.k8s.io
     resources:
       - storageclasses

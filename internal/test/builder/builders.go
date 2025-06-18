@@ -19,6 +19,7 @@ package builder
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -1773,6 +1774,8 @@ type MachineDeploymentBuilder struct {
 	labels                 map[string]string
 	status                 *clusterv1.MachineDeploymentStatus
 	minReadySeconds        *int32
+	minSize                *int32
+	maxSize                *int32
 }
 
 // MachineDeployment creates a MachineDeploymentBuilder with the given name and namespace.
@@ -1828,6 +1831,18 @@ func (m *MachineDeploymentBuilder) WithVersion(version string) *MachineDeploymen
 // WithReplicas sets the number of replicas for the MachineDeploymentClassBuilder.
 func (m *MachineDeploymentBuilder) WithReplicas(replicas int32) *MachineDeploymentBuilder {
 	m.replicas = &replicas
+	return m
+}
+
+// WithMinClusterAutoscalerAnnotation sets the number of CA min annotation for the MachineDeploymentBuilder.
+func (m *MachineDeploymentBuilder) WithMinClusterAutoscalerAnnotation(min int32) *MachineDeploymentBuilder {
+	m.minSize = &min
+	return m
+}
+
+// WithMaxClusterAutoscalerAnnotation sets the number of CA max annotation for the MachineDeploymentBuilder.
+func (m *MachineDeploymentBuilder) WithMaxClusterAutoscalerAnnotation(max int32) *MachineDeploymentBuilder {
+	m.maxSize = &max
 	return m
 }
 
@@ -1897,6 +1912,20 @@ func (m *MachineDeploymentBuilder) Build() *clusterv1.MachineDeployment {
 		}
 	}
 	obj.Spec.MinReadySeconds = m.minReadySeconds
+
+	if m.minSize != nil {
+		if obj.Annotations == nil {
+			obj.Annotations = map[string]string{}
+		}
+		obj.Annotations[clusterv1.AutoscalerMinSizeAnnotation] = strconv.FormatInt(int64(*m.minSize), 10)
+	}
+
+	if m.maxSize != nil {
+		if obj.Annotations == nil {
+			obj.Annotations = map[string]string{}
+		}
+		obj.Annotations[clusterv1.AutoscalerMaxSizeAnnotation] = strconv.FormatInt(int64(*m.maxSize), 10)
+	}
 
 	return obj
 }

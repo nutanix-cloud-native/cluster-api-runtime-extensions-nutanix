@@ -132,6 +132,16 @@ namespaceSync:
   # By default, sourceNamespace is the helm release namespace.
   sourceNamespace: ""
 
+# Enable the Cluster Autoscaler limits enforcement controller.
+# This controller ensures that the number of replicas in a MachineDeployment
+# does not exceed the limits set by the Cluster Autoscaler annotations.
+# It will also ensure that the number of replicas is at least the minimum
+# number of replicas set by the Cluster Autoscaler annotations.
+# The controller will not enforce the limits if the Cluster Autoscaler annotations
+# are not present on the MachineDeployment.
+enforceClusterAutoscalerLimits:
+  enabled: true
+
 deployment:
   replicas: 1
 
