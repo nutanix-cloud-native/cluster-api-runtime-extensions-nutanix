@@ -83,7 +83,7 @@ NOTE: ConfigMap should contain complete helm values for Cilium as same will be a
 
 ### Default Cilium Specification
 
-Please check the [default Cilium configuration](https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/blob/v{{< param "version" >}}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml).
+Please check the [default Cilium configuration].
 
 ## Select Deployment Strategy
 
@@ -134,3 +134,4 @@ deploying cluster-api-runtime-extensions-nutanix chart:
 ```
 
 [Cluster API Add-on Provider for Helm]: https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm
+[default Cilium configuration]: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/blob/v{{< param "version" >}}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml {{< mdl-disable "<!-- markdownlint-disable MD013 MD034 -->" >}}
