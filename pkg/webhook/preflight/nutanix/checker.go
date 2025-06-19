@@ -18,9 +18,10 @@ import (
 )
 
 var Checker = &nutanixChecker{
-	configurationCheckFactory: newConfigurationCheck,
-	credentialsCheckFactory:   newCredentialsCheck,
-	vmImageChecksFactory:      newVMImageChecks,
+	configurationCheckFactory:             newConfigurationCheck,
+	credentialsCheckFactory:               newCredentialsCheck,
+	vmImageChecksFactory:                  newVMImageChecks,
+	vmImageKubernetesVersionChecksFactory: newVMImageKubernetesVersionChecks,
 }
 
 type nutanixChecker struct {
@@ -35,6 +36,10 @@ type nutanixChecker struct {
 	) preflight.Check
 
 	vmImageChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	vmImageKubernetesVersionChecksFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
 }
@@ -69,6 +74,7 @@ func (n *nutanixChecker) Init(
 	}
 
 	checks = append(checks, n.vmImageChecksFactory(cd)...)
+	checks = append(checks, n.vmImageKubernetesVersionChecksFactory(cd)...)
 
 	// Add more checks here as needed.
 
