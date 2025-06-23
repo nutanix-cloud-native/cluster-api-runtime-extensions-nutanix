@@ -295,7 +295,6 @@ var _ = Describe("Quick start", func() {
 														),
 													},
 												)
-
 												WaitForCoreDNSToBeReadyInWorkloadCluster(
 													ctx,
 													WaitForCoreDNSToBeReadyInWorkloadClusterInput{
@@ -305,6 +304,15 @@ var _ = Describe("Quick start", func() {
 															flavor,
 															"wait-deployment",
 														),
+													},
+												)
+
+												EnsureClusterCAForRegistryAddon(
+													ctx,
+													EnsureClusterCAForRegistryAddonInput{
+														Registry:        addonsConfig.Registry,
+														WorkloadCluster: workloadCluster,
+														ClusterProxy:    proxy,
 													},
 												)
 											},

@@ -168,6 +168,15 @@ var _ = Describe("Self-hosted", Serial, func() {
 															),
 														},
 													)
+
+													EnsureClusterCAForRegistryAddon(
+														ctx,
+														EnsureClusterCAForRegistryAddonInput{
+															Registry:        addonsConfig.Registry,
+															WorkloadCluster: workloadCluster,
+															ClusterProxy:    proxy,
+														},
+													)
 												},
 											}
 										},
