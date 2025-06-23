@@ -1,6 +1,6 @@
 +++
 title = "Registry"
-icon = "fa-solid fa-eye"
+icon = "fa-solid fa-cubes"
 +++
 
 By leveraging CAPI cluster lifecycle hooks, this handler deploys an OCI [Distribution] registry,

@@ -1,6 +1,6 @@
 +++
 title = " Container Object Storage Interface (COSI)"
-icon = "fa-solid fa-eye"
+icon = "fa-solid fa-object-group"
 +++
 
 By leveraging CAPI cluster lifecycle hooks, this handler deploys [Container Object Storage Interface] (COSI)

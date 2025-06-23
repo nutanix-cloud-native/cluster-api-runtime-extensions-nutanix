@@ -62,7 +62,7 @@ spec:
 
 NOTE: Only ConfigMap kind objects will be allowed to refer helm values from.
 
-ConfigMap Format -
+ConfigMap Format:
 
 ```yaml
 apiVersion: v1
@@ -134,4 +134,9 @@ deploying cluster-api-runtime-extensions-nutanix chart:
 ```
 
 [Cluster API Add-on Provider for Helm]: https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm
-[default Cilium configuration]: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/blob/v{{< param "version" >}}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml {{< mdl-disable "<!-- markdownlint-disable MD013 MD034 -->" >}}
+
+{{< mdl-disable "<!-- markdownlint-disable MD013 MD034 -->" >}}
+
+[default Cilium configuration]: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/blob/v{{< param "version" >}}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml
+
+{{< mdl-disable "<!-- markdownlint-restore -->" >}}
