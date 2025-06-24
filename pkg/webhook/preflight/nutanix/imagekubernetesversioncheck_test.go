@@ -27,55 +27,55 @@ func TestExtractKubernetesVersionFromImageName(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:      "nkp ubuntu vgpu image",
-			imageName: "nkp-ubuntu-22.04-vgpu-1.32.3-20250604180644",
+			name:      "kubedistro ubuntu vgpu image",
+			imageName: "kubedistro-ubuntu-22.04-vgpu-1.32.3-20250604180644",
 			want:      "1.32.3",
 			wantErr:   false,
 		},
 		{
-			name:      "nkp rocky release cis image",
-			imageName: "nkp-rocky-9.5-release-cis-1.32.3-20250430150550",
+			name:      "kubedistro rocky release cis image",
+			imageName: "kubedistro-rocky-9.5-release-cis-1.32.3-20250430150550",
 			want:      "1.32.3",
 			wantErr:   false,
 		},
 		{
-			name:      "nkp rhel fips image",
-			imageName: "nkp-rhel-8.10-fips-1.32.3-20250505212227",
+			name:      "kubedistro rhel fips image",
+			imageName: "kubedistro-rhel-8.10-fips-1.32.3-20250505212227",
 			want:      "1.32.3",
 			wantErr:   false,
 		},
 		{
-			name:      "nkp rocky basic image",
-			imageName: "nkp-rocky-9.5-1.32.3-20250514222748",
+			name:      "kubedistro rocky basic image",
+			imageName: "kubedistro-rocky-9.5-1.32.3-20250514222748",
 			want:      "1.32.3",
 			wantErr:   false,
 		},
 		{
 			name:      "different k8s version",
-			imageName: "nkp-ubuntu-22.04-1.31.5-20250101000000",
+			imageName: "kubedistro-ubuntu-22.04-1.31.5-20250101000000",
 			want:      "1.31.5",
 			wantErr:   false,
 		},
 		{
-			name:      "custom image name with kubernetes-version at end", // e.g., not following NKP naming convention
+			name:      "custom image name with kubernetes-version at end", // e.g., not following kubedistro naming convention
 			imageName: "custom-image-v1.23",
 			want:      "1.23",
 			wantErr:   false,
 		},
 		{
-			name:      "custom image name with kubernetes version in middle", // e.g., not following NKP naming convention
+			name:      "custom image name with kubernetes version in middle", // e.g., not following kubedistro naming convention
 			imageName: "custom-v1.23.1-image",
 			want:      "1.23.1",
 			wantErr:   false,
 		},
 		{
-			name:      "custom image name with kubernetes version in start", // e.g., not following NKP naming convention
+			name:      "custom image name with kubernetes version in start", // e.g., not following kubedistro naming convention
 			imageName: "v1.23.1-alpha-custom-image",
 			want:      "1.23.1",
 			wantErr:   false,
 		},
 		{
-			name:      "custom image name - no match", // e.g., not following NKP naming convention
+			name:      "custom image name - no match", // e.g., not following kubedistro naming convention
 			imageName: "my-custom-image-name",
 			want:      "",
 			wantErr:   true,
@@ -119,7 +119,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
 						ExtId:       ptr.To("test-uuid"),
-						Name:        ptr.To("nkp-ubuntu-22.04-vgpu-1.32.3-20250604180644"),
+						Name:        ptr.To("kubedistro-ubuntu-22.04-vgpu-1.32.3-20250604180644"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -144,7 +144,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
 						ExtId:       ptr.To("test-uuid"),
-						Name:        ptr.To("nkp-ubuntu-22.04-vgpu-1.31.5-20250604180644"),
+						Name:        ptr.To("kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -162,7 +162,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Error:   true,
 				Causes: []preflight.Cause{
 					{
-						Message: "kubernetes version mismatch: cluster version '1.32.3' does not match image version '1.31.5' (from image name 'nkp-ubuntu-22.04-vgpu-1.31.5-20250604180644')", //nolint:lll // cause is long
+						Message: "kubernetes version mismatch: cluster version '1.32.3' does not match image version '1.31.5' (from image name 'kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644')", //nolint:lll // cause is long
 						Field:   "test-field",
 					},
 				},
