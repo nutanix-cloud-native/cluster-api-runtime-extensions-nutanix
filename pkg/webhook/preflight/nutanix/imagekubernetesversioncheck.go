@@ -55,8 +55,7 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 
 		if len(images) == 0 {
 			return preflight.CheckResult{
-				Allowed:  true,
-				Warnings: []string{"expected to find 1 VM Image, found none"},
+				Allowed: true,
 			}
 		}
 
