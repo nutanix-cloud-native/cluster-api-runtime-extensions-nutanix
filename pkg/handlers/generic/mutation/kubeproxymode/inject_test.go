@@ -160,6 +160,56 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
+			Name: "kube proxy iptables mode with Nutanix",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.AWSClusterConfigSpec{
+						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+							KubeProxy: &v1alpha1.KubeProxy{
+								Mode: v1alpha1.KubeProxyModeIPTables,
+							},
+						},
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ConsistOf(
+					gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
+						gomega.HaveKeyWithValue("owner", "root:root"),
+						gomega.HaveKeyWithValue("permissions", "0644"),
+						gomega.HaveKeyWithValue("content", `
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: iptables
+`,
+						),
+					),
+				),
+			}, {
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+				ValueMatcher: gomega.ConsistOf(
+					`/bin/sh -ec '(grep -q "^kind: KubeProxyConfiguration$" /run/kubeadm/kubeadm.yaml && sed -i -e "s/^\(kind: KubeProxyConfiguration\)$/\1\nmode: iptables/" /run/kubeadm/kubeadm.yaml) || (cat /etc/kubernetes/kubeproxy-config.yaml >>/run/kubeadm/kubeadm.yaml)'`, //nolint:lll // Just a long command.
+				),
+			}},
+		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "nutanix",
+				},
+			},
+		},
+	}, {
+		patchTest: capitest.PatchTestDef{
 			Name: "kube proxy iptables mode with AWS",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
@@ -195,7 +245,7 @@ mode: iptables
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 				ValueMatcher: gomega.ConsistOf(
-					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+					`/bin/sh -ec '(grep -q "^kind: KubeProxyConfiguration$" /run/kubeadm/kubeadm.yaml && sed -i -e "s/^\(kind: KubeProxyConfiguration\)$/\1\nmode: iptables/" /run/kubeadm/kubeadm.yaml) || (cat /etc/kubernetes/kubeproxy-config.yaml >>/run/kubeadm/kubeadm.yaml)'`, //nolint:lll // Just a long command.
 				),
 			}},
 		},
@@ -233,6 +283,9 @@ mode: iptables
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
 						gomega.HaveKeyWithValue("content", `
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
 mode: iptables
 `,
 						),
@@ -242,7 +295,7 @@ mode: iptables
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 				ValueMatcher: gomega.ConsistOf(
-					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+					`/bin/sh -ec '(grep -q "^kind: KubeProxyConfiguration$" /run/kubeadm/kubeadm.yaml && sed -i -e "s/^\(kind: KubeProxyConfiguration\)$/\1\nmode: iptables/" /run/kubeadm/kubeadm.yaml) || (cat /etc/kubernetes/kubeproxy-config.yaml >>/run/kubeadm/kubeadm.yaml)'`, //nolint:lll // Just a long command.
 				),
 			}},
 		},
@@ -292,7 +345,7 @@ mode: nftables
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 				ValueMatcher: gomega.ConsistOf(
-					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+					`/bin/sh -ec '(grep -q "^kind: KubeProxyConfiguration$" /run/kubeadm/kubeadm.yaml && sed -i -e "s/^\(kind: KubeProxyConfiguration\)$/\1\nmode: nftables/" /run/kubeadm/kubeadm.yaml) || (cat /etc/kubernetes/kubeproxy-config.yaml >>/run/kubeadm/kubeadm.yaml)'`, //nolint:lll // Just a long command.
 				),
 			}},
 		},
@@ -342,7 +395,7 @@ mode: nftables
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 				ValueMatcher: gomega.ConsistOf(
-					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+					`/bin/sh -ec '(grep -q "^kind: KubeProxyConfiguration$" /run/kubeadm/kubeadm.yaml && sed -i -e "s/^\(kind: KubeProxyConfiguration\)$/\1\nmode: nftables/" /run/kubeadm/kubeadm.yaml) || (cat /etc/kubernetes/kubeproxy-config.yaml >>/run/kubeadm/kubeadm.yaml)'`, //nolint:lll // Just a long command.
 				),
 			}},
 		},
@@ -380,6 +433,9 @@ mode: nftables
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
 						gomega.HaveKeyWithValue("content", `
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
 mode: nftables
 `,
 						),
@@ -389,7 +445,7 @@ mode: nftables
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
 				ValueMatcher: gomega.ConsistOf(
-					"/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'",
+					`/bin/sh -ec '(grep -q "^kind: KubeProxyConfiguration$" /run/kubeadm/kubeadm.yaml && sed -i -e "s/^\(kind: KubeProxyConfiguration\)$/\1\nmode: nftables/" /run/kubeadm/kubeadm.yaml) || (cat /etc/kubernetes/kubeproxy-config.yaml >>/run/kubeadm/kubeadm.yaml)'`, //nolint:lll // Just a long command.
 				),
 			}},
 		},

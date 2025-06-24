@@ -345,7 +345,6 @@ const (
 
 type KubeProxy struct {
 	// Mode specifies the mode for kube-proxy:
-	//
 	// - iptables means that kube-proxy is installed in iptables mode.
 	// - nftables means that kube-proxy is installed in nftables mode.
 	// +kubebuilder:validation:Optional

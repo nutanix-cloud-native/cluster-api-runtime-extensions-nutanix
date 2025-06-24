@@ -10,7 +10,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -22,7 +21,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 const (
@@ -36,11 +34,13 @@ kind: KubeProxyConfiguration
 mode: %s
 `
 
-	// kubeProxyConfigYAMLTemplateForDockerProvider is the kube-proxy configuration template for Docker provider.
-	// CAPD already configures some stuff in KubeProxyConfiguration, so we only need to set the mode.
-	kubeProxyConfigYAMLTemplateForDockerProvider = `
-mode: %s
-`
+	// addKubeProxyModeToExistingKubeProxyConfiguration is a sed command to add the kube-proxy mode to
+	// an existing KubeProxyConfiguration present in the kubeadm config file. If there is no existing
+	// KubeProxyConfiguration, it will exit with a non-zero status code which allows to run the fallback
+	// command to append the KubeProxyConfiguration specified in the template above to the kubeadm config file.
+	addKubeProxyModeToExistingKubeProxyConfiguration = `grep -q "^kind: KubeProxyConfiguration$" %[1]s && sed -i -e "s/^\(kind: KubeProxyConfiguration\)$/\1\nmode: %[2]s/" %[1]s` //nolint:lll // Just a long command.
+
+	kubeadmConfigFilePath = "/run/kubeadm/kubeadm.yaml"
 )
 
 type kubeProxyMode struct {
@@ -145,19 +145,32 @@ func (h *kubeProxyMode) Mutate(
 
 			switch kubeProxyMode {
 			case v1alpha1.KubeProxyModeIPTables, v1alpha1.KubeProxyModeNFTables:
-				kubeProxyConfigProviderTemplate := templateForClusterProvider(cluster)
-
 				kubeProxyConfig := bootstrapv1.File{
 					Path:        "/etc/kubernetes/kubeproxy-config.yaml",
 					Owner:       "root:root",
 					Permissions: "0644",
-					Content:     fmt.Sprintf(kubeProxyConfigProviderTemplate, kubeProxyMode),
+					Content:     fmt.Sprintf(kubeProxyConfigYAMLTemplate, kubeProxyMode),
 				}
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 					obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
 					kubeProxyConfig,
 				)
-				mergeKubeProxyConfigCmd := "/bin/sh -ec 'cat /etc/kubernetes/kubeproxy-config.yaml >> /run/kubeadm/kubeadm.yaml'"
+
+				sedCommand := fmt.Sprintf(
+					addKubeProxyModeToExistingKubeProxyConfiguration,
+					kubeadmConfigFilePath,
+					kubeProxyMode,
+				)
+				catCommand := fmt.Sprintf(
+					"cat /etc/kubernetes/kubeproxy-config.yaml >>%s",
+					kubeadmConfigFilePath,
+				)
+				mergeKubeProxyConfigCmd := fmt.Sprintf(
+					"/bin/sh -ec '(%s) || (%s)'",
+					sedCommand,
+					catCommand,
+				)
+
 				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
 					obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
 					mergeKubeProxyConfigCmd,
@@ -169,14 +182,4 @@ func (h *kubeProxyMode) Mutate(
 			return nil
 		},
 	)
-}
-
-// templateForClusterProvider returns the kube-proxy config template based on the cluster provider.
-func templateForClusterProvider(cluster *clusterv1.Cluster) string {
-	switch utils.GetProvider(cluster) {
-	case "docker":
-		return kubeProxyConfigYAMLTemplateForDockerProvider
-	default:
-		return kubeProxyConfigYAMLTemplate
-	}
 }
