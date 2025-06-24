@@ -5,7 +5,10 @@ CAREN_FEATURE_GATES ?= ""
 
 .PHONY: dev.run-on-kind
 dev.run-on-kind: export KUBECONFIG := $(KIND_KUBECONFIG)
-dev.run-on-kind: kind.create clusterctl.init
+dev.run-on-kind: kind.create
+ifndef SKIP_CLUSTERCTL_INIT
+dev.run-on-kind: clusterctl.init
+endif
 ifndef SKIP_BUILD
 dev.run-on-kind: release-snapshot
 endif
