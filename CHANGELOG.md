@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.30.0 (2025-06-24)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Build with Go 1.24.4 to fix CVEs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1157
+* feat: add requests and limits to registry containers by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1158
+* feat: Add preflight checks framework by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1129
+* feat: Preflight check opt-out by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1156
+* feat: Nutanix VM image preflight check by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1130
+* feat: update addons by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1168
+* feat: Enforce MD replicas within cluster autoscaler bounds by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1169
+* feat(preflight): Storage container checks for Nutanix by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1136
+* feat: update Nutanix CSI to 3.3.4 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1179
+### Fixes 🔧
+* fix: update CNCF registry version to 2.3.4, app version 2.8.3 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1150
+* fix: registry addon headless service port by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1159
+* fix: preserve registry addon root CA on move by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1155
+* fix: Add noderegistration patch to previous handler by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1177
+### Other Changes
+* build: include regclient/regsync image for registry addon by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1148
+* test: Add update test helpers by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1162
+* test(e2e): Nutanix 1.33.1 testing by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1164
+* build: Update all tools by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1165
+* refactor: add global feature.Gates variable by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1167
+* ci: new env variable to set --feature-gates by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1166
+* build: github.com/hashicorp/go-retryablehttp@v0.7.8 to fix CVE by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1170
+* docs: Update link to default Cilium values in cni.md by @yannickstruyf3 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1173
+* docs: Fix up Cilium config link (again) & icons by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1176
+
+## New Contributors
+* @yannickstruyf3 made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1173
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.29.0...v0.30.0
+
 ## 0.29.0 (2025-06-03)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
