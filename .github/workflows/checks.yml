@@ -141,7 +141,7 @@ jobs:
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v2
         with:
-          fail_level: error
+          fail_level: any
           reporter: github-pr-review
           golangci_lint_version: v${{ steps.versions.outputs.golangci-lint }}
           go_version: v${{ steps.versions.outputs.golang }}
@@ -159,7 +159,7 @@ jobs:
       - name: actionlint
         uses: reviewdog/action-actionlint@v1
         with:
-          fail_level: error
+          fail_level: any
           reporter: github-pr-review
 
   pre-commit:
