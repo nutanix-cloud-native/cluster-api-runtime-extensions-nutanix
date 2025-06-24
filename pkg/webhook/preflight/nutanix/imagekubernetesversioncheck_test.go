@@ -162,7 +162,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Error:   true,
 				Causes: []preflight.Cause{
 					{
-						Message: "kubernetes version mismatch: cluster version '1.32.3' does not match image version '1.31.5' (from image name 'kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644')", //nolint:lll // cause is long
+						Message: "kubernetes version mismatch: cluster kubernetes version '1.32.3' does not match image kubernetes version '1.31.5' (from image name 'kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644')", //nolint:lll // cause is long
 						Field:   "test-field",
 					},
 				},

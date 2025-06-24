@@ -62,7 +62,7 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 		if err := c.checkKubernetesVersion(&images[0]); err != nil {
 			return preflight.CheckResult{
 				Allowed: false,
-				Error:   true,
+				Error:   false,
 				Causes: []preflight.Cause{
 					{
 						Message: err.Error(),
@@ -95,7 +95,7 @@ func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image)
 
 	if imageK8sVersion != c.clusterK8sVersion {
 		return fmt.Errorf(
-			"kubernetes version mismatch: cluster version '%s' does not match image version '%s' (from image name '%s')",
+			"kubernetes version mismatch: cluster kubernetes version '%s' does not match image kubernetes version '%s' (from image name '%s')", //nolint:lll // error message is long
 			c.clusterK8sVersion,
 			imageK8sVersion,
 			imageName,
