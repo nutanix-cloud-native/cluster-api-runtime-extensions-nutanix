@@ -60,7 +60,7 @@ repositories:
     repoURL: https://nutanix.github.io/helm-releases/
     charts:
       nutanix-csi-storage:
-      - 3.3.3
+      - 3.3.4
   snapshot-controller:
     repoURL: https://piraeus.io/helm-charts/
     charts:
