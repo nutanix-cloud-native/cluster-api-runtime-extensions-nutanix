@@ -405,10 +405,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"missing-container\" exists:" +
-				" no storage container named \"missing-container\" found on cluster named",
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "storage container \"missing-container\" not found on cluster \"test-cluster\"",
 		},
 		{
 			name: "multiple storage containers found",
@@ -483,10 +482,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"duplicate-container\" exists:" +
-				" multiple storage containers found with name",
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "multiple storage containers named \"duplicate-container\" found on cluster \"test-cluster\"",
 		},
 		{
 			name: "successful storage container check",
@@ -601,8 +599,8 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"valid-container\" exists:" +
-				" failed to get cluster: API error",
+			expectedCauseMessage: "failed to check if storage container \"valid-container\" exists: " +
+				"failed to get cluster \"test-cluster\": API error",
 		},
 		{
 			name: "error listing storage containers",
@@ -667,8 +665,8 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"valid-container\" exists:" +
-				" failed to list storage containers: API error listing containers",
+			expectedCauseMessage: "failed to check if storage container \"valid-container\" exists in cluster " +
+				"\"test-cluster\": failed to list storage containers: API error listing containers",
 		},
 		{
 			name: "invalid response data type",
@@ -736,8 +734,9 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"valid-container\" exists:" +
-				" failed to get data returned by ListStorageContainers",
+			expectedCauseMessage: "failed to check if storage container \"valid-container\" exists in cluster " +
+				"\"test-cluster\": failed to get data returned by ListStorageContainers" +
+				"(filter=\"name eq 'valid-container' and clusterExtId eq 'cluster-uuid-123'\")",
 		},
 		{
 			name: "multiple storage class configs with success",
