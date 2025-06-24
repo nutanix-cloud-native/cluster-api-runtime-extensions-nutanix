@@ -154,25 +154,15 @@ func getStorageContainer(
 		return nil, fmt.Errorf("failed to list storage containers: %w", err)
 	}
 
-	switch resp.GetData().(type) {
+	switch data := resp.GetData().(type) {
 	case nil:
 		return nil, fmt.Errorf("failed to find a matching storage container")
 
 	case clustermgmtv4errors.ErrorResponse:
-		errResp, ok := resp.GetData().(clustermgmtv4errors.ErrorResponse)
-		if !ok {
-			return nil, fmt.Errorf("failed to parse error response from %v", resp.GetData())
-		}
-
-		return nil, fmt.Errorf("failed to list storage containers: %v", errResp.GetError())
+		return nil, fmt.Errorf("failed to list storage containers: %v", data.GetError())
 
 	case []clustermgmtv4.StorageContainer:
-		containers, ok := resp.GetData().([]clustermgmtv4.StorageContainer)
-		if !ok {
-			return nil, fmt.Errorf("failed to parse storage containers from %v", resp.GetData())
-		}
-
-		if len(containers) == 0 {
+		if len(data) == 0 {
 			return nil, fmt.Errorf(
 				"no storage container named %q found on cluster named %q",
 				storageContainerName,
@@ -180,7 +170,7 @@ func getStorageContainer(
 			)
 		}
 
-		if len(containers) > 1 {
+		if len(data) > 1 {
 			return nil, fmt.Errorf(
 				"multiple storage containers found with name %q on cluster %q",
 				storageContainerName,
@@ -188,10 +178,15 @@ func getStorageContainer(
 			)
 		}
 
-		return ptr.To(containers[0]), nil
+		return ptr.To(data[0]), nil
+	default:
+		return nil,
+			fmt.Errorf(
+				"unexpected response type from ListStorageContainers(filter=%q): %T",
+				fltr,
+				resp.GetData(),
+			)
 	}
-
-	return nil, fmt.Errorf("unexpected response type from ListStorageContainers(filter=%q): %T", fltr, resp.GetData())
 }
 
 func getCluster(
