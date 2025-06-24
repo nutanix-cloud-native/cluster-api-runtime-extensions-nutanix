@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
+	clustermgmtv4errors "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/error"
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -153,28 +154,44 @@ func getStorageContainer(
 		return nil, fmt.Errorf("failed to list storage containers: %w", err)
 	}
 
-	containers, ok := resp.GetData().([]clustermgmtv4.StorageContainer)
-	if !ok {
-		return nil, fmt.Errorf("failed to get data returned by ListStorageContainers(filter=%q)", fltr)
+	switch resp.GetData().(type) {
+	case nil:
+		return nil, fmt.Errorf("failed to find a matching storage container")
+
+	case clustermgmtv4errors.ErrorResponse:
+		errResp, ok := resp.GetData().(clustermgmtv4errors.ErrorResponse)
+		if !ok {
+			return nil, fmt.Errorf("failed to parse error response from %v", resp.GetData())
+		}
+
+		return nil, fmt.Errorf("failed to list storage containers: %v", errResp.GetError())
+
+	case []clustermgmtv4.StorageContainer:
+		containers, ok := resp.GetData().([]clustermgmtv4.StorageContainer)
+		if !ok {
+			return nil, fmt.Errorf("failed to parse storage containers from %v", resp.GetData())
+		}
+
+		if len(containers) == 0 {
+			return nil, fmt.Errorf(
+				"no storage container named %q found on cluster named %q",
+				storageContainerName,
+				*cluster.Name,
+			)
+		}
+
+		if len(containers) > 1 {
+			return nil, fmt.Errorf(
+				"multiple storage containers found with name %q on cluster %q",
+				storageContainerName,
+				*cluster.Name,
+			)
+		}
+
+		return ptr.To(containers[0]), nil
 	}
 
-	if len(containers) == 0 {
-		return nil, fmt.Errorf(
-			"no storage container named %q found on cluster named %q",
-			storageContainerName,
-			*cluster.Name,
-		)
-	}
-
-	if len(containers) > 1 {
-		return nil, fmt.Errorf(
-			"multiple storage containers found with name %q on cluster %q",
-			storageContainerName,
-			*cluster.Name,
-		)
-	}
-
-	return ptr.To(containers[0]), nil
+	return nil, fmt.Errorf("unexpected response type from ListStorageContainers(filter=%q): %T", fltr, resp.GetData())
 }
 
 func getCluster(

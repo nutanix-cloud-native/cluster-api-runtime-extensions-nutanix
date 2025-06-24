@@ -734,10 +734,77 @@ func TestStorageContainerCheck(t *testing.T) {
 					}, nil
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"valid-container\" exists:" +
-				" failed to get data returned by ListStorageContainers",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedCauseMessage: "failed to check if storage container named \"valid-container\" exists: failed to find a matching storage container", //nolint:lll // long error message
+		},
+		{
+			name: "nil response data type",
+			nodeSpec: &carenv1.NutanixNodeSpec{
+				MachineDetails: carenv1.NutanixMachineDetails{
+					Cluster: capxv1.NutanixResourceIdentifier{
+						Type: capxv1.NutanixIdentifierName,
+						Name: ptr.To(clusterName),
+					},
+				},
+			},
+			csiSpec: &carenv1.CSIProvider{
+				StorageClassConfigs: map[string]carenv1.StorageClassConfig{
+					"test-sc": {
+						Parameters: map[string]string{
+							"storageContainer": "valid-container",
+						},
+					},
+				},
+			},
+			nclient: &mocknclient{
+				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+					return nil, nil
+				},
+				listClustersFunc: func(
+					page,
+					limit *int,
+					filter,
+					orderby,
+					apply,
+					select_ *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.ListClustersApiResponse,
+					error,
+				) {
+					resp := &clustermgmtv4.ListClustersApiResponse{
+						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+					}
+					err := resp.SetData([]clustermgmtv4.Cluster{
+						{
+							Name:  ptr.To(clusterName),
+							ExtId: ptr.To("cluster-uuid-123"),
+						},
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+				listStorageContainersFunc: func(
+					page,
+					limit *int,
+					filter,
+					orderby,
+					select_ *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.ListStorageContainersApiResponse,
+					error,
+				) {
+					// Return a non-nil response but with nil Data or wrong type to simulate data conversion error
+					return &clustermgmtv4.ListStorageContainersApiResponse{
+						Data: nil,
+					}, nil
+				},
+			},
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedCauseMessage: "failed to check if storage container named \"valid-container\" exists: failed to find a matching storage container", //nolint:lll // long error message
 		},
 		{
 			name: "multiple storage class configs with success",
