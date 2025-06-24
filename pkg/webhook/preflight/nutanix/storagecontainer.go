@@ -6,10 +6,9 @@ package nutanix
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
-	clustermgmtv4errors "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/error"
-	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -63,6 +62,14 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		return result
 	}
 
+	clusterIdentifier := &c.nodeSpec.MachineDetails.Cluster
+
+	// We wait to get the cluster until we know we need to.
+	// We should only get the cluster once.
+	getClusterOnce := sync.OnceValues(func() (*clustermgmtv4.Cluster, error) {
+		return getCluster(c.nclient, clusterIdentifier)
+	})
+
 	for _, storageClassConfig := range c.csiSpec.StorageClassConfigs {
 		if storageClassConfig.Parameters == nil {
 			continue
@@ -73,19 +80,62 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			continue
 		}
 
-		if _, err := getStorageContainer(c.nclient, c.nodeSpec, storageContainer); err != nil {
+		cluster, err := getClusterOnce()
+		if err != nil {
 			result.Allowed = false
 			result.Error = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"failed to check if storage container named %q exists: %s",
+					"failed to check if storage container %q exists: failed to get cluster %q: %s",
 					storageContainer,
+					clusterIdentifier,
 					err,
 				),
 				Field: c.field,
 			})
+			continue
+		}
 
-			return result
+		containers, err := getStorageContainers(c.nclient, *cluster.ExtId, storageContainer)
+		if err != nil {
+			result.Allowed = false
+			result.Error = true
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf(
+					"failed to check if storage container %q exists in cluster %q: %s",
+					storageContainer,
+					clusterIdentifier,
+					err,
+				),
+				Field: c.field,
+			})
+			continue
+		}
+
+		if len(containers) == 0 {
+			result.Allowed = false
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf(
+					"storage container %q not found on cluster %q",
+					storageContainer,
+					clusterIdentifier,
+				),
+				Field: c.field,
+			})
+			continue
+		}
+
+		if len(containers) > 1 {
+			result.Allowed = false
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf(
+					"multiple storage containers named %q found on cluster %q",
+					storageContainer,
+					clusterIdentifier,
+				),
+				Field: c.field,
+			})
+			continue
 		}
 	}
 
@@ -138,55 +188,25 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	return checks
 }
 
-func getStorageContainer(
+func getStorageContainers(
 	client client,
-	nodeSpec *carenv1.NutanixNodeSpec,
+	clusterUUID string,
 	storageContainerName string,
-) (*clustermgmtv4.StorageContainer, error) {
-	cluster, err := getCluster(client, &nodeSpec.MachineDetails.Cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster: %w", err)
-	}
-
-	fltr := fmt.Sprintf("name eq '%s' and clusterExtId eq '%s'", storageContainerName, *cluster.ExtId)
+) ([]clustermgmtv4.StorageContainer, error) {
+	fltr := fmt.Sprintf("name eq '%s' and clusterExtId eq '%s'", storageContainerName, clusterUUID)
 	resp, err := client.ListStorageContainers(nil, nil, &fltr, nil, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list storage containers: %w", err)
+		return nil, err
 	}
-
-	switch data := resp.GetData().(type) {
-	case nil:
-		return nil, fmt.Errorf("failed to find a matching storage container")
-
-	case clustermgmtv4errors.ErrorResponse:
-		return nil, fmt.Errorf("failed to list storage containers: %v", data.GetError())
-
-	case []clustermgmtv4.StorageContainer:
-		if len(data) == 0 {
-			return nil, fmt.Errorf(
-				"no storage container named %q found on cluster named %q",
-				storageContainerName,
-				*cluster.Name,
-			)
-		}
-
-		if len(data) > 1 {
-			return nil, fmt.Errorf(
-				"multiple storage containers found with name %q on cluster %q",
-				storageContainerName,
-				*cluster.Name,
-			)
-		}
-
-		return ptr.To(data[0]), nil
-	default:
-		return nil,
-			fmt.Errorf(
-				"unexpected response type from ListStorageContainers(filter=%q): %T",
-				fltr,
-				resp.GetData(),
-			)
+	if resp == nil || resp.GetData() == nil {
+		// No images were returned.
+		return []clustermgmtv4.StorageContainer{}, nil
 	}
+	containers, ok := resp.GetData().([]clustermgmtv4.StorageContainer)
+	if !ok {
+		return nil, fmt.Errorf("failed to get data returned by ListStorageContainers(filter=%q)", fltr)
+	}
+	return containers, nil
 }
 
 func getCluster(
