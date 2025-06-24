@@ -57,20 +57,26 @@ func TestExtractKubernetesVersionFromImageName(t *testing.T) {
 			wantErr:   false,
 		},
 		{
+			name:      "custom image name with kubernetes-version at end", // e.g., not following NKP naming convention
+			imageName: "custom-image-v1.23",
+			want:      "1.23",
+			wantErr:   false,
+		},
+		{
+			name:      "custom image name with kubernetes version in middle", // e.g., not following NKP naming convention
+			imageName: "custom-v1.23.1-image",
+			want:      "1.23.1",
+			wantErr:   false,
+		},
+		{
+			name:      "custom image name with kubernetes version in start", // e.g., not following NKP naming convention
+			imageName: "v1.23.1-alpha-custom-image",
+			want:      "1.23.1",
+			wantErr:   false,
+		},
+		{
 			name:      "custom image name - no match", // e.g., not following NKP naming convention
 			imageName: "my-custom-image-name",
-			want:      "",
-			wantErr:   true,
-		},
-		{
-			name:      "missing timestamp",
-			imageName: "nkp-ubuntu-22.04-1.32.3",
-			want:      "",
-			wantErr:   true,
-		},
-		{
-			name:      "invalid version format", // e.g., missing patch version
-			imageName: "nkp-ubuntu-22.04-1.32-20250604180644",
 			want:      "",
 			wantErr:   true,
 		},
@@ -88,7 +94,7 @@ func TestExtractKubernetesVersionFromImageName(t *testing.T) {
 
 			if tc.wantErr {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), "image name does not match expected NKP naming convention")
+				assert.Contains(t, err.Error(), "image name does not match expected naming convention")
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tc.want, got)
@@ -188,7 +194,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Error:   true,
 				Causes: []preflight.Cause{
 					{
-						Message: "failed to extract Kubernetes version from image name 'my-custom-image-name': image name does not match expected NKP naming convention (expected pattern: *-<k8s-version>-<timestamp>). This check assumes NKP image naming convention. You can opt out of this check if using custom image naming", //nolint:lll // cause is long
+						Message: "failed to extract Kubernetes version from image name 'my-custom-image-name': image name does not match expected naming convention (expected pattern: .*<k8s-version>.*). This check assumes a naming convention that includes kubernetes version in the name. You can opt out of this check if using non-compliant naming", //nolint:lll // cause is long
 						Field:   "test-field",
 					},
 				},

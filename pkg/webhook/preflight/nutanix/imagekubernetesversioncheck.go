@@ -16,7 +16,8 @@ import (
 )
 
 // Examples: nkp-ubuntu-22.04-vgpu-1.32.3-20250604180644, nkp-rocky-9.5-release-cis-1.32.3-20250430150550.
-var kubernetesVersionRegex = regexp.MustCompile(`-(\d+\.\d+\.\d+)-\d{14}$`)
+// The regex captures the Kubernetes version in the format of 1.x.y, where x and y are digits.
+var kubernetesVersionRegex = regexp.MustCompile(`(?i)\b[vV]?(1\.\d+(?:\.\d+)?)\b`)
 
 type imageKubernetesVersionCheck struct {
 	machineDetails    *carenv1.NutanixMachineDetails
@@ -89,8 +90,8 @@ func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image)
 	imageK8sVersion, err := extractKubernetesVersionFromImageName(imageName)
 	if err != nil {
 		return fmt.Errorf("failed to extract Kubernetes version from image name '%s': %s. "+
-			"This check assumes NKP image naming convention. "+
-			"You can opt out of this check if using custom image naming", imageName, err)
+			"This check assumes a naming convention that includes kubernetes version in the name. "+
+			"You can opt out of this check if using non-compliant naming", imageName, err)
 	}
 
 	if imageK8sVersion != c.clusterK8sVersion {
@@ -105,12 +106,14 @@ func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image)
 	return nil
 }
 
+// extractKubernetesVersionFromImageName extracts the Kubernetes version from the given image name.
+// It expects something that looks like a kubernetes version in the image name i.e. 1.x.y?,
 // Examples: nkp-ubuntu-22.04-vgpu-1.32.3-20250604180644 -> 1.32.3.
 func extractKubernetesVersionFromImageName(imageName string) (string, error) {
 	matches := kubernetesVersionRegex.FindStringSubmatch(imageName)
 	if len(matches) < 2 {
 		return "", fmt.Errorf(
-			"image name does not match expected NKP naming convention (expected pattern: *-<k8s-version>-<timestamp>)",
+			"image name does not match expected naming convention (expected pattern: .*<k8s-version>.*)",
 		)
 	}
 	return matches[1], nil
