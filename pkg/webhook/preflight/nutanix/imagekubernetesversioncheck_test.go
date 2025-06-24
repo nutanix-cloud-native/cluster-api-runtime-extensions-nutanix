@@ -159,7 +159,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			clusterK8sVersion: "1.32.3",
 			want: preflight.CheckResult{
 				Allowed: false,
-				Error:   true,
+				Error:   false,
 				Causes: []preflight.Cause{
 					{
 						Message: "kubernetes version mismatch: cluster kubernetes version '1.32.3' does not match image kubernetes version '1.31.5' (from image name 'kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644')", //nolint:lll // cause is long
@@ -191,7 +191,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			clusterK8sVersion: "1.32.3",
 			want: preflight.CheckResult{
 				Allowed: false,
-				Error:   true,
+				Error:   false,
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to extract Kubernetes version from image name 'my-custom-image-name': image name does not match expected naming convention (expected pattern: .*<k8s-version>.*). This check assumes a naming convention that includes kubernetes version in the name. You can opt out of this check if using non-compliant naming", //nolint:lll // cause is long
@@ -223,7 +223,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			clusterK8sVersion: "1.32.3",
 			want: preflight.CheckResult{
 				Allowed: false,
-				Error:   true,
+				Error:   false,
 				Causes: []preflight.Cause{
 					{
 						Message: "VM image name is empty",
