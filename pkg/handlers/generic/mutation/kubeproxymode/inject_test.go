@@ -182,8 +182,7 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `
----
+						gomega.HaveKeyWithValue("content", `---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: iptables
@@ -232,8 +231,7 @@ mode: iptables
 						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `
----
+						gomega.HaveKeyWithValue("content", `---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: iptables
@@ -282,8 +280,7 @@ mode: iptables
 						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `
----
+						gomega.HaveKeyWithValue("content", `---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: iptables
@@ -332,8 +329,7 @@ mode: iptables
 						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `
----
+						gomega.HaveKeyWithValue("content", `---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: nftables
@@ -382,8 +378,7 @@ mode: nftables
 						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `
----
+						gomega.HaveKeyWithValue("content", `---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: nftables
@@ -432,8 +427,7 @@ mode: nftables
 						gomega.HaveKeyWithValue("path", "/etc/kubernetes/kubeproxy-config.yaml"),
 						gomega.HaveKeyWithValue("owner", "root:root"),
 						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `
----
+						gomega.HaveKeyWithValue("content", `---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: nftables

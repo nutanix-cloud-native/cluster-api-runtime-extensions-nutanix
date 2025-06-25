@@ -4,9 +4,12 @@
 package kubeproxymode
 
 import (
+	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
 	"slices"
+	"text/template"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -27,13 +30,6 @@ const (
 	// VariableName is the external patch variable name.
 	VariableName = "kubeProxy"
 
-	kubeProxyConfigYAMLTemplate = `
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-mode: %s
-`
-
 	// addKubeProxyModeToExistingKubeProxyConfiguration is a sed command to add the kube-proxy mode to
 	// an existing KubeProxyConfiguration present in the kubeadm config file. If there is no existing
 	// KubeProxyConfiguration, it will exit with a non-zero status code which allows to run the fallback
@@ -41,6 +37,13 @@ mode: %s
 	addKubeProxyModeToExistingKubeProxyConfiguration = `grep -q "^kind: KubeProxyConfiguration$" %[1]s && sed -i -e "s/^\(kind: KubeProxyConfiguration\)$/\1\nmode: %[2]s/" %[1]s` //nolint:lll // Just a long command.
 
 	kubeadmConfigFilePath = "/run/kubeadm/kubeadm.yaml"
+)
+
+var (
+	//go:embed embedded/kubeproxyconfig.yaml
+	kubeProxyConfigYAML []byte
+
+	kubeProxyConfigTemplate = template.Must(template.New("kubeProxyConfig").Parse(string(kubeProxyConfigYAML)))
 )
 
 type kubeProxyMode struct {
@@ -145,41 +148,67 @@ func (h *kubeProxyMode) Mutate(
 
 			switch kubeProxyMode {
 			case v1alpha1.KubeProxyModeIPTables, v1alpha1.KubeProxyModeNFTables:
-				kubeProxyConfig := bootstrapv1.File{
-					Path:        "/etc/kubernetes/kubeproxy-config.yaml",
-					Owner:       "root:root",
-					Permissions: "0644",
-					Content:     fmt.Sprintf(kubeProxyConfigYAMLTemplate, kubeProxyMode),
-				}
-				obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
-					obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-					kubeProxyConfig,
-				)
-
-				sedCommand := fmt.Sprintf(
-					addKubeProxyModeToExistingKubeProxyConfiguration,
-					kubeadmConfigFilePath,
-					kubeProxyMode,
-				)
-				catCommand := fmt.Sprintf(
-					"cat /etc/kubernetes/kubeproxy-config.yaml >>%s",
-					kubeadmConfigFilePath,
-				)
-				mergeKubeProxyConfigCmd := fmt.Sprintf(
-					"/bin/sh -ec '(%s) || (%s)'",
-					sedCommand,
-					catCommand,
-				)
-
-				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
-					obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
-					mergeKubeProxyConfigCmd,
-				)
+				return addKubeProxyConfigFileAndCommand(obj, kubeProxyMode)
 			default:
 				return fmt.Errorf("unknown kube proxy mode %q", kubeProxyMode)
 			}
-
-			return nil
 		},
 	)
+}
+
+// addKubeProxyConfigFileAndCommand adds the kube-proxy configuration file and command to the KCPTemplate.
+// It creates a KubeProxyConfiguration file with the specified mode and appends it to the kubeadm config file.
+// It also adds a command to the PreKubeadmCommands to merge the kube-proxy configuration into the kubeadm config file.
+// If the kubeadm config file already contains a KubeProxyConfiguration, it uses a sed command to add the mode to
+// the existing configuration.
+// If the kubeadm config file does not contain a KubeProxyConfiguration, it appends the new configuration
+// to the kubeadm config file using a cat command.
+//
+// TODO: KubeProxyConfiguration should be exposed upstream in CAPI to be able to configure kube-proxy mode directly
+// without the need for the messy commands in this implementation.
+func addKubeProxyConfigFileAndCommand(
+	obj *controlplanev1.KubeadmControlPlaneTemplate, kubeProxyMode v1alpha1.KubeProxyMode,
+) error {
+	templateInput := struct {
+		Mode string
+	}{
+		Mode: string(kubeProxyMode),
+	}
+	var b bytes.Buffer
+	err := kubeProxyConfigTemplate.Execute(&b, templateInput)
+	if err != nil {
+		return fmt.Errorf("failed executing kube-proxy config template: %w", err)
+	}
+
+	kubeProxyConfig := bootstrapv1.File{
+		Path:        "/etc/kubernetes/kubeproxy-config.yaml",
+		Owner:       "root:root",
+		Permissions: "0644",
+		Content:     b.String(),
+	}
+	obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
+		obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+		kubeProxyConfig,
+	)
+
+	sedCommand := fmt.Sprintf(
+		addKubeProxyModeToExistingKubeProxyConfiguration,
+		kubeadmConfigFilePath,
+		kubeProxyMode,
+	)
+	catCommand := fmt.Sprintf(
+		"cat /etc/kubernetes/kubeproxy-config.yaml >>%s",
+		kubeadmConfigFilePath,
+	)
+	mergeKubeProxyConfigCmd := fmt.Sprintf(
+		"/bin/sh -ec '(%s) || (%s)'",
+		sedCommand,
+		catCommand,
+	)
+
+	obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
+		obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
+		mergeKubeProxyConfigCmd,
+	)
+	return nil
 }
