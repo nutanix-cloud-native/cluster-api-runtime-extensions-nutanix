@@ -39,7 +39,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: NutanixWorkerNodeConfigSpec defines the desired state of NutanixNodeSpec.
+              description: NutanixWorkerNodeConfigSpec defines the desired state of NutanixWorkerNodeSpec.
               properties:
                 nodeRegistration:
                   default: {}

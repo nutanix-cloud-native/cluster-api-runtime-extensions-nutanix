@@ -9,7 +9,17 @@ import (
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 )
 
-type NutanixNodeSpec struct {
+type NutanixControlPlaneNodeSpec struct {
+	MachineDetails NutanixMachineDetails `json:"machineDetails"`
+
+	// failureDomains specifies a list of NutanixFailureDomains (by names)
+	// that the cluster uses to deploy its control-plane machines.
+	// +listType=set
+	// +optional
+	FailureDomains []string `json:"failureDomains,omitempty"`
+}
+
+type NutanixWorkerNodeSpec struct {
 	MachineDetails NutanixMachineDetails `json:"machineDetails"`
 }
 

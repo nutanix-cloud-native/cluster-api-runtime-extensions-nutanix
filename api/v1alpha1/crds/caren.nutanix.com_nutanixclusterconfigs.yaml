@@ -329,6 +329,14 @@ spec:
                       type: object
                     nutanix:
                       properties:
+                        failureDomains:
+                          description: |-
+                            failureDomains specifies a list of NutanixFailureDomains (by names)
+                            that the cluster uses to deploy its control-plane machines.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: set
                         machineDetails:
                           properties:
                             additionalCategories:

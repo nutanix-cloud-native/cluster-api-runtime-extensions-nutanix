@@ -56,7 +56,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			name: "initialization with control plane config",
 			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
-					Nutanix: &carenv1.NutanixNodeSpec{},
+					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{},
 				},
 			},
 			workerNodeConfigs:          nil,
@@ -71,10 +71,10 @@ func TestNutanixChecker_Init(t *testing.T) {
 			nutanixConfig: nil,
 			workerNodeConfigs: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
 				"worker-1": {
-					Nutanix: &carenv1.NutanixNodeSpec{},
+					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 				"worker-2": {
-					Nutanix: &carenv1.NutanixNodeSpec{},
+					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
 			expectedCheckCount:         6, // config check, credentials check, 2 VM image checks, 2 storage container checks
@@ -87,12 +87,12 @@ func TestNutanixChecker_Init(t *testing.T) {
 			name: "initialization with both control plane and worker node configs",
 			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
-					Nutanix: &carenv1.NutanixNodeSpec{},
+					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{},
 				},
 			},
 			workerNodeConfigs: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
 				"worker-1": {
-					Nutanix: &carenv1.NutanixNodeSpec{},
+					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
 			// config check, credentials check, 2 VM image checks (1 CP + 1 worker), 2 storage container checks (1 CP + 1 worker)

@@ -20,7 +20,7 @@ const (
 )
 
 type storageContainerCheck struct {
-	nodeSpec *carenv1.NutanixNodeSpec
+	nodeSpec *carenv1.NutanixWorkerNodeSpec
 	field    string
 	csiSpec  *carenv1.CSIProvider
 	nclient  client
@@ -139,7 +139,7 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 
 func getStorageContainer(
 	client client,
-	nodeSpec *carenv1.NutanixNodeSpec,
+	nodeSpec *carenv1.NutanixWorkerNodeSpec,
 	storageContainerName string,
 ) (*clustermgmtv4.StorageContainer, error) {
 	cluster, err := getCluster(client, &nodeSpec.MachineDetails.Cluster)
