@@ -212,6 +212,10 @@ type GenericClusterConfigSpec struct {
 
 	// +kubebuilder:validation:Optional
 	DNS *DNS `json:"dns,omitempty"`
+
+	// KubeProxy defines the configuration for kube-proxy.
+	// +kubebuilder:validation:Optional
+	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
 }
 
 type Image struct {
@@ -326,6 +330,27 @@ type CoreDNS struct {
 	// the default version based on the cluster's Kubernetes version will be used.
 	// +kubebuilder:validation:Optional
 	Image *Image `json:"image,omitempty"`
+}
+
+type KubeProxyMode string
+
+const (
+	// KubeProxyModeIPTables indicates that kube-proxy should be installed in iptables
+	// mode.
+	KubeProxyModeIPTables KubeProxyMode = "iptables"
+	// KubeProxyModeNFTables indicates that kube-proxy should be installed in nftables
+	// mode.
+	KubeProxyModeNFTables KubeProxyMode = "nftables"
+)
+
+type KubeProxy struct {
+	// Mode specifies the mode for kube-proxy:
+	// - iptables means that kube-proxy is installed in iptables mode.
+	// - nftables means that kube-proxy is installed in nftables mode.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=iptables;nftables
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
+	Mode KubeProxyMode `json:"mode,omitempty"`
 }
 
 //nolint:gochecknoinits // Idiomatic to use init functions to register APIs with scheme.

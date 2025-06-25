@@ -676,6 +676,22 @@ spec:
                       - url
                     type: object
                   type: array
+                kubeProxy:
+                  description: KubeProxy defines the configuration for kube-proxy.
+                  properties:
+                    mode:
+                      description: |-
+                        Mode specifies the mode for kube-proxy:
+                        - iptables means that kube-proxy is installed in iptables mode.
+                        - nftables means that kube-proxy is installed in nftables mode.
+                      enum:
+                        - iptables
+                        - nftables
+                      type: string
+                      x-kubernetes-validations:
+                        - message: Value cannot be changed after cluster creation
+                          rule: self == oldSelf
+                  type: object
                 kubernetesImageRepository:
                   description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
                   pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
