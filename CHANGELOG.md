@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.31.0 (2025-06-25)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Allow configuration of kube-proxy mode on cluster creation by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1163
+### Fixes 🔧
+* fix: Do not run preflight checks if Cluster is paused by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1181
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.30.0...v0.31.0
+
 ## 0.30.0 (2025-06-24)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
