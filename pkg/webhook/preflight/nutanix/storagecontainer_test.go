@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
+	clustermgmtv4errors "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/error"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
@@ -405,10 +406,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"missing-container\" exists:" +
-				" no storage container named \"missing-container\" found on cluster named",
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "storage container \"missing-container\" not found on cluster \"test-cluster\"",
 		},
 		{
 			name: "multiple storage containers found",
@@ -483,10 +483,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"duplicate-container\" exists:" +
-				" multiple storage containers found with name",
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "multiple storage containers named \"duplicate-container\" found on cluster \"test-cluster\"",
 		},
 		{
 			name: "successful storage container check",
@@ -601,8 +600,8 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"valid-container\" exists:" +
-				" failed to get cluster: API error",
+			expectedCauseMessage: "failed to check if storage container \"valid-container\" exists: " +
+				"failed to get cluster \"test-cluster\": API error",
 		},
 		{
 			name: "error listing storage containers",
@@ -667,11 +666,11 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"valid-container\" exists:" +
-				" failed to list storage containers: API error listing containers",
+			expectedCauseMessage: "failed to check if storage container \"valid-container\" exists in cluster " +
+				"\"test-cluster\": API error listing containers",
 		},
 		{
-			name: "invalid response data type",
+			name: "error response from ListStorageContainers",
 			nodeSpec: &carenv1.NutanixNodeSpec{
 				MachineDetails: carenv1.NutanixMachineDetails{
 					Cluster: capxv1.NutanixResourceIdentifier{
@@ -728,16 +727,82 @@ func TestStorageContainerCheck(t *testing.T) {
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
 				) {
-					// Return a non-nil response but with nil Data or wrong type to simulate data conversion error
-					return &clustermgmtv4.ListStorageContainersApiResponse{
-						ObjectType_: ptr.To("wrong-data-type"),
-					}, nil
+					resp := &clustermgmtv4.ListStorageContainersApiResponse{}
+					err := resp.SetData(*clustermgmtv4errors.NewErrorResponse())
+					require.NoError(t, err)
+					return resp, nil
 				},
 			},
 			expectedAllowed: false,
 			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container named \"valid-container\" exists:" +
-				" failed to get data returned by ListStorageContainers",
+			expectedCauseMessage: "failed to check if storage container \"valid-container\" exists in cluster " +
+				"\"test-cluster\": failed to get data returned by ListStorageContainers" +
+				"(filter=\"name eq 'valid-container' and clusterExtId eq 'cluster-uuid-123'\")",
+		},
+		{
+			name: "nil data from ListStorageContainers",
+			nodeSpec: &carenv1.NutanixNodeSpec{
+				MachineDetails: carenv1.NutanixMachineDetails{
+					Cluster: capxv1.NutanixResourceIdentifier{
+						Type: capxv1.NutanixIdentifierName,
+						Name: ptr.To(clusterName),
+					},
+				},
+			},
+			csiSpec: &carenv1.CSIProvider{
+				StorageClassConfigs: map[string]carenv1.StorageClassConfig{
+					"test-sc": {
+						Parameters: map[string]string{
+							"storageContainer": "valid-container",
+						},
+					},
+				},
+			},
+			nclient: &mocknclient{
+				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+					return nil, nil
+				},
+				listClustersFunc: func(
+					page,
+					limit *int,
+					filter,
+					orderby,
+					apply,
+					select_ *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.ListClustersApiResponse,
+					error,
+				) {
+					resp := &clustermgmtv4.ListClustersApiResponse{
+						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+					}
+					err := resp.SetData([]clustermgmtv4.Cluster{
+						{
+							Name:  ptr.To(clusterName),
+							ExtId: ptr.To("cluster-uuid-123"),
+						},
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+				listStorageContainersFunc: func(
+					page,
+					limit *int,
+					filter,
+					orderby,
+					select_ *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.ListStorageContainersApiResponse,
+					error,
+				) {
+					return &clustermgmtv4.ListStorageContainersApiResponse{}, nil
+				},
+			},
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "storage container \"valid-container\" not found on cluster \"test-cluster\"",
 		},
 		{
 			name: "multiple storage class configs with success",
@@ -915,17 +980,16 @@ func TestGetCluster(t *testing.T) {
 			errorContains: "API error",
 		},
 		{
-			name: "get cluster by UUID - invalid response data",
+			name: "get cluster by UUID - error response",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierUUID,
 				UUID: ptr.To("test-uuid-invalid"),
 			},
 			client: &mocknclient{
 				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
-					// Return an invalid data type
-					resp := &clustermgmtv4.GetClusterApiResponse{
-						ObjectType_: ptr.To("wrong-data-type"),
-					}
+					resp := &clustermgmtv4.GetClusterApiResponse{}
+					err := resp.SetData(*clustermgmtv4errors.NewErrorResponse())
+					require.NoError(t, err)
 					return resp, nil
 				},
 			},
@@ -1015,6 +1079,33 @@ func TestGetCluster(t *testing.T) {
 			},
 			expectError:   true,
 			errorContains: "no clusters were returned",
+		},
+		{
+			name: "get cluster by name - error response",
+			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
+				Type: capxv1.NutanixIdentifierName,
+				Name: ptr.To("test-cluster-nil"),
+			},
+			client: &mocknclient{
+				listClustersFunc: func(page,
+					limit *int,
+					filter,
+					orderby,
+					apply,
+					select_ *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.ListClustersApiResponse,
+					error,
+				) {
+					resp := &clustermgmtv4.ListClustersApiResponse{}
+					err := resp.SetData(*clustermgmtv4errors.NewErrorResponse())
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
+			expectError:   true,
+			errorContains: "failed to get data returned by ListClusters",
 		},
 		{
 			name: "get cluster by name - nil data",
