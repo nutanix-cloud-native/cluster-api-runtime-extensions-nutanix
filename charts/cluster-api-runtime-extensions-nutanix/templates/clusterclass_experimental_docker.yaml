@@ -1,0 +1,9 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if and .Values.deployExperimentalClusterClasses (.Capabilities.APIVersions.Has "infrastructure.cluster.x-k8s.io/v1beta1/DockerClusterTemplate") }}
+{{ range $path, $_ :=  .Files.Glob  "clusterclasses/experimental/docker-*.yaml" }}
+---
+{{ $.Files.Get $path }}
+{{ end }}
+{{- end}}

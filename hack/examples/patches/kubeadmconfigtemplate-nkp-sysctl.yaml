@@ -1,0 +1,13 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/template/spec/files/-"
+  value:
+    content: |
+      net.ipv4.ip_forward=1
+    path: /etc/sysctl.d/99-nkp.conf
+    permissions: "0644"
+- op: "add"
+  path: "/spec/template/spec/preKubeadmCommands/-"
+  value: systemctl restart systemd-sysctl

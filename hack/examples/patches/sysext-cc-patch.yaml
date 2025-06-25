@@ -1,0 +1,47 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/patches/0"
+  value:
+    name: sysexts
+    definitions:
+    - selector:
+        apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+        kind: KubeadmConfigTemplate
+        matchResources:
+          machineDeploymentClass:
+            names: ["*"]
+      jsonPatches:
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands/-
+        value: mkdir -p /var/lib/extensions/
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands/-
+        value: curl -L https://extensions.flatcar.org/extensions/containerd/containerd-2.1.3-x86-64.raw -o /var/lib/extensions/containerd.raw
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands/-
+        valueFrom:
+          template: curl -L https://extensions.flatcar.org/extensions/kubernetes/kubernetes-{{ .builtin.cluster.topology.version }}-x86-64.raw -o /var/lib/extensions/kubernetes.raw
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands/-
+        value: systemd-sysext merge
+    - selector:
+        apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+        kind: KubeadmControlPlaneTemplate
+        matchResources:
+          controlPlane: true
+      jsonPatches:
+      - op: add
+        path: /spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/-
+        value: mkdir -p /var/lib/extensions/
+      - op: add
+        path: /spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/-
+        value: curl -L https://extensions.flatcar.org/extensions/containerd/containerd-2.1.3-x86-64.raw -o /var/lib/extensions/containerd.raw
+      - op: add
+        path: /spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/-
+        valueFrom:
+          template: curl -L https://extensions.flatcar.org/extensions/kubernetes/kubernetes-{{ .builtin.cluster.topology.version }}-x86-64.raw -o /var/lib/extensions/kubernetes.raw
+      - op: add
+        path: /spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/-
+        value: systemd-sysext merge
