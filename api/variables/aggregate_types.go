@@ -47,6 +47,8 @@ type WorkerNodeConfigSpec struct {
 	Docker *carenv1.DockerNodeSpec `json:"docker,omitempty"`
 
 	Nutanix *carenv1.NutanixNodeSpec `json:"nutanix,omitempty"`
+
+	carenv1.GenericNodeSpec `json:",inline"`
 }
 
 type Addons struct {
