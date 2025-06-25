@@ -95,6 +95,12 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
+	if cluster.Spec.Paused {
+		// If the cluster is paused, skip all checks.
+		// This allows the cluster to be moved to another API server without running checks.
+		return admission.Allowed("")
+	}
+
 	skipEvaluator := skip.New(cluster)
 
 	if skipEvaluator.ForAll() {
