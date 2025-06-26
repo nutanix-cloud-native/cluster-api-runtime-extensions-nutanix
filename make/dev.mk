@@ -22,6 +22,7 @@ dev.run-on-kind:
 		--set-string image.tag=$(SNAPSHOT_VERSION) \
 		--set-string helmRepository.images.bundleInitializer.tag=$(SNAPSHOT_VERSION) \
 		--set extraArgs.feature-gates="$(CAREN_FEATURE_GATES)" \
+		--set deployExperimentalClusterClasses=true \
 		--wait --wait-for-jobs
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
 	kubectl rollout restart deployment helm-repository

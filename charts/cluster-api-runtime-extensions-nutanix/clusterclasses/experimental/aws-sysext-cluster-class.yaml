@@ -1,0 +1,252 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: aws
+  name: aws-sysext-quick-start
+spec:
+  controlPlane:
+    machineInfrastructure:
+      ref:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        kind: AWSMachineTemplate
+        name: aws-sysext-quick-start-control-plane
+    ref:
+      apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+      kind: KubeadmControlPlaneTemplate
+      name: aws-sysext-quick-start-control-plane
+  infrastructure:
+    ref:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSClusterTemplate
+      name: aws-sysext-quick-start
+  patches:
+  - definitions:
+    - jsonPatches:
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands/-
+        value: mkdir -p /var/lib/extensions/
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands/-
+        value: curl -L https://extensions.flatcar.org/extensions/containerd/containerd-2.1.3-x86-64.raw
+          -o /var/lib/extensions/containerd.raw
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands/-
+        valueFrom:
+          template: curl -L https://extensions.flatcar.org/extensions/kubernetes/kubernetes-{{
+            .builtin.cluster.topology.version }}-x86-64.raw -o /var/lib/extensions/kubernetes.raw
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands/-
+        value: systemd-sysext merge
+      selector:
+        apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+        kind: KubeadmConfigTemplate
+        matchResources:
+          machineDeploymentClass:
+            names:
+            - '*'
+    - jsonPatches:
+      - op: add
+        path: /spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/-
+        value: mkdir -p /var/lib/extensions/
+      - op: add
+        path: /spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/-
+        value: curl -L https://extensions.flatcar.org/extensions/containerd/containerd-2.1.3-x86-64.raw
+          -o /var/lib/extensions/containerd.raw
+      - op: add
+        path: /spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/-
+        valueFrom:
+          template: curl -L https://extensions.flatcar.org/extensions/kubernetes/kubernetes-{{
+            .builtin.cluster.topology.version }}-x86-64.raw -o /var/lib/extensions/kubernetes.raw
+      - op: add
+        path: /spec/template/spec/kubeadmConfigSpec/preKubeadmCommands/-
+        value: systemd-sysext merge
+      selector:
+        apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+        kind: KubeadmControlPlaneTemplate
+        matchResources:
+          controlPlane: true
+    name: sysexts
+  - external:
+      discoverVariablesExtension: awsclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
+      generateExtension: awsclusterv4configpatch-gp.cluster-api-runtime-extensions-nutanix
+    name: cluster-config
+  - external:
+      discoverVariablesExtension: awsworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
+      generateExtension: awsworkerv4configpatch-gp.cluster-api-runtime-extensions-nutanix
+    name: worker-config
+  - definitions:
+    - jsonPatches:
+      - op: add
+        path: /spec/template/spec/identityRef
+        value:
+          kind: AWSClusterControllerIdentity
+          name: default
+      selector:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        kind: AWSClusterTemplate
+        matchResources:
+          infrastructureCluster: true
+    description: AWSClusterStaticIdentity identityRef to use when creating the cluster
+    name: identityRef
+  workers:
+    machineDeployments:
+    - class: default-worker
+      template:
+        bootstrap:
+          ref:
+            apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+            kind: KubeadmConfigTemplate
+            name: aws-sysext-quick-start-worker-bootstraptemplate
+        infrastructure:
+          ref:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+            kind: AWSMachineTemplate
+            name: aws-sysext-quick-start-worker-machinetemplate
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSClusterTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: aws
+  name: aws-sysext-quick-start
+spec:
+  template:
+    spec:
+      controlPlaneLoadBalancer:
+        healthCheckProtocol: HTTPS
+        loadBalancerType: nlb
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlaneTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: aws
+  name: aws-sysext-quick-start-control-plane
+spec:
+  template:
+    spec:
+      kubeadmConfigSpec:
+        clusterConfiguration:
+          apiServer:
+            extraArgs:
+              admission-control-config-file: /etc/kubernetes/admission.yaml
+              enable-admission-plugins: DenyServiceExternalIPs,EventRateLimit,NodeRestriction
+              profiling: "false"
+              service-account-lookup: "true"
+            extraVolumes:
+            - hostPath: /etc/kubernetes/admission.yaml
+              mountPath: /etc/kubernetes/admission.yaml
+              name: admission-config
+              pathType: File
+              readOnly: true
+            - hostPath: /etc/kubernetes/eventratelimit-config.yaml
+              mountPath: /etc/kubernetes/eventratelimit-config.yaml
+              name: eventratelimit-config
+              pathType: File
+              readOnly: true
+          controllerManager:
+            extraArgs:
+              cloud-provider: external
+              profiling: "false"
+              terminated-pod-gc-threshold: "10000"
+          scheduler:
+            extraArgs:
+              profiling: "false"
+        files:
+        - content: |
+            apiVersion: apiserver.config.k8s.io/v1
+            kind: AdmissionConfiguration
+            plugins:
+            - name: EventRateLimit
+              path: /etc/kubernetes/eventratelimit-config.yaml
+          path: /etc/kubernetes/admission.yaml
+          permissions: "0600"
+        - content: |
+            apiVersion: eventratelimit.admission.k8s.io/v1alpha1
+            kind: Configuration
+            limits:
+            - type: Server
+              qps: 10000
+              burst: 40000
+          path: /etc/kubernetes/eventratelimit-config.yaml
+          permissions: "0600"
+        - content: |
+            net.ipv4.ip_forward=1
+          path: /etc/sysctl.d/99-nkp.conf
+          permissions: "0644"
+        initConfiguration:
+          nodeRegistration:
+            kubeletExtraArgs:
+              cloud-provider: external
+              event-qps: "5"
+              make-iptables-util-chains: "true"
+              pod-max-pids: "4096"
+              read-only-port: "0"
+              streaming-connection-idle-timeout: 5m
+              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+            name: '{{ ds.meta_data.local_hostname }}'
+        joinConfiguration:
+          nodeRegistration:
+            kubeletExtraArgs:
+              cloud-provider: external
+              event-qps: "5"
+              make-iptables-util-chains: "true"
+              pod-max-pids: "4096"
+              read-only-port: "0"
+              streaming-connection-idle-timeout: 5m
+              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+            name: '{{ ds.meta_data.local_hostname }}'
+        preKubeadmCommands:
+        - systemctl restart systemd-sysctl
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: aws
+  name: aws-sysext-quick-start-control-plane
+spec:
+  template:
+    spec:
+      instanceType: PLACEHOLDER
+      sshKeyName: ""
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: aws
+  name: aws-sysext-quick-start-worker-machinetemplate
+spec:
+  template:
+    spec:
+      instanceType: PLACEHOLDER
+      sshKeyName: ""
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: aws
+  name: aws-sysext-quick-start-worker-bootstraptemplate
+spec:
+  template:
+    spec:
+      files:
+      - content: |
+          net.ipv4.ip_forward=1
+        path: /etc/sysctl.d/99-nkp.conf
+        permissions: "0644"
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: external
+            event-qps: "5"
+            pod-max-pids: "4096"
+            read-only-port: "0"
+            streaming-connection-idle-timeout: 5m
+            tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+          name: '{{ ds.meta_data.local_hostname }}'
+      preKubeadmCommands:
+      - systemctl restart systemd-sysctl

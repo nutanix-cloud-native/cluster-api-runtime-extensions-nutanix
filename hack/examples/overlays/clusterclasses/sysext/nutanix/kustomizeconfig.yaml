@@ -1,0 +1,22 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+nameReference:
+  - kind: NutanixMachineTemplate
+    fieldSpecs:
+    - kind: ClusterClass
+      path: spec/controlPlane/machineInfrastructure/ref/name
+    - kind: ClusterClass
+      path: spec/workers/machineDeployments/template/infrastructure/ref/name
+  - kind: KubeadmControlPlaneTemplate
+    fieldSpecs:
+    - kind: ClusterClass
+      path: spec/controlPlane/ref/name
+  - kind: NutanixClusterTemplate
+    fieldSpecs:
+    - kind: ClusterClass
+      path: spec/infrastructure/ref/name
+  - kind: KubeadmConfigTemplate
+    fieldSpecs:
+    - kind: ClusterClass
+      path: spec/workers/machineDeployments/template/bootstrap/ref/name

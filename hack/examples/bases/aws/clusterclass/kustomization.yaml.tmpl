@@ -7,13 +7,8 @@ kind: Kustomization
 resources:
 - https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/${CAPA_VERSION}/cluster-template-simple-clusterclass.yaml
 
-configurations:
-  - kustomizeconfig.yaml
-
 sortOptions:
   order: fifo
-
-namePrefix: aws-
 
 labels:
 - includeSelectors: false

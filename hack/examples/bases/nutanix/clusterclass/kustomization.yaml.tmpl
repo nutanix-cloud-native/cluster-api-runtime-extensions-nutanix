@@ -7,13 +7,8 @@ kind: Kustomization
 resources:
 - https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/${CAPX_VERSION}/cluster-template-clusterclass.yaml
 
-configurations:
-  - kustomizeconfig.yaml
-
 sortOptions:
   order: fifo
-
-namePrefix:
 
 labels:
 - includeSelectors: false

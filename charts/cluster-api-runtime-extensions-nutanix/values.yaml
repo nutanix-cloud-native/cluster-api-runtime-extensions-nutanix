@@ -121,6 +121,7 @@ hooks:
 helmAddonsConfigMap: default-helm-addons-config
 
 deployDefaultClusterClasses: true
+deployExperimentalClusterClasses: false
 
 # The ClusterClass and the Templates it references must be in the same namespace
 # as the Cluster. To enable cluster creation in user-defined namespaces, CAREN

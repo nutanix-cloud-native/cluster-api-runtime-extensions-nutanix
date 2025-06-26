@@ -1,0 +1,68 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../../../bases/nutanix/clusterclass
+
+sortOptions:
+  order: fifo
+
+namePrefix: "nutanix-sysext-"
+
+configurations:
+  - kustomizeconfig.yaml
+
+patches:
+  - target:
+      kind: ClusterClass
+    patch: |-
+      - op: "add"
+        path: "/spec/patches"
+        value:
+          - name: "cluster-config"
+            external:
+              generateExtension: "nutanixclusterv4configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              discoverVariablesExtension: "nutanixclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix"
+          - name: "worker-config"
+            external:
+              generateExtension: "nutanixworkerv4configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              discoverVariablesExtension: "nutanixworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
+
+  # BEGIN CIS patches
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/cis-kubeadmcontrolplanetemplate.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../../patches/cis-kubeadmconfigtemplate.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/initialize-extravolumes.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/cis-admissionconfiguration.yaml
+  # END CIS patches
+
+  # BEGIN sysext patches
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../../patches/initialize-kubeadmconfigtemplate-files.yaml
+  # - target:
+  #    kind: KubeadmConfigTemplate
+  #  path: ../../../../patches/initialize-kubeadmconfigtemplate-prekubeadmcommands.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../../patches/kubeadmconfigtemplate-nkp-sysctl.yaml
+  #  - target:
+  #      kind: KubeadmControlPlaneTemplate
+  #    path: ../../../../patches/initialize-kubeadmcontrolplanetemplate-prekubeadmcommands.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/kubeadmcontrolplanetemplate-nkp-sysctl.yaml
+  - target:
+      kind: ClusterClass
+    path: ../../../../patches/sysext-cc-patch.yaml
+  # END sysext patches

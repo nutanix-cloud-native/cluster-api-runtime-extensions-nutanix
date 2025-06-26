@@ -1,0 +1,68 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: aws
+  name: ${CLUSTER_NAME}
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - ${POD_CIDR:-192.168.0.0/16}
+    serviceDomain: ${SERVICE_DOMAIN:="cluster.local"}
+    services:
+      cidrBlocks:
+      - ${SERVICE_CIDR:-10.128.0.0/12}
+  topology:
+    class: aws-sysext-quick-start
+    controlPlane:
+      replicas: ${CONTROL_PLANE_MACHINE_COUNT}
+    variables:
+    - name: clusterConfig
+      value:
+        addons:
+          ccm: {}
+          clusterAutoscaler: {}
+          cni:
+            provider: Cilium
+          csi:
+            defaultStorage:
+              provider: aws-ebs
+              storageClassConfig: default
+            providers:
+              aws-ebs:
+                storageClassConfigs:
+                  default: {}
+            snapshotController: {}
+          nfd: {}
+        aws:
+          region: us-west-2
+        controlPlane:
+          aws:
+            ami:
+              lookup:
+                baseOS: ${AMI_LOOKUP_BASEOS}
+                format: ${AMI_LOOKUP_FORMAT}
+                org: "${AMI_LOOKUP_ORG}"
+        dns:
+          coreDNS: {}
+        encryptionAtRest:
+          providers:
+          - aescbc: {}
+    - name: workerConfig
+      value:
+        aws:
+          ami:
+            lookup:
+              baseOS: ${AMI_LOOKUP_BASEOS}
+              format: ${AMI_LOOKUP_FORMAT}
+              org: "${AMI_LOOKUP_ORG}"
+    version: ${KUBERNETES_VERSION}
+    workers:
+      machineDeployments:
+      - class: default-worker
+        metadata:
+          annotations:
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
+        name: md-0

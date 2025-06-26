@@ -58,7 +58,7 @@ providers:
     contract: v1beta1
     files:
     - sourcePath: "../data/shared/v1beta1-capa/metadata.yaml"
-    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/aws-cluster-class.yaml"
+    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/clusterclasses/default/aws-cluster-class.yaml"
       targetName: clusterclass-aws-quick-start.yaml
     - sourcePath: "../../../examples/capi-quick-start/aws-cluster-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-cilium-helm-addon.yaml
@@ -81,7 +81,7 @@ providers:
     contract: v1beta1
     files:
     - sourcePath: "../data/shared/v1beta1/metadata.yaml"
-    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/docker-cluster-class.yaml"
+    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/clusterclasses/default/docker-cluster-class.yaml"
       targetName: clusterclass-docker-quick-start.yaml
     - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-cilium-helm-addon.yaml
@@ -104,7 +104,7 @@ providers:
     contract: v1beta1
     files:
     - sourcePath: "../data/shared/v1beta1-capx/metadata.yaml"
-    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/nutanix-cluster-class.yaml"
+    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/clusterclasses/default/nutanix-cluster-class.yaml"
       targetName: clusterclass-nutanix-quick-start.yaml
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-cilium-helm-addon.yaml
