@@ -1,7 +1,7 @@
 // Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package cncfdistribution
+package utils
 
 import (
 	"testing"
@@ -25,5 +25,15 @@ func Test_certificateDNSNames(t *testing.T) {
 		"cncf-distribution-registry-docker-registry-1.cncf-distribution-registry-docker-registry-headless.registry-system.svc",
 		"cncf-distribution-registry-docker-registry-1.cncf-distribution-registry-docker-registry-headless.registry-system.svc.cluster.local",
 	}
-	assert.Equal(t, expected, certificateDNSNames())
+
+	assert.Equal(
+		t,
+		expected,
+		getCertificateDNSNames(
+			"cncf-distribution-registry-docker-registry",
+			"cncf-distribution-registry-docker-registry-headless",
+			"registry-system",
+			2,
+		),
+	)
 }
