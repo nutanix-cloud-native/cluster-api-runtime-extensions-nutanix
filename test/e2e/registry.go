@@ -101,3 +101,48 @@ func EnsureClusterCAForRegistryAddon(
 	const caCrtKey = "ca.crt"
 	Expect(rootCASecret.Data[caCrtKey]).To(Equal(rootCASecret.Data[caCrtKey]))
 }
+
+type EnsureAntiAffnityForRegistryAddonInput struct {
+	Registry        *v1alpha1.RegistryAddon
+	WorkloadCluster *clusterv1.Cluster
+	ClusterProxy    framework.ClusterProxy
+}
+
+func EnsureAntiAffnityForRegistryAddon(
+	ctx context.Context,
+	input EnsureAntiAffnityForRegistryAddonInput,
+) {
+	if input.Registry == nil {
+		return
+	}
+	Log("Ensuring anti-affinity for registry addon in workload cluster")
+	workloadClusterClient := input.ClusterProxy.GetWorkloadCluster(
+		ctx, input.WorkloadCluster.Namespace, input.WorkloadCluster.Name,
+	).GetClient()
+
+	sts := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cncf-distribution-registry-docker-registry",
+			Namespace: "registry-system",
+		},
+	}
+	err := workloadClusterClient.Get(ctx, ctrlclient.ObjectKeyFromObject(sts), sts)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(sts.Spec.Template.Spec.Affinity).ToNot(BeNil())
+	Expect(sts.Spec.Template.Spec.Affinity.PodAntiAffinity).ToNot(BeNil())
+	podAntiAffinity := sts.Spec.Template.Spec.Affinity.PodAntiAffinity
+	Expect(
+		podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution,
+	).ToNot(BeEmpty())
+	Expect(
+		podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution[0].TopologyKey,
+	).To(Equal("kubernetes.io/hostname"))
+	Expect(
+		podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution[0].LabelSelector,
+	).ToNot(BeNil())
+	affinityLabels := podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution[0].LabelSelector.MatchLabels
+	Expect(
+		affinityLabels[v1alpha1.ClusterUUIDAnnotationKey],
+	).To(Equal(input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]))
+	Expect(sts.Spec.Template.Spec.Affinity.NodeAffinity).ToNot(BeNil())
+}

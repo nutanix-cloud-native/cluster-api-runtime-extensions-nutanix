@@ -47,3 +47,4 @@ affinity:
           labelSelector:
             matchLabels:
               caren.nutanix.com/cluster-uuid: {{ .ClusterUUID }}
+          topologyKey: kubernetes.io/hostname
