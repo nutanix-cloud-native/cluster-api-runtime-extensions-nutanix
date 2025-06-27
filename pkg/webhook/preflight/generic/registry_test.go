@@ -140,76 +140,6 @@ func TestRegistryCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "registry mirror with missing username in secret",
-			registryMirror: &carenv1.GlobalImageRegistryMirror{
-				URL: testRegistryURL,
-				Credentials: &carenv1.RegistryCredentials{
-					SecretRef: &carenv1.LocalObjectReference{
-						Name: "test-secret",
-					},
-				},
-			},
-			kclient: &mockK8sClient{
-				getSecretFunc: func(ctx context.Context,
-					key types.NamespacedName,
-					obj ctrlclient.Object,
-					opts ...ctrlclient.GetOption,
-				) error {
-					secret := obj.(*corev1.Secret)
-					secret.Data = map[string][]byte{
-						"password": []byte("testpass"),
-					}
-					return nil
-				},
-			},
-			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   true,
-				Causes: []preflight.Cause{
-					{
-						Message: "failed to get username from Registry credentials Secret. secret must have field username.",
-						//nolint:lll // this is a test for a field.
-						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",
-					},
-				},
-			},
-		},
-		{
-			name: "registry mirror with missing password in secret",
-			registryMirror: &carenv1.GlobalImageRegistryMirror{
-				URL: testRegistryURL,
-				Credentials: &carenv1.RegistryCredentials{
-					SecretRef: &carenv1.LocalObjectReference{
-						Name: "test-secret",
-					},
-				},
-			},
-			kclient: &mockK8sClient{
-				getSecretFunc: func(ctx context.Context,
-					key types.NamespacedName,
-					obj ctrlclient.Object,
-					opts ...ctrlclient.GetOption,
-				) error {
-					secret := obj.(*corev1.Secret)
-					secret.Data = map[string][]byte{
-						"username": []byte("testuser"),
-					}
-					return nil
-				},
-			},
-			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   true,
-				Causes: []preflight.Cause{
-					{
-						Message: "failed to get password from Registry credentials Secret. secret must have field password.",
-						//nolint:lll // this is a test for a field.
-						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",
-					},
-				},
-			},
-		},
-		{
 			name: "registry mirror ping failure",
 			registryMirror: &carenv1.GlobalImageRegistryMirror{
 				URL: testRegistryURL,
@@ -224,7 +154,7 @@ func TestRegistryCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: pingFailedReasonString(
-							mirrorURLValidationRegex.ReplaceAllString(testRegistryURL, ""),
+							testRegistryURL,
 							testPingFailedError,
 						),
 						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",

@@ -6,7 +6,7 @@ package generic
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"net/url"
 
 	"github.com/go-logr/logr"
 	"github.com/regclient/regclient"
@@ -22,13 +22,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-var (
-	registryMirrorVarPath    = "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror"
-	mirrorURLValidationRegex = regexp.MustCompile(
-		`^https?://`,
-	) // in order to use regclient we need to pass just a hostname
-	// this regex allows us to strip it so we can verify connectivity for this test.
-)
+var registryMirrorVarPath = "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror"
 
 type registryCheck struct {
 	registryMirror        *carenv1.GlobalImageRegistryMirror
@@ -87,12 +81,23 @@ func (r *registryCheck) checkRegistry(
 	credentials *carenv1.RegistryCredentials,
 	regClientGetter regClientPingerFactory,
 ) preflight.CheckResult {
-	registryURL = mirrorURLValidationRegex.ReplaceAllString(registryURL, "")
 	result := preflight.CheckResult{
 		Allowed: false,
 	}
+	registryURLParsed, err := url.ParseRequestURI(registryURL)
+	if err != nil {
+		result.Allowed = false
+		result.Error = true
+		result.Causes = append(result.Causes,
+			preflight.Cause{
+				Message: fmt.Sprintf("failed to parse registry url %s with error : %s", registryURL, err),
+				Field:   registryMirrorVarPath,
+			},
+		)
+		return result
+	}
 	mirrorHost := config.Host{
-		Name: registryURL,
+		Name: registryURLParsed.Host,
 	}
 	if credentials != nil && credentials.SecretRef != nil {
 		mirrorCredentialsSecret := &corev1.Secret{}
@@ -116,31 +121,13 @@ func (r *registryCheck) checkRegistry(
 			return result
 		}
 		username, ok := mirrorCredentialsSecret.Data["username"]
-		if !ok {
-			result.Allowed = false
-			result.Error = true
-			result.Causes = append(result.Causes,
-				preflight.Cause{
-					Message: "failed to get username from Registry credentials Secret. secret must have field username.",
-					Field:   fmt.Sprintf("%s.credentials.secretRef", registryMirrorVarPath),
-				},
-			)
-			return result
+		if ok {
+			mirrorHost.User = string(username)
 		}
 		password, ok := mirrorCredentialsSecret.Data["password"]
-		if !ok {
-			result.Allowed = false
-			result.Error = true
-			result.Causes = append(result.Causes,
-				preflight.Cause{
-					Message: "failed to get password from Registry credentials Secret. secret must have field password.",
-					Field:   fmt.Sprintf("%s.credentials.secretRef", registryMirrorVarPath),
-				},
-			)
-			return result
+		if ok {
+			mirrorHost.Pass = string(password)
 		}
-		mirrorHost.User = string(username)
-		mirrorHost.Pass = string(password)
 		if caCert, ok := mirrorCredentialsSecret.Data["ca.crt"]; ok {
 			mirrorHost.RegCert = string(caCert)
 		}
@@ -149,7 +136,7 @@ func (r *registryCheck) checkRegistry(
 		regclient.WithConfigHost(mirrorHost),
 		regclient.WithUserAgent("regclient/example"),
 	)
-	mirrorRef, err := ref.NewHost(registryURL)
+	mirrorRef, err := ref.NewHost(registryURLParsed.Host)
 	if err != nil {
 		result.Allowed = false
 		result.Error = true
