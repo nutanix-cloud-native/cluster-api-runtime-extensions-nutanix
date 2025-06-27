@@ -10,9 +10,11 @@ import (
 	"text/template"
 
 	"github.com/go-logr/logr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	_ "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -97,6 +99,47 @@ func (n *RegistrySyncer) Apply(
 
 	if err := addonApplier.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply registry syncer addon: %w", err)
+	}
+
+	return nil
+}
+
+// Cleanup cleans up the HCP on the management cluster for the cluster.
+// The syncer is applied against the management cluster can be in a different namespace from cluster.
+// Since cross-namespace owner references are not allowed, we need to delete the HelmChartProxy directly.
+func (n *RegistrySyncer) Cleanup(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	log.Info("Checking if registry syncer needs to be cleaned up")
+	managementCluster, err := capiutils.ManagementCluster(ctx, n.client)
+	if err != nil {
+		return fmt.Errorf("failed to get management cluster: %w", err)
+	}
+	shouldApply, err := shouldApplyRegistrySyncer(cluster, managementCluster)
+	if err != nil {
+		return fmt.Errorf("failed to check if registry syncer should be cleaned up: %w", err)
+	}
+	if !shouldApply {
+		log.Info("Skipping registry syncer cleanup as it is not required")
+		return nil
+	}
+
+	log.Info("Cleaning up registry syncer for cluster")
+	hcp := &caaphv1.HelmChartProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      addonResourceNameForCluster(cluster),
+			Namespace: managementCluster.Namespace,
+		},
+	}
+
+	err = ctrlclient.IgnoreNotFound(n.client.Delete(ctx, hcp))
+	if err != nil {
+		return fmt.Errorf(
+			"failed to delete regystry syncer installation HelmChartProxy: %w",
+			err,
+		)
 	}
 
 	return nil
