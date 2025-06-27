@@ -39,6 +39,14 @@ const (
 	// DNSVariableName is the DNS external patch variable name.
 	DNSVariableName = "dns"
 
-	ClusterUUIDAnnotationKey                = APIGroup + "/cluster-uuid"
+	ClusterUUIDAnnotationKey = APIGroup + "/cluster-uuid"
+
 	SkipAutoEnablingWorkloadClusterRegistry = APIGroup + "/skip-auto-enabling-workload-cluster-registry"
+
+	// PreflightChecksSkipAnnotationKey is the key of the annotation on the Cluster used to skip preflight checks.
+	PreflightChecksSkipAnnotationKey = "preflight.cluster.caren.nutanix.com/skip"
+
+	// PreflightChecksSkipAllAnnotationValue is the value used in the cluster's annotations to indicate
+	// that all checks are skipped.
+	PreflightChecksSkipAllAnnotationValue = "all"
 )
