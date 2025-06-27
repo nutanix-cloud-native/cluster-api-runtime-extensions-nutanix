@@ -131,11 +131,13 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 				resp.Allowed = false
 			}
 			for _, cause := range result.Causes {
-				resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
-					Type:    metav1.CauseType(fmt.Sprintf("FailedPreflight%s", result.Name)),
-					Message: cause.Message,
-					Field:   cause.Field,
-				})
+				resp.Result.Details.Causes = append(resp.Result.Details.Causes,
+					metav1.StatusCause{
+						Type:    metav1.CauseType(result.Name),
+						Message: cause.Message,
+						Field:   cause.Field,
+					},
+				)
 			}
 			resp.Warnings = append(resp.Warnings, result.Warnings...)
 		}
