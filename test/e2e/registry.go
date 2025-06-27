@@ -101,3 +101,57 @@ func EnsureClusterCAForRegistryAddon(
 	const caCrtKey = "ca.crt"
 	Expect(rootCASecret.Data[caCrtKey]).To(Equal(rootCASecret.Data[caCrtKey]))
 }
+
+type EnsureAntiAffnityForRegistryAddonInput struct {
+	Registry        *v1alpha1.RegistryAddon
+	WorkloadCluster *clusterv1.Cluster
+	ClusterProxy    framework.ClusterProxy
+}
+
+func EnsureAntiAffnityForRegistryAddon(
+	ctx context.Context,
+	input EnsureAntiAffnityForRegistryAddonInput,
+) {
+	if input.Registry == nil {
+		return
+	}
+	Log("Ensuring anti-affinity for registry addon in workload cluster")
+	workloadClusterClient := input.ClusterProxy.GetWorkloadCluster(
+		ctx, input.WorkloadCluster.Namespace, input.WorkloadCluster.Name,
+	).GetClient()
+
+	sts := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cncf-distribution-registry-docker-registry",
+			Namespace: "registry-system",
+		},
+	}
+	err := workloadClusterClient.Get(ctx, ctrlclient.ObjectKeyFromObject(sts), sts)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(sts.Spec.Template.Spec.Affinity).ToNot(BeNil())
+	Expect(sts.Spec.Template.Spec.Affinity.PodAntiAffinity).ToNot(BeNil())
+	podAntiAffinity := sts.Spec.Template.Spec.Affinity.PodAntiAffinity
+	Expect(
+		podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+	).ToNot(BeEmpty())
+	Expect(
+		podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].Weight,
+	).To(Equal(int32(100)))
+	podAffinityTerm := podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm
+	Expect(podAffinityTerm).ToNot(BeNil())
+	Expect(podAffinityTerm.TopologyKey).To(Equal("kubernetes.io/hostname"))
+	Expect(podAffinityTerm.LabelSelector).ToNot(BeNil())
+	affinityLabels := podAffinityTerm.LabelSelector.MatchLabels
+	Expect(
+		affinityLabels[v1alpha1.ClusterUUIDAnnotationKey],
+	).To(Equal(input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]))
+
+	// test node affinity
+	nodeAffinity := sts.Spec.Template.Spec.Affinity.NodeAffinity
+	Expect(nodeAffinity).ToNot(BeNil())
+	Expect(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution).ToNot(BeNil())
+	nodeSelectorTerm := nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
+	Expect(nodeSelectorTerm).ToNot(BeNil())
+	Expect(nodeSelectorTerm.MatchExpressions).ToNot(BeEmpty())
+	Expect(nodeSelectorTerm.MatchExpressions[0].Key).To(Equal("node-role.kubernetes.io/control-plane"))
+}
