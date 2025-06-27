@@ -10,6 +10,7 @@ import (
 
 	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/config"
+	"github.com/regclient/regclient/types/ping"
 	"github.com/regclient/regclient/types/ref"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,31 +29,34 @@ var (
 	// this regex allows us to strip it so we can verify connectivity for this test.
 )
 
-type registyCheck struct {
-	registryMirror *carenv1.GlobalImageRegistryMirror
-	imageRegistry  *carenv1.ImageRegistry
-	field          string
-	kclient        ctrlclient.Client
-	cluster        *clusterv1.Cluster
+type registryCheck struct {
+	registryMirror        *carenv1.GlobalImageRegistryMirror
+	imageRegistry         *carenv1.ImageRegistry
+	field                 string
+	kclient               ctrlclient.Client
+	cluster               *clusterv1.Cluster
+	regClientPingerGetter regClientPingerFactory
 }
 
-func (r *registyCheck) Name() string {
+func (r *registryCheck) Name() string {
 	return "RegistryCredentials"
 }
 
-func (r *registyCheck) Run(ctx context.Context) preflight.CheckResult {
+func (r *registryCheck) Run(ctx context.Context) preflight.CheckResult {
 	if r.registryMirror != nil {
 		return r.checkRegistry(
 			ctx,
-			mirrorURLValidationRegex.ReplaceAllString(r.registryMirror.URL, ""),
+			r.registryMirror.URL,
 			r.registryMirror.Credentials,
+			r.regClientPingerGetter,
 		)
 	}
 	if r.imageRegistry != nil {
 		return r.checkRegistry(
 			ctx,
-			mirrorURLValidationRegex.ReplaceAllString(r.imageRegistry.URL, ""),
+			r.imageRegistry.URL,
 			r.imageRegistry.Credentials,
+			r.regClientPingerGetter,
 		)
 	}
 	return preflight.CheckResult{
@@ -60,11 +64,27 @@ func (r *registyCheck) Run(ctx context.Context) preflight.CheckResult {
 	}
 }
 
-func (r *registyCheck) checkRegistry(
+type regClientPinger interface {
+	Ping(context.Context, ref.Ref) (ping.Result, error)
+}
+
+type regClientPingerFactory func(...regclient.Opt) regClientPinger
+
+func defaultRegClientGetter(opts ...regclient.Opt) regClientPinger {
+	return regclient.New(opts...)
+}
+
+func pingFailedReasonString(registryURL string, err error) string {
+	return fmt.Sprintf("failed to ping registry %s with err: %s", registryURL, err.Error())
+}
+
+func (r *registryCheck) checkRegistry(
 	ctx context.Context,
 	registryURL string,
 	credentials *carenv1.RegistryCredentials,
+	regClientGetter regClientPingerFactory,
 ) preflight.CheckResult {
+	registryURL = mirrorURLValidationRegex.ReplaceAllString(registryURL, "")
 	result := preflight.CheckResult{
 		Allowed: false,
 	}
@@ -77,7 +97,7 @@ func (r *registyCheck) checkRegistry(
 			ctx,
 			types.NamespacedName{
 				Namespace: r.cluster.Namespace,
-				Name:      r.registryMirror.Credentials.SecretRef.Name,
+				Name:      credentials.SecretRef.Name,
 			},
 			mirrorCredentialsSecret,
 		)
@@ -110,7 +130,7 @@ func (r *registyCheck) checkRegistry(
 			result.Error = true
 			result.Causes = append(result.Causes,
 				preflight.Cause{
-					Message: "failed to get username from Registry credentials Secret. secret must have field password.",
+					Message: "failed to get password from Registry credentials Secret. secret must have field password.",
 					Field:   fmt.Sprintf("%s.credentials.secretRef", registryMirrorVarPath),
 				},
 			)
@@ -122,17 +142,17 @@ func (r *registyCheck) checkRegistry(
 			mirrorHost.RegCert = string(caCert)
 		}
 	}
-	rc := regclient.New(
+	rc := regClientGetter(
 		regclient.WithConfigHost(mirrorHost),
 		regclient.WithUserAgent("regclient/example"),
 	)
-	mirrorRef, err := ref.NewHost(mirrorHost.Hostname)
+	mirrorRef, err := ref.NewHost(registryURL)
 	if err != nil {
 		result.Allowed = false
 		result.Error = true
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: "failed to create a client to verify registry configuration",
+				Message: fmt.Sprintf("failed to create a client to verify registry configuration %s", err.Error()),
 				Field:   registryMirrorVarPath,
 			},
 		)
@@ -141,10 +161,9 @@ func (r *registyCheck) checkRegistry(
 	_, err = rc.Ping(ctx, mirrorRef) // ping will return an error for anything that's not 200
 	if err != nil {
 		result.Allowed = false
-		result.Error = true
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to ping registry %s with err: %s", mirrorHost.Hostname, err.Error()),
+				Message: pingFailedReasonString(registryURL, err),
 				Field:   registryMirrorVarPath,
 			},
 		)
@@ -161,23 +180,26 @@ func newRegistryCheck(
 	checks := []preflight.Check{}
 	if cd.genericClusterConfigSpec != nil &&
 		cd.genericClusterConfigSpec.GlobalImageRegistryMirror != nil {
-		checks = append(checks, &registyCheck{
-			field:          "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
-			kclient:        cd.kclient,
-			registryMirror: cd.genericClusterConfigSpec.GlobalImageRegistryMirror,
-			cluster:        cd.cluster,
+		checks = append(checks, &registryCheck{
+			field:                 "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
+			kclient:               cd.kclient,
+			registryMirror:        cd.genericClusterConfigSpec.GlobalImageRegistryMirror.DeepCopy(),
+			cluster:               cd.cluster,
+			regClientPingerGetter: defaultRegClientGetter,
 		})
 	}
 	if cd.genericClusterConfigSpec != nil && len(cd.genericClusterConfigSpec.ImageRegistries) > 0 {
-		for i, registry := range cd.genericClusterConfigSpec.ImageRegistries {
-			checks = append(checks, &registyCheck{
+		for i := range cd.genericClusterConfigSpec.ImageRegistries {
+			registry := cd.genericClusterConfigSpec.ImageRegistries[i]
+			checks = append(checks, &registryCheck{
 				field: fmt.Sprintf(
 					"cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[%d]",
 					i,
 				),
-				kclient:       cd.kclient,
-				imageRegistry: &registry,
-				cluster:       cd.cluster,
+				kclient:               cd.kclient,
+				imageRegistry:         registry.DeepCopy(),
+				cluster:               cd.cluster,
+				regClientPingerGetter: defaultRegClientGetter,
 			})
 		}
 	}
