@@ -84,6 +84,10 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
+	if req.Operation == admissionv1.Update {
+		return admission.Allowed("")
+	}
+
 	cluster := &clusterv1.Cluster{}
 	err := h.decoder.Decode(req, cluster)
 	if err != nil {
