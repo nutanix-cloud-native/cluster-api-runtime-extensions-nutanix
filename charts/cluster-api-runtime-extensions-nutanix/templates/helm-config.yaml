@@ -51,6 +51,10 @@ data:
     ChartName: nutanix-csi-storage
     ChartVersion: 3.3.4
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}'
+  registry-syncer: |
+    ChartName: registry-syncer
+    ChartVersion: 0.1.0
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/staging/{{ end }}'
   snapshot-controller: |
     ChartName: snapshot-controller
     ChartVersion: 4.0.2

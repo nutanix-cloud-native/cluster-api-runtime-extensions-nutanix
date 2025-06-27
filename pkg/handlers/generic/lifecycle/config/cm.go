@@ -30,6 +30,7 @@ const (
 	AWSCCM                   Component = "aws-ccm"
 	COSIController           Component = "cosi-controller"
 	CNCFDistributionRegistry Component = "cncf-distribution-registry"
+	RegistrySyncer           Component = "registry-syncer"
 )
 
 type HelmChartGetter struct {

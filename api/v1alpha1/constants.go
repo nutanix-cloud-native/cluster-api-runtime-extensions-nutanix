@@ -39,6 +39,7 @@ const (
 	// DNSVariableName is the DNS external patch variable name.
 	DNSVariableName = "dns"
 
-	ClusterUUIDAnnotationKey                = APIGroup + "/cluster-uuid"
-	SkipAutoEnablingWorkloadClusterRegistry = APIGroup + "/skip-auto-enabling-workload-cluster-registry"
+	ClusterUUIDAnnotationKey                 = APIGroup + "/cluster-uuid"
+	SkipAutoEnablingWorkloadClusterRegistry  = APIGroup + "/skip-auto-enabling-workload-cluster-registry"
+	SkipSynchronizingWorkloadClusterRegistry = APIGroup + "/skip-synchronizing-workload-cluster-registry"
 )
