@@ -17,6 +17,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registry/syncer"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registry/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
@@ -99,7 +100,7 @@ func (n *CNCFDistribution) Apply(
 	opts := &utils.EnsureCertificateOpts{
 		RemoteSecretKey: ctrlclient.ObjectKey{
 			Name:      registryMetadata.TLSSecretName,
-			Namespace: registryMetadata.HelmReleaseNamespace,
+			Namespace: registryMetadata.Namespace,
 		},
 		Spec: utils.CertificateSpec{
 			CommonName:  registryMetadata.ServiceName,
@@ -140,6 +141,17 @@ func (n *CNCFDistribution) Apply(
 		return fmt.Errorf("failed to apply CNCF Distribution registry addon: %w", err)
 	}
 
+	// Apply the registry syncer for workload clusters if needed.
+	registrySyncer := syncer.New(
+		n.client,
+		&syncer.Config{GlobalOptions: n.config.GlobalOptions},
+		n.helmChartInfoGetter,
+	)
+	err = registrySyncer.Apply(ctx, cluster, log)
+	if err != nil {
+		return fmt.Errorf("failed to apply CNCF Distribution registry syncer: %w", err)
+	}
+
 	return nil
 }
 
@@ -176,35 +188,4 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	return b.String(), nil
-}
-
-func certificateDNSNames() []string {
-	names := []string{
-		stsName,
-		fmt.Sprintf("%s.%s", stsName, DefaultHelmReleaseNamespace),
-		fmt.Sprintf("%s.%s.svc", stsName, DefaultHelmReleaseNamespace),
-		fmt.Sprintf("%s.%s.svc.cluster.local", stsName, DefaultHelmReleaseNamespace),
-	}
-	for i := 0; i < stsReplicas; i++ {
-		names = append(names,
-			[]string{
-				fmt.Sprintf("%s-%d", stsName, i),
-				fmt.Sprintf("%s-%d.%s.%s", stsName, i, stsHeadlessServiceName, DefaultHelmReleaseNamespace),
-				fmt.Sprintf("%s-%d.%s.%s.svc", stsName, i, stsHeadlessServiceName, DefaultHelmReleaseNamespace),
-				fmt.Sprintf(
-					"%s-%d.%s.%s.svc.cluster.local",
-					stsName, i, stsHeadlessServiceName, DefaultHelmReleaseNamespace,
-				),
-			}...,
-		)
-	}
-
-	return names
-}
-
-func certificateIPAddresses(serviceIP string) []string {
-	return []string{
-		serviceIP,
-		"127.0.0.1",
-	}
 }

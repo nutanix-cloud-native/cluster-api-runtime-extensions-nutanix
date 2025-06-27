@@ -18,6 +18,7 @@ type RegistryMetadata struct {
 	Replicas int32
 
 	Namespace           string
+	AnyPodName          string
 	ServiceName         string
 	HeadlessServiceName string
 	ServiceIP           string
@@ -56,6 +57,8 @@ func getRegistryMetadataForCNCFDistribution(cluster *clusterv1.Cluster) (*Regist
 
 		tlsSecretName = "registry-tls"
 	)
+	// The CNCF distribution registry is deployed as a StatefulSet with a known Pod name.
+	firstPodName := fmt.Sprintf("%s-%d", workloadName, 0)
 	serviceIP, err := ServiceIPForCluster(cluster)
 	if err != nil {
 		return nil, fmt.Errorf("error getting service IP for the CNCF distribution registry: %w", err)
@@ -81,6 +84,7 @@ func getRegistryMetadataForCNCFDistribution(cluster *clusterv1.Cluster) (*Regist
 		Replicas: replicas,
 
 		Namespace:           defaultHelmReleaseNamespace,
+		AnyPodName:          firstPodName,
 		ServiceName:         serviceName,
 		HeadlessServiceName: headlessServiceName,
 		ServiceIP:           serviceIP,

@@ -55,7 +55,7 @@ func (a *workloadClusterAutoEnabler) defaulter(
 	}
 
 	// Check if the addon is already enabled in the cluster, if it is just return.
-	clusterRegistry, err := registryAddonFromCluster(cluster)
+	clusterRegistry, err := variables.RegistryAddon(cluster)
 	if err != nil {
 		return admission.Errored(
 			http.StatusInternalServerError,
@@ -96,7 +96,7 @@ func (a *workloadClusterAutoEnabler) defaulter(
 		return admission.Allowed("")
 	}
 	// Check if the addon is enabled in the management cluster, if not just return.
-	managementClusterRegistry, err := registryAddonFromCluster(managementCluster)
+	managementClusterRegistry, err := variables.RegistryAddon(managementCluster)
 	if err != nil {
 		return admission.Errored(
 			http.StatusInternalServerError,
@@ -133,21 +133,6 @@ func hasSkipAnnotation(cluster *clusterv1.Cluster) bool {
 	}
 	_, ok := cluster.Annotations[carenv1.SkipAutoEnablingWorkloadClusterRegistry]
 	return ok
-}
-
-func registryAddonFromCluster(cluster *clusterv1.Cluster) (*carenv1.RegistryAddon, error) {
-	spec, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal cluster variable: %w", err)
-	}
-	if spec == nil {
-		return nil, nil
-	}
-	if spec.Addons == nil {
-		return nil, nil
-	}
-
-	return spec.Addons.Registry, nil
 }
 
 func globalImageRegistryMirrorFromCluster(cluster *clusterv1.Cluster) (*carenv1.GlobalImageRegistryMirror, error) {

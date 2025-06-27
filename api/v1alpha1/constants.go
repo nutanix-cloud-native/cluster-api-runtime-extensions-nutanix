@@ -41,7 +41,14 @@ const (
 
 	ClusterUUIDAnnotationKey = APIGroup + "/cluster-uuid"
 
+	// SkipAutoEnablingWorkloadClusterRegistry is the key of the annotation on the Cluster
+	// used to skip enabling the registry addon on workload cluster.
 	SkipAutoEnablingWorkloadClusterRegistry = APIGroup + "/skip-auto-enabling-workload-cluster-registry"
+
+	// SkipSynchronizingWorkloadClusterRegistry is the key of the annotation on the Cluster
+	// used to skip deploying the components that will sync OCI artifacts from the registry
+	// running on the management cluster to registry running on the workload cluster.
+	SkipSynchronizingWorkloadClusterRegistry = APIGroup + "/skip-synchronizing-workload-cluster-registry"
 
 	// PreflightChecksSkipAnnotationKey is the key of the annotation on the Cluster used to skip preflight checks.
 	PreflightChecksSkipAnnotationKey = "preflight.cluster.caren.nutanix.com/skip"

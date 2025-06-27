@@ -47,6 +47,20 @@ annotations:
    caren.nutanix.com/skip-auto-enabling-workload-cluster-registry: "true"
 ```
 
+All images pushed to the management cluster's registry cab be automatically synced to the workload cluster's registry.
+To enable this behavior, set the following feature gate on the controller:
+
+```text
+  --feature-gates=SynchronizeWorkloadClusterRegistry=true
+```
+
+It is also possible to disable this behavior by setting the following annotation on the Cluster resource:
+
+```yaml
+annotations:
+   caren.nutanix.com/skip-synchronizing-workload-cluster-registry: "true"
+```
+
 ## Registry Certificate
 
 1. A root CA Certificate is deployed in the provider's namespace.

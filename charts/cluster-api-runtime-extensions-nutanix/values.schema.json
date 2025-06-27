@@ -536,6 +536,22 @@
                     },
                     "type": "object"
                 },
+                "registrySyncer": {
+                    "properties": {
+                        "defaultValueTemplateConfigMap": {
+                            "properties": {
+                                "create": {
+                                    "type": "boolean"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
                 "serviceLoadBalancer": {
                     "properties": {
                         "metalLB": {

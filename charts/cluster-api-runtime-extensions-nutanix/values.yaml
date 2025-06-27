@@ -117,6 +117,10 @@ hooks:
       defaultValueTemplateConfigMap:
         create: true
         name: default-cncf-distribution-registry-helm-values-template
+  registrySyncer:
+    defaultValueTemplateConfigMap:
+      create: true
+      name: default-registry-syncer-helm-values-template
 
 helmAddonsConfigMap: default-helm-addons-config
 
