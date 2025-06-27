@@ -97,7 +97,7 @@ func Test_shouldApplyRegistrySyncer(t *testing.T) {
 func Test_templateValues(t *testing.T) {
 	result, err := templateValues(namedClusterWithRegistry(t, "test-cluster"), testRegistrySyncerTemplate)
 	require.NoError(t, err)
-	assert.EqualValues(t, expectedRegistrySyncerTemplate, result)
+	assert.Equal(t, expectedRegistrySyncerTemplate, result)
 }
 
 func clusterWithRegistry(t *testing.T) *clusterv1.Cluster {
