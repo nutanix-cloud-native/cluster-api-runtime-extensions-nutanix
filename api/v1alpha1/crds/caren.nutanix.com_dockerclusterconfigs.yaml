@@ -517,6 +517,18 @@ spec:
                   description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
                   pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
                   type: string
+                ntp:
+                  description: NTP defines the NTP configuration for the cluster.
+                  properties:
+                    servers:
+                      description: Servers is a list of NTP servers to use for time synchronization.
+                      items:
+                        type: string
+                      minItems: 1
+                      type: array
+                  required:
+                    - servers
+                  type: object
                 proxy:
                   description: HTTPProxy required for providing proxy configuration.
                   properties:
