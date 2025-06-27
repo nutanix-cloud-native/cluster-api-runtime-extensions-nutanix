@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
 func TestNew(t *testing.T) {
@@ -37,14 +39,14 @@ func TestNew(t *testing.T) {
 		{
 			name: "ignores empty skip annotation value",
 			annotations: map[string]string{
-				AnnotationKey: "",
+				carenv1.PreflightChecksSkipAnnotationKey: "",
 			},
 			expectCheckNames: map[string]struct{}{},
 		},
 		{
 			name: "ignores empty check names",
 			annotations: map[string]string{
-				AnnotationKey: "InfraVMImage,,InfraCredentials,",
+				carenv1.PreflightChecksSkipAnnotationKey: "InfraVMImage,,InfraCredentials,",
 			},
 			expectCheckNames: map[string]struct{}{
 				"infravmimage":     {},
@@ -54,14 +56,14 @@ func TestNew(t *testing.T) {
 		{
 			name: "ignores value of only commas",
 			annotations: map[string]string{
-				AnnotationKey: ",,,",
+				carenv1.PreflightChecksSkipAnnotationKey: ",,,",
 			},
 			expectCheckNames: map[string]struct{}{},
 		},
 		{
 			name: "accepts single check name",
 			annotations: map[string]string{
-				AnnotationKey: "InfraVMImage",
+				carenv1.PreflightChecksSkipAnnotationKey: "InfraVMImage",
 			},
 			expectCheckNames: map[string]struct{}{
 				"infravmimage": {},
@@ -70,7 +72,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "accepts multiple check names",
 			annotations: map[string]string{
-				AnnotationKey: "InfraVMImage,InfraCredentials",
+				carenv1.PreflightChecksSkipAnnotationKey: "InfraVMImage,InfraCredentials",
 			},
 			expectCheckNames: map[string]struct{}{
 				"infravmimage":     {},
@@ -80,7 +82,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "trims spaces from check names",
 			annotations: map[string]string{
-				AnnotationKey: " InfraVMImage , InfraCredentials ",
+				carenv1.PreflightChecksSkipAnnotationKey: " InfraVMImage , InfraCredentials ",
 			},
 			expectCheckNames: map[string]struct{}{
 				"infravmimage":     {},
@@ -125,7 +127,7 @@ func TestEvaluator_For(t *testing.T) {
 		{
 			name: "empty annotation value",
 			annotations: map[string]string{
-				AnnotationKey: "",
+				carenv1.PreflightChecksSkipAnnotationKey: "",
 			},
 			checkName:   "InfraVMImage",
 			expectMatch: false,
@@ -133,7 +135,7 @@ func TestEvaluator_For(t *testing.T) {
 		{
 			name: "skip InfraVMImage check",
 			annotations: map[string]string{
-				AnnotationKey: "InfraVMImage,InfraCredentials",
+				carenv1.PreflightChecksSkipAnnotationKey: "InfraVMImage,InfraCredentials",
 			},
 			checkName:   "InfraVMImage",
 			expectMatch: true,
@@ -141,7 +143,7 @@ func TestEvaluator_For(t *testing.T) {
 		{
 			name: "skip credentials, but not image",
 			annotations: map[string]string{
-				AnnotationKey: "InfraCredentials",
+				carenv1.PreflightChecksSkipAnnotationKey: "InfraCredentials",
 			},
 			checkName:   "InfraVMImage",
 			expectMatch: false,
@@ -149,7 +151,7 @@ func TestEvaluator_For(t *testing.T) {
 		{
 			name: "skip with spaces and case mixing",
 			annotations: map[string]string{
-				AnnotationKey: " infraVMImage , InfraCredentials ",
+				carenv1.PreflightChecksSkipAnnotationKey: " infraVMImage , InfraCredentials ",
 			},
 			checkName:   "InfraVMImage",
 			expectMatch: true,
@@ -157,7 +159,7 @@ func TestEvaluator_For(t *testing.T) {
 		{
 			name: "extra commas do not affect matching",
 			annotations: map[string]string{
-				AnnotationKey: "InfraVMImage,,InfraCredentials,",
+				carenv1.PreflightChecksSkipAnnotationKey: "InfraVMImage,,InfraCredentials,",
 			},
 			checkName:   "InfraVMImage",
 			expectMatch: true,
@@ -165,7 +167,7 @@ func TestEvaluator_For(t *testing.T) {
 		{
 			name: "skip all checks",
 			annotations: map[string]string{
-				AnnotationKey: "all",
+				carenv1.PreflightChecksSkipAnnotationKey: "all",
 			},
 			checkName:   "InfraVMImage",
 			expectMatch: true,
@@ -206,34 +208,34 @@ func TestEvaluator_ForAll(t *testing.T) {
 		{
 			name: "empty annotation value",
 			annotations: map[string]string{
-				AnnotationKey: "",
+				carenv1.PreflightChecksSkipAnnotationKey: "",
 			},
 		},
 		{
 			name: "skip all checks with spaces and case mixing",
 			annotations: map[string]string{
-				AnnotationKey: " aLL ",
+				carenv1.PreflightChecksSkipAnnotationKey: " aLL ",
 			},
 			expectMatch: true,
 		},
 		{
 			name: "skip all checks with extra commas",
 			annotations: map[string]string{
-				AnnotationKey: ",all,,",
+				carenv1.PreflightChecksSkipAnnotationKey: ",all,,",
 			},
 			expectMatch: true,
 		},
 		{
 			name: "skip all checks",
 			annotations: map[string]string{
-				AnnotationKey: "all",
+				carenv1.PreflightChecksSkipAnnotationKey: "all",
 			},
 			expectMatch: true,
 		},
 		{
 			name: "skip some checks, but not all",
 			annotations: map[string]string{
-				AnnotationKey: "OneCheck,AnotherCheck",
+				carenv1.PreflightChecksSkipAnnotationKey: "OneCheck,AnotherCheck",
 			},
 			expectMatch: false,
 		},

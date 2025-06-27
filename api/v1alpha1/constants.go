@@ -40,4 +40,11 @@ const (
 	DNSVariableName = "dns"
 
 	ClusterUUIDAnnotationKey = APIGroup + "/cluster-uuid"
+
+	// PreflightChecksSkipAnnotationKey is the key of the annotation on the Cluster used to skip preflight checks.
+	PreflightChecksSkipAnnotationKey = "preflight.cluster.caren.nutanix.com/skip"
+
+	// PreflightChecksSkipAllAnnotationValue is the value used in the cluster's annotations to indicate
+	// that all checks are skipped.
+	PreflightChecksSkipAllAnnotationValue = "all"
 )
