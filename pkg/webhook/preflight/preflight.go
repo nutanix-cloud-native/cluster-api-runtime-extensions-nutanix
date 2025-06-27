@@ -185,6 +185,12 @@ func run(ctx context.Context,
 
 			checksWG := sync.WaitGroup{}
 			for j, check := range checks {
+				ctrl.LoggerFrom(ctx).V(5).Info(
+					"running preflight check",
+					"checkName", check.Name(),
+					"clusterName", cluster.Name,
+					"clusterNamespace", cluster.Namespace,
+				)
 				if skipEvaluator.For(check.Name()) {
 					resultsOrderedByCheck[j] = namedResult{
 						Name: check.Name(),
