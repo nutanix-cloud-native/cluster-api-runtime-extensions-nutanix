@@ -155,6 +155,26 @@ func (n *CNCFDistribution) Apply(
 	return nil
 }
 
+func (n *CNCFDistribution) Cleanup(
+	ctx context.Context,
+	_ v1alpha1.RegistryAddon,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	// Delete any registry syncer artifacts.
+	registrySyncer := syncer.New(
+		n.client,
+		&syncer.Config{GlobalOptions: n.config.GlobalOptions},
+		n.helmChartInfoGetter,
+	)
+	err := registrySyncer.Cleanup(ctx, cluster, log)
+	if err != nil {
+		return fmt.Errorf("failed to clean up CNCF Distribution registry syncer: %w", err)
+	}
+
+	return nil
+}
+
 func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	valuesTemplate, err := template.New("").Parse(text)
 	if err != nil {

@@ -32,6 +32,12 @@ type RegistryProvider interface {
 		cluster *clusterv1.Cluster,
 		log logr.Logger,
 	) error
+	Cleanup(
+		ctx context.Context,
+		registryVar v1alpha1.RegistryAddon,
+		cluster *clusterv1.Cluster,
+		log logr.Logger,
+	) error
 }
 
 type RegistryHandler struct {
@@ -265,4 +271,85 @@ func (r *RegistryHandler) apply(
 			registryVar.Provider,
 		),
 	)
+}
+
+func (r *RegistryHandler) BeforeClusterDelete(
+	ctx context.Context,
+	req *runtimehooksv1.BeforeClusterDeleteRequest,
+	resp *runtimehooksv1.BeforeClusterDeleteResponse,
+) {
+	cluster := &req.Cluster
+
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"cluster",
+		clusterKey,
+	)
+
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	registryVar, err := variables.Get[v1alpha1.RegistryAddon](
+		varMap,
+		r.variableName,
+		r.variablePath...)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).
+				Info(
+					"Skipping RegistryAddon, field is not specified",
+					"error",
+					err,
+				)
+			return
+		}
+		log.Error(
+			err,
+			"failed to read RegistryAddon provider from cluster definition",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("failed to read RegistryAddon provider from cluster definition: %v",
+				err,
+			),
+		)
+		return
+	}
+
+	handler, ok := r.ProviderHandler[registryVar.Provider]
+	if !ok {
+		err = fmt.Errorf("unknown RegistryAddon Provider")
+		log.Error(err, "provider", registryVar.Provider)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("%s %s", err, registryVar.Provider),
+		)
+		return
+	}
+
+	log.Info(fmt.Sprintf("Clean up RegistryAddon provider %s", registryVar.Provider))
+	err = handler.Cleanup(
+		ctx,
+		registryVar,
+		cluster,
+		log,
+	)
+	if err != nil {
+		log.Error(
+			err,
+			fmt.Sprintf(
+				"failed to clean up RegistryAddon provider %s",
+				registryVar.Provider,
+			),
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf(
+				"failed to clean up RegistryAddon provider: %v",
+				err,
+			),
+		)
+		return
+	}
+
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

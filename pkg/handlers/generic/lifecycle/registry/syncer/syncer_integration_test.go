@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -27,13 +28,13 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
-var _ = Describe("Test Syncer Apply", func() {
+var _ = Describe("Test Syncer", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
 	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
 	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
 
-	It("Should create HelmChartProxy", func(ctx SpecContext) {
+	It("Should create HelmChartProxy and then delete it", func(ctx SpecContext) {
 		t := GinkgoT()
 		featuregatetesting.SetFeatureGateDuringTest(
 			t,
@@ -101,6 +102,14 @@ var _ = Describe("Test Syncer Apply", func() {
 
 		expectedMatchLabels := map[string]string{clusterv1.ClusterNameLabel: managementCluster.Name}
 		Expect(registrySyncerHelmChartProxy.Spec.ClusterSelector.MatchLabels).To(Equal(expectedMatchLabels))
+
+		// Run the cleanup and verify that the HelmChartProxy is deleted.
+		err = syncer.Cleanup(ctx, workloadCluster, logr.Discard())
+		Expect(err).To(BeNil())
+
+		err = c.Get(ctx, registrySyncerHelmChartProxyKey, registrySyncerHelmChartProxy)
+		Expect(err).ToNot(BeNil())
+		Expect(apierrors.IsNotFound(err)).To(BeTrue())
 	})
 	AfterEach(func(ctx SpecContext) {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
