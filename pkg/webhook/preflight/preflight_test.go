@@ -248,7 +248,7 @@ func TestHandle(t *testing.T) {
 						Details: &metav1.StatusDetails{
 							Causes: []metav1.StatusCause{
 								{
-									Type:    "FailedPreflightTest1",
+									Type:    "Test1",
 									Field:   "spec.test",
 									Message: "test failed",
 								},
@@ -342,11 +342,11 @@ func TestHandle(t *testing.T) {
 						Details: &metav1.StatusDetails{
 							Causes: []metav1.StatusCause{
 								{
-									Type:    "FailedPreflightTest2",
+									Type:    "Test2",
 									Message: "check failed",
 								},
 								{
-									Type:    "FailedPreflightTest1",
+									Type:    "Test1",
 									Message: "internal error",
 								},
 							},
@@ -475,11 +475,11 @@ func TestHandleCancelledContext(t *testing.T) {
 				Details: &metav1.StatusDetails{
 					Causes: []metav1.StatusCause{
 						{
-							Type:    "FailedPreflightTest1",
+							Type:    "Test1",
 							Message: "context cancelled",
 						},
 						{
-							Type:    "FailedPreflightTest2",
+							Type:    "Test2",
 							Message: "context cancelled",
 						},
 					},

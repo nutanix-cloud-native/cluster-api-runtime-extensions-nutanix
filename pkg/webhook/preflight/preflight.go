@@ -84,6 +84,10 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
+	if req.Operation == admissionv1.Update {
+		return admission.Allowed("")
+	}
+
 	cluster := &clusterv1.Cluster{}
 	err := h.decoder.Decode(req, cluster)
 	if err != nil {
@@ -131,11 +135,13 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 				resp.Allowed = false
 			}
 			for _, cause := range result.Causes {
-				resp.Result.Details.Causes = append(resp.Result.Details.Causes, metav1.StatusCause{
-					Type:    metav1.CauseType(fmt.Sprintf("FailedPreflight%s", result.Name)),
-					Message: cause.Message,
-					Field:   cause.Field,
-				})
+				resp.Result.Details.Causes = append(resp.Result.Details.Causes,
+					metav1.StatusCause{
+						Type:    metav1.CauseType(result.Name),
+						Message: cause.Message,
+						Field:   cause.Field,
+					},
+				)
 			}
 			resp.Warnings = append(resp.Warnings, result.Warnings...)
 		}
@@ -185,6 +191,12 @@ func run(ctx context.Context,
 
 			checksWG := sync.WaitGroup{}
 			for j, check := range checks {
+				ctrl.LoggerFrom(ctx).V(5).Info(
+					"running preflight check",
+					"checkName", check.Name(),
+					"clusterName", cluster.Name,
+					"clusterNamespace", cluster.Namespace,
+				)
 				if skipEvaluator.For(check.Name()) {
 					resultsOrderedByCheck[j] = namedResult{
 						Name: check.Name(),
