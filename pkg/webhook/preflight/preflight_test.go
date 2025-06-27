@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/skip"
 )
 
@@ -68,7 +69,7 @@ func topologyCluster(skippedCheckNames ...string) *clusterv1.Cluster {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
 			Annotations: map[string]string{
-				skip.AnnotationKey: strings.Join(skippedCheckNames, ","),
+				carenv1.PreflightChecksSkipAnnotationKey: strings.Join(skippedCheckNames, ","),
 			},
 		},
 		Spec: clusterv1.ClusterSpec{
@@ -147,7 +148,7 @@ func TestHandle(t *testing.T) {
 		},
 		{
 			name:    "if cluster skips all checks, then allowed, with a warning",
-			cluster: topologyCluster(skip.SkipAllChecksAnnotationValue),
+			cluster: topologyCluster(carenv1.PreflightChecksSkipAllAnnotationValue),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{},

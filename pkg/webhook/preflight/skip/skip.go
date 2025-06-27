@@ -6,15 +6,8 @@ import (
 	"strings"
 
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-)
 
-const (
-	// AnnotationKey is the key of the annotation on the Cluster used to skip preflight checks.
-	AnnotationKey = "preflight.cluster.caren.nutanix.com/skip"
-
-	// SkipAllChecksAnnotationValue is the value used in the cluster's annotations to indicate
-	// that all checks are skipped.
-	SkipAllChecksAnnotationValue = "all"
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
 // Evaluator is used to determine which checks should be skipped, based on the cluster's annotations.
@@ -35,7 +28,7 @@ func New(cluster *clusterv1.Cluster) *Evaluator {
 		return o
 	}
 
-	value, exists := annotations[AnnotationKey]
+	value, exists := annotations[carenv1.PreflightChecksSkipAnnotationKey]
 	if !exists {
 		// If the annotation does not exist, return an Evaluator with no prefixes.
 		return o
@@ -49,7 +42,8 @@ func New(cluster *clusterv1.Cluster) *Evaluator {
 		normalizedCheckName := strings.TrimSpace(strings.ToLower(checkName))
 		o.normalizedCheckNames[normalizedCheckName] = struct{}{}
 	}
-	if _, exists := o.normalizedCheckNames[SkipAllChecksAnnotationValue]; exists && len(o.normalizedCheckNames) == 1 {
+	if _, exists := o.normalizedCheckNames[carenv1.PreflightChecksSkipAllAnnotationValue]; exists &&
+		len(o.normalizedCheckNames) == 1 {
 		o.all = true
 	}
 	return o
