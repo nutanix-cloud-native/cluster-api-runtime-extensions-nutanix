@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/go-logr/logr"
 	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/config"
 	"github.com/regclient/regclient/types/ping"
@@ -36,6 +37,7 @@ type registryCheck struct {
 	kclient               ctrlclient.Client
 	cluster               *clusterv1.Cluster
 	regClientPingerGetter regClientPingerFactory
+	log                   logr.Logger
 }
 
 func (r *registryCheck) Name() string {
@@ -43,6 +45,7 @@ func (r *registryCheck) Name() string {
 }
 
 func (r *registryCheck) Run(ctx context.Context) preflight.CheckResult {
+	r.log.Info("Running registry check")
 	if r.registryMirror != nil {
 		return r.checkRegistry(
 			ctx,
@@ -186,6 +189,7 @@ func newRegistryCheck(
 			registryMirror:        cd.genericClusterConfigSpec.GlobalImageRegistryMirror.DeepCopy(),
 			cluster:               cd.cluster,
 			regClientPingerGetter: defaultRegClientGetter,
+			log:                   cd.log,
 		})
 	}
 	if cd.genericClusterConfigSpec != nil && len(cd.genericClusterConfigSpec.ImageRegistries) > 0 {
@@ -200,6 +204,7 @@ func newRegistryCheck(
 				imageRegistry:         registry.DeepCopy(),
 				cluster:               cd.cluster,
 				regClientPingerGetter: defaultRegClientGetter,
+				log:                   cd.log,
 			})
 		}
 	}

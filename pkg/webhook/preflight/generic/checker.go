@@ -15,10 +15,14 @@ import (
 )
 
 var Checker = &genericChecker{
-	registryCheckFactory: newRegistryCheck,
+	registryCheckFactory:      newRegistryCheck,
+	configurationCheckFactory: newConfigurationCheck,
 }
 
 type genericChecker struct {
+	configurationCheckFactory func(
+		cd *checkDependencies,
+	) preflight.Check
 	registryCheckFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
@@ -41,7 +45,11 @@ func (g *genericChecker) Init(
 		cluster: cluster,
 		log:     ctrl.LoggerFrom(ctx).WithName("preflight/generic"),
 	}
-	checks := []preflight.Check{}
+	checks := []preflight.Check{
+		// The configuration check must run first, because it initializes data used by all other checks.
+		g.configurationCheckFactory(cd),
+	}
 	checks = append(checks, g.registryCheckFactory(cd)...)
+	cd.log.Info("returning checks", "checks", checks)
 	return checks
 }
