@@ -165,12 +165,14 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		ServiceIP     string
 		Replicas      int32
 		TLSSecretName string
+		ClusterUUID   string
 	}
 
 	templateInput := input{
 		Replicas:      stsReplicas,
 		ServiceIP:     serviceIP,
 		TLSSecretName: tlsSecretName,
+		ClusterUUID:   cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
 	}
 
 	var b bytes.Buffer

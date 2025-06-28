@@ -21,7 +21,7 @@ type WaitForStatefulSetAvailableInput struct {
 	StatefulSet *appsv1.StatefulSet
 }
 
-// WaitForStatefulSetsAvailable waits until the Deployment has observedGeneration equal to generation and
+// WaitForStatefulSetsAvailable waits until the Statefulset has observedGeneration equal to generation and
 // status.Available = True, that signals that all the desired replicas are in place.
 func WaitForStatefulSetsAvailable(
 	ctx context.Context, input WaitForStatefulSetAvailableInput, intervals ...interface{},

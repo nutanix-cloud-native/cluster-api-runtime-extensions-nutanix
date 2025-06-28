@@ -177,6 +177,15 @@ var _ = Describe("Self-hosted", Serial, func() {
 															ClusterProxy:    proxy,
 														},
 													)
+
+													EnsureAntiAffnityForRegistryAddon(
+														ctx,
+														EnsureAntiAffnityForRegistryAddonInput{
+															Registry:        addonsConfig.Registry,
+															WorkloadCluster: workloadCluster,
+															ClusterProxy:    proxy,
+														},
+													)
 												},
 											}
 										},
