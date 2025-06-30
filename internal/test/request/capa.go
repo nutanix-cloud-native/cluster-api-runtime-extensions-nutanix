@@ -10,18 +10,18 @@ import (
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
-	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
+	capav1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 )
 
-func NewNutanixClusterTemplateRequestItem(
+func NewAWSClusterTemplateRequestItem(
 	uid types.UID,
-	existingSpec ...capxv1.NutanixClusterTemplateSpec,
+	existingSpec ...capav1.AWSClusterTemplateSpec,
 ) runtimehooksv1.GeneratePatchesRequestItem {
-	nutanixClusterTemplate := &capxv1.NutanixClusterTemplate{
+	awsClusterTemplate := &capav1.AWSClusterTemplate{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: capxv1.GroupVersion.String(),
-			Kind:       "NutanixClusterTemplate",
+			APIVersion: capav1.GroupVersion.String(),
+			Kind:       "AWSClusterTemplate",
 		},
 	}
 
@@ -29,13 +29,13 @@ func NewNutanixClusterTemplateRequestItem(
 	case 0:
 		// Do nothing.
 	case 1:
-		nutanixClusterTemplate.Spec = existingSpec[0]
+		awsClusterTemplate.Spec = existingSpec[0]
 	default:
 		panic("can only take at most one existing spec")
 	}
 
 	return request.NewRequestItem(
-		nutanixClusterTemplate,
+		awsClusterTemplate,
 		&runtimehooksv1.HolderReference{
 			APIVersion: clusterv1.GroupVersion.String(),
 			Kind:       "Cluster",
@@ -47,18 +47,18 @@ func NewNutanixClusterTemplateRequestItem(
 	)
 }
 
-func NewCPNutanixMachineTemplateRequestItem(
+func NewCPAWSMachineTemplateRequestItem(
 	uid types.UID,
 ) runtimehooksv1.GeneratePatchesRequestItem {
 	return request.NewRequestItem(
-		&capxv1.NutanixMachineTemplate{
+		&capav1.AWSMachineTemplate{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: capxv1.GroupVersion.String(),
-				Kind:       "NutanixMachineTemplate",
+				APIVersion: capav1.GroupVersion.String(),
+				Kind:       "AWSMachineTemplate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "nutanix-machine-template",
-				Namespace: "nutanix-cluster",
+				Name:      "aws-machine-template",
+				Namespace: "aws-cluster",
 			},
 		},
 		&runtimehooksv1.HolderReference{
@@ -70,18 +70,18 @@ func NewCPNutanixMachineTemplateRequestItem(
 	)
 }
 
-func NewWorkerNutanixMachineTemplateRequestItem(
+func NewWorkerAWSMachineTemplateRequestItem(
 	uid types.UID,
 ) runtimehooksv1.GeneratePatchesRequestItem {
 	return request.NewRequestItem(
-		&capxv1.NutanixMachineTemplate{
+		&capav1.AWSMachineTemplate{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: capxv1.GroupVersion.String(),
-				Kind:       "NutanixMachineTemplate",
+				APIVersion: capav1.GroupVersion.String(),
+				Kind:       "AWSMachineTemplate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "nutanix-machine-template",
-				Namespace: "nutanix-cluster",
+				Name:      "aws-machine-template",
+				Namespace: "aws-cluster",
 			},
 		},
 		&runtimehooksv1.HolderReference{
