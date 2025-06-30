@@ -14,6 +14,25 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
+        path: /mutate-v1beta1-addons
+    failurePolicy: Fail
+    name: addons-defaulter.caren.nutanix.com
+    rules:
+      - apiGroups:
+          - cluster.x-k8s.io
+        apiVersions:
+          - '*'
+        operations:
+          - CREATE
+        resources:
+          - clusters
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: '{{ include "chart.name" . }}-admission'
+        namespace: '{{ .Release.Namespace }}'
         path: /mutate-v1beta1-cluster
     failurePolicy: Fail
     name: cluster-defaulter.caren.nutanix.com
