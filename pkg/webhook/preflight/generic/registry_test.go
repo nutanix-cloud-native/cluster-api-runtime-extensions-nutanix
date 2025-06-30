@@ -209,11 +209,23 @@ func TestRegistryCheck(t *testing.T) {
 
 			// Create the check
 			check := &registryCheck{
-				registryMirror:        tc.registryMirror,
-				imageRegistry:         tc.imageRegistry,
 				kclient:               tc.kclient,
 				cluster:               cluster,
 				regClientPingerGetter: tc.mockRegClientPingerFactory,
+			}
+			if tc.registryMirror != nil {
+				check.registryURL = tc.registryMirror.URL
+				if tc.registryMirror.Credentials != nil {
+					check.credentials = tc.registryMirror.Credentials
+
+				}
+			}
+			if tc.imageRegistry != nil {
+				check.registryURL = tc.imageRegistry.URL
+				if tc.imageRegistry.Credentials != nil {
+					check.credentials = tc.imageRegistry.Credentials
+
+				}
 			}
 
 			// Execute the check
@@ -229,18 +241,14 @@ func TestRegistryCheck(t *testing.T) {
 
 func TestNewRegistryCheck(t *testing.T) {
 	testCases := []struct {
-		name                       string
-		genericClusterConfigSpec   *carenv1.GenericClusterConfigSpec
-		expectedChecks             int
-		expectRegistryMirrorCheck  bool
-		expectImageRegistriesCheck bool
+		name                     string
+		genericClusterConfigSpec *carenv1.GenericClusterConfigSpec
+		expectedChecks           int
 	}{
 		{
-			name:                       "no registry configuration",
-			genericClusterConfigSpec:   &carenv1.GenericClusterConfigSpec{},
-			expectedChecks:             0,
-			expectRegistryMirrorCheck:  false,
-			expectImageRegistriesCheck: false,
+			name:                     "no registry configuration",
+			genericClusterConfigSpec: &carenv1.GenericClusterConfigSpec{},
+			expectedChecks:           0,
 		},
 		{
 			name: "only registry mirror configuration",
@@ -249,9 +257,7 @@ func TestNewRegistryCheck(t *testing.T) {
 					URL: testRegistryURL,
 				},
 			},
-			expectedChecks:             1,
-			expectRegistryMirrorCheck:  true,
-			expectImageRegistriesCheck: false,
+			expectedChecks: 1,
 		},
 		{
 			name: "only image registries configuration",
@@ -265,9 +271,7 @@ func TestNewRegistryCheck(t *testing.T) {
 					},
 				},
 			},
-			expectedChecks:             2,
-			expectRegistryMirrorCheck:  false,
-			expectImageRegistriesCheck: true,
+			expectedChecks: 2,
 		},
 		{
 			name: "both registry mirror and image registries configuration",
@@ -281,9 +285,7 @@ func TestNewRegistryCheck(t *testing.T) {
 					},
 				},
 			},
-			expectedChecks:             2,
-			expectRegistryMirrorCheck:  true,
-			expectImageRegistriesCheck: true,
+			expectedChecks: 2,
 		},
 	}
 
@@ -305,17 +307,8 @@ func TestNewRegistryCheck(t *testing.T) {
 			assert.Len(t, checks, tc.expectedChecks)
 
 			for _, check := range checks {
-				rc, ok := check.(*registryCheck)
+				_, ok := check.(*registryCheck)
 				require.True(t, ok)
-				if tc.expectRegistryMirrorCheck && rc.imageRegistry == nil { //
-					assert.NotNil(
-						t,
-						rc.registryMirror,
-						"expected registry mirror got %v for field %s", rc.registryMirror, rc.field,
-					)
-				} else if tc.expectImageRegistriesCheck {
-					assert.NotNil(t, rc.imageRegistry, "expected image registry got %v for field %s", rc.imageRegistry, rc.field)
-				}
 			}
 		})
 	}

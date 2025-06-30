@@ -25,13 +25,14 @@ import (
 var registryMirrorVarPath = "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror"
 
 type registryCheck struct {
-	registryMirror        *carenv1.GlobalImageRegistryMirror
-	imageRegistry         *carenv1.ImageRegistry
 	field                 string
 	kclient               ctrlclient.Client
 	cluster               *clusterv1.Cluster
 	regClientPingerGetter regClientPingerFactory
 	log                   logr.Logger
+
+	registryURL string
+	credentials *carenv1.RegistryCredentials
 }
 
 func (r *registryCheck) Name() string {
@@ -39,25 +40,12 @@ func (r *registryCheck) Name() string {
 }
 
 func (r *registryCheck) Run(ctx context.Context) preflight.CheckResult {
-	if r.registryMirror != nil {
-		return r.checkRegistry(
-			ctx,
-			r.registryMirror.URL,
-			r.registryMirror.Credentials,
-			r.regClientPingerGetter,
-		)
-	}
-	if r.imageRegistry != nil {
-		return r.checkRegistry(
-			ctx,
-			r.imageRegistry.URL,
-			r.imageRegistry.Credentials,
-			r.regClientPingerGetter,
-		)
-	}
-	return preflight.CheckResult{
-		Allowed: true,
-	}
+	return r.checkRegistry(
+		ctx,
+		r.registryURL,
+		r.credentials,
+		r.regClientPingerGetter,
+	)
 }
 
 type regClientPinger interface {
@@ -82,6 +70,10 @@ func (r *registryCheck) checkRegistry(
 ) preflight.CheckResult {
 	result := preflight.CheckResult{
 		Allowed: false,
+	}
+	if r.registryURL == "" {
+		result.Allowed = true
+		return result
 	}
 	registryURLParsed, err := url.ParseRequestURI(registryURL)
 	if err != nil {
@@ -172,10 +164,11 @@ func newRegistryCheck(
 		checks = append(checks, &registryCheck{
 			field:                 "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
 			kclient:               cd.kclient,
-			registryMirror:        cd.genericClusterConfigSpec.GlobalImageRegistryMirror.DeepCopy(),
 			cluster:               cd.cluster,
 			regClientPingerGetter: defaultRegClientGetter,
 			log:                   cd.log,
+			registryURL:           cd.genericClusterConfigSpec.GlobalImageRegistryMirror.DeepCopy().URL,
+			credentials:           cd.genericClusterConfigSpec.GlobalImageRegistryMirror.DeepCopy().Credentials,
 		})
 	}
 	if cd.genericClusterConfigSpec != nil && len(cd.genericClusterConfigSpec.ImageRegistries) > 0 {
@@ -187,10 +180,11 @@ func newRegistryCheck(
 					i,
 				),
 				kclient:               cd.kclient,
-				imageRegistry:         registry.DeepCopy(),
 				cluster:               cd.cluster,
 				regClientPingerGetter: defaultRegClientGetter,
 				log:                   cd.log,
+				registryURL:           registry.DeepCopy().URL,
+				credentials:           registry.DeepCopy().Credentials,
 			})
 		}
 	}
