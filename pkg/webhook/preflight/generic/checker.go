@@ -50,6 +50,5 @@ func (g *genericChecker) Init(
 		g.configurationCheckFactory(cd),
 	}
 	checks = append(checks, g.registryCheckFactory(cd)...)
-	cd.log.Info("returning checks", "checks", checks)
 	return checks
 }

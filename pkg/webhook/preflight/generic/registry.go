@@ -39,7 +39,6 @@ func (r *registryCheck) Name() string {
 }
 
 func (r *registryCheck) Run(ctx context.Context) preflight.CheckResult {
-	r.log.Info("Running registry check")
 	if r.registryMirror != nil {
 		return r.checkRegistry(
 			ctx,
