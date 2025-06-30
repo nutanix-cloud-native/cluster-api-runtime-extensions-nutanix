@@ -216,6 +216,10 @@ type GenericClusterConfigSpec struct {
 	// KubeProxy defines the configuration for kube-proxy.
 	// +kubebuilder:validation:Optional
 	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
+
+	// NTP defines the NTP configuration for the cluster.
+	// +kubebuilder:validation:Optional
+	NTP *NTP `json:"ntp,omitempty"`
 }
 
 type Image struct {
@@ -351,6 +355,14 @@ type KubeProxy struct {
 	// +kubebuilder:validation:Enum=iptables;nftables
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
 	Mode KubeProxyMode `json:"mode,omitempty"`
+}
+
+// NTP defines the NTP configuration for the cluster.
+type NTP struct {
+	// Servers is a list of NTP servers to use for time synchronization.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
+	Servers []string `json:"servers"`
 }
 
 //nolint:gochecknoinits // Idiomatic to use init functions to register APIs with scheme.
