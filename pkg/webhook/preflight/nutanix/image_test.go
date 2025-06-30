@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr/testr"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
+	vmmv4error "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/error"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
@@ -225,6 +226,42 @@ func TestVMImageCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get VM Image: api error",
+						Field:   "test-field",
+					},
+				},
+			},
+		},
+		{
+			name: "listing images returns an error response",
+			nclient: &mocknclient{
+				listImagesFunc: func(page,
+					limit *int,
+					filter,
+					orderby,
+					select_ *string,
+					args ...map[string]interface{},
+				) (
+					*vmmv4.ListImagesApiResponse,
+					error,
+				) {
+					resp := &vmmv4.ListImagesApiResponse{}
+					err := resp.SetData(*vmmv4error.NewErrorResponse())
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
+			machineDetails: &carenv1.NutanixMachineDetails{
+				Image: &capxv1.NutanixResourceIdentifier{
+					Type: capxv1.NutanixIdentifierName,
+					Name: ptr.To("test-image"),
+				},
+			},
+			want: preflight.CheckResult{
+				Allowed: false,
+				Error:   true,
+				Causes: []preflight.Cause{
+					{
+						Message: "failed to get VM Image: failed to get data returned by ListImages",
 						Field:   "test-field",
 					},
 				},
