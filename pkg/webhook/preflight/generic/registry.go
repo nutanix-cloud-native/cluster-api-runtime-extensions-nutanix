@@ -14,6 +14,7 @@ import (
 	"github.com/regclient/regclient/types/ping"
 	"github.com/regclient/regclient/types/ref"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -98,6 +99,17 @@ func (r *registryCheck) checkRegistry(
 			},
 			mirrorCredentialsSecret,
 		)
+		if apierrors.IsNotFound(err) {
+			result.Allowed = false
+			result.Error = false
+			result.Causes = append(result.Causes,
+				preflight.Cause{
+					Message: fmt.Sprintf("Registry credentials Secret %q not found", credentials.SecretRef.Name),
+					Field:   r.field + ".credentials.secretRef",
+				},
+			)
+			return result
+		}
 		if err != nil {
 			result.Allowed = false
 			result.Error = true

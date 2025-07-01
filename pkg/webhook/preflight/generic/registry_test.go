@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -126,7 +127,7 @@ func TestRegistryCheck(t *testing.T) {
 					obj ctrlclient.Object,
 					opts ...ctrlclient.GetOption,
 				) error {
-					return fmt.Errorf("secret not found")
+					return fmt.Errorf("fake error")
 				},
 			},
 			want: preflight.CheckResult{
@@ -134,7 +135,39 @@ func TestRegistryCheck(t *testing.T) {
 				Error:   true,
 				Causes: []preflight.Cause{
 					{
-						Message: "failed to get Registry credentials Secret: secret not found",
+						Message: "failed to get Registry credentials Secret: fake error",
+						//nolint:lll // this is a test for a field.
+						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",
+					},
+				},
+			},
+		},
+		{
+			name:  "registry mirror with missing credentials secret",
+			field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
+			registryMirror: &carenv1.GlobalImageRegistryMirror{
+				URL: testRegistryURL,
+				Credentials: &carenv1.RegistryCredentials{
+					SecretRef: &carenv1.LocalObjectReference{
+						Name: "test-secret",
+					},
+				},
+			},
+			kclient: &mockK8sClient{
+				getSecretFunc: func(ctx context.Context,
+					key types.NamespacedName,
+					obj ctrlclient.Object,
+					opts ...ctrlclient.GetOption,
+				) error {
+					return apierrors.NewNotFound(corev1.Resource("secrets"), "test-secret")
+				},
+			},
+			want: preflight.CheckResult{
+				Allowed: false,
+				Error:   false,
+				Causes: []preflight.Cause{
+					{
+						Message: "Registry credentials Secret \"test-secret\" not found",
 						//nolint:lll // this is a test for a field.
 						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",
 					},
