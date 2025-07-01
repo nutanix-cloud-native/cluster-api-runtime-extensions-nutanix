@@ -37,7 +37,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 
 	if c.csiSpec == nil {
 		result.Allowed = false
-		result.Error = true
+		result.InternalError = true
 		result.Causes = append(result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
 				"no storage container found for cluster %q",
@@ -83,7 +83,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		cluster, err := getClusterOnce()
 		if err != nil {
 			result.Allowed = false
-			result.Error = true
+			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"failed to check if storage container %q exists: failed to get cluster %q: %s",
@@ -99,7 +99,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		containers, err := getStorageContainers(c.nclient, *cluster.ExtId, storageContainer)
 		if err != nil {
 			result.Allowed = false
-			result.Error = true
+			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"failed to check if storage container %q exists in cluster %q: %s",

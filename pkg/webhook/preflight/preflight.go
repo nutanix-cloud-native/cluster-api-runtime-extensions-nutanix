@@ -43,8 +43,8 @@ type (
 	// list of causes for the failure. It also contains a list of warnings that were
 	// generated during the check.
 	CheckResult struct {
-		Allowed bool
-		Error   bool
+		Allowed       bool
+		InternalError bool
 
 		Causes   []Cause
 		Warnings []string
@@ -128,7 +128,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	internalError := false
 	for _, results := range resultsOrderedByCheckerAndCheck {
 		for _, result := range results {
-			if result.Error {
+			if result.InternalError {
 				internalError = true
 			}
 			if !result.Allowed {
@@ -201,9 +201,9 @@ func run(ctx context.Context,
 					resultsOrderedByCheck[j] = namedResult{
 						Name: check.Name(),
 						CheckResult: CheckResult{
-							Allowed: true,
-							Error:   false,
-							Causes:  nil,
+							Allowed:       true,
+							InternalError: false,
+							Causes:        nil,
 							Warnings: []string{
 								fmt.Sprintf("Cluster has skipped preflight check %q", check.Name()),
 							},
@@ -223,7 +223,7 @@ func run(ctx context.Context,
 							resultsOrderedByCheck[j] = namedResult{
 								Name: check.Name(),
 								CheckResult: CheckResult{
-									Error: true,
+									InternalError: true,
 									Causes: []Cause{
 										{
 											Message: fmt.Sprintf("internal error (panic): %s", r),

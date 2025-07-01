@@ -89,7 +89,7 @@ func newCredentialsCheck(
 	)
 	if apierrors.IsNotFound(err) {
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.Error = false
+		credentialsCheck.result.InternalError = false
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Prism Central credentials Secret %q not found",
@@ -101,7 +101,7 @@ func newCredentialsCheck(
 	}
 	if err != nil {
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.Error = true
+		credentialsCheck.result.InternalError = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to get Prism Central credentials Secret %q: %s",
@@ -169,7 +169,7 @@ func newCredentialsCheck(
 	nclient, err := nclientFactory(credentials)
 	if err != nil {
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.Error = true
+		credentialsCheck.result.InternalError = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to initialize Nutanix client: %s", err),
@@ -183,7 +183,7 @@ func newCredentialsCheck(
 	_, err = nclient.GetCurrentLoggedInUser(ctx)
 	if err != nil {
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.Error = true
+		credentialsCheck.result.InternalError = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to validate credentials using the v3 API client. "+

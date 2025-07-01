@@ -131,8 +131,8 @@ func TestRegistryCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   true,
+				Allowed:       false,
+				InternalError: true,
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get Registry credentials Secret: fake error",
@@ -163,8 +163,8 @@ func TestRegistryCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   false,
+				Allowed:       false,
+				InternalError: false,
 				Causes: []preflight.Cause{
 					{
 						Message: "Registry credentials Secret \"test-secret\" not found",
@@ -264,8 +264,8 @@ func TestRegistryCheck(t *testing.T) {
 				}
 			},
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   false,
+				Allowed:       false,
+				InternalError: false,
 				Causes: []preflight.Cause{
 					{
 						Message: fmt.Sprintf("failed to parse registry url %s with error: "+
@@ -311,7 +311,7 @@ func TestRegistryCheck(t *testing.T) {
 
 			// Verify the result
 			assert.Equal(t, tc.want.Allowed, got.Allowed, "(allowed) mismatch for test "+tc.name)
-			assert.Equal(t, tc.want.Error, got.Error, "(error) mismatch test "+tc.name)
+			assert.Equal(t, tc.want.InternalError, got.InternalError, "(error) mismatch test "+tc.name)
 			assert.Equal(t, tc.want.Causes, got.Causes, "(causes) mismatch test "+tc.name)
 		})
 	}

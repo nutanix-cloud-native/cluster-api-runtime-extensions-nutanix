@@ -29,7 +29,7 @@ func TestNewCredentialsCheck_Success(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.True(t, result.Allowed)
-	assert.False(t, result.Error)
+	assert.False(t, result.InternalError)
 	assert.Empty(t, result.Causes)
 }
 
@@ -42,7 +42,7 @@ func TestNewCredentialsCheck_NoNutanixConfig(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.True(t, result.Allowed)
-	assert.False(t, result.Error)
+	assert.False(t, result.InternalError)
 	assert.Empty(t, result.Causes)
 }
 
@@ -55,7 +55,7 @@ func TestNewCredentialsCheck_MissingNutanixField(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.False(t, result.Error)
+	assert.False(t, result.InternalError)
 	assert.NotEmpty(t, result.Causes)
 	assert.Contains(t, result.Causes[0].Message, "Nutanix cluster configuration is not defined")
 }
@@ -69,7 +69,7 @@ func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.False(t, result.Error)
+	assert.False(t, result.InternalError)
 	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central endpoint URL")
 }
 
@@ -82,7 +82,7 @@ func TestNewCredentialsCheck_SecretNotFound(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.False(t, result.Error)
+	assert.False(t, result.InternalError)
 	assert.Contains(t, result.Causes[0].Message, "Prism Central credentials Secret \"ntnx-creds\" not found")
 }
 
@@ -120,7 +120,7 @@ func TestNewCredentialsCheck_SecretGetError(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.True(t, result.Error)
+	assert.True(t, result.InternalError)
 	assert.Contains(t, result.Causes[0].Message, "Failed to get Prism Central credentials Secret \"ntnx-creds\": fake error")
 }
 
@@ -140,7 +140,7 @@ func TestNewCredentialsCheck_SecretEmpty(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.False(t, result.Error)
+	assert.False(t, result.InternalError)
 	assert.Contains(t, result.Causes[0].Message, "credentials Secret \"ntnx-creds\" is empty")
 }
 
@@ -159,7 +159,7 @@ func TestNewCredentialsCheck_SecretMissingKey(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nil, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.False(t, result.Error)
+	assert.False(t, result.InternalError)
 	assert.Contains(t, result.Causes[0].Message, "does not contain key \"credentials\"")
 }
 
@@ -181,7 +181,7 @@ func TestNewCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.False(t, result.Error)
+	assert.False(t, result.InternalError)
 	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central credentials")
 }
 
@@ -194,7 +194,7 @@ func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.True(t, result.Error)
+	assert.True(t, result.InternalError)
 	assert.Contains(t, result.Causes[0].Message, "Failed to initialize Nutanix client")
 }
 
@@ -207,7 +207,7 @@ func TestNewCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.True(t, result.Error)
+	assert.True(t, result.InternalError)
 	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client.")
 }
 

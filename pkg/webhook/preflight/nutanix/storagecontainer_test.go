@@ -893,7 +893,7 @@ func TestStorageContainerCheck(t *testing.T) {
 
 			// Verify the result
 			assert.Equal(t, tc.expectedAllowed, result.Allowed)
-			assert.Equal(t, tc.expectedError, result.Error)
+			assert.Equal(t, tc.expectedError, result.InternalError)
 
 			if tc.expectedCauseMessage != "" {
 				require.NotEmpty(t, result.Causes)

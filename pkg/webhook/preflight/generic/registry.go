@@ -77,7 +77,7 @@ func (r *registryCheck) checkRegistry(
 	registryURLParsed, err := url.ParseRequestURI(registryURL)
 	if err != nil {
 		result.Allowed = false
-		result.Error = false
+		result.InternalError = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("failed to parse registry url %s with error: %s", registryURL, err),
@@ -101,7 +101,7 @@ func (r *registryCheck) checkRegistry(
 		)
 		if apierrors.IsNotFound(err) {
 			result.Allowed = false
-			result.Error = false
+			result.InternalError = false
 			result.Causes = append(result.Causes,
 				preflight.Cause{
 					Message: fmt.Sprintf("Registry credentials Secret %q not found", credentials.SecretRef.Name),
@@ -112,7 +112,7 @@ func (r *registryCheck) checkRegistry(
 		}
 		if err != nil {
 			result.Allowed = false
-			result.Error = true
+			result.InternalError = true
 			result.Causes = append(result.Causes,
 				preflight.Cause{
 					Message: fmt.Sprintf("failed to get Registry credentials Secret: %s", err),
@@ -157,7 +157,7 @@ func (r *registryCheck) checkRegistry(
 		return result
 	}
 	result.Allowed = true
-	result.Error = false
+	result.InternalError = false
 	return result
 }
 
