@@ -47,7 +47,7 @@ annotations:
    caren.nutanix.com/skip-auto-enabling-workload-cluster-registry: "true"
 ```
 
-All images pushed to the management cluster's registry cab be automatically synced to the workload cluster's registry.
+All images pushed to the management cluster's registry can be automatically synced to the workload cluster's registry.
 To enable this behavior, set the following feature gate on the controller:
 
 ```text
