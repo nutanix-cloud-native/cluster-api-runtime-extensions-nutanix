@@ -31,7 +31,7 @@ type DockerControlPlaneSpec struct {
 // NutanixControlPlaneSpec defines the desired state of the control plane for a Nutanix cluster.
 type NutanixControlPlaneSpec struct {
 	// +kubebuilder:validation:Optional
-	Nutanix *NutanixNodeSpec `json:"nutanix,omitempty"`
+	Nutanix *NutanixControlPlaneNodeSpec `json:"nutanix,omitempty"`
 
 	GenericControlPlaneSpec `json:",inline"`
 

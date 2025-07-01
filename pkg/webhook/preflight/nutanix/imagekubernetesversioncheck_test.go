@@ -292,7 +292,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 				cluster: tc.cluster,
 				nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 					ControlPlane: &carenv1.NutanixControlPlaneSpec{
-						Nutanix: &carenv1.NutanixNodeSpec{
+						Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
 							MachineDetails: carenv1.NutanixMachineDetails{
 								Image: &capxv1.NutanixResourceIdentifier{
 									Type: capxv1.NutanixIdentifierUUID,
@@ -304,7 +304,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 				},
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
 					"test-md": {
-						Nutanix: &carenv1.NutanixNodeSpec{
+						Nutanix: &carenv1.NutanixWorkerNodeSpec{
 							MachineDetails: carenv1.NutanixMachineDetails{
 								Image: &capxv1.NutanixResourceIdentifier{
 									Type: capxv1.NutanixIdentifierUUID,

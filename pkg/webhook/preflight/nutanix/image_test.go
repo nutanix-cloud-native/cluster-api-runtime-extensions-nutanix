@@ -522,7 +522,7 @@ func TestNewVMImageChecks(t *testing.T) {
 			name: "control plane configuration only",
 			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
-					Nutanix: &carenv1.NutanixNodeSpec{
+					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
@@ -554,7 +554,7 @@ func TestNewVMImageChecks(t *testing.T) {
 			nutanixClusterConfigSpec: nil,
 			nutanixWorkerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
 				"worker-1": {
-					Nutanix: &carenv1.NutanixNodeSpec{
+					Nutanix: &carenv1.NutanixWorkerNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
@@ -584,7 +584,7 @@ func TestNewVMImageChecks(t *testing.T) {
 			name: "both control plane and worker nodes configuration",
 			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
-					Nutanix: &carenv1.NutanixNodeSpec{
+					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
@@ -596,7 +596,7 @@ func TestNewVMImageChecks(t *testing.T) {
 			},
 			nutanixWorkerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
 				"worker-1": {
-					Nutanix: &carenv1.NutanixNodeSpec{
+					Nutanix: &carenv1.NutanixWorkerNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
@@ -606,7 +606,7 @@ func TestNewVMImageChecks(t *testing.T) {
 					},
 				},
 				"worker-2": {
-					Nutanix: &carenv1.NutanixNodeSpec{
+					Nutanix: &carenv1.NutanixWorkerNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
@@ -640,7 +640,7 @@ func TestNewVMImageChecks(t *testing.T) {
 					Nutanix: nil,
 				},
 				"worker-2": {
-					Nutanix: &carenv1.NutanixNodeSpec{
+					Nutanix: &carenv1.NutanixWorkerNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
