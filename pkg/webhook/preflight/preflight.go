@@ -33,7 +33,13 @@ type (
 	// The Name method is used to identify the check if Run fails to return a result, for
 	// example if it panics.
 	Check interface {
+		// Name returns the name of the check.
+		// The name should be unique across all checks, and should be used to identify the check
+		// in the CheckResult.
+		// It is also used to skip the check if the cluster has skipped it.
 		Name() string
+
+		// Run executes the check and returns a CheckResult.
 		Run(ctx context.Context) CheckResult
 	}
 
@@ -43,10 +49,22 @@ type (
 	// list of causes for the failure. It also contains a list of warnings that were
 	// generated during the check.
 	CheckResult struct {
-		Allowed       bool
+		// Allowed indicates whether the check passed.
+		Allowed bool
+
+		// InternalError indicates whether there was an internal error running the check.
+		// This should be false for most check failures. It can be true in case of an unexpected
+		// error, like a network error, an API rate-limit error, etc.
 		InternalError bool
 
-		Causes   []Cause
+		// Causes contains a list of causes for the failure. Each cause has a message and an
+		// optional field that the cause relates to. The field is used to indicate which part of
+		// the cluster configuration the cause relates to.
+		Causes []Cause
+
+		// Warnings contains a list of warnings returned by the check.
+		// For example, a check should return a warning when the cluster uses configuration
+		// not yet supported by the check.
 		Warnings []string
 	}
 
@@ -54,8 +72,14 @@ type (
 	// field that the cause relates to. The field is used to indicate which part of the
 	// cluster configuration the cause relates to.
 	Cause struct {
+		// Message is a human-readable message describing the cause of the failure.
 		Message string
-		Field   string
+
+		// Field is an optional field that the cause relates to.
+		// It is used to indicate which part of the cluster configuration the cause relates to.
+		// It is a JSONPath expression that points to the field in the cluster configuration.
+		// For example, "spec.topology.variables[.name=clusterConfig].value.imageRegistries[0]".
+		Field string
 	}
 )
 
