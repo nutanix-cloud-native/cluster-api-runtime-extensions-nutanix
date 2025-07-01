@@ -76,7 +76,7 @@ func (r *registryCheck) checkRegistry(
 	registryURLParsed, err := url.ParseRequestURI(registryURL)
 	if err != nil {
 		result.Allowed = false
-		result.Error = true
+		result.Error = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("failed to parse registry url %s with error: %s", registryURL, err),
@@ -125,19 +125,15 @@ func (r *registryCheck) checkRegistry(
 		regclient.WithConfigHost(mirrorHost),
 		regclient.WithUserAgent("regclient/example"),
 	)
-	mirrorRef, err := ref.NewHost(registryURLParsed.Host)
-	if err != nil {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
-			preflight.Cause{
-				Message: fmt.Sprintf("failed to create a client to verify registry configuration %s", err.Error()),
-				Field:   r.field,
-			},
-		)
-		return result
-	}
-	_, err = rc.Ping(ctx, mirrorRef) // ping will return an error for anything that's not 200
+	_, err = rc.Ping(ctx,
+		ref.Ref{
+			// Because we ping the registry, we only need the "registry" part of the ref.
+			Registry: registryURLParsed.Host,
+			// The default scheme is "reg""
+			Scheme: "reg",
+		},
+	)
+	// Ping will return an error for anything that's not 200.
 	if err != nil {
 		result.Allowed = false
 		result.Causes = append(result.Causes,
