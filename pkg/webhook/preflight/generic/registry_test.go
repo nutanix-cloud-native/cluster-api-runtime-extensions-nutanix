@@ -217,14 +217,12 @@ func TestRegistryCheck(t *testing.T) {
 				check.registryURL = tc.registryMirror.URL
 				if tc.registryMirror.Credentials != nil {
 					check.credentials = tc.registryMirror.Credentials
-
 				}
 			}
 			if tc.imageRegistry != nil {
 				check.registryURL = tc.imageRegistry.URL
 				if tc.imageRegistry.Credentials != nil {
 					check.credentials = tc.imageRegistry.Credentials
-
 				}
 			}
 
