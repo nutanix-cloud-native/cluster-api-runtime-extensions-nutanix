@@ -91,10 +91,19 @@ func TestHandle(t *testing.T) {
 		checkers         []Checker
 		expectedResponse admission.Response
 	}{
-		// Keeping the existing test cases that don't use checks
 		{
 			name:      "skip delete operations",
 			operation: admissionv1.Delete,
+			cluster:   topologyCluster(),
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: true,
+				},
+			},
+		},
+		{
+			name:      "skip update operations",
+			operation: admissionv1.Update,
 			cluster:   topologyCluster(),
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
