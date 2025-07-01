@@ -63,6 +63,7 @@ func (m *mockK8sClient) Get(
 func TestRegistryCheck(t *testing.T) {
 	testCases := []struct {
 		name                       string
+		field                      string
 		registryMirror             *carenv1.GlobalImageRegistryMirror
 		imageRegistry              *carenv1.ImageRegistry
 		kclient                    ctrlclient.Client
@@ -109,7 +110,8 @@ func TestRegistryCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "registry mirror with invalid credentials secret",
+			name:  "registry mirror with invalid credentials secret",
+			field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
 			registryMirror: &carenv1.GlobalImageRegistryMirror{
 				URL: testRegistryURL,
 				Credentials: &carenv1.RegistryCredentials{
@@ -140,7 +142,8 @@ func TestRegistryCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "registry mirror ping failure",
+			name:  "registry mirror ping failure",
+			field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
 			registryMirror: &carenv1.GlobalImageRegistryMirror{
 				URL: testRegistryURL,
 			},
@@ -209,6 +212,7 @@ func TestRegistryCheck(t *testing.T) {
 
 			// Create the check
 			check := &registryCheck{
+				field:                 tc.field,
 				kclient:               tc.kclient,
 				cluster:               cluster,
 				regClientPingerGetter: tc.mockRegClientPingerFactory,

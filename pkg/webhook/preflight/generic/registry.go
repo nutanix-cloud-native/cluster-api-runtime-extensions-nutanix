@@ -22,8 +22,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-var registryMirrorVarPath = "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror"
-
 type registryCheck struct {
 	field                 string
 	kclient               ctrlclient.Client
@@ -81,8 +79,8 @@ func (r *registryCheck) checkRegistry(
 		result.Error = true
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to parse registry url %s with error : %s", registryURL, err),
-				Field:   registryMirrorVarPath,
+				Message: fmt.Sprintf("failed to parse registry url %s with error: %s", registryURL, err),
+				Field:   r.field + ".url",
 			},
 		)
 		return result
@@ -106,7 +104,7 @@ func (r *registryCheck) checkRegistry(
 			result.Causes = append(result.Causes,
 				preflight.Cause{
 					Message: fmt.Sprintf("failed to get Registry credentials Secret: %s", err),
-					Field:   fmt.Sprintf("%s.credentials.secretRef", registryMirrorVarPath),
+					Field:   r.field + ".credentials.secretRef",
 				},
 			)
 			return result
@@ -134,7 +132,7 @@ func (r *registryCheck) checkRegistry(
 		result.Causes = append(result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("failed to create a client to verify registry configuration %s", err.Error()),
-				Field:   registryMirrorVarPath,
+				Field:   r.field,
 			},
 		)
 		return result
@@ -145,7 +143,7 @@ func (r *registryCheck) checkRegistry(
 		result.Causes = append(result.Causes,
 			preflight.Cause{
 				Message: pingFailedReasonString(registryURL, err),
-				Field:   registryMirrorVarPath,
+				Field:   r.field,
 			},
 		)
 		return result
