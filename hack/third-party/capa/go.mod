@@ -7,7 +7,7 @@ go 1.22.0
 
 toolchain go1.24.1
 
-require sigs.k8s.io/cluster-api-provider-aws/v2 v2.8.3
+require sigs.k8s.io/cluster-api-provider-aws/v2 v2.8.4
 
 require (
 	github.com/aws/aws-sdk-go v1.55.5 // indirect
