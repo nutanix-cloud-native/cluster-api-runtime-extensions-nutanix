@@ -43,6 +43,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/cluster"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
+	preflightgeneric "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/generic"
 	preflightnutanix "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/nutanix"
 )
 
@@ -246,6 +247,7 @@ func main() {
 		Handler: preflight.New(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme()),
 			[]preflight.Checker{
 				// Add your preflight checkers here.
+				preflightgeneric.Checker,
 				preflightnutanix.Checker,
 			}...,
 		),
