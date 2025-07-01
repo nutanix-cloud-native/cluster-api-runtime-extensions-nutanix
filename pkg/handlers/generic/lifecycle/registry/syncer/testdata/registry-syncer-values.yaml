@@ -1,0 +1,86 @@
+initContainers:
+  # The regsync container does not fail when it cannot connect to the destination registry.
+  # In the case when it runs as a Job, it will prematurely exit.
+  # This init container will wait for the destination registry to be ready.
+  - name: wait-for-registry
+    image: ghcr.io/d2iq-labs/kubectl-betterwait:v1.30.100
+    args:
+      - --for=condition=Ready
+      - --timeout=-1s # a negative number here means wait forever
+      - --interval=5s # poll every 5 seconds to the resources to be created
+      - --namespace=registry-system
+      - --kubeconfig=/kubeconfig/admin.conf
+      # Ideally we would wait for the Service to be ready, but Kubernetes does not have a condition for that.
+      - pod/cncf-distribution-registry-docker-registry-0
+    volumeMounts:
+      - mountPath: /kubeconfig
+        name: kubeconfig
+        readOnly: true
+  - name: port-forward-registry
+    image: ghcr.io/d2iq-labs/kubectl-betterwait:v1.30.100
+    command:
+      - /bin/kubectl
+    args:
+      - port-forward
+      - --address=127.0.0.1
+      - --namespace=registry-system
+      - --kubeconfig=/kubeconfig/admin.conf
+      # This will port-forward to a single Pod in the Service.
+      - service/cncf-distribution-registry-docker-registry-headless
+      - 5000:5000
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 50Mi
+    volumeMounts:
+      - mountPath: /kubeconfig
+        name: kubeconfig
+        readOnly: true
+    # Kubernetes will treat this as a Sidecar container
+    # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+    restartPolicy: Always
+
+extraVolumes:
+  - name: kubeconfig
+    secret:
+      items:
+        - key: value
+          path: admin.conf
+      secretName: test-cluster-kubeconfig
+  - name: ca-cert
+    secret:
+      secretName: test-cluster-registry-addon-ca
+
+extraVolumeMounts:
+  # Assume both the source and the target registries have the same CA.
+  # Source registry running in the cluster.
+  - mountPath: /etc/docker/certs.d/cncf-distribution-registry-docker-registry.registry-system.svc.cluster.local:443/
+    name: ca-cert
+    readOnly: true
+  # Destination registry running in the remote cluster being port-forwarded.
+  - mountPath: /etc/docker/certs.d/127.0.0.1:5000/
+    name: ca-cert
+    readOnly: true
+
+deployment:
+  config:
+    creds:
+      - registry: cncf-distribution-registry-docker-registry.registry-system.svc.cluster.local:443
+        reqPerSec: 1
+    sync:
+      - source: cncf-distribution-registry-docker-registry.registry-system.svc.cluster.local:443
+        target: 127.0.0.1:5000
+        type: registry
+        interval: 1m
+
+job:
+  enabled: true
+  config:
+    sync:
+      - source: cncf-distribution-registry-docker-registry.registry-system.svc.cluster.local:443
+        target: 127.0.0.1:5000
+        type: registry
+        interval: 1m
