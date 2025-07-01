@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
@@ -52,7 +53,6 @@ func newCredentialsCheck(
 	// However, the credentials configuration is missing, so we cannot perform the check.
 	if cd.nutanixClusterConfigSpec == nil || cd.nutanixClusterConfigSpec.Nutanix == nil {
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.Error = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: "Nutanix cluster configuration is not defined in the cluster spec",
@@ -69,7 +69,6 @@ func newCredentialsCheck(
 	if err != nil {
 		// Should not happen if the cluster passed CEL validation rules.
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.Error = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("failed to parse Prism Central endpoint URL: %s", err),
@@ -88,13 +87,28 @@ func newCredentialsCheck(
 		},
 		credentialsSecret,
 	)
+	if apierrors.IsNotFound(err) {
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.Error = false
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
+			preflight.Cause{
+				Message: fmt.Sprintf("Prism Central credentials Secret %q not found",
+					prismCentralEndpointSpec.Credentials.SecretRef.Name),
+				Field: "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials.secretRef",
+			},
+		)
+		return credentialsCheck
+	}
 	if err != nil {
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.Error = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to get Prism Central credentials Secret: %s", err),
-				Field:   "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials.secretRef",
+				Message: fmt.Sprintf("Failed to get Prism Central credentials Secret %q: %s",
+					prismCentralEndpointSpec.Credentials.SecretRef.Name,
+					err,
+				),
+				Field: "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials.secretRef",
 			},
 		)
 		return credentialsCheck
@@ -102,11 +116,10 @@ func newCredentialsCheck(
 
 	if len(credentialsSecret.Data) == 0 {
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.Error = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"credentials Secret '%s' is empty",
+					"credentials Secret %q is empty",
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 				),
 				Field: "cluster.spec.topology.variables[.name=clusterConfig].nutanix.prismCentralEndpoint.credentials.secretRef",
@@ -118,11 +131,10 @@ func newCredentialsCheck(
 	data, ok := credentialsSecret.Data[credentialsSecretDataKey]
 	if !ok {
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.Error = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"credentials Secret '%s' does not contain key '%s'",
+					"credentials Secret %q does not contain key %q",
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 					credentialsSecretDataKey,
 				),
@@ -135,7 +147,6 @@ func newCredentialsCheck(
 	usernamePassword, err := prismcredentials.ParseCredentials(data)
 	if err != nil {
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.Error = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("failed to parse Prism Central credentials: %s", err),

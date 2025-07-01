@@ -5,12 +5,15 @@ package nutanix
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
@@ -52,7 +55,7 @@ func TestNewCredentialsCheck_MissingNutanixField(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.True(t, result.Error)
+	assert.False(t, result.Error)
 	assert.NotEmpty(t, result.Causes)
 	assert.Contains(t, result.Causes[0].Message, "Nutanix cluster configuration is not defined")
 }
@@ -66,7 +69,7 @@ func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.True(t, result.Error)
+	assert.False(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central endpoint URL")
 }
 
@@ -79,8 +82,46 @@ func TestNewCredentialsCheck_SecretNotFound(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
+	assert.False(t, result.Error)
+	assert.Contains(t, result.Causes[0].Message, "Prism Central credentials Secret \"ntnx-creds\" not found")
+}
+
+type fakeK8sSecretClient struct {
+	ctrlclient.Client
+	getSecretFunc func(context.Context, types.NamespacedName, ctrlclient.Object, ...ctrlclient.GetOption) error
+}
+
+func (m *fakeK8sSecretClient) Get(
+	ctx context.Context,
+	key types.NamespacedName,
+	obj ctrlclient.Object,
+	opts ...ctrlclient.GetOption,
+) error {
+	if m.getSecretFunc != nil {
+		return m.getSecretFunc(ctx, key, obj, opts...)
+	}
+	return nil
+}
+
+func TestNewCredentialsCheck_SecretGetError(t *testing.T) {
+	cd := validCheckDependencies()
+	cd.kclient = &fakeK8sSecretClient{
+		getSecretFunc: func(ctx context.Context,
+			key types.NamespacedName,
+			obj ctrlclient.Object,
+			opts ...ctrlclient.GetOption,
+		) error {
+			return fmt.Errorf("fake error")
+		},
+	}
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
+	result := check.Run(context.Background())
+	assert.False(t, result.Allowed)
 	assert.True(t, result.Error)
-	assert.Contains(t, result.Causes[0].Message, "failed to get Prism Central credentials Secret")
+	assert.Contains(t, result.Causes[0].Message, "Failed to get Prism Central credentials Secret \"ntnx-creds\": fake error")
 }
 
 func TestNewCredentialsCheck_SecretEmpty(t *testing.T) {
@@ -99,8 +140,8 @@ func TestNewCredentialsCheck_SecretEmpty(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.True(t, result.Error)
-	assert.Contains(t, result.Causes[0].Message, "credentials Secret 'ntnx-creds' is empty")
+	assert.False(t, result.Error)
+	assert.Contains(t, result.Causes[0].Message, "credentials Secret \"ntnx-creds\" is empty")
 }
 
 func TestNewCredentialsCheck_SecretMissingKey(t *testing.T) {
@@ -118,8 +159,8 @@ func TestNewCredentialsCheck_SecretMissingKey(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nil, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.True(t, result.Error)
-	assert.Contains(t, result.Causes[0].Message, "does not contain key 'credentials'")
+	assert.False(t, result.Error)
+	assert.Contains(t, result.Causes[0].Message, "does not contain key \"credentials\"")
 }
 
 func TestNewCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
@@ -140,7 +181,7 @@ func TestNewCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
-	assert.True(t, result.Error)
+	assert.False(t, result.Error)
 	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central credentials")
 }
 
