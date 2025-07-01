@@ -29,6 +29,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | certificates.issuer.name | string | `""` |  |
 | certificates.issuer.selfSigned | bool | `true` |  |
 | deployDefaultClusterClasses | bool | `true` |  |
+| deployExperimentalClusterClasses | bool | `false` |  |
 | deployment.replicas | int | `1` |  |
 | enforceClusterAutoscalerLimits.enabled | bool | `true` |  |
 | env | object | `{}` |  |

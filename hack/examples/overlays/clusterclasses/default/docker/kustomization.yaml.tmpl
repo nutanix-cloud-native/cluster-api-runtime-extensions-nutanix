@@ -1,0 +1,62 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../../../bases/docker/clusterclass
+
+sortOptions:
+  order: fifo
+
+namePrefix: docker-
+
+configurations:
+  - kustomizeconfig.yaml
+
+patches:
+  - target:
+      kind: ClusterClass
+    patch: |-
+      - op: "add"
+        path: "/spec/patches"
+        value:
+          - name: "cluster-config"
+            external:
+              generateExtension: "dockerclusterv4configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              discoverVariablesExtension: "dockerclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix"
+          - name: "worker-config"
+            external:
+              generateExtension: "dockerworkerv4configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              discoverVariablesExtension: "dockerworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
+
+  # BEGIN CIS patches
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/cis-kubeadmcontrolplanetemplate.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../../patches/cis-kubeadmconfigtemplate.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/initialize-kubeadmcontrolplanetemplate-postkubeadmcommands.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/cis-kubeadmcontrolplanetemplate-kubelet-file-permissions.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../../patches/initialize-kubeadmconfigtemplate-postkubeadmcommands.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../../patches/cis-kubeadmconfigtemplate-kubelet-file-permissions.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/initialize-kubeadmcontrolplanetemplate-files.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/initialize-extravolumes.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../../patches/cis-admissionconfiguration.yaml
+  # END CIS patches

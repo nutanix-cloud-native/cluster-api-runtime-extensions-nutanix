@@ -7,13 +7,8 @@ kind: Kustomization
 resources:
 - https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/clusterclass-quick-start.yaml
 
-configurations:
-  - kustomizeconfig.yaml
-
 sortOptions:
   order: fifo
-
-namePrefix: docker-
 
 labels:
 - includeSelectors: false

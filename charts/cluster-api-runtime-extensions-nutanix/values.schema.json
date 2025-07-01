@@ -23,6 +23,9 @@
         "deployDefaultClusterClasses": {
             "type": "boolean"
         },
+        "deployExperimentalClusterClasses": {
+            "type": "boolean"
+        },
         "deployment": {
             "properties": {
                 "replicas": {
