@@ -17,18 +17,9 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registry/syncer"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registry/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
-)
-
-const (
-	DefaultHelmReleaseName      = "cncf-distribution-registry"
-	DefaultHelmReleaseNamespace = "registry-system"
-
-	stsName                = "cncf-distribution-registry-docker-registry"
-	stsHeadlessServiceName = "cncf-distribution-registry-docker-registry-headless"
-	stsReplicas            = 2
-	tlsSecretName          = "registry-tls"
 )
 
 type Config struct {
@@ -98,20 +89,23 @@ func (n *CNCFDistribution) Apply(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
-	// Copy the TLS secret to the remote cluster.
-	serviceIP, err := utils.ServiceIPForCluster(cluster)
+	registryMetadata, err := utils.GetRegistryMetadata(cluster)
 	if err != nil {
-		return fmt.Errorf("error getting service IP for the CNCF distribution registry: %w", err)
+		return fmt.Errorf(
+			"failed to get registry metadata for CNCF Distribution registry addon: %w",
+			err,
+		)
 	}
+	// Copy the TLS secret to the remote cluster.
 	opts := &utils.EnsureCertificateOpts{
 		RemoteSecretKey: ctrlclient.ObjectKey{
-			Name:      tlsSecretName,
-			Namespace: DefaultHelmReleaseNamespace,
+			Name:      registryMetadata.TLSSecretName,
+			Namespace: registryMetadata.Namespace,
 		},
 		Spec: utils.CertificateSpec{
-			CommonName:  stsName,
-			DNSNames:    certificateDNSNames(),
-			IPAddresses: certificateIPAddresses(serviceIP),
+			CommonName:  registryMetadata.ServiceName,
+			DNSNames:    registryMetadata.CertificateDNSNames,
+			IPAddresses: registryMetadata.CertificateIPAddresses,
 		},
 	}
 	err = utils.EnsureRegistryServerCertificateSecretOnRemoteCluster(
@@ -136,8 +130,8 @@ func (n *CNCFDistribution) Apply(
 	addonApplier := addons.NewHelmAddonApplier(
 		addons.NewHelmAddonConfig(
 			n.config.defaultValuesTemplateConfigMapName,
-			DefaultHelmReleaseNamespace,
-			DefaultHelmReleaseName,
+			registryMetadata.HelmReleaseNamespace,
+			registryMetadata.HelmReleaseName,
 		),
 		n.client,
 		helmChartInfo,
@@ -145,6 +139,37 @@ func (n *CNCFDistribution) Apply(
 
 	if err := addonApplier.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply CNCF Distribution registry addon: %w", err)
+	}
+
+	// Apply the registry syncer for workload clusters if needed.
+	registrySyncer := syncer.New(
+		n.client,
+		&syncer.Config{GlobalOptions: n.config.GlobalOptions},
+		n.helmChartInfoGetter,
+	)
+	err = registrySyncer.Apply(ctx, cluster, log)
+	if err != nil {
+		return fmt.Errorf("failed to apply CNCF Distribution registry syncer: %w", err)
+	}
+
+	return nil
+}
+
+func (n *CNCFDistribution) Cleanup(
+	ctx context.Context,
+	_ v1alpha1.RegistryAddon,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	// Delete any registry syncer artifacts.
+	registrySyncer := syncer.New(
+		n.client,
+		&syncer.Config{GlobalOptions: n.config.GlobalOptions},
+		n.helmChartInfoGetter,
+	)
+	err := registrySyncer.Cleanup(ctx, cluster, log)
+	if err != nil {
+		return fmt.Errorf("failed to clean up CNCF Distribution registry syncer: %w", err)
 	}
 
 	return nil
@@ -156,9 +181,9 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	serviceIP, err := utils.ServiceIPForCluster(cluster)
+	registryMetadata, err := utils.GetRegistryMetadata(cluster)
 	if err != nil {
-		return "", fmt.Errorf("error getting service IP for the CNCF distribution registry: %w", err)
+		return "", fmt.Errorf("failed to get registry metadata: %w", err)
 	}
 
 	type input struct {
@@ -168,9 +193,9 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	templateInput := input{
-		Replicas:      stsReplicas,
-		ServiceIP:     serviceIP,
-		TLSSecretName: tlsSecretName,
+		Replicas:      registryMetadata.Replicas,
+		ServiceIP:     registryMetadata.ServiceIP,
+		TLSSecretName: registryMetadata.TLSSecretName,
 	}
 
 	var b bytes.Buffer
@@ -183,35 +208,4 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	return b.String(), nil
-}
-
-func certificateDNSNames() []string {
-	names := []string{
-		stsName,
-		fmt.Sprintf("%s.%s", stsName, DefaultHelmReleaseNamespace),
-		fmt.Sprintf("%s.%s.svc", stsName, DefaultHelmReleaseNamespace),
-		fmt.Sprintf("%s.%s.svc.cluster.local", stsName, DefaultHelmReleaseNamespace),
-	}
-	for i := 0; i < stsReplicas; i++ {
-		names = append(names,
-			[]string{
-				fmt.Sprintf("%s-%d", stsName, i),
-				fmt.Sprintf("%s-%d.%s.%s", stsName, i, stsHeadlessServiceName, DefaultHelmReleaseNamespace),
-				fmt.Sprintf("%s-%d.%s.%s.svc", stsName, i, stsHeadlessServiceName, DefaultHelmReleaseNamespace),
-				fmt.Sprintf(
-					"%s-%d.%s.%s.svc.cluster.local",
-					stsName, i, stsHeadlessServiceName, DefaultHelmReleaseNamespace,
-				),
-			}...,
-		)
-	}
-
-	return names
-}
-
-func certificateIPAddresses(serviceIP string) []string {
-	return []string{
-		serviceIP,
-		"127.0.0.1",
-	}
 }

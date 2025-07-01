@@ -1,0 +1,12 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.hooks.registrySyncer.defaultValueTemplateConfigMap.name }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.hooks.registrySyncer.defaultValueTemplateConfigMap.name }}'
+data:
+  values.yaml: |-
+    {{- .Files.Get "addons/registry-syncer/values-template.yaml" | nindent 4 }}
+{{- end -}}

@@ -61,6 +61,11 @@ repositories:
     charts:
       nutanix-csi-storage:
       - 3.3.4
+  registry-syncer:
+    repoURL: https://mesosphere.github.io/charts/staging/
+    charts:
+      registry-syncer:
+      - 0.1.0
   snapshot-controller:
     repoURL: https://piraeus.io/helm-charts/
     charts:
