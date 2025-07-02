@@ -143,8 +143,8 @@ func EnsureAntiAffnityForRegistryAddon(
 	Expect(podAffinityTerm.LabelSelector).ToNot(BeNil())
 	affinityLabels := podAffinityTerm.LabelSelector.MatchLabels
 	Expect(
-		affinityLabels[v1alpha1.ClusterUUIDAnnotationKey],
-	).To(Equal(input.WorkloadCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]))
+		affinityLabels["cncf-distribution-registry"],
+	).To(Equal("true")) // Ensure the label matches the pod AntiAffinity.
 
 	// test node affinity
 	nodeAffinity := sts.Spec.Template.Spec.Affinity.NodeAffinity

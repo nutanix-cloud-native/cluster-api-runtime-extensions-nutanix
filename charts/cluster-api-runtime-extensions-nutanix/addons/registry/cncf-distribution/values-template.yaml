@@ -31,7 +31,7 @@ tolerations:
     effect: "NoSchedule"
 
 podLabels:
-  caren.nutanix.com/cluster-uuid: {{ .ClusterUUID }} # ensure the labels match with pod AntiAffinity.
+  cncf-distribution-registry: "true" # ensure the labels match with pod AntiAffinity.
 
 affinity:
   nodeAffinity:
@@ -46,5 +46,5 @@ affinity:
         podAffinityTerm:
           labelSelector:
             matchLabels:
-              caren.nutanix.com/cluster-uuid: {{ .ClusterUUID }}
+              cncf-distribution-registry: "true"
           topologyKey: kubernetes.io/hostname
