@@ -190,6 +190,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 		cluster         *clusterv1.Cluster
 		expectedVersion string
 		expectedChecks  int
+		nclient         client
 	}{
 		{
 			name: "cluster with topology version",
@@ -202,6 +203,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 			},
 			expectedVersion: "1.32.3",
 			expectedChecks:  1,
+			nclient:         &mocknclient{},
 		},
 		{
 			name: "cluster with topology version without v prefix",
@@ -214,6 +216,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 			},
 			expectedVersion: "1.32.3",
 			expectedChecks:  1,
+			nclient:         &mocknclient{},
 		},
 		{
 			name: "cluster without topology",
@@ -224,6 +227,20 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 			},
 			expectedVersion: "",
 			expectedChecks:  0,
+			nclient:         &mocknclient{},
+		},
+		{
+			name: "client not initialized",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Version: "v1.32.3",
+					},
+				},
+			},
+			expectedVersion: "1.32.3",
+			expectedChecks:  0,
+			nclient:         nil,
 		},
 	}
 
@@ -243,7 +260,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 						},
 					},
 				},
-				nclient: &mocknclient{},
+				nclient: tc.nclient,
 				log:     testr.New(t),
 			}
 
