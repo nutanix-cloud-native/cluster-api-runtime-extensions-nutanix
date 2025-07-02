@@ -6,7 +6,6 @@ package nutanix
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
@@ -14,10 +13,6 @@ import (
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
-
-// The regex captures the Kubernetes version in the format of 1.x.y, where x and y are digits.
-// Example: kubedistro-rocky-9.5-vgpu-1.32.3-20250604180644 -> 1.32.3.
-var kubernetesVersionRegex = regexp.MustCompile(`(?i)\b[vV]?(1\.\d+(?:\.\d+)?)\b`)
 
 type imageKubernetesVersionCheck struct {
 	machineDetails    *carenv1.NutanixMachineDetails
@@ -86,36 +81,15 @@ func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image)
 		return fmt.Errorf("VM image name is empty")
 	}
 
-	imageK8sVersion, err := extractKubernetesVersionFromImageName(imageName)
-	if err != nil {
-		return fmt.Errorf("failed to extract Kubernetes version from image name '%s': %s. "+
-			"This check assumes a naming convention that includes kubernetes version in the name. "+
-			"You can opt out of this check if using non-compliant naming", imageName, err)
-	}
-
-	if imageK8sVersion != c.clusterK8sVersion {
+	if !strings.Contains(imageName, c.clusterK8sVersion) {
 		return fmt.Errorf(
-			"kubernetes version mismatch: cluster kubernetes version '%s' does not match image kubernetes version '%s' (from image name '%s')", //nolint:lll // error message is long
+			"cluster kubernetes version '%s' is not part of image name '%s'",
 			c.clusterK8sVersion,
-			imageK8sVersion,
 			imageName,
 		)
 	}
 
 	return nil
-}
-
-// extractKubernetesVersionFromImageName extracts the Kubernetes version from the given image name.
-// It expects something that looks like a kubernetes version in the image name i.e. 1.x.y?.
-// Examples: kubedistro-rocky-9.5-vgpu-1.32.3-20250604180644 -> 1.32.3.
-func extractKubernetesVersionFromImageName(imageName string) (string, error) {
-	matches := kubernetesVersionRegex.FindStringSubmatch(imageName)
-	if len(matches) < 2 {
-		return "", fmt.Errorf(
-			"image name does not match expected naming convention (expected pattern: .*<k8s-version>.*)",
-		)
-	}
-	return matches[1], nil
 }
 
 func newVMImageKubernetesVersionChecks(

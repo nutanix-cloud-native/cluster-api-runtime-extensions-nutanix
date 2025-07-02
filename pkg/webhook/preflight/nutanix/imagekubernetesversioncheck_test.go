@@ -19,90 +19,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-func TestExtractKubernetesVersionFromImageName(t *testing.T) {
-	testCases := []struct {
-		name      string
-		imageName string
-		want      string
-		wantErr   bool
-	}{
-		{
-			name:      "kubedistro ubuntu vgpu image",
-			imageName: "kubedistro-ubuntu-22.04-vgpu-1.32.3-20250604180644",
-			want:      "1.32.3",
-			wantErr:   false,
-		},
-		{
-			name:      "kubedistro rocky release cis image",
-			imageName: "kubedistro-rocky-9.5-release-cis-1.32.3-20250430150550",
-			want:      "1.32.3",
-			wantErr:   false,
-		},
-		{
-			name:      "kubedistro rhel fips image",
-			imageName: "kubedistro-rhel-8.10-fips-1.32.3-20250505212227",
-			want:      "1.32.3",
-			wantErr:   false,
-		},
-		{
-			name:      "kubedistro rocky basic image",
-			imageName: "kubedistro-rocky-9.5-1.32.3-20250514222748",
-			want:      "1.32.3",
-			wantErr:   false,
-		},
-		{
-			name:      "different k8s version",
-			imageName: "kubedistro-ubuntu-22.04-1.31.5-20250101000000",
-			want:      "1.31.5",
-			wantErr:   false,
-		},
-		{
-			name:      "custom image name with kubernetes-version at end", // e.g., not following kubedistro naming convention
-			imageName: "custom-image-v1.23",
-			want:      "1.23",
-			wantErr:   false,
-		},
-		{
-			name:      "custom image name with kubernetes version in middle", // e.g., not following kubedistro naming convention
-			imageName: "custom-v1.23.1-image",
-			want:      "1.23.1",
-			wantErr:   false,
-		},
-		{
-			name:      "custom image name with kubernetes version in start", // e.g., not following kubedistro naming convention
-			imageName: "v1.23.1-alpha-custom-image",
-			want:      "1.23.1",
-			wantErr:   false,
-		},
-		{
-			name:      "custom image name - no match", // e.g., not following kubedistro naming convention
-			imageName: "my-custom-image-name",
-			want:      "",
-			wantErr:   true,
-		},
-		{
-			name:      "empty image name",
-			imageName: "",
-			want:      "",
-			wantErr:   true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := extractKubernetesVersionFromImageName(tc.imageName)
-
-			if tc.wantErr {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), "image name does not match expected naming convention")
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tc.want, got)
-			}
-		})
-	}
-}
-
 func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 	testCases := []struct {
 		name              string
@@ -162,7 +78,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Error:   false,
 				Causes: []preflight.Cause{
 					{
-						Message: "kubernetes version mismatch: cluster kubernetes version '1.32.3' does not match image kubernetes version '1.31.5' (from image name 'kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644')", //nolint:lll // cause is long
+						Message: "cluster kubernetes version '1.32.3' is not part of image name 'kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644'", //nolint:lll // cause message is long
 						Field:   "test-field",
 					},
 				},
@@ -194,7 +110,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Error:   false,
 				Causes: []preflight.Cause{
 					{
-						Message: "failed to extract Kubernetes version from image name 'my-custom-image-name': image name does not match expected naming convention (expected pattern: .*<k8s-version>.*). This check assumes a naming convention that includes kubernetes version in the name. You can opt out of this check if using non-compliant naming", //nolint:lll // cause is long
+						Message: "cluster kubernetes version '1.32.3' is not part of image name 'my-custom-image-name'",
 						Field:   "test-field",
 					},
 				},
