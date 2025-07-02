@@ -39,11 +39,8 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		result.Allowed = false
 		result.InternalError = true
 		result.Causes = append(result.Causes, preflight.Cause{
-			Message: fmt.Sprintf(
-				"no storage container found for cluster %q",
-				*c.machineSpec.Cluster.Name,
-			),
-			Field: c.field,
+			Message: "Nutanix CSI Provider configuration is missing",
+			Field:   c.field,
 		})
 
 		return result
@@ -52,11 +49,8 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 	if c.csiSpec.StorageClassConfigs == nil {
 		result.Allowed = false
 		result.Causes = append(result.Causes, preflight.Cause{
-			Message: fmt.Sprintf(
-				"no storage class configs found for cluster %q",
-				*c.machineSpec.Cluster.Name,
-			),
-			Field: c.field,
+			Message: "Nutanix CSI Provider configuration is missing storage class configurations",
+			Field:   c.field,
 		})
 
 		return result

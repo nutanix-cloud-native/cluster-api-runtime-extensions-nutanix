@@ -276,7 +276,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			nclient:              nil,
 			expectedAllowed:      false,
 			expectedError:        true,
-			expectedCauseMessage: fmt.Sprintf("no storage container found for cluster %q", clusterName),
+			expectedCauseMessage: "Nutanix CSI Provider configuration is missing",
 		},
 		{
 			name: "nil storage class configs",
@@ -290,7 +290,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			nclient:              nil,
 			expectedAllowed:      false,
 			expectedError:        false,
-			expectedCauseMessage: fmt.Sprintf("no storage class configs found for cluster %q", clusterName),
+			expectedCauseMessage: "Nutanix CSI Provider configuration is missing storage class configurations",
 		},
 		{
 			name: "storage class config without parameters",
