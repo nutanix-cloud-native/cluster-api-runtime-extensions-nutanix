@@ -148,6 +148,22 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:    "imageLookup not yet supported",
+			nclient: &mocknclient{},
+			machineDetails: &carenv1.NutanixMachineDetails{
+				ImageLookup: &capxv1.NutanixImageLookup{
+					Format: ptr.To("test-format"),
+					BaseOS: "test-baseos",
+				},
+			},
+			want: preflight.CheckResult{
+				Allowed: true,
+				Warnings: []string{
+					"test-field uses imageLookup, which is not yet supported by checks",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
