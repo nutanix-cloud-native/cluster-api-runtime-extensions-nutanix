@@ -315,6 +315,15 @@ var _ = Describe("Quick start", func() {
 														ClusterProxy:    proxy,
 													},
 												)
+
+												EnsureAntiAffnityForRegistryAddon(
+													ctx,
+													EnsureAntiAffnityForRegistryAddonInput{
+														Registry:        addonsConfig.Registry,
+														WorkloadCluster: workloadCluster,
+														ClusterProxy:    proxy,
+													},
+												)
 											},
 										}
 									})
