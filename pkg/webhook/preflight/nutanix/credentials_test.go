@@ -121,7 +121,11 @@ func TestNewCredentialsCheck_SecretGetError(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "Failed to get Prism Central credentials Secret \"ntnx-creds\": fake error")
+	assert.Contains(
+		t,
+		result.Causes[0].Message,
+		"Failed to get Prism Central credentials Secret \"ntnx-creds\": fake error",
+	)
 }
 
 func TestNewCredentialsCheck_SecretEmpty(t *testing.T) {
