@@ -550,12 +550,10 @@ func TestStorageContainerCheck(t *testing.T) {
 		},
 		{
 			name: "multiple clusters found",
-			nodeSpec: &carenv1.NutanixNodeSpec{
-				MachineDetails: carenv1.NutanixMachineDetails{
-					Cluster: capxv1.NutanixResourceIdentifier{
-						Type: capxv1.NutanixIdentifierName,
-						Name: ptr.To(clusterName),
-					},
+			machineSpec: &carenv1.NutanixMachineDetails{
+				Cluster: capxv1.NutanixResourceIdentifier{
+					Type: capxv1.NutanixIdentifierName,
+					Name: ptr.To(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
