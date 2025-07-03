@@ -417,6 +417,20 @@ func TestGetVMImages(t *testing.T) {
 			errorMsg: "image identifier is missing both name and uuid",
 		},
 		{
+			name: "no image found by uuid",
+			client: &mocknclient{
+				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+					return nil, nil
+				},
+			},
+			id: &capxv1.NutanixResourceIdentifier{
+				Type: capxv1.NutanixIdentifierUUID,
+				UUID: ptr.To("test-uuid"),
+			},
+			wantErr: false,
+			want:    []vmmv4.Image{}, // No images found
+		},
+		{
 			name: "invalid data from GetImageById",
 			client: &mocknclient{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {

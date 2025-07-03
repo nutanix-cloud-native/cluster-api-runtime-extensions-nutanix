@@ -5,6 +5,7 @@ package nutanix
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr/testr"
@@ -161,6 +162,47 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Allowed: true,
 				Warnings: []string{
 					"test-field uses imageLookup, which is not yet supported by checks",
+				},
+			},
+		},
+		{
+			name: "no images found",
+			nclient: &mocknclient{
+				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+					return nil, nil
+				},
+			},
+			machineDetails: &carenv1.NutanixMachineDetails{
+				Image: &capxv1.NutanixResourceIdentifier{
+					Type: capxv1.NutanixIdentifierUUID,
+					UUID: ptr.To("test-uuid"),
+				},
+			},
+			want: preflight.CheckResult{
+				Allowed: true,
+			},
+		},
+		{
+			name: "error getting images",
+			nclient: &mocknclient{
+				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+					return nil, fmt.Errorf("some error")
+				},
+			},
+			machineDetails: &carenv1.NutanixMachineDetails{
+				Image: &capxv1.NutanixResourceIdentifier{
+					Type: capxv1.NutanixIdentifierUUID,
+					UUID: ptr.To("test-uuid"),
+				},
+			},
+			want: preflight.CheckResult{
+				Allowed: false,
+				Error:   true,
+				Causes: []preflight.Cause{
+					{
+						Message: "failed to get VM Image: some error",
+						Field:   "test-field",
+					},
 				},
 			},
 		},
