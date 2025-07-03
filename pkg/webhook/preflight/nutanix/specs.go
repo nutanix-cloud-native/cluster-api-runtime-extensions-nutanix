@@ -46,7 +46,7 @@ func newConfigurationCheck(
 	if err != nil {
 		// Should not happen if the cluster passed CEL validation rules.
 		configurationCheck.result.Allowed = false
-		configurationCheck.result.Error = true
+		configurationCheck.result.InternalError = true
 		configurationCheck.result.Causes = append(configurationCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to unmarshal cluster variable %s: %s",
@@ -79,7 +79,7 @@ func newConfigurationCheck(
 			if err != nil {
 				// Should not happen if the cluster passed CEL validation rules.
 				configurationCheck.result.Allowed = false
-				configurationCheck.result.Error = true
+				configurationCheck.result.InternalError = true
 				configurationCheck.result.Causes = append(configurationCheck.result.Causes,
 					preflight.Cause{
 						Message: fmt.Sprintf("Failed to unmarshal topology machineDeployment variable %s: %s",

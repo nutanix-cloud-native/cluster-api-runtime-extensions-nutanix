@@ -188,8 +188,8 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   true,
+				Allowed:       false,
+				InternalError: true,
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get VM Image: api error",
@@ -221,8 +221,8 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   true,
+				Allowed:       false,
+				InternalError: true,
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get VM Image: api error",
@@ -257,8 +257,8 @@ func TestVMImageCheck(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   true,
+				Allowed:       false,
+				InternalError: true,
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get VM Image: failed to get data returned by ListImages",
@@ -293,7 +293,7 @@ func TestVMImageCheck(t *testing.T) {
 
 			// Verify the result
 			assert.Equal(t, tc.want.Allowed, got.Allowed)
-			assert.Equal(t, tc.want.Error, got.Error)
+			assert.Equal(t, tc.want.InternalError, got.InternalError)
 			assert.Equal(t, tc.want.Causes, got.Causes)
 		})
 	}

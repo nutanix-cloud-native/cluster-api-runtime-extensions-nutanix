@@ -14,6 +14,7 @@ import (
 	"github.com/regclient/regclient/types/ping"
 	"github.com/regclient/regclient/types/ref"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,7 +77,7 @@ func (r *registryCheck) checkRegistry(
 	registryURLParsed, err := url.ParseRequestURI(registryURL)
 	if err != nil {
 		result.Allowed = false
-		result.Error = true
+		result.InternalError = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("failed to parse registry url %s with error: %s", registryURL, err),
@@ -98,9 +99,20 @@ func (r *registryCheck) checkRegistry(
 			},
 			mirrorCredentialsSecret,
 		)
+		if apierrors.IsNotFound(err) {
+			result.Allowed = false
+			result.InternalError = false
+			result.Causes = append(result.Causes,
+				preflight.Cause{
+					Message: fmt.Sprintf("Registry credentials Secret %q not found", credentials.SecretRef.Name),
+					Field:   r.field + ".credentials.secretRef",
+				},
+			)
+			return result
+		}
 		if err != nil {
 			result.Allowed = false
-			result.Error = true
+			result.InternalError = true
 			result.Causes = append(result.Causes,
 				preflight.Cause{
 					Message: fmt.Sprintf("failed to get Registry credentials Secret: %s", err),
@@ -125,19 +137,15 @@ func (r *registryCheck) checkRegistry(
 		regclient.WithConfigHost(mirrorHost),
 		regclient.WithUserAgent("regclient/example"),
 	)
-	mirrorRef, err := ref.NewHost(registryURLParsed.Host)
-	if err != nil {
-		result.Allowed = false
-		result.Error = true
-		result.Causes = append(result.Causes,
-			preflight.Cause{
-				Message: fmt.Sprintf("failed to create a client to verify registry configuration %s", err.Error()),
-				Field:   r.field,
-			},
-		)
-		return result
-	}
-	_, err = rc.Ping(ctx, mirrorRef) // ping will return an error for anything that's not 200
+	_, err = rc.Ping(ctx,
+		ref.Ref{
+			// Because we ping the registry, we only need the "registry" part of the ref.
+			Registry: registryURLParsed.Host,
+			// The default scheme is "reg""
+			Scheme: "reg",
+		},
+	)
+	// Ping will return an error for anything that's not 200.
 	if err != nil {
 		result.Allowed = false
 		result.Causes = append(result.Causes,
@@ -149,7 +157,7 @@ func (r *registryCheck) checkRegistry(
 		return result
 	}
 	result.Allowed = true
-	result.Error = false
+	result.InternalError = false
 	return result
 }
 

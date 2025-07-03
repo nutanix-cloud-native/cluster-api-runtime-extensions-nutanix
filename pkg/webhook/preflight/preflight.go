@@ -33,7 +33,13 @@ type (
 	// The Name method is used to identify the check if Run fails to return a result, for
 	// example if it panics.
 	Check interface {
+		// Name returns the name of the check.
+		// The name should be unique across all checks, and should be used to identify the check
+		// in the CheckResult.
+		// It is also used to skip the check if the cluster has skipped it.
 		Name() string
+
+		// Run executes the check and returns a CheckResult.
 		Run(ctx context.Context) CheckResult
 	}
 
@@ -43,10 +49,22 @@ type (
 	// list of causes for the failure. It also contains a list of warnings that were
 	// generated during the check.
 	CheckResult struct {
+		// Allowed indicates whether the check passed.
 		Allowed bool
-		Error   bool
 
-		Causes   []Cause
+		// InternalError indicates whether there was an internal error running the check.
+		// This should be false for most check failures. It can be true in case of an unexpected
+		// error, like a network error, an API rate-limit error, etc.
+		InternalError bool
+
+		// Causes contains a list of causes for the failure. Each cause has a message and an
+		// optional field that the cause relates to. The field is used to indicate which part of
+		// the cluster configuration the cause relates to.
+		Causes []Cause
+
+		// Warnings contains a list of warnings returned by the check.
+		// For example, a check should return a warning when the cluster uses configuration
+		// not yet supported by the check.
 		Warnings []string
 	}
 
@@ -54,8 +72,14 @@ type (
 	// field that the cause relates to. The field is used to indicate which part of the
 	// cluster configuration the cause relates to.
 	Cause struct {
+		// Message is a human-readable message describing the cause of the failure.
 		Message string
-		Field   string
+
+		// Field is an optional field that the cause relates to.
+		// It is used to indicate which part of the cluster configuration the cause relates to.
+		// It is a JSONPath expression that points to the field in the cluster configuration.
+		// For example, "spec.topology.variables[.name=clusterConfig].value.imageRegistries[0]".
+		Field string
 	}
 )
 
@@ -128,7 +152,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	internalError := false
 	for _, results := range resultsOrderedByCheckerAndCheck {
 		for _, result := range results {
-			if result.Error {
+			if result.InternalError {
 				internalError = true
 			}
 			if !result.Allowed {
@@ -201,9 +225,9 @@ func run(ctx context.Context,
 					resultsOrderedByCheck[j] = namedResult{
 						Name: check.Name(),
 						CheckResult: CheckResult{
-							Allowed: true,
-							Error:   false,
-							Causes:  nil,
+							Allowed:       true,
+							InternalError: false,
+							Causes:        nil,
 							Warnings: []string{
 								fmt.Sprintf("Cluster has skipped preflight check %q", check.Name()),
 							},
@@ -223,7 +247,7 @@ func run(ctx context.Context,
 							resultsOrderedByCheck[j] = namedResult{
 								Name: check.Name(),
 								CheckResult: CheckResult{
-									Error: true,
+									InternalError: true,
 									Causes: []Cause{
 										{
 											Message: fmt.Sprintf("internal error (panic): %s", r),

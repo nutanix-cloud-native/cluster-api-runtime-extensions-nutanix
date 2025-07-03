@@ -42,7 +42,7 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 		images, err := getVMImages(c.nclient, c.machineDetails.Image)
 		if err != nil {
 			result.Allowed = false
-			result.Error = true
+			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf("failed to get VM Image: %s", err),
 				Field:   c.field,

@@ -296,8 +296,8 @@ func TestHandle(t *testing.T) {
 						&mockCheck{
 							name: "Test1",
 							result: CheckResult{
-								Allowed: false,
-								Error:   true,
+								Allowed:       false,
+								InternalError: true,
 								Causes: []Cause{
 									{
 										Message: "internal error",
@@ -426,8 +426,8 @@ func (c *cancellableCheck) Run(ctx context.Context) CheckResult {
 	case <-ctx.Done():
 		c.cancelled = true
 		return CheckResult{
-			Allowed: false,
-			Error:   true,
+			Allowed:       false,
+			InternalError: true,
 			Causes: []Cause{
 				{
 					Message: "context cancelled",
@@ -585,7 +585,7 @@ func TestRun_MultipleCheckersMultipleChecks(t *testing.T) {
 			&mockCheck{
 				name: "c2-check1",
 				result: CheckResult{
-					Error: true,
+					InternalError: true,
 				},
 			},
 		},
@@ -733,7 +733,7 @@ func TestRun_ContextCancellation(t *testing.T) {
 	check := &contextAwareCheck{
 		name: "cancellable-check",
 		onCancel: func() CheckResult {
-			return CheckResult{Error: true}
+			return CheckResult{InternalError: true}
 		},
 		onTimeout: func() CheckResult {
 			close(completed)
@@ -766,7 +766,7 @@ func TestRun_ContextCancellation(t *testing.T) {
 
 	results := resultsOrderedByCheckerAndCheck[0]
 	assert.Len(t, results, 1, "expected 1 result from the checker")
-	assert.True(t, results[0].Error, "expected result to be an error after cancellation")
+	assert.True(t, results[0].InternalError, "expected result to be an error after cancellation")
 }
 
 func TestRun_OrderOfResults(t *testing.T) {
@@ -865,7 +865,7 @@ func TestRun_ErrorHandlingInChecks(t *testing.T) {
 	errorCheck := &mockCheck{
 		name: "error-check",
 		result: CheckResult{
-			Error: true,
+			InternalError: true,
 			Causes: []Cause{
 				{
 					Message: "simulated error in check",
@@ -886,7 +886,7 @@ func TestRun_ErrorHandlingInChecks(t *testing.T) {
 	wantErrorCheckResult := namedResult{
 		Name: "error-check",
 		CheckResult: CheckResult{
-			Error: true,
+			InternalError: true,
 			Causes: []Cause{
 				{
 					Message: "simulated error in check",
@@ -947,7 +947,7 @@ func TestRun_PanicHandlingInChecks(t *testing.T) {
 	wantPanicCheckResult := namedResult{
 		Name: "panicking-check",
 		CheckResult: CheckResult{
-			Error: true,
+			InternalError: true,
 			Causes: []Cause{
 				{
 					Message: "internal error (panic): simulated panic in check",

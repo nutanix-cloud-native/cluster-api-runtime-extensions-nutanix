@@ -75,8 +75,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			},
 			clusterK8sVersion: "1.32.3",
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   false,
+				Allowed:       false,
+				InternalError: false,
 				Causes: []preflight.Cause{
 					{
 						Message: "cluster kubernetes version '1.32.3' is not part of image name 'kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644'", //nolint:lll // cause message is long
@@ -107,8 +107,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			},
 			clusterK8sVersion: "1.32.3",
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   false,
+				Allowed:       false,
+				InternalError: false,
 				Causes: []preflight.Cause{
 					{
 						Message: "cluster kubernetes version '1.32.3' is not part of image name 'my-custom-image-name'",
@@ -139,8 +139,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			},
 			clusterK8sVersion: "1.32.3",
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   false,
+				Allowed:       false,
+				InternalError: false,
 				Causes: []preflight.Cause{
 					{
 						Message: "VM image name is empty",
@@ -196,8 +196,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				},
 			},
 			want: preflight.CheckResult{
-				Allowed: false,
-				Error:   true,
+				Allowed:       false,
+				InternalError: true,
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get VM Image: some error",
@@ -220,7 +220,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			got := check.Run(context.Background())
 
 			assert.Equal(t, tc.want.Allowed, got.Allowed)
-			assert.Equal(t, tc.want.Error, got.Error)
+			assert.Equal(t, tc.want.InternalError, got.InternalError)
 			assert.Equal(t, tc.want.Causes, got.Causes)
 		})
 	}

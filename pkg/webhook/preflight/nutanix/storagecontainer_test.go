@@ -276,7 +276,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			nclient:              nil,
 			expectedAllowed:      false,
 			expectedError:        true,
-			expectedCauseMessage: fmt.Sprintf("no storage container found for cluster %q", clusterName),
+			expectedCauseMessage: "Nutanix CSI Provider configuration is missing",
 		},
 		{
 			name: "nil storage class configs",
@@ -290,7 +290,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			nclient:              nil,
 			expectedAllowed:      false,
 			expectedError:        false,
-			expectedCauseMessage: fmt.Sprintf("no storage class configs found for cluster %q", clusterName),
+			expectedCauseMessage: "Nutanix CSI Provider configuration is missing storage class configurations",
 		},
 		{
 			name: "storage class config without parameters",
@@ -396,9 +396,10 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectedAllowed:      false,
-			expectedError:        false,
-			expectedCauseMessage: "storage container \"missing-container\" not found on cluster \"test-cluster\"",
+			expectedAllowed: false,
+			expectedError:   false,
+			expectedCauseMessage: "expected to find 1 storage container named \"missing-container\" " +
+				"on cluster \"test-cluster\", found 0",
 		},
 		{
 			name: "multiple storage containers found",
@@ -471,9 +472,10 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectedAllowed:      false,
-			expectedError:        false,
-			expectedCauseMessage: "multiple storage containers named \"duplicate-container\" found on cluster \"test-cluster\"",
+			expectedAllowed: false,
+			expectedError:   false,
+			expectedCauseMessage: "expected to find 1 storage container named \"duplicate-container\" " +
+				"on cluster \"test-cluster\", found 2",
 		},
 		{
 			name: "successful storage container check",
@@ -545,6 +547,57 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: true,
 			expectedError:   false,
+		},
+		{
+			name: "multiple clusters found",
+			machineSpec: &carenv1.NutanixMachineDetails{
+				Cluster: capxv1.NutanixResourceIdentifier{
+					Type: capxv1.NutanixIdentifierName,
+					Name: ptr.To(clusterName),
+				},
+			},
+			csiSpec: &carenv1.CSIProvider{
+				StorageClassConfigs: map[string]carenv1.StorageClassConfig{
+					"test-sc": {
+						Parameters: map[string]string{
+							"storageContainer": "valid-container",
+						},
+					},
+				},
+			},
+			nclient: &mocknclient{
+				listClustersFunc: func(
+					page,
+					limit *int,
+					filter,
+					orderby,
+					apply,
+					select_ *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.ListClustersApiResponse,
+					error,
+				) {
+					resp := &clustermgmtv4.ListClustersApiResponse{
+						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+					}
+					err := resp.SetData([]clustermgmtv4.Cluster{
+						{
+							Name:  ptr.To(clusterName),
+							ExtId: ptr.To("cluster-uuid-123"),
+						},
+						{
+							Name:  ptr.To(clusterName),
+							ExtId: ptr.To("cluster-uuid-456"),
+						},
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "expected to find 1 cluster matching the reference, found 2",
 		},
 		{
 			name: "error getting cluster",
@@ -778,9 +831,10 @@ func TestStorageContainerCheck(t *testing.T) {
 					return &clustermgmtv4.ListStorageContainersApiResponse{}, nil
 				},
 			},
-			expectedAllowed:      false,
-			expectedError:        false,
-			expectedCauseMessage: "storage container \"valid-container\" not found on cluster \"test-cluster\"",
+			expectedAllowed: false,
+			expectedError:   false,
+			expectedCauseMessage: "expected to find 1 storage container named \"valid-container\" " +
+				"on cluster \"test-cluster\", found 0",
 		},
 		{
 			name: "multiple storage class configs with success",
@@ -893,7 +947,7 @@ func TestStorageContainerCheck(t *testing.T) {
 
 			// Verify the result
 			assert.Equal(t, tc.expectedAllowed, result.Allowed)
-			assert.Equal(t, tc.expectedError, result.Error)
+			assert.Equal(t, tc.expectedError, result.InternalError)
 
 			if tc.expectedCauseMessage != "" {
 				require.NotEmpty(t, result.Causes)
@@ -906,14 +960,14 @@ func TestStorageContainerCheck(t *testing.T) {
 	}
 }
 
-func TestGetCluster(t *testing.T) {
+func TestGetClusters(t *testing.T) {
 	testCases := []struct {
-		name              string
-		clusterIdentifier *capxv1.NutanixResourceIdentifier
-		client            client
-		expectError       bool
-		errorContains     string
-		expectedClusterID string
+		name               string
+		clusterIdentifier  *capxv1.NutanixResourceIdentifier
+		client             client
+		expectError        bool
+		errorContains      string
+		expectedClusterIDs []string
 	}{
 		{
 			name: "get cluster by UUID - success",
@@ -938,8 +992,8 @@ func TestGetCluster(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectError:       false,
-			expectedClusterID: "test-uuid-123",
+			expectError:        false,
+			expectedClusterIDs: []string{"test-uuid-123"},
 		},
 		{
 			name: "get cluster by UUID - API error",
@@ -1005,8 +1059,8 @@ func TestGetCluster(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectError:       false,
-			expectedClusterID: "test-uuid-123",
+			expectError:        false,
+			expectedClusterIDs: []string{"test-uuid-123"},
 		},
 		{
 			name: "get cluster by name - API error",
@@ -1053,7 +1107,7 @@ func TestGetCluster(t *testing.T) {
 					return nil, nil
 				},
 			},
-			expectError:   true,
+			expectError:   false,
 			errorContains: "no clusters were returned",
 		},
 		{
@@ -1106,7 +1160,7 @@ func TestGetCluster(t *testing.T) {
 					}, nil
 				},
 			},
-			expectError:   true,
+			expectError:   false,
 			errorContains: "no clusters were returned",
 		},
 		{
@@ -1135,7 +1189,7 @@ func TestGetCluster(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectError:   true,
+			expectError:   false,
 			errorContains: "no clusters found with name",
 		},
 		{
@@ -1173,8 +1227,8 @@ func TestGetCluster(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectError:   true,
-			errorContains: "multiple clusters found with name",
+			expectError:        false,
+			expectedClusterIDs: []string{"test-uuid-1", "test-uuid-2"},
 		},
 		{
 			name: "invalid identifier type",
@@ -1227,16 +1281,19 @@ func TestGetCluster(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cluster, err := getCluster(tc.client, tc.clusterIdentifier)
+			clusters, err := getClusters(tc.client, tc.clusterIdentifier)
 
 			if tc.expectError {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tc.errorContains)
-				assert.Nil(t, cluster)
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, cluster)
-				assert.Equal(t, tc.expectedClusterID, *cluster.ExtId)
+				assert.Nil(t, clusters)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Len(t, tc.expectedClusterIDs, len(clusters))
+			for i, cluster := range clusters {
+				assert.Equal(t, tc.expectedClusterIDs[i], *cluster.ExtId)
 			}
 		})
 	}

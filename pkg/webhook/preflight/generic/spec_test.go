@@ -102,8 +102,8 @@ func TestNewConfigurationCheck(t *testing.T) {
 				},
 			},
 			expectedResult: preflight.CheckResult{
-				Allowed: false,
-				Error:   true,
+				Allowed:       false,
+				InternalError: true,
 				Causes: []preflight.Cause{
 					{
 						Message: "Failed to unmarshal cluster variable clusterConfig: failed to unmarshal json:" +

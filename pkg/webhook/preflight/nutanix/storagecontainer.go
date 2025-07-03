@@ -37,13 +37,10 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 
 	if c.csiSpec == nil {
 		result.Allowed = false
-		result.Error = true
+		result.InternalError = true
 		result.Causes = append(result.Causes, preflight.Cause{
-			Message: fmt.Sprintf(
-				"no storage container found for cluster %q",
-				*c.machineSpec.Cluster.Name,
-			),
-			Field: c.field,
+			Message: "Nutanix CSI Provider configuration is missing",
+			Field:   c.field,
 		})
 
 		return result
@@ -52,11 +49,8 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 	if c.csiSpec.StorageClassConfigs == nil {
 		result.Allowed = false
 		result.Causes = append(result.Causes, preflight.Cause{
-			Message: fmt.Sprintf(
-				"no storage class configs found for cluster %q",
-				*c.machineSpec.Cluster.Name,
-			),
-			Field: c.field,
+			Message: "Nutanix CSI Provider configuration is missing storage class configurations",
+			Field:   c.field,
 		})
 
 		return result
@@ -64,10 +58,13 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 
 	clusterIdentifier := &c.machineSpec.Cluster
 
-	// We wait to get the cluster until we know we need to.
-	// We should only get the cluster once.
-	getClusterOnce := sync.OnceValues(func() (*clustermgmtv4.Cluster, error) {
-		return getCluster(c.nclient, clusterIdentifier)
+	// To avoid unnecessary API calls, we delay the retrieval of clusters until we actually
+	// need to check for storage containers.
+	// There is only one cluster referenced in MachineDetails, so we can use sync.OnceValues
+	// to ensure that we only call getClusters once, even if there are multiple storage
+	// class configs.
+	getClustersOnce := sync.OnceValues(func() ([]clustermgmtv4.Cluster, error) {
+		return getClusters(c.nclient, clusterIdentifier)
 	})
 
 	for _, storageClassConfig := range c.csiSpec.StorageClassConfigs {
@@ -80,10 +77,10 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			continue
 		}
 
-		cluster, err := getClusterOnce()
+		clusters, err := getClustersOnce()
 		if err != nil {
 			result.Allowed = false
-			result.Error = true
+			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"failed to check if storage container %q exists: failed to get cluster %q: %s",
@@ -96,10 +93,25 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			continue
 		}
 
+		if len(clusters) != 1 {
+			result.Allowed = false
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf(
+					"expected to find 1 cluster matching the reference, found %d",
+					len(clusters),
+				),
+				Field: c.field,
+			})
+			continue
+		}
+
+		// Found exactly one cluster.
+		cluster := &clusters[0]
+
 		containers, err := getStorageContainers(c.nclient, *cluster.ExtId, storageContainer)
 		if err != nil {
 			result.Allowed = false
-			result.Error = true
+			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"failed to check if storage container %q exists in cluster %q: %s",
@@ -112,26 +124,14 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			continue
 		}
 
-		if len(containers) == 0 {
+		if len(containers) != 1 {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"storage container %q not found on cluster %q",
+					"expected to find 1 storage container named %q on cluster %q, found %d",
 					storageContainer,
 					clusterIdentifier,
-				),
-				Field: c.field,
-			})
-			continue
-		}
-
-		if len(containers) > 1 {
-			result.Allowed = false
-			result.Causes = append(result.Causes, preflight.Cause{
-				Message: fmt.Sprintf(
-					"multiple storage containers named %q found on cluster %q",
-					storageContainer,
-					clusterIdentifier,
+					len(containers),
 				),
 				Field: c.field,
 			})
@@ -209,48 +209,37 @@ func getStorageContainers(
 	return containers, nil
 }
 
-func getCluster(
+func getClusters(
 	client client,
 	clusterIdentifier *v1beta1.NutanixResourceIdentifier,
-) (*clustermgmtv4.Cluster, error) {
+) ([]clustermgmtv4.Cluster, error) {
 	switch {
 	case clusterIdentifier.IsUUID():
 		resp, err := client.GetClusterById(clusterIdentifier.UUID)
 		if err != nil {
 			return nil, err
 		}
-
 		cluster, ok := resp.GetData().(clustermgmtv4.Cluster)
 		if !ok {
 			return nil, fmt.Errorf("failed to get data returned by GetClusterById")
 		}
-
-		return &cluster, nil
+		return []clustermgmtv4.Cluster{cluster}, nil
 	case clusterIdentifier.IsName():
 		filter := fmt.Sprintf("name eq '%s'", *clusterIdentifier.Name)
 		resp, err := client.ListClusters(nil, nil, &filter, nil, nil, nil)
 		if err != nil {
 			return nil, err
 		}
-
 		if resp == nil || resp.GetData() == nil {
-			return nil, fmt.Errorf("no clusters were returned")
+			// No clusters were returned.
+			return []clustermgmtv4.Cluster{}, nil
 		}
 
 		clusters, ok := resp.GetData().([]clustermgmtv4.Cluster)
 		if !ok {
 			return nil, fmt.Errorf("failed to get data returned by ListClusters")
 		}
-
-		if len(clusters) == 0 {
-			return nil, fmt.Errorf("no clusters found with name %q", *clusterIdentifier.Name)
-		}
-
-		if len(clusters) > 1 {
-			return nil, fmt.Errorf("multiple clusters found with name %q", *clusterIdentifier.Name)
-		}
-
-		return &clusters[0], nil
+		return clusters, nil
 	default:
 		return nil, fmt.Errorf("cluster identifier is missing both name and uuid")
 	}

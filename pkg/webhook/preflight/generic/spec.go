@@ -42,7 +42,7 @@ func newConfigurationCheck(
 	)
 	if err != nil {
 		configurationCheck.result.Allowed = false
-		configurationCheck.result.Error = true
+		configurationCheck.result.InternalError = true
 		configurationCheck.result.Causes = append(configurationCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to unmarshal cluster variable %s: %s",
