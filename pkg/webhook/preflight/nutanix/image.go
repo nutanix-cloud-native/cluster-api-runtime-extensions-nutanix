@@ -115,6 +115,10 @@ func getVMImages(
 		if err != nil {
 			return nil, err
 		}
+		if resp == nil {
+			// No images were returned.
+			return []vmmv4.Image{}, nil
+		}
 		image, ok := resp.GetData().(vmmv4.Image)
 		if !ok {
 			return nil, fmt.Errorf("failed to get data returned by GetImageById")
