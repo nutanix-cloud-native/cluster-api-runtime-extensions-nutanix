@@ -20,10 +20,10 @@ const (
 )
 
 type storageContainerCheck struct {
-	nodeSpec *carenv1.NutanixNodeSpec
-	field    string
-	csiSpec  *carenv1.CSIProvider
-	nclient  client
+	machineSpec *carenv1.NutanixMachineDetails
+	field       string
+	csiSpec     *carenv1.CSIProvider
+	nclient     client
 }
 
 func (c *storageContainerCheck) Name() string {
@@ -41,7 +41,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		result.Causes = append(result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
 				"no storage container found for cluster %q",
-				*c.nodeSpec.MachineDetails.Cluster.Name,
+				*c.machineSpec.Cluster.Name,
 			),
 			Field: c.field,
 		})
@@ -54,7 +54,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		result.Causes = append(result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
 				"no storage class configs found for cluster %q",
-				*c.nodeSpec.MachineDetails.Cluster.Name,
+				*c.machineSpec.Cluster.Name,
 			),
 			Field: c.field,
 		})
@@ -62,7 +62,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		return result
 	}
 
-	clusterIdentifier := &c.nodeSpec.MachineDetails.Cluster
+	clusterIdentifier := &c.machineSpec.Cluster
 
 	// We wait to get the cluster until we know we need to.
 	// We should only get the cluster once.
@@ -160,10 +160,10 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,
 			&storageContainerCheck{
-				nodeSpec: cd.nutanixClusterConfigSpec.ControlPlane.Nutanix,
-				field:    "cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix",
-				csiSpec:  &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-				nclient:  cd.nclient,
+				machineSpec: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
+				field:       "cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix.machineDetails",
+				csiSpec:     &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+				nclient:     cd.nclient,
 			},
 		)
 	}
@@ -172,10 +172,10 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
 			checks = append(checks,
 				&storageContainerCheck{
-					nodeSpec: nutanixWorkerNodeConfigSpec.Nutanix,
+					machineSpec: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
 					field: fmt.Sprintf(
 						"cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-							".variables[.name=workerConfig].value.nutanix",
+							".variables[.name=workerConfig].value.nutanix.machineDetails",
 						mdName,
 					),
 					csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,

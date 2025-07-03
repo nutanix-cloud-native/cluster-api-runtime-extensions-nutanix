@@ -34,7 +34,7 @@ type ControlPlaneSpec struct {
 
 	Docker *carenv1.DockerNodeSpec `json:"docker,omitempty"`
 
-	Nutanix *carenv1.NutanixNodeSpec `json:"nutanix,omitempty"`
+	Nutanix *carenv1.NutanixControlPlaneNodeSpec `json:"nutanix,omitempty"`
 
 	carenv1.GenericControlPlaneSpec `json:",inline"`
 
@@ -46,7 +46,7 @@ type WorkerNodeConfigSpec struct {
 
 	Docker *carenv1.DockerNodeSpec `json:"docker,omitempty"`
 
-	Nutanix *carenv1.NutanixNodeSpec `json:"nutanix,omitempty"`
+	Nutanix *carenv1.NutanixWorkerNodeSpec `json:"nutanix,omitempty"`
 
 	carenv1.GenericNodeSpec `json:",inline"`
 }

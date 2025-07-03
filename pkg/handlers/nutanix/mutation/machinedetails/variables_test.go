@@ -100,7 +100,7 @@ func TestVariableValidation(t *testing.T) {
 func minimumClusterConfigSpec() v1alpha1.NutanixClusterConfigSpec {
 	return v1alpha1.NutanixClusterConfigSpec{
 		ControlPlane: &v1alpha1.NutanixControlPlaneSpec{
-			Nutanix: &v1alpha1.NutanixNodeSpec{
+			Nutanix: &v1alpha1.NutanixControlPlaneNodeSpec{
 				MachineDetails: v1alpha1.NutanixMachineDetails{
 					BootType:       capxv1.NutanixBootTypeLegacy,
 					VCPUSockets:    2,
