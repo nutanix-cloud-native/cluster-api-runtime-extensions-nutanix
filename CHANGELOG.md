@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.34.0 (2025-09-29)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: update AWS CSI to 2.48.0 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1280
+* feat: Pull in EKS APIs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1253
+* feat: Add EKS handlers by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1254
+* feat: enable Cilium kube-proxy replacement for new clusters by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1288
+* feat: automatically enable Cilium kube-proxy replacement feature by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1286
+* feat: update mindthegap version to v1.24.0 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1305
+* feat: EKS ClusterClass and example by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1296
+* feat: Enable configurable parallel image pulls by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1306
+* feat: add identityRef for AWS and EKS clusters by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1311
+* feat: add volume APIs to AWS and EKS Nodes by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1309
+* feat: update Cilium to latest version by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1318
+* feat: cilium configuration overrides for EKS provider by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1316
+### Fixes 🔧
+* fix: Correct placementGroup variable name in API by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1256
+* fix: hardcode the kubectl tag in registry syncer Pods by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1262
+* fix: include Generic config specs in EKS cluster API  by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1298
+* fix: Ciliums kube-proxy replacement rollout and wait by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1307
+### Other Changes
+* test: Add t.Helper() calls in nested tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1258
+* build: remove legacy kube-vip manifest by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1260
+* refactor: move deprecated Kubelet flags to KubeletConfiguration by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1259
+* build: Add kube-api-linter by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1209
+* docs: Remove redundant CRS enable env var by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1274
+* ci: Fix reviewdog run for pushes to main by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1275
+* test(e2e): Test against Kubernetes v1.34.0 via Docker provider by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1273
+* ci: Upgrade CAPI core minor releases in own dependabot group by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1276
+* refactor: Use declared builtin variable name rather than string by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1281
+* ci: Use DeterminateSystems/nix-installer-action instead of cachix action by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1284
+* perf: Enable compression of audit logs to increase retention, without changing disk space requirements by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1270
+* build: use kustomize to generate failuredomain examples by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1294
+* refactor: keep only common types in Generic config specs by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1297
+* test: new LoadBalancer Service e2e test by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1304
+* build: Update Kubernetes patch versions for tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1310
+* test: reduce polling frequency on PC API by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1312
+* docs: Upgrade to docsy 0.12.0 with hugo >= 0.146.0 support by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1315
+* build: go1.25.1 to fix CVE by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1314
+* refactor: Use metallb APIs instead of unstructured by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1317
+* refactor: add new kube-proxy mode disable option by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1319
+* ci: Upgrade devbox install action and remove custom golangci-lint by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1322
+* build: Update all tools via devbox update by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1328
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.33.1...v0.34.0
+
 ## 0.33.1 (2025-07-31)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
