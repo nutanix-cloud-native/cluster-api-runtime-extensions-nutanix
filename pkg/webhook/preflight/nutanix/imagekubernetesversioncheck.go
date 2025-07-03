@@ -37,8 +37,8 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 		images, err := getVMImages(c.nclient, c.machineDetails.Image)
 		if err != nil {
 			return preflight.CheckResult{
-				Allowed: false,
-				Error:   true,
+				Allowed:       false,
+				InternalError: true,
 				Causes: []preflight.Cause{
 					{
 						Message: fmt.Sprintf("failed to get VM Image: %s", err),
@@ -56,8 +56,8 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 
 		if err := c.checkKubernetesVersion(&images[0]); err != nil {
 			return preflight.CheckResult{
-				Allowed: false,
-				Error:   false,
+				Allowed:       false,
+				InternalError: false,
 				Causes: []preflight.Cause{
 					{
 						Message: err.Error(),
