@@ -202,7 +202,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 				},
 			},
 			expectedVersion: "1.32.3",
-			expectedChecks:  1,
+			expectedChecks:  2,
 			nclient:         &mocknclient{},
 		},
 		{
@@ -215,7 +215,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 				},
 			},
 			expectedVersion: "1.32.3",
-			expectedChecks:  1,
+			expectedChecks:  2,
 			nclient:         &mocknclient{},
 		},
 		{
@@ -250,6 +250,18 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 				cluster: tc.cluster,
 				nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 					ControlPlane: &carenv1.NutanixControlPlaneSpec{
+						Nutanix: &carenv1.NutanixNodeSpec{
+							MachineDetails: carenv1.NutanixMachineDetails{
+								Image: &capxv1.NutanixResourceIdentifier{
+									Type: capxv1.NutanixIdentifierUUID,
+									UUID: ptr.To("test-uuid"),
+								},
+							},
+						},
+					},
+				},
+				nutanixWorkerNodeConfigSpecByMachineDeploymentName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
+					"test-md": {
 						Nutanix: &carenv1.NutanixNodeSpec{
 							MachineDetails: carenv1.NutanixMachineDetails{
 								Image: &capxv1.NutanixResourceIdentifier{
