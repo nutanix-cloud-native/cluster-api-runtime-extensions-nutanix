@@ -118,7 +118,7 @@ func newVMImageKubernetesVersionChecks(
 			&imageKubernetesVersionCheck{
 				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
 				field: "cluster.spec.topology.variables[.name=clusterConfig]" +
-					".value.nutanix.controlPlane.machineDetails",
+					".value.nutanix.controlPlane.machineDetails.image",
 				nclient:           cd.nclient,
 				clusterK8sVersion: clusterK8sVersion,
 			},
@@ -131,7 +131,7 @@ func newVMImageKubernetesVersionChecks(
 				&imageKubernetesVersionCheck{
 					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
 					field: fmt.Sprintf("cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-						".variables[.name=workerConfig].value.nutanix.machineDetails", mdName),
+						".variables[.name=workerConfig].value.nutanix.machineDetails.image", mdName),
 					nclient:           cd.nclient,
 					clusterK8sVersion: clusterK8sVersion,
 				},
