@@ -82,10 +82,13 @@ func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image)
 		return fmt.Errorf("VM image name is empty")
 	}
 
-	k8sVersion, err := sanitizeKubernetesVersion(c.clusterK8sVersion)
+	parsedVersion, err := semver.Parse(c.clusterK8sVersion)
 	if err != nil {
 		return fmt.Errorf("failed to parse kubernetes version '%s': %v", c.clusterK8sVersion, err)
 	}
+
+	// For example, "1.33.1+fips.0" becomes "1.33.1".
+	k8sVersion := parsedVersion.FinalizeVersion()
 
 	if !strings.Contains(imageName, k8sVersion) {
 		return fmt.Errorf(
@@ -96,17 +99,6 @@ func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image)
 	}
 
 	return nil
-}
-
-// sanitizeKubernetesVersion parses the Kubernetes version and returns major.minor.patch.
-// For example, "1.33.1+fips.0" becomes "1.33.1".
-func sanitizeKubernetesVersion(version string) (string, error) {
-	parsedVersion, err := semver.Parse(version)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%d.%d.%d", parsedVersion.Major, parsedVersion.Minor, parsedVersion.Patch), nil
 }
 
 func newVMImageKubernetesVersionChecks(
