@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.31.0 (2025-07-03)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Allow configuration of kube-proxy mode on cluster creation by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1163
+* feat: auto enable registry addon in workload clusters by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1175
+* feat(ntp): Configure NTP for clusters by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1185
+* feat: adds a generic checker package with registry and mirror  checks by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1186
+* feat: deploy registry syncer for workload clusters by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1189
+* feat(preflight): Add VM Image kubernetes version check by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1172
+* feat: CAREN support for NutanixFailureDomain by @yanhua121 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1192
+### Fixes 🔧
+* fix: Do not run preflight checks if Cluster is paused by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1181
+* fix: misc fixes to the preflight framework by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1188
+* fix(preflight): improved error reporting for storage container and VM image checks by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1180
+* fix(file): rename test/request/capa.go and test/request/capx.go by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1193
+* fix: Move preflight skip annotation constants to api module by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1187
+* fix: Include correct field name in registry preflight check results by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1194
+* fix: add tolerations and nodeAffinity overrides for registry addon by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1183
+* fix: include GenericNodeSpec in aggregate type by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1182
+* fix: Do not treat expected preflight check failures as internal errors by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1195
+
+## New Contributors
+* @yanhua121 made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1192
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.30.0...v0.31.0
+
 ## 0.30.0 (2025-06-24)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
