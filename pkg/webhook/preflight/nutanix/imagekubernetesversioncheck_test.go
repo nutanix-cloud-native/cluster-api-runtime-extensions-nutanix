@@ -86,6 +86,31 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			},
 		},
 		{
+			name: "kubernetes version with build metadata matches",
+			nclient: &mocknclient{
+				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+					resp := &vmmv4.GetImageApiResponse{}
+					err := resp.SetData(vmmv4.Image{
+						ObjectType_: ptr.To("vmm.v4.content.Image"),
+						ExtId:       ptr.To("test-uuid"),
+						Name:        ptr.To("kubedistro-rhel-8.10-release-fips-1.33.1-20250704023459"),
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
+			machineDetails: &carenv1.NutanixMachineDetails{
+				Image: &capxv1.NutanixResourceIdentifier{
+					Type: capxv1.NutanixIdentifierUUID,
+					UUID: ptr.To("test-uuid"),
+				},
+			},
+			clusterK8sVersion: "1.33.1+fips.0",
+			want: preflight.CheckResult{
+				Allowed: true,
+			},
+		},
+		{
 			name: "custom image name - extraction fails",
 			nclient: &mocknclient{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
@@ -112,6 +137,38 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "cluster kubernetes version '1.32.3' is not part of image name 'my-custom-image-name'",
+						Field:   "test-field",
+					},
+				},
+			},
+		},
+		{
+			name: "invalid kubernetes version",
+			nclient: &mocknclient{
+				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+					resp := &vmmv4.GetImageApiResponse{}
+					err := resp.SetData(vmmv4.Image{
+						ObjectType_: ptr.To("vmm.v4.content.Image"),
+						ExtId:       ptr.To("test-uuid"),
+						Name:        ptr.To("kubedistro-rhel-8.10-release-fips-1.33.1-20250704023459"),
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
+			machineDetails: &carenv1.NutanixMachineDetails{
+				Image: &capxv1.NutanixResourceIdentifier{
+					Type: capxv1.NutanixIdentifierUUID,
+					UUID: ptr.To("test-uuid"),
+				},
+			},
+			clusterK8sVersion: "invalid.version",
+			want: preflight.CheckResult{
+				Allowed:       false,
+				InternalError: false,
+				Causes: []preflight.Cause{
+					{
+						Message: "failed to parse kubernetes version 'invalid.version': No Major.Minor.Patch elements found",
 						Field:   "test-field",
 					},
 				},
