@@ -265,20 +265,6 @@ func TestStorageContainerCheck(t *testing.T) {
 		expectedCauseMessage string
 	}{
 		{
-			name: "nil CSI spec",
-			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
-					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
-				},
-			},
-			csiSpec:              nil,
-			nclient:              nil,
-			expectedAllowed:      false,
-			expectedError:        true,
-			expectedCauseMessage: "Nutanix CSI Provider configuration is missing",
-		},
-		{
 			name: "nil storage class configs",
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: capxv1.NutanixResourceIdentifier{

@@ -35,17 +35,6 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		Allowed: true,
 	}
 
-	if c.csiSpec == nil {
-		result.Allowed = false
-		result.InternalError = true
-		result.Causes = append(result.Causes, preflight.Cause{
-			Message: "Nutanix CSI Provider configuration is missing",
-			Field:   c.field,
-		})
-
-		return result
-	}
-
 	if c.csiSpec.StorageClassConfigs == nil {
 		result.Allowed = false
 		result.Causes = append(result.Causes, preflight.Cause{
