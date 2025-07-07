@@ -212,7 +212,21 @@ func TestNewCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client.")
+	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client: "+
+		assert.AnError.Error())
+}
+
+func TestNewCredentialsCheck_GetCurrentLoggedInUserInvalidCredentials(t *testing.T) {
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{err: fmt.Errorf("invalid Nutanix credentials")}, nil
+	}
+	cd := validCheckDependencies()
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
+	result := check.Run(context.Background())
+	assert.False(t, result.Allowed)
+	assert.False(t, result.InternalError)
+	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client: "+
+		"invalid Nutanix credentials")
 }
 
 func validCheckDependencies() *checkDependencies {

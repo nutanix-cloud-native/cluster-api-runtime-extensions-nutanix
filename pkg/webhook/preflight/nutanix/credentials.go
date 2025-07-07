@@ -6,6 +6,7 @@ package nutanix
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -188,12 +189,17 @@ func newCredentialsCheck(
 
 	// Validate the credentials using an API call.
 	_, err = nclient.GetCurrentLoggedInUser(ctx)
-	if err != nil {
+	if err == nil {
+		// We initialized both clients, and verified the credentials using the v3 client.
+		cd.nclient = nclient
+		return credentialsCheck
+	}
+
+	if strings.Contains(err.Error(), "invalid Nutanix credentials") {
 		credentialsCheck.result.Allowed = false
-		credentialsCheck.result.InternalError = true
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to validate credentials using the v3 API client: %s", err),
+				Message: fmt.Sprintf("Failed to validate credentials using the v3 API client: %s", err),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
 					".value.nutanix.prismCentralEndpoint.credentials.secretRef",
 			},
@@ -201,8 +207,13 @@ func newCredentialsCheck(
 		return credentialsCheck
 	}
 
-	// We initialized both clients, and verified the credentials using the v3 client.
-	cd.nclient = nclient
-
+	credentialsCheck.result.Allowed = false
+	credentialsCheck.result.InternalError = true
+	credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
+		preflight.Cause{
+			Message: fmt.Sprintf("Failed to validate credentials using the v3 API client: %s", err),
+			Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint",
+		},
+	)
 	return credentialsCheck
 }
