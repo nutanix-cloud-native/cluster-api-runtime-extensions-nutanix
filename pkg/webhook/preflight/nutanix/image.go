@@ -45,7 +45,7 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf("failed to get VM Image: %s", err),
-				Field:   c.field,
+				Field:   c.field + ".image",
 			})
 			return result
 		}
@@ -54,7 +54,7 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf("expected to find 1 VM Image, found %d", len(images)),
-				Field:   c.field,
+				Field:   c.field + ".image",
 			})
 			return result
 		}

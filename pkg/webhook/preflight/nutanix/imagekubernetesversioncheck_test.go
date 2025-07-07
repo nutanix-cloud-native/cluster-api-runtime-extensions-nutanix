@@ -80,7 +80,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "cluster kubernetes version '1.32.3' is not part of image name 'kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644'", //nolint:lll // cause message is long
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -137,7 +137,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "cluster kubernetes version '1.32.3' is not part of image name 'my-custom-image-name'",
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -169,7 +169,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to parse kubernetes version 'invalid.version': No Major.Minor.Patch elements found",
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -201,7 +201,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "VM image name is empty",
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -258,7 +258,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get VM Image: some error",
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -269,7 +269,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			check := &imageKubernetesVersionCheck{
 				machineDetails:    tc.machineDetails,
-				field:             "test-field",
+				field:             "machineDetails",
 				nclient:           tc.nclient,
 				clusterK8sVersion: tc.clusterK8sVersion,
 			}

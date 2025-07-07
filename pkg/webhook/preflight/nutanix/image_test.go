@@ -127,7 +127,7 @@ func TestVMImageCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "expected to find 1 VM Image, found 0",
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -169,7 +169,7 @@ func TestVMImageCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "expected to find 1 VM Image, found 2",
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -193,7 +193,7 @@ func TestVMImageCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get VM Image: api error",
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -226,7 +226,7 @@ func TestVMImageCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get VM Image: api error",
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -262,7 +262,7 @@ func TestVMImageCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "failed to get VM Image: failed to get data returned by ListImages",
-						Field:   "test-field",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -284,7 +284,7 @@ func TestVMImageCheck(t *testing.T) {
 			// Create the check
 			check := &imageCheck{
 				machineDetails: tc.machineDetails,
-				field:          "test-field",
+				field:          "machineDetails",
 				nclient:        tc.nclient,
 			}
 

@@ -43,7 +43,7 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 				Causes: []preflight.Cause{
 					{
 						Message: fmt.Sprintf("failed to get VM Image: %s", err),
-						Field:   c.field,
+						Field:   c.field + ".image",
 					},
 				},
 			}
@@ -62,7 +62,7 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 				Causes: []preflight.Cause{
 					{
 						Message: err.Error(),
-						Field:   c.field,
+						Field:   c.field + ".image",
 					},
 				},
 			}
@@ -127,7 +127,7 @@ func newVMImageKubernetesVersionChecks(
 			&imageKubernetesVersionCheck{
 				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
 				field: "cluster.spec.topology.variables[.name=clusterConfig]" +
-					".value.nutanix.controlPlane.machineDetails.image",
+					".value.nutanix.controlPlane.machineDetails",
 				nclient:           cd.nclient,
 				clusterK8sVersion: clusterK8sVersion,
 			},
@@ -140,7 +140,7 @@ func newVMImageKubernetesVersionChecks(
 				&imageKubernetesVersionCheck{
 					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
 					field: fmt.Sprintf("cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-						".variables[.name=workerConfig].value.nutanix.machineDetails.image", mdName),
+						".variables[.name=workerConfig].value.nutanix.machineDetails", mdName),
 					nclient:           cd.nclient,
 					clusterK8sVersion: clusterK8sVersion,
 				},
