@@ -161,7 +161,7 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 		checks = append(checks,
 			&storageContainerCheck{
 				machineSpec: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				field:       "cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix.machineDetails",
+				field:       "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails",
 				csiSpec:     &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
 				nclient:     cd.nclient,
 			},
@@ -174,8 +174,8 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 				&storageContainerCheck{
 					machineSpec: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
 					field: fmt.Sprintf(
-						"cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-							".variables[.name=workerConfig].value.nutanix.machineDetails",
+						"$.spec.topology.workers.machineDeployments[?@.name==%q]"+
+							".variables[?@.name=workerConfig].value.nutanix.machineDetails",
 						mdName,
 					),
 					csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,

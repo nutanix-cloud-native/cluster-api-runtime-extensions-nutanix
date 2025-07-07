@@ -138,7 +138,7 @@ func TestNewConfigurationCheck(t *testing.T) {
 					{
 						Message: "Failed to unmarshal cluster variable clusterConfig: failed to unmarshal json:" +
 							" invalid character 'i' looking for beginning of object key string",
-						Field: "cluster.spec.topology.variables[.name=clusterConfig].nutanix",
+						Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix",
 					},
 				},
 			},
@@ -186,8 +186,8 @@ func TestNewConfigurationCheck(t *testing.T) {
 					{
 						Message: "Failed to unmarshal topology machineDeployment variable workerConfig:" +
 							" failed to unmarshal json: invalid character 'i' looking for beginning of object key string",
-						Field: "cluster.spec.topology.workers.machineDeployments[.name=md-0]." +
-							"variables[.name=workerConfig].value.nutanix.machineDetails",
+						Field: "$.spec.topology.workers.machineDeployments[?@.name==\"md-0\"]" +
+							".variables[?@.name=workerConfig].value.nutanix.machineDetails",
 					},
 				},
 			},
