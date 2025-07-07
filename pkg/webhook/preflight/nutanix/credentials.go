@@ -71,7 +71,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to parse Prism Central endpoint URL: %s", err),
+				Message: fmt.Sprintf("Failed to parse Prism Central endpoint URL: %s", err),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
 					".value.nutanix.prismCentralEndpoint.url",
 			},
@@ -122,7 +122,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"credentials Secret %q is empty",
+					"Credentials Secret %q is empty",
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 				),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
@@ -138,7 +138,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"credentials Secret %q does not contain key %q",
+					"Credentials Secret %q does not contain key %q",
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 					credentialsSecretDataKey,
 				),
@@ -154,7 +154,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to parse Prism Central credentials: %s", err),
+				Message: fmt.Sprintf("Failed to parse Prism Central credentials: %s", err),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
 					".value.nutanix.prismCentralEndpoint.credentials.secretRef",
 			},

@@ -83,7 +83,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"failed to check if storage container %q exists: failed to get cluster %q: %s",
+					"Failed to check if storage container %q exists: failed to get cluster %q: %s",
 					storageContainer,
 					clusterIdentifier,
 					err,
@@ -97,7 +97,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"expected to find 1 cluster matching the reference, found %d",
+					"Expected to find 1 cluster matching the reference, found %d",
 					len(clusters),
 				),
 				Field: c.field,
@@ -114,7 +114,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"failed to check if storage container %q exists in cluster %q: %s",
+					"Failed to check if storage container %q exists in cluster %q: %s",
 					storageContainer,
 					clusterIdentifier,
 					err,
@@ -128,7 +128,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"expected to find 1 storage container named %q on cluster %q, found %d",
+					"Expected to find 1 storage container named %q on cluster %q, found %d",
 					storageContainer,
 					clusterIdentifier,
 					len(containers),

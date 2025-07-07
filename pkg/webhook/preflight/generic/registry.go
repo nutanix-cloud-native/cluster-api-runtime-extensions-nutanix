@@ -58,7 +58,7 @@ func defaultRegClientGetter(opts ...regclient.Opt) regClientPinger {
 }
 
 func pingFailedReasonString(registryURL string, err error) string {
-	return fmt.Sprintf("failed to ping registry %s with err: %s", registryURL, err.Error())
+	return fmt.Sprintf("Failed to ping registry %s with err: %s", registryURL, err.Error())
 }
 
 func (r *registryCheck) checkRegistry(
@@ -80,7 +80,7 @@ func (r *registryCheck) checkRegistry(
 		result.InternalError = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to parse registry url %s with error: %s", registryURL, err),
+				Message: fmt.Sprintf("Failed to parse registry URL %q with error: %s", registryURL, err),
 				Field:   r.field + ".url",
 			},
 		)
@@ -115,8 +115,11 @@ func (r *registryCheck) checkRegistry(
 			result.InternalError = true
 			result.Causes = append(result.Causes,
 				preflight.Cause{
-					Message: fmt.Sprintf("failed to get Registry credentials Secret: %s", err),
-					Field:   r.field + ".credentials.secretRef",
+					Message: fmt.Sprintf("Failed to get Registry credentials Secret %q: %s",
+						credentials.SecretRef.Name,
+						err,
+					),
+					Field: r.field + ".credentials.secretRef",
 				},
 			)
 			return result

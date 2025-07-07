@@ -135,7 +135,7 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: "failed to get Registry credentials Secret: fake error",
+						Message: "Failed to get Registry credentials Secret \"test-secret\": fake error",
 						//nolint:lll // this is a test for a field.
 						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",
 					},
@@ -268,7 +268,7 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: fmt.Sprintf("failed to parse registry url %s with error: "+
+						Message: fmt.Sprintf("Failed to parse registry URL %q with error: "+
 							"parse \"invalid-url\": invalid URI for request", "invalid-url"),
 						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
 					},
