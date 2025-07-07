@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/blang/semver/v4"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -81,7 +82,15 @@ func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image)
 		return fmt.Errorf("VM image name is empty")
 	}
 
-	if !strings.Contains(imageName, c.clusterK8sVersion) {
+	parsedVersion, err := semver.Parse(c.clusterK8sVersion)
+	if err != nil {
+		return fmt.Errorf("failed to parse kubernetes version '%s': %v", c.clusterK8sVersion, err)
+	}
+
+	// For example, "1.33.1+fips.0" becomes "1.33.1".
+	k8sVersion := parsedVersion.FinalizeVersion()
+
+	if !strings.Contains(imageName, k8sVersion) {
 		return fmt.Errorf(
 			"cluster kubernetes version '%s' is not part of image name '%s'",
 			c.clusterK8sVersion,
