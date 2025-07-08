@@ -343,7 +343,7 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "failed to parse registry url must be http or https tcp://some-registry.lol",
+						Message: "Registry URL scheme \"tcp\" is not supported. Use http or https.",
 						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
 					},
 				},

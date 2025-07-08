@@ -93,8 +93,11 @@ func (r *registryCheck) checkRegistry(
 		result.Allowed = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("failed to parse registry url must be http or https %s", registryURL),
-				Field:   r.field + ".url",
+				Message: fmt.Sprintf(
+					"Registry URL scheme %q is not supported. Use http or https.",
+					registryURLParsed.Scheme,
+				),
+				Field: r.field + ".url",
 			},
 		)
 		return result
@@ -104,14 +107,14 @@ func (r *registryCheck) checkRegistry(
 	}
 
 	if credentials != nil && credentials.SecretRef != nil {
-		mirrorCredentialsSecret := &corev1.Secret{}
+		credentialsSecret := &corev1.Secret{}
 		err := r.kclient.Get(
 			ctx,
 			types.NamespacedName{
 				Namespace: r.cluster.Namespace,
 				Name:      credentials.SecretRef.Name,
 			},
-			mirrorCredentialsSecret,
+			credentialsSecret,
 		)
 		if apierrors.IsNotFound(err) {
 			result.Allowed = false
@@ -135,15 +138,15 @@ func (r *registryCheck) checkRegistry(
 			)
 			return result
 		}
-		username, ok := mirrorCredentialsSecret.Data["username"]
+		username, ok := credentialsSecret.Data["username"]
 		if ok {
 			registryHost.User = string(username)
 		}
-		password, ok := mirrorCredentialsSecret.Data["password"]
+		password, ok := credentialsSecret.Data["password"]
 		if ok {
 			registryHost.Pass = string(password)
 		}
-		if caCert, ok := mirrorCredentialsSecret.Data["ca.crt"]; ok {
+		if caCert, ok := credentialsSecret.Data["ca.crt"]; ok {
 			registryHost.RegCert = string(caCert)
 		}
 	}
