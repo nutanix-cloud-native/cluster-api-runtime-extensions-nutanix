@@ -35,7 +35,7 @@ type registryCheck struct {
 }
 
 func (r *registryCheck) Name() string {
-	return "RegistryCredentials"
+	return "Registry"
 }
 
 func (r *registryCheck) Run(ctx context.Context) preflight.CheckResult {
