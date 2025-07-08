@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.31.1 (2025-07-08)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix(preflight): sanitize kubernetes version for image name preflight check by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1198
+* fix: allow http registries by disabling TLS check by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1203
+* fix: use a better name for registry check by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1204
+* fix: Misc. fixes to preflight check results by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1202
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.31.0...v0.31.1
+
 ## 0.31.0 (2025-07-03)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
