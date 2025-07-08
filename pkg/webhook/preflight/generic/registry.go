@@ -86,18 +86,35 @@ func (r *registryCheck) checkRegistry(
 		)
 		return result
 	}
-	mirrorHost := config.Host{
+	registryHost := config.Host{
 		Name: registryURLParsed.Host,
 	}
+	if registryURLParsed.Scheme != "http" && registryURLParsed.Scheme != "https" {
+		result.Allowed = false
+		result.Causes = append(result.Causes,
+			preflight.Cause{
+				Message: fmt.Sprintf(
+					"Registry URL scheme %q is not supported. Use http or https.",
+					registryURLParsed.Scheme,
+				),
+				Field: r.field + ".url",
+			},
+		)
+		return result
+	}
+	if registryURLParsed.Scheme == "http" {
+		registryHost.TLS = config.TLSDisabled
+	}
+
 	if credentials != nil && credentials.SecretRef != nil {
-		mirrorCredentialsSecret := &corev1.Secret{}
+		credentialsSecret := &corev1.Secret{}
 		err := r.kclient.Get(
 			ctx,
 			types.NamespacedName{
 				Namespace: r.cluster.Namespace,
 				Name:      credentials.SecretRef.Name,
 			},
-			mirrorCredentialsSecret,
+			credentialsSecret,
 		)
 		if apierrors.IsNotFound(err) {
 			result.Allowed = false
@@ -121,21 +138,21 @@ func (r *registryCheck) checkRegistry(
 			)
 			return result
 		}
-		username, ok := mirrorCredentialsSecret.Data["username"]
+		username, ok := credentialsSecret.Data["username"]
 		if ok {
-			mirrorHost.User = string(username)
+			registryHost.User = string(username)
 		}
-		password, ok := mirrorCredentialsSecret.Data["password"]
+		password, ok := credentialsSecret.Data["password"]
 		if ok {
-			mirrorHost.Pass = string(password)
+			registryHost.Pass = string(password)
 		}
-		if caCert, ok := mirrorCredentialsSecret.Data["ca.crt"]; ok {
-			mirrorHost.RegCert = string(caCert)
+		if caCert, ok := credentialsSecret.Data["ca.crt"]; ok {
+			registryHost.RegCert = string(caCert)
 		}
 	}
 	rc := regClientGetter(
-		regclient.WithConfigHost(mirrorHost),
-		regclient.WithUserAgent("regclient/example"),
+		regclient.WithConfigHost(registryHost),
+		regclient.WithUserAgent("regclient/caren"),
 	)
 	_, err = rc.Ping(ctx,
 		ref.Ref{
