@@ -233,6 +233,38 @@ func TestRegistryCheck(t *testing.T) {
 			},
 		},
 		{
+			name: "image registry with valid configuration using http",
+			imageRegistry: &carenv1.ImageRegistry{
+				URL: "http://registry.example.com",
+				Credentials: &carenv1.RegistryCredentials{
+					SecretRef: &carenv1.LocalObjectReference{
+						Name: "test-secret",
+					},
+				},
+			},
+			kclient: &mockK8sClient{
+				getSecretFunc: func(ctx context.Context,
+					key types.NamespacedName,
+					obj ctrlclient.Object,
+					opts ...ctrlclient.GetOption,
+				) error {
+					secret := obj.(*corev1.Secret)
+					secret.Data = map[string][]byte{
+						"username": []byte("testuser"),
+					}
+					return nil
+				},
+			},
+			mockRegClientPingerFactory: func(...regclient.Opt) regClientPinger {
+				return &mockRegClient{
+					pingFunc: func(ref.Ref) error { return nil },
+				}
+			},
+			want: preflight.CheckResult{
+				Allowed: true,
+			},
+		},
+		{
 			name:  "image registry with invalid URL",
 			field: "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0]",
 			imageRegistry: &carenv1.ImageRegistry{
@@ -271,6 +303,48 @@ func TestRegistryCheck(t *testing.T) {
 						Message: fmt.Sprintf("failed to parse registry url %s with error: "+
 							"parse \"invalid-url\": invalid URI for request", "invalid-url"),
 						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
+					},
+				},
+			},
+		},
+		{
+			name:  "image registry with invalid URL scheme",
+			field: "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0]",
+			imageRegistry: &carenv1.ImageRegistry{
+				URL: "tcp://some-registry.lol",
+				Credentials: &carenv1.RegistryCredentials{
+					SecretRef: &carenv1.LocalObjectReference{
+						Name: "test-secret",
+					},
+				},
+			},
+			kclient: &mockK8sClient{
+				getSecretFunc: func(ctx context.Context,
+					key types.NamespacedName,
+					obj ctrlclient.Object,
+					opts ...ctrlclient.GetOption,
+				) error {
+					secret := obj.(*corev1.Secret)
+					secret.Data = map[string][]byte{
+						"username": []byte("testuser"),
+						"password": []byte("testpass"),
+						"ca.crt":   []byte("test-ca-cert"),
+					}
+					return nil
+				},
+			},
+			mockRegClientPingerFactory: func(...regclient.Opt) regClientPinger {
+				return &mockRegClient{
+					pingFunc: func(ref.Ref) error { return nil },
+				}
+			},
+			want: preflight.CheckResult{
+				Allowed:       false,
+				InternalError: false,
+				Causes: []preflight.Cause{
+					{
+						Message: "failed to parse registry url must be http or https tcp://some-registry.lol",
+						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
 					},
 				},
 			},
