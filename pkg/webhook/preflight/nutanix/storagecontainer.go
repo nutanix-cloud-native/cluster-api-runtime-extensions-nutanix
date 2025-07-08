@@ -35,17 +35,6 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		Allowed: true,
 	}
 
-	if c.csiSpec == nil {
-		result.Allowed = false
-		result.InternalError = true
-		result.Causes = append(result.Causes, preflight.Cause{
-			Message: "Nutanix CSI Provider configuration is missing",
-			Field:   c.field,
-		})
-
-		return result
-	}
-
 	if c.csiSpec.StorageClassConfigs == nil {
 		result.Allowed = false
 		result.Causes = append(result.Causes, preflight.Cause{
@@ -83,7 +72,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"failed to check if storage container %q exists: failed to get cluster %q: %s",
+					"Failed to check if storage container %q exists: failed to get cluster %q: %s",
 					storageContainer,
 					clusterIdentifier,
 					err,
@@ -97,7 +86,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"expected to find 1 cluster matching the reference, found %d",
+					"Expected to find 1 cluster matching the reference, found %d",
 					len(clusters),
 				),
 				Field: c.field,
@@ -114,7 +103,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"failed to check if storage container %q exists in cluster %q: %s",
+					"Failed to check if storage container %q exists in cluster %q: %s",
 					storageContainer,
 					clusterIdentifier,
 					err,
@@ -128,7 +117,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"expected to find 1 storage container named %q on cluster %q, found %d",
+					"Expected to find 1 storage container named %q on cluster %q, found %d",
 					storageContainer,
 					clusterIdentifier,
 					len(containers),
@@ -161,7 +150,7 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 		checks = append(checks,
 			&storageContainerCheck{
 				machineSpec: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				field:       "cluster.spec.topology[.name=clusterConfig].value.controlPlane.nutanix.machineDetails",
+				field:       "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails",
 				csiSpec:     &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
 				nclient:     cd.nclient,
 			},
@@ -174,8 +163,8 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 				&storageContainerCheck{
 					machineSpec: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
 					field: fmt.Sprintf(
-						"cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-							".variables[.name=workerConfig].value.nutanix.machineDetails",
+						"$.spec.topology.workers.machineDeployments[?@.name==%q]"+
+							".variables[?@.name=workerConfig].value.nutanix.machineDetails",
 						mdName,
 					),
 					csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,

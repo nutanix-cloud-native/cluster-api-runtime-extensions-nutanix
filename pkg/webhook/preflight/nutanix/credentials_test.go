@@ -70,7 +70,7 @@ func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.False(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central endpoint URL")
+	assert.Contains(t, result.Causes[0].Message, "Failed to parse Prism Central endpoint URL")
 }
 
 func TestNewCredentialsCheck_SecretNotFound(t *testing.T) {
@@ -145,7 +145,7 @@ func TestNewCredentialsCheck_SecretEmpty(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.False(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "credentials Secret \"ntnx-creds\" is empty")
+	assert.Contains(t, result.Causes[0].Message, "Credentials Secret \"ntnx-creds\" is empty")
 }
 
 func TestNewCredentialsCheck_SecretMissingKey(t *testing.T) {
@@ -186,7 +186,7 @@ func TestNewCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.False(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "failed to parse Prism Central credentials")
+	assert.Contains(t, result.Causes[0].Message, "Failed to parse Prism Central credentials")
 }
 
 func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
@@ -212,7 +212,21 @@ func TestNewCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client.")
+	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client: "+
+		assert.AnError.Error())
+}
+
+func TestNewCredentialsCheck_GetCurrentLoggedInUserInvalidCredentials(t *testing.T) {
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &mocknclient{err: fmt.Errorf("invalid Nutanix credentials")}, nil
+	}
+	cd := validCheckDependencies()
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
+	result := check.Run(context.Background())
+	assert.False(t, result.Allowed)
+	assert.False(t, result.InternalError)
+	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client: "+
+		"invalid Nutanix credentials")
 }
 
 func validCheckDependencies() *checkDependencies {

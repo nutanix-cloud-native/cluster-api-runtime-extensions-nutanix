@@ -265,20 +265,6 @@ func TestStorageContainerCheck(t *testing.T) {
 		expectedCauseMessage string
 	}{
 		{
-			name: "nil CSI spec",
-			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
-					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
-				},
-			},
-			csiSpec:              nil,
-			nclient:              nil,
-			expectedAllowed:      false,
-			expectedError:        true,
-			expectedCauseMessage: "Nutanix CSI Provider configuration is missing",
-		},
-		{
 			name: "nil storage class configs",
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: capxv1.NutanixResourceIdentifier{
@@ -398,7 +384,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   false,
-			expectedCauseMessage: "expected to find 1 storage container named \"missing-container\" " +
+			expectedCauseMessage: "Expected to find 1 storage container named \"missing-container\" " +
 				"on cluster \"test-cluster\", found 0",
 		},
 		{
@@ -474,7 +460,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   false,
-			expectedCauseMessage: "expected to find 1 storage container named \"duplicate-container\" " +
+			expectedCauseMessage: "Expected to find 1 storage container named \"duplicate-container\" " +
 				"on cluster \"test-cluster\", found 2",
 		},
 		{
@@ -597,7 +583,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed:      false,
 			expectedError:        false,
-			expectedCauseMessage: "expected to find 1 cluster matching the reference, found 2",
+			expectedCauseMessage: "Expected to find 1 cluster matching the reference, found 2",
 		},
 		{
 			name: "error getting cluster",
@@ -637,7 +623,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container \"valid-container\" exists: " +
+			expectedCauseMessage: "Failed to check if storage container \"valid-container\" exists: " +
 				"failed to get cluster \"test-cluster\": API error",
 		},
 		{
@@ -701,7 +687,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container \"valid-container\" exists in cluster " +
+			expectedCauseMessage: "Failed to check if storage container \"valid-container\" exists in cluster " +
 				"\"test-cluster\": API error listing containers",
 		},
 		{
@@ -768,7 +754,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   true,
-			expectedCauseMessage: "failed to check if storage container \"valid-container\" exists in cluster " +
+			expectedCauseMessage: "Failed to check if storage container \"valid-container\" exists in cluster " +
 				"\"test-cluster\": failed to get data returned by ListStorageContainers" +
 				"(filter=\"name eq 'valid-container' and clusterExtId eq 'cluster-uuid-123'\")",
 		},
@@ -833,7 +819,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed: false,
 			expectedError:   false,
-			expectedCauseMessage: "expected to find 1 storage container named \"valid-container\" " +
+			expectedCauseMessage: "Expected to find 1 storage container named \"valid-container\" " +
 				"on cluster \"test-cluster\", found 0",
 		},
 		{

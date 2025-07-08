@@ -79,8 +79,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "cluster kubernetes version '1.32.3' is not part of image name 'kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644'", //nolint:lll // cause message is long
-						Field:   "test-field",
+						Message: "Kubernetes version check failed: kubernetes version \"1.32.3\" is not part " +
+							"of image name \"kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644\"",
+						Field: "machineDetails.image",
 					},
 				},
 			},
@@ -136,8 +137,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "cluster kubernetes version '1.32.3' is not part of image name 'my-custom-image-name'",
-						Field:   "test-field",
+						Message: "Kubernetes version check failed: kubernetes version \"1.32.3\" is not part of " +
+							"image name \"my-custom-image-name\"",
+						Field: "machineDetails.image",
 					},
 				},
 			},
@@ -168,8 +170,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "failed to parse kubernetes version 'invalid.version': No Major.Minor.Patch elements found",
-						Field:   "test-field",
+						Message: "Kubernetes version check failed: failed to parse kubernetes version " +
+							"\"invalid.version\": No Major.Minor.Patch elements found",
+						Field: "machineDetails.image",
 					},
 				},
 			},
@@ -200,8 +203,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "VM image name is empty",
-						Field:   "test-field",
+						Message: "Kubernetes version check failed: VM image name is empty",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -218,7 +221,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			want: preflight.CheckResult{
 				Allowed: true,
 				Warnings: []string{
-					"test-field uses imageLookup, which is not yet supported by checks",
+					"Field test-field uses imageLookup, which is not yet supported by checks",
 				},
 			},
 		},
@@ -257,8 +260,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: "failed to get VM Image: some error",
-						Field:   "test-field",
+						Message: "Failed to get VM Image: some error",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -269,7 +272,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			check := &imageKubernetesVersionCheck{
 				machineDetails:    tc.machineDetails,
-				field:             "test-field",
+				field:             "machineDetails",
 				nclient:           tc.nclient,
 				clusterK8sVersion: tc.clusterK8sVersion,
 			}

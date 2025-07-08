@@ -33,7 +33,7 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 		result.Allowed = true
 		result.Warnings = append(
 			result.Warnings,
-			fmt.Sprintf("%s uses imageLookup, which is not yet supported by checks", c.field),
+			fmt.Sprintf("Field %s uses imageLookup, which is not yet supported by checks", c.field),
 		)
 		return result
 	}
@@ -44,8 +44,8 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
-				Message: fmt.Sprintf("failed to get VM Image: %s", err),
-				Field:   c.field,
+				Message: fmt.Sprintf("Failed to get VM Image: %s", err),
+				Field:   c.field + ".image",
 			})
 			return result
 		}
@@ -53,8 +53,8 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 		if len(images) != 1 {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
-				Message: fmt.Sprintf("expected to find 1 VM Image, found %d", len(images)),
-				Field:   c.field,
+				Message: fmt.Sprintf("Expected to find 1 VM Image, found %d", len(images)),
+				Field:   c.field + ".image",
 			})
 			return result
 		}
@@ -82,7 +82,7 @@ func newVMImageChecks(
 		checks = append(checks,
 			&imageCheck{
 				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				field: "cluster.spec.topology.variables[.name=clusterConfig]" +
+				field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]." +
 					".value.nutanix.controlPlane.machineDetails",
 				nclient: cd.nclient,
 			},
@@ -94,8 +94,8 @@ func newVMImageChecks(
 			checks = append(checks,
 				&imageCheck{
 					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
-					field: fmt.Sprintf("cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-						".variables[.name=workerConfig].value.nutanix.machineDetails", mdName),
+					field: fmt.Sprintf("$.spec.topology.workers.machineDeployments[?@.name==%q]"+
+						".variables[?@.name=workerConfig].value.nutanix.machineDetails", mdName),
 					nclient: cd.nclient,
 				},
 			)

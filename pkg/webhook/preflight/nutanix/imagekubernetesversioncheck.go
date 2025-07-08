@@ -42,8 +42,8 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: fmt.Sprintf("failed to get VM Image: %s", err),
-						Field:   c.field,
+						Message: fmt.Sprintf("Failed to get VM Image: %s", err),
+						Field:   c.field + ".image",
 					},
 				},
 			}
@@ -61,8 +61,8 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: err.Error(),
-						Field:   c.field,
+						Message: "Kubernetes version check failed: " + err.Error(),
+						Field:   c.field + ".image",
 					},
 				},
 			}
@@ -84,7 +84,7 @@ func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image)
 
 	parsedVersion, err := semver.Parse(c.clusterK8sVersion)
 	if err != nil {
-		return fmt.Errorf("failed to parse kubernetes version '%s': %v", c.clusterK8sVersion, err)
+		return fmt.Errorf("failed to parse kubernetes version %q: %v", c.clusterK8sVersion, err)
 	}
 
 	// For example, "1.33.1+fips.0" becomes "1.33.1".
@@ -92,7 +92,7 @@ func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image)
 
 	if !strings.Contains(imageName, k8sVersion) {
 		return fmt.Errorf(
-			"cluster kubernetes version '%s' is not part of image name '%s'",
+			"kubernetes version %q is not part of image name %q",
 			c.clusterK8sVersion,
 			imageName,
 		)
@@ -126,8 +126,8 @@ func newVMImageKubernetesVersionChecks(
 		checks = append(checks,
 			&imageKubernetesVersionCheck{
 				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				field: "cluster.spec.topology.variables[.name=clusterConfig]" +
-					".value.nutanix.controlPlane.machineDetails.image",
+				field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]." +
+					".value.nutanix.controlPlane.machineDetails",
 				nclient:           cd.nclient,
 				clusterK8sVersion: clusterK8sVersion,
 			},
@@ -139,8 +139,8 @@ func newVMImageKubernetesVersionChecks(
 			checks = append(checks,
 				&imageKubernetesVersionCheck{
 					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
-					field: fmt.Sprintf("cluster.spec.topology.workers.machineDeployments[.name=%s]"+
-						".variables[.name=workerConfig].value.nutanix.machineDetails.image", mdName),
+					field: fmt.Sprintf("$.spec.topology.workers.machineDeployments[?@.name==%q]"+
+						".variables[?@.name=workerConfig].value.nutanix.machineDetails", mdName),
 					nclient:           cd.nclient,
 					clusterK8sVersion: clusterK8sVersion,
 				},
