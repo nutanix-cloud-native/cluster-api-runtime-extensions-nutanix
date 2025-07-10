@@ -86,9 +86,9 @@ func newConfigurationCheck(
 							carenv1.WorkerConfigVariableName,
 							err,
 						),
+						//nolint:lll // The field is long.
 						Field: fmt.Sprintf(
-							"$.spec.topology.workers.machineDeployments[?@.name==%q]"+
-								".variables[?@.name=workerConfig].value.nutanix.machineDetails",
+							"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
 							md.Name,
 						),
 					},
