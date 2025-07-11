@@ -19,6 +19,7 @@ import (
 	"k8s.io/klog/v2"
 	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -32,6 +33,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/enforceclusterautoscalerlimits"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/failuredomainrollout"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/namespacesync"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/feature"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
@@ -55,6 +57,7 @@ func main() {
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
 	utilruntime.Must(crsv1.AddToScheme(clientScheme))
 	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(controlplanev1.AddToScheme(clientScheme))
 	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
 
 	webhookOptions := webhook.Options{
@@ -121,6 +124,7 @@ func main() {
 
 	namespacesyncOptions := namespacesync.Options{}
 	enforceClusterAutoscalerLimitsOptions := enforceclusterautoscalerlimits.Options{}
+	failureDomainRolloutOptions := failuredomainrollout.Options{}
 
 	// Initialize and parse command line flags.
 	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())
@@ -133,6 +137,7 @@ func main() {
 	nutanixMetaHandlers.AddFlags(pflag.CommandLine)
 	namespacesyncOptions.AddFlags(pflag.CommandLine)
 	enforceClusterAutoscalerLimitsOptions.AddFlags(pflag.CommandLine)
+	failureDomainRolloutOptions.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 
@@ -227,6 +232,23 @@ func main() {
 				"unable to create controller",
 				"controller",
 				"enforceclusterautoscalerlimits.Reconciler",
+			)
+			os.Exit(1)
+		}
+	}
+
+	if failureDomainRolloutOptions.Enabled {
+		if err := (&failuredomainrollout.Reconciler{
+			Client: mgr.GetClient(),
+		}).SetupWithManager(
+			mgr,
+			&controller.Options{MaxConcurrentReconciles: failureDomainRolloutOptions.Concurrency},
+		); err != nil {
+			setupLog.Error(
+				err,
+				"unable to create controller",
+				"controller",
+				"failuredomainrollout.Reconciler",
 			)
 			os.Exit(1)
 		}
