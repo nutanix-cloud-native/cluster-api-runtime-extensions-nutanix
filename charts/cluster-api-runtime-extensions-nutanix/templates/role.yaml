@@ -75,6 +75,7 @@ rules:
       - cluster.x-k8s.io
     resources:
       - clusters
+      - machines
     verbs:
       - get
       - list
@@ -82,6 +83,13 @@ rules:
   - apiGroups:
       - cluster.x-k8s.io
     resources:
+      - clusters/status
+    verbs:
+      - get
+  - apiGroups:
+      - cluster.x-k8s.io
+    resources:
+      - kubeadmcontrolplanes
       - machinedeployments
     verbs:
       - get
