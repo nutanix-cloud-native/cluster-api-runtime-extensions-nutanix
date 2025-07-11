@@ -20,6 +20,7 @@ import (
 var Checker = &nutanixChecker{
 	configurationCheckFactory:             newConfigurationCheck,
 	credentialsCheckFactory:               newCredentialsCheck,
+	failureDomainCheckFactory:             newFailureDomainChecks,
 	vmImageChecksFactory:                  newVMImageChecks,
 	vmImageKubernetesVersionChecksFactory: newVMImageKubernetesVersionChecks,
 	storageContainerChecksFactory:         newStorageContainerChecks,
@@ -35,6 +36,10 @@ type nutanixChecker struct {
 		nclientFactory func(prismgoclient.Credentials) (client, error),
 		cd *checkDependencies,
 	) preflight.Check
+
+	failureDomainCheckFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
 
 	vmImageChecksFactory func(
 		cd *checkDependencies,
@@ -77,6 +82,10 @@ func (n *nutanixChecker) Init(
 		n.configurationCheckFactory(cd),
 		n.credentialsCheckFactory(ctx, newClient, cd),
 	}
+
+	// The failure domains check need to run before the image, storage container checks that depends on whether
+	// failure domains are configured correctly.
+	checks = append(checks, n.failureDomainCheckFactory(cd)...)
 
 	checks = append(checks, n.vmImageChecksFactory(cd)...)
 	checks = append(checks, n.vmImageKubernetesVersionChecksFactory(cd)...)
