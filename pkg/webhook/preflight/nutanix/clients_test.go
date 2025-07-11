@@ -7,6 +7,7 @@ import (
 	"context"
 
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
+	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 
 	prismv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
@@ -57,6 +58,18 @@ type mocknclient struct {
 		select_ *string,
 		args ...map[string]interface{},
 	) (*clustermgmtv4.ListStorageContainersApiResponse, error)
+
+	GetSubnetByIdFunc func(id *string) (*netv4.GetSubnetApiResponse, error)
+
+	ListSubnetsFunc func(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		expand_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (*netv4.ListSubnetsApiResponse, error)
 }
 
 func (m *mocknclient) GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error) {
@@ -93,4 +106,20 @@ func (m *mocknclient) ListStorageContainers(
 	args ...map[string]interface{},
 ) (*clustermgmtv4.ListStorageContainersApiResponse, error) {
 	return m.listStorageContainersFunc(page, limit, filter, orderby, select_, args...)
+}
+
+func (m *mocknclient) GetSubnetById(id *string) (*netv4.GetSubnetApiResponse, error) {
+	return m.GetSubnetByIdFunc(id)
+}
+
+func (m *mocknclient) ListSubnets(
+	page_ *int,
+	limit_ *int,
+	filter_ *string,
+	orderby_ *string,
+	expand_ *string,
+	select_ *string,
+	args ...map[string]interface{},
+) (*netv4.ListSubnetsApiResponse, error) {
+	return m.ListSubnetsFunc(page_, limit_, filter_, orderby_, expand_, select_, args...)
 }
