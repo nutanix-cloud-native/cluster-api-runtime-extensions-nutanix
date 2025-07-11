@@ -82,9 +82,8 @@ func newVMImageChecks(
 		checks = append(checks,
 			&imageCheck{
 				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]." +
-					".value.nutanix.controlPlane.machineDetails",
-				nclient: cd.nclient,
+				field:          "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.controlPlane.machineDetails", ///nolint:lll // Field is long.
+				nclient:        cd.nclient,
 			},
 		)
 	}
@@ -94,8 +93,11 @@ func newVMImageChecks(
 			checks = append(checks,
 				&imageCheck{
 					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
-					field: fmt.Sprintf("$.spec.topology.workers.machineDeployments[?@.name==%q]"+
-						".variables[?@.name=workerConfig].value.nutanix.machineDetails", mdName),
+					///nolint:lll // The field is long.
+					field: fmt.Sprintf(
+						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
+						mdName,
+					),
 					nclient: cd.nclient,
 				},
 			)

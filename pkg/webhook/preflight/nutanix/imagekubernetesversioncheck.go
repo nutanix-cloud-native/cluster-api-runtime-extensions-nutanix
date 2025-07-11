@@ -125,9 +125,8 @@ func newVMImageKubernetesVersionChecks(
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		checks = append(checks,
 			&imageKubernetesVersionCheck{
-				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]." +
-					".value.nutanix.controlPlane.machineDetails",
+				machineDetails:    &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
+				field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.controlPlane.machineDetails", ///nolint:lll // Field is long.
 				nclient:           cd.nclient,
 				clusterK8sVersion: clusterK8sVersion,
 			},
@@ -139,8 +138,11 @@ func newVMImageKubernetesVersionChecks(
 			checks = append(checks,
 				&imageKubernetesVersionCheck{
 					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
-					field: fmt.Sprintf("$.spec.topology.workers.machineDeployments[?@.name==%q]"+
-						".variables[?@.name=workerConfig].value.nutanix.machineDetails", mdName),
+					//nolint:lll // The field is long.
+					field: fmt.Sprintf(
+						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
+						mdName,
+					),
 					nclient:           cd.nclient,
 					clusterK8sVersion: clusterK8sVersion,
 				},

@@ -79,9 +79,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Kubernetes version check failed: kubernetes version \"1.32.3\" is not part " +
-							"of image name \"kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644\"",
-						Field: "machineDetails.image",
+						///nolint:lll // The message is long.
+						Message: "Kubernetes version check failed: kubernetes version \"1.32.3\" is not part of image name \"kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644\"",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -137,9 +137,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Kubernetes version check failed: kubernetes version \"1.32.3\" is not part of " +
-							"image name \"my-custom-image-name\"",
-						Field: "machineDetails.image",
+						///nolint:lll // The message is long.
+						Message: "Kubernetes version check failed: kubernetes version \"1.32.3\" is not part of image name \"my-custom-image-name\"",
+						Field:   "machineDetails.image",
 					},
 				},
 			},
@@ -170,9 +170,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Kubernetes version check failed: failed to parse kubernetes version " +
-							"\"invalid.version\": No Major.Minor.Patch elements found",
-						Field: "machineDetails.image",
+						//nolint:lll // The message is long.
+						Message: "Kubernetes version check failed: failed to parse kubernetes version \"invalid.version\": No Major.Minor.Patch elements found",
+						Field:   "machineDetails.image",
 					},
 				},
 			},

@@ -162,9 +162,9 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 			checks = append(checks,
 				&storageContainerCheck{
 					machineSpec: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
+					//nolint:lll // The field is long.
 					field: fmt.Sprintf(
-						"$.spec.topology.workers.machineDeployments[?@.name==%q]"+
-							".variables[?@.name=workerConfig].value.nutanix.machineDetails",
+						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
 						mdName,
 					),
 					csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
@@ -193,7 +193,7 @@ func getStorageContainers(
 	}
 	containers, ok := resp.GetData().([]clustermgmtv4.StorageContainer)
 	if !ok {
-		return nil, fmt.Errorf("failed to get data returned by ListStorageContainers(filter=%q)", fltr)
+		return nil, fmt.Errorf("failed to get data returned by ListStorageContainers (filter=%q)", fltr)
 	}
 	return containers, nil
 }
