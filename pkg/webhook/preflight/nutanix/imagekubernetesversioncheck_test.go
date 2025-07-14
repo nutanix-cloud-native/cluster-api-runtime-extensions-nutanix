@@ -79,8 +79,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						///nolint:lll // The message is long.
-						Message: "Kubernetes version check failed: kubernetes version \"1.32.3\" is not part of image name \"kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644\"",
+						Message: "The VM Image identified by \"test-uuid\" has the name \"kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644\". The name does not have the cluster Kubernetes version \"1.32.3\". Change the VM Image name, or use a different VM Image.", ///nolint:lll // The message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -112,7 +111,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			},
 		},
 		{
-			name: "custom image name - extraction fails",
+			name: "custom image name has no Kubernetes version",
 			nclient: &mocknclient{
 				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
@@ -137,8 +136,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						///nolint:lll // The message is long.
-						Message: "Kubernetes version check failed: kubernetes version \"1.32.3\" is not part of image name \"my-custom-image-name\"",
+						Message: "The VM Image identified by \"test-uuid\" has the name \"my-custom-image-name\". The name does not have the cluster Kubernetes version \"1.32.3\". Change the VM Image name, or use a different VM Image.", ///nolint:lll // The message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -167,11 +165,10 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			clusterK8sVersion: "invalid.version",
 			want: preflight.CheckResult{
 				Allowed:       false,
-				InternalError: false,
+				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						//nolint:lll // The message is long.
-						Message: "Kubernetes version check failed: failed to parse kubernetes version \"invalid.version\": No Major.Minor.Patch elements found",
+						Message: "The Cluster Kubernetes version \"invalid.version\" is not a valid semantic version. This error should not happen under normal circumstances. Please report.", //nolint:lll // The message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -203,7 +200,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Kubernetes version check failed: VM image name is empty",
+						Message: "The VM Image identified by \"test-uuid\" has no name. Give the VM Image a name, or use a different VM Image, then retry.", //nolint:lll // The message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -260,7 +257,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: "Failed to get VM Image: some error",
+						Message: "Failed to get VM Image \"test-uuid\": some error. This is usually a temporary error. Please retry.", //nolint:lll // The message is long.
 						Field:   "machineDetails.image",
 					},
 				},
