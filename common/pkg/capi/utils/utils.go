@@ -64,9 +64,11 @@ func ManagementOrFutureManagementCluster(ctx context.Context, c client.Reader) (
 	return cluster, nil
 }
 
-func clusterAnnotationsFromNodes(ctx context.Context, c client.Reader) (string, string, error) {
+func clusterAnnotationsFromNodes(
+	ctx context.Context, c client.Reader,
+) (clusterName, clusterNamespace string, err error) {
 	allNodes := &corev1.NodeList{}
-	err := c.List(ctx, allNodes)
+	err = c.List(ctx, allNodes)
 	if err != nil {
 		return "", "", fmt.Errorf("error listing Nodes: %w", err)
 	}
