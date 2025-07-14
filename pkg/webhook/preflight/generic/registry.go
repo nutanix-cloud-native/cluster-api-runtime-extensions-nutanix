@@ -57,8 +57,12 @@ func defaultRegClientGetter(opts ...regclient.Opt) regClientPinger {
 	return regclient.New(opts...)
 }
 
-func pingFailedReasonString(registryURL string, err error) string {
-	return fmt.Sprintf("Failed to ping registry %s with err: %s", registryURL, err.Error())
+func pingFailedMessage(registryURL string, err error) string {
+	return fmt.Sprintf(
+		"Failed to ping registry %q: %s. First verify that the management cluster can reach the registry, then retry.", ///nolint:lll // Message is long.
+		registryURL,
+		err.Error(),
+	)
 }
 
 func (r *registryCheck) checkRegistry(
@@ -80,8 +84,12 @@ func (r *registryCheck) checkRegistry(
 		result.InternalError = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("Failed to parse registry URL %q with error: %s", registryURL, err),
-				Field:   r.field + ".url",
+				Message: fmt.Sprintf(
+					"Failed to parse registry URL %q with error: %s.  This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.",
+					registryURL,
+					err,
+				),
+				Field: r.field + ".url",
 			},
 		)
 		return result
@@ -94,7 +102,8 @@ func (r *registryCheck) checkRegistry(
 		result.Causes = append(result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"Registry URL scheme %q is not supported. Use http or https.",
+					"The registry URL %q uses the scheme %q. This scheme is not supported. Use either the \"http\" or \"https\" scheme.", ///nolint:lll // Message is long.
+					registryURL,
 					registryURLParsed.Scheme,
 				),
 				Field: r.field + ".url",
@@ -121,8 +130,11 @@ func (r *registryCheck) checkRegistry(
 			result.InternalError = false
 			result.Causes = append(result.Causes,
 				preflight.Cause{
-					Message: fmt.Sprintf("Registry credentials Secret %q not found", credentials.SecretRef.Name),
-					Field:   r.field + ".credentials.secretRef",
+					Message: fmt.Sprintf(
+						"Registry credentials Secret %q not found. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+						credentials.SecretRef.Name,
+					),
+					Field: r.field + ".credentials.secretRef",
 				},
 			)
 			return result
@@ -132,7 +144,8 @@ func (r *registryCheck) checkRegistry(
 			result.InternalError = true
 			result.Causes = append(result.Causes,
 				preflight.Cause{
-					Message: fmt.Sprintf("Failed to get Registry credentials Secret %q: %s",
+					Message: fmt.Sprintf(
+						"Failed to get Registry credentials Secret %q: %s. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
 						credentials.SecretRef.Name,
 						err,
 					),
@@ -170,7 +183,7 @@ func (r *registryCheck) checkRegistry(
 		result.Allowed = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{
-				Message: pingFailedReasonString(registryURL, err),
+				Message: pingFailedMessage(registryURL, err),
 				Field:   r.field,
 			},
 		)

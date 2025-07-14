@@ -135,9 +135,8 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: "Failed to get Registry credentials Secret \"test-secret\": fake error",
-						//nolint:lll // this is a test for a field.
-						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",
+						Message: "Failed to get Registry credentials Secret \"test-secret\": fake error. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
+						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",              //nolint:lll // Field is long.
 					},
 				},
 			},
@@ -167,9 +166,8 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Registry credentials Secret \"test-secret\" not found",
-						//nolint:lll // this is a test for a field.
-						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",
+						Message: "Registry credentials Secret \"test-secret\" not found. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",                        //nolint:lll // Field is long.
 					},
 				},
 			},
@@ -189,7 +187,7 @@ func TestRegistryCheck(t *testing.T) {
 				Allowed: false,
 				Causes: []preflight.Cause{
 					{
-						Message: pingFailedReasonString(
+						Message: pingFailedMessage(
 							testRegistryURL,
 							testPingFailedError,
 						),
@@ -300,11 +298,8 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: fmt.Sprintf(
-							"Failed to parse registry URL %q with error: parse \"invalid-url\": invalid URI for request",
-							"invalid-url",
-						),
-						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
+						Message: "Failed to parse registry URL \"invalid-url\" with error: parse \"invalid-url\": invalid URI for request.  This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
 					},
 				},
 			},
@@ -345,7 +340,7 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Registry URL scheme \"tcp\" is not supported. Use http or https.",
+						Message: "The registry URL \"tcp://some-registry.lol\" uses the scheme \"tcp\". This scheme is not supported. Use either the \"http\" or \"https\" scheme.", ///nolint:lll // Message is long.
 						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
 					},
 				},

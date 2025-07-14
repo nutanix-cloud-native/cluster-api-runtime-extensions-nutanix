@@ -57,7 +57,11 @@ func TestNewCredentialsCheck_MissingNutanixField(t *testing.T) {
 	assert.False(t, result.Allowed)
 	assert.False(t, result.InternalError)
 	assert.NotEmpty(t, result.Causes)
-	assert.Contains(t, result.Causes[0].Message, "Nutanix cluster configuration is not defined")
+	assert.Contains(
+		t,
+		result.Causes[0].Message,
+		"The Nutanix configuration is missing from the Cluster resource. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+	)
 }
 
 func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
@@ -70,7 +74,11 @@ func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.False(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "Failed to parse Prism Central endpoint URL")
+	assert.Contains(
+		t,
+		result.Causes[0].Message,
+		"Failed to parse the Prism Central endpoint URL \"not-a-url\": error parsing Prism Central URL: parse \"not-a-url\": invalid URI for request. Check the URL format and retry.", ///nolint:lll // Message is long.
+	)
 }
 
 func TestNewCredentialsCheck_SecretNotFound(t *testing.T) {
@@ -199,7 +207,11 @@ func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "Failed to initialize Nutanix client")
+	assert.Contains(
+		t,
+		result.Causes[0].Message,
+		"Failed to initialize the Nutanix Prism Central API client: assert.AnError general error for testing. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+	)
 }
 
 func TestNewCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {

@@ -136,8 +136,7 @@ func TestNewConfigurationCheck(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						//nolint:lll // The message is long.
-						Message: "Failed to unmarshal cluster variable clusterConfig: failed to unmarshal json: invalid character 'i' looking for beginning of object key string",
+						Message: "Failed to unmarshal cluster variable \"clusterConfig\": failed to unmarshal json: invalid character 'i' looking for beginning of object key string. This should not happen under normal circumstances. Please report it.", ///nolint:lll // The message is long.
 						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix",
 					},
 				},
@@ -184,10 +183,8 @@ func TestNewConfigurationCheck(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						//nolint:lll // The message is long.
-						Message: "Failed to unmarshal topology machineDeployment variable workerConfig: failed to unmarshal json: invalid character 'i' looking for beginning of object key string",
-						//nolint:lll // The field is long.
-						Field: "$.spec.topology.workers.machineDeployments[?@.name==\"md-0\"].variables[?@.name=workerConfig].value.nutanix.machineDetails",
+						Message: "Failed to unmarshal topology machineDeployment variable \"workerConfig\": failed to unmarshal json: invalid character 'i' looking for beginning of object key string. This should not happen under normal circumstances. Please report it.", ///nolint:lll // The message is long.
+						Field:   "$.spec.topology.workers.machineDeployments[?@.name==\"md-0\"].variables[?@.name=workerConfig].value.nutanix.machineDetails",                                                                                                                 ///nolint:lll // The field is long.
 					},
 				},
 			},

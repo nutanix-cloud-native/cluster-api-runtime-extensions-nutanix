@@ -382,10 +382,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   false,
-			//nolint:lll // The message is long.
-			expectedCauseMessage: "Expected to find 1 storage container named \"missing-container\" on cluster \"test-cluster\", found 0",
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "Found 0 Storage Containers that match identifier \"missing-container\" on Cluster \"test-cluster\". There must be exactly 1 Storage Container that matches this identifier. Make the Storage Container identifiers unique, or use a different Storage Container, and then retry.", //nolint:lll // Message is long.
 		},
 		{
 			name: "multiple storage containers found",
@@ -458,10 +457,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   false,
-			//nolint:lll // The message is long.
-			expectedCauseMessage: "Expected to find 1 storage container named \"duplicate-container\" on cluster \"test-cluster\", found 2",
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "Found 2 Storage Containers that match identifier \"duplicate-container\" on Cluster \"test-cluster\". There must be exactly 1 Storage Container that matches this identifier. Make the Storage Container identifiers unique, or use a different Storage Container, and then retry.", //nolint:lll // The message is long.
 		},
 		{
 			name: "successful storage container check",
@@ -583,7 +581,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed:      false,
 			expectedError:        false,
-			expectedCauseMessage: "Expected to find 1 cluster matching the reference, found 2",
+			expectedCauseMessage: "Found 2 Clusters (Prism Elements) in Prism Central that match identifier \"test-cluster\". There must be exactly 1 Cluster that matches this identifier. Make the Cluster identifiers unique, and then retry.", //nolint:lll // The message is long.
 		},
 		{
 			name: "error getting cluster",
@@ -621,10 +619,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return nil, fmt.Errorf("API error")
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   true,
-			//nolint:lll // The message is long.
-			expectedCauseMessage: "Failed to check if storage container \"valid-container\" exists: failed to get cluster \"test-cluster\": API error",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedCauseMessage: "Failed to check if storage container \"valid-container\" exists: failed to get cluster \"test-cluster\": API error. This is usually a temporary error. Please retry.", //nolint:lll // The message is long.
 		},
 		{
 			name: "error listing storage containers",
@@ -685,10 +682,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return nil, fmt.Errorf("API error listing containers")
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   true,
-			//nolint:lll // The message is long.
-			expectedCauseMessage: "Failed to check if storage container \"valid-container\" exists in cluster \"test-cluster\": API error listing containers",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedCauseMessage: "Failed to check if Storage Container \"valid-container\" exists in cluster \"test-cluster\": API error listing containers. This is usually a temporary error. Please retry.", //nolint:lll // The message is long.
 		},
 		{
 			name: "error response from ListStorageContainers",
@@ -752,10 +748,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   true,
-			//nolint:lll // The message is long.
-			expectedCauseMessage: "Failed to check if storage container \"valid-container\" exists in cluster \"test-cluster\": failed to get data returned by ListStorageContainers (filter=\"name eq 'valid-container' and clusterExtId eq 'cluster-uuid-123'\")",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedCauseMessage: "Failed to check if Storage Container \"valid-container\" exists in cluster \"test-cluster\": failed to get data returned by ListStorageContainers (filter=\"name eq 'valid-container' and clusterExtId eq 'cluster-uuid-123'\"). This is usually a temporary error. Please retry.", //nolint:lll // The message is long.
 		},
 		{
 			name: "nil data from ListStorageContainers",
@@ -816,10 +811,9 @@ func TestStorageContainerCheck(t *testing.T) {
 					return &clustermgmtv4.ListStorageContainersApiResponse{}, nil
 				},
 			},
-			expectedAllowed: false,
-			expectedError:   false,
-			//nolint:lll // The message is long.
-			expectedCauseMessage: "Expected to find 1 storage container named \"valid-container\" on cluster \"test-cluster\", found 0",
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "Found 0 Storage Containers that match identifier \"valid-container\" on Cluster \"test-cluster\". There must be exactly 1 Storage Container that matches this identifier. Make the Storage Container identifiers unique, or use a different Storage Container, and then retry.", //nolint:lll // The message is long.
 		},
 		{
 			name: "multiple storage class configs with success",

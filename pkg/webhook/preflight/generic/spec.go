@@ -45,7 +45,8 @@ func newConfigurationCheck(
 		configurationCheck.result.InternalError = true
 		configurationCheck.result.Causes = append(configurationCheck.result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("Failed to unmarshal cluster variable %s: %s",
+				Message: fmt.Sprintf(
+					"Failed to unmarshal cluster variable %q: %s. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
 					carenv1.ClusterConfigVariableName,
 					err,
 				),

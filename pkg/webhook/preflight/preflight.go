@@ -250,8 +250,11 @@ func run(ctx context.Context,
 									InternalError: true,
 									Causes: []Cause{
 										{
-											Message: fmt.Sprintf("internal error (panic): %s", r),
-											Field:   "",
+											Message: fmt.Sprintf(
+												"The preflight check code had a specific internal error called a \"panic\". This error should not happen under normal circumstances. Please report it, and include the following information: %s", ///nolint:lll // Message is long.
+												r,
+											),
+											Field: "",
 										},
 									},
 								},

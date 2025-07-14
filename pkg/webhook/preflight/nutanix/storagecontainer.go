@@ -38,7 +38,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 	if c.csiSpec.StorageClassConfigs == nil {
 		result.Allowed = false
 		result.Causes = append(result.Causes, preflight.Cause{
-			Message: "Nutanix CSI Provider configuration is missing storage class configurations",
+			Message: "Nutanix CSI Provider configuration is missing storage class configurations. This should not happen under normal circumstances. Please report it.", //nolint:lll // Message is long.
 			Field:   c.field,
 		})
 
@@ -72,7 +72,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Failed to check if storage container %q exists: failed to get cluster %q: %s",
+					"Failed to check if storage container %q exists: failed to get cluster %q: %s. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
 					storageContainer,
 					clusterIdentifier,
 					err,
@@ -86,8 +86,9 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Expected to find 1 cluster matching the reference, found %d",
+					"Found %d Clusters (Prism Elements) in Prism Central that match identifier %q. There must be exactly 1 Cluster that matches this identifier. Make the Cluster identifiers unique, and then retry.", ///nolint:lll // Message is long.
 					len(clusters),
+					clusterIdentifier,
 				),
 				Field: c.field,
 			})
@@ -103,7 +104,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Failed to check if storage container %q exists in cluster %q: %s",
+					"Failed to check if Storage Container %q exists in cluster %q: %s. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
 					storageContainer,
 					clusterIdentifier,
 					err,
@@ -117,10 +118,10 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Expected to find 1 storage container named %q on cluster %q, found %d",
+					"Found %d Storage Containers that match identifier %q on Cluster %q. There must be exactly 1 Storage Container that matches this identifier. Make the Storage Container identifiers unique, or use a different Storage Container, and then retry.", ///nolint:lll // Message is long.
+					len(containers),
 					storageContainer,
 					clusterIdentifier,
-					len(containers),
 				),
 				Field: c.field,
 			})

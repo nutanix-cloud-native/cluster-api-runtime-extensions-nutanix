@@ -950,7 +950,7 @@ func TestRun_PanicHandlingInChecks(t *testing.T) {
 			InternalError: true,
 			Causes: []Cause{
 				{
-					Message: "internal error (panic): simulated panic in check",
+					Message: "The preflight check code had a specific internal error called a \"panic\". This error should not happen under normal circumstances. Please report it, and include the following information: simulated panic in check", ///nolint:lll // Message is long.
 					Field:   "",
 				},
 			},
