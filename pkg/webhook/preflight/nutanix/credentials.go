@@ -205,7 +205,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"Failed to validate credentials using the v3 API client: %s. Please check the username and/or password.", ///nolint:lll // Message is long.
+					"Failed to validate credentials: %s. Please check the username and/or password.", ///nolint:lll // Message is long.
 					err,
 				),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
@@ -219,7 +219,7 @@ func newCredentialsCheck(
 	credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 		preflight.Cause{
 			Message: fmt.Sprintf(
-				"Failed to validate credentials using the v3 API client: %s. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+				"Failed to validate credentials: %s. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
 				err,
 			),
 			Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint",

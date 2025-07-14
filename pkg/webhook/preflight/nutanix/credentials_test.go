@@ -224,7 +224,7 @@ func TestNewCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client: "+
+	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials: "+
 		assert.AnError.Error())
 }
 
@@ -237,7 +237,7 @@ func TestNewCredentialsCheck_GetCurrentLoggedInUserInvalidCredentials(t *testing
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.False(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials using the v3 API client: "+
+	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials: "+
 		"invalid Nutanix credentials")
 }
 
