@@ -1577,6 +1577,54 @@
         }
       }
     },
+    "reviewdog@latest": {
+      "last_modified": "2025-06-20T02:24:11Z",
+      "resolved": "github:NixOS/nixpkgs/076e8c6678d8c54204abcb4b1b14c366835a58bb#reviewdog",
+      "source": "devbox-search",
+      "version": "0.20.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3yyxphpj15k63glrjhks2gkpj0ni9snf-reviewdog-0.20.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3yyxphpj15k63glrjhks2gkpj0ni9snf-reviewdog-0.20.3"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/drhvxi0lcpa5drqvh3asqll3kak7g2ja-reviewdog-0.20.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/drhvxi0lcpa5drqvh3asqll3kak7g2ja-reviewdog-0.20.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/i6cknyqzrvzzpzjh9n267y4b15zdxc6n-reviewdog-0.20.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/i6cknyqzrvzzpzjh9n267y4b15zdxc6n-reviewdog-0.20.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/15vfbrwqpi0z4d97790vs7cr5ysz6srd-reviewdog-0.20.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/15vfbrwqpi0z4d97790vs7cr5ysz6srd-reviewdog-0.20.3"
+        }
+      }
+    },
     "rsync@latest": {
       "last_modified": "2025-07-13T22:45:35Z",
       "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#rsync",

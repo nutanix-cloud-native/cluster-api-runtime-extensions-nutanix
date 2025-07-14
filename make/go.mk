@@ -125,6 +125,7 @@ endif
 endif
 
 GOLANGCI_CONFIG_FILE ?= $(wildcard $(REPO_ROOT)/.golangci.y*ml)
+GOLANGCI_KAL_CONFIG_FILE ?= $(wildcard $(REPO_ROOT)/.golangci-kal.y*ml)
 
 .PHONY:fmt
 fmt: ## Runs golangci-lint fmt for all modules in repository
@@ -154,6 +155,16 @@ endif
 lint.%: ## Runs golangci-lint run for a specific module
 lint.%: fmt.% ; $(info $(M) linting $* module)
 	$(if $(filter-out root,$*),cd $* && )golangci-lint run --fix --config=$(GOLANGCI_CONFIG_FILE)
+
+.PHONY: lint-kube-api
+lint-kube-api: ## Runs kube-api-linter via custom golangci-lint configuration
+lint-kube-api: go-generate hack/tools/golangci-lint-kube-api-linter
+lint-kube-api: ; $(info $(M) running kube-api-linter)
+	cd api && $(PWD)/hack/tools/golangci-lint-kube-api-linter run --fix --config=$(PWD)/.golangci-kal.yml
+
+hack/tools/golangci-lint-kube-api-linter: hack/tools/.custom-gcl.yml
+hack/tools/golangci-lint-kube-api-linter: ; $(info $(M) installing golangci-lint-kube-api-linter tool)
+	cd hack/tools && golangci-lint custom
 
 .PHONY: mod-tidy
 mod-tidy: ## Run go mod tidy for all modules
