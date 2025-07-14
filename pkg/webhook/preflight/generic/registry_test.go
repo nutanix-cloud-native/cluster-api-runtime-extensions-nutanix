@@ -300,8 +300,10 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: fmt.Sprintf("Failed to parse registry URL %q with error: "+
-							"parse \"invalid-url\": invalid URI for request", "invalid-url"),
+						Message: fmt.Sprintf(
+							"Failed to parse registry URL %q with error: parse \"invalid-url\": invalid URI for request",
+							"invalid-url",
+						),
 						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
 					},
 				},

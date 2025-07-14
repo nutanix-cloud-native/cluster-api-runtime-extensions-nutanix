@@ -73,8 +73,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to parse Prism Central endpoint URL: %s", err),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
-					".value.nutanix.prismCentralEndpoint.url",
+				Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.url", ///nolint:lll // Field is long.
 			},
 		)
 		return credentialsCheck
@@ -96,8 +95,7 @@ func newCredentialsCheck(
 			preflight.Cause{
 				Message: fmt.Sprintf("Prism Central credentials Secret %q not found",
 					prismCentralEndpointSpec.Credentials.SecretRef.Name),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
-					".value.nutanix.prismCentralEndpoint.credentials.secretRef",
+				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
 			},
 		)
 		return credentialsCheck
@@ -111,8 +109,7 @@ func newCredentialsCheck(
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 					err,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
-					".value.nutanix.prismCentralEndpoint.credentials.secretRef",
+				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
 			},
 		)
 		return credentialsCheck
@@ -126,8 +123,7 @@ func newCredentialsCheck(
 					"Credentials Secret %q is empty",
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
-					".value.nutanix.prismCentralEndpoint.credentials.secretRef",
+				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
 			},
 		)
 		return credentialsCheck
@@ -143,8 +139,7 @@ func newCredentialsCheck(
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 					credentialsSecretDataKey,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
-					".value.nutanix.prismCentralEndpoint.credentials.secretRef",
+				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
 			},
 		)
 		return credentialsCheck
@@ -156,8 +151,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to parse Prism Central credentials: %s", err),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
-					".value.nutanix.prismCentralEndpoint.credentials.secretRef",
+				Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
 			},
 		)
 		return credentialsCheck
@@ -180,8 +174,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to initialize Nutanix client: %s", err),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
-					".value.nutanix.prismCentralEndpoint.credentials.secretRef",
+				Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
 			},
 		)
 		return credentialsCheck
@@ -200,8 +193,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf("Failed to validate credentials using the v3 API client: %s", err),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]" +
-					".value.nutanix.prismCentralEndpoint.credentials.secretRef",
+				Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
 			},
 		)
 		return credentialsCheck
