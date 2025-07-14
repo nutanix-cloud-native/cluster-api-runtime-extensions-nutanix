@@ -26,6 +26,12 @@ repos:
     language: system
     files: "(.*\\.go|go.mod|go.sum|go.mk)$"
     pass_filenames: false
+  - id: kube-api-linter
+    name: kube-api-linter
+    entry: make lint-kube-api
+    language: system
+    files: "((^api/(.*\\.go|go.mod|go.sum))|go.mk)$"
+    pass_filenames: false
   - id: chart-docs
     name: chart-docs
     entry: make chart-docs
