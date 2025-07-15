@@ -12,7 +12,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 
@@ -36,7 +35,7 @@ func WaitForCOSIControllerToBeReadyInWorkloadCluster(
 		return
 	}
 
-	switch ptr.Deref(input.COSI.Strategy, "") {
+	switch input.COSI.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
@@ -53,7 +52,7 @@ func WaitForCOSIControllerToBeReadyInWorkloadCluster(
 		Fail(
 			fmt.Sprintf(
 				"Do not know how to wait for COSI using strategy %s to be ready",
-				*input.COSI.Strategy,
+				input.COSI.Strategy,
 			),
 		)
 	}

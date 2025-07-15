@@ -31,7 +31,7 @@ func TestVariableValidation(t *testing.T) {
 								Lookup: &v1alpha1.AMILookup{
 									Format: "capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*",
 									BaseOS: "rhel-8.4",
-									Org:    "12345678",
+									Org:    "o-0123456789",
 								},
 							},
 						},

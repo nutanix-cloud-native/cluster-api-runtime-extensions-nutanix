@@ -51,8 +51,11 @@ spec:
                       properties:
                         id:
                           description: ID is the id of the security group
+                          format: ^sg-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                          minLength: 1
                           type: string
                       type: object
+                    maxItems: 32
                     type: array
                   ami:
                     description: |-
@@ -62,32 +65,45 @@ spec:
                       id:
                         description: AMI ID is the reference to the AMI from which
                           to create the machine instance.
+                        format: ^ami-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                        minLength: 1
                         type: string
                       lookup:
                         description: Lookup is the lookup arguments for the AMI.
                         properties:
                           baseOS:
                             description: The name of the base os for image lookup
+                            maxLength: 32
+                            minLength: 1
                             type: string
                           format:
                             description: |-
                               AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
                               base OS and kubernetes version.
                             example: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
+                            maxLength: 128
+                            minLength: 1
                             type: string
                           org:
                             description: The AWS Organization ID to use for image
                               lookup.
+                            format: ^o-[0-9a-z]{10,32}$
+                            maxLength: 34
+                            minLength: 12
                             type: string
                         type: object
                     type: object
                   iamInstanceProfile:
                     default: nodes.cluster-api-provider-aws.sigs.k8s.io
                     description: The IAM instance profile to use for the cluster Machines.
+                    maxLength: 128
+                    minLength: 1
                     type: string
                   instanceType:
                     default: m5.2xlarge
                     description: The AWS instance type to use for the cluster Machines.
+                    maxLength: 32
+                    minLength: 1
                     type: string
                   placementGroup:
                     description: PlacementGroup specifies the placement group in which
@@ -140,14 +156,18 @@ spec:
                       type: string
                     key:
                       description: The taint key to be applied to a node.
+                      maxLength: 253
                       type: string
                     value:
                       description: The taint value corresponding to the taint key.
+                      maxLength: 63
+                      minLength: 1
                       type: string
                   required:
                   - effect
                   - key
                   type: object
+                maxItems: 32
                 type: array
             type: object
         type: object

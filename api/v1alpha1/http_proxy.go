@@ -20,10 +20,14 @@ const (
 type HTTPProxy struct {
 	// HTTP proxy value.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=2048
 	HTTP string `json:"http,omitempty"`
 
 	// HTTPS proxy value.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=2048
 	HTTPS string `json:"https,omitempty"`
 
 	// AdditionalNo Proxy list that will be added to the automatically calculated
@@ -31,6 +35,9 @@ type HTTPProxy struct {
 	// Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
 	//   ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=128
+	// +kubebuilder:validation:items:MinLength=1
+	// +kubebuilder:validation:items:MaxLength=253
 	AdditionalNo []string `json:"additionalNo,omitempty"`
 }
 

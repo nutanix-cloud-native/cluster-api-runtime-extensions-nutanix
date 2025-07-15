@@ -118,8 +118,9 @@ type CNI struct {
 
 	// Addon strategy used to deploy the CNI provider to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy *AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitempty"`
 
 	// AddonConfig contains the configuration for the CNI provider.
 	// +kubebuilder:validation:Optional
@@ -153,6 +154,7 @@ type ValuesReference struct {
 	// Name is the name of resource being referenced.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
 	Name string `json:"name"`
 }
 
@@ -160,8 +162,9 @@ type ValuesReference struct {
 type NFD struct {
 	// Addon strategy used to deploy Node Feature Discovery (NFD) to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy *AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
 
 // ClusterAutoscaler tells us to enable or disable the cluster-autoscaler addon.
@@ -169,8 +172,9 @@ type ClusterAutoscaler struct {
 	// Addon strategy used to deploy cluster-autoscaler to the management cluster
 	// targeting the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy *AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
 
 type GenericCSI struct {
@@ -185,15 +189,17 @@ type GenericCSI struct {
 type GenericCOSI struct {
 	// Addon strategy used to deploy the COSI controller to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=HelmAddon
-	Strategy *AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
 
 type SnapshotController struct {
 	// Addon strategy used to deploy the snapshot controller to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy *AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
 
 type DefaultStorage struct {
@@ -205,6 +211,7 @@ type DefaultStorage struct {
 	// Name of the default storage class config the specified default provider.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=242
 	StorageClassConfig string `json:"storageClassConfig"`
 }
 
@@ -251,8 +258,9 @@ type CSIProvider struct {
 
 	// Addon strategy used to deploy the CSI provider to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy *AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitempty"`
 
 	// The reference to any secret used by the CSI Provider.
 	// +kubebuilder:validation:Optional
@@ -276,8 +284,7 @@ type StorageClassConfig struct {
 
 	// If the storage class should allow volume expanding
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=false
-	AllowExpansion bool `json:"allowExpansion,omitempty"`
+	AllowExpansion bool `json:"allowExpansion,omitempty"` //nolint:kubeapilinter,lll // Leave as bool for backward compatibility and this comment makes it a long line.
 }
 
 type CSICredentials struct {
@@ -302,8 +309,9 @@ type CCM struct {
 
 	// Addon strategy used to deploy the CCM to the workload cluster.
 	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy *AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitempty"`
 }
 
 type CCMCredentials struct {
@@ -329,21 +337,25 @@ type ServiceLoadBalancerConfiguration struct {
 	// provider uses to choose an address for a load balancer.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=10
 	AddressRanges []AddressRange `json:"addressRanges"`
 }
 
 // AddressRange defines an IPv4 range.
 type AddressRange struct {
 	// +kubebuilder:validation:Format=ipv4
+	// +kubebuilder:validation:Required
 	Start string `json:"start"`
 
 	// +kubebuilder:validation:Format=ipv4
+	// +kubebuilder:validation:Required
 	End string `json:"end"`
 }
 
 type RegistryAddon struct {
 	// The OCI registry provider to deploy.
 	// +kubebuilder:default="CNCF Distribution"
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum="CNCF Distribution"
 	Provider string `json:"provider"`
 }

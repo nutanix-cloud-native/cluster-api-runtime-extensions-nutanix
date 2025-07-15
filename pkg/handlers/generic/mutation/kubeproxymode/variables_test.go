@@ -133,7 +133,7 @@ func minimalDockerClusterConfigSpec() v1alpha1.DockerClusterConfigSpec {
 	return v1alpha1.DockerClusterConfigSpec{
 		ControlPlane: &v1alpha1.DockerControlPlaneSpec{
 			Docker: &v1alpha1.DockerNodeSpec{
-				CustomImage: ptr.To("fake-docker-image"),
+				CustomImage: "fake-docker-image",
 			},
 		},
 	}

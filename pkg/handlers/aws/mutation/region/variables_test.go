@@ -24,7 +24,7 @@ func TestVariableValidation(t *testing.T) {
 			Name: "specified region",
 			Vals: v1alpha1.AWSClusterConfigSpec{
 				AWS: &v1alpha1.AWSSpec{
-					Region: ptr.To(v1alpha1.Region("a-specified-region")),
+					Region: ptr.To(v1alpha1.Region("specified")),
 				},
 			},
 		},
