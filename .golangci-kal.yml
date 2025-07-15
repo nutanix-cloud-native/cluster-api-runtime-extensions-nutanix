@@ -22,8 +22,8 @@ linters:
               - "maxlength" # Ensure all strings and arrays have maximum lengths/maximum items.
               - "nobools" # Bools do not evolve over time, should use enums instead.
               - "nofloats" # Ensure floats are not used.
-              - "nomaps" # Ensure maps are not used.
-              # "nophase" # Ensure phases are not used, as they are not extensible.
+              # - "nomaps" # Ensure maps are not used.
+              # - "nophase" # Ensure phases are not used, as they are not extensible.
               - "optionalfields" # Ensure that all fields marked as optional adhere to being pointers and
                                  # having the `omitempty` value in their `json` tag where appropriate.
               - "optionalorrequired" # Every field should be marked as `+optional` or `+required`.
@@ -40,8 +40,8 @@ linters:
             optionalfields:
               pointers:
                 preference: WhenRequired # Always | WhenRequired # Whether to always require pointers, or only when required. Defaults to `Always`.
-            # jsontags:
-            #   jsonTagRegex: "^[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)*$" # The default regex is appropriate for our use case.
+            jsontags:
+              jsonTagRegex: "^[a-z][a-z0-9-]*(?:[A-Z][a-z0-9]*)*$" # The default regex is appropriate for our use case.
             optionalorrequired:
               preferredOptionalMarker: kubebuilder:validation:Optional # The preferred optional marker to use, fixes will suggest to use this marker. Defaults to `optional`.
               preferredRequiredMarker: kubebuilder:validation:Required # The preferred required marker to use, fixes will suggest to use this marker. Defaults to `required`.
@@ -55,6 +55,33 @@ linters:
       - external/
       # Ignore test files.
       - '.+_test\.go$'
+      # Ignore aggregate types.
+      - 'aggregate_types\.go$'
+    rules:
+    - path: ".*"
+      text: "optionalorrequired: embedded field  must be marked as kubebuilder:validation:Optional or kubebuilder:validation:Required"
+      linters:
+        - kubeapilinter
+
+    # kube-api-linter does not handle formats correctly yet.
+    - path: '/addon_types\.go$'
+      text: "maxlength: field (Start|End) must have a maximum length, add kubebuilder:validation:MaxLength marker"
+      linters:
+        - kubeapilinter
+    - path: '/common_types\.go$'
+      text: "maxlength: field Address must have a maximum length, add kubebuilder:validation:MaxLength marker"
+      linters:
+        - kubeapilinter
+
+    # kube-api-linter does not handle patterns correctly yet.
+    - path: '/aws_(clusterconfig|node)_types\.go$'
+      text: "maxlength: field (ID|IAMInstanceProfile|InstanceType|Org) must have a maximum length, add kubebuilder:validation:MaxLength marker"
+      linters:
+        - kubeapilinter
+    - path: '/(nutanix_)?(clusterconfig)_types\.go$'
+      text: "maxlength: field (URL|Tag) must have a maximum length, add kubebuilder:validation:MaxLength marker"
+      linters:
+        - kubeapilinter
 
 issues:
   max-same-issues: 0

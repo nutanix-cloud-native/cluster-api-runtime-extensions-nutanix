@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -136,7 +135,7 @@ func (n *DefaultClusterAutoscaler) apply(
 	}
 
 	var strategy addonStrategy
-	switch ptr.Deref(caVar.Strategy, "") {
+	switch caVar.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
 			config: n.config.crsConfig,
@@ -172,7 +171,7 @@ func (n *DefaultClusterAutoscaler) apply(
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("unknown cluster-autoscaler addon deployment strategy %q", *caVar.Strategy),
+			fmt.Sprintf("unknown cluster-autoscaler addon deployment strategy %q", caVar.Strategy),
 		)
 		return
 	}
@@ -217,7 +216,7 @@ func (n *DefaultClusterAutoscaler) BeforeClusterDelete(
 	}
 
 	var strategy addonStrategy
-	switch ptr.Deref(caVar.Strategy, "") {
+	switch caVar.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
 			config: n.config.crsConfig,
@@ -235,7 +234,7 @@ func (n *DefaultClusterAutoscaler) BeforeClusterDelete(
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("unknown cluster-autoscaler addon deployment strategy %q", *caVar.Strategy),
+			fmt.Sprintf("unknown cluster-autoscaler addon deployment strategy %q", caVar.Strategy),
 		)
 		return
 	}

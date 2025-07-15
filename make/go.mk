@@ -160,7 +160,7 @@ lint.%: fmt.% ; $(info $(M) linting $* module)
 lint-kube-api: ## Runs kube-api-linter via custom golangci-lint configuration
 lint-kube-api: go-generate hack/tools/golangci-lint-kube-api-linter
 lint-kube-api: ; $(info $(M) running kube-api-linter)
-	cd api && $(PWD)/hack/tools/golangci-lint-kube-api-linter run --fix --config=$(PWD)/.golangci-kal.yml
+	cd api && $(PWD)/hack/tools/golangci-lint-kube-api-linter run --config=$(PWD)/.golangci-kal.yml
 
 hack/tools/golangci-lint-kube-api-linter: hack/tools/.custom-gcl.yml
 hack/tools/golangci-lint-kube-api-linter: ; $(info $(M) installing golangci-lint-kube-api-linter tool)

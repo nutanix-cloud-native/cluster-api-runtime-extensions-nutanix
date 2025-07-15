@@ -7,10 +7,14 @@ type AWSControlPlaneNodeSpec struct {
 	// The IAM instance profile to use for the cluster Machines.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=control-plane.cluster-api-provider-aws.sigs.k8s.io
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=128
 	IAMInstanceProfile string `json:"iamInstanceProfile,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=m5.xlarge
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=32
 	InstanceType string `json:"instanceType,omitempty"`
 
 	AWSGenericNodeSpec `json:",inline"`
@@ -20,11 +24,15 @@ type AWSWorkerNodeSpec struct {
 	// The IAM instance profile to use for the cluster Machines.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=nodes.cluster-api-provider-aws.sigs.k8s.io
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=128
 	IAMInstanceProfile string `json:"iamInstanceProfile,omitempty"`
 
 	// The AWS instance type to use for the cluster Machines.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=m5.2xlarge
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=32
 	InstanceType string `json:"instanceType,omitempty"`
 
 	AWSGenericNodeSpec `json:",inline"`
@@ -40,17 +48,22 @@ type AWSGenericNodeSpec struct {
 	AdditionalSecurityGroups AdditionalSecurityGroup `json:"additionalSecurityGroups,omitempty"`
 }
 
+// +kubebuilder:validation:MaxItems=32
 type AdditionalSecurityGroup []SecurityGroup
 
 type SecurityGroup struct {
 	// ID is the id of the security group
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=`^sg-[0-9a-f]{8}(?:[0-9a-f]{9})?$`
+	// +kubebuilder:validation:MinLength=1
 	ID string `json:"id,omitempty"`
 }
 
 type AMISpec struct {
 	// AMI ID is the reference to the AMI from which to create the machine instance.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=`^ami-[0-9a-f]{8}(?:[0-9a-f]{9})?$`
+	// +kubebuilder:validation:MinLength=1
 	ID string `json:"id,omitempty"`
 
 	// Lookup is the lookup arguments for the AMI.
@@ -63,13 +76,20 @@ type AMILookup struct {
 	// base OS and kubernetes version.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:example=`capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=128
 	Format string `json:"format,omitempty"`
 
 	// The AWS Organization ID to use for image lookup.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=`^o-[0-9a-z]{10,32}$`
+	// +kubebuilder:validation:MinLength=12
+	// +kubebuilder:validation:MaxLength=34
 	Org string `json:"org,omitempty"`
 
 	// The name of the base os for image lookup
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=32
 	BaseOS string `json:"baseOS,omitempty"`
 }

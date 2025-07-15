@@ -20,6 +20,8 @@ type AWSSpec struct {
 	ControlPlaneLoadBalancer *AWSLoadBalancerSpec `json:"controlPlaneLoadBalancer,omitempty"`
 }
 
+// +kubebuilder:validation:MinLength=4
+// +kubebuilder:validation:MaxLength=16
 type Region string
 
 type AWSNetwork struct {
@@ -34,17 +36,18 @@ type AWSNetwork struct {
 type VPC struct {
 	// Existing VPC ID to use for the cluster.
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Format=`^vpc-[0-9a-f]{8}(?:[0-9a-f]{9})?$`
 	ID string `json:"id"`
 }
 
+// +kubebuilder:validation:MaxItems=10
 type Subnets []SubnetSpec
 
 // SubnetSpec configures an AWS Subnet.
 type SubnetSpec struct {
 	// Existing Subnet ID to use for the cluster.
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Format=`^subnet-[0-9a-f]{8}(?:[0-9a-f]{9})?$`
 	ID string `json:"id"`
 }
 
