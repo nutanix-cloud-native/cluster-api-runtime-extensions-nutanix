@@ -126,7 +126,7 @@ func TestVMImageCheck(t *testing.T) {
 				Allowed: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Expected to find 1 VM Image, found 0",
+						Message: "Found 0 VM Images in Prism Central that match identifier \"test-non-existent-image\". There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, use a different VM Image, or identify the VM Image by its UUID, then retry.", ///nolint:lll // Message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -168,7 +168,7 @@ func TestVMImageCheck(t *testing.T) {
 				Allowed: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Expected to find 1 VM Image, found 2",
+						Message: "Found 2 VM Images in Prism Central that match identifier \"test-duplicate-image\". There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, use a different VM Image, or identify the VM Image by its UUID, then retry.", ///nolint:lll // Message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -192,7 +192,7 @@ func TestVMImageCheck(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: "Failed to get VM Image: api error",
+						Message: "Failed to get VM Image \"test-uuid\": api error. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -225,7 +225,7 @@ func TestVMImageCheck(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: "Failed to get VM Image: api error",
+						Message: "Failed to get VM Image \"test-image\": api error. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -261,7 +261,7 @@ func TestVMImageCheck(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: "Failed to get VM Image: failed to get data returned by ListImages",
+						Message: "Failed to get VM Image \"test-image\": failed to get data returned by ListImages. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
 						Field:   "machineDetails.image",
 					},
 				},

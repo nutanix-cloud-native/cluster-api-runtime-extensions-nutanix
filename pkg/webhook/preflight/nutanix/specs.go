@@ -49,7 +49,8 @@ func newConfigurationCheck(
 		configurationCheck.result.InternalError = true
 		configurationCheck.result.Causes = append(configurationCheck.result.Causes,
 			preflight.Cause{
-				Message: fmt.Sprintf("Failed to unmarshal cluster variable %s: %s",
+				Message: fmt.Sprintf(
+					"Failed to unmarshal cluster variable %q: %s. Review the Cluster.", ///nolint:lll // Message is long.
 					carenv1.ClusterConfigVariableName,
 					err,
 				),
@@ -82,7 +83,8 @@ func newConfigurationCheck(
 				configurationCheck.result.InternalError = true
 				configurationCheck.result.Causes = append(configurationCheck.result.Causes,
 					preflight.Cause{
-						Message: fmt.Sprintf("Failed to unmarshal topology machineDeployment variable %s: %s",
+						Message: fmt.Sprintf(
+							"Failed to unmarshal topology machineDeployment variable %q: %s. Review the Cluster.", ///nolint:lll // Message is long.
 							carenv1.WorkerConfigVariableName,
 							err,
 						),

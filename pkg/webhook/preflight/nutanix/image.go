@@ -44,8 +44,12 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
-				Message: fmt.Sprintf("Failed to get VM Image: %s", err),
-				Field:   c.field + ".image",
+				Message: fmt.Sprintf(
+					"Failed to get VM Image %q: %s. This is usually a temporary error. Please retry.",
+					c.machineDetails.Image,
+					err,
+				),
+				Field: c.field + ".image",
 			})
 			return result
 		}
@@ -53,8 +57,12 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 		if len(images) != 1 {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
-				Message: fmt.Sprintf("Expected to find 1 VM Image, found %d", len(images)),
-				Field:   c.field + ".image",
+				Message: fmt.Sprintf(
+					"Found %d VM Images in Prism Central that match identifier %q. There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, use a different VM Image, or identify the VM Image by its UUID, then retry.", ///nolint:lll // Message is long.
+					len(images),
+					c.machineDetails.Image,
+				),
+				Field: c.field + ".image",
 			})
 			return result
 		}
