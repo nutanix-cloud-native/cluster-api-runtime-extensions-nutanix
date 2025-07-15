@@ -21,11 +21,12 @@ import (
 
 func TestInitStorageContainerChecks(t *testing.T) {
 	testCases := []struct {
-		name                         string
-		nutanixClusterConfigSpec     *carenv1.NutanixClusterConfigSpec
-		workerNodeConfigSpecByMDName map[string]*carenv1.NutanixWorkerNodeConfigSpec
-		expectedChecksCount          int
-		nclient                      client
+		name                                 string
+		nutanixClusterConfigSpec             *carenv1.NutanixClusterConfigSpec
+		workerNodeConfigSpecByMDName         map[string]*carenv1.NutanixWorkerNodeConfigSpec
+		failureDomainByMachineDeploymentName map[string]string
+		expectedChecksCount                  int
+		nclient                              client
 	}{
 		{
 			name:                         "client not initialized",
@@ -80,7 +81,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			nclient:                      &mocknclient{},
 		},
 		{
-			name: "cluster config with CSI and control plane",
+			name: "cluster config with CSI and control plane without failure domains",
 			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
 					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
@@ -113,7 +114,41 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			nclient:                      &mocknclient{},
 		},
 		{
-			name: "cluster config with CSI and worker nodes",
+			name: "cluster config with CSI and control plane with failure domains",
+			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
+				ControlPlane: &carenv1.NutanixControlPlaneSpec{
+					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
+						FailureDomains: []string{"fd-1", "fd-2", "fd-3"},
+						MachineDetails: carenv1.NutanixMachineDetails{
+							Cluster: capxv1.NutanixResourceIdentifier{
+								Type: capxv1.NutanixIdentifierName,
+								Name: ptr.To("my-cluster"),
+							},
+						},
+					},
+				},
+				Addons: &carenv1.NutanixAddons{
+					CSI: &carenv1.NutanixCSI{
+						Providers: carenv1.NutanixCSIProviders{
+							NutanixCSI: carenv1.CSIProvider{
+								StorageClassConfigs: map[string]carenv1.StorageClassConfig{
+									"test-sc": {
+										Parameters: map[string]string{
+											"storageContainer": "test-container",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
+			expectedChecksCount:          0,
+			nclient:                      &mocknclient{},
+		},
+		{
+			name: "cluster config with CSI and worker nodes without failureDomain",
 			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 				Addons: &carenv1.NutanixAddons{
 					CSI: &carenv1.NutanixCSI{
@@ -137,6 +172,33 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			expectedChecksCount: 1,
 			nclient:             &mocknclient{},
+		},
+		{
+			name: "cluster config with CSI and worker nodes with failureDomain",
+			nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
+				Addons: &carenv1.NutanixAddons{
+					CSI: &carenv1.NutanixCSI{
+						Providers: carenv1.NutanixCSIProviders{
+							NutanixCSI: carenv1.CSIProvider{},
+						},
+					},
+				},
+			},
+			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
+				"worker-1": {
+					Nutanix: &carenv1.NutanixWorkerNodeSpec{
+						MachineDetails: carenv1.NutanixMachineDetails{
+							Cluster: capxv1.NutanixResourceIdentifier{
+								Type: capxv1.NutanixIdentifierName,
+								Name: ptr.To("worker-cluster"),
+							},
+						},
+					},
+				},
+			},
+			failureDomainByMachineDeploymentName: map[string]string{"worker-1": "fd-4"},
+			expectedChecksCount:                  0,
+			nclient:                              &mocknclient{},
 		},
 		{
 			name: "cluster config with CSI, control plane and worker nodes",
@@ -238,7 +300,11 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			cd := &checkDependencies{
 				nutanixClusterConfigSpec:                           tc.nutanixClusterConfigSpec,
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tc.workerNodeConfigSpecByMDName,
-				nclient: tc.nclient,
+				failureDomainByMachineDeploymentName:               tc.failureDomainByMachineDeploymentName,
+				nclient:                                            tc.nclient,
+			}
+			if cd.failureDomainByMachineDeploymentName == nil {
+				cd.failureDomainByMachineDeploymentName = map[string]string{}
 			}
 
 			// Call the function under test
