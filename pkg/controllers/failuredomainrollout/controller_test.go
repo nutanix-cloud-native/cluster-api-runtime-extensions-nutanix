@@ -615,6 +615,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		kcp                    *controlplanev1.KubeadmControlPlane
 		machines               []clusterv1.Machine
 		expectRolloutTriggered bool
+		expectRequeue          bool
+		expectedRequeueAfter   time.Duration
 		description            string
 	}{
 		{
@@ -650,6 +652,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				createMachine("m2", "fd2"),
 			},
 			expectRolloutTriggered: true,
+			expectRequeue:          false,
 			description:            "fd1 was removed from cluster, machine still uses it",
 		},
 		{
@@ -686,6 +689,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				createMachine("m2", "fd2"),
 			},
 			expectRolloutTriggered: true,
+			expectRequeue:          false,
 			description:            "fd1 was disabled, machine still uses it",
 		},
 		{
@@ -724,6 +728,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				createMachine("m3", "fd2"),
 			},
 			expectRolloutTriggered: true,
+			expectRequeue:          false,
 			description:            "fd3 was added, can improve from [2,1] to [1,1,1]",
 		},
 		{
@@ -760,6 +765,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				createMachine("m2", "fd2"),
 			},
 			expectRolloutTriggered: false,
+			expectRequeue:          false,
 			description:            "same failure domains, no changes",
 		},
 		{
@@ -799,7 +805,96 @@ func TestReconciler_Reconcile(t *testing.T) {
 				createMachine("m3", "fd3"),
 			},
 			expectRolloutTriggered: false,
+			expectRequeue:          false,
 			description:            "fd4 was added but distribution [1,1,1] is already optimal, no improvement possible",
+		},
+		{
+			name: "cluster not reconciled - should requeue",
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "test-cluster",
+					Namespace:  "test-namespace",
+					Generation: 5, // Higher than observedGeneration
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{},
+					ControlPlaneRef: &corev1.ObjectReference{
+						Name: "test-kcp",
+					},
+				},
+				Status: clusterv1.ClusterStatus{
+					ObservedGeneration: 3, // Lower than generation
+					FailureDomains: clusterv1.FailureDomains{
+						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
+						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
+					},
+				},
+			},
+			kcp: &controlplanev1.KubeadmControlPlane{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "test-kcp",
+					Namespace:  "test-namespace",
+					Generation: 2,
+				},
+				Spec: controlplanev1.KubeadmControlPlaneSpec{
+					Replicas: ptr.To[int32](3),
+				},
+				Status: controlplanev1.KubeadmControlPlaneStatus{
+					ObservedGeneration: 2, // Matches generation
+				},
+			},
+			machines: []clusterv1.Machine{
+				createMachine("m1", "fd1"),
+				createMachine("m2", "fd2"),
+			},
+			expectRolloutTriggered: false,
+			expectRequeue:          true,
+			expectedRequeueAfter:   2 * time.Minute,
+			description:            "cluster observedGeneration < generation, should requeue",
+		},
+		{
+			name: "kubeadmcontrolplane not reconciled - should requeue",
+			cluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "test-cluster",
+					Namespace:  "test-namespace",
+					Generation: 3,
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{},
+					ControlPlaneRef: &corev1.ObjectReference{
+						Name: "test-kcp",
+					},
+				},
+				Status: clusterv1.ClusterStatus{
+					ObservedGeneration: 3, // Matches generation
+					FailureDomains: clusterv1.FailureDomains{
+						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
+						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
+					},
+				},
+			},
+			kcp: &controlplanev1.KubeadmControlPlane{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "test-kcp",
+					Namespace:  "test-namespace",
+					Generation: 7, // Higher than observedGeneration
+				},
+				Spec: controlplanev1.KubeadmControlPlaneSpec{
+					Replicas: ptr.To[int32](3),
+				},
+				Status: controlplanev1.KubeadmControlPlaneStatus{
+					ObservedGeneration: 4, // Lower than generation
+				},
+			},
+			machines: []clusterv1.Machine{
+				createMachine("m1", "fd1"),
+				createMachine("m2", "fd2"),
+			},
+			expectRolloutTriggered: false,
+			expectRequeue:          true,
+			expectedRequeueAfter:   2 * time.Minute,
+			description:            "kcp observedGeneration < generation, should requeue",
 		},
 	}
 
@@ -830,25 +925,47 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 			result, err := r.Reconcile(context.Background(), req)
 			require.NoError(t, err, "Reconciliation should not fail")
-			require.Equal(t, reconcile.Result{}, result, "Should return empty result")
 
-			// Verify the KCP was updated correctly
-			var updatedKCP controlplanev1.KubeadmControlPlane
-			err = fakeClient.Get(context.Background(), client.ObjectKeyFromObject(tt.kcp), &updatedKCP)
-			require.NoError(t, err, "Should be able to get updated KCP")
-
-			if tt.expectRolloutTriggered {
-				require.NotNil(t, updatedKCP.Spec.RolloutAfter, "RolloutAfter should be set")
-				require.NotEqual(t, initialRolloutAfter, updatedKCP.Spec.RolloutAfter, "RolloutAfter should be updated")
-				require.WithinDuration(
+			// Check for requeue scenarios
+			if tt.expectRequeue {
+				require.Equal(
 					t,
-					time.Now(),
-					updatedKCP.Spec.RolloutAfter.Time,
-					5*time.Second,
-					"RolloutAfter should be recent",
+					reconcile.Result{RequeueAfter: tt.expectedRequeueAfter},
+					result,
+					"Should return requeue result",
+				)
+
+				// Verify the KCP was NOT updated in requeue scenarios
+				var updatedKCP controlplanev1.KubeadmControlPlane
+				err = fakeClient.Get(context.Background(), client.ObjectKeyFromObject(tt.kcp), &updatedKCP)
+				require.NoError(t, err, "Should be able to get KCP")
+				require.Equal(
+					t,
+					initialRolloutAfter,
+					updatedKCP.Spec.RolloutAfter,
+					"RolloutAfter should not be changed in requeue scenarios",
 				)
 			} else {
-				require.Equal(t, initialRolloutAfter, updatedKCP.Spec.RolloutAfter, "RolloutAfter should not be changed")
+				require.Equal(t, reconcile.Result{}, result, "Should return empty result")
+
+				// Verify the KCP was updated correctly for normal scenarios
+				var updatedKCP controlplanev1.KubeadmControlPlane
+				err = fakeClient.Get(context.Background(), client.ObjectKeyFromObject(tt.kcp), &updatedKCP)
+				require.NoError(t, err, "Should be able to get updated KCP")
+
+				if tt.expectRolloutTriggered {
+					require.NotNil(t, updatedKCP.Spec.RolloutAfter, "RolloutAfter should be set")
+					require.NotEqual(t, initialRolloutAfter, updatedKCP.Spec.RolloutAfter, "RolloutAfter should be updated")
+					require.WithinDuration(
+						t,
+						time.Now(),
+						updatedKCP.Spec.RolloutAfter.Time,
+						5*time.Second,
+						"RolloutAfter should be recent",
+					)
+				} else {
+					require.Equal(t, initialRolloutAfter, updatedKCP.Spec.RolloutAfter, "RolloutAfter should not be changed")
+				}
 			}
 		})
 	}

@@ -71,6 +71,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
+	// If the Cluster is not fully reconciled, we should skip our own reconciliation.
+	if cluster.Status.ObservedGeneration < cluster.Generation {
+		logger.V(5).Info("Cluster is not yet reconciled, skipping failure domain rollout check",
+			"observedGeneration", cluster.Status.ObservedGeneration, "generation", cluster.Generation)
+		return ctrl.Result{RequeueAfter: 2 * time.Minute}, nil
+	}
+
 	// Get the KubeAdmControlPlane
 	kcpKey := types.NamespacedName{
 		Namespace: cluster.Namespace,
@@ -85,6 +92,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		return ctrl.Result{}, fmt.Errorf("failed to get KubeAdmControlPlane %s: %w", kcpKey, err)
+	}
+
+	// If the KubeadmControlPlane is not fully reconciled, we should skip our own reconciliation.
+	if kcp.Status.ObservedGeneration < kcp.Generation {
+		logger.V(5).Info("KubeAdmControlPlane is not yet reconciled, skipping failure domain rollout check",
+			"observedGeneration", kcp.Status.ObservedGeneration, "generation", kcp.Generation)
+		return ctrl.Result{RequeueAfter: 2 * time.Minute}, nil
 	}
 
 	// Check if we need to trigger a rollout
@@ -136,6 +150,10 @@ func (r *Reconciler) getMachineDistribution(ctx context.Context, cluster *cluste
 
 	distribution := make(map[string]int)
 	for i := range machines.Items {
+		// Ignore machines that are being deleted.
+		if !machines.Items[i].DeletionTimestamp.IsZero() {
+			continue
+		}
 		if machines.Items[i].Spec.FailureDomain != nil {
 			distribution[*machines.Items[i].Spec.FailureDomain]++
 		}
