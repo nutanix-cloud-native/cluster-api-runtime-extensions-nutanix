@@ -8,19 +8,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 type Reconciler struct {
@@ -33,13 +31,71 @@ func (r *Reconciler) SetupWithManager(
 ) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clusterv1.Cluster{}).
-		Watches(
-			&controlplanev1.KubeadmControlPlane{},
-			handler.EnqueueRequestsFromMapFunc(r.kubeadmControlPlaneToCluster),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
-		).
 		WithOptions(*options).
 		Complete(r)
+}
+
+// areResourcesDeleting checks if either the cluster or KCP has a deletion timestamp.
+// Returns true if any resource is being deleted and reconciliation should be skipped.
+func (r *Reconciler) areResourcesDeleting(cluster *clusterv1.Cluster, kcp *controlplanev1.KubeadmControlPlane) bool {
+	if cluster != nil && !cluster.DeletionTimestamp.IsZero() {
+		return true
+	}
+
+	if kcp != nil && !kcp.DeletionTimestamp.IsZero() {
+		return true
+	}
+
+	return false
+}
+
+// areResourcesUpdating checks if either the cluster or KCP has not fully reconciled.
+// Returns true if any resource is still being updated and reconciliation should be requeued.
+func (r *Reconciler) areResourcesUpdating(cluster *clusterv1.Cluster, kcp *controlplanev1.KubeadmControlPlane) bool {
+	if cluster != nil && cluster.Status.ObservedGeneration < cluster.Generation {
+		return true
+	}
+
+	if kcp != nil && kcp.Status.ObservedGeneration < kcp.Generation {
+		return true
+	}
+
+	return false
+}
+
+// areResourcesPaused checks if either the cluster or KCP is paused.
+// Uses the standard CAPI annotations.IsPaused utility which handles both cluster.Spec.Paused and paused annotations.
+func (r *Reconciler) areResourcesPaused(cluster *clusterv1.Cluster, kcp *controlplanev1.KubeadmControlPlane) bool {
+	if cluster != nil && annotations.IsPaused(cluster, cluster) {
+		return true
+	}
+
+	if cluster != nil && kcp != nil && annotations.IsPaused(cluster, kcp) {
+		return true
+	}
+
+	return false
+}
+
+// shouldSkipClusterReconciliation checks if the cluster should be skipped for reconciliation
+// based on early validation checks. Returns true if reconciliation should be skipped.
+func (r *Reconciler) shouldSkipClusterReconciliation(cluster *clusterv1.Cluster, logger logr.Logger) bool {
+	if cluster.Spec.Topology == nil {
+		logger.V(5).Info("Cluster is not using topology, skipping reconciliation")
+		return true
+	}
+
+	if cluster.Spec.ControlPlaneRef == nil {
+		logger.V(5).Info("Cluster has no control plane reference, skipping reconciliation")
+		return true
+	}
+
+	if len(cluster.Status.FailureDomains) == 0 {
+		logger.V(5).Info("Cluster has no failure domains, skipping reconciliation")
+		return true
+	}
+
+	return false
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -56,26 +112,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// Early validation checks
-	if cluster.Spec.Topology == nil {
-		logger.V(5).Info("Cluster is not using topology, skipping reconciliation")
+	if r.shouldSkipClusterReconciliation(&cluster, logger) {
 		return ctrl.Result{}, nil
-	}
-
-	if cluster.Spec.ControlPlaneRef == nil {
-		logger.V(5).Info("Cluster has no control plane reference, skipping reconciliation")
-		return ctrl.Result{}, nil
-	}
-
-	if len(cluster.Status.FailureDomains) == 0 {
-		logger.V(5).Info("Cluster has no failure domains, skipping reconciliation")
-		return ctrl.Result{}, nil
-	}
-
-	// If the Cluster is not fully reconciled, we should skip our own reconciliation.
-	if cluster.Status.ObservedGeneration < cluster.Generation {
-		logger.V(5).Info("Cluster is not yet reconciled, skipping failure domain rollout check",
-			"observedGeneration", cluster.Status.ObservedGeneration, "generation", cluster.Generation)
-		return ctrl.Result{RequeueAfter: 2 * time.Minute}, nil
 	}
 
 	// Get the KubeAdmControlPlane
@@ -94,10 +132,21 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("failed to get KubeAdmControlPlane %s: %w", kcpKey, err)
 	}
 
-	// If the KubeadmControlPlane is not fully reconciled, we should skip our own reconciliation.
-	if kcp.Status.ObservedGeneration < kcp.Generation {
-		logger.V(5).Info("KubeAdmControlPlane is not yet reconciled, skipping failure domain rollout check",
-			"observedGeneration", kcp.Status.ObservedGeneration, "generation", kcp.Generation)
+	// Skip reconciliation if either cluster or KCP is being deleted
+	if r.areResourcesDeleting(&cluster, &kcp) {
+		logger.V(5).Info("Cluster or KubeadmControlPlane is being deleted, skipping reconciliation")
+		return ctrl.Result{}, nil
+	}
+
+	// Skip reconciliation if either cluster or KCP is paused
+	if r.areResourcesPaused(&cluster, &kcp) {
+		logger.V(5).Info("Cluster or KubeadmControlPlane is paused, skipping reconciliation")
+		return ctrl.Result{}, nil
+	}
+
+	// Skip reconciliation if either cluster or KCP is not fully reconciled
+	if r.areResourcesUpdating(&cluster, &kcp) {
+		logger.V(5).Info("Cluster or KubeadmControlPlane is not yet reconciled, requeuing")
 		return ctrl.Result{RequeueAfter: 2 * time.Minute}, nil
 	}
 
@@ -107,33 +156,36 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("failed to determine if rollout is needed: %w", err)
 	}
 
-	if needsRollout {
-		logger.Info("Rollout needed due to failure domain changes", "reason", reason)
-
-		// Check if we should skip the rollout due to recent or ongoing rollout activities
-		if shouldSkip, requeueAfter := r.shouldSkipRollout(&kcp); shouldSkip {
-			logger.Info("Skipping rollout due to recent or ongoing rollout activity",
-				"reason", reason, "requeueAfter", requeueAfter)
-			return ctrl.Result{RequeueAfter: requeueAfter}, nil
-		}
-
-		logger.Info("Attempting to trigger KCP rollout due to failure domain changes", "reason", reason)
-
-		// Set rolloutAfter to trigger immediate rollout
-		now := metav1.Now()
-		kcpCopy := kcp.DeepCopy()
-		kcpCopy.Spec.RolloutAfter = &now
-
-		if err := r.Update(ctx, kcpCopy); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to update KubeAdmControlPlane %s: %w", kcpKey, err)
-		}
-
-		logger.Info(
-			"Successfully triggered KCP rollout due to failure domain changes",
-			"rolloutAfter",
-			now.Format(time.RFC3339),
-		)
+	if !needsRollout {
+		logger.V(5).Info("No rollout needed due to failure domain changes", "reason", reason)
+		return ctrl.Result{}, nil
 	}
+
+	logger.Info("Rollout needed due to failure domain changes", "reason", reason)
+
+	// Check if we should skip the rollout due to recent or ongoing rollout activities
+	if shouldSkip, requeueAfter := r.shouldSkipRollout(&kcp); shouldSkip {
+		logger.V(5).Info("Skipping rollout due to recent or ongoing rollout activity",
+			"reason", reason, "requeueAfter", requeueAfter)
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+
+	logger.Info("Attempting to trigger KCP rollout due to failure domain changes", "reason", reason)
+
+	// Set rolloutAfter to trigger immediate rollout
+	now := metav1.Now()
+	kcpCopy := kcp.DeepCopy()
+	kcpCopy.Spec.RolloutAfter = &now
+
+	if err := r.Update(ctx, kcpCopy); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to update KubeAdmControlPlane %s: %w", kcpKey, err)
+	}
+
+	logger.Info(
+		"Successfully triggered KCP rollout due to failure domain changes",
+		"rolloutAfter",
+		now.Format(time.RFC3339),
+	)
 
 	return ctrl.Result{}, nil
 }
@@ -264,47 +316,31 @@ func (r *Reconciler) hasSuboptimalDistribution(distribution map[string]int, repl
 	return false
 }
 
-// canImproveWithMoreFDs checks if using additional failure domains would improve fault tolerance by comparing
-// current max concentration vs ideal max with optimal distribution.
-// Also checks if we can reduce the number of FDs at maximum concentration.
+// canImproveWithMoreFDs checks if using additional failure domains would improve fault tolerance
+// by reducing either the maximum number of replicas per FD, or the number of FDs at maximum concentration.
 func (r *Reconciler) canImproveWithMoreFDs(currentDistribution map[string]int, replicas, availableCount int) bool {
-	if len(currentDistribution) == 0 {
+	if len(currentDistribution) == 0 || replicas == 0 || availableCount <= len(currentDistribution) {
 		return false
 	}
 
-	// Find current min and max counts to understand current concentration
-	minCount, maxCount := replicas, 0
+	currentMaxPerFD, currentFDsAtMax := 0, 0
 	for _, count := range currentDistribution {
-		if count < minCount {
-			minCount = count
-		}
-		if count > maxCount {
-			maxCount = count
-		}
-	}
-
-	// When this function is called, we know hasSuboptimalDistribution was false,
-	// which means maxCount <= calculateMaxIdealPerFD(replicas, availableCount).
-	// Therefore, we only need to check if we can improve concentration.
-
-	currentFDsAtMax := 0
-	for _, count := range currentDistribution {
-		if count == maxCount {
+		if count > currentMaxPerFD {
+			currentMaxPerFD, currentFDsAtMax = count, 1
+		} else if count == currentMaxPerFD {
 			currentFDsAtMax++
 		}
 	}
 
-	// Calculate optimal number of FDs that should have the maximum
-	// In optimal distribution, (replicas % availableCount) FDs get the extra replica
-	optimalFDsAtMax := replicas % availableCount
-	if optimalFDsAtMax == 0 && replicas > 0 {
-		// If evenly divisible and we have replicas, all FDs get the same amount
-		// This means no FDs are "at max" in the sense of having extras
+	optimalMaxPerFD := r.calculateMaxIdealPerFD(replicas, availableCount)
+	extra := replicas % availableCount
+	optimalFDsAtMax := extra
+	if optimalFDsAtMax == 0 {
 		optimalFDsAtMax = availableCount
 	}
 
-	// Improvement if we can reduce the number of FDs at maximum concentration
-	return optimalFDsAtMax < currentFDsAtMax
+	return optimalMaxPerFD < currentMaxPerFD ||
+		(optimalMaxPerFD == currentMaxPerFD && optimalFDsAtMax < currentFDsAtMax)
 }
 
 // calculateMaxIdealPerFD calculates the maximum number of machines per failure domain in ideal distribution.
@@ -312,53 +348,20 @@ func (r *Reconciler) calculateMaxIdealPerFD(replicas, availableCount int) int {
 	if availableCount == 0 {
 		return replicas
 	}
-
-	baseReplicasPerFD := replicas / availableCount
-	extraReplicas := replicas % availableCount
-
-	if extraReplicas > 0 {
-		return baseReplicasPerFD + 1
+	base := replicas / availableCount
+	if replicas%availableCount > 0 {
+		return base + 1
 	}
-
-	return baseReplicasPerFD
+	return base
 }
 
 // getAvailableFailureDomains returns the names of available failure domains for control plane.
 func getAvailableFailureDomains(failureDomains clusterv1.FailureDomains) []string {
 	var available []string
-	for name, fd := range failureDomains {
-		if fd.ControlPlane {
-			available = append(available, name)
+	for fd, info := range failureDomains {
+		if info.ControlPlane {
+			available = append(available, fd)
 		}
 	}
 	return available
-}
-
-// kubeadmControlPlaneToCluster maps KubeAdmControlPlane changes to cluster reconcile requests.
-func (r *Reconciler) kubeadmControlPlaneToCluster(ctx context.Context, obj client.Object) []reconcile.Request {
-	kcp, ok := obj.(*controlplanev1.KubeadmControlPlane)
-	if !ok {
-		return nil
-	}
-
-	// Find the cluster that owns this KCP
-	var clusters clusterv1.ClusterList
-	if err := r.List(ctx, &clusters, client.InNamespace(kcp.Namespace)); err != nil {
-		return nil
-	}
-
-	for i := range clusters.Items {
-		if clusters.Items[i].Spec.ControlPlaneRef != nil && clusters.Items[i].Spec.ControlPlaneRef.Name == kcp.Name {
-			return []reconcile.Request{
-				{
-					NamespacedName: types.NamespacedName{
-						Namespace: clusters.Items[i].Namespace,
-						Name:      clusters.Items[i].Name,
-					},
-				},
-			}
-		}
-	}
-
-	return nil
 }
