@@ -21,7 +21,7 @@ var testDefs = []capitest.VariableTestDef{{
 		Addons: &apivariables.Addons{
 			COSI: &apivariables.COSI{
 				GenericCOSI: v1alpha1.GenericCOSI{
-					Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
+					Strategy: v1alpha1.AddonStrategyHelmAddon,
 				},
 			},
 		},
@@ -32,7 +32,7 @@ var testDefs = []capitest.VariableTestDef{{
 		Addons: &apivariables.Addons{
 			COSI: &apivariables.COSI{
 				GenericCOSI: v1alpha1.GenericCOSI{
-					Strategy: ptr.To(v1alpha1.AddonStrategyClusterResourceSet),
+					Strategy: v1alpha1.AddonStrategyClusterResourceSet,
 				},
 			},
 		},
@@ -44,7 +44,7 @@ var testDefs = []capitest.VariableTestDef{{
 		Addons: &apivariables.Addons{
 			COSI: &apivariables.COSI{
 				GenericCOSI: v1alpha1.GenericCOSI{
-					Strategy: ptr.To[v1alpha1.AddonStrategy]("invalid-strategy"),
+					Strategy: v1alpha1.AddonStrategy("invalid-strategy"),
 				},
 			},
 		},

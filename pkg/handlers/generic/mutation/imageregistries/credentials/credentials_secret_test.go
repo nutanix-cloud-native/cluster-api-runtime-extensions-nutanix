@@ -31,7 +31,7 @@ func Test_generateCredentialsSecretFile(t *testing.T) {
 		{
 			name: "config with no static credentials, expect no file",
 			configs: []providerConfig{
-				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+				{URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			},
 			clusterName: "test-cluster",
 			wantFile:    nil,
@@ -89,7 +89,7 @@ func Test_generateCredentialsSecret(t *testing.T) {
 		{
 			name: "config with no static credentials, expect no Secret",
 			configs: []providerConfig{
-				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+				{URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			},
 			clusterName: "test-cluster",
 			namespace:   "test-namespace",
@@ -157,7 +157,7 @@ func Test_kubeletStaticCredentialProviderSecretContents(t *testing.T) {
 		{
 			name: "config with no static credentials, expect empty string",
 			configs: []providerConfig{
-				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+				{URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			},
 			wantContents: "",
 		},
@@ -189,7 +189,7 @@ func Test_kubeletStaticCredentialProviderSecretContents(t *testing.T) {
 					Username: "myuser",
 					Password: "mypassword",
 				},
-				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+				{URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com"},
 				{
 					URL:      "https://registry-1.docker.io",
 					Username: "myuser",

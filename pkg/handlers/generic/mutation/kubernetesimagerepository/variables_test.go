@@ -18,9 +18,7 @@ import (
 var testDefs = []capitest.VariableTestDef{{
 	Name: "set",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		KubernetesImageRepository: ptr.To(
-			"my-registry.io/my-org/my-repo",
-		),
+		KubernetesImageRepository: "my-registry.io/my-org/my-repo",
 	},
 }}
 

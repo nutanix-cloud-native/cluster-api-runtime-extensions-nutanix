@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -142,7 +141,7 @@ func (n *DefaultCOSIController) apply(
 	}
 
 	var strategy addons.Applier
-	switch ptr.Deref(cosiVar.Strategy, "") {
+	switch cosiVar.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.COSIController)
 		if err != nil {
@@ -177,7 +176,7 @@ func (n *DefaultCOSIController) apply(
 		return
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("unknown COSI addon deployment strategy %q", *cosiVar.Strategy))
+		resp.SetMessage(fmt.Sprintf("unknown COSI addon deployment strategy %q", cosiVar.Strategy))
 		return
 	}
 
