@@ -163,7 +163,7 @@ helmRepository:
       pullPolicy: IfNotPresent
     mindthegap:
       repository: ghcr.io/mesosphere/mindthegap
-      tag: "v1.17.0"
+      tag: "v1.22.1"
       pullPolicy: IfNotPresent
   securityContext:
     runAsUser: 65532
