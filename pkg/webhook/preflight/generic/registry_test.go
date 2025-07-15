@@ -166,8 +166,8 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Registry credentials Secret \"test-secret\" not found. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
-						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",                        //nolint:lll // Field is long.
+						Message: "Registry credentials Secret \"test-secret\" not found. Create the Secret first, then create the Cluster.",   ///nolint:lll // Message is long.
+						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef", //nolint:lll // Field is long.
 					},
 				},
 			},
@@ -298,7 +298,7 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Failed to parse registry URL \"invalid-url\" with error: parse \"invalid-url\": invalid URI for request.  This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+						Message: "Failed to parse registry URL \"invalid-url\" with error: parse \"invalid-url\": invalid URI for request. Review the Cluster.", ///nolint:lll // Message is long.
 						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
 					},
 				},

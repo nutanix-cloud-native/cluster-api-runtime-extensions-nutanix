@@ -106,7 +106,7 @@ func TestNewConfigurationCheck(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: "Failed to unmarshal cluster variable \"clusterConfig\": failed to unmarshal json: invalid character 'i' looking for beginning of object key string. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // The message is long.
+						Message: "Failed to unmarshal cluster variable \"clusterConfig\": failed to unmarshal json: invalid character 'i' looking for beginning of object key string. Review the Cluster.", ///nolint:lll // The message is long.
 						Field:   "cluster.spec.topology.variables[.name=clusterConfig].genericClusterConfigSpec",
 					},
 				},

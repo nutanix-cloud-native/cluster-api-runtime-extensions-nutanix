@@ -85,7 +85,7 @@ func (r *registryCheck) checkRegistry(
 		result.Causes = append(result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"Failed to parse registry URL %q with error: %s.  This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.",
+					"Failed to parse registry URL %q with error: %s. Review the Cluster.", ///nolint:lll // Message is long.",
 					registryURL,
 					err,
 				),
@@ -131,7 +131,7 @@ func (r *registryCheck) checkRegistry(
 			result.Causes = append(result.Causes,
 				preflight.Cause{
 					Message: fmt.Sprintf(
-						"Registry credentials Secret %q not found. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+						"Registry credentials Secret %q not found. Create the Secret first, then create the Cluster.", ///nolint:lll // Message is long.
 						credentials.SecretRef.Name,
 					),
 					Field: r.field + ".credentials.secretRef",
