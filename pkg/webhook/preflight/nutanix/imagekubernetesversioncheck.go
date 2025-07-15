@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/blang/semver/v4"
-	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
@@ -29,8 +28,13 @@ func (c *imageKubernetesVersionCheck) Name() string {
 func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckResult {
 	if c.machineDetails.ImageLookup != nil {
 		return preflight.CheckResult{
-			Allowed:  true,
-			Warnings: []string{fmt.Sprintf("%s uses imageLookup, which is not yet supported by checks", c.field)},
+			Allowed: true,
+			Warnings: []string{
+				fmt.Sprintf(
+					"%s uses imageLookup, which is not yet supported by checks",
+					c.field,
+				),
+			},
 		}
 	}
 
@@ -42,8 +46,12 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: fmt.Sprintf("Failed to get VM Image: %s", err),
-						Field:   c.field + ".image",
+						Message: fmt.Sprintf(
+							"Failed to get VM Image %q: %s. This is usually a temporary error. Please retry.",
+							c.machineDetails.Image,
+							err,
+						),
+						Field: c.field + ".image",
 					},
 				},
 			}
@@ -54,15 +62,59 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 				Allowed: true,
 			}
 		}
+		image := images[0]
 
-		if err := c.checkKubernetesVersion(&images[0]); err != nil {
+		if image.Name == nil || *image.Name == "" {
 			return preflight.CheckResult{
 				Allowed:       false,
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Kubernetes version check failed: " + err.Error(),
-						Field:   c.field + ".image",
+						Message: fmt.Sprintf(
+							"The VM Image identified by %q has no name. Give the VM Image a name, or use a different VM Image. Make sure the VM Image contains the Kubernetes version supported by the VM Image. Choose a VM Image that supports the cluster Kubernetes version: %q", //nolint:lll // The message is long.
+							*c.machineDetails.Image,
+							c.clusterK8sVersion,
+						),
+						Field: c.field + ".image",
+					},
+				},
+			}
+		}
+
+		// Uses the same function that is used by the Cluster API topology validation webhook.
+		parsedClusterK8sVersion, err := semver.ParseTolerant(c.clusterK8sVersion)
+		if err != nil {
+			return preflight.CheckResult{
+				Allowed: false,
+				// The Cluster API topology validation webhook should prevent this from happening,
+				// so if it does, treat it as an internal error.
+				InternalError: true,
+				Causes: []preflight.Cause{
+					{
+						Message: fmt.Sprintf(
+							"The Cluster Kubernetes version %q is not a valid semantic version. This error should not happen under normal circumstances. Please report.", //nolint:lll // The message is long.
+							c.clusterK8sVersion,
+						),
+						Field: c.field + ".image",
+					},
+				},
+			}
+		}
+
+		finalizedClusterK8sVersion := parsedClusterK8sVersion.FinalizeVersion()
+		if !strings.Contains(*image.Name, finalizedClusterK8sVersion) {
+			return preflight.CheckResult{
+				Allowed:       false,
+				InternalError: false,
+				Causes: []preflight.Cause{
+					{
+						Message: fmt.Sprintf(
+							"The VM Image identified by %q has the name %q. Make sure the VM Image name contains the Kubernetes version supported by the VM Image. Choose a VM Image that supports the cluster Kubernetes version: %q.", //nolint:lll // The message is long.
+							*c.machineDetails.Image,
+							*image.Name,
+							finalizedClusterK8sVersion,
+						),
+						Field: c.field + ".image",
 					},
 				},
 			}
@@ -70,35 +122,6 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 	}
 
 	return preflight.CheckResult{Allowed: true}
-}
-
-func (c *imageKubernetesVersionCheck) checkKubernetesVersion(image *vmmv4.Image) error {
-	imageName := ""
-	if image.Name != nil {
-		imageName = *image.Name
-	}
-
-	if imageName == "" {
-		return fmt.Errorf("VM image name is empty")
-	}
-
-	parsedVersion, err := semver.Parse(c.clusterK8sVersion)
-	if err != nil {
-		return fmt.Errorf("failed to parse kubernetes version %q: %v", c.clusterK8sVersion, err)
-	}
-
-	// For example, "1.33.1+fips.0" becomes "1.33.1".
-	k8sVersion := parsedVersion.FinalizeVersion()
-
-	if !strings.Contains(imageName, k8sVersion) {
-		return fmt.Errorf(
-			"kubernetes version %q is not part of image name %q",
-			c.clusterK8sVersion,
-			imageName,
-		)
-	}
-
-	return nil
 }
 
 func newVMImageKubernetesVersionChecks(
