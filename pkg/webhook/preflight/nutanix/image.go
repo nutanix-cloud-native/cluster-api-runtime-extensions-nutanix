@@ -58,7 +58,7 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Found %d VM Images in Prism Central that match identifier %q. There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, or use a different VM Image, and then retry.", ///nolint:lll // Message is long.
+					"Found %d VM Images in Prism Central that match identifier %q. There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, use a different VM Image, or identify the VM Image by its UUID, then retry.", ///nolint:lll // Message is long.
 					len(images),
 					c.machineDetails.Image,
 				),

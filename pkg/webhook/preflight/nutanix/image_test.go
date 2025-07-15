@@ -126,7 +126,7 @@ func TestVMImageCheck(t *testing.T) {
 				Allowed: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Found 0 VM Images in Prism Central that match identifier \"test-non-existent-image\". There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, or use a different VM Image, and then retry.", ///nolint:lll // Message is long.
+						Message: "Found 0 VM Images in Prism Central that match identifier \"test-non-existent-image\". There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, use a different VM Image, or identify the VM Image by its UUID, then retry.", ///nolint:lll // Message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -168,7 +168,7 @@ func TestVMImageCheck(t *testing.T) {
 				Allowed: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Found 2 VM Images in Prism Central that match identifier \"test-duplicate-image\". There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, or use a different VM Image, and then retry.", ///nolint:lll // Message is long.
+						Message: "Found 2 VM Images in Prism Central that match identifier \"test-duplicate-image\". There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, use a different VM Image, or identify the VM Image by its UUID, then retry.", ///nolint:lll // Message is long.
 						Field:   "machineDetails.image",
 					},
 				},
