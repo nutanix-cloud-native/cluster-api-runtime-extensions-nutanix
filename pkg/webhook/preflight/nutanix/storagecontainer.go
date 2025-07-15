@@ -38,7 +38,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 	if c.csiSpec.StorageClassConfigs == nil {
 		result.Allowed = false
 		result.Causes = append(result.Causes, preflight.Cause{
-			Message: "Nutanix CSI Provider configuration is missing storage class configurations. This should not happen under normal circumstances. Please report it.", //nolint:lll // Message is long.
+			Message: "Nutanix CSI Provider configuration is missing storage class configurations. Review the Cluster.", //nolint:lll // Message is long.
 			Field:   c.field,
 		})
 

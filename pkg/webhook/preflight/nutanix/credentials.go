@@ -56,7 +56,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
-				Message: "The Nutanix configuration is missing from the Cluster resource. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+				Message: "The Nutanix configuration is missing from the Cluster resource. Review the Cluster resource.", ///nolint:lll // Message is long.
 				Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix",
 			},
 		)
@@ -97,7 +97,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"Prism Central credentials Secret %q not found. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+					"Prism Central credentials Secret %q not found. Create the Secret first, then create the Cluster.", ///nolint:lll // Message is long.
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 				),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
@@ -126,7 +126,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"Credentials Secret %q is empty. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+					"Credentials Secret %q is empty. Review the Secret.", ///nolint:lll // Message is long.
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 				),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
@@ -141,7 +141,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"Credentials Secret %q does not contain key %q. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+					"Credentials Secret %q does not contain key %q. Review the Secret.", ///nolint:lll // Message is long.
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 					credentialsSecretDataKey,
 				),
@@ -157,7 +157,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"Failed to parse Prism Central credentials: %s. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+					"Failed to parse Prism Central credentials: %s. Review the Secret.", ///nolint:lll // Message is long.
 					err,
 				),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
@@ -183,7 +183,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"Failed to initialize the Nutanix Prism Central API client: %s. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.",
+					"Failed to initialize the Nutanix Prism Central API client: %s.", ///nolint:lll // Message is long.",
 					err,
 				),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
@@ -219,7 +219,7 @@ func newCredentialsCheck(
 	credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 		preflight.Cause{
 			Message: fmt.Sprintf(
-				"Failed to validate credentials: %s. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+				"Failed to validate credentials: %s. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
 				err,
 			),
 			Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint",

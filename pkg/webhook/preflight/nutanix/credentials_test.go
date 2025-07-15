@@ -60,7 +60,7 @@ func TestNewCredentialsCheck_MissingNutanixField(t *testing.T) {
 	assert.Contains(
 		t,
 		result.Causes[0].Message,
-		"The Nutanix configuration is missing from the Cluster resource. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+		"The Nutanix configuration is missing from the Cluster resource. Review the Cluster resource.", ///nolint:lll // Message is long.
 	)
 }
 
@@ -210,7 +210,7 @@ func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
 	assert.Contains(
 		t,
 		result.Causes[0].Message,
-		"Failed to initialize the Nutanix Prism Central API client: assert.AnError general error for testing. This error should not happen under normal circumstances. Please report it.", ///nolint:lll // Message is long.
+		"Failed to initialize the Nutanix Prism Central API client: assert.AnError general error for testing.", ///nolint:lll // Message is long.
 	)
 }
 
