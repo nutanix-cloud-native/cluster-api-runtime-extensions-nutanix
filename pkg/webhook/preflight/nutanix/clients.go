@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
+	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
@@ -48,6 +49,16 @@ type client interface {
 		select_ *string,
 		args ...map[string]interface{},
 	) (*clustermgmtv4.ListStorageContainersApiResponse, error)
+	GetSubnetById(id *string) (*netv4.GetSubnetApiResponse, error)
+	ListSubnets(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		expand_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (*netv4.ListSubnetsApiResponse, error)
 }
 
 // clientWrapper implements the client interface and wraps both v3 and v4 clients.
@@ -155,6 +166,38 @@ func (c *clientWrapper) ListStorageContainers(
 		limit_,
 		filter_,
 		orderby_,
+		select_,
+		args...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *clientWrapper) GetSubnetById(id *string) (*netv4.GetSubnetApiResponse, error) {
+	resp, err := c.v4client.SubnetsApiInstance.GetSubnetById(id)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *clientWrapper) ListSubnets(
+	page_ *int,
+	limit_ *int,
+	filter_ *string,
+	orderby_ *string,
+	expand_ *string,
+	select_ *string,
+	args ...map[string]interface{},
+) (*netv4.ListSubnetsApiResponse, error) {
+	resp, err := c.v4client.SubnetsApiInstance.ListSubnets(
+		page_,
+		limit_,
+		filter_,
+		orderby_,
+		expand_,
 		select_,
 		args...,
 	)
