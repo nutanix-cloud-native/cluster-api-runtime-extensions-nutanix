@@ -384,10 +384,10 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed:      false,
 			expectedError:        false,
-			expectedCauseMessage: "Found 0 Storage Containers that match identifier \"missing-container\" on Cluster \"test-cluster\". There must be exactly 1 Storage Container that matches this identifier. Make the Storage Container identifiers unique, or use a different Storage Container, and then retry.", //nolint:lll // Message is long.
+			expectedCauseMessage: "Found no Storage Containers with name \"missing-container\" on Cluster \"test-cluster\". Create a Storage Container with this name on Cluster \"test-cluster\", and then retry.", //nolint:lll // Message is long.
 		},
 		{
-			name: "multiple storage containers found",
+			name: "multiple storage containers with same name in same cluster found",
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
@@ -458,8 +458,8 @@ func TestStorageContainerCheck(t *testing.T) {
 				},
 			},
 			expectedAllowed:      false,
-			expectedError:        false,
-			expectedCauseMessage: "Found 2 Storage Containers that match identifier \"duplicate-container\" on Cluster \"test-cluster\". There must be exactly 1 Storage Container that matches this identifier. Make the Storage Container identifiers unique, or use a different Storage Container, and then retry.", //nolint:lll // The message is long.
+			expectedError:        true,
+			expectedCauseMessage: "Found 2 Storage Containers with name \"duplicate-container\" on Cluster \"test-cluster\". This should not happen under normal circumstances. Please report.", //nolint:lll // The message is long.
 		},
 		{
 			name: "successful storage container check",
@@ -581,7 +581,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed:      false,
 			expectedError:        false,
-			expectedCauseMessage: "Found 2 Clusters (Prism Elements) in Prism Central that match identifier \"test-cluster\". There must be exactly 1 Cluster that matches this identifier. Make the Cluster identifiers unique, and then retry.", //nolint:lll // The message is long.
+			expectedCauseMessage: "Found 2 Clusters (Prism Elements) in Prism Central that match identifier \"test-cluster\". There must be exactly 1 Cluster that matches this identifier. Use a unique Cluster name, or identify the Cluster by its UUID, then retry.", //nolint:lll // The message is long.
 		},
 		{
 			name: "error getting cluster",
@@ -813,7 +813,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			expectedAllowed:      false,
 			expectedError:        false,
-			expectedCauseMessage: "Found 0 Storage Containers that match identifier \"valid-container\" on Cluster \"test-cluster\". There must be exactly 1 Storage Container that matches this identifier. Make the Storage Container identifiers unique, or use a different Storage Container, and then retry.", //nolint:lll // The message is long.
+			expectedCauseMessage: "Found no Storage Containers with name \"valid-container\" on Cluster \"test-cluster\". Create a Storage Container with this name on Cluster \"test-cluster\", and then retry.", //nolint:lll // The message is long.
 		},
 		{
 			name: "multiple storage class configs with success",

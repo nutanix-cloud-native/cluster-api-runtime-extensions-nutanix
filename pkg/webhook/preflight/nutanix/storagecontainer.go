@@ -61,7 +61,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			continue
 		}
 
-		storageContainer, ok := storageClassConfig.Parameters[csiParameterKeyStorageContainer]
+		storageContainerName, ok := storageClassConfig.Parameters[csiParameterKeyStorageContainer]
 		if !ok {
 			continue
 		}
@@ -73,7 +73,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"Failed to check if storage container %q exists: failed to get cluster %q: %s. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
-					storageContainer,
+					storageContainerName,
 					clusterIdentifier,
 					err,
 				),
@@ -86,7 +86,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Found %d Clusters (Prism Elements) in Prism Central that match identifier %q. There must be exactly 1 Cluster that matches this identifier. Make the Cluster identifiers unique, and then retry.", ///nolint:lll // Message is long.
+					"Found %d Clusters (Prism Elements) in Prism Central that match identifier %q. There must be exactly 1 Cluster that matches this identifier. Use a unique Cluster name, or identify the Cluster by its UUID, then retry.", ///nolint:lll // Message is long.
 					len(clusters),
 					clusterIdentifier,
 				),
@@ -98,14 +98,14 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		// Found exactly one cluster.
 		cluster := &clusters[0]
 
-		containers, err := getStorageContainers(c.nclient, *cluster.ExtId, storageContainer)
+		containers, err := getStorageContainers(c.nclient, *cluster.ExtId, storageContainerName)
 		if err != nil {
 			result.Allowed = false
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"Failed to check if Storage Container %q exists in cluster %q: %s. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
-					storageContainer,
+					storageContainerName,
 					clusterIdentifier,
 					err,
 				),
@@ -114,18 +114,37 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 			continue
 		}
 
-		if len(containers) != 1 {
+		// Because Storage Container names are unique within a Cluster, we will either find exactly one
+		// Storage Container with the given name, or none at all.
+		switch len(containers) {
+		case 0:
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Found %d Storage Containers that match identifier %q on Cluster %q. There must be exactly 1 Storage Container that matches this identifier. Make the Storage Container identifiers unique, or use a different Storage Container, and then retry.", ///nolint:lll // Message is long.
-					len(containers),
-					storageContainer,
+					"Found no Storage Containers with name %q on Cluster %q. Create a Storage Container with this name on Cluster %q, and then retry.", ///nolint:lll // Message is long.
+					storageContainerName,
+					clusterIdentifier,
 					clusterIdentifier,
 				),
 				Field: c.field,
 			})
+		case 1:
 			continue
+		default: // 2 or more Storage Containers with the same name found on the same Cluster.
+			// This is an unexpected situation, as Storage Container names should be unique within a Cluster.
+			// We log this as an internal error, as it indicates a potential issue with the Nutanix API or the
+			// underlying data.
+			result.Allowed = false
+			result.InternalError = true
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf(
+					"Found %d Storage Containers with name %q on Cluster %q. This should not happen under normal circumstances. Please report.", ///nolint:lll // Message is long.
+					len(containers),
+					storageContainerName,
+					clusterIdentifier,
+				),
+				Field: c.field,
+			})
 		}
 	}
 
