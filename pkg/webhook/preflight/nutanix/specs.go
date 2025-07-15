@@ -65,10 +65,18 @@ func newConfigurationCheck(
 		cd.nutanixClusterConfigSpec = nutanixClusterConfigSpec
 	}
 
+	failureDomainByMachineDeploymentName := make(map[string]string)
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName := make(map[string]*carenv1.NutanixWorkerNodeConfigSpec)
+
 	if cd.cluster.Spec.Topology.Workers != nil {
 		for i := range cd.cluster.Spec.Topology.Workers.MachineDeployments {
 			md := &cd.cluster.Spec.Topology.Workers.MachineDeployments[i]
+
+			// Save the failureDomain only if it is configured
+			if md.FailureDomain != nil && *md.FailureDomain != "" {
+				failureDomainByMachineDeploymentName[md.Name] = *md.FailureDomain
+			}
+
 			if md.Variables == nil {
 				continue
 			}
@@ -106,6 +114,9 @@ func newConfigurationCheck(
 	if len(nutanixWorkerNodeConfigSpecByMachineDeploymentName) > 0 {
 		cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName = nutanixWorkerNodeConfigSpecByMachineDeploymentName
 	}
+
+	// Save the failureDomainByMachineDeploymentName
+	cd.failureDomainByMachineDeploymentName = failureDomainByMachineDeploymentName
 
 	return configurationCheck
 }

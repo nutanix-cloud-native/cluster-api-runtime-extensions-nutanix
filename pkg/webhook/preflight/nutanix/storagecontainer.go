@@ -165,20 +165,36 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 		return checks
 	}
 
-	if cd.nutanixClusterConfigSpec != nil && cd.nutanixClusterConfigSpec.ControlPlane != nil &&
+	if cd.nutanixClusterConfigSpec != nil &&
+		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
-		checks = append(checks,
-			&storageContainerCheck{
-				machineSpec: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				field:       "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails",
-				csiSpec:     &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-				nclient:     cd.nclient,
-			},
-		)
+		// Skip the check if failureDomains are configured
+		if len(cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.FailureDomains) > 0 {
+			cd.log.V(5).
+				Info("Skip preflight check NutanixStorageContainer for controlPlane with failureDomains configured.")
+		} else {
+			checks = append(checks,
+				&storageContainerCheck{
+					machineSpec: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
+					field:       "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails",
+					csiSpec:     &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+					nclient:     cd.nclient,
+				},
+			)
+		}
 	}
 
 	for mdName, nutanixWorkerNodeConfigSpec := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
+			// Skip the check if failureDomain is configured
+			if fdName, ok := cd.failureDomainByMachineDeploymentName[mdName]; ok {
+				cd.log.V(5).Info(
+					"Skip preflight check NutanixStorageContainer for machineDeployment with failureDomain configured.",
+					"machineDeployment", mdName, "failureDomain", fdName,
+				)
+				continue
+			}
+
 			checks = append(checks,
 				&storageContainerCheck{
 					machineSpec: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,

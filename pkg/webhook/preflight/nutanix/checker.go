@@ -60,6 +60,7 @@ type checkDependencies struct {
 
 	nutanixClusterConfigSpec                           *carenv1.NutanixClusterConfigSpec
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
+	failureDomainByMachineDeploymentName               map[string]string
 
 	nclient client
 	log     logr.Logger
