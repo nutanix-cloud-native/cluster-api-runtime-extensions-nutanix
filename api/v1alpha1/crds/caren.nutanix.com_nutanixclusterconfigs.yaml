@@ -299,6 +299,7 @@ spec:
                       description: |-
                         AutoRenewCertificates specifies the configuration for auto-renewing the
                         certificates of the control plane.
+                      nullable: true
                       properties:
                         daysBeforeExpiry:
                           description: |-
