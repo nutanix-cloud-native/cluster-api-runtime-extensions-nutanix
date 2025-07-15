@@ -71,8 +71,9 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 				Causes: []preflight.Cause{
 					{
 						Message: fmt.Sprintf(
-							"The VM Image identified by %q has no name. Give the VM Image a name, or use a different VM Image, then retry.", //nolint:lll // The message is long.
+							"The VM Image identified by %q has no name. Give the VM Image a name, or use a different VM Image. Make sure the VM Image contains the Kubernetes version supported by the VM Image. Choose a VM Image that supports the cluster Kubernetes version: %q", //nolint:lll // The message is long.
 							*c.machineDetails.Image,
+							c.clusterK8sVersion,
 						),
 						Field: c.field + ".image",
 					},
@@ -108,7 +109,7 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 				Causes: []preflight.Cause{
 					{
 						Message: fmt.Sprintf(
-							"The VM Image identified by %q has the name %q. The name does not have the cluster Kubernetes version %q. Change the VM Image name, or use a different VM Image.", //nolint:lll // The message is long.
+							"The VM Image identified by %q has the name %q. Make sure the VM Image name contains the Kubernetes version supported by the VM Image. Choose a VM Image that supports the cluster Kubernetes version: %q.", //nolint:lll // The message is long.
 							*c.machineDetails.Image,
 							*image.Name,
 							finalizedClusterK8sVersion,

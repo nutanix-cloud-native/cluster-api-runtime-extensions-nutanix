@@ -79,7 +79,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "The VM Image identified by \"test-uuid\" has the name \"kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644\". The name does not have the cluster Kubernetes version \"1.32.3\". Change the VM Image name, or use a different VM Image.", ///nolint:lll // The message is long.
+						Message: "The VM Image identified by \"test-uuid\" has the name \"kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644\". Make sure the VM Image name contains the Kubernetes version supported by the VM Image. Choose a VM Image that supports the cluster Kubernetes version: \"1.32.3\".", ///nolint:lll // The message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -136,7 +136,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "The VM Image identified by \"test-uuid\" has the name \"my-custom-image-name\". The name does not have the cluster Kubernetes version \"1.32.3\". Change the VM Image name, or use a different VM Image.", ///nolint:lll // The message is long.
+						Message: "The VM Image identified by \"test-uuid\" has the name \"my-custom-image-name\". Make sure the VM Image name contains the Kubernetes version supported by the VM Image. Choose a VM Image that supports the cluster Kubernetes version: \"1.32.3\".", ///nolint:lll // The message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -200,7 +200,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "The VM Image identified by \"test-uuid\" has no name. Give the VM Image a name, or use a different VM Image, then retry.", //nolint:lll // The message is long.
+						Message: "The VM Image identified by \"test-uuid\" has no name. Give the VM Image a name, or use a different VM Image. Make sure the VM Image contains the Kubernetes version supported by the VM Image. Choose a VM Image that supports the cluster Kubernetes version: \"1.32.3\"", //nolint:lll // The message is long.
 						Field:   "machineDetails.image",
 					},
 				},
