@@ -39,7 +39,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | helmRepository.images.bundleInitializer.tag | string | `""` |  |
 | helmRepository.images.mindthegap.pullPolicy | string | `"IfNotPresent"` |  |
 | helmRepository.images.mindthegap.repository | string | `"ghcr.io/mesosphere/mindthegap"` |  |
-| helmRepository.images.mindthegap.tag | string | `"v1.17.0"` |  |
+| helmRepository.images.mindthegap.tag | string | `"v1.22.1"` |  |
 | helmRepository.securityContext.fsGroup | int | `65532` |  |
 | helmRepository.securityContext.runAsGroup | int | `65532` |  |
 | helmRepository.securityContext.runAsUser | int | `65532` |  |
