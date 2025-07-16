@@ -146,6 +146,17 @@ namespaceSync:
 enforceClusterAutoscalerLimits:
   enabled: true
 
+# -- Runtime configuration for the failure domain rollout controller.
+# This controller monitors cluster.status.failureDomains and triggers rollouts
+# on KubeadmControlPlane when there are meaningful changes to failure domains.
+# e.g. when an active failure domain is disabled or removed, or when adding a new failure domain
+# can improve the distribution of control plane nodes across failure domains.
+failureDomainRollout:
+  # -- Enable the failure domain rollout controller
+  enabled: true
+  # -- Concurrency of the failure domain rollout controller
+  concurrency: 10
+
 deployment:
   replicas: 1
 

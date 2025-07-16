@@ -43,6 +43,17 @@
             "properties": {},
             "type": "object"
         },
+        "failureDomainRollout": {
+            "properties": {
+                "concurrency": {
+                    "type": "integer"
+                },
+                "enabled": {
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "helmAddonsConfigMap": {
             "type": "string"
         },
