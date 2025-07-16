@@ -32,6 +32,9 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | deployment.replicas | int | `1` |  |
 | enforceClusterAutoscalerLimits.enabled | bool | `true` |  |
 | env | object | `{}` |  |
+| failureDomainRollout | object | `{"concurrency":10,"enabled":true}` | Runtime configuration for the failure domain rollout controller. This controller monitors cluster.status.failureDomains and triggers rollouts on KubeadmControlPlane when there are meaningful changes to failure domains. e.g. when an active failure domain is disabled or removed, or when adding a new failure domain can improve the distribution of control plane nodes across failure domains. |
+| failureDomainRollout.concurrency | int | `10` | Concurrency of the failure domain rollout controller |
+| failureDomainRollout.enabled | bool | `true` | Enable the failure domain rollout controller |
 | helmAddonsConfigMap | string | `"default-helm-addons-config"` |  |
 | helmRepository.enabled | bool | `true` |  |
 | helmRepository.images.bundleInitializer.pullPolicy | string | `"IfNotPresent"` |  |
