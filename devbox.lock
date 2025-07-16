@@ -854,50 +854,50 @@
       }
     },
     "golangci-lint@latest": {
-      "last_modified": "2025-05-16T20:19:48Z",
-      "resolved": "github:NixOS/nixpkgs/12a55407652e04dcf2309436eb06fef0d3713ef3#golangci-lint",
+      "last_modified": "2025-07-04T02:32:11Z",
+      "resolved": "github:NixOS/nixpkgs/472908faa934435cf781ae8fac77291af3d137d3#golangci-lint",
       "source": "devbox-search",
-      "version": "2.1.6",
+      "version": "2.2.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8d3n5ly5r6prqyx3h5nr2v778hzwp83r-golangci-lint-2.1.6",
+              "path": "/nix/store/y34ymr5fc4nywh487v49djqzplqy8nih-golangci-lint-2.2.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8d3n5ly5r6prqyx3h5nr2v778hzwp83r-golangci-lint-2.1.6"
+          "store_path": "/nix/store/y34ymr5fc4nywh487v49djqzplqy8nih-golangci-lint-2.2.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/sazvkjsaxnpnplrsaj5wf1x9xkgv0s88-golangci-lint-2.1.6",
+              "path": "/nix/store/yvlh8x7mmlg7j8vqbzjslngipvkgfgdc-golangci-lint-2.2.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/sazvkjsaxnpnplrsaj5wf1x9xkgv0s88-golangci-lint-2.1.6"
+          "store_path": "/nix/store/yvlh8x7mmlg7j8vqbzjslngipvkgfgdc-golangci-lint-2.2.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/cqfnavdyysfdm9cam8bsyscbsk8zg781-golangci-lint-2.1.6",
+              "path": "/nix/store/zji7s77vyb0l2gpnz1nsa7al4w83rjw6-golangci-lint-2.2.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/cqfnavdyysfdm9cam8bsyscbsk8zg781-golangci-lint-2.1.6"
+          "store_path": "/nix/store/zji7s77vyb0l2gpnz1nsa7al4w83rjw6-golangci-lint-2.2.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/snqg2xccy7fb6q6n2dw3bfql6mqbh6ar-golangci-lint-2.1.6",
+              "path": "/nix/store/p1144qggxazwz6791avlf6cqzyvkh8cv-golangci-lint-2.2.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/snqg2xccy7fb6q6n2dw3bfql6mqbh6ar-golangci-lint-2.1.6"
+          "store_path": "/nix/store/p1144qggxazwz6791avlf6cqzyvkh8cv-golangci-lint-2.2.1"
         }
       }
     },
@@ -1574,6 +1574,54 @@
             }
           ],
           "store_path": "/nix/store/qx2b0gcg7xl29pz5zi071fjpwsx0rn4g-pre-commit-4.2.0"
+        }
+      }
+    },
+    "reviewdog@latest": {
+      "last_modified": "2025-06-20T02:24:11Z",
+      "resolved": "github:NixOS/nixpkgs/076e8c6678d8c54204abcb4b1b14c366835a58bb#reviewdog",
+      "source": "devbox-search",
+      "version": "0.20.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3yyxphpj15k63glrjhks2gkpj0ni9snf-reviewdog-0.20.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3yyxphpj15k63glrjhks2gkpj0ni9snf-reviewdog-0.20.3"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/drhvxi0lcpa5drqvh3asqll3kak7g2ja-reviewdog-0.20.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/drhvxi0lcpa5drqvh3asqll3kak7g2ja-reviewdog-0.20.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/i6cknyqzrvzzpzjh9n267y4b15zdxc6n-reviewdog-0.20.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/i6cknyqzrvzzpzjh9n267y4b15zdxc6n-reviewdog-0.20.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/15vfbrwqpi0z4d97790vs7cr5ysz6srd-reviewdog-0.20.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/15vfbrwqpi0z4d97790vs7cr5ysz6srd-reviewdog-0.20.3"
         }
       }
     },

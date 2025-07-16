@@ -50,3 +50,4 @@ test/e2e/config/caren-envsubst.yaml
 hack/tools/fetch-images/fetch-images
 caren-images.txt
 hack/examples/release/*-cluster-class.yaml
+golangci-lint-kube-api-linter

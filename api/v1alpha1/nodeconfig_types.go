@@ -37,7 +37,7 @@ type AWSWorkerNodeConfig struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Spec AWSWorkerNodeConfigSpec `json:"spec,omitempty"`
+	Spec *AWSWorkerNodeConfigSpec `json:"spec,omitempty"`
 }
 
 func (s AWSWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
@@ -62,7 +62,7 @@ type DockerWorkerNodeConfig struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Spec DockerControlPlaneSpec `json:"spec,omitempty"`
+	Spec *DockerControlPlaneSpec `json:"spec,omitempty"`
 }
 
 func (s DockerWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
@@ -87,7 +87,7 @@ type NutanixWorkerNodeConfig struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Spec NutanixWorkerNodeConfigSpec `json:"spec,omitempty"`
+	Spec *NutanixWorkerNodeConfigSpec `json:"spec,omitempty"`
 }
 
 func (s NutanixWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
@@ -105,6 +105,7 @@ type NutanixWorkerNodeConfigSpec struct {
 type GenericNodeSpec struct {
 	// Taints specifies the taints the Node API object should be registered with.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=32
 	Taints []Taint `json:"taints,omitempty"`
 
 	// NodeRegistration holds fields that relate to registering the new control-plane node to the cluster.
@@ -118,10 +119,13 @@ type GenericNodeSpec struct {
 type Taint struct {
 	// The taint key to be applied to a node.
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength=253
 	Key string `json:"key"`
 
 	// The taint value corresponding to the taint key.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
 	Value string `json:"value,omitempty"`
 
 	// The effect of the taint on pods that do not tolerate the taint.

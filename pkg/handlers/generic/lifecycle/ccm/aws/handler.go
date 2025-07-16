@@ -10,7 +10,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -93,7 +92,7 @@ func (a *AWSCCM) Apply(
 	}
 
 	var strategy addons.Applier
-	switch ptr.Deref(clusterConfig.Addons.CCM.Strategy, "") {
+	switch clusterConfig.Addons.CCM.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := a.helmChartInfoGetter.For(ctx, log, config.AWSCCM)
 		if err != nil {
@@ -114,7 +113,7 @@ func (a *AWSCCM) Apply(
 	case "":
 		return fmt.Errorf("strategy not specified for AWS CCM")
 	default:
-		return fmt.Errorf("strategy %s not implemented", *clusterConfig.Addons.CCM.Strategy)
+		return fmt.Errorf("strategy %s not implemented", clusterConfig.Addons.CCM.Strategy)
 	}
 
 	if err := strategy.Apply(ctx, cluster, a.config.DefaultsNamespace(), log); err != nil {

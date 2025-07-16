@@ -15,7 +15,7 @@ type AutoRenewCertificatesSpec struct {
 	// certificates of the control plane will expire within the specified days.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=7
-	DaysBeforeExpiry int32 `json:"daysBeforeExpiry,omitempty"`
+	DaysBeforeExpiry int32 `json:"daysBeforeExpiry"`
 }
 
 // DockerControlPlaneSpec defines the desired state of the control plane for a Docker cluster.
