@@ -12,7 +12,12 @@ import (
 	clustermgmtv4errors "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/error"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -20,6 +25,55 @@ import (
 )
 
 func TestInitStorageContainerChecks(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	require.NoError(t, capxv1.AddToScheme(testScheme))
+
+	fd1 := &capxv1.NutanixFailureDomain{
+		ObjectMeta: metav1.ObjectMeta{Name: "fd-1", Namespace: "default"},
+		Spec: capxv1.NutanixFailureDomainSpec{
+			PrismElementCluster: capxv1.NutanixResourceIdentifier{
+				Type: capxv1.NutanixIdentifierName,
+				Name: ptr.To("pe-cluster-from-fd-1"),
+			},
+		},
+	}
+	fd2 := &capxv1.NutanixFailureDomain{
+		ObjectMeta: metav1.ObjectMeta{Name: "fd-2", Namespace: "default"},
+		Spec: capxv1.NutanixFailureDomainSpec{
+			PrismElementCluster: capxv1.NutanixResourceIdentifier{
+				Type: capxv1.NutanixIdentifierName,
+				Name: ptr.To("pe-cluster-from-fd-2"),
+			},
+		},
+	}
+	fd3 := &capxv1.NutanixFailureDomain{
+		ObjectMeta: metav1.ObjectMeta{Name: "fd-3", Namespace: "default"},
+		Spec: capxv1.NutanixFailureDomainSpec{
+			PrismElementCluster: capxv1.NutanixResourceIdentifier{
+				Type: capxv1.NutanixIdentifierName,
+				Name: ptr.To("pe-cluster-from-fd-3"),
+			},
+		},
+	}
+	fd4 := &capxv1.NutanixFailureDomain{
+		ObjectMeta: metav1.ObjectMeta{Name: "fd-4", Namespace: "default"},
+		Spec: capxv1.NutanixFailureDomainSpec{
+			PrismElementCluster: capxv1.NutanixResourceIdentifier{
+				Type: capxv1.NutanixIdentifierName,
+				Name: ptr.To("pe-cluster-from-fd-4"),
+			},
+		},
+	}
+
+	fakeKubeClient := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(fd1, fd2, fd3, fd4).Build()
+
+	clusterObj := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-cluster",
+			Namespace: "default",
+		},
+	}
+
 	testCases := []struct {
 		name                                 string
 		nutanixClusterConfigSpec             *carenv1.NutanixClusterConfigSpec
@@ -27,6 +81,8 @@ func TestInitStorageContainerChecks(t *testing.T) {
 		failureDomainByMachineDeploymentName map[string]string
 		expectedChecksCount                  int
 		nclient                              client
+		kclient                              ctrlclient.Client
+		cluster                              *clusterv1.Cluster
 	}{
 		{
 			name:                         "client not initialized",
@@ -112,6 +168,8 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          1,
 			nclient:                      &mocknclient{},
+			kclient:                      fakeKubeClient,
+			cluster:                      clusterObj,
 		},
 		{
 			name: "cluster config with CSI and control plane with failure domains",
@@ -144,8 +202,10 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				},
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
-			expectedChecksCount:          0,
+			expectedChecksCount:          3,
 			nclient:                      &mocknclient{},
+			kclient:                      fakeKubeClient,
+			cluster:                      clusterObj,
 		},
 		{
 			name: "cluster config with CSI and worker nodes without failureDomain",
@@ -172,6 +232,8 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			expectedChecksCount: 1,
 			nclient:             &mocknclient{},
+			kclient:             fakeKubeClient,
+			cluster:             clusterObj,
 		},
 		{
 			name: "cluster config with CSI and worker nodes with failureDomain",
@@ -197,8 +259,10 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				},
 			},
 			failureDomainByMachineDeploymentName: map[string]string{"worker-1": "fd-4"},
-			expectedChecksCount:                  0,
+			expectedChecksCount:                  1,
 			nclient:                              &mocknclient{},
+			kclient:                              fakeKubeClient,
+			cluster:                              clusterObj,
 		},
 		{
 			name: "cluster config with CSI, control plane and worker nodes",
@@ -302,6 +366,8 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tc.workerNodeConfigSpecByMDName,
 				failureDomainByMachineDeploymentName:               tc.failureDomainByMachineDeploymentName,
 				nclient:                                            tc.nclient,
+				kclient:                                            tc.kclient,
+				cluster:                                            tc.cluster,
 			}
 			if cd.failureDomainByMachineDeploymentName == nil {
 				cd.failureDomainByMachineDeploymentName = map[string]string{}
@@ -317,6 +383,9 @@ func TestInitStorageContainerChecks(t *testing.T) {
 }
 
 func TestStorageContainerCheck(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	require.NoError(t, capxv1.AddToScheme(testScheme))
+
 	clusterName := "test-cluster"
 	field := "test.field.path"
 
@@ -329,6 +398,9 @@ func TestStorageContainerCheck(t *testing.T) {
 		expectedAllowed      bool
 		expectedError        bool
 		expectedCauseMessage string
+		failureDomainName    string
+		kclient              ctrlclient.Client
+		namespace            string
 	}{
 		{
 			name: "nil storage class configs",
@@ -974,16 +1046,158 @@ func TestStorageContainerCheck(t *testing.T) {
 			expectedAllowed: true,
 			expectedError:   false,
 		},
+		{
+			name: "successful storage container check with failure domain",
+			csiSpec: &carenv1.CSIProvider{
+				StorageClassConfigs: map[string]carenv1.StorageClassConfig{
+					"test-sc": {
+						Parameters: map[string]string{
+							"storageContainer": "fd-container",
+						},
+					},
+				},
+			},
+			nclient: &mocknclient{
+				listClustersFunc: func(
+					page,
+					limit *int,
+					filter,
+					orderby,
+					apply,
+					select_ *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.ListClustersApiResponse,
+					error,
+				) {
+					require.NotNil(t, filter)
+					assert.Equal(
+						t,
+						"name eq 'pe-cluster-from-fd'",
+						*filter,
+						"filter should be based on failure domain",
+					)
+
+					resp := &clustermgmtv4.ListClustersApiResponse{
+						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+					}
+					err := resp.SetData([]clustermgmtv4.Cluster{
+						{
+							Name:  ptr.To("pe-cluster-from-fd"),
+							ExtId: ptr.To("cluster-uuid-fd"),
+						},
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+				listStorageContainersFunc: func(
+					page,
+					limit *int,
+					filter,
+					orderby,
+					select_ *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.ListStorageContainersApiResponse,
+					error,
+				) {
+					require.NotNil(t, filter)
+					assert.Equal(
+						t,
+						"name eq 'fd-container' and clusterExtId eq 'cluster-uuid-fd'",
+						*filter,
+						"filter should be based on storage container and cluster from failure domain",
+					)
+
+					resp := &clustermgmtv4.ListStorageContainersApiResponse{
+						ObjectType_: ptr.To("clustermgmt.v4.config.ListStorageContainersApiResponse"),
+					}
+					err := resp.SetData([]clustermgmtv4.StorageContainer{
+						{
+							Name: ptr.To("fd-container"),
+						},
+					})
+					require.NoError(t, err)
+					return resp, nil
+				},
+			},
+			failureDomainName: "my-fd",
+			kclient: fake.NewClientBuilder().
+				WithScheme(testScheme).
+				WithObjects(&capxv1.NutanixFailureDomain{
+					ObjectMeta: metav1.ObjectMeta{Name: "my-fd", Namespace: "test-ns"},
+					Spec: capxv1.NutanixFailureDomainSpec{
+						PrismElementCluster: capxv1.NutanixResourceIdentifier{
+							Type: capxv1.NutanixIdentifierName,
+							Name: ptr.To("pe-cluster-from-fd"),
+						},
+					},
+				}).Build(),
+			namespace:       "test-ns",
+			expectedAllowed: true,
+			expectedError:   false,
+		},
+		{
+			name: "failure domain not found",
+			csiSpec: &carenv1.CSIProvider{
+				StorageClassConfigs: map[string]carenv1.StorageClassConfig{
+					"test-sc": {
+						Parameters: map[string]string{
+							"storageContainer": "some-container",
+						},
+					},
+				},
+			},
+			nclient:              &mocknclient{},
+			failureDomainName:    "non-existent-fd",
+			kclient:              fake.NewClientBuilder().WithScheme(testScheme).Build(), // Empty client
+			namespace:            "test-ns",
+			expectedAllowed:      false,
+			expectedError:        false,
+			expectedCauseMessage: "NutanixFailureDomain \"non-existent-fd\" referenced in cluster was not found in the management cluster. Please create it and retry.", //nolint:lll // The message is long.
+		},
+		{
+			name: "error getting failure domain",
+			csiSpec: &carenv1.CSIProvider{
+				StorageClassConfigs: map[string]carenv1.StorageClassConfig{
+					"test-sc": {
+						Parameters: map[string]string{
+							"storageContainer": "some-container",
+						},
+					},
+				},
+			},
+			nclient:           &mocknclient{},
+			failureDomainName: "fd-with-error",
+			kclient: &mockKubeClient{
+				SubResourceClient: nil,
+				getFunc: func(
+					ctx context.Context,
+					key ctrlclient.ObjectKey,
+					obj ctrlclient.Object,
+					opts ...ctrlclient.GetOption,
+				) error {
+					return fmt.Errorf("kube API error")
+				},
+			},
+			namespace:            "test-ns",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedCauseMessage: "Failed to get cluster identifier from NutanixFailureDomain \"fd-with-error\": kube API error This is usually a temporary error. Please retry.", //nolint:lll // The message is long.
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create the check function
 			check := storageContainerCheck{
-				machineSpec: tc.machineSpec,
-				csiSpec:     tc.csiSpec,
-				nclient:     tc.nclient,
-				field:       field,
+				machineSpec:       tc.machineSpec,
+				csiSpec:           tc.csiSpec,
+				nclient:           tc.nclient,
+				field:             field,
+				failureDomainName: tc.failureDomainName,
+				kclient:           tc.kclient,
+				namespace:         tc.namespace,
 			}
 
 			// Run the check

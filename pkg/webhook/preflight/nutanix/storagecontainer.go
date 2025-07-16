@@ -9,8 +9,10 @@ import (
 	"sync"
 
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
+	"k8s.io/apimachinery/pkg/api/errors"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
@@ -20,10 +22,16 @@ const (
 )
 
 type storageContainerCheck struct {
+	// machineSpec is used for cluster identifier when no failure domain is configured
 	machineSpec *carenv1.NutanixMachineDetails
-	field       string
-	csiSpec     *carenv1.CSIProvider
-	nclient     client
+	// failureDomainName is used for cluster identifier when failure domain is configured
+	failureDomainName string
+	namespace         string
+	kclient           ctrlclient.Client
+	// Common fields
+	field   string
+	csiSpec *carenv1.CSIProvider
+	nclient client
 }
 
 func (c *storageContainerCheck) Name() string {
@@ -45,7 +53,40 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		return result
 	}
 
-	clusterIdentifier := &c.machineSpec.Cluster
+	// Get cluster identifier based on whether failure domain is configured
+	var clusterIdentifier *capxv1.NutanixResourceIdentifier
+	var err error
+
+	if c.failureDomainName != "" {
+		// Get cluster identifier from failure domain
+		clusterIdentifier, err = c.getClusterIdentifierFromFailureDomain(ctx)
+		if err != nil {
+			result.Allowed = false
+			if errors.IsNotFound(err) {
+				result.Causes = append(result.Causes, preflight.Cause{
+					Message: fmt.Sprintf(
+						"NutanixFailureDomain %q referenced in cluster was not found in the management cluster. Please create it and retry.", //nolint:lll // Message is long.
+						c.failureDomainName,
+					),
+					Field: c.field,
+				})
+			} else {
+				result.InternalError = true
+				result.Causes = append(result.Causes, preflight.Cause{
+					Message: fmt.Sprintf(
+						"Failed to get cluster identifier from NutanixFailureDomain %q: %v This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+						c.failureDomainName,
+						err,
+					),
+					Field: c.field,
+				})
+			}
+			return result
+		}
+	} else {
+		// Use cluster identifier from machine spec
+		clusterIdentifier = &c.machineSpec.Cluster
+	}
 
 	// To avoid unnecessary API calls, we delay the retrieval of clusters until we actually
 	// need to check for storage containers.
@@ -151,6 +192,19 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 	return result
 }
 
+// getClusterIdentifierFromFailureDomain fetches the failure domain and returns the cluster identifier.
+func (c *storageContainerCheck) getClusterIdentifierFromFailureDomain(
+	ctx context.Context,
+) (*capxv1.NutanixResourceIdentifier, error) {
+	fdObj := &capxv1.NutanixFailureDomain{}
+	fdKey := ctrlclient.ObjectKey{Name: c.failureDomainName, Namespace: c.namespace}
+	if err := c.kclient.Get(ctx, fdKey, fdObj); err != nil {
+		return nil, err
+	}
+
+	return &fdObj.Spec.PrismElementCluster, nil
+}
+
 func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	checks := []preflight.Check{}
 
@@ -168,10 +222,27 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	if cd.nutanixClusterConfigSpec != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
-		// Skip the check if failureDomains are configured
+		// Check if failureDomains are configured for control plane
 		if len(cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.FailureDomains) > 0 {
-			cd.log.V(5).
-				Info("Skip preflight check NutanixStorageContainer for controlPlane with failureDomains configured.")
+			// Create a check for each failure domain
+			// Only create checks if we have the required dependencies for failure domain checks
+			if cd.cluster != nil && cd.kclient != nil {
+				for _, fdName := range cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.FailureDomains {
+					if fdName != "" {
+						checks = append(checks,
+							&storageContainerCheck{
+								failureDomainName: fdName,
+								namespace:         cd.cluster.Namespace,
+								kclient:           cd.kclient,
+
+								field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains",
+								csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+								nclient: cd.nclient,
+							},
+						)
+					}
+				}
+			}
 		} else {
 			checks = append(checks,
 				&storageContainerCheck{
@@ -186,27 +257,41 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 
 	for mdName, nutanixWorkerNodeConfigSpec := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
-			// Skip the check if failureDomain is configured
+			// Check if failureDomain is configured for this machine deployment
 			if fdName, ok := cd.failureDomainByMachineDeploymentName[mdName]; ok {
-				cd.log.V(5).Info(
-					"Skip preflight check NutanixStorageContainer for machineDeployment with failureDomain configured.",
-					"machineDeployment", mdName, "failureDomain", fdName,
-				)
-				continue
-			}
+				// Use failure domain for cluster information
+				// Only create checks if we have the required dependencies for failure domain checks
+				if fdName != "" && cd.cluster != nil && cd.kclient != nil {
+					checks = append(checks,
+						&storageContainerCheck{
+							failureDomainName: fdName,
+							namespace:         cd.cluster.Namespace,
+							kclient:           cd.kclient,
 
-			checks = append(checks,
-				&storageContainerCheck{
-					machineSpec: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
-					//nolint:lll // The field is long.
-					field: fmt.Sprintf(
-						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
-						mdName,
-					),
-					csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-					nclient: cd.nclient,
-				},
-			)
+							field: fmt.Sprintf(
+								"$.spec.topology.workers.machineDeployments[?@.name==%q].failureDomain",
+								mdName,
+							),
+							csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+							nclient: cd.nclient,
+						},
+					)
+				}
+			} else {
+				// Use machine details for cluster information
+				checks = append(checks,
+					&storageContainerCheck{
+						machineSpec: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
+						//nolint:lll // The field is long.
+						field: fmt.Sprintf(
+							"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
+							mdName,
+						),
+						csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+						nclient: cd.nclient,
+					},
+				)
+			}
 		}
 	}
 
@@ -236,7 +321,7 @@ func getStorageContainers(
 
 func getClusters(
 	client client,
-	clusterIdentifier *v1beta1.NutanixResourceIdentifier,
+	clusterIdentifier *capxv1.NutanixResourceIdentifier,
 ) ([]clustermgmtv4.Cluster, error) {
 	switch {
 	case clusterIdentifier.IsUUID():
