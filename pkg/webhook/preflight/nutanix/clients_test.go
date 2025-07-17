@@ -9,6 +9,7 @@ import (
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	prismv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 )
@@ -70,6 +71,30 @@ type mocknclient struct {
 		select_ *string,
 		args ...map[string]interface{},
 	) (*netv4.ListSubnetsApiResponse, error)
+}
+
+type mockKubeClient struct {
+	ctrlclient.Client
+	SubResourceClient ctrlclient.SubResourceClient
+	getFunc           func(
+		ctx context.Context,
+		key ctrlclient.ObjectKey,
+		obj ctrlclient.Object,
+		opts ...ctrlclient.GetOption,
+	) error
+}
+
+func (m *mockKubeClient) Get(
+	ctx context.Context,
+	key ctrlclient.ObjectKey,
+	obj ctrlclient.Object,
+	opts ...ctrlclient.GetOption,
+) error {
+	return m.getFunc(ctx, key, obj, opts...)
+}
+
+func (m *mockKubeClient) SubResource(subResource string) ctrlclient.SubResourceClient {
+	return m.SubResourceClient
 }
 
 func (m *mocknclient) GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error) {
