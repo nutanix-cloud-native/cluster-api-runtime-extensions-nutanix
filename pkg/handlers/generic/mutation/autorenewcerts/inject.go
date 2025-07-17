@@ -67,8 +67,12 @@ func (h *autoRenewCerts) Mutate(
 		h.variableName,
 		h.variableFieldPath...,
 	)
-	if err != nil && !variables.IsNotFoundError(err) {
-		return err
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("Control Plane auto renew certs variable not defined")
+		} else {
+			return err
+		}
 	}
 
 	log = log.WithValues(
