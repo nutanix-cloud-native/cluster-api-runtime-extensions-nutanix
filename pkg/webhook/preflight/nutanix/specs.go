@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
@@ -77,12 +79,41 @@ func newConfigurationCheck(
 				failureDomainByMachineDeploymentName[md.Name] = *md.FailureDomain
 			}
 
-			if md.Variables == nil {
+			var workerConfigVar *clusterv1.ClusterVariable
+			var workerConfigFieldPath string
+			if md.Variables != nil {
+				workerConfigVar = variables.GetClusterVariableByName(
+					carenv1.WorkerConfigVariableName,
+					md.Variables.Overrides,
+				)
+				if workerConfigVar != nil {
+					workerConfigFieldPath = fmt.Sprintf(
+						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=='%s'].value.nutanix",
+						md.Name,
+						carenv1.WorkerConfigVariableName,
+					)
+				}
+			}
+			if workerConfigVar == nil {
+				workerConfigVar = variables.GetClusterVariableByName(
+					carenv1.WorkerConfigVariableName,
+					cd.cluster.Spec.Topology.Variables,
+				)
+				if workerConfigVar != nil {
+					workerConfigFieldPath = fmt.Sprintf(
+						"$.spec.topology.variables[?@.name=='%s'].value.nutanix",
+						carenv1.WorkerConfigVariableName,
+					)
+				}
+			}
+
+			if workerConfigVar == nil {
 				continue
 			}
+
 			nutanixWorkerNodeConfigSpec := &carenv1.NutanixWorkerNodeConfigSpec{}
 			err := variables.UnmarshalClusterVariable(
-				variables.GetClusterVariableByName(carenv1.WorkerConfigVariableName, md.Variables.Overrides),
+				workerConfigVar,
 				nutanixWorkerNodeConfigSpec,
 			)
 			if err != nil {
@@ -92,24 +123,22 @@ func newConfigurationCheck(
 				configurationCheck.result.Causes = append(configurationCheck.result.Causes,
 					preflight.Cause{
 						Message: fmt.Sprintf(
-							"Failed to unmarshal topology machineDeployment variable %q: %s. Review the Cluster.", ///nolint:lll // Message is long.
+							"Failed to unmarshal variable %q: %s. Review the Cluster.", ///nolint:lll // Message is long.
 							carenv1.WorkerConfigVariableName,
 							err,
 						),
-						//nolint:lll // The field is long.
-						Field: fmt.Sprintf(
-							"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
-							md.Name,
-						),
+						Field: workerConfigFieldPath,
 					},
 				)
 			}
+
 			// Save the NutanixWorkerNodeConfigSpec only if it contains Nutanix configuration.
 			if nutanixWorkerNodeConfigSpec.Nutanix != nil {
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName[md.Name] = nutanixWorkerNodeConfigSpec
 			}
 		}
 	}
+
 	// Save the NutanixWorkerNodeConfigSpecByMachineDeploymentName only if it contains at least one Nutanix configuration.
 	if len(nutanixWorkerNodeConfigSpecByMachineDeploymentName) > 0 {
 		cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName = nutanixWorkerNodeConfigSpecByMachineDeploymentName

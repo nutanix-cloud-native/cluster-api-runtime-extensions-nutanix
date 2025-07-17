@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -58,7 +59,7 @@ func TestNewConfigurationCheck(t *testing.T) {
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
 									Raw: []byte(
-										`{"controlPlane": {"nutanix": {"prismElement": {"address": "pe.example.com"}}}}`,
+										`{"controlPlane": {"nutanix": {"cluster": {"name": "cluster-from-variable"}}}}`,
 									),
 								},
 							},
@@ -96,7 +97,7 @@ func TestNewConfigurationCheck(t *testing.T) {
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
 													Raw: []byte(
-														`{"nutanix": {"prismElement": {"address": "pe.example.com"}}}`,
+														`{"nutanix": {"cluster": {"name": "cluster-from-override"}}}`,
 													),
 												},
 											},
@@ -183,8 +184,8 @@ func TestNewConfigurationCheck(t *testing.T) {
 				InternalError: true,
 				Causes: []preflight.Cause{
 					{
-						Message: "Failed to unmarshal topology machineDeployment variable \"workerConfig\": failed to unmarshal json: invalid character 'i' looking for beginning of object key string. Review the Cluster.", ///nolint:lll // The message is long.
-						Field:   "$.spec.topology.workers.machineDeployments[?@.name==\"md-0\"].variables[?@.name=workerConfig].value.nutanix.machineDetails",                                                                ///nolint:lll // The field is long.
+						Message: "Failed to unmarshal variable \"workerConfig\": failed to unmarshal json: invalid character 'i' looking for beginning of object key string. Review the Cluster.", ///nolint:lll // The message is long.
+						Field:   "$.spec.topology.workers.machineDeployments[?@.name==\"md-0\"].variables[?@.name=='workerConfig'].value.nutanix",                                                 ///nolint:lll // The field is long.
 					},
 				},
 			},
@@ -238,7 +239,7 @@ func TestNewConfigurationCheck(t *testing.T) {
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
 													Raw: []byte(
-														`{"nutanix": {"prismElement": {"address": "pe1.example.com"}}}`,
+														`{"nutanix": {"cluster": {"name": "cluster-from-override"}}}`,
 													),
 												},
 											},
@@ -253,7 +254,7 @@ func TestNewConfigurationCheck(t *testing.T) {
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
 													Raw: []byte(
-														`{"nutanix": {"prismElement": {"address": "pe2.example.com"}}}`,
+														`{"nutanix": {"cluster": {"name": "cluster-from-override"}}}`,
 													),
 												},
 											},
@@ -271,6 +272,89 @@ func TestNewConfigurationCheck(t *testing.T) {
 			expectedNutanixClusterConfigSpec:          false,
 			expectedWorkerNodeConfigSpecMapNotEmpty:   true,
 			expectedWorkerNodeConfigSpecMapEntryCount: 2,
+		},
+		{
+			name: "worker config from cluster variables",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name: carenv1.ClusterConfigVariableName,
+								Value: v1.JSON{
+									Raw: []byte(`{}`),
+								},
+							},
+							{
+								Name: carenv1.WorkerConfigVariableName,
+								Value: v1.JSON{
+									Raw: []byte(
+										`{"nutanix": {"cluster": {"name": "cluster-from-variable"}}}`,
+									),
+								},
+							},
+						},
+						Workers: &clusterv1.WorkersTopology{
+							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+								{
+									Name: "md-0",
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: preflight.CheckResult{
+				Allowed: true,
+			},
+			expectedNutanixClusterConfigSpec:          false,
+			expectedWorkerNodeConfigSpecMapNotEmpty:   true,
+			expectedWorkerNodeConfigSpecMapEntryCount: 1,
+		},
+		{
+			name: "worker config with failure domain",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name: carenv1.ClusterConfigVariableName,
+								Value: v1.JSON{
+									Raw: []byte(
+										`{"nutanix": {"failureDomains": ["fd-1", "fd-2", "fd-3"]}}`,
+									),
+								},
+							},
+						},
+						Workers: &clusterv1.WorkersTopology{
+							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+								{
+									Name: "md-0",
+									Variables: &clusterv1.MachineDeploymentVariables{
+										Overrides: []clusterv1.ClusterVariable{
+											{
+												Name: carenv1.WorkerConfigVariableName,
+												Value: v1.JSON{
+													Raw: []byte(
+														`{"nutanix": {"cluster": {"name": "worker-cluster"}, "subnets": [{"name": "worker-subnet"}]}}`,
+													),
+												},
+											},
+										},
+									},
+									FailureDomain: ptr.To("fd-1"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: preflight.CheckResult{
+				Allowed: true,
+			},
+			expectedNutanixClusterConfigSpec:          true,
+			expectedWorkerNodeConfigSpecMapNotEmpty:   true,
+			expectedWorkerNodeConfigSpecMapEntryCount: 1,
 		},
 		{
 			name: "worker config without nutanix field",
@@ -341,6 +425,77 @@ func TestNewConfigurationCheck(t *testing.T) {
 			expectedNutanixClusterConfigSpec:          false,
 			expectedWorkerNodeConfigSpecMapNotEmpty:   false,
 			expectedWorkerNodeConfigSpecMapEntryCount: 0,
+		},
+		{
+			name: "mixed worker scenarios - with/without overrides and with/without failure domains",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name: carenv1.ClusterConfigVariableName,
+								Value: v1.JSON{
+									Raw: []byte(`{"nutanix": {"failureDomains": ["fd-1", "fd-2", "fd-3"]}}`),
+								},
+							},
+							{
+								Name: carenv1.WorkerConfigVariableName,
+								Value: v1.JSON{
+									Raw: []byte(`{"nutanix": {"cluster": {"name": "cluster-from-variable"}}}`),
+								},
+							},
+						},
+						Workers: &clusterv1.WorkersTopology{
+							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+								{
+									Name: "md-with-overrides",
+									Variables: &clusterv1.MachineDeploymentVariables{
+										Overrides: []clusterv1.ClusterVariable{
+											{
+												Name: carenv1.WorkerConfigVariableName,
+												Value: v1.JSON{
+													Raw: []byte(
+														`{"nutanix": {"cluster": {"name": "cluster-from-override"}}}`,
+													),
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "md-without-overrides",
+								},
+								{
+									Name:          "md-with-overrides-and-fd",
+									FailureDomain: ptr.To("fd-1"),
+									Variables: &clusterv1.MachineDeploymentVariables{
+										Overrides: []clusterv1.ClusterVariable{
+											{
+												Name: carenv1.WorkerConfigVariableName,
+												Value: v1.JSON{
+													Raw: []byte(
+														`{"nutanix": {"cluster": {"name": "cluster-from-override"}}}`,
+													),
+												},
+											},
+										},
+									},
+								},
+								{
+									Name:          "md-without-overrides-and-fd",
+									FailureDomain: ptr.To("fd-1"),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: preflight.CheckResult{
+				Allowed: true,
+			},
+			expectedNutanixClusterConfigSpec:          true,
+			expectedWorkerNodeConfigSpecMapNotEmpty:   true,
+			expectedWorkerNodeConfigSpecMapEntryCount: 4,
 		},
 	}
 
