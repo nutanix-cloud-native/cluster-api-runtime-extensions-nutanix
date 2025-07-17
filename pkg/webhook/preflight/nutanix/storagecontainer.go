@@ -45,7 +45,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		return result
 	}
 
-	clusterIdentifier := &c.machineSpec.Cluster
+	clusterIdentifier := c.machineSpec.Cluster
 
 	// To avoid unnecessary API calls, we delay the retrieval of clusters until we actually
 	// need to check for storage containers.

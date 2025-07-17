@@ -11,6 +11,7 @@ import (
 	"net/netip"
 
 	v1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -89,7 +90,113 @@ func (a *nutanixValidator) validate(
 		}
 	}
 
+	if err := validateFailureDomainRelatedConfig(clusterConfig, cluster); err != nil {
+		return admission.Denied(err.Error())
+	}
+
 	return admission.Allowed("")
+}
+
+// validateFailureDomainRelatedConfig validates the failure domain related configuration in cluster topology.
+func validateFailureDomainRelatedConfig(
+	clusterConfig *variables.ClusterConfigSpec,
+	cluster *clusterv1.Cluster,
+) error {
+	fldErrs := field.ErrorList{}
+	fldPath := field.NewPath("spec", "topology")
+
+	// Validate that either failureDomains is set, or cluster and subnets are set with machineDetails, for control plane.
+	if clusterConfig.ControlPlane != nil &&
+		clusterConfig.ControlPlane.Nutanix != nil &&
+		len(clusterConfig.ControlPlane.Nutanix.FailureDomains) == 0 {
+
+		machineDetails := clusterConfig.ControlPlane.Nutanix.MachineDetails
+		if machineDetails.Cluster == nil || !(machineDetails.Cluster.IsName() || machineDetails.Cluster.IsUUID()) {
+			fldErrs = append(fldErrs, field.Required(
+				fldPath.Child(
+					"variables",
+					"clusterConfig",
+					"value",
+					"controlPlane",
+					"nutanix",
+					"machineDetails",
+					"cluster",
+				),
+				"\"cluster\" must set when failureDomains is not configured.",
+			))
+		}
+
+		if len(machineDetails.Subnets) == 0 {
+			fldErrs = append(fldErrs, field.Required(
+				fldPath.Child(
+					"variables",
+					"clusterConfig",
+					"value",
+					"controlPlane",
+					"nutanix",
+					"machineDetails",
+					"subnets",
+				),
+				"\"subnets\" must set when failureDomains is not configured.",
+			))
+		}
+	}
+
+	// Validate either failureDomains is set, or cluster and sebnets are set with machineDetails, for workers.
+	if cluster.Spec.Topology.Workers != nil {
+		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
+			md := cluster.Spec.Topology.Workers.MachineDeployments[i]
+			if md.FailureDomain != nil && *md.FailureDomain != "" {
+				// failureDomain is configured
+				continue
+			}
+
+			if md.Variables != nil && len(md.Variables.Overrides) > 0 {
+				workerConfig, err := variables.UnmarshalWorkerConfigVariable(md.Variables.Overrides)
+				if err != nil {
+					fldErrs = append(fldErrs, field.InternalError(
+						fldPath.Child("workers", "machineDeployments", "variables", "workerConfig"),
+						fmt.Errorf("failed to unmarshal worker topology variable: %w", err)))
+				}
+				if workerConfig.Nutanix == nil {
+					continue
+				}
+
+				machineDetails := workerConfig.Nutanix.MachineDetails
+				if machineDetails.Cluster == nil ||
+					!(machineDetails.Cluster.IsName() || machineDetails.Cluster.IsUUID()) {
+					fldErrs = append(fldErrs, field.Required(
+						fldPath.Child(
+							"workers",
+							"machineDeployments",
+							"variables",
+							"workerConfig",
+							"nutanix",
+							"machineDetails",
+							"cluster",
+						),
+						"\"cluster\" must set when failureDomain is not configured.",
+					))
+				}
+				if len(machineDetails.Subnets) == 0 {
+					fldErrs = append(fldErrs, field.Required(
+						fldPath.Child(
+							"workers",
+							"machineDeployments",
+							"variables",
+							"workerConfig",
+							"nutanix",
+							"machineDetails",
+							"subnets",
+						),
+						"\"subnets\" must set when failureDomain is not configured.",
+					))
+				}
+			}
+		}
+	}
+
+	return fldErrs.ToAggregate()
 }
 
 // validatePrismCentralIPNotInLoadBalancerIPRange checks if the Prism Central IP is not

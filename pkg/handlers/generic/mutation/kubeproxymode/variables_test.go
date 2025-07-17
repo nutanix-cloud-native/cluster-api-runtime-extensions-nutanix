@@ -162,13 +162,18 @@ func minimalNutanixClusterConfigSpec() v1alpha1.NutanixClusterConfigSpec {
 						Type: capxv1.NutanixIdentifierName,
 						Name: ptr.To("fake-image"),
 					},
-					Cluster: capxv1.NutanixResourceIdentifier{
+					Cluster: &capxv1.NutanixResourceIdentifier{
 						Type: capxv1.NutanixIdentifierName,
 						Name: ptr.To("fake-pe-cluster"),
 					},
 					MemorySize:     resource.MustParse("8Gi"),
 					SystemDiskSize: resource.MustParse("40Gi"),
-					Subnets:        []capxv1.NutanixResourceIdentifier{},
+					Subnets: []capxv1.NutanixResourceIdentifier{
+						{
+							Type: capxv1.NutanixIdentifierName,
+							Name: ptr.To("fake-subnet"),
+						},
+					},
 				},
 			},
 		},

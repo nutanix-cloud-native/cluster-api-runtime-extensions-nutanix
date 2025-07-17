@@ -27,7 +27,7 @@ var (
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-image"),
 		},
-		Cluster: capxv1.NutanixResourceIdentifier{
+		Cluster: &capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-pe-cluster"),
 		},
@@ -72,7 +72,7 @@ var (
 		ImageLookup: &capxv1.NutanixImageLookup{
 			BaseOS: "rockylinux-9",
 		},
-		Cluster: capxv1.NutanixResourceIdentifier{
+		Cluster: &capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
 			Name: ptr.To("fake-pe-cluster"),
 		},
