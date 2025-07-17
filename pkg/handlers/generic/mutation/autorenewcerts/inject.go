@@ -67,12 +67,7 @@ func (h *autoRenewCerts) Mutate(
 		h.variableName,
 		h.variableFieldPath...,
 	)
-	if err != nil {
-		if variables.IsNotFoundError(err) {
-			log.V(5).Info("Control Plane auto renew certs variable not defined")
-			return nil
-		}
-
+	if err != nil && !variables.IsNotFoundError(err) {
 		return err
 	}
 
@@ -92,10 +87,18 @@ func (h *autoRenewCerts) Mutate(
 		selectors.ControlPlane(),
 		log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
-			log.WithValues(
+			log = log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info(fmt.Sprintf(
+			)
+
+			if autoRenewCertsVar.DaysBeforeExpiry == 0 {
+				log.Info("removing auto renew certs config from control plane kubeadm config spec")
+				obj.Spec.Template.Spec.RolloutBefore = nil
+				return nil
+			}
+
+			log.Info(fmt.Sprintf(
 				"adding auto renew certs config for %d days before expiry to control plane kubeadm config spec",
 				autoRenewCertsVar.DaysBeforeExpiry,
 			))
