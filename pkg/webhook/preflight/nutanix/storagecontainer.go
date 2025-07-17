@@ -222,31 +222,30 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	if cd.nutanixClusterConfigSpec != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
-		// Check if failureDomains are configured for control plane
-		if len(cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.FailureDomains) > 0 {
-			// Create a check for each failure domain
-			// Only create checks if we have the required dependencies for failure domain checks
-			if cd.cluster != nil && cd.kclient != nil {
-				for _, fdName := range cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.FailureDomains {
-					if fdName != "" {
-						checks = append(checks,
-							&storageContainerCheck{
-								failureDomainName: fdName,
-								namespace:         cd.cluster.Namespace,
-								kclient:           cd.kclient,
 
-								field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains",
-								csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-								nclient: cd.nclient,
-							},
-						)
-					}
+		controlPlaneNutanix := cd.nutanixClusterConfigSpec.ControlPlane.Nutanix
+
+		// Check if failureDomains are configured for control plane
+		if len(controlPlaneNutanix.FailureDomains) > 0 && cd.cluster != nil && cd.kclient != nil {
+			// Create a check for each failure domain
+			for _, fdName := range controlPlaneNutanix.FailureDomains {
+				if fdName != "" {
+					checks = append(checks,
+						&storageContainerCheck{
+							failureDomainName: fdName,
+							namespace:         cd.cluster.Namespace,
+							kclient:           cd.kclient,
+							field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains",
+							csiSpec:           &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+							nclient:           cd.nclient,
+						},
+					)
 				}
 			}
 		} else {
 			checks = append(checks,
 				&storageContainerCheck{
-					machineSpec: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
+					machineSpec: &controlPlaneNutanix.MachineDetails,
 					field:       "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails",
 					csiSpec:     &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
 					nclient:     cd.nclient,
@@ -258,25 +257,22 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	for mdName, nutanixWorkerNodeConfigSpec := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
 			// Check if failureDomain is configured for this machine deployment
-			if fdName, ok := cd.failureDomainByMachineDeploymentName[mdName]; ok {
+			if fdName, ok := cd.failureDomainByMachineDeploymentName[mdName]; ok && fdName != "" && cd.cluster != nil && cd.kclient != nil {
 				// Use failure domain for cluster information
-				// Only create checks if we have the required dependencies for failure domain checks
-				if fdName != "" && cd.cluster != nil && cd.kclient != nil {
-					checks = append(checks,
-						&storageContainerCheck{
-							failureDomainName: fdName,
-							namespace:         cd.cluster.Namespace,
-							kclient:           cd.kclient,
+				checks = append(checks,
+					&storageContainerCheck{
+						failureDomainName: fdName,
+						namespace:         cd.cluster.Namespace,
+						kclient:           cd.kclient,
 
-							field: fmt.Sprintf(
-								"$.spec.topology.workers.machineDeployments[?@.name==%q].failureDomain",
-								mdName,
-							),
-							csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-							nclient: cd.nclient,
-						},
-					)
-				}
+						field: fmt.Sprintf(
+							"$.spec.topology.workers.machineDeployments[?@.name==%q].failureDomain",
+							mdName,
+						),
+						csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+						nclient: cd.nclient,
+					},
+				)
 			} else {
 				// Use machine details for cluster information
 				checks = append(checks,
