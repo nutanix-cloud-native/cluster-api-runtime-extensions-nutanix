@@ -61,9 +61,12 @@ func newFailureDomainChecks(cd *checkDependencies) []preflight.Check {
 				checks = append(checks, &failureDomainCheck{
 					failureDomainName: *md.FailureDomain,
 					namespace:         cd.cluster.Namespace,
-					field:             "$.spec.topology.workers.machineDeployments[?@.name==%q].failureDomain",
-					kclient:           cd.kclient,
-					nclient:           cd.nclient,
+					field: fmt.Sprintf(
+						"$.spec.topology.workers.machineDeployments[?@.name==%q].failureDomain",
+						md.Name,
+					),
+					kclient: cd.kclient,
+					nclient: cd.nclient,
 				})
 			}
 		}

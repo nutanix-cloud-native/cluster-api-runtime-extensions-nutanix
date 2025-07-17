@@ -1609,7 +1609,11 @@ func (in *NutanixMachineDetails) DeepCopyInto(out *NutanixMachineDetails) {
 		*out = new(v1beta1.NutanixImageLookup)
 		(*in).DeepCopyInto(*out)
 	}
-	in.Cluster.DeepCopyInto(&out.Cluster)
+	if in.Cluster != nil {
+		in, out := &in.Cluster, &out.Cluster
+		*out = new(v1beta1.NutanixResourceIdentifier)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Subnets != nil {
 		in, out := &in.Subnets, &out.Subnets
 		*out = make([]v1beta1.NutanixResourceIdentifier, len(*in))

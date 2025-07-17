@@ -50,13 +50,15 @@ type NutanixMachineDetails struct {
 
 	// cluster identifies the Prism Element in which the machine will be created.
 	// The identifier (uuid or name) can be obtained from the console or API.
-	// +kubebuilder:validation:Required
-	Cluster capxv1.NutanixResourceIdentifier `json:"cluster"`
+	// +kubebuilder:validation:Optional
+	// +optional
+	Cluster *capxv1.NutanixResourceIdentifier `json:"cluster,omitempty"`
 
 	// subnet identifies the network subnet to use for the machine.
 	// The identifier (uuid or name) can be obtained from the console or API.
-	// +kubebuilder:validation:Required
-	Subnets []capxv1.NutanixResourceIdentifier `json:"subnets"`
+	// +kubebuilder:validation:Optional
+	// +optional
+	Subnets []capxv1.NutanixResourceIdentifier `json:"subnets,omitempty"`
 
 	// List of categories that need to be added to the machines. Categories must already
 	// exist in Prism Central. One category key can have more than one value.

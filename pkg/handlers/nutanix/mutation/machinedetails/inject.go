@@ -97,7 +97,14 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			spec := obj.Spec.Template.Spec
 
 			spec.BootType = nutanixMachineDetailsVar.BootType
-			spec.Cluster = nutanixMachineDetailsVar.Cluster
+			if nutanixMachineDetailsVar.Cluster != nil {
+				spec.Cluster = *nutanixMachineDetailsVar.Cluster
+			} else {
+				// Have to set the required Type field.
+				spec.Cluster = capxv1.NutanixResourceIdentifier{
+					Type: capxv1.NutanixIdentifierName,
+				}
+			}
 
 			switch {
 			case nutanixMachineDetailsVar.Image != nil:
@@ -118,7 +125,6 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			spec.Subnets = slices.Clone(nutanixMachineDetailsVar.Subnets)
 			spec.AdditionalCategories = slices.Clone(nutanixMachineDetailsVar.AdditionalCategories)
 			spec.GPUs = slices.Clone(nutanixMachineDetailsVar.GPUs)
-
 			spec.Project = nutanixMachineDetailsVar.Project.DeepCopy()
 
 			obj.Spec.Template.Spec = spec

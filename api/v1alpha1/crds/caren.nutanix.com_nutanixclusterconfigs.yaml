@@ -511,9 +511,7 @@ spec:
                               format: int32
                               type: integer
                           required:
-                            - cluster
                             - memorySize
-                            - subnets
                             - systemDiskSize
                             - vcpuSockets
                             - vcpusPerSocket

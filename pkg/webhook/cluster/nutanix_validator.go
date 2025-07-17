@@ -11,6 +11,7 @@ import (
 	"net/netip"
 
 	v1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -89,7 +90,144 @@ func (a *nutanixValidator) validate(
 		}
 	}
 
+	if err := validateTopologyFailureDomainConfig(clusterConfig, cluster); err != nil {
+		return admission.Denied(err.Error())
+	}
+
 	return admission.Allowed("")
+}
+
+// validateTopologyFailureDomainConfig validates the failure domain related configuration in cluster topology.
+func validateTopologyFailureDomainConfig(
+	clusterConfig *variables.ClusterConfigSpec,
+	cluster *clusterv1.Cluster,
+) error {
+	fldErrs := field.ErrorList{}
+
+	// Validate control plane failure domain configuration
+	if controlPlaneErrs := validateControlPlaneFailureDomainConfig(clusterConfig); controlPlaneErrs != nil {
+		fldErrs = append(fldErrs, controlPlaneErrs...)
+	}
+
+	// Validate worker failure domain configuration
+	if workerErrs := validateWorkerFailureDomainConfig(cluster); workerErrs != nil {
+		fldErrs = append(fldErrs, workerErrs...)
+	}
+
+	return fldErrs.ToAggregate()
+}
+
+// validateControlPlaneFailureDomainConfig validates that either failureDomains are set,
+// or cluster and subnets are set with machineDetails, for control plane.
+func validateControlPlaneFailureDomainConfig(clusterConfig *variables.ClusterConfigSpec) field.ErrorList {
+	fldErrs := field.ErrorList{}
+	fldPath := field.NewPath(
+		"spec",
+		"topology",
+		"variables",
+		"clusterConfig",
+		"value",
+		"controlPlane",
+		"nutanix",
+		"machineDetails",
+	)
+
+	if clusterConfig.ControlPlane != nil &&
+		clusterConfig.ControlPlane.Nutanix != nil &&
+		len(clusterConfig.ControlPlane.Nutanix.FailureDomains) == 0 {
+		machineDetails := clusterConfig.ControlPlane.Nutanix.MachineDetails
+		if machineDetails.Cluster == nil || (!machineDetails.Cluster.IsName() && !machineDetails.Cluster.IsUUID()) {
+			fldErrs = append(fldErrs, field.Required(
+				fldPath.Child("cluster"),
+				"\"cluster\" must be set when failureDomains are not configured.",
+			))
+		}
+
+		if len(machineDetails.Subnets) == 0 {
+			fldErrs = append(fldErrs, field.Required(
+				fldPath.Child("subnets"),
+				"\"subnets\" must be set when failureDomains are not configured.",
+			))
+		}
+	}
+
+	return fldErrs
+}
+
+// validateWorkerFailureDomainConfig validates either failureDomains is set,
+// or cluster and subnets are set with machineDetails, for workers.
+func validateWorkerFailureDomainConfig(cluster *clusterv1.Cluster) field.ErrorList {
+	fldErrs := field.ErrorList{}
+	workerConfigVarPath := field.NewPath("spec", "topology", "variables", "workerConfig")
+	workerConfigMDVarOverridePath := field.NewPath(
+		"spec",
+		"topology",
+		"workers",
+		"machineDeployments",
+		"variables",
+		"overrides",
+		"workerConfig",
+	)
+
+	// Get the machineDetails from cluster variable "workerConfig" if it is configured
+	defaultWorkerConfig, err := variables.UnmarshalWorkerConfigVariable(cluster.Spec.Topology.Variables)
+	if err != nil {
+		fldErrs = append(fldErrs, field.InternalError(workerConfigVarPath,
+			fmt.Errorf("failed to unmarshal cluster topology variable %q: %w", v1alpha1.WorkerConfigVariableName, err)))
+	}
+
+	if cluster.Spec.Topology.Workers != nil {
+		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
+			md := cluster.Spec.Topology.Workers.MachineDeployments[i]
+			if md.FailureDomain != nil && *md.FailureDomain != "" {
+				// failureDomain is configured so we can skip checking the cluster and subnet in machineDetails
+				continue
+			}
+
+			// Get the machineDetails from the overrides variable "workerConfig" if it is configured,
+			// otherwise use the defaultWorkerConfig if it is configured.
+			var workerConfig *variables.WorkerNodeConfigSpec
+			if md.Variables != nil && len(md.Variables.Overrides) > 0 {
+				workerConfig, err = variables.UnmarshalWorkerConfigVariable(md.Variables.Overrides)
+				if err != nil {
+					fldErrs = append(fldErrs, field.InternalError(
+						workerConfigMDVarOverridePath,
+						fmt.Errorf(
+							"failed to unmarshal worker overrides variable %q: %w",
+							v1alpha1.WorkerConfigVariableName,
+							err,
+						),
+					))
+				}
+			}
+
+			wcfgPath := workerConfigMDVarOverridePath
+			if workerConfig == nil {
+				workerConfig = defaultWorkerConfig
+				wcfgPath = workerConfigVarPath
+			}
+			if workerConfig == nil || workerConfig.Nutanix == nil {
+				continue
+			}
+
+			machineDetails := workerConfig.Nutanix.MachineDetails
+			if machineDetails.Cluster == nil ||
+				(!machineDetails.Cluster.IsName() && !machineDetails.Cluster.IsUUID()) {
+				fldErrs = append(fldErrs, field.Required(
+					wcfgPath.Child("value", "nutanix", "machineDetails", "cluster"),
+					"\"cluster\" must be set when failureDomain is not configured.",
+				))
+			}
+			if len(machineDetails.Subnets) == 0 {
+				fldErrs = append(fldErrs, field.Required(
+					wcfgPath.Child("value", "nutanix", "machineDetails", "subnets"),
+					"\"subnets\" must be set when failureDomain is not configured.",
+				))
+			}
+		}
+	}
+
+	return fldErrs
 }
 
 // validatePrismCentralIPNotInLoadBalancerIPRange checks if the Prism Central IP is not

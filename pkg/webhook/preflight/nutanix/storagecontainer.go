@@ -85,7 +85,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		}
 	} else {
 		// Use cluster identifier from machine spec
-		clusterIdentifier = &c.machineSpec.Cluster
+		clusterIdentifier = c.machineSpec.Cluster
 	}
 
 	// To avoid unnecessary API calls, we delay the retrieval of clusters until we actually
