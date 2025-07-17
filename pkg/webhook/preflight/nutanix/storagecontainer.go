@@ -222,7 +222,6 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	if cd.nutanixClusterConfigSpec != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
-
 		controlPlaneNutanix := cd.nutanixClusterConfigSpec.ControlPlane.Nutanix
 
 		// Check if failureDomains are configured for control plane
@@ -235,7 +234,7 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 							failureDomainName: fdName,
 							namespace:         cd.cluster.Namespace,
 							kclient:           cd.kclient,
-							field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains",
+							field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // The field is long.
 							csiSpec:           &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
 							nclient:           cd.nclient,
 						},
@@ -257,7 +256,10 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	for mdName, nutanixWorkerNodeConfigSpec := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if nutanixWorkerNodeConfigSpec.Nutanix != nil {
 			// Check if failureDomain is configured for this machine deployment
-			if fdName, ok := cd.failureDomainByMachineDeploymentName[mdName]; ok && fdName != "" && cd.cluster != nil && cd.kclient != nil {
+			if fdName, ok := cd.failureDomainByMachineDeploymentName[mdName]; ok &&
+				fdName != "" &&
+				cd.cluster != nil &&
+				cd.kclient != nil {
 				// Use failure domain for cluster information
 				checks = append(checks,
 					&storageContainerCheck{
