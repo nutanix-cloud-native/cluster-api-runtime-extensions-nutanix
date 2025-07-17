@@ -112,7 +112,7 @@ func TestRegistryCheck(t *testing.T) {
 		},
 		{
 			name:  "registry mirror with invalid credentials secret",
-			field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
 			registryMirror: &carenv1.GlobalImageRegistryMirror{
 				URL: testRegistryURL,
 				Credentials: &carenv1.RegistryCredentials{
@@ -136,14 +136,14 @@ func TestRegistryCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "Failed to get Registry credentials Secret \"test-secret\": fake error. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
-						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef",              //nolint:lll // Field is long.
+						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror.credentials.secretRef",             //nolint:lll // Field is long.
 					},
 				},
 			},
 		},
 		{
 			name:  "registry mirror with missing credentials secret",
-			field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
 			registryMirror: &carenv1.GlobalImageRegistryMirror{
 				URL: testRegistryURL,
 				Credentials: &carenv1.RegistryCredentials{
@@ -166,15 +166,15 @@ func TestRegistryCheck(t *testing.T) {
 				InternalError: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "Registry credentials Secret \"test-secret\" not found. Create the Secret first, then create the Cluster.",   ///nolint:lll // Message is long.
-						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror.credentials.secretRef", //nolint:lll // Field is long.
+						Message: "Registry credentials Secret \"test-secret\" not found. Create the Secret first, then create the Cluster.",    ///nolint:lll // Message is long.
+						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror.credentials.secretRef", //nolint:lll // Field is long.
 					},
 				},
 			},
 		},
 		{
 			name:  "registry mirror ping failure",
-			field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
 			registryMirror: &carenv1.GlobalImageRegistryMirror{
 				URL: testRegistryURL,
 			},
@@ -191,7 +191,7 @@ func TestRegistryCheck(t *testing.T) {
 							testRegistryURL,
 							testPingFailedError,
 						),
-						Field: "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
+						Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
 					},
 				},
 			},
@@ -264,7 +264,7 @@ func TestRegistryCheck(t *testing.T) {
 		},
 		{
 			name:  "image registry with invalid URL",
-			field: "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0]",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.imageRegistries[0]",
 			imageRegistry: &carenv1.ImageRegistry{
 				URL: "invalid-url",
 				Credentials: &carenv1.RegistryCredentials{
@@ -299,14 +299,14 @@ func TestRegistryCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "Failed to parse registry URL \"invalid-url\" with error: parse \"invalid-url\": invalid URI for request. Review the Cluster.", ///nolint:lll // Message is long.
-						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
+						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.imageRegistries[0].url",
 					},
 				},
 			},
 		},
 		{
 			name:  "image registry with invalid URL scheme",
-			field: "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0]",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.imageRegistries[0]",
 			imageRegistry: &carenv1.ImageRegistry{
 				URL: "tcp://some-registry.lol",
 				Credentials: &carenv1.RegistryCredentials{
@@ -341,7 +341,7 @@ func TestRegistryCheck(t *testing.T) {
 				Causes: []preflight.Cause{
 					{
 						Message: "The registry URL \"tcp://some-registry.lol\" uses the scheme \"tcp\". This scheme is not supported. Use either the \"http\" or \"https\" scheme.", ///nolint:lll // Message is long.
-						Field:   "cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[0].url",
+						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.imageRegistries[0].url",
 					},
 				},
 			},
