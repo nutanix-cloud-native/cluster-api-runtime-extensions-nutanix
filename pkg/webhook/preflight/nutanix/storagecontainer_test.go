@@ -142,7 +142,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
 					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
-							Cluster: capxv1.NutanixResourceIdentifier{
+							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
 								Name: ptr.To("my-cluster"),
 							},
@@ -178,7 +178,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
 						FailureDomains: []string{"fd-1", "fd-2", "fd-3"},
 						MachineDetails: carenv1.NutanixMachineDetails{
-							Cluster: capxv1.NutanixResourceIdentifier{
+							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
 								Name: ptr.To("my-cluster"),
 							},
@@ -222,7 +222,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				"worker-1": {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
-							Cluster: capxv1.NutanixResourceIdentifier{
+							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
 								Name: ptr.To("worker-cluster"),
 							},
@@ -250,7 +250,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				"worker-1": {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
-							Cluster: capxv1.NutanixResourceIdentifier{
+							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
 								Name: ptr.To("worker-cluster"),
 							},
@@ -270,7 +270,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
 					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
-							Cluster: capxv1.NutanixResourceIdentifier{
+							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
 								Name: ptr.To("cp-cluster"),
 							},
@@ -289,7 +289,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				"worker-1": {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
-							Cluster: capxv1.NutanixResourceIdentifier{
+							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
 								Name: ptr.To("worker1-cluster"),
 							},
@@ -299,7 +299,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				"worker-2": {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
-							Cluster: capxv1.NutanixResourceIdentifier{
+							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
 								Name: ptr.To("worker2-cluster"),
 							},
@@ -343,7 +343,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				"worker-1": {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{
 						MachineDetails: carenv1.NutanixMachineDetails{
-							Cluster: capxv1.NutanixResourceIdentifier{
+							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
 								Name: ptr.To("worker1-cluster"),
 							},
@@ -405,7 +405,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "nil storage class configs",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -419,7 +419,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "storage class config without parameters",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -438,7 +438,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "storage class config without storage container parameter",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -459,7 +459,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "storage container not found",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -527,7 +527,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "multiple storage containers with same name in same cluster found",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -602,7 +602,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "successful storage container check",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -673,7 +673,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "multiple clusters found",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -724,7 +724,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "error getting cluster",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -764,7 +764,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "error listing storage containers",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -827,7 +827,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "error response from ListStorageContainers",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -893,7 +893,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "nil data from ListStorageContainers",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
@@ -956,7 +956,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		{
 			name: "multiple storage class configs with success",
 			machineSpec: &carenv1.NutanixMachineDetails{
-				Cluster: capxv1.NutanixResourceIdentifier{
+				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
 					Name: ptr.To(clusterName),
 				},
