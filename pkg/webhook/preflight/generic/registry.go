@@ -201,7 +201,7 @@ func newRegistryCheck(
 	if cd.genericClusterConfigSpec != nil &&
 		cd.genericClusterConfigSpec.GlobalImageRegistryMirror != nil {
 		checks = append(checks, &registryCheck{
-			field:                 "cluster.spec.topology.variables[.name=clusterConfig].value.globalImageRegistryMirror",
+			field:                 "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
 			kclient:               cd.kclient,
 			cluster:               cd.cluster,
 			regClientPingerGetter: defaultRegClientGetter,
@@ -215,7 +215,7 @@ func newRegistryCheck(
 			registry := cd.genericClusterConfigSpec.ImageRegistries[i]
 			checks = append(checks, &registryCheck{
 				field: fmt.Sprintf(
-					"cluster.spec.topology.variables[.name=clusterConfig].value.imageRegistries[%d]",
+					"$.spec.topology.variables[?@.name==\"clusterConfig\"].value.imageRegistries[%d]",
 					i,
 				),
 				kclient:               cd.kclient,
