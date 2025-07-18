@@ -34,7 +34,7 @@ func ValidateClusterVariable(
 		return field.ErrorList{err}
 	}
 
-	variableValue, err := unmarshalAndDefaultVariableValue(fldPath, value, structuralSchema)
+	variableValue, err := unmarshalAndDefaultVariableValue[T](fldPath, value, structuralSchema)
 	if err != nil {
 		return field.ErrorList{err}
 	}
@@ -45,26 +45,27 @@ func ValidateClusterVariable(
 		return err
 	}
 
+	var oldVariableValue T
 	// Validate variable against the schema using CEL.
-	if err := validateCEL(fldPath, variableValue, nil, structuralSchema); err != nil {
+	if err := validateCEL[T](fldPath, variableValue, oldVariableValue, structuralSchema); err != nil {
 		return err
 	}
 
 	return validateUnknownFields(fldPath, value, variableValue, apiExtensionsSchema)
 }
 
-func unmarshalAndDefaultVariableValue(
+func unmarshalAndDefaultVariableValue[T any](
 	fldPath *field.Path,
 	value *clusterv1.ClusterVariable,
 	s *structuralschema.Structural,
-) (any, *field.Error) {
+) (T, *field.Error) {
 	// Parse JSON value.
-	var variableValue any
+	var variableValue T
 	// Only try to unmarshal the clusterVariable if it is not nil, otherwise the variableValue is nil.
 	// Note: A clusterVariable with a nil value is the result of setting the variable value to "null" via YAML.
 	if value.Value.Raw != nil {
 		if err := json.Unmarshal(value.Value.Raw, &variableValue); err != nil {
-			return nil, field.Invalid(
+			return variableValue, field.Invalid(
 				fldPath.Child("value"), string(value.Value.Raw),
 				fmt.Sprintf("variable %q could not be parsed: %v", value.Name, err),
 			)
@@ -122,9 +123,9 @@ func validatorAndSchemas(
 	return validator, apiExtensionsSchema, s, nil
 }
 
-func validateCEL(
+func validateCEL[T any](
 	fldPath *field.Path,
-	variableValue, oldVariableValue any,
+	variableValue, oldVariableValue T,
 	structuralSchema *structuralschema.Structural,
 ) field.ErrorList {
 	// Note: k/k CR validation also uses celconfig.PerCallLimit when creating the validator for a custom resource.
@@ -215,8 +216,8 @@ func validateUnknownFields(
 	return nil
 }
 
-// ValidateClusterVariable validates an update to a clusterVariable.
-func ValidateClusterVariableUpdate(
+// ValidateClusterVariableUpdate validates an update to a clusterVariable.
+func ValidateClusterVariableUpdate[T any](
 	value, oldValue *clusterv1.ClusterVariable,
 	definition *clusterv1.ClusterClassVariable,
 	fldPath *field.Path,
@@ -226,12 +227,12 @@ func ValidateClusterVariableUpdate(
 		return field.ErrorList{err}
 	}
 
-	variableValue, err := unmarshalAndDefaultVariableValue(fldPath, value, structuralSchema)
+	variableValue, err := unmarshalAndDefaultVariableValue[T](fldPath, value, structuralSchema)
 	if err != nil {
 		return field.ErrorList{err}
 	}
 
-	oldVariableValue, err := unmarshalAndDefaultVariableValue(fldPath, oldValue, structuralSchema)
+	oldVariableValue, err := unmarshalAndDefaultVariableValue[T](fldPath, oldValue, structuralSchema)
 	if err != nil {
 		return field.ErrorList{err}
 	}
@@ -243,7 +244,7 @@ func ValidateClusterVariableUpdate(
 	}
 
 	// Validate variable against the schema using CEL.
-	if err := validateCEL(fldPath, variableValue, oldVariableValue, structuralSchema); err != nil {
+	if err := validateCEL[T](fldPath, variableValue, oldVariableValue, structuralSchema); err != nil {
 		return err
 	}
 
