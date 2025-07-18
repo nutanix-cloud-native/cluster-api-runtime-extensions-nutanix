@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
@@ -24,7 +25,7 @@ import (
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/v1.5.1/internal/topology/variables/cluster_variable_validation.go#L118
 //
 //nolint:lll // Adding for URL above, does not work when adding to end of line in a comment block.
-func ValidateClusterVariable(
+func ValidateClusterVariable[T any](
 	value *clusterv1.ClusterVariable,
 	definition *clusterv1.ClusterClassVariable,
 	fldPath *field.Path,
@@ -139,12 +140,13 @@ func validateCEL[T any](
 
 	// Note: k/k CRD validation also uses celconfig.RuntimeCELCostBudget for the Validate call.
 	// The current RuntimeCELCostBudget gives roughly 1 second for the validation of a variable value.
-	if validationErrors, _ := celValidator.Validate(
+	if validationErrors := validateCELRecursively(
 		context.Background(),
+		celValidator,
 		fldPath.Child("value"),
 		structuralSchema,
-		variableValue,
-		oldVariableValue,
+		reflect.ValueOf(variableValue),
+		reflect.ValueOf(oldVariableValue),
 		celconfig.RuntimeCELCostBudget,
 	); len(validationErrors) > 0 {
 		var allErrs field.ErrorList
