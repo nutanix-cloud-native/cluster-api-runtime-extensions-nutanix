@@ -89,7 +89,7 @@ var _ = Describe("Generate auto renew patches", func() {
 		},
 		{
 			patchTest: capitest.PatchTestDef{
-				Name: "auto cert renewal set with Nutanix",
+				Name: "auto cert renewal set to 10 with Nutanix",
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
 						v1alpha1.ClusterConfigVariableName,
@@ -112,6 +112,31 @@ var _ = Describe("Generate auto renew patches", func() {
 						"certificatesExpiryDays",
 						gomega.BeEquivalentTo(10),
 					),
+				}},
+			},
+		},
+		{
+			patchTest: capitest.PatchTestDef{
+				Name: "auto cert renewal set to 0 with Nutanix",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						v1alpha1.NutanixClusterConfigSpec{
+							ControlPlane: &v1alpha1.NutanixControlPlaneSpec{
+								GenericControlPlaneSpec: v1alpha1.GenericControlPlaneSpec{
+									AutoRenewCertificates: &v1alpha1.AutoRenewCertificatesSpec{
+										DaysBeforeExpiry: 0,
+									},
+								},
+							},
+						},
+					),
+				},
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+					Operation:    "add",
+					Path:         "/spec/template/spec",
+					ValueMatcher: gomega.HaveKey("rolloutBefore"),
 				}},
 			},
 		},

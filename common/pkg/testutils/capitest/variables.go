@@ -26,12 +26,30 @@ type VariableTestDef struct {
 	ExpectError bool
 }
 
-func ValidateDiscoverVariables[T mutation.DiscoverVariables](
+func ValidateDiscoverVariables[V mutation.DiscoverVariables](
 	t *testing.T,
 	variableName string,
 	variableSchema *clusterv1.VariableSchema,
 	variableRequired bool,
-	handlerCreator func() T,
+	handlerCreator func() V,
+	variableTestDefs ...VariableTestDef,
+) {
+	ValidateDiscoverVariablesAs[V, any](
+		t,
+		variableName,
+		variableSchema,
+		variableRequired,
+		handlerCreator,
+		variableTestDefs...,
+	)
+}
+
+func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
+	t *testing.T,
+	variableName string,
+	variableSchema *clusterv1.VariableSchema,
+	variableRequired bool,
+	handlerCreator func() V,
 	variableTestDefs ...VariableTestDef,
 ) {
 	t.Helper()
@@ -72,7 +90,7 @@ func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 			case tt.OldVals != nil:
 				encodedOldVals, err := json.Marshal(tt.OldVals)
 				g.Expect(err).NotTo(gomega.HaveOccurred())
-				validateErr = openapi.ValidateClusterVariableUpdate(
+				validateErr = openapi.ValidateClusterVariableUpdate[T](
 					&clusterv1.ClusterVariable{
 						Name:  variableName,
 						Value: apiextensionsv1.JSON{Raw: encodedVals},
@@ -85,7 +103,7 @@ func ValidateDiscoverVariables[T mutation.DiscoverVariables](
 					field.NewPath(variableName),
 				).ToAggregate()
 			default:
-				validateErr = openapi.ValidateClusterVariable(
+				validateErr = openapi.ValidateClusterVariable[T](
 					&clusterv1.ClusterVariable{
 						Name:  variableName,
 						Value: apiextensionsv1.JSON{Raw: encodedVals},

@@ -339,9 +339,12 @@ spec:
                           description: |-
                             DaysBeforeExpiry indicates a rollout needs to be performed if the
                             certificates of the control plane will expire within the specified days.
+                            Set to 0 to disable automated certificate renewal.
                           format: int32
-                          minimum: 7
                           type: integer
+                          x-kubernetes-validations:
+                            - message: Value must be 0 or at least 7
+                              rule: self == 0 || self >= 7
                       required:
                         - daysBeforeExpiry
                       type: object
