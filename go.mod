@@ -30,20 +30,20 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/regclient/regclient v0.9.0
 	github.com/samber/lo v1.51.0
-	github.com/spf13/pflag v1.0.6
+	github.com/spf13/pflag v1.0.7
 	github.com/stretchr/testify v1.10.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.32.6
-	k8s.io/apiextensions-apiserver v0.32.6
-	k8s.io/apimachinery v0.32.6
-	k8s.io/apiserver v0.32.6
-	k8s.io/client-go v0.32.6
-	k8s.io/component-base v0.32.6
+	k8s.io/api v0.32.7
+	k8s.io/apiextensions-apiserver v0.32.7
+	k8s.io/apimachinery v0.32.7
+	k8s.io/apiserver v0.32.7
+	k8s.io/client-go v0.32.7
+	k8s.io/component-base v0.32.7
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubelet v0.31.10
+	k8s.io/kubelet v0.31.11
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
-	sigs.k8s.io/cluster-api v1.10.3
-	sigs.k8s.io/cluster-api/test v1.10.3
+	sigs.k8s.io/cluster-api v1.10.4
+	sigs.k8s.io/cluster-api/test v1.10.4
 	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/yaml v1.5.0
 )
@@ -94,7 +94,7 @@ require (
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
