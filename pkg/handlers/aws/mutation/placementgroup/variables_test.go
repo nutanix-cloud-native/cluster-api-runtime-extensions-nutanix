@@ -4,6 +4,7 @@
 package placementgroup
 
 import (
+	"strings"
 	"testing"
 
 	"k8s.io/utils/ptr"
@@ -26,11 +27,43 @@ func TestVariableValidation(t *testing.T) {
 				ControlPlane: &v1alpha1.AWSControlPlaneSpec{
 					AWS: &v1alpha1.AWSControlPlaneNodeSpec{
 						AWSGenericNodeSpec: v1alpha1.AWSGenericNodeSpec{
-							PlacementGroupName: "pg-1234",
+							PlacementGroup: &v1alpha1.PlacementGroup{
+								Name: "pg-1234",
+							},
 						},
 					},
 				},
 			},
+		},
+		capitest.VariableTestDef{
+			Name: "specified empty group name",
+			Vals: v1alpha1.AWSClusterConfigSpec{
+				ControlPlane: &v1alpha1.AWSControlPlaneSpec{
+					AWS: &v1alpha1.AWSControlPlaneNodeSpec{
+						AWSGenericNodeSpec: v1alpha1.AWSGenericNodeSpec{
+							PlacementGroup: &v1alpha1.PlacementGroup{
+								Name: "",
+							},
+						},
+					},
+				},
+			},
+			ExpectError: true,
+		},
+		capitest.VariableTestDef{
+			Name: "specified too long placement group name",
+			Vals: v1alpha1.AWSClusterConfigSpec{
+				ControlPlane: &v1alpha1.AWSControlPlaneSpec{
+					AWS: &v1alpha1.AWSControlPlaneNodeSpec{
+						AWSGenericNodeSpec: v1alpha1.AWSGenericNodeSpec{
+							PlacementGroup: &v1alpha1.PlacementGroup{
+								Name: strings.Repeat("a", 256), // 256 characters long
+							},
+						},
+					},
+				},
+			},
+			ExpectError: true,
 		},
 	)
 }

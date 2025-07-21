@@ -55,7 +55,7 @@ func (h *awsPlacementGroupWorkerPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	placementGroupNameVar, err := variables.Get[string](
+	placementGroupVar, err := variables.Get[v1alpha1.PlacementGroup](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -74,7 +74,7 @@ func (h *awsPlacementGroupWorkerPatchHandler) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		placementGroupNameVar,
+		placementGroupVar,
 	)
 
 	return patches.MutateIfApplicable(
@@ -92,7 +92,7 @@ func (h *awsPlacementGroupWorkerPatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting placement group in workers AWSMachineTemplate spec")
 
-			obj.Spec.Template.Spec.PlacementGroupName = placementGroupNameVar
+			obj.Spec.Template.Spec.PlacementGroupName = placementGroupVar.Name
 
 			return nil
 		},

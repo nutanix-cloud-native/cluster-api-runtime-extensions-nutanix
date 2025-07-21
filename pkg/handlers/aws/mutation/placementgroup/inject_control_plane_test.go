@@ -33,7 +33,7 @@ var _ = Describe("Generate PlacementGroup patches for ControlPlane", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					"pg-1234",
+					v1alpha1.PlacementGroup{Name: "pg-1234"},
 					v1alpha1.ControlPlaneConfigVariableName,
 					v1alpha1.AWSVariableName,
 					VariableName,

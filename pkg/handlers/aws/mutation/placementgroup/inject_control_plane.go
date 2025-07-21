@@ -22,7 +22,7 @@ import (
 
 const (
 	// VariableName is the external patch variable name.
-	VariableName = "placementGroupName"
+	VariableName = "placementGroup"
 )
 
 type awsPlacementGroupControlPlanePatchHandler struct {
@@ -61,7 +61,7 @@ func (h *awsPlacementGroupControlPlanePatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	placementGroupNameVar, err := variables.Get[string](
+	placementGroupVar, err := variables.Get[v1alpha1.PlacementGroup](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
@@ -80,7 +80,7 @@ func (h *awsPlacementGroupControlPlanePatchHandler) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		placementGroupNameVar,
+		placementGroupVar,
 	)
 
 	return patches.MutateIfApplicable(
@@ -98,7 +98,7 @@ func (h *awsPlacementGroupControlPlanePatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting placement group in control plane AWSMachineTemplate spec")
 
-			obj.Spec.Template.Spec.PlacementGroupName = placementGroupNameVar
+			obj.Spec.Template.Spec.PlacementGroupName = placementGroupVar.Name
 
 			return nil
 		},

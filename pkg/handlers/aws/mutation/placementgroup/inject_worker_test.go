@@ -30,7 +30,7 @@ var _ = Describe("Generate PlacementGroup patches for Worker", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.WorkerConfigVariableName,
-					"pg-1234",
+					v1alpha1.PlacementGroup{Name: "pg-1234"},
 					v1alpha1.AWSVariableName,
 					VariableName,
 				),
