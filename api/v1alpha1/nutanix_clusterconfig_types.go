@@ -35,7 +35,7 @@ type NutanixPrismCentralEndpointSpec struct {
 
 	// use insecure connection to Prism Central endpoint
 	// +kubebuilder:validation:Optional
-	Insecure bool `json:"insecure,omitempty"` //nolint:kubeapilinter // Leave as bool for backward compatibility.
+	Insecure bool `json:"insecure,omitempty"`
 
 	// A base64 PEM encoded x509 cert for the RootCA that was used to create
 	// the certificate for a Prism Central that uses certificates that were issued by a non-publicly trusted RootCA.

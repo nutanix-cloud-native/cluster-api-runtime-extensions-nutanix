@@ -284,7 +284,7 @@ type StorageClassConfig struct {
 
 	// If the storage class should allow volume expanding
 	// +kubebuilder:validation:Optional
-	AllowExpansion bool `json:"allowExpansion,omitempty"` //nolint:kubeapilinter,lll // Leave as bool for backward compatibility and this comment makes it a long line.
+	AllowExpansion bool `json:"allowExpansion,omitempty"`
 }
 
 type CSICredentials struct {
