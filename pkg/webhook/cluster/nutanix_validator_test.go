@@ -270,13 +270,7 @@ func TestValidateTopologyFailureDomainConfig(t *testing.T) {
 			expectedErr:         false,
 			expectedErrMessages: nil,
 		},
-		{
-			name:                "controlPlane failureDomains configured and machineDetail cluster and subnets set",
-			clusterConfig:       fakeClusterConfigSpec(true, true, true),
-			cluster:             fakeCluster(t, true, false, false, workerConfigNone),
-			expectedErr:         false,
-			expectedErrMessages: nil,
-		},
+
 		{
 			name:          "worker failureDomain not configured and missing 'cluster' in workerConfig overrides only",
 			clusterConfig: fakeClusterConfigSpec(true, false, false),
@@ -312,13 +306,7 @@ func TestValidateTopologyFailureDomainConfig(t *testing.T) {
 			expectedErr:         false,
 			expectedErrMessages: nil,
 		},
-		{
-			name:                "worker failureDomain configured and machineDetail cluster and subnets set in workerConfig overrides only", //nolint:lll // name is long.
-			clusterConfig:       fakeClusterConfigSpec(true, false, false),
-			cluster:             fakeCluster(t, true, true, true, workerConfigOverridesOnly),
-			expectedErr:         false,
-			expectedErrMessages: nil,
-		},
+
 		{
 			name:          "worker failureDomain not configured and missing machineDetail 'cluster' and 'subnets' in workerConfig default only", //nolint:lll // name is long.
 			clusterConfig: fakeClusterConfigSpec(true, false, false),
@@ -350,6 +338,33 @@ func TestValidateTopologyFailureDomainConfig(t *testing.T) {
 			name:                "worker failureDomain configured and missing workerConfig",
 			clusterConfig:       fakeClusterConfigSpec(true, false, false),
 			cluster:             fakeCluster(t, true, false, false, workerConfigNone),
+			expectedErr:         false,
+			expectedErrMessages: nil,
+		},
+		{
+			name:          "controlPlane failureDomains configured with cluster/subnets set violates XOR",
+			clusterConfig: fakeClusterConfigSpec(true, true, true),
+			cluster:       fakeCluster(t, true, false, false, workerConfigNone),
+			expectedErr:   true,
+			expectedErrMessages: []string{
+				"spec.topology.variables.clusterConfig.value.controlPlane.nutanix.machineDetails.cluster: Forbidden: \"cluster\" must not be set when failureDomains are configured.", //nolint:lll // Message is long.
+				"spec.topology.variables.clusterConfig.value.controlPlane.nutanix.machineDetails.subnets: Forbidden: \"subnets\" must not be set when failureDomains are configured.", //nolint:lll // Message is long.
+			},
+		},
+		{
+			name:          "worker failureDomain configured with cluster/subnets set in variables overrides violates XOR",
+			clusterConfig: fakeClusterConfigSpec(true, false, false),
+			cluster:       fakeCluster(t, true, true, true, workerConfigOverridesOnly),
+			expectedErr:   true,
+			expectedErrMessages: []string{
+				"spec.topology.workers.machineDeployments.variables.overrides.workerConfig.value.nutanix.machineDetails.cluster: Forbidden: \"cluster\" must not be set when failureDomain is configured.", //nolint:lll // Message is long.
+				"spec.topology.workers.machineDeployments.variables.overrides.workerConfig.value.nutanix.machineDetails.subnets: Forbidden: \"subnets\" must not be set when failureDomain is configured.", //nolint:lll // Message is long.
+			},
+		},
+		{
+			name:                "default workerConfig variable with cluster/subnets set when control plane has failureDomains should be allowed", //nolint:lll // name is long.
+			clusterConfig:       fakeClusterConfigSpec(true, false, false),
+			cluster:             fakeCluster(t, false, true, true, workerConfigDefaultOnly),
 			expectedErr:         false,
 			expectedErrMessages: nil,
 		},

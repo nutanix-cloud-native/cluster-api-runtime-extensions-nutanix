@@ -117,8 +117,8 @@ func validateTopologyFailureDomainConfig(
 	return fldErrs.ToAggregate()
 }
 
-// validateControlPlaneFailureDomainConfig validates that either failureDomains are set,
-// or cluster and subnets are set with machineDetails, for control plane.
+// validateControlPlaneFailureDomainConfig validates XOR behavior: either failureDomains are set
+// OR cluster and subnets are set with machineDetails, but not both, for control plane.
 func validateControlPlaneFailureDomainConfig(clusterConfig *variables.ClusterConfigSpec) field.ErrorList {
 	fldErrs := field.ErrorList{}
 	fldPath := field.NewPath(
@@ -132,31 +132,54 @@ func validateControlPlaneFailureDomainConfig(clusterConfig *variables.ClusterCon
 		"machineDetails",
 	)
 
-	if clusterConfig.ControlPlane != nil &&
-		clusterConfig.ControlPlane.Nutanix != nil &&
-		len(clusterConfig.ControlPlane.Nutanix.FailureDomains) == 0 {
+	if clusterConfig.ControlPlane != nil && clusterConfig.ControlPlane.Nutanix != nil {
 		machineDetails := clusterConfig.ControlPlane.Nutanix.MachineDetails
-		if machineDetails.Cluster == nil || (!machineDetails.Cluster.IsName() && !machineDetails.Cluster.IsUUID()) {
-			fldErrs = append(fldErrs, field.Required(
-				fldPath.Child("cluster"),
-				"\"cluster\" must be set when failureDomains are not configured.",
-			))
-		}
+		hasFailureDomains := len(clusterConfig.ControlPlane.Nutanix.FailureDomains) > 0
+		hasCluster := machineDetails.Cluster != nil &&
+			(machineDetails.Cluster.IsName() || machineDetails.Cluster.IsUUID())
+		hasSubnets := len(machineDetails.Subnets) > 0
 
-		if len(machineDetails.Subnets) == 0 {
-			fldErrs = append(fldErrs, field.Required(
-				fldPath.Child("subnets"),
-				"\"subnets\" must be set when failureDomains are not configured.",
-			))
+		if !hasFailureDomains {
+			// No failure domains -> cluster/subnets MUST be set
+			if !hasCluster {
+				fldErrs = append(fldErrs, field.Required(
+					fldPath.Child("cluster"),
+					"\"cluster\" must be set when failureDomains are not configured.",
+				))
+			}
+
+			if !hasSubnets {
+				fldErrs = append(fldErrs, field.Required(
+					fldPath.Child("subnets"),
+					"\"subnets\" must be set when failureDomains are not configured.",
+				))
+			}
+		} else {
+			// Failure domains present -> cluster/subnets MUST NOT be set
+			if hasCluster {
+				fldErrs = append(fldErrs, field.Forbidden(
+					fldPath.Child("cluster"),
+					"\"cluster\" must not be set when failureDomains are configured.",
+				))
+			}
+
+			if hasSubnets {
+				fldErrs = append(fldErrs, field.Forbidden(
+					fldPath.Child("subnets"),
+					"\"subnets\" must not be set when failureDomains are configured.",
+				))
+			}
 		}
 	}
 
 	return fldErrs
 }
 
-// validateWorkerFailureDomainConfig validates either failureDomains is set,
-// or cluster and subnets are set with machineDetails, for workers.
-func validateWorkerFailureDomainConfig(cluster *clusterv1.Cluster) field.ErrorList {
+// validateWorkerFailureDomainConfig validates XOR behavior: either failureDomain is set
+// OR cluster and subnets are set with machineDetails, but not both, for workers.
+func validateWorkerFailureDomainConfig(
+	cluster *clusterv1.Cluster,
+) field.ErrorList {
 	fldErrs := field.ErrorList{}
 	workerConfigVarPath := field.NewPath("spec", "topology", "variables", "workerConfig")
 	workerConfigMDVarOverridePath := field.NewPath(
@@ -179,10 +202,7 @@ func validateWorkerFailureDomainConfig(cluster *clusterv1.Cluster) field.ErrorLi
 	if cluster.Spec.Topology.Workers != nil {
 		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
 			md := cluster.Spec.Topology.Workers.MachineDeployments[i]
-			if md.FailureDomain != nil && *md.FailureDomain != "" {
-				// failureDomain is configured so we can skip checking the cluster and subnet in machineDetails
-				continue
-			}
+			hasFailureDomain := md.FailureDomain != nil && *md.FailureDomain != ""
 
 			// Get the machineDetails from the overrides variable "workerConfig" if it is configured,
 			// otherwise use the defaultWorkerConfig if it is configured.
@@ -211,18 +231,38 @@ func validateWorkerFailureDomainConfig(cluster *clusterv1.Cluster) field.ErrorLi
 			}
 
 			machineDetails := workerConfig.Nutanix.MachineDetails
-			if machineDetails.Cluster == nil ||
-				(!machineDetails.Cluster.IsName() && !machineDetails.Cluster.IsUUID()) {
-				fldErrs = append(fldErrs, field.Required(
-					wcfgPath.Child("value", "nutanix", "machineDetails", "cluster"),
-					"\"cluster\" must be set when failureDomain is not configured.",
-				))
-			}
-			if len(machineDetails.Subnets) == 0 {
-				fldErrs = append(fldErrs, field.Required(
-					wcfgPath.Child("value", "nutanix", "machineDetails", "subnets"),
-					"\"subnets\" must be set when failureDomain is not configured.",
-				))
+			hasCluster := machineDetails.Cluster != nil &&
+				(machineDetails.Cluster.IsName() || machineDetails.Cluster.IsUUID())
+			hasSubnets := len(machineDetails.Subnets) > 0
+
+			if !hasFailureDomain {
+				// No failure domain -> cluster/subnets MUST be set
+				if !hasCluster {
+					fldErrs = append(fldErrs, field.Required(
+						wcfgPath.Child("value", "nutanix", "machineDetails", "cluster"),
+						"\"cluster\" must be set when failureDomain is not configured.",
+					))
+				}
+				if !hasSubnets {
+					fldErrs = append(fldErrs, field.Required(
+						wcfgPath.Child("value", "nutanix", "machineDetails", "subnets"),
+						"\"subnets\" must be set when failureDomain is not configured.",
+					))
+				}
+			} else {
+				// Failure domain present -> cluster/subnets MUST NOT be set
+				if hasCluster {
+					fldErrs = append(fldErrs, field.Forbidden(
+						wcfgPath.Child("value", "nutanix", "machineDetails", "cluster"),
+						"\"cluster\" must not be set when failureDomain is configured.",
+					))
+				}
+				if hasSubnets {
+					fldErrs = append(fldErrs, field.Forbidden(
+						wcfgPath.Child("value", "nutanix", "machineDetails", "subnets"),
+						"\"subnets\" must not be set when failureDomain is configured.",
+					))
+				}
 			}
 		}
 	}
