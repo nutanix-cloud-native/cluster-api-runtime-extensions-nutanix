@@ -115,8 +115,8 @@ spec:
               cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "0"
               capacity.cluster-autoscaler.kubernetes.io/cpu: "8"
               capacity.cluster-autoscaler.kubernetes.io/memory: "8112564Ki"
-            capacity.cluster-autoscaler.kubernetes.io/labels: "node-restriction.kubernetes.io/my-app="
-            capacity.cluster-autoscaler.kubernetes.io/taints: "mytaint=tainted:NoSchedule"
+              capacity.cluster-autoscaler.kubernetes.io/labels: "node-restriction.kubernetes.io/my-app="
+              capacity.cluster-autoscaler.kubernetes.io/taints: "mytaint=tainted:NoSchedule"
           name: scale-from-zero-example
           # Do not set the replicas field, otherwise the topology controller will revert back the autoscaler's changes
 ```
