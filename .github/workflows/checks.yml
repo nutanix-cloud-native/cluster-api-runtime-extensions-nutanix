@@ -132,37 +132,16 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Install custom golangci-lint
+        run: devbox run make hack/tools/golangci-lint-kube-api-linter
+
       - name: golangci-lint
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          devbox run golangci-lint run --config=${{ github.workspace }}/.golangci.yml --output.text.path=stdout ./... | \
+          ${{ github.workspace }}/hack/tools/golangci-lint-kube-api-linter run --config=${{ github.workspace }}/.golangci.yml --output.text.path=stdout ./... | \
             devbox run reviewdog -f=golangci-lint -reporter=github-pr-review --fail-level=any
         working-directory: ${{ matrix.module }}
-
-  lint-api:
-    runs-on: ubuntu-24.04
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.13.0
-        with:
-          enable-cache: true
-
-      - name: Install kube-api-linter
-        run: devbox run make hack/tools/golangci-lint-kube-api-linter
-
-      - name: golangci-lint-kube-api-linter
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ${{ github.workspace }}/hack/tools/golangci-lint-kube-api-linter run --config=${{ github.workspace }}/.golangci.yml --output.text.path=stdout ./... | \
-            devbox run reviewdog -name=kube=api-linter -f=golangci-lint -reporter=github-pr-review --fail-level=any
-        working-directory: api
 
   lint-gha:
     runs-on: ubuntu-24.04
