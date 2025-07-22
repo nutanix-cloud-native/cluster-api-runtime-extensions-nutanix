@@ -84,3 +84,12 @@ type NutanixMachineDetails struct {
 	// +kubebuilder:validation:Optional
 	GPUs []capxv1.NutanixGPU `json:"gpus,omitempty"`
 }
+
+// HasClusterAndSubnets checks if cluster and subnets are configured in the machine details.
+// It returns (hasCluster, hasSubnets).
+func (md *NutanixMachineDetails) HasClusterAndSubnets() (hasCluster, hasSubnets bool) {
+	hasCluster = md.Cluster != nil &&
+		(md.Cluster.IsName() || md.Cluster.IsUUID())
+	hasSubnets = len(md.Subnets) > 0
+	return hasCluster, hasSubnets
+}
