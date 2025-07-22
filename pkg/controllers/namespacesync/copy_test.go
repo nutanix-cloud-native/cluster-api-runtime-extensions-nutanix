@@ -19,7 +19,7 @@ func TestDoNotUpdateIfTargetExists(t *testing.T) {
 	timeout := 50 * time.Second
 
 	prefix := names.SimpleNameGenerator.GenerateName("test-")
-	sourceClusterClassName, cleanup, err := createClusterClassAndTemplates(
+	sourceClusterClassName, _, cleanup, err := createClusterClassAndTemplates(
 		prefix,
 		sourceClusterClassNamespace,
 	)
@@ -44,7 +44,7 @@ func TestDoNotUpdateIfTargetExists(t *testing.T) {
 	g.Expect(cleanup()).To(Succeed())
 
 	// Create source class again
-	sourceClusterClassName, cleanup, err = createClusterClassAndTemplates(
+	sourceClusterClassName, _, cleanup, err = createClusterClassAndTemplates(
 		prefix,
 		sourceClusterClassNamespace,
 	)
