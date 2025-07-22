@@ -21,7 +21,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}'
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
-    ChartVersion: 9.46.6
+    ChartVersion: 9.48.0
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}'
   cncf-distribution-registry: |
     ChartName: docker-registry

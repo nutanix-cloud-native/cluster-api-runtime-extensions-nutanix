@@ -33,3 +33,35 @@ extraVolumeSecrets:
 rbac:
   # Create a Role instead of a ClusterRoles to update cluster-api objects
   clusterScoped: false
+{{- $capiProvider := index .Cluster.Labels "cluster.x-k8s.io/provider" }}
+{{- if eq $capiProvider "aws" }}
+  additionalRules:
+    - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+      resources:
+      - awsmachinetemplates
+      verbs:
+      - get
+      - list
+      - watch
+{{- else if eq $capiProvider "docker" }}
+  additionalRules:
+    - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+      resources:
+      - dockermachinetemplates
+      verbs:
+      - get
+      - list
+      - watch
+{{- else if eq $capiProvider "nutanix" }}
+  additionalRules:
+    - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+      resources:
+      - nutanixmachinetemplates
+      verbs:
+      - get
+      - list
+      - watch
+{{- end }}
