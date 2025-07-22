@@ -45,7 +45,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 			name:                     "nil cluster config",
 			nutanixClusterConfigSpec: nil,
 			machineDeployments:       nil,
-			nclient:                  &mocknclient{},
+			nclient:                  &clientWrapper{},
 			kclient:                  getK8sClient(),
 			expectedChecksCount:      0,
 		},
@@ -57,7 +57,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 				},
 			},
 			machineDeployments:  []clusterv1.MachineDeploymentTopology{},
-			nclient:             &mocknclient{},
+			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
 			expectedChecksCount: 0,
 		},
@@ -71,7 +71,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 				},
 			},
 			machineDeployments:  []clusterv1.MachineDeploymentTopology{},
-			nclient:             &mocknclient{},
+			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
 			expectedChecksCount: 3,
 		},
@@ -83,7 +83,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 				Name:          "md-1",
 				FailureDomain: ptr.To("fd-w1"),
 			}},
-			nclient:             &mocknclient{},
+			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
 			expectedChecksCount: 1,
 		},
@@ -101,7 +101,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 				Name:          "md-1",
 				FailureDomain: ptr.To("fd-w1"),
 			}},
-			nclient:             &mocknclient{},
+			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
 			expectedChecksCount: 4,
 		},
@@ -158,7 +158,7 @@ func TestFailureDomainCheck(t *testing.T) {
 			name:                  "failureDomain object not found",
 			fdName:                failureDomainName,
 			kclient:               fake.NewFakeClient(),
-			nclient:               &mocknclient{},
+			nclient:               &clientWrapper{},
 			expectedAllowed:       false,
 			expectedInternalError: true,
 			expectedCauseMessage:  "Failed to get NutanixFailureDomain",
@@ -168,11 +168,11 @@ func TestFailureDomainCheck(t *testing.T) {
 			name:    "failureDomain check failed at PE cluster validation",
 			fdName:  failureDomainName,
 			kclient: getK8sClient(),
-			nclient: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			nclient: &clientWrapper{
+				GetClusterByIdFunc: func(uuid *string, args ...map[string]interface{}) (*clustermgmtv4.GetClusterApiResponse, error) {
 					return nil, nil
 				},
-				listClustersFunc: func(
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -196,8 +196,8 @@ func TestFailureDomainCheck(t *testing.T) {
 			name:    "failureDomain check failed at subnets validation",
 			fdName:  failureDomainName,
 			kclient: getK8sClient(),
-			nclient: &mocknclient{
-				listClustersFunc: func(
+			nclient: &clientWrapper{
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -221,7 +221,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				GetSubnetByIdFunc: func(id *string) (*netv4.GetSubnetApiResponse, error) {
+				GetSubnetByIdFunc: func(uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
 					return nil, nil
 				},
 				ListSubnetsFunc: func(
@@ -245,8 +245,8 @@ func TestFailureDomainCheck(t *testing.T) {
 			name:    "failureDomain check success",
 			fdName:  failureDomainName,
 			kclient: getK8sClient(),
-			nclient: &mocknclient{
-				listClustersFunc: func(
+			nclient: &clientWrapper{
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -270,7 +270,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				GetSubnetByIdFunc: func(id *string) (*netv4.GetSubnetApiResponse, error) {
+				GetSubnetByIdFunc: func(uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
 					return nil, nil
 				},
 				ListSubnetsFunc: func(

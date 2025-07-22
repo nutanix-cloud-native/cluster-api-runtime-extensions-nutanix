@@ -18,10 +18,23 @@ import (
 
 // client contains methods to interact with Nutanix Prism v3 and v4 APIs.
 type client interface {
-	GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error)
+	GetCurrentLoggedInUser(
+		ctx context.Context,
+	) (
+		*prismv3.UserIntentResponse,
+		error,
+	)
 
-	GetImageById(id *string) (*vmmv4.GetImageApiResponse, error)
-	ListImages(page_ *int,
+	GetImageById(
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*vmmv4.GetImageApiResponse,
+		error,
+	)
+
+	ListImages(
+		page_ *int,
 		limit_ *int,
 		filter_ *string,
 		orderby_ *string,
@@ -31,7 +44,14 @@ type client interface {
 		*vmmv4.ListImagesApiResponse,
 		error,
 	)
-	GetClusterById(id *string) (*clustermgmtv4.GetClusterApiResponse, error)
+
+	GetClusterById(
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*clustermgmtv4.GetClusterApiResponse, error,
+	)
+
 	ListClusters(
 		page_ *int,
 		limit_ *int,
@@ -40,7 +60,10 @@ type client interface {
 		apply_ *string,
 		select_ *string,
 		args ...map[string]interface{},
-	) (*clustermgmtv4.ListClustersApiResponse, error)
+	) (
+		*clustermgmtv4.ListClustersApiResponse,
+		error,
+	)
 	ListStorageContainers(
 		page_ *int,
 		limit_ *int,
@@ -48,8 +71,18 @@ type client interface {
 		orderby_ *string,
 		select_ *string,
 		args ...map[string]interface{},
-	) (*clustermgmtv4.ListStorageContainersApiResponse, error)
-	GetSubnetById(id *string) (*netv4.GetSubnetApiResponse, error)
+	) (
+		*clustermgmtv4.ListStorageContainersApiResponse,
+		error,
+	)
+
+	GetSubnetById(
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*netv4.GetSubnetApiResponse, error,
+	)
+
 	ListSubnets(
 		page_ *int,
 		limit_ *int,
@@ -58,13 +91,87 @@ type client interface {
 		expand_ *string,
 		select_ *string,
 		args ...map[string]interface{},
-	) (*netv4.ListSubnetsApiResponse, error)
+	) (
+		*netv4.ListSubnetsApiResponse, error,
+	)
 }
 
 // clientWrapper implements the client interface and wraps both v3 and v4 clients.
 type clientWrapper struct {
-	v3client *prismv3.Client
-	v4client *prismv4.Client
+	GetCurrentLoggedInUserFunc func(
+		ctx context.Context,
+	) (
+		*prismv3.UserIntentResponse, error,
+	)
+
+	GetImageByIdFunc func(
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*vmmv4.GetImageApiResponse, error,
+	)
+
+	ListImagesFunc func(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (
+		*vmmv4.ListImagesApiResponse,
+		error,
+	)
+
+	GetClusterByIdFunc func(
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*clustermgmtv4.GetClusterApiResponse, error,
+	)
+
+	ListClustersFunc func(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		apply_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (
+		*clustermgmtv4.ListClustersApiResponse,
+		error,
+	)
+	ListStorageContainersFunc func(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (
+		*clustermgmtv4.ListStorageContainersApiResponse,
+		error,
+	)
+
+	GetSubnetByIdFunc func(
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*netv4.GetSubnetApiResponse, error,
+	)
+
+	ListSubnetsFunc func(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		expand_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (
+		*netv4.ListSubnetsApiResponse, error,
+	)
 }
 
 var _ = client(&clientWrapper{})
@@ -83,31 +190,55 @@ func newClient(
 	}
 
 	return &clientWrapper{
-		v3client: v3c,
-		v4client: v4c,
+		GetCurrentLoggedInUserFunc: v3c.V3.GetCurrentLoggedInUser,
+		GetImageByIdFunc:           v4c.ImagesApiInstance.GetImageById,
+		ListImagesFunc:             v4c.ImagesApiInstance.ListImages,
+		GetClusterByIdFunc:         v4c.ClustersApiInstance.GetClusterById,
+		ListClustersFunc:           v4c.ClustersApiInstance.ListClusters,
+		ListStorageContainersFunc:  v4c.StorageContainerAPI.ListStorageContainers,
+		GetSubnetByIdFunc:          v4c.SubnetsApiInstance.GetSubnetById,
+		ListSubnetsFunc:            v4c.SubnetsApiInstance.ListSubnets,
 	}, nil
 }
 
-func (c *clientWrapper) GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error) {
-	return c.v3client.V3.GetCurrentLoggedInUser(ctx)
+func (c *clientWrapper) GetCurrentLoggedInUser(
+	ctx context.Context,
+) (
+	*prismv3.UserIntentResponse,
+	error,
+) {
+	return c.GetCurrentLoggedInUserFunc(ctx)
 }
 
-func (c *clientWrapper) GetImageById(id *string) (*vmmv4.GetImageApiResponse, error) {
-	resp, err := c.v4client.ImagesApiInstance.GetImageById(id)
+func (c *clientWrapper) GetImageById(
+	uuid *string,
+	args ...map[string]interface{},
+) (
+	*vmmv4.GetImageApiResponse,
+	error,
+) {
+	resp, err := c.GetImageByIdFunc(
+		uuid,
+		args...,
+	)
 	if err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
 
-func (c *clientWrapper) ListImages(page_ *int,
+func (c *clientWrapper) ListImages(
+	page_ *int,
 	limit_ *int,
 	filter_ *string,
 	orderby_ *string,
 	select_ *string,
 	args ...map[string]interface{},
-) (*vmmv4.ListImagesApiResponse, error) {
-	resp, err := c.v4client.ImagesApiInstance.ListImages(
+) (
+	*vmmv4.ListImagesApiResponse,
+	error,
+) {
+	resp, err := c.ListImagesFunc(
 		page_,
 		limit_,
 		filter_,
@@ -121,8 +252,17 @@ func (c *clientWrapper) ListImages(page_ *int,
 	return resp, nil
 }
 
-func (c *clientWrapper) GetClusterById(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
-	resp, err := c.v4client.ClustersApiInstance.GetClusterById(id)
+func (c *clientWrapper) GetClusterById(
+	uuid *string,
+	args ...map[string]interface{},
+) (
+	*clustermgmtv4.GetClusterApiResponse,
+	error,
+) {
+	resp, err := c.GetClusterByIdFunc(
+		uuid,
+		args...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -137,8 +277,11 @@ func (c *clientWrapper) ListClusters(
 	apply_ *string,
 	select_ *string,
 	args ...map[string]interface{},
-) (*clustermgmtv4.ListClustersApiResponse, error) {
-	resp, err := c.v4client.ClustersApiInstance.ListClusters(
+) (
+	*clustermgmtv4.ListClustersApiResponse,
+	error,
+) {
+	resp, err := c.ListClustersFunc(
 		page_,
 		limit_,
 		filter_,
@@ -160,8 +303,11 @@ func (c *clientWrapper) ListStorageContainers(
 	orderby_ *string,
 	select_ *string,
 	args ...map[string]interface{},
-) (*clustermgmtv4.ListStorageContainersApiResponse, error) {
-	resp, err := c.v4client.StorageContainerAPI.ListStorageContainers(
+) (
+	*clustermgmtv4.ListStorageContainersApiResponse,
+	error,
+) {
+	resp, err := c.ListStorageContainersFunc(
 		page_,
 		limit_,
 		filter_,
@@ -175,8 +321,17 @@ func (c *clientWrapper) ListStorageContainers(
 	return resp, nil
 }
 
-func (c *clientWrapper) GetSubnetById(id *string) (*netv4.GetSubnetApiResponse, error) {
-	resp, err := c.v4client.SubnetsApiInstance.GetSubnetById(id)
+func (c *clientWrapper) GetSubnetById(
+	uuid *string,
+	args ...map[string]interface{},
+) (
+	*netv4.GetSubnetApiResponse,
+	error,
+) {
+	resp, err := c.GetSubnetByIdFunc(
+		uuid,
+		args...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -191,8 +346,11 @@ func (c *clientWrapper) ListSubnets(
 	expand_ *string,
 	select_ *string,
 	args ...map[string]interface{},
-) (*netv4.ListSubnetsApiResponse, error) {
-	resp, err := c.v4client.SubnetsApiInstance.ListSubnets(
+) (
+	*netv4.ListSubnetsApiResponse,
+	error,
+) {
+	resp, err := c.ListSubnetsFunc(
 		page_,
 		limit_,
 		filter_,

@@ -30,8 +30,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 	}{
 		{
 			name: "kubernetes version matches",
-			nclient: &mocknclient{
-				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+			nclient: &clientWrapper{
+				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -55,8 +55,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "kubernetes version mismatch",
-			nclient: &mocknclient{
-				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+			nclient: &clientWrapper{
+				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -87,8 +87,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "kubernetes version with build metadata matches",
-			nclient: &mocknclient{
-				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+			nclient: &clientWrapper{
+				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -112,8 +112,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "custom image name has no Kubernetes version",
-			nclient: &mocknclient{
-				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+			nclient: &clientWrapper{
+				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -144,8 +144,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "invalid kubernetes version",
-			nclient: &mocknclient{
-				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+			nclient: &clientWrapper{
+				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -176,8 +176,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "empty image name",
-			nclient: &mocknclient{
-				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+			nclient: &clientWrapper{
+				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -208,7 +208,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name:    "imageLookup not yet supported",
-			nclient: &mocknclient{},
+			nclient: &clientWrapper{},
 			machineDetails: &carenv1.NutanixMachineDetails{
 				ImageLookup: &capxv1.NutanixImageLookup{
 					Format: ptr.To("test-format"),
@@ -224,8 +224,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "no images found",
-			nclient: &mocknclient{
-				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+			nclient: &clientWrapper{
+				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					return nil, nil
 				},
 			},
@@ -241,8 +241,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "error getting images",
-			nclient: &mocknclient{
-				getImageByIdFunc: func(uuid *string) (*vmmv4.GetImageApiResponse, error) {
+			nclient: &clientWrapper{
+				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					return nil, fmt.Errorf("some error")
 				},
 			},
@@ -302,7 +302,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 			},
 			expectedVersion: "1.32.3",
 			expectedChecks:  2,
-			nclient:         &mocknclient{},
+			nclient:         &clientWrapper{},
 		},
 		{
 			name: "cluster with topology version without v prefix",
@@ -315,7 +315,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 			},
 			expectedVersion: "1.32.3",
 			expectedChecks:  2,
-			nclient:         &mocknclient{},
+			nclient:         &clientWrapper{},
 		},
 		{
 			name: "cluster without topology",
@@ -326,7 +326,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 			},
 			expectedVersion: "",
 			expectedChecks:  0,
-			nclient:         &mocknclient{},
+			nclient:         &clientWrapper{},
 		},
 		{
 			name: "client not initialized",
