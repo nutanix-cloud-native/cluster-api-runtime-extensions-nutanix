@@ -32,7 +32,8 @@ func copyClusterClassAndTemplates(
 		// Copy Template to target namespace
 		targetTemplate := copyObjectForCreate(sourceTemplate, sourceTemplate.GetName(), namespace)
 
-		if err := w.Create(ctx, targetTemplate); err != nil {
+		//nolint:gocritic // Inline error is checked.
+		if err := w.Create(ctx, targetTemplate); client.IgnoreAlreadyExists(err) != nil {
 			return fmt.Errorf(
 				"failed to create %s %s: %w",
 				targetTemplate.GetKind(),
@@ -50,7 +51,8 @@ func copyClusterClassAndTemplates(
 		return fmt.Errorf("error processing references: %w", err)
 	}
 
-	if err := w.Create(ctx, target); err != nil {
+	//nolint:gocritic // Inline error is checked.
+	if err := w.Create(ctx, target); client.IgnoreAlreadyExists(err) != nil {
 		return fmt.Errorf(
 			"failed to create %s %s: %w",
 			target.Kind,

@@ -138,7 +138,7 @@ func (r *Reconciler) Reconcile(
 			scc,
 			namespace,
 		)
-		if client.IgnoreAlreadyExists(err) != nil {
+		if err != nil {
 			// TODO Record an Event.
 			return ctrl.Result{}, fmt.Errorf(
 				"failed to copy source ClusterClass %s or its referenced Templates to namespace %s: %w",
