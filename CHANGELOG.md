@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.32.0 (2025-07-23)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Validate the configured failure domain(s) exist and valid by @yanhua121 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1208
+* feat: Add context to preflight check messages by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1210
+* feat: Skip FD dependent preflight checks when failureDomain configured by @yanhua121 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1213
+* feat(failuredomains): add failure domain rollout controller by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1207
+* feat: Add more context to MetalLB config apply conflict errors by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1225
+* feat: Add scale from zero cluster-autoscaler support by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1227
+### Fixes 🔧
+* fix: Fix typo in field name; use one-line strings to prevent future typos by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1206
+* fix: Nuanced image Kubernetes version check errors by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1211
+* fix(helm): add failuredomain rollout controller config to helm chart  by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1214
+* fix(ccm): Update Nutanix CCM to v0.5.2 by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1220
+* fix(preflight): check storage containers on all failure domains by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1215
+* fix(preflight): ensure MDs without overrides are also checked by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1216
+* fix: Use JSONPath in check result fields by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1221
+* fix: machineDetails fields "cluster" and "subnets" should be optional by @yanhua121 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1217
+* fix(auto-cert-renewal): adds 0 as valid value for daysBeforeExpiry by @atulv7 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1218
+* fix: Namespacesync copies resources after partial copy failure by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1228
+### Other Changes
+* build: update mindthegap version by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1212
+
+## New Contributors
+* @atulv7 made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1218
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.31.1...v0.32.0
+
 ## 0.31.1 (2025-07-08)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
