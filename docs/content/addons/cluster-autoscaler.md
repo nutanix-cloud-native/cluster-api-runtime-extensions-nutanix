@@ -52,6 +52,16 @@ To deploy the addon via `ClusterResourceSet` replace the value of `strategy` wit
 
 ## Scale from zero
 
+{{% alert title="Required Cluster labels" color=warning %}}
+CAREN support for scale from zero currently relies on specific labels on the `Cluster` resource in order for Cluster
+Autoscaler RBAC to be correctly configured. Ensure that your `Clusters` have the appropriate `cluster.x-k8s.io/provider`
+label as follows:
+
+- CAPA: `cluster.x-k8s.io/provider: aws`
+- CAPX: `cluster.x-k8s.io/provider: nutanix`
+- CAPD: `cluster.x-k8s.io/provider: docker`
+{{% /alert %}}
+
 CAREN deploys Cluster Autoscaler with appropriate permissions to enable scaling nodepools from zero. However, CAPI
 providers must implement functionality as described in the [autoscaling from zero proposal][Scale from zero status
 updates] in order for scaling from zero to be possible.
@@ -65,6 +75,8 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   name: <NAME>
+  labels:
+    cluster.x-k8s.io/provider: <PROVIDER>
 spec:
   topology:
     variables:
@@ -96,6 +108,8 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   name: <NAME>
+  labels:
+    cluster.x-k8s.io/provider: <PROVIDER>
 spec:
   topology:
     variables:
