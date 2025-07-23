@@ -86,24 +86,19 @@ var (
 		},
 	}
 	matchersForAllImageTemplating = []capitest.JSONPatchMatcher{
-		// boot type
 		{
 			Operation:    "add",
 			Path:         "/spec/template/spec/bootType",
 			ValueMatcher: gomega.BeEquivalentTo(capxv1.NutanixBootTypeLegacy),
 		},
-		// cluster
 		{
-			Operation:    "add",
-			Path:         "/spec/template/spec/cluster/name",
-			ValueMatcher: gomega.BeEquivalentTo("fake-pe-cluster"),
+			Operation: "add",
+			Path:      "/spec/template/spec/cluster",
+			ValueMatcher: gomega.SatisfyAll(
+				gomega.HaveKeyWithValue("type", gomega.BeEquivalentTo(capxv1.NutanixIdentifierName)),
+				gomega.HaveKeyWithValue("name", gomega.BeEquivalentTo("fake-pe-cluster")),
+			),
 		},
-		{
-			Operation:    "replace",
-			Path:         "/spec/template/spec/cluster/type",
-			ValueMatcher: gomega.BeEquivalentTo(capxv1.NutanixIdentifierName),
-		},
-
 		{
 			Operation:    "replace",
 			Path:         "/spec/template/spec/vcpuSockets",
@@ -125,9 +120,14 @@ var (
 			ValueMatcher: gomega.BeEquivalentTo("40Gi"),
 		},
 		{
-			Operation:    "replace",
-			Path:         "/spec/template/spec/subnet",
-			ValueMatcher: gomega.HaveLen(1),
+			Operation: "add",
+			Path:      "/spec/template/spec/subnet",
+			ValueMatcher: gomega.ContainElement(
+				gomega.SatisfyAll(
+					gomega.HaveKeyWithValue("type", gomega.BeEquivalentTo(capxv1.NutanixIdentifierName)),
+					gomega.HaveKeyWithValue("name", gomega.BeEquivalentTo("fake-subnet")),
+				),
+			),
 		},
 		{
 			Operation: "add",
@@ -159,14 +159,12 @@ var (
 			ValueMatcher: gomega.BeEquivalentTo(capxv1.NutanixBootTypeLegacy),
 		},
 		{
-			Operation:    "add",
-			Path:         "/spec/template/spec/cluster/name",
-			ValueMatcher: gomega.BeEquivalentTo("fake-pe-cluster"),
-		},
-		{
-			Operation:    "replace",
-			Path:         "/spec/template/spec/cluster/type",
-			ValueMatcher: gomega.BeEquivalentTo(capxv1.NutanixIdentifierName),
+			Operation: "add",
+			Path:      "/spec/template/spec/cluster",
+			ValueMatcher: gomega.SatisfyAll(
+				gomega.HaveKeyWithValue("type", gomega.BeEquivalentTo(capxv1.NutanixIdentifierName)),
+				gomega.HaveKeyWithValue("name", gomega.BeEquivalentTo("fake-pe-cluster")),
+			),
 		},
 		{
 			Operation:    "replace",
@@ -189,9 +187,14 @@ var (
 			ValueMatcher: gomega.BeEquivalentTo("40Gi"),
 		},
 		{
-			Operation:    "replace",
-			Path:         "/spec/template/spec/subnet",
-			ValueMatcher: gomega.HaveLen(1),
+			Operation: "add",
+			Path:      "/spec/template/spec/subnet",
+			ValueMatcher: gomega.ContainElement(
+				gomega.SatisfyAll(
+					gomega.HaveKeyWithValue("type", gomega.BeEquivalentTo(capxv1.NutanixIdentifierName)),
+					gomega.HaveKeyWithValue("name", gomega.BeEquivalentTo("fake-subnet")),
+				),
+			),
 		},
 		{
 			Operation: "add",
