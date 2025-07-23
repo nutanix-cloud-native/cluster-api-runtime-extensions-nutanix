@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.28.0 (2025-07-23)
+
+<!-- Release notes generated using configuration in .github/release.yaml at v0.28.0 -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Update all addon versions by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1054
+* feat: go 1.24.1 and update all other tools by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1066
+* feat: bumped frr-routing to 9.1.3 by @ArvinderPal09 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1067
+* feat: properly support kube-vip upgrades by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1062
+* feat: update addons by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1072
+* feat: enable Cilium's hubble relay mTLS by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1086
+* feat: adds image tempalting for capx by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1096
+* feat: support setting kubeadm ignorePreflightErrors by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1097
+* feat: go 1.24.2 to fix CVE by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1100
+* feat: update Calico to v3.29.3 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1101
+### Fixes 🔧
+* fix: correctly handle multiple registries with the same Host by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1063
+* fix: Tolerate all NoSchedule taints for NFD and CSI deployments by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1074
+* fix: Retain existing join and init kubeadm config when adding taints by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1073
+### Other Changes
+* docs: updates cilium doc with link to its default spec by @manoj-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1036
+* ci: Replace deprecated blackduck scan action by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1070
+* build: Update k8s.io/{kubelet,utils} deps by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1078
+* revert: "build: Update k8s.io/{kubelet,utils} deps" by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1080
+* ci: Enable dependabot for hack/tools module by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1082
+* build: Update k8s.io/kubelet dep by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1081
+* ci: Use Kubernetes minor in e2e check name by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1090
+* release(main):  v0.28.0 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1071
+
+## New Contributors
+* @ArvinderPal09 made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1067
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.27.5...v0.28.0
+
 ## 0.27.5 (2025-06-06)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.27.x -->
