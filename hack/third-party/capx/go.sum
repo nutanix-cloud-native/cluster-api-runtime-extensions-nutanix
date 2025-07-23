@@ -76,8 +76,8 @@ github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 h1:n6/
 github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00/go.mod h1:Pm3mSP3c5uWn86xMLZ5Sa7JB9GsEZySvHYXCTK4E9q4=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.7.0-beta.2 h1:RsqSaYm5Vg6887taqJ8mRtqa1zckiwtqZVf3/xJRcro=
-github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.7.0-beta.2/go.mod h1:8F3sXZInz+dShppYLmMzQwUAzFsZTyaxaB3bf5rIk/A=
+github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.7.0-beta.4 h1:SNfZlG/AJ/RUpEij0Lu1XbrIoOxk+tZvzQktFdPkGYc=
+github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.7.0-beta.4/go.mod h1:6AJwae8W/nGmITlnuTnvMxCxxztctEAUJulxC9z/jgU=
 github.com/nutanix-cloud-native/prism-go-client v0.5.0 h1:aSNuKDOK7+q676MQyetYXcySY41IjSvN2UmrDIU3+6s=
 github.com/nutanix-cloud-native/prism-go-client v0.5.0/go.mod h1:QhLX+sEep0cStzHVYU6mPgIlnA8U3DySskagrbDprRk=
 github.com/onsi/ginkgo/v2 v2.23.4 h1:ktYTpKJAVZnDT4VjxSbiBenUjmlL/5QkBEocaWXiQus=
