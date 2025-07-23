@@ -10,6 +10,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/storage/names"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,7 +22,7 @@ func TestReconcileExistingNamespaceWithUpdatedLabels(t *testing.T) {
 	g := NewWithT(t)
 	timeout := 5 * time.Second
 
-	sourceClusterClassName, cleanup, err := createUniqueClusterClassAndTemplates(
+	sourceClusterClassName, _, cleanup, err := createUniqueClusterClassAndTemplates(
 		sourceClusterClassNamespace,
 	)
 	g.Expect(err).ToNot(HaveOccurred())
@@ -53,7 +54,7 @@ func TestReconcileNewNamespaces(t *testing.T) {
 	g := NewWithT(t)
 	timeout := 5 * time.Second
 
-	sourceClusterClassName, cleanup, err := createUniqueClusterClassAndTemplates(
+	sourceClusterClassName, _, cleanup, err := createUniqueClusterClassAndTemplates(
 		sourceClusterClassNamespace,
 	)
 	g.Expect(err).ToNot(HaveOccurred())
@@ -84,7 +85,7 @@ func TestReconcileNewClusterClass(t *testing.T) {
 	targetNamespaces, err := createTargetNamespaces(3)
 	g.Expect(err).ToNot(HaveOccurred())
 
-	sourceClusterClassName, cleanup, err := createUniqueClusterClassAndTemplates(
+	sourceClusterClassName, _, cleanup, err := createUniqueClusterClassAndTemplates(
 		sourceClusterClassNamespace,
 	)
 	g.Expect(err).ToNot(HaveOccurred())
@@ -108,7 +109,7 @@ func TestReconcileNewClusterClass(t *testing.T) {
 func TestSourceClusterClassNamespaceEmpty(t *testing.T) {
 	g := NewWithT(t)
 
-	_, cleanup, err := createUniqueClusterClassAndTemplates(
+	_, _, cleanup, err := createUniqueClusterClassAndTemplates(
 		sourceClusterClassNamespace,
 	)
 	g.Expect(err).ToNot(HaveOccurred())
@@ -126,6 +127,60 @@ func TestSourceClusterClassNamespaceEmpty(t *testing.T) {
 	ns, err := r.listSourceClusterClasses(ctx)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(ns).To(BeEmpty())
+}
+
+func TestReconcileAfterPartialFailureToCopy(t *testing.T) {
+	g := NewWithT(t)
+	timeout := 5 * time.Second
+	prefix := "partial-failure"
+
+	sourceClusterClassName, sourceTemplates, sourceCleanup, err := createClusterClassAndTemplates(
+		prefix,
+		sourceClusterClassNamespace,
+	)
+	g.Expect(err).ToNot(HaveOccurred())
+	defer func() {
+		g.Expect(sourceCleanup()).To(Succeed())
+	}()
+
+	// Create a namespace with the same ClusterClass and templates.
+	targetNamespace, err := env.CreateNamespace(ctx, "target", map[string]string{})
+	g.Expect(err).ToNot(HaveOccurred())
+	targetClusterClassName, targetTemplates, _, err := createClusterClassAndTemplates(
+		prefix,
+		targetNamespace.Name,
+	)
+	g.Expect(err).ToNot(HaveOccurred())
+
+	// Verify that the target ClusterClass and templates match the source.
+	g.Expect(targetClusterClassName).To(Equal(sourceClusterClassName))
+	for i := range targetTemplates {
+		g.Expect(targetTemplates[i].GetName()).To(Equal(sourceTemplates[i].GetName()))
+	}
+
+	// Simulate a partial copy failure by removing the ClusterClass--the last object copied--from the target namespace.
+	g.Expect(env.CleanupAndWait(ctx, &clusterv1.ClusterClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      targetClusterClassName,
+			Namespace: targetNamespace.Name,
+		},
+	})).To(Succeed())
+
+	// Label the namespace so that it is considered a target namespace to trigger the reconcile loop.
+	targetNamespace.Labels[targetNamespaceLabelKey] = ""
+	err = env.Update(ctx, targetNamespace)
+	g.Expect(err).ToNot(HaveOccurred())
+
+	// Verify that the templates are copied.
+	g.Eventually(func() error {
+		return verifyClusterClassAndTemplates(
+			env.Client,
+			sourceClusterClassName,
+			targetNamespace.Name,
+		)
+	},
+		timeout,
+	).Should(Succeed())
 }
 
 func verifyClusterClassAndTemplates(
@@ -151,6 +206,7 @@ func verifyClusterClassAndTemplates(
 
 func createUniqueClusterClassAndTemplates(namespace string) (
 	clusterClassName string,
+	templates []client.Object,
 	cleanup func() error,
 	err error,
 ) {
@@ -165,6 +221,7 @@ func createClusterClassAndTemplates(
 	namespace string,
 ) (
 	clusterClassName string,
+	templates []client.Object,
 	cleanup func() error,
 	err error,
 ) {
@@ -206,7 +263,7 @@ func createClusterClassAndTemplates(
 
 	// Create the set of initObjects from the objects above to add to the API server when the test environment starts.
 
-	templates := []client.Object{
+	templates = []client.Object{
 		bootstrapTemplate,
 		infraMachineTemplateWorker,
 		infraMachineTemplateControlPlane,
@@ -216,11 +273,11 @@ func createClusterClassAndTemplates(
 
 	for _, obj := range templates {
 		if err := env.CreateAndWait(ctx, obj); err != nil {
-			return "", nil, err
+			return "", nil, nil, err
 		}
 	}
 	if err := env.CreateAndWait(ctx, clusterClass); err != nil {
-		return "", nil, err
+		return "", nil, nil, err
 	}
 
 	cleanup = func() error {
@@ -232,7 +289,7 @@ func createClusterClassAndTemplates(
 		return env.CleanupAndWait(ctx, clusterClass)
 	}
 
-	return clusterClass.Name, cleanup, nil
+	return clusterClass.Name, templates, cleanup, nil
 }
 
 func createTargetNamespaces(number int) ([]*corev1.Namespace, error) {
