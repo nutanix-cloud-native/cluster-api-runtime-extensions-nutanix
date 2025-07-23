@@ -71,7 +71,7 @@ func (h *nutanixControlPlaneFailureDomains) Mutate(
 	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.V(5).Info("ControlPlane nutanix failureDomains variable not defined", "error", err.Error())
+			log.V(5).Info("ControlPlane nutanix failureDomains variable not defined in cluster config")
 			return nil
 		}
 		log.V(5).Error(err, "failed to get controlPlane nutanix failureDomains variable")
