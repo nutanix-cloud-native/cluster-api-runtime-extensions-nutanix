@@ -1614,7 +1614,7 @@ func TestGetClusters(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			clusters, err := getClusters(tc.client, tc.clusterIdentifier)
+			clusters, err := getClusters(context.Background(), tc.client, tc.clusterIdentifier)
 
 			if tc.expectError {
 				require.Error(t, err)

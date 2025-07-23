@@ -112,7 +112,7 @@ func (fdc *failureDomainCheck) Run(ctx context.Context) preflight.CheckResult {
 	// Validate the failure domain configuration
 	// Validate spec.prismElementCluster configuration
 	peIdentifier := fdObj.Spec.PrismElementCluster
-	peClusters, err := getClusters(fdc.nclient, &peIdentifier)
+	peClusters, err := getClusters(ctx, fdc.nclient, &peIdentifier)
 	if err != nil {
 		result.Allowed = false
 		result.InternalError = true
@@ -143,7 +143,7 @@ func (fdc *failureDomainCheck) Run(ctx context.Context) preflight.CheckResult {
 
 	// Validate spec.subnets configuration
 	for _, id := range fdObj.Spec.Subnets {
-		subnets, err := getSubnets(fdc.nclient, &id)
+		subnets, err := getSubnets(ctx, fdc.nclient, &id)
 		if err != nil {
 			result.Allowed = false
 			result.InternalError = true
@@ -186,10 +186,17 @@ func (fdc *failureDomainCheck) Run(ctx context.Context) preflight.CheckResult {
 }
 
 // getSubnets returns the subnets found in PC with the input identifier.
-func getSubnets(client client, subnetId *capxv1.NutanixResourceIdentifier) ([]netv4.Subnet, error) {
+func getSubnets(
+	ctx context.Context,
+	client client,
+	subnetId *capxv1.NutanixResourceIdentifier,
+) (
+	[]netv4.Subnet,
+	error,
+) {
 	switch {
 	case subnetId.IsUUID():
-		resp, err := client.GetSubnetById(subnetId.UUID)
+		resp, err := client.GetSubnetById(ctx, subnetId.UUID)
 		if err != nil {
 			return nil, err
 		}
@@ -204,7 +211,7 @@ func getSubnets(client client, subnetId *capxv1.NutanixResourceIdentifier) ([]ne
 		return []netv4.Subnet{subnet}, nil
 	case subnetId.IsName():
 		filter_ := fmt.Sprintf("name eq '%s'", *subnetId.Name)
-		resp, err := client.ListSubnets(nil, nil, &filter_, nil, nil, nil)
+		resp, err := client.ListSubnets(ctx, nil, nil, &filter_, nil, nil, nil)
 		if err != nil {
 			return nil, err
 		}

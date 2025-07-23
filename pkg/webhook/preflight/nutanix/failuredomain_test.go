@@ -169,7 +169,13 @@ func TestFailureDomainCheck(t *testing.T) {
 			fdName:  failureDomainName,
 			kclient: getK8sClient(),
 			nclient: &clientWrapper{
-				GetClusterByIdFunc: func(uuid *string, args ...map[string]interface{}) (*clustermgmtv4.GetClusterApiResponse, error) {
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, nil
 				},
 				ListClustersFunc: func(

@@ -26,6 +26,7 @@ type client interface {
 	)
 
 	GetImageById(
+		ctx context.Context,
 		uuid *string,
 		args ...map[string]interface{},
 	) (
@@ -34,6 +35,7 @@ type client interface {
 	)
 
 	ListImages(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -46,6 +48,7 @@ type client interface {
 	)
 
 	GetClusterById(
+		ctx context.Context,
 		uuid *string,
 		args ...map[string]interface{},
 	) (
@@ -53,6 +56,7 @@ type client interface {
 	)
 
 	ListClusters(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -65,6 +69,7 @@ type client interface {
 		error,
 	)
 	ListStorageContainers(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -77,6 +82,7 @@ type client interface {
 	)
 
 	GetSubnetById(
+		ctx context.Context,
 		uuid *string,
 		args ...map[string]interface{},
 	) (
@@ -84,6 +90,7 @@ type client interface {
 	)
 
 	ListSubnets(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -211,23 +218,23 @@ func (c *clientWrapper) GetCurrentLoggedInUser(
 }
 
 func (c *clientWrapper) GetImageById(
+	ctx context.Context,
 	uuid *string,
 	args ...map[string]interface{},
 ) (
 	*vmmv4.GetImageApiResponse,
 	error,
 ) {
-	resp, err := c.GetImageByIdFunc(
-		uuid,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return callWithContext(ctx, func() (*vmmv4.GetImageApiResponse, error) {
+		return c.GetImageByIdFunc(
+			uuid,
+			args...,
+		)
+	})
 }
 
 func (c *clientWrapper) ListImages(
+	ctx context.Context,
 	page_ *int,
 	limit_ *int,
 	filter_ *string,
@@ -238,38 +245,36 @@ func (c *clientWrapper) ListImages(
 	*vmmv4.ListImagesApiResponse,
 	error,
 ) {
-	resp, err := c.ListImagesFunc(
-		page_,
-		limit_,
-		filter_,
-		orderby_,
-		select_,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return callWithContext(ctx, func() (*vmmv4.ListImagesApiResponse, error) {
+		return c.ListImagesFunc(
+			page_,
+			limit_,
+			filter_,
+			orderby_,
+			select_,
+			args...,
+		)
+	})
 }
 
 func (c *clientWrapper) GetClusterById(
+	ctx context.Context,
 	uuid *string,
 	args ...map[string]interface{},
 ) (
 	*clustermgmtv4.GetClusterApiResponse,
 	error,
 ) {
-	resp, err := c.GetClusterByIdFunc(
-		uuid,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return callWithContext(ctx, func() (*clustermgmtv4.GetClusterApiResponse, error) {
+		return c.GetClusterByIdFunc(
+			uuid,
+			args...,
+		)
+	})
 }
 
 func (c *clientWrapper) ListClusters(
+	ctx context.Context,
 	page_ *int,
 	limit_ *int,
 	filter_ *string,
@@ -281,22 +286,21 @@ func (c *clientWrapper) ListClusters(
 	*clustermgmtv4.ListClustersApiResponse,
 	error,
 ) {
-	resp, err := c.ListClustersFunc(
-		page_,
-		limit_,
-		filter_,
-		orderby_,
-		apply_,
-		select_,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return callWithContext(ctx, func() (*clustermgmtv4.ListClustersApiResponse, error) {
+		return c.ListClustersFunc(
+			page_,
+			limit_,
+			filter_,
+			orderby_,
+			apply_,
+			select_,
+			args...,
+		)
+	})
 }
 
 func (c *clientWrapper) ListStorageContainers(
+	ctx context.Context,
 	page_ *int,
 	limit_ *int,
 	filter_ *string,
@@ -307,38 +311,36 @@ func (c *clientWrapper) ListStorageContainers(
 	*clustermgmtv4.ListStorageContainersApiResponse,
 	error,
 ) {
-	resp, err := c.ListStorageContainersFunc(
-		page_,
-		limit_,
-		filter_,
-		orderby_,
-		select_,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return callWithContext(ctx, func() (*clustermgmtv4.ListStorageContainersApiResponse, error) {
+		return c.ListStorageContainersFunc(
+			page_,
+			limit_,
+			filter_,
+			orderby_,
+			select_,
+			args...,
+		)
+	})
 }
 
 func (c *clientWrapper) GetSubnetById(
+	ctx context.Context,
 	uuid *string,
 	args ...map[string]interface{},
 ) (
 	*netv4.GetSubnetApiResponse,
 	error,
 ) {
-	resp, err := c.GetSubnetByIdFunc(
-		uuid,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return callWithContext(ctx, func() (*netv4.GetSubnetApiResponse, error) {
+		return c.GetSubnetByIdFunc(
+			uuid,
+			args...,
+		)
+	})
 }
 
 func (c *clientWrapper) ListSubnets(
+	ctx context.Context,
 	page_ *int,
 	limit_ *int,
 	filter_ *string,
@@ -350,17 +352,47 @@ func (c *clientWrapper) ListSubnets(
 	*netv4.ListSubnetsApiResponse,
 	error,
 ) {
-	resp, err := c.ListSubnetsFunc(
-		page_,
-		limit_,
-		filter_,
-		orderby_,
-		expand_,
-		select_,
-		args...,
-	)
-	if err != nil {
-		return nil, err
+	return callWithContext(ctx, func() (*netv4.ListSubnetsApiResponse, error) {
+		return c.ListSubnetsFunc(
+			page_,
+			limit_,
+			filter_,
+			orderby_,
+			expand_,
+			select_,
+			args...,
+		)
+	})
+}
+
+// callWithContext is a helper function that immediately responds to context cancellation,
+// while calling a long-running, non-preemptible function. The long-running function always
+// runs to completion, but its result is only returned if the context is not cancelled.
+func callWithContext[T any](ctx context.Context, f func() (T, error)) (resp T, err error) {
+	respCh := make(chan T)
+	errCh := make(chan error)
+
+	go func() {
+		resp, err := f()
+		select {
+		case <-ctx.Done():
+			// Context was cancelled before function returned. We assume no one wants the result anymore.
+		default:
+			if err != nil {
+				errCh <- err
+			}
+			respCh <- resp
+		}
+		close(respCh)
+		close(errCh)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return resp, ctx.Err()
+	case err := <-errCh:
+		return resp, err
+	case resp := <-respCh:
+		return resp, nil
 	}
-	return resp, nil
 }
