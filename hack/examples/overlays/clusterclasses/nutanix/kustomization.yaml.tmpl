@@ -49,3 +49,7 @@ patches:
       kind: KubeadmControlPlaneTemplate
     path: ../../../patches/cis-admissionconfiguration.yaml
   # END CIS patches
+
+  - target:
+      kind: NutanixMachineTemplate
+    path: ../../../patches/nutanix/remove-cluster-and-subnet-from-machinetemplates.yaml
