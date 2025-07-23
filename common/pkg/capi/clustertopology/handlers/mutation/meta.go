@@ -14,6 +14,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
@@ -99,12 +100,27 @@ func (mgp metaGeneratePatches) GeneratePatches(
 			vars map[string]apiextensionsv1.JSON,
 			holderRef runtimehooksv1.HolderReference,
 		) error {
-			for _, h := range mgp.mutators {
+			log := ctrl.LoggerFrom(ctx).WithValues(
+				"holderRef", holderRef,
+				"objectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"handlerName", mgp.name,
+			)
+
+			log.V(3).Info("Starting mutation pipeline", "handlerCount", len(mgp.mutators))
+
+			for i, h := range mgp.mutators {
+				handlerName := fmt.Sprintf("%T", h)
+				log.V(5).Info("Running mutator", "index", i, "handler", handlerName)
+
 				if err := h.Mutate(ctx, obj.(*unstructured.Unstructured), vars, holderRef, clusterKey, clusterGetter); err != nil {
+					log.Error(err, "Mutator failed", "index", i, "handler", handlerName)
 					return err
 				}
+
+				log.V(5).Info("Mutator completed successfully", "index", i, "handler", handlerName)
 			}
 
+			log.V(3).Info("Mutation pipeline completed successfully", "handlerCount", len(mgp.mutators))
 			return nil
 		},
 	)
