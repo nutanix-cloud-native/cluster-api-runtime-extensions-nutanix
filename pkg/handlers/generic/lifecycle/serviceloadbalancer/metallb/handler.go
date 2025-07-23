@@ -166,12 +166,12 @@ func (n *MetalLB) Apply(
 						switch o.GetKind() {
 						case "IPAddressPool":
 							err = fmt.Errorf(
-								"%w. This resource must list only the addresses listed in the Cluster configuration",
+								"%w. This resource has been modified in the workload cluster: it must contain exactly the addresses listed in the Cluster configuration", //nolint:lll // Long error message,
 								err,
 							)
 						case "L2Advertisement":
 							err = fmt.Errorf(
-								"%w. This resource must list only the %q IP Address Pool",
+								"%w. This resource has been modified in the workload cluster, it must only contain the %q IP Address Pool", //nolint:lll // Long error message,
 								err,
 								configInput.Name,
 							)
