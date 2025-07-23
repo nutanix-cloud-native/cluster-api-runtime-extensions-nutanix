@@ -33,6 +33,8 @@ Cluster:
   Namespace: tmpl-clusternamespace-tmpl
   Annotations:
     caren.nutanix.com/cluster-uuid: tmpl-clusteruuid-tmpl
+  Labels:
+    cluster.x-k8s.io/provider: tmpl-capiprovider-tmpl
 EOF
 gomplate -f "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/addons/cluster-autoscaler/values-template.yaml" \
   --context .="${ASSETS_DIR}/gomplate-context.yaml" \
@@ -42,6 +44,7 @@ kustomize build --enable-helm "${ASSETS_DIR}" >"${ASSETS_DIR}/${FILE_NAME}"
 
 sed -i -e "s/\([a-z-]*\)tmpl-clustername\([^-]*\)-tmpl\([a-z-]*\)/\1{{ \`{{ .Cluster.Name\2 }}\` }}\3/g" \
   -e "s/\([a-z-]*\)tmpl-clusteruuid-tmpl\([a-z-]*\)/\1{{ \`{{ index .Cluster.Annotations \"caren.nutanix.com\/cluster-uuid\" }}\` }}\2/g" \
+  -e "s/\([a-z-]*\)tmpl-capiprovider-tmpl\([a-z-]*\)/\1{{ \`{{ index .Cluster.Labels \"cluster.x-k8s.io\/provider\" }}\` }}\2/g" \
   "${ASSETS_DIR}/${FILE_NAME}"
 
 kubectl create configmap "{{ .Values.hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name }}" --dry-run=client --output yaml \

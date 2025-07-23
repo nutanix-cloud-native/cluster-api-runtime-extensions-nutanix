@@ -25,7 +25,7 @@ repositories:
     repoURL: https://kubernetes.github.io/autoscaler
     charts:
       cluster-autoscaler:
-      - 9.46.6
+      - 9.48.0
   cosi:
     repoURL: https://mesosphere.github.io/charts/stable/
     charts:
