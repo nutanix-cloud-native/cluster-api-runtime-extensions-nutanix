@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kwait "k8s.io/apimachinery/pkg/util/wait"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -132,11 +133,12 @@ func (n *MetalLB) Apply(
 		),
 	)
 
-	cos, err := ConfigurationObjects(&ConfigurationInput{
+	configInput := &ConfigurationInput{
 		Name:          DefaultHelmReleaseName,
 		Namespace:     DefaultHelmReleaseNamespace,
 		AddressRanges: slb.Configuration.AddressRanges,
-	})
+	}
+	cos, err := ConfigurationObjects(configInput)
 	if err != nil {
 		return fmt.Errorf("failed to generate MetalLB configuration: %w", err)
 	}
@@ -160,6 +162,21 @@ func (n *MetalLB) Apply(
 						},
 					},
 				); err != nil {
+					if apierrors.IsConflict(err) {
+						switch o.GetKind() {
+						case "IPAddressPool":
+							err = fmt.Errorf(
+								"%w. This resource has been modified in the workload cluster: it must contain exactly the addresses listed in the Cluster configuration", //nolint:lll // Long error message,
+								err,
+							)
+						case "L2Advertisement":
+							err = fmt.Errorf(
+								"%w. This resource has been modified in the workload cluster, it must only contain the %q IP Address Pool", //nolint:lll // Long error message,
+								err,
+								configInput.Name,
+							)
+						}
+					}
 					applyErr = fmt.Errorf(
 						"failed to apply MetalLB configuration %s %s: %w",
 						o.GetKind(),
