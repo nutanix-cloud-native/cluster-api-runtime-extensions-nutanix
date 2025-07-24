@@ -27,12 +27,12 @@
 
           clusterctl-aws = buildGo124Module rec {
             name = "clusterctl-aws";
-            version = "2.8.3";
+            version = "2.8.4";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-x8gRIzORZcHYVdaa4mEq1bkUJcbpXawICD4r498aaBg=";
+              hash = "sha256-YGM9iHYyU4oafPz6FICrhesdZ4dO65K/kMnEvzT7dAA=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
@@ -58,29 +58,29 @@
 
           release-please = buildNpmPackage rec {
             pname = "release-please";
-            version = "17.0.0";
+            version = "17.1.1";
             src = fetchFromGitHub {
               owner = "googleapis";
               repo = "release-please";
               rev = "v${version}";
-              hash = "sha256-/d02gnrKyFJ0rc3Tr6MEOw8hx5ab1xNIfmy0dpiVnIs=";
+              hash = "sha256-Gv/DR/ltDpc1ELa9Ko1JEQVF5AKQSX1mHAPaepa7gN4=";
             };
-            npmDepsHash = "sha256-xLG+he/kFJrS24WdPzUiqO3hYynZYy5HGhFpsVopIOA=";
+            npmDepsHash = "sha256-dnzDUGpxPQUr0R8mo7RR3mvbQIimO4SD5C2omZ9t9uw=";
             dontNpmBuild = true;
           };
 
           helm-schema = buildGo124Module rec {
             pname = "helm-schema";
-            version = "1.8.0";
+            version = "2.2.0";
 
             src = fetchFromGitHub {
               owner = "losisin";
               repo = "helm-values-schema-json";
               rev = "v${version}";
-              hash = "sha256-HvVOnDpIP1tjdpSOkWl8qhwVl87s8JYRJsYGqWhICr8=";
+              hash = "sha256-CiH3N/Ji4KaJheqI0aTkt3GkJgalREAZgOfVM48oI2g=";
             };
             doCheck = false;
-            vendorHash = "sha256-mT2A6xXlTFYrA6yNpz9jaa69vdetY/OgjNtTvG4jAYs=";
+            vendorHash = "sha256-yp1zcMa3rXC0M5Kww4VAY2sRFKkb2rKcOYkoLRlfgt4=";
             ldflags = let t = "main"; in [
               "-s"
               "-w"
@@ -91,7 +91,7 @@
 
             postPatch = ''
               sed -i '/^hooks:/,+2 d' plugin.yaml
-              sed -i 's#command: "$HELM_PLUGIN_DIR/schema"#command: "$HELM_PLUGIN_DIR/helm-values-schema-json"#' plugin.yaml
+              sed -i 's#command: $HELM_PLUGIN_DIR/schema#command: $HELM_PLUGIN_DIR/helm-values-schema-json#' plugin.yaml
             '';
 
             postInstall = ''
