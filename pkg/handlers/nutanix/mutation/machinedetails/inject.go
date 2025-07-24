@@ -99,11 +99,6 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			spec.BootType = nutanixMachineDetailsVar.BootType
 			if nutanixMachineDetailsVar.Cluster != nil {
 				spec.Cluster = *nutanixMachineDetailsVar.Cluster
-			} else {
-				// Have to set the required Type field.
-				spec.Cluster = capxv1.NutanixResourceIdentifier{
-					Type: capxv1.NutanixIdentifierName,
-				}
 			}
 
 			switch {
@@ -122,7 +117,10 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			spec.MemorySize = nutanixMachineDetailsVar.MemorySize
 			spec.SystemDiskSize = nutanixMachineDetailsVar.SystemDiskSize
 
-			spec.Subnets = slices.Clone(nutanixMachineDetailsVar.Subnets)
+			if len(nutanixMachineDetailsVar.Subnets) > 0 {
+				spec.Subnets = slices.Clone(nutanixMachineDetailsVar.Subnets)
+			}
+
 			spec.AdditionalCategories = slices.Clone(nutanixMachineDetailsVar.AdditionalCategories)
 			spec.GPUs = slices.Clone(nutanixMachineDetailsVar.GPUs)
 			spec.Project = nutanixMachineDetailsVar.Project.DeepCopy()
