@@ -292,7 +292,7 @@ func generateGoFile(versionMap map[string]string, outputPath string) error {
 		return fmt.Errorf("creating directories error: %w", err)
 	}
 
-	if err := os.WriteFile(outputPath, formattedSrc, 0o644); err != nil { //nolint:gosec // Should be world readable.
+	if err := os.WriteFile(outputPath, formattedSrc, 0o644); err != nil { //nolint:gosec // The output file should be world readable.
 		return fmt.Errorf("writing file error: %w", err)
 	}
 
