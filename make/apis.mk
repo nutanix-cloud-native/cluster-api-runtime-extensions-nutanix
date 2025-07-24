@@ -59,4 +59,4 @@ api.sync.%: ; $(info $(M) syncing external API: $(PROVIDER_MODULE_$*)/$(PROVIDER
 .PHONY: coredns.sync
 coredns.sync: ## Syncs the Kubernetes version to CoreDNS version mapping used in the cluster upgrade
 coredns.sync: ; $(info $(M) syncing CoreDNS version mapping)
-	go run hack/tools/coredns-versions/main.go
+	cd hack/tools/coredns-versions && go run . --output="$(REPO_ROOT)/api/versions/coredns.go"

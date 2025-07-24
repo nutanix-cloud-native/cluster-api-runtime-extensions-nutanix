@@ -5,14 +5,13 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"go/format"
-	"io"
-	"net/http"
 	"os"
+	"os/signal"
 	"path"
 	"regexp"
 	"sort"
@@ -20,10 +19,11 @@ import (
 	"text/template"
 
 	"github.com/blang/semver/v4"
+	"github.com/google/go-github/v72/github"
 )
 
 var (
-	// Command-line flags
+	// Command-line flags.
 	outputFile           = flag.String("output", "api/versions/coredns.go", "Output file path")
 	minKubernetesVersion = flag.String(
 		"min-kubernetes-version",
@@ -33,8 +33,7 @@ var (
 )
 
 const (
-	constantsURLTemplate = "https://raw.githubusercontent.com/kubernetes/kubernetes/v%s/cmd/kubeadm/app/constants/constants.go"
-	tagsAPIURL           = "https://api.github.com/repos/kubernetes/kubernetes/tags?per_page=100&page=%d"
+	kubeadmConstantsFilePathInRepo = "cmd/kubeadm/app/constants/constants.go"
 )
 
 var goTemplate = `// Copyright 2024 Nutanix. All rights reserved.
@@ -51,14 +50,14 @@ import (
 	"github.com/blang/semver/v4"
 )
 
-// Kubernetes versions
+// Kubernetes versions.
 const (
 {{- range .KubernetesConstants }}
 	{{ .Name }} = "{{ .Version }}"
 {{- end }}
 )
 
-// CoreDNS versions
+// CoreDNS versions.
 const (
 {{- range .CoreDNSConstants }}
 	{{ .Name }} = "{{ .Version }}"
@@ -114,13 +113,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	versions, err := fetchKubernetesVersions(minSemverVersion)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error fetching Kubernetes versions: %v\n", err)
-		os.Exit(1)
+	ctx, cancelFunc := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancelFunc()
+
+	ghClient := github.NewClient(nil)
+	if ghToken := os.Getenv("GH_TOKEN"); ghToken != "" {
+		ghClient = ghClient.WithAuthToken(ghToken)
 	}
 
-	versionMap, err := fetchCoreDNSVersions(versions)
+	versions, err := fetchKubernetesVersions(ctx, minSemverVersion, ghClient)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error fetching Kubernetes versions: %v\n", err)
+		os.Exit(1) //nolint:gocritic // This will still be a clean exit.
+	}
+
+	versionMap, err := fetchCoreDNSVersions(ctx, versions, ghClient)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error fetching CoreDNS versions: %v\n", err)
 		os.Exit(1)
@@ -134,47 +141,51 @@ func main() {
 	fmt.Printf("Successfully generated %s\n", *outputFile)
 }
 
-// Fetch Kubernetes versions from GitHub branches
-func fetchKubernetesVersions(minVersion semver.Version) ([]semver.Version, error) {
+// Fetch Kubernetes versions from GitHub branches.
+func fetchKubernetesVersions(
+	ctx context.Context,
+	minVersion semver.Version,
+	ghClient *github.Client,
+) ([]semver.Version, error) {
+	listOptions := &github.ListOptions{
+		PerPage: 100,
+	}
+
 	minorVersionToPatchVersion := make(map[string]semver.Version)
-	page := 1
-
 	for {
-		url := fmt.Sprintf(tagsAPIURL, page)
-		tagNames, err := fetchTagNames(url)
+		tags, resp, err := ghClient.Repositories.ListTags(ctx, "kubernetes", "kubernetes", listOptions)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to list Kubernetes versions: %w", err)
 		}
 
-		if len(tagNames) == 0 {
-			break
-		}
+		for _, tag := range tags {
+			if !strings.HasPrefix(tag.GetName(), "v") {
+				continue // Skip tags without 'v' prefix
+			}
 
-		for _, tag := range tagNames {
-			if strings.HasPrefix(tag, "v") {
-				v, err := semver.ParseTolerant(tag)
-				if err != nil {
-					continue // Skip invalid version
-				}
-
-				if v.Pre != nil {
-					continue // Skip pre-release versions
-				}
-
-				if v.LT(minVersion) {
-					continue // Skip versions below the minimum
-				}
-
-				// Store the highest patch version for each minor version
-				minorVersion := fmt.Sprintf("v%d.%d", v.Major, v.Minor)
-				if existingPatchVersionForMinor, exists := minorVersionToPatchVersion[minorVersion]; !exists ||
-					v.GT(existingPatchVersionForMinor) {
-					minorVersionToPatchVersion[minorVersion] = v
-				}
+			v, err := semver.ParseTolerant(tag.GetName())
+			if err != nil {
+				continue // Skip invalid versions
+			}
+			if v.Pre != nil {
+				continue // Skip pre-release versions
+			}
+			if v.LT(minVersion) {
+				continue // Skip versions below the minimum
+			}
+			// Store the highest patch version for each minor version
+			minorVersion := fmt.Sprintf("v%d.%d", v.Major, v.Minor)
+			if existingPatchVersionForMinor, exists := minorVersionToPatchVersion[minorVersion]; !exists ||
+				v.GT(existingPatchVersionForMinor) {
+				minorVersionToPatchVersion[minorVersion] = v
 			}
 		}
 
-		page++
+		if resp.NextPage == 0 {
+			break
+		}
+
+		listOptions.Page = resp.NextPage
 	}
 
 	if len(minorVersionToPatchVersion) == 0 {
@@ -191,56 +202,58 @@ func fetchKubernetesVersions(minVersion semver.Version) ([]semver.Version, error
 	return versions, nil
 }
 
-// Fetch branch names from GitHub API
-func fetchTagNames(url string) ([]string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("HTTP GET error: %w", err)
-	}
-	defer resp.Body.Close()
+func fetchCoreDNSVersions(
+	ctx context.Context, versions []semver.Version, ghClient *github.Client,
+) (map[string]string, error) {
+	versionMap := make(map[string]string, len(versions))
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("non-200 HTTP status: %d", resp.StatusCode)
-	}
-
-	var tags []struct {
-		Name string `json:"name"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&tags); err != nil {
-		return nil, fmt.Errorf("decoding JSON error: %w", err)
-	}
-
-	tagNames := make([]string, 0, len(tags))
-	for _, tag := range tags {
-		tagNames = append(tagNames, tag.Name)
-	}
-
-	return tagNames, nil
-}
-
-func fetchCoreDNSVersions(versions []semver.Version) (map[string]string, error) {
-	versionMap := make(map[string]string)
 	re := regexp.MustCompile(`CoreDNSVersion\s*=\s*"([^"]+)"`)
 
 	for _, k8sVersion := range versions {
-		url := fmt.Sprintf(constantsURLTemplate, k8sVersion)
-		coreDNSVersionStr, err := extractCoreDNSVersion(url, re)
+		fileContent, _, _, err := ghClient.Repositories.GetContents(
+			ctx,
+			"kubernetes",
+			"kubernetes",
+			kubeadmConstantsFilePathInRepo,
+			&github.RepositoryContentGetOptions{
+				Ref: "v" + k8sVersion.String(),
+			},
+		)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Failed for Kubernetes %s: %v\n", k8sVersion, err)
-			continue
+			return nil, fmt.Errorf(
+				"failed to get Kubeadm constants file contents for Kubernetes version v%s: %w",
+				k8sVersion,
+				err,
+			)
 		}
+
+		decodedContent, err := fileContent.GetContent()
+		if err != nil {
+			return nil, fmt.Errorf(
+				"failed to decode Kubeadm constants file contents for Kubernetes version v%s: %w",
+				k8sVersion,
+				err,
+			)
+		}
+
+		matches := re.FindStringSubmatch(decodedContent)
+		if len(matches) != 2 {
+			return nil, errors.New(
+				"CoreDNS version not found in Kubeadm constants file for Kubernetes version " + k8sVersion.String(),
+			)
+		}
+
+		coreDNSVersionStr := matches[1]
 
 		// Parse and normalize CoreDNS version
 		v, err := semver.ParseTolerant(coreDNSVersionStr)
 		if err != nil {
-			fmt.Fprintf(
-				os.Stderr,
-				"Warning: Invalid CoreDNS version '%s' for Kubernetes %s\n",
+			return nil, fmt.Errorf(
+				"invalid CoreDNS version '%s' for Kubernetes %s: %w",
 				coreDNSVersionStr,
 				k8sVersion,
+				err,
 			)
-			continue
 		}
 
 		coreDNSVersion := "v" + v.String()
@@ -255,31 +268,6 @@ func fetchCoreDNSVersions(versions []semver.Version) (map[string]string, error) 
 	}
 
 	return versionMap, nil
-}
-
-func extractCoreDNSVersion(url string, re *regexp.Regexp) (string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("HTTP GET error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("non-200 HTTP status: %d", resp.StatusCode)
-	}
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("reading body error: %w", err)
-	}
-
-	matches := re.FindStringSubmatch(string(bodyBytes))
-	if len(matches) != 2 {
-		return "", errors.New("CoreDNSVersion not found")
-	}
-
-	coreDNSVersion := matches[1]
-	return coreDNSVersion, nil
 }
 
 func generateGoFile(versionMap map[string]string, outputPath string) error {
@@ -304,7 +292,7 @@ func generateGoFile(versionMap map[string]string, outputPath string) error {
 		return fmt.Errorf("creating directories error: %w", err)
 	}
 
-	if err := os.WriteFile(outputPath, formattedSrc, 0o644); err != nil {
+	if err := os.WriteFile(outputPath, formattedSrc, 0o644); err != nil { //nolint:gosec // The output file should be world readable.
 		return fmt.Errorf("writing file error: %w", err)
 	}
 
@@ -316,15 +304,12 @@ func prepareTemplateData(versionMap map[string]string) map[string]interface{} {
 		Name    string
 		Version string
 	}
-	var k8sConstants []Const
-	var coreDNSConstants []Const
 
 	type versionMapEntry struct {
 		KubernetesVersion string
 		KubernetesConst   string
 		CoreDNSConst      string
 	}
-	var versionMapList []versionMapEntry
 
 	// Maps for deduplication
 	k8sConstMap := make(map[string]string)
@@ -337,6 +322,7 @@ func prepareTemplateData(versionMap map[string]string) map[string]interface{} {
 	}
 
 	// Generate constants for CoreDNS versions
+	coreDNSConstants := make([]Const, 0, len(uniqueCoreDNSVersions))
 	for coreDNSVersion := range uniqueCoreDNSVersions {
 		constName := versionToConst("CoreDNS", coreDNSVersion)
 		coreDNSConstMap[coreDNSVersion] = constName
@@ -344,6 +330,7 @@ func prepareTemplateData(versionMap map[string]string) map[string]interface{} {
 	}
 
 	// Generate constants and mapping for Kubernetes versions
+	k8sConstants := make([]Const, 0, len(versionMap))
 	for k8sVersion := range versionMap {
 		if _, exists := k8sConstMap[k8sVersion]; !exists {
 			constName := versionToConst("Kubernetes", k8sVersion)
@@ -353,6 +340,7 @@ func prepareTemplateData(versionMap map[string]string) map[string]interface{} {
 	}
 
 	// Map Kubernetes constants to CoreDNS constants
+	versionMapList := make([]versionMapEntry, 0, len(versionMap))
 	for k8sVersion, coreDNSVersion := range versionMap {
 		versionMapList = append(versionMapList, versionMapEntry{
 			KubernetesVersion: k8sVersion,
