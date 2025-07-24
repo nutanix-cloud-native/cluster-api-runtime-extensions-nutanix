@@ -3,3 +3,5 @@
 package preflight
 
 // +kubebuilder:webhook:path=/preflight-v1beta1-cluster,mutating=false,failurePolicy=fail,groups="cluster.x-k8s.io",resources=clusters,verbs=create,versions=*,name=preflight.cluster.caren.nutanix.com,admissionReviewVersions=v1,sideEffects=None,timeoutSeconds=30
+
+// IMPORTANT Keep timeoutSeconds in sync with the `Timeout` constant defined in this package.

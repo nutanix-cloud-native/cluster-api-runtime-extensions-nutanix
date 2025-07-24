@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +18,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/skip"
+)
+
+const (
+	// Timeout is the duration, in seconds, that the preflight checks handler has to respond.
+	// IMPORTANT Keep in sync timeoutSeconds in the kubebuilder:webhook marker defined in this package.
+	Timeout = 30 * time.Second
 )
 
 type (
@@ -138,7 +145,12 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		)
 	}
 
-	resultsOrderedByCheckerAndCheck := run(ctx, h.client, cluster, skipEvaluator, h.checkers)
+	// Reserve time for checks to handle context cancellation, so
+	// that we have time to summarize the results, and return a response.
+	checkTimeout := Timeout - 2*time.Second
+	checkCtx, checkCtxCancel := context.WithTimeout(ctx, checkTimeout)
+	resultsOrderedByCheckerAndCheck := run(checkCtx, h.client, cluster, skipEvaluator, h.checkers)
+	checkCtxCancel()
 
 	// Summarize the results.
 	resp := admission.Response{
