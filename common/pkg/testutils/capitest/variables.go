@@ -34,6 +34,8 @@ func ValidateDiscoverVariables[V mutation.DiscoverVariables](
 	handlerCreator func() V,
 	variableTestDefs ...VariableTestDef,
 ) {
+	t.Helper()
+
 	ValidateDiscoverVariablesAs[V, any](
 		t,
 		variableName,

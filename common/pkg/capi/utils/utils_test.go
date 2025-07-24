@@ -138,7 +138,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 				},
 			},
 			wantErr: fmt.Errorf(
-				"error determining management cluster for the provided client: error getting Cluster object based on Node annotations: clusters.cluster.x-k8s.io \"management-cluster\" not found",
+				`error determining management cluster for the provided client: error getting Cluster object based on Node annotations: clusters.cluster.x-k8s.io "management-cluster" not found`, //nolint:lll // Long error message.
 			),
 		},
 		{
@@ -162,7 +162,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 				},
 			},
 			wantErr: fmt.Errorf(
-				"error determining management cluster for the provided client: missing \"cluster.x-k8s.io/cluster-name\" annotation",
+				`error determining management cluster for the provided client: missing "cluster.x-k8s.io/cluster-name" annotation`, //nolint:lll // Long error message.
 			),
 		},
 		{
@@ -186,7 +186,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 				},
 			},
 			wantErr: fmt.Errorf(
-				"error determining management cluster for the provided client: missing \"cluster.x-k8s.io/cluster-namespace\" annotation",
+				`error determining management cluster for the provided client: missing "cluster.x-k8s.io/cluster-namespace" annotation`, //nolint:lll // Long error message.
 			),
 		},
 		{
@@ -213,7 +213,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 				},
 			},
 			wantErr: fmt.Errorf(
-				"error determining management cluster for the provided client: multiple Cluster objects found, expected exactly one",
+				"error determining management cluster for the provided client: multiple Cluster objects found, expected exactly one", //nolint:lll // Long error message.
 			),
 		},
 	}
@@ -239,7 +239,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 
 func buildFakeClientForTest(t *testing.T, clusters []clusterv1.Cluster, nodes []corev1.Node) client.Client {
 	t.Helper()
-	var objs []client.Object
+	objs := make([]client.Object, 0, len(clusters)+len(nodes))
 	for i := range clusters {
 		objs = append(objs, &clusters[i])
 	}

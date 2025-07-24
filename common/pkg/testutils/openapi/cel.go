@@ -70,7 +70,7 @@ func validateCELRecursively(
 			continue
 		}
 
-		jsonName := jsonFieldName(fieldType)
+		jsonName := jsonFieldName(&fieldType)
 		if jsonName == "" {
 			continue
 		}
@@ -99,13 +99,13 @@ func reflectValueToInterface(v reflect.Value) interface{} {
 	return v.Interface()
 }
 
-func jsonFieldName(field reflect.StructField) string {
-	tag := field.Tag.Get("json")
+func jsonFieldName(fld *reflect.StructField) string {
+	tag := fld.Tag.Get("json")
 	if tag == "-" {
 		return ""
 	}
 	if tag == "" {
-		return field.Name
+		return fld.Name
 	}
 	return strings.Split(tag, ",")[0]
 }
