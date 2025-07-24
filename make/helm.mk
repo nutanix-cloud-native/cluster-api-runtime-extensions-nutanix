@@ -21,6 +21,6 @@ lint-and-install-chart:
 schema-chart: ## Updates helm values JSON schema
 schema-chart:
 	helm schema \
-		--use-helm-docs \
+	  --use-helm-docs \
 	  --input charts/cluster-api-runtime-extensions-nutanix/values.yaml \
 	  --output charts/cluster-api-runtime-extensions-nutanix/values.schema.json
