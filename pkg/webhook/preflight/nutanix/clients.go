@@ -368,31 +368,29 @@ func (c *clientWrapper) ListSubnets(
 // callWithContext is a helper function that immediately responds to context cancellation,
 // while calling a long-running, non-preemptible function. The long-running function always
 // runs to completion, but its result is only returned if the context is not cancelled.
-func callWithContext[T any](ctx context.Context, f func() (T, error)) (resp T, err error) {
-	respCh := make(chan T)
-	errCh := make(chan error)
+func callWithContext[T any](ctx context.Context, f func() (T, error)) (T, error) {
+	type result[T any] struct {
+		val T
+		err error
+	}
+
+	// The buffered channel allows us to send the result of the function without knowing
+	// whether the channel will be read. If the context is not cancelled, this function will
+	// read from the channel and return the value to caller. If the context is cancelled, we
+	// will not read from the channel. Once this function returns, the channel will go out
+	// of scope, and be garbage collected.
+	ch := make(chan result[T], 1)
 
 	go func() {
 		resp, err := f()
-		select {
-		case <-ctx.Done():
-			// Context was cancelled before function returned. We assume no one wants the result anymore.
-		default:
-			if err != nil {
-				errCh <- err
-			}
-			respCh <- resp
-		}
-		close(respCh)
-		close(errCh)
+		ch <- result[T]{val: resp, err: err}
 	}()
 
 	select {
 	case <-ctx.Done():
-		return resp, ctx.Err()
-	case err := <-errCh:
-		return resp, err
-	case resp := <-respCh:
-		return resp, nil
+		var zero T
+		return zero, ctx.Err()
+	case res := <-ch:
+		return res.val, res.err
 	}
 }
