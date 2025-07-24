@@ -118,7 +118,7 @@ func (fdc *failureDomainCheck) Run(ctx context.Context) preflight.CheckResult {
 		result.InternalError = true
 		result.Causes = append(result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
-				"Failed to check if the Prism Element cluster %q, referenced by Failure Domain %q, exists: %v This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+				"Failed to check if the Prism Element cluster %q, referenced by Failure Domain %q, exists: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
 				peIdentifier,
 				fdc.failureDomainName,
 				err,
@@ -149,7 +149,7 @@ func (fdc *failureDomainCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Failed to get subnet %q referenced by the Failure Domain %q: %v This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+					"Failed to get subnet %q referenced by the Failure Domain %q: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
 					id,
 					fdc.failureDomainName,
 					err,
