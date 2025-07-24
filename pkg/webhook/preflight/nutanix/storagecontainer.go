@@ -47,7 +47,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		result.Allowed = false
 		result.Causes = append(result.Causes, preflight.Cause{
 			Message: "Nutanix CSI Provider configuration is missing storage class configurations. Review the Cluster.", //nolint:lll // Message is long.
-			Field:   c.field,
+			Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.addons.csi.providers.nutanix",        //nolint:lll // The field is long.
 		})
 
 		return result
@@ -120,7 +120,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 					clusterIdentifier,
 					err,
 				),
-				Field: c.field,
+				Field: c.field + ".cluster",
 			})
 			continue
 		}
@@ -133,7 +133,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 					len(clusters),
 					clusterIdentifier,
 				),
-				Field: c.field,
+				Field: c.field + ".cluster",
 			})
 			continue
 		}
@@ -152,7 +152,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 					clusterIdentifier,
 					err,
 				),
-				Field: c.field,
+				Field: c.field + ".cluster",
 			})
 			continue
 		}
@@ -169,7 +169,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 					clusterIdentifier,
 					clusterIdentifier,
 				),
-				Field: c.field,
+				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.addons.csi.providers.nutanix.storageClassConfigs.volume.parameters.storageContainer", //nolint:lll // The field is long.
 			})
 		case 1:
 			continue
@@ -186,7 +186,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 					storageContainerName,
 					clusterIdentifier,
 				),
-				Field: c.field,
+				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.addons.csi.providers.nutanix.storageClassConfigs.volume.parameters.storageContainer", //nolint:lll // The field is long.
 			})
 		}
 	}
