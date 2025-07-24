@@ -3,11 +3,11 @@
 
 module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/external/capx
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.24.2
+toolchain go1.24.3
 
-require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.7.0-beta.2
+require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.7.0-beta.4
 
 require (
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
@@ -28,7 +28,6 @@ require (
 	github.com/nutanix-cloud-native/prism-go-client v0.5.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.uber.org/automaxprocs v1.6.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
