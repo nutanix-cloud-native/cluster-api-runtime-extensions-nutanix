@@ -12,7 +12,7 @@ import (
 	"github.com/blang/semver/v4"
 )
 
-// Kubernetes versions
+// Kubernetes versions.
 const (
 	Kubernetes_V1_22 = "v1.22"
 	Kubernetes_V1_23 = "v1.23"
@@ -28,7 +28,7 @@ const (
 	Kubernetes_V1_33 = "v1.33"
 )
 
-// CoreDNS versions
+// CoreDNS versions.
 const (
 	CoreDNS_V1_8_4  = "v1.8.4"
 	CoreDNS_V1_8_6  = "v1.8.6"

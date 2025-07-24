@@ -195,6 +195,7 @@ jobs:
         run: devbox run -- make pre-commit
         env:
           SKIP: no-commit-to-branch,golangci-lint,actionlint-system
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   lint-test-helm:
     runs-on: ubuntu-24.04

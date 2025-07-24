@@ -15,6 +15,11 @@ repos:
     language: system
     files: "(.*\\.go|go.mod|go.sum|go.mk)$"
     pass_filenames: false
+  - id: check-coredns-versions
+    name: check-coredns-versions
+    entry: make coredns.sync
+    language: system
+    files: "^api/versions/coredns.go$"
   - id: golangci-lint
     name: golangci-lint
     entry: make lint
@@ -63,11 +68,6 @@ repos:
     language: system
     files: "^devbox.(yaml|lock)$"
     pass_filenames: false
-  - id: check-coredns-versions
-    name: check-coredns-versions
-    entry: make coredns.sync
-    language: system
-    files: "^api/versions/coredns.go$"
 - repo: https://github.com/tekwizely/pre-commit-golang
   rev: v1.0.0-rc.1
   hooks:
