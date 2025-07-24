@@ -55,34 +55,36 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 
 	// Get cluster identifier based on whether failure domain is configured
 	var clusterIdentifier *capxv1.NutanixResourceIdentifier
-	var err error
 
 	if c.failureDomainName != "" {
-		// Get cluster identifier from failure domain
-		clusterIdentifier, err = c.getClusterIdentifierFromFailureDomain(ctx)
+		// Use cluster identifier from failure domain
+		fdObj := &capxv1.NutanixFailureDomain{}
+		fdKey := ctrlclient.ObjectKey{Name: c.failureDomainName, Namespace: c.namespace}
+		err := c.kclient.Get(ctx, fdKey, fdObj)
 		if err != nil {
 			result.Allowed = false
 			if errors.IsNotFound(err) {
 				result.Causes = append(result.Causes, preflight.Cause{
 					Message: fmt.Sprintf(
-						"NutanixFailureDomain %q referenced in cluster was not found in the management cluster. Please create it and retry.", //nolint:lll // Message is long.
+						"NutanixFailureDomain %q was not found in the management cluster. Please create it and retry.", //nolint:lll // Message is long.
 						c.failureDomainName,
 					),
-					Field: c.field,
+					Field: c.field + ".failureDomain",
 				})
 			} else {
 				result.InternalError = true
 				result.Causes = append(result.Causes, preflight.Cause{
 					Message: fmt.Sprintf(
-						"Failed to get cluster identifier from NutanixFailureDomain %q: %v This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+						"Failed to get NutanixFailureDomain %q: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
 						c.failureDomainName,
 						err,
 					),
-					Field: c.field,
+					Field: c.field + ".failureDomain",
 				})
 			}
 			return result
 		}
+		clusterIdentifier = &fdObj.Spec.PrismElementCluster
 	} else {
 		// Use cluster identifier from machine spec
 		clusterIdentifier = c.machineSpec.Cluster
@@ -190,19 +192,6 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 	}
 
 	return result
-}
-
-// getClusterIdentifierFromFailureDomain fetches the failure domain and returns the cluster identifier.
-func (c *storageContainerCheck) getClusterIdentifierFromFailureDomain(
-	ctx context.Context,
-) (*capxv1.NutanixResourceIdentifier, error) {
-	fdObj := &capxv1.NutanixFailureDomain{}
-	fdKey := ctrlclient.ObjectKey{Name: c.failureDomainName, Namespace: c.namespace}
-	if err := c.kclient.Get(ctx, fdKey, fdObj); err != nil {
-		return nil, err
-	}
-
-	return &fdObj.Spec.PrismElementCluster, nil
 }
 
 func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {

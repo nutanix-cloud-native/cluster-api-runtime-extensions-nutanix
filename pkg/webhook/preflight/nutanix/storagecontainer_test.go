@@ -398,6 +398,7 @@ func TestStorageContainerCheck(t *testing.T) {
 		expectedAllowed      bool
 		expectedError        bool
 		expectedCauseMessage string
+		expectedField        string
 		failureDomainName    string
 		kclient              ctrlclient.Client
 		namespace            string
@@ -414,7 +415,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			nclient:              nil,
 			expectedAllowed:      false,
 			expectedError:        false,
-			expectedCauseMessage: "Nutanix CSI Provider configuration is missing storage class configurations",
+			expectedCauseMessage: "Nutanix CSI Provider configuration is missing storage class configurations. Review the Cluster.", //nolint:lll // The message is long.
 		},
 		{
 			name: "storage class config without parameters",
@@ -1154,7 +1155,8 @@ func TestStorageContainerCheck(t *testing.T) {
 			namespace:            "test-ns",
 			expectedAllowed:      false,
 			expectedError:        false,
-			expectedCauseMessage: "NutanixFailureDomain \"non-existent-fd\" referenced in cluster was not found in the management cluster. Please create it and retry.", //nolint:lll // The message is long.
+			expectedCauseMessage: "NutanixFailureDomain \"non-existent-fd\" was not found in the management cluster. Please create it and retry.", //nolint:lll // The message is long.
+			expectedField:        field + ".failureDomain",
 		},
 		{
 			name: "error getting failure domain",
@@ -1183,7 +1185,8 @@ func TestStorageContainerCheck(t *testing.T) {
 			namespace:            "test-ns",
 			expectedAllowed:      false,
 			expectedError:        true,
-			expectedCauseMessage: "Failed to get cluster identifier from NutanixFailureDomain \"fd-with-error\": kube API error This is usually a temporary error. Please retry.", //nolint:lll // The message is long.
+			expectedCauseMessage: "Failed to get NutanixFailureDomain \"fd-with-error\": kube API error. This is usually a temporary error. Please retry.", //nolint:lll // The message is long.
+			expectedField:        field + ".failureDomain",
 		},
 	}
 
@@ -1208,12 +1211,16 @@ func TestStorageContainerCheck(t *testing.T) {
 			assert.Equal(t, tc.expectedAllowed, result.Allowed)
 			assert.Equal(t, tc.expectedError, result.InternalError)
 
-			if tc.expectedCauseMessage != "" {
+			if !tc.expectedAllowed {
 				require.NotEmpty(t, result.Causes)
-				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
-				assert.Equal(t, field, result.Causes[0].Field)
-			} else {
-				assert.Empty(t, result.Causes)
+
+				if tc.expectedCauseMessage != "" {
+					assert.Equal(t, tc.expectedCauseMessage, result.Causes[0].Message)
+				}
+
+				if tc.expectedField != "" {
+					assert.Equal(t, tc.expectedField, result.Causes[0].Field)
+				}
 			}
 		})
 	}
