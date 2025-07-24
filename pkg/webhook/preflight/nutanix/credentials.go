@@ -222,6 +222,8 @@ func newCredentialsCheck(
 				"Failed to validate credentials: %s. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
 				err,
 			),
+			// We do not add ".url" or ".credentials.secretRef" to the field, because we do not know
+			// if the error is related to the URL, or the credentials.
 			Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint",
 		},
 	)

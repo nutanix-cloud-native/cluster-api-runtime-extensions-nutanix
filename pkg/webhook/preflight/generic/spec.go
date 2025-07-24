@@ -50,7 +50,7 @@ func newConfigurationCheck(
 					carenv1.ClusterConfigVariableName,
 					err,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].genericClusterConfigSpec",
+				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]",
 			},
 		)
 	}
