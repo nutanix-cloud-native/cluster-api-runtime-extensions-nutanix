@@ -56,7 +56,7 @@ func newConfigurationCheck(
 					carenv1.ClusterConfigVariableName,
 					err,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix",
+				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"]",
 			},
 		)
 	}
@@ -88,7 +88,7 @@ func newConfigurationCheck(
 				)
 				if workerConfigVar != nil {
 					workerConfigFieldPath = fmt.Sprintf(
-						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=='%s'].value.nutanix",
+						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=='%s']",
 						md.Name,
 						carenv1.WorkerConfigVariableName,
 					)
@@ -101,7 +101,7 @@ func newConfigurationCheck(
 				)
 				if workerConfigVar != nil {
 					workerConfigFieldPath = fmt.Sprintf(
-						"$.spec.topology.variables[?@.name=='%s'].value.nutanix",
+						"$.spec.topology.variables[?@.name=='%s']",
 						carenv1.WorkerConfigVariableName,
 					)
 				}
