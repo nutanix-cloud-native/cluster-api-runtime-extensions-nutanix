@@ -9,7 +9,6 @@ import (
 
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -138,7 +137,7 @@ func (s *SnapshotControllerHandler) apply(
 	}
 
 	var strategy addons.Applier
-	switch ptr.Deref(snapshotControllerVar.Strategy, "") {
+	switch snapshotControllerVar.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
 		helmChart, err := s.helmChartInfoGetter.For(ctx, log, config.SnapshotController)
 		if err != nil {
@@ -166,7 +165,7 @@ func (s *SnapshotControllerHandler) apply(
 		resp.SetMessage(
 			fmt.Sprintf(
 				"unknown snapshot-controller addon deployment strategy %q",
-				*snapshotControllerVar.Strategy,
+				snapshotControllerVar.Strategy,
 			),
 		)
 	}
