@@ -88,7 +88,7 @@ func (fdc *failureDomainCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"NutanixFailureDomain %q referenced in cluster was not found in the management cluster. Please create it and retry.", //nolint:lll // Message is long.
+					"NutanixFailureDomain %q was not found in the management cluster. Please create it and retry.", //nolint:lll // Message is long.
 					fdc.failureDomainName,
 				),
 				Field: fdc.field,
@@ -100,7 +100,7 @@ func (fdc *failureDomainCheck) Run(ctx context.Context) preflight.CheckResult {
 		result.InternalError = true
 		result.Causes = append(result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
-				"Failed to get NutanixFailureDomain %q: %v This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+				"Failed to get NutanixFailureDomain %q: %s This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
 				fdc.failureDomainName,
 				err,
 			),
