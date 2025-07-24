@@ -124,7 +124,7 @@ func main() {
 	versions, err := fetchKubernetesVersions(ctx, minSemverVersion, ghClient)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error fetching Kubernetes versions: %v\n", err)
-		os.Exit(1) //nolint:gocritic // Will still be clean exit.
+		os.Exit(1) //nolint:gocritic // This will still be a clean exit.
 	}
 
 	versionMap, err := fetchCoreDNSVersions(ctx, versions, ghClient)
