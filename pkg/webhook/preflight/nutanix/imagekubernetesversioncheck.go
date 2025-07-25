@@ -39,7 +39,7 @@ func (c *imageKubernetesVersionCheck) Run(ctx context.Context) preflight.CheckRe
 	}
 
 	if c.machineDetails.Image != nil {
-		images, err := getVMImages(c.nclient, c.machineDetails.Image)
+		images, err := getVMImages(ctx, c.nclient, c.machineDetails.Image)
 		if err != nil {
 			return preflight.CheckResult{
 				Allowed:       false,

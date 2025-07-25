@@ -96,7 +96,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			nutanixClusterConfigSpec:     nil,
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
-			nclient:                      &mocknclient{},
+			nclient:                      &clientWrapper{},
 		},
 		{
 			name: "cluster config without addons",
@@ -107,7 +107,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
-			nclient:                      &mocknclient{},
+			nclient:                      &clientWrapper{},
 		},
 		{
 			name: "cluster config with addons but no CSI",
@@ -119,7 +119,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
-			nclient:                      &mocknclient{},
+			nclient:                      &clientWrapper{},
 		},
 		{
 			name: "cluster config with CSI but no control plane or worker nodes",
@@ -134,7 +134,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
-			nclient:                      &mocknclient{},
+			nclient:                      &clientWrapper{},
 		},
 		{
 			name: "cluster config with CSI and control plane without failure domains",
@@ -167,7 +167,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          1,
-			nclient:                      &mocknclient{},
+			nclient:                      &clientWrapper{},
 			kclient:                      fakeKubeClient,
 			cluster:                      clusterObj,
 		},
@@ -203,7 +203,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          3,
-			nclient:                      &mocknclient{},
+			nclient:                      &clientWrapper{},
 			kclient:                      fakeKubeClient,
 			cluster:                      clusterObj,
 		},
@@ -231,7 +231,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				},
 			},
 			expectedChecksCount: 1,
-			nclient:             &mocknclient{},
+			nclient:             &clientWrapper{},
 			kclient:             fakeKubeClient,
 			cluster:             clusterObj,
 		},
@@ -260,7 +260,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			failureDomainByMachineDeploymentName: map[string]string{"worker-1": "fd-4"},
 			expectedChecksCount:                  1,
-			nclient:                              &mocknclient{},
+			nclient:                              &clientWrapper{},
 			kclient:                              fakeKubeClient,
 			cluster:                              clusterObj,
 		},
@@ -308,7 +308,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				},
 			},
 			expectedChecksCount: 3, // 1 for control plane, 2 for workers
-			nclient:             &mocknclient{},
+			nclient:             &clientWrapper{},
 		},
 		{
 			name: "cluster config with CSI and null control plane nutanix",
@@ -326,7 +326,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 			},
 			workerNodeConfigSpecByMDName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{},
 			expectedChecksCount:          0,
-			nclient:                      &mocknclient{},
+			nclient:                      &clientWrapper{},
 		},
 		{
 			name: "cluster config with CSI and some nutanix nil workers",
@@ -355,7 +355,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				},
 			},
 			expectedChecksCount: 1, // only for the defined worker-1
-			nclient:             &mocknclient{},
+			nclient:             &clientWrapper{},
 		},
 	}
 
@@ -474,11 +474,17 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			nclient: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, nil
 				},
-				listClustersFunc: func(
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -502,7 +508,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				listStorageContainersFunc: func(
+				ListStorageContainersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -542,11 +548,19 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
-					return nil, nil
+			nclient: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
+					return nil,
+						nil
 				},
-				listClustersFunc: func(
+
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -570,7 +584,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				listStorageContainersFunc: func(
+				ListStorageContainersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -617,11 +631,17 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			nclient: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, nil
 				},
-				listClustersFunc: func(
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -645,7 +665,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				listStorageContainersFunc: func(
+				ListStorageContainersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -688,8 +708,8 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				listClustersFunc: func(
+			nclient: &clientWrapper{
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -739,11 +759,17 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			nclient: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, fmt.Errorf("API error")
 				},
-				listClustersFunc: func(
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -779,11 +805,17 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			nclient: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, nil
 				},
-				listClustersFunc: func(
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -807,7 +839,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				listStorageContainersFunc: func(
+				ListStorageContainersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -842,11 +874,17 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			nclient: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, nil
 				},
-				listClustersFunc: func(
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -870,7 +908,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				listStorageContainersFunc: func(
+				ListStorageContainersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -908,11 +946,17 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			nclient: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, nil
 				},
-				listClustersFunc: func(
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -936,7 +980,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				listStorageContainersFunc: func(
+				ListStorageContainersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -981,11 +1025,17 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			nclient: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, nil
 				},
-				listClustersFunc: func(
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -1009,7 +1059,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				listStorageContainersFunc: func(
+				ListStorageContainersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -1058,8 +1108,8 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient: &mocknclient{
-				listClustersFunc: func(
+			nclient: &clientWrapper{
+				ListClustersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -1091,7 +1141,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				listStorageContainersFunc: func(
+				ListStorageContainersFunc: func(
 					page,
 					limit *int,
 					filter,
@@ -1149,7 +1199,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient:              &mocknclient{},
+			nclient:              &clientWrapper{},
 			failureDomainName:    "non-existent-fd",
 			kclient:              fake.NewClientBuilder().WithScheme(testScheme).Build(), // Empty client
 			namespace:            "test-ns",
@@ -1169,7 +1219,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					},
 				},
 			},
-			nclient:           &mocknclient{},
+			nclient:           &clientWrapper{},
 			failureDomainName: "fd-with-error",
 			kclient: &mockKubeClient{
 				SubResourceClient: nil,
@@ -1241,9 +1291,15 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierUUID,
 				UUID: ptr.To("test-uuid-123"),
 			},
-			client: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
-					assert.Equal(t, "test-uuid-123", *id)
+			client: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
+					assert.Equal(t, "test-uuid-123", *uuid)
 					resp := &clustermgmtv4.GetClusterApiResponse{
 						ObjectType_: ptr.To("clustermgmt.v4.config.GetClusterApiResponse"),
 					}
@@ -1267,8 +1323,14 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierUUID,
 				UUID: ptr.To("test-uuid-error"),
 			},
-			client: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			client: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, fmt.Errorf("API error")
 				},
 			},
@@ -1281,8 +1343,14 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierUUID,
 				UUID: ptr.To("test-uuid-invalid"),
 			},
-			client: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			client: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					resp := &clustermgmtv4.GetClusterApiResponse{}
 					err := resp.SetData(*clustermgmtv4errors.NewErrorResponse())
 					require.NoError(t, err)
@@ -1298,8 +1366,8 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster"),
 			},
-			client: &mocknclient{
-				listClustersFunc: func(page,
+			client: &clientWrapper{
+				ListClustersFunc: func(page,
 					limit *int,
 					filter,
 					orderby,
@@ -1334,8 +1402,8 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-error"),
 			},
-			client: &mocknclient{
-				listClustersFunc: func(page,
+			client: &clientWrapper{
+				ListClustersFunc: func(page,
 					limit *int,
 					filter,
 					orderby,
@@ -1358,8 +1426,8 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-nil"),
 			},
-			client: &mocknclient{
-				listClustersFunc: func(page,
+			client: &clientWrapper{
+				ListClustersFunc: func(page,
 					limit *int,
 					filter,
 					orderby,
@@ -1382,8 +1450,8 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-nil"),
 			},
-			client: &mocknclient{
-				listClustersFunc: func(page,
+			client: &clientWrapper{
+				ListClustersFunc: func(page,
 					limit *int,
 					filter,
 					orderby,
@@ -1409,8 +1477,8 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-nil-data"),
 			},
-			client: &mocknclient{
-				listClustersFunc: func(page,
+			client: &clientWrapper{
+				ListClustersFunc: func(page,
 					limit *int,
 					filter,
 					orderby,
@@ -1435,8 +1503,8 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-not-found"),
 			},
-			client: &mocknclient{
-				listClustersFunc: func(page,
+			client: &clientWrapper{
+				ListClustersFunc: func(page,
 					limit *int,
 					filter,
 					orderby,
@@ -1464,8 +1532,8 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: ptr.To("test-cluster-duplicate"),
 			},
-			client: &mocknclient{
-				listClustersFunc: func(page,
+			client: &clientWrapper{
+				ListClustersFunc: func(page,
 					limit *int,
 					filter,
 					orderby,
@@ -1501,7 +1569,7 @@ func TestGetClusters(t *testing.T) {
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: "invalid",
 			},
-			client:        &mocknclient{},
+			client:        &clientWrapper{},
 			expectError:   true,
 			errorContains: "cluster identifier is missing both name and uuid",
 		},
@@ -1511,8 +1579,14 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierUUID,
 				UUID: nil,
 			},
-			client: &mocknclient{
-				getClusterByIdFunc: func(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
+			client: &clientWrapper{
+				GetClusterByIdFunc: func(
+					uuid *string,
+					args ...map[string]interface{},
+				) (
+					*clustermgmtv4.GetClusterApiResponse,
+					error,
+				) {
 					return nil, fmt.Errorf("should not be called")
 				},
 			},
@@ -1525,8 +1599,8 @@ func TestGetClusters(t *testing.T) {
 				Type: capxv1.NutanixIdentifierName,
 				Name: nil,
 			},
-			client: &mocknclient{
-				listClustersFunc: func(page,
+			client: &clientWrapper{
+				ListClustersFunc: func(page,
 					limit *int,
 					filter,
 					orderby,
@@ -1547,7 +1621,7 @@ func TestGetClusters(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			clusters, err := getClusters(tc.client, tc.clusterIdentifier)
+			clusters, err := getClusters(context.Background(), tc.client, tc.clusterIdentifier)
 
 			if tc.expectError {
 				require.Error(t, err)

@@ -18,10 +18,25 @@ import (
 
 // client contains methods to interact with Nutanix Prism v3 and v4 APIs.
 type client interface {
-	GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error)
+	GetCurrentLoggedInUser(
+		ctx context.Context,
+	) (
+		*prismv3.UserIntentResponse,
+		error,
+	)
 
-	GetImageById(id *string) (*vmmv4.GetImageApiResponse, error)
-	ListImages(page_ *int,
+	GetImageById(
+		ctx context.Context,
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*vmmv4.GetImageApiResponse,
+		error,
+	)
+
+	ListImages(
+		ctx context.Context,
+		page_ *int,
 		limit_ *int,
 		filter_ *string,
 		orderby_ *string,
@@ -31,8 +46,17 @@ type client interface {
 		*vmmv4.ListImagesApiResponse,
 		error,
 	)
-	GetClusterById(id *string) (*clustermgmtv4.GetClusterApiResponse, error)
+
+	GetClusterById(
+		ctx context.Context,
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*clustermgmtv4.GetClusterApiResponse, error,
+	)
+
 	ListClusters(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -40,17 +64,33 @@ type client interface {
 		apply_ *string,
 		select_ *string,
 		args ...map[string]interface{},
-	) (*clustermgmtv4.ListClustersApiResponse, error)
+	) (
+		*clustermgmtv4.ListClustersApiResponse,
+		error,
+	)
 	ListStorageContainers(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
 		orderby_ *string,
 		select_ *string,
 		args ...map[string]interface{},
-	) (*clustermgmtv4.ListStorageContainersApiResponse, error)
-	GetSubnetById(id *string) (*netv4.GetSubnetApiResponse, error)
+	) (
+		*clustermgmtv4.ListStorageContainersApiResponse,
+		error,
+	)
+
+	GetSubnetById(
+		ctx context.Context,
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*netv4.GetSubnetApiResponse, error,
+	)
+
 	ListSubnets(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -58,13 +98,87 @@ type client interface {
 		expand_ *string,
 		select_ *string,
 		args ...map[string]interface{},
-	) (*netv4.ListSubnetsApiResponse, error)
+	) (
+		*netv4.ListSubnetsApiResponse, error,
+	)
 }
 
 // clientWrapper implements the client interface and wraps both v3 and v4 clients.
 type clientWrapper struct {
-	v3client *prismv3.Client
-	v4client *prismv4.Client
+	GetCurrentLoggedInUserFunc func(
+		ctx context.Context,
+	) (
+		*prismv3.UserIntentResponse, error,
+	)
+
+	GetImageByIdFunc func(
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*vmmv4.GetImageApiResponse, error,
+	)
+
+	ListImagesFunc func(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (
+		*vmmv4.ListImagesApiResponse,
+		error,
+	)
+
+	GetClusterByIdFunc func(
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*clustermgmtv4.GetClusterApiResponse, error,
+	)
+
+	ListClustersFunc func(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		apply_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (
+		*clustermgmtv4.ListClustersApiResponse,
+		error,
+	)
+	ListStorageContainersFunc func(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (
+		*clustermgmtv4.ListStorageContainersApiResponse,
+		error,
+	)
+
+	GetSubnetByIdFunc func(
+		uuid *string,
+		args ...map[string]interface{},
+	) (
+		*netv4.GetSubnetApiResponse, error,
+	)
+
+	ListSubnetsFunc func(
+		page_ *int,
+		limit_ *int,
+		filter_ *string,
+		orderby_ *string,
+		expand_ *string,
+		select_ *string,
+		args ...map[string]interface{},
+	) (
+		*netv4.ListSubnetsApiResponse, error,
+	)
 }
 
 var _ = client(&clientWrapper{})
@@ -83,53 +197,84 @@ func newClient(
 	}
 
 	return &clientWrapper{
-		v3client: v3c,
-		v4client: v4c,
+		GetCurrentLoggedInUserFunc: v3c.V3.GetCurrentLoggedInUser,
+		GetImageByIdFunc:           v4c.ImagesApiInstance.GetImageById,
+		ListImagesFunc:             v4c.ImagesApiInstance.ListImages,
+		GetClusterByIdFunc:         v4c.ClustersApiInstance.GetClusterById,
+		ListClustersFunc:           v4c.ClustersApiInstance.ListClusters,
+		ListStorageContainersFunc:  v4c.StorageContainerAPI.ListStorageContainers,
+		GetSubnetByIdFunc:          v4c.SubnetsApiInstance.GetSubnetById,
+		ListSubnetsFunc:            v4c.SubnetsApiInstance.ListSubnets,
 	}, nil
 }
 
-func (c *clientWrapper) GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error) {
-	return c.v3client.V3.GetCurrentLoggedInUser(ctx)
+func (c *clientWrapper) GetCurrentLoggedInUser(
+	ctx context.Context,
+) (
+	*prismv3.UserIntentResponse,
+	error,
+) {
+	return c.GetCurrentLoggedInUserFunc(ctx)
 }
 
-func (c *clientWrapper) GetImageById(id *string) (*vmmv4.GetImageApiResponse, error) {
-	resp, err := c.v4client.ImagesApiInstance.GetImageById(id)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+func (c *clientWrapper) GetImageById(
+	ctx context.Context,
+	uuid *string,
+	args ...map[string]interface{},
+) (
+	*vmmv4.GetImageApiResponse,
+	error,
+) {
+	return callWithContext(ctx, func() (*vmmv4.GetImageApiResponse, error) {
+		return c.GetImageByIdFunc(
+			uuid,
+			args...,
+		)
+	})
 }
 
-func (c *clientWrapper) ListImages(page_ *int,
+func (c *clientWrapper) ListImages(
+	ctx context.Context,
+	page_ *int,
 	limit_ *int,
 	filter_ *string,
 	orderby_ *string,
 	select_ *string,
 	args ...map[string]interface{},
-) (*vmmv4.ListImagesApiResponse, error) {
-	resp, err := c.v4client.ImagesApiInstance.ListImages(
-		page_,
-		limit_,
-		filter_,
-		orderby_,
-		select_,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+) (
+	*vmmv4.ListImagesApiResponse,
+	error,
+) {
+	return callWithContext(ctx, func() (*vmmv4.ListImagesApiResponse, error) {
+		return c.ListImagesFunc(
+			page_,
+			limit_,
+			filter_,
+			orderby_,
+			select_,
+			args...,
+		)
+	})
 }
 
-func (c *clientWrapper) GetClusterById(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
-	resp, err := c.v4client.ClustersApiInstance.GetClusterById(id)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+func (c *clientWrapper) GetClusterById(
+	ctx context.Context,
+	uuid *string,
+	args ...map[string]interface{},
+) (
+	*clustermgmtv4.GetClusterApiResponse,
+	error,
+) {
+	return callWithContext(ctx, func() (*clustermgmtv4.GetClusterApiResponse, error) {
+		return c.GetClusterByIdFunc(
+			uuid,
+			args...,
+		)
+	})
 }
 
 func (c *clientWrapper) ListClusters(
+	ctx context.Context,
 	page_ *int,
 	limit_ *int,
 	filter_ *string,
@@ -137,53 +282,65 @@ func (c *clientWrapper) ListClusters(
 	apply_ *string,
 	select_ *string,
 	args ...map[string]interface{},
-) (*clustermgmtv4.ListClustersApiResponse, error) {
-	resp, err := c.v4client.ClustersApiInstance.ListClusters(
-		page_,
-		limit_,
-		filter_,
-		orderby_,
-		apply_,
-		select_,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+) (
+	*clustermgmtv4.ListClustersApiResponse,
+	error,
+) {
+	return callWithContext(ctx, func() (*clustermgmtv4.ListClustersApiResponse, error) {
+		return c.ListClustersFunc(
+			page_,
+			limit_,
+			filter_,
+			orderby_,
+			apply_,
+			select_,
+			args...,
+		)
+	})
 }
 
 func (c *clientWrapper) ListStorageContainers(
+	ctx context.Context,
 	page_ *int,
 	limit_ *int,
 	filter_ *string,
 	orderby_ *string,
 	select_ *string,
 	args ...map[string]interface{},
-) (*clustermgmtv4.ListStorageContainersApiResponse, error) {
-	resp, err := c.v4client.StorageContainerAPI.ListStorageContainers(
-		page_,
-		limit_,
-		filter_,
-		orderby_,
-		select_,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+) (
+	*clustermgmtv4.ListStorageContainersApiResponse,
+	error,
+) {
+	return callWithContext(ctx, func() (*clustermgmtv4.ListStorageContainersApiResponse, error) {
+		return c.ListStorageContainersFunc(
+			page_,
+			limit_,
+			filter_,
+			orderby_,
+			select_,
+			args...,
+		)
+	})
 }
 
-func (c *clientWrapper) GetSubnetById(id *string) (*netv4.GetSubnetApiResponse, error) {
-	resp, err := c.v4client.SubnetsApiInstance.GetSubnetById(id)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+func (c *clientWrapper) GetSubnetById(
+	ctx context.Context,
+	uuid *string,
+	args ...map[string]interface{},
+) (
+	*netv4.GetSubnetApiResponse,
+	error,
+) {
+	return callWithContext(ctx, func() (*netv4.GetSubnetApiResponse, error) {
+		return c.GetSubnetByIdFunc(
+			uuid,
+			args...,
+		)
+	})
 }
 
 func (c *clientWrapper) ListSubnets(
+	ctx context.Context,
 	page_ *int,
 	limit_ *int,
 	filter_ *string,
@@ -191,18 +348,49 @@ func (c *clientWrapper) ListSubnets(
 	expand_ *string,
 	select_ *string,
 	args ...map[string]interface{},
-) (*netv4.ListSubnetsApiResponse, error) {
-	resp, err := c.v4client.SubnetsApiInstance.ListSubnets(
-		page_,
-		limit_,
-		filter_,
-		orderby_,
-		expand_,
-		select_,
-		args...,
-	)
-	if err != nil {
-		return nil, err
+) (
+	*netv4.ListSubnetsApiResponse,
+	error,
+) {
+	return callWithContext(ctx, func() (*netv4.ListSubnetsApiResponse, error) {
+		return c.ListSubnetsFunc(
+			page_,
+			limit_,
+			filter_,
+			orderby_,
+			expand_,
+			select_,
+			args...,
+		)
+	})
+}
+
+// callWithContext is a helper function that immediately responds to context cancellation,
+// while calling a long-running, non-preemptible function. The long-running function always
+// runs to completion, but its result is only returned if the context is not cancelled.
+func callWithContext[T any](ctx context.Context, f func() (T, error)) (T, error) {
+	type result[T any] struct {
+		val T
+		err error
 	}
-	return resp, nil
+
+	// The buffered channel allows us to send the result of the function without knowing
+	// whether the channel will be read. If the context is not cancelled, this function will
+	// read from the channel and return the value to caller. If the context is cancelled, we
+	// will not read from the channel. Once this function returns, the channel will go out
+	// of scope, and be garbage collected.
+	ch := make(chan result[T], 1)
+
+	go func() {
+		resp, err := f()
+		ch <- result[T]{val: resp, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		var zero T
+		return zero, ctx.Err()
+	case res := <-ch:
+		return res.val, res.err
+	}
 }

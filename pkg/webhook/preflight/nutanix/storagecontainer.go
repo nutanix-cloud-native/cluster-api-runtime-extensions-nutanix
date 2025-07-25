@@ -96,7 +96,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 	// to ensure that we only call getClusters once, even if there are multiple storage
 	// class configs.
 	getClustersOnce := sync.OnceValues(func() ([]clustermgmtv4.Cluster, error) {
-		return getClusters(c.nclient, clusterIdentifier)
+		return getClusters(ctx, c.nclient, clusterIdentifier)
 	})
 
 	for _, storageClassConfig := range c.csiSpec.StorageClassConfigs {
@@ -141,7 +141,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 		// Found exactly one cluster.
 		cluster := &clusters[0]
 
-		containers, err := getStorageContainers(c.nclient, *cluster.ExtId, storageContainerName)
+		containers, err := getStorageContainers(ctx, c.nclient, *cluster.ExtId, storageContainerName)
 		if err != nil {
 			result.Allowed = false
 			result.InternalError = true
@@ -286,12 +286,13 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 }
 
 func getStorageContainers(
+	ctx context.Context,
 	client client,
 	clusterUUID string,
 	storageContainerName string,
 ) ([]clustermgmtv4.StorageContainer, error) {
 	fltr := fmt.Sprintf("name eq '%s' and clusterExtId eq '%s'", storageContainerName, clusterUUID)
-	resp, err := client.ListStorageContainers(nil, nil, &fltr, nil, nil)
+	resp, err := client.ListStorageContainers(ctx, nil, nil, &fltr, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -307,12 +308,13 @@ func getStorageContainers(
 }
 
 func getClusters(
+	ctx context.Context,
 	client client,
 	clusterIdentifier *capxv1.NutanixResourceIdentifier,
 ) ([]clustermgmtv4.Cluster, error) {
 	switch {
 	case clusterIdentifier.IsUUID():
-		resp, err := client.GetClusterById(clusterIdentifier.UUID)
+		resp, err := client.GetClusterById(ctx, clusterIdentifier.UUID)
 		if err != nil {
 			return nil, err
 		}
@@ -323,7 +325,7 @@ func getClusters(
 		return []clustermgmtv4.Cluster{cluster}, nil
 	case clusterIdentifier.IsName():
 		filter := fmt.Sprintf("name eq '%s'", *clusterIdentifier.Name)
-		resp, err := client.ListClusters(nil, nil, &filter, nil, nil, nil)
+		resp, err := client.ListClusters(ctx, nil, nil, &filter, nil, nil, nil)
 		if err != nil {
 			return nil, err
 		}

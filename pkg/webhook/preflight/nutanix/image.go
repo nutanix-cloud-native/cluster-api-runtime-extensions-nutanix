@@ -39,7 +39,7 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 	}
 
 	if c.machineDetails.Image != nil {
-		images, err := getVMImages(c.nclient, c.machineDetails.Image)
+		images, err := getVMImages(ctx, c.nclient, c.machineDetails.Image)
 		if err != nil {
 			result.Allowed = false
 			result.InternalError = true
@@ -116,12 +116,13 @@ func newVMImageChecks(
 }
 
 func getVMImages(
+	ctx context.Context,
 	client client,
 	id *capxv1.NutanixResourceIdentifier,
 ) ([]vmmv4.Image, error) {
 	switch {
 	case id.IsUUID():
-		resp, err := client.GetImageById(id.UUID)
+		resp, err := client.GetImageById(ctx, id.UUID)
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +137,7 @@ func getVMImages(
 		return []vmmv4.Image{image}, nil
 	case id.IsName():
 		filter_ := fmt.Sprintf("name eq '%s'", *id.Name)
-		resp, err := client.ListImages(nil, nil, &filter_, nil, nil)
+		resp, err := client.ListImages(ctx, nil, nil, &filter_, nil, nil)
 		if err != nil {
 			return nil, err
 		}

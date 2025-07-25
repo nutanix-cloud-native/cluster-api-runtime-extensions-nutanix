@@ -5,73 +5,12 @@ package nutanix
 
 import (
 	"context"
+	"errors"
+	"testing"
+	"time"
 
-	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
-	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
-	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	prismv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 )
-
-var _ = client(&mocknclient{})
-
-// mocknclient is a mock implementation of the client interface for testing purposes.
-type mocknclient struct {
-	user *prismv3.UserIntentResponse
-	err  error
-
-	getImageByIdFunc func(
-		uuid *string,
-	) (
-		*vmmv4.GetImageApiResponse, error,
-	)
-
-	listImagesFunc func(
-		page,
-		limit *int,
-		filter,
-		orderby,
-		select_ *string,
-		args ...map[string]interface{},
-	) (
-		*vmmv4.ListImagesApiResponse,
-		error,
-	)
-
-	getClusterByIdFunc func(id *string) (*clustermgmtv4.GetClusterApiResponse, error)
-
-	listClustersFunc func(
-		page,
-		limit *int,
-		filter,
-		orderby,
-		apply,
-		select_ *string,
-		args ...map[string]interface{},
-	) (*clustermgmtv4.ListClustersApiResponse, error)
-
-	listStorageContainersFunc func(
-		page,
-		limit *int,
-		filter,
-		orderby,
-		select_ *string,
-		args ...map[string]interface{},
-	) (*clustermgmtv4.ListStorageContainersApiResponse, error)
-
-	GetSubnetByIdFunc func(id *string) (*netv4.GetSubnetApiResponse, error)
-
-	ListSubnetsFunc func(
-		page_ *int,
-		limit_ *int,
-		filter_ *string,
-		orderby_ *string,
-		expand_ *string,
-		select_ *string,
-		args ...map[string]interface{},
-	) (*netv4.ListSubnetsApiResponse, error)
-}
 
 type mockKubeClient struct {
 	ctrlclient.Client
@@ -97,54 +36,89 @@ func (m *mockKubeClient) SubResource(subResource string) ctrlclient.SubResourceC
 	return m.SubResourceClient
 }
 
-func (m *mocknclient) GetCurrentLoggedInUser(ctx context.Context) (*prismv3.UserIntentResponse, error) {
-	return m.user, m.err
-}
+func TestCallWithContext(t *testing.T) {
+	t.Parallel()
+	testSuccessValue := "success"
+	testError := errors.New("test error")
 
-func (m *mocknclient) GetImageById(uuid *string) (*vmmv4.GetImageApiResponse, error) {
-	return m.getImageByIdFunc(uuid)
-}
+	tests := []struct {
+		name        string
+		ctx         func() (context.Context, context.CancelFunc)
+		f           func() (string, error)
+		wantVal     string
+		wantErr     error
+		cancelAfter time.Duration
+	}{
+		{
+			name: "should return value on success",
+			ctx: func() (context.Context, context.CancelFunc) {
+				return context.Background(), func() {}
+			},
+			f: func() (string, error) {
+				return testSuccessValue, nil
+			},
+			wantVal: testSuccessValue,
+			wantErr: nil,
+		},
+		{
+			name: "should return error when function fails",
+			ctx: func() (context.Context, context.CancelFunc) {
+				return context.Background(), func() {}
+			},
+			f: func() (string, error) {
+				return "", testError
+			},
+			wantErr: testError,
+		},
+		{
+			name: "should return context error when context is cancelled during execution",
+			ctx: func() (context.Context, context.CancelFunc) {
+				return context.WithCancel(context.Background())
+			},
+			f: func() (string, error) {
+				time.Sleep(100 * time.Millisecond)
+				return testSuccessValue, nil
+			},
+			wantErr:     context.Canceled,
+			cancelAfter: 10 * time.Millisecond,
+		},
+		{
+			name: "should return context error when context is already cancelled",
+			ctx: func() (context.Context, context.CancelFunc) {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return ctx, func() {}
+			},
+			f: func() (string, error) {
+				t.Log("this function should not have its result returned")
+				return testSuccessValue, nil
+			},
+			wantErr: context.Canceled,
+		},
+	}
 
-func (m *mocknclient) ListImages(
-	page, limit *int,
-	filter, orderby, select_ *string,
-	args ...map[string]interface{},
-) (*vmmv4.ListImagesApiResponse, error) {
-	return m.listImagesFunc(page, limit, filter, orderby, select_)
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			ctx, cancel := tt.ctx()
+			defer cancel()
 
-func (m *mocknclient) GetClusterById(id *string) (*clustermgmtv4.GetClusterApiResponse, error) {
-	return m.getClusterByIdFunc(id)
-}
+			if tt.cancelAfter > 0 {
+				go func() {
+					time.Sleep(tt.cancelAfter)
+					cancel()
+				}()
+			}
 
-func (m *mocknclient) ListClusters(
-	page, limit *int,
-	filter, orderby, apply, select_ *string,
-	args ...map[string]interface{},
-) (*clustermgmtv4.ListClustersApiResponse, error) {
-	return m.listClustersFunc(page, limit, filter, orderby, apply, select_, args...)
-}
+			gotVal, gotErr := callWithContext(ctx, tt.f)
 
-func (m *mocknclient) ListStorageContainers(
-	page, limit *int,
-	filter, orderby, select_ *string,
-	args ...map[string]interface{},
-) (*clustermgmtv4.ListStorageContainersApiResponse, error) {
-	return m.listStorageContainersFunc(page, limit, filter, orderby, select_, args...)
-}
+			if !errors.Is(gotErr, tt.wantErr) {
+				t.Errorf("callWithContext() error = %v, wantErr %v", gotErr, tt.wantErr)
+			}
 
-func (m *mocknclient) GetSubnetById(id *string) (*netv4.GetSubnetApiResponse, error) {
-	return m.GetSubnetByIdFunc(id)
-}
-
-func (m *mocknclient) ListSubnets(
-	page_ *int,
-	limit_ *int,
-	filter_ *string,
-	orderby_ *string,
-	expand_ *string,
-	select_ *string,
-	args ...map[string]interface{},
-) (*netv4.ListSubnetsApiResponse, error) {
-	return m.ListSubnetsFunc(page_, limit_, filter_, orderby_, expand_, select_, args...)
+			if gotVal != tt.wantVal {
+				t.Errorf("callWithContext() gotVal = %s, wantVal %s", gotVal, tt.wantVal)
+			}
+		})
+	}
 }
