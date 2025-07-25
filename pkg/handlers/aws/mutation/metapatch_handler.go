@@ -14,6 +14,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/iaminstanceprofile"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/instancetype"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/network"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/placementgroup"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/region"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/securitygroups"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
@@ -30,6 +31,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 		instancetype.NewControlPlanePatch(),
 		ami.NewControlPlanePatch(),
 		securitygroups.NewControlPlanePatch(),
+		placementgroup.NewControlPlanePatch(),
 	}
 	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
@@ -48,6 +50,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 		instancetype.NewWorkerPatch(),
 		ami.NewWorkerPatch(),
 		securitygroups.NewWorkerPatch(),
+		placementgroup.NewWorkerPatch(),
 	}
 	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 

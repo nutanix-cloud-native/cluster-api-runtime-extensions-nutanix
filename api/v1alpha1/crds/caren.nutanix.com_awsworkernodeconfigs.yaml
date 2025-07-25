@@ -89,6 +89,18 @@ spec:
                     default: m5.2xlarge
                     description: The AWS instance type to use for the cluster Machines.
                     type: string
+                  placementGroupName:
+                    description: PlacementGroup specifies the placement group in which
+                      to launch the instance.
+                    properties:
+                      name:
+                        description: Name is the name of the placement group.
+                        maxLength: 255
+                        minLength: 1
+                        type: string
+                    required:
+                    - name
+                    type: object
                 type: object
               nodeRegistration:
                 default: {}

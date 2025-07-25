@@ -390,6 +390,17 @@ spec:
                         instanceType:
                           default: m5.xlarge
                           type: string
+                        placementGroupName:
+                          description: PlacementGroup specifies the placement group in which to launch the instance.
+                          properties:
+                            name:
+                              description: Name is the name of the placement group.
+                              maxLength: 255
+                              minLength: 1
+                              type: string
+                          required:
+                            - name
+                          type: object
                       type: object
                     nodeRegistration:
                       default: {}
