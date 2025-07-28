@@ -38,9 +38,21 @@ type AWSGenericNodeSpec struct {
 
 	// +kubebuilder:validation:Optional
 	AdditionalSecurityGroups AdditionalSecurityGroup `json:"additionalSecurityGroups,omitempty"`
+
+	// PlacementGroup specifies the placement group in which to launch the instance.
+	// +kubebuilder:validation:Optional
+	PlacementGroup *PlacementGroup `json:"placementGroupName,omitempty"`
 }
 
 type AdditionalSecurityGroup []SecurityGroup
+
+type PlacementGroup struct {
+	// Name is the name of the placement group.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=255
+	Name string `json:"name"`
+}
 
 type SecurityGroup struct {
 	// ID is the id of the security group
