@@ -110,6 +110,10 @@ providers:
       targetName: cluster-template-topology-cilium-helm-addon.yaml
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-crs.yaml"
       targetName: cluster-template-topology-cilium-crs.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-failuredomain-cilium-helm-addon.yaml"
+      targetName: cluster-template-topology-failuredomain-cilium-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-failuredomain-cilium-crs.yaml"
+      targetName: cluster-template-topology-failuredomain-cilium-crs.yaml
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-helm-addon.yaml"
       targetName: cluster-template-topology-calico-helm-addon.yaml
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-crs.yaml"
