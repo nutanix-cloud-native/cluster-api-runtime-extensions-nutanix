@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.33.0 (2025-07-28)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Reserve time to return preflight results before webhook timeout by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1235
+* feat: Support context for all Nutanix client calls by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1234
+* feat: Support AWS PlacementGroups by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1219
+### Fixes 🔧
+* fix(webhook): Update cluster webhook to validate failure domains by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1233
+* fix: More fixes to preflight result messages and fields by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1240
+* fix(deps): udpate CAPX to v1.7.0-beta.5 by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1241
+### Other Changes
+* build: Use GH client and token for coredns version mapping by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1238
+* build: Update all tools by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1237
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.32.0...v0.33.0
+
 ## 0.32.0 (2025-07-23)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
