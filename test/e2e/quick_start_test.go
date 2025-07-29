@@ -54,281 +54,290 @@ var _ = Describe("Quick start", func() {
 							default:
 								Fail("unknown addon strategy: " + addonStrategy)
 							}
-							flavor := fmt.Sprintf(
-								"topology-%s-%s",
-								strings.ToLower(cniProvider),
-								strategy,
+
+							flavors := []string{}
+							flavors = append(
+								flavors,
+								fmt.Sprintf("topology-%s-%s", strings.ToLower(cniProvider), strategy),
 							)
-							Context(
-								flavor,
-								func() {
-									var (
-										testE2EConfig                    *clusterctl.E2EConfig
-										clusterLocalClusterctlConfigPath string
-									)
-
-									BeforeEach(func() {
-										testE2EConfig = e2eConfig.DeepCopy()
-
-										// Check if a provider-specific Kubernetes version is set in the environment and use that. This allows
-										// for testing against different Kubernetes versions, as some providers (e.g. Docker) have machine images
-										// available that are not available in other providers.
-										// This version can be specified in `test/e2e/config/caren.yaml` with a variable named
-										// `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
-										// `KUBERNETES_VERSION_DOCKER: v1.29.5`.
-										varName := capie2e.KubernetesVersion + "_" + strings.ToUpper(
-											lowercaseProvider,
+							if provider == "Nutanix" && cniProvider == "Cilium" {
+								flavors = append(
+									flavors,
+									fmt.Sprintf("topology-failuredomain-%s-%s", strings.ToLower(cniProvider), strategy),
+								)
+							}
+							for _, flavor := range flavors {
+								Context(
+									flavor,
+									func() {
+										var (
+											testE2EConfig                    *clusterctl.E2EConfig
+											clusterLocalClusterctlConfigPath string
 										)
-										if testE2EConfig.HasVariable(varName) {
-											testE2EConfig.Variables[capie2e.KubernetesVersion] = testE2EConfig.MustGetVariable(
-												varName,
-											)
-										}
 
-										// For Nutanix provider, reserve an IP address for the workload cluster control plane endpoint -
-										// remember to unreserve it!
-										if provider == "Nutanix" {
-											By(
-												"Reserving an IP address for the workload cluster control plane endpoint",
-											)
-											nutanixClient, err := nutanix.NewV4Client(
-												nutanix.CredentialsFromCAPIE2EConfig(testE2EConfig),
-											)
-											Expect(err).ToNot(HaveOccurred())
+										BeforeEach(func() {
+											testE2EConfig = e2eConfig.DeepCopy()
 
-											controlPlaneEndpointIP, unreserveControlPlaneEndpointIP, err := nutanix.ReserveIP(
-												testE2EConfig.MustGetVariable("NUTANIX_SUBNET_NAME"),
-												testE2EConfig.MustGetVariable(
-													"NUTANIX_PRISM_ELEMENT_CLUSTER_NAME",
-												),
-												nutanixClient,
-											)
-											Expect(err).ToNot(HaveOccurred())
-											DeferCleanup(unreserveControlPlaneEndpointIP)
-											testE2EConfig.Variables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
-										}
-
-										clusterLocalTempDir, err := os.MkdirTemp("", "clusterctl-")
-										Expect(err).ToNot(HaveOccurred())
-										DeferCleanup(func() {
-											Expect(os.RemoveAll(clusterLocalTempDir)).To(Succeed())
-										})
-										clusterLocalClusterctlConfigPath = createClusterctlLocalRepository(
-											testE2EConfig,
-											clusterLocalTempDir,
-										)
-									})
-
-									capie2e.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
-										if !slices.Contains(
-											e2eConfig.InfrastructureProviders(),
-											lowercaseProvider,
-										) {
-											Fail(fmt.Sprintf(
-												"provider %s is not enabled - check environment setup for provider specific requirements",
+											// Check if a provider-specific Kubernetes version is set in the environment and use that. This allows
+											// for testing against different Kubernetes versions, as some providers (e.g. Docker) have machine images
+											// available that are not available in other providers.
+											// This version can be specified in `test/e2e/config/caren.yaml` with a variable named
+											// `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
+											// `KUBERNETES_VERSION_DOCKER: v1.29.5`.
+											varName := capie2e.KubernetesVersion + "_" + strings.ToUpper(
 												lowercaseProvider,
-											))
-										}
-
-										clusterNamePrefix := "quick-start-"
-										// To be able to test the self-hosted cluster with long name, we need to set the
-										// maxClusterNameength to 63 which is the maximum length of a cluster name.
-										maxClusterNameLength := 63
-										// However, if the provider is Docker, we need to reduce the maxClusterNameLength
-										// because CAPI adds multiple random suffixes to the cluster name which are used in
-										// Docker cluster, and then in MachineDeployment, and finally in the machine names,
-										// resulting in 23 extra characters added to the cluster name for the actual worker node
-										// machine names. These machine names are used for Docker container names. The Docker
-										// image used by KinD have a maximum hostname length of 64 characters. This can be
-										// determined by running `getconf HOST_NAME_MAX` in a Docker container and is different
-										// from the host which generally allows 255 characters nowadays.
-										// Any longer than this prevents the container from starting, returning an error such
-										// as `error during container init: sethostname: invalid argument: unknown`.
-										// Therefore we reduce the maximum cluster to 64 (max hostname length) - 23 (random suffixes).
-										if lowercaseProvider == "docker" {
-											maxClusterNameLength = 64 - 23
-										}
-
-										return capie2e.QuickStartSpecInput{
-											ClusterName: ptr.To(clusterNamePrefix +
-												util.RandomString(
-													maxClusterNameLength-len(clusterNamePrefix),
-												)),
-											E2EConfig:              testE2EConfig,
-											ClusterctlConfigPath:   clusterLocalClusterctlConfigPath,
-											BootstrapClusterProxy:  bootstrapClusterProxy,
-											ArtifactFolder:         artifactFolder,
-											SkipCleanup:            skipCleanup,
-											Flavor:                 ptr.To(flavor),
-											InfrastructureProvider: ptr.To(lowercaseProvider),
-											PostMachinesProvisioned: func(proxy capiframework.ClusterProxy, namespace, clusterName string) {
-												capiframework.AssertOwnerReferences(
-													namespace,
-													proxy.GetKubeconfigPath(),
-													filterClusterObjectsWithNameFilterIgnoreClusterAutoscaler(
-														clusterName,
-													),
-													capiframework.CoreOwnerReferenceAssertion,
-													capiframework.DockerInfraOwnerReferenceAssertions,
-													capiframework.KubeadmBootstrapOwnerReferenceAssertions,
-													capiframework.KubeadmControlPlaneOwnerReferenceAssertions,
-													AWSInfraOwnerReferenceAssertions,
-													NutanixInfraOwnerReferenceAssertions,
-													AddonReferenceAssertions,
-													KubernetesReferenceAssertions,
+											)
+											if testE2EConfig.HasVariable(varName) {
+												testE2EConfig.Variables[capie2e.KubernetesVersion] = testE2EConfig.MustGetVariable(
+													varName,
 												)
+											}
 
-												workloadCluster := capiframework.GetClusterByName(
-													ctx,
-													capiframework.GetClusterByNameInput{
-														Namespace: namespace,
-														Name:      clusterName,
-														Getter:    proxy.GetClient(),
-													},
-												)
-												Expect(workloadCluster.Spec.Topology).ToNot(BeNil())
-
-												By("Waiting until nodes are ready")
-												workloadProxy := proxy.GetWorkloadCluster(
-													ctx,
-													namespace,
-													clusterName,
-												)
-												workloadClient := workloadProxy.GetClient()
-
-												nodeCount := int(
-													ptr.Deref(
-														workloadCluster.Spec.Topology.ControlPlane.Replicas,
-														0,
-													),
-												) +
-													lo.Reduce(
-														workloadCluster.Spec.Topology.Workers.MachineDeployments,
-														func(agg int, md clusterv1.MachineDeploymentTopology, _ int) int {
-															switch {
-															case md.Replicas != nil:
-																return agg + int(
-																	ptr.Deref(md.Replicas, 0),
-																)
-															case md.Metadata.Annotations["cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size"] != "":
-																minSize, err := strconv.Atoi(
-																	md.Metadata.Annotations["cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size"],
-																)
-																Expect(err).ToNot(HaveOccurred())
-																return agg + minSize
-															default:
-																return agg
-															}
-														},
-														0,
-													)
-
-												capiframework.WaitForNodesReady(
-													ctx,
-													capiframework.WaitForNodesReadyInput{
-														Lister: workloadClient,
-														KubernetesVersion: testE2EConfig.MustGetVariable(
-															capie2e.KubernetesVersion,
-														),
-														Count: nodeCount,
-														WaitForNodesReady: testE2EConfig.GetIntervals(
-															flavor,
-															"wait-nodes-ready",
-														),
-													},
-												)
-
+											// For Nutanix provider, reserve an IP address for the workload cluster control plane endpoint -
+											// remember to unreserve it!
+											if provider == "Nutanix" {
 												By(
-													"Waiting for all requested addons to be ready in workload cluster",
+													"Reserving an IP address for the workload cluster control plane endpoint",
 												)
-												clusterVars := variables.ClusterVariablesToVariablesMap(
-													workloadCluster.Spec.Topology.Variables,
-												)
-												addonsConfig, err := variables.Get[apivariables.Addons](
-													clusterVars,
-													v1alpha1.ClusterConfigVariableName,
-													"addons",
+												nutanixClient, err := nutanix.NewV4Client(
+													nutanix.CredentialsFromCAPIE2EConfig(testE2EConfig),
 												)
 												Expect(err).ToNot(HaveOccurred())
-												WaitForAddonsToBeReadyInWorkloadCluster(
-													ctx,
-													WaitForAddonsToBeReadyInWorkloadClusterInput{
-														AddonsConfig:           addonsConfig,
-														ClusterProxy:           proxy,
-														WorkloadCluster:        workloadCluster,
-														InfrastructureProvider: lowercaseProvider,
-														DeploymentIntervals: testE2EConfig.GetIntervals(
-															flavor,
-															"wait-deployment",
-														),
-														DaemonSetIntervals: testE2EConfig.GetIntervals(
-															flavor,
-															"wait-daemonset",
-														),
-														StatefulSetIntervals: testE2EConfig.GetIntervals(
-															flavor,
-															"wait-statefulset",
-														),
-														HelmReleaseIntervals: testE2EConfig.GetIntervals(
-															flavor,
-															"wait-helmrelease",
-														),
-														ClusterResourceSetIntervals: testE2EConfig.GetIntervals(
-															flavor,
-															"wait-clusterresourceset",
-														),
-														ResourceIntervals: testE2EConfig.GetIntervals(
-															flavor,
-															"wait-resource",
-														),
-													},
-												)
 
-												WaitForCoreDNSImageVersion(
-													ctx,
-													WaitForDNSUpgradeInput{
-														WorkloadCluster: workloadCluster,
-														ClusterProxy:    proxy,
-														DeploymentIntervals: testE2EConfig.GetIntervals(
-															flavor,
-															"wait-deployment",
-														),
-													},
+												controlPlaneEndpointIP, unreserveControlPlaneEndpointIP, err := nutanix.ReserveIP(
+													testE2EConfig.MustGetVariable("NUTANIX_SUBNET_NAME"),
+													testE2EConfig.MustGetVariable(
+														"NUTANIX_PRISM_ELEMENT_CLUSTER_NAME",
+													),
+													nutanixClient,
 												)
-												WaitForCoreDNSToBeReadyInWorkloadCluster(
-													ctx,
-													WaitForCoreDNSToBeReadyInWorkloadClusterInput{
-														WorkloadCluster: workloadCluster,
-														ClusterProxy:    proxy,
-														DeploymentIntervals: testE2EConfig.GetIntervals(
-															flavor,
-															"wait-deployment",
-														),
-													},
-												)
+												Expect(err).ToNot(HaveOccurred())
+												DeferCleanup(unreserveControlPlaneEndpointIP)
+												testE2EConfig.Variables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
+											}
 
-												EnsureClusterCAForRegistryAddon(
-													ctx,
-													EnsureClusterCAForRegistryAddonInput{
-														Registry:        addonsConfig.Registry,
-														WorkloadCluster: workloadCluster,
-														ClusterProxy:    proxy,
-													},
-												)
+											clusterLocalTempDir, err := os.MkdirTemp("", "clusterctl-")
+											Expect(err).ToNot(HaveOccurred())
+											DeferCleanup(func() {
+												Expect(os.RemoveAll(clusterLocalTempDir)).To(Succeed())
+											})
+											clusterLocalClusterctlConfigPath = createClusterctlLocalRepository(
+												testE2EConfig,
+												clusterLocalTempDir,
+											)
+										})
 
-												EnsureAntiAffnityForRegistryAddon(
-													ctx,
-													EnsureAntiAffnityForRegistryAddonInput{
-														Registry:        addonsConfig.Registry,
-														WorkloadCluster: workloadCluster,
-														ClusterProxy:    proxy,
-													},
-												)
-											},
-										}
-									})
-								},
-							)
+										capie2e.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
+											if !slices.Contains(
+												e2eConfig.InfrastructureProviders(),
+												lowercaseProvider,
+											) {
+												Fail(fmt.Sprintf(
+													"provider %s is not enabled - check environment setup for provider specific requirements",
+													lowercaseProvider,
+												))
+											}
+
+											clusterNamePrefix := "quick-start-"
+											// To be able to test the self-hosted cluster with long name, we need to set the
+											// maxClusterNameength to 63 which is the maximum length of a cluster name.
+											maxClusterNameLength := 63
+											// However, if the provider is Docker, we need to reduce the maxClusterNameLength
+											// because CAPI adds multiple random suffixes to the cluster name which are used in
+											// Docker cluster, and then in MachineDeployment, and finally in the machine names,
+											// resulting in 23 extra characters added to the cluster name for the actual worker node
+											// machine names. These machine names are used for Docker container names. The Docker
+											// image used by KinD have a maximum hostname length of 64 characters. This can be
+											// determined by running `getconf HOST_NAME_MAX` in a Docker container and is different
+											// from the host which generally allows 255 characters nowadays.
+											// Any longer than this prevents the container from starting, returning an error such
+											// as `error during container init: sethostname: invalid argument: unknown`.
+											// Therefore we reduce the maximum cluster to 64 (max hostname length) - 23 (random suffixes).
+											if lowercaseProvider == "docker" {
+												maxClusterNameLength = 64 - 23
+											}
+
+											return capie2e.QuickStartSpecInput{
+												ClusterName: ptr.To(clusterNamePrefix +
+													util.RandomString(
+														maxClusterNameLength-len(clusterNamePrefix),
+													)),
+												E2EConfig:              testE2EConfig,
+												ClusterctlConfigPath:   clusterLocalClusterctlConfigPath,
+												BootstrapClusterProxy:  bootstrapClusterProxy,
+												ArtifactFolder:         artifactFolder,
+												SkipCleanup:            skipCleanup,
+												Flavor:                 ptr.To(flavor),
+												InfrastructureProvider: ptr.To(lowercaseProvider),
+												PostMachinesProvisioned: func(proxy capiframework.ClusterProxy, namespace, clusterName string) {
+													capiframework.AssertOwnerReferences(
+														namespace,
+														proxy.GetKubeconfigPath(),
+														filterClusterObjectsWithNameFilterIgnoreClusterAutoscaler(
+															clusterName,
+														),
+														capiframework.CoreOwnerReferenceAssertion,
+														capiframework.DockerInfraOwnerReferenceAssertions,
+														capiframework.KubeadmBootstrapOwnerReferenceAssertions,
+														capiframework.KubeadmControlPlaneOwnerReferenceAssertions,
+														AWSInfraOwnerReferenceAssertions,
+														NutanixInfraOwnerReferenceAssertions,
+														AddonReferenceAssertions,
+														KubernetesReferenceAssertions,
+													)
+
+													workloadCluster := capiframework.GetClusterByName(
+														ctx,
+														capiframework.GetClusterByNameInput{
+															Namespace: namespace,
+															Name:      clusterName,
+															Getter:    proxy.GetClient(),
+														},
+													)
+													Expect(workloadCluster.Spec.Topology).ToNot(BeNil())
+
+													By("Waiting until nodes are ready")
+													workloadProxy := proxy.GetWorkloadCluster(
+														ctx,
+														namespace,
+														clusterName,
+													)
+													workloadClient := workloadProxy.GetClient()
+
+													nodeCount := int(
+														ptr.Deref(
+															workloadCluster.Spec.Topology.ControlPlane.Replicas,
+															0,
+														),
+													) +
+														lo.Reduce(
+															workloadCluster.Spec.Topology.Workers.MachineDeployments,
+															func(agg int, md clusterv1.MachineDeploymentTopology, _ int) int {
+																switch {
+																case md.Replicas != nil:
+																	return agg + int(
+																		ptr.Deref(md.Replicas, 0),
+																	)
+																case md.Metadata.Annotations["cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size"] != "":
+																	minSize, err := strconv.Atoi(
+																		md.Metadata.Annotations["cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size"],
+																	)
+																	Expect(err).ToNot(HaveOccurred())
+																	return agg + minSize
+																default:
+																	return agg
+																}
+															},
+															0,
+														)
+
+													capiframework.WaitForNodesReady(
+														ctx,
+														capiframework.WaitForNodesReadyInput{
+															Lister: workloadClient,
+															KubernetesVersion: testE2EConfig.MustGetVariable(
+																capie2e.KubernetesVersion,
+															),
+															Count: nodeCount,
+															WaitForNodesReady: testE2EConfig.GetIntervals(
+																flavor,
+																"wait-nodes-ready",
+															),
+														},
+													)
+
+													By(
+														"Waiting for all requested addons to be ready in workload cluster",
+													)
+													clusterVars := variables.ClusterVariablesToVariablesMap(
+														workloadCluster.Spec.Topology.Variables,
+													)
+													addonsConfig, err := variables.Get[apivariables.Addons](
+														clusterVars,
+														v1alpha1.ClusterConfigVariableName,
+														"addons",
+													)
+													Expect(err).ToNot(HaveOccurred())
+													WaitForAddonsToBeReadyInWorkloadCluster(
+														ctx,
+														WaitForAddonsToBeReadyInWorkloadClusterInput{
+															AddonsConfig:           addonsConfig,
+															ClusterProxy:           proxy,
+															WorkloadCluster:        workloadCluster,
+															InfrastructureProvider: lowercaseProvider,
+															DeploymentIntervals: testE2EConfig.GetIntervals(
+																flavor,
+																"wait-deployment",
+															),
+															DaemonSetIntervals: testE2EConfig.GetIntervals(
+																flavor,
+																"wait-daemonset",
+															),
+															StatefulSetIntervals: testE2EConfig.GetIntervals(
+																flavor,
+																"wait-statefulset",
+															),
+															HelmReleaseIntervals: testE2EConfig.GetIntervals(
+																flavor,
+																"wait-helmrelease",
+															),
+															ClusterResourceSetIntervals: testE2EConfig.GetIntervals(
+																flavor,
+																"wait-clusterresourceset",
+															),
+															ResourceIntervals: testE2EConfig.GetIntervals(
+																flavor,
+																"wait-resource",
+															),
+														},
+													)
+
+													WaitForCoreDNSImageVersion(
+														ctx,
+														WaitForDNSUpgradeInput{
+															WorkloadCluster: workloadCluster,
+															ClusterProxy:    proxy,
+															DeploymentIntervals: testE2EConfig.GetIntervals(
+																flavor,
+																"wait-deployment",
+															),
+														},
+													)
+													WaitForCoreDNSToBeReadyInWorkloadCluster(
+														ctx,
+														WaitForCoreDNSToBeReadyInWorkloadClusterInput{
+															WorkloadCluster: workloadCluster,
+															ClusterProxy:    proxy,
+															DeploymentIntervals: testE2EConfig.GetIntervals(
+																flavor,
+																"wait-deployment",
+															),
+														},
+													)
+
+													EnsureClusterCAForRegistryAddon(
+														ctx,
+														EnsureClusterCAForRegistryAddonInput{
+															Registry:        addonsConfig.Registry,
+															WorkloadCluster: workloadCluster,
+															ClusterProxy:    proxy,
+														},
+													)
+
+													EnsureAntiAffnityForRegistryAddon(
+														ctx,
+														EnsureAntiAffnityForRegistryAddonInput{
+															Registry:        addonsConfig.Registry,
+															WorkloadCluster: workloadCluster,
+															ClusterProxy:    proxy,
+														},
+													)
+												},
+											}
+										})
+									},
+								)
+							}
 						})
 					}
 				})
