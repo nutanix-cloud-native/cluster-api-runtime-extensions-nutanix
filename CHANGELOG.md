@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.33.1 (2025-07-31)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Correct control plane field in NutanixVMImage preflight check by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1244
+* fix: More granular error message for NutanixVMImage preflight check by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1245
+* fix(deps): Update CAPX to v1.7.0 by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1248
+### Other Changes
+* test: Add a E2E test creating a Nutanix cluster with failure domains by @yanhua121 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1243
+* refactor: Add more debug logs, remove redundant keys/values from log messages in preflight framework by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1246
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.33.0...v0.33.1
+
 ## 0.33.0 (2025-07-28)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
