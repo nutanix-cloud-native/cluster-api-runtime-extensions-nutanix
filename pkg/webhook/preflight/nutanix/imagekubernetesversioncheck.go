@@ -149,7 +149,7 @@ func newVMImageKubernetesVersionChecks(
 		checks = append(checks,
 			&imageKubernetesVersionCheck{
 				machineDetails:    &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.controlPlane.machineDetails", ///nolint:lll // Field is long.
+				field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails", ///nolint:lll // Field is long.
 				nclient:           cd.nclient,
 				clusterK8sVersion: clusterK8sVersion,
 			},
