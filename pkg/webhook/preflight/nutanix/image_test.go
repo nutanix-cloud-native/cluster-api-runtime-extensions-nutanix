@@ -85,7 +85,7 @@ func TestVMImageCheck(t *testing.T) {
 				Allowed: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "No VM Images found in Prism Central that match identifier \"test-uuid\". Check that the correct VM Image is found in Prism Central. If the VM Image exists, you may need to change the identifier. If no VM Image is found, create one using the NKP CLI, or download a pre-built VM Image from the Nutanix portal, and upload it to Prism Central. Once you have the correct VM Image, retry.", ///nolint:lll // Message is long.
+						Message: "No VM Images found in Prism Central that match identifier \"test-uuid\". Check that the correct VM Image is found in Prism Central. If you find the VM Image in Prism Central, you may need to change the identifier. If no VM Image is found, create one, or download a pre-built VM Image from the Nutanix portal, and upload it to Prism Central. Once you have the correct VM Image, retry.", ///nolint:lll // Message is long.
 						Field:   "machineDetails.image",
 					},
 				},
@@ -150,7 +150,7 @@ func TestVMImageCheck(t *testing.T) {
 				Allowed: false,
 				Causes: []preflight.Cause{
 					{
-						Message: "No VM Images found in Prism Central that match identifier \"test-non-existent-image\". Check that the correct VM Image is found in Prism Central. If the VM Image exists, you may need to change the identifier. If no VM Image is found, create one using the NKP CLI, or download a pre-built VM Image from the Nutanix portal, and upload it to Prism Central. Once you have the correct VM Image, retry.", ///nolint:lll // Message is long.
+						Message: "No VM Images found in Prism Central that match identifier \"test-non-existent-image\". Check that the correct VM Image is found in Prism Central. If you find the VM Image in Prism Central, you may need to change the identifier. If no VM Image is found, create one, or download a pre-built VM Image from the Nutanix portal, and upload it to Prism Central. Once you have the correct VM Image, retry.", ///nolint:lll // Message is long.
 						Field:   "machineDetails.image",
 					},
 				},

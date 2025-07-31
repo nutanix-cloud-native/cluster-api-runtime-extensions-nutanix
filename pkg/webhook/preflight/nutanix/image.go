@@ -59,7 +59,7 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"No VM Images found in Prism Central that match identifier %q. Check that the correct VM Image is found in Prism Central. If the VM Image exists, you may need to change the identifier. If no VM Image is found, create one using the NKP CLI, or download a pre-built VM Image from the Nutanix portal, and upload it to Prism Central. Once you have the correct VM Image, retry.", ///nolint:lll // Message is long.
+					"No VM Images found in Prism Central that match identifier %q. Check that the correct VM Image is found in Prism Central. If you find the VM Image in Prism Central, you may need to change the identifier. If no VM Image is found, create one, or download a pre-built VM Image from the Nutanix portal, and upload it to Prism Central. Once you have the correct VM Image, retry.", ///nolint:lll // Message is long.
 					c.machineDetails.Image,
 				),
 				Field: c.field + ".image",
