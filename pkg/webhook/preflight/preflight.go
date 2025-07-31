@@ -111,11 +111,15 @@ type namedResult struct {
 }
 
 func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+	log := ctrl.LoggerFrom(ctx)
+
 	if req.Operation == admissionv1.Delete {
+		log.V(5).Info("Skipping preflight checks for delete operation")
 		return admission.Allowed("")
 	}
 
 	if req.Operation == admissionv1.Update {
+		log.V(5).Info("Skipping preflight checks for update operation")
 		return admission.Allowed("")
 	}
 
@@ -139,6 +143,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	skipEvaluator := skip.New(cluster)
 
 	if skipEvaluator.ForAll() {
+		log.V(5).Info("Skipping all preflight checks")
 		// If the cluster has skipped all checks, return allowed.
 		return admission.Allowed("").WithWarnings(
 			"Cluster has skipped all preflight checks",
@@ -149,6 +154,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	// that we have time to summarize the results, and return a response.
 	checkTimeout := Timeout - 2*time.Second
 	checkCtx, checkCtxCancel := context.WithTimeout(ctx, checkTimeout)
+	log.V(5).Info("Running preflight checks")
 	resultsOrderedByCheckerAndCheck := run(checkCtx, h.client, cluster, skipEvaluator, h.checkers)
 	checkCtxCancel()
 
