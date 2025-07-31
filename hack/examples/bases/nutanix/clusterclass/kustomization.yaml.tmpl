@@ -99,3 +99,10 @@ ${KUBE_VIP_CONTENT}
           name: PLACEHOLDER
           kind: Secret
           namespace: default
+
+# Remove empty failureDomains array from NutanixClusterTemplate
+- target:
+    kind: NutanixClusterTemplate
+  patch: |-
+    - op: "remove"
+      path: "/spec/template/spec/failureDomains"
