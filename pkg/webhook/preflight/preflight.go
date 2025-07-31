@@ -236,8 +236,6 @@ func run(ctx context.Context,
 				ctrl.LoggerFrom(ctx).V(5).Info(
 					"running preflight check",
 					"checkName", check.Name(),
-					"clusterName", cluster.Name,
-					"clusterNamespace", cluster.Namespace,
 				)
 				if skipEvaluator.For(check.Name()) {
 					resultsOrderedByCheck[j] = namedResult{
@@ -281,8 +279,6 @@ func run(ctx context.Context,
 								fmt.Errorf("preflight check panic"),
 								fmt.Sprintf("%v", r),
 								"checkName", check.Name(),
-								"clusterName", cluster.Name,
-								"clusterNamespace", cluster.Namespace,
 								"stackTrace", string(debug.Stack()),
 							)
 						}
