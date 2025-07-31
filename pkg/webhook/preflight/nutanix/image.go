@@ -54,11 +54,25 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 			return result
 		}
 
-		if len(images) != 1 {
+		switch len(images) {
+		case 0:
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Found %d VM Images in Prism Central that match identifier %q. There must be exactly 1 VM Image that matches this identifier. Remove duplicate VM Images, use a different VM Image, or identify the VM Image by its UUID, then retry.", ///nolint:lll // Message is long.
+					"No VM Images found in Prism Central that match identifier %q. Check that the correct VM Image is found in Prism Central. If the VM Image exists, you may need to change the identifier. If no VM Image is found, create one using the NKP CLI, or download a pre-built VM Image from the Nutanix portal, and upload it to Prism Central. Once you have the correct VM Image, retry.", ///nolint:lll // Message is long.
+					c.machineDetails.Image,
+				),
+				Field: c.field + ".image",
+			})
+			return result
+		case 1:
+			result.Allowed = true
+			return result
+		default: // Found multiple images.
+			result.Allowed = false
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf(
+					"Found %d VM Images in Prism Central that match name %q. There must be exactly 1 VM Image that matches this name. Remove duplicate VM Images, use a different VM Image, or identify the VM Image by its UUID, then retry.", ///nolint:lll // Message is long.
 					len(images),
 					c.machineDetails.Image,
 				),
@@ -66,10 +80,6 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 			})
 			return result
 		}
-
-		// Found exactly one image.
-		result.Allowed = true
-		return result
 	}
 
 	// Neither ImageLookup nor Image is specified.
