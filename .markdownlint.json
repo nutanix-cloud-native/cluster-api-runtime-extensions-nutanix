@@ -1,6 +1,6 @@
 {
   "heading-style": { "style": "atx" },
   "ul-style": { "style": "dash" },
-  "line-length": { "line_length": 120, "code_blocks": false },
+  "line-length": false,
   "hr-style": { "style": "---" }
 }
