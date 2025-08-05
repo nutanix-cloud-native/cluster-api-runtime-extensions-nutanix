@@ -96,7 +96,7 @@ func (s NutanixWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //n
 
 // NutanixWorkerNodeConfigSpec defines the desired state of NutanixWorkerNodeSpec.
 type NutanixWorkerNodeConfigSpec struct {
-	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Required
 	Nutanix *NutanixWorkerNodeSpec `json:"nutanix,omitempty"`
 
 	GenericNodeSpec `json:",inline"`

@@ -10,6 +10,8 @@ import (
 )
 
 type NutanixControlPlaneNodeSpec struct {
+	// machineDetails specifies the details of the Nutanix machine that will be created
+	// +kubebuilder:validation:Required
 	MachineDetails NutanixMachineDetails `json:"machineDetails"`
 
 	// failureDomains specifies a list of NutanixFailureDomains (by names)
@@ -20,6 +22,8 @@ type NutanixControlPlaneNodeSpec struct {
 }
 
 type NutanixWorkerNodeSpec struct {
+	// machineDetails specifies the details of the Nutanix machine that will be created
+	// +kubebuilder:validation:Required
 	MachineDetails NutanixMachineDetails `json:"machineDetails"`
 }
 
