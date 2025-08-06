@@ -21,22 +21,28 @@ var testDefs = []capitest.VariableTestDef{{
 }, {
 	Name: "valid single NTP server",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		NTP: &v1alpha1.NTP{
-			Servers: []string{"pool.ntp.org"},
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{"pool.ntp.org"},
+			},
 		},
 	},
 }, {
 	Name: "valid multiple NTP servers",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		NTP: &v1alpha1.NTP{
-			Servers: []string{"time.aws.com", "time.google.com", "pool.ntp.org"},
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{"time.aws.com", "time.google.com", "pool.ntp.org"},
+			},
 		},
 	},
 }, {
 	Name: "empty servers array",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		NTP: &v1alpha1.NTP{
-			Servers: []string{},
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{},
+			},
 		},
 	},
 	ExpectError: true,
