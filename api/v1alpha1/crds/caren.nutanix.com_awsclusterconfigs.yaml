@@ -390,7 +390,7 @@ spec:
                         instanceType:
                           default: m5.xlarge
                           type: string
-                        placementGroupName:
+                        placementGroup:
                           description: PlacementGroup specifies the placement group in which to launch the instance.
                           properties:
                             name:
