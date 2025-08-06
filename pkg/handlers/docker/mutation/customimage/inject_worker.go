@@ -87,7 +87,7 @@ func (h *customImageWorkerPatchHandler) Mutate(
 		),
 		log,
 		func(obj *capdv1.DockerMachineTemplate) error {
-			fieldPath := []string{"builtin", "machineDeployment", "version"}
+			fieldPath := []string{runtimehooksv1.BuiltinsName, "machineDeployment", "version"}
 
 			if customImageVar == "" {
 				kubernetesVersion, err := variables.Get[string](

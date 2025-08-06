@@ -60,7 +60,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 			Name: "restart script and command added to worker node kubeadm config template",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": "*",

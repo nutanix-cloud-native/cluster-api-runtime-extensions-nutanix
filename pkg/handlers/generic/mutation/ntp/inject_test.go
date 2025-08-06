@@ -100,7 +100,7 @@ var _ = Describe("Generate NTP patches", func() {
 					VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": "worker-class",
@@ -131,7 +131,7 @@ var _ = Describe("Generate NTP patches", func() {
 					VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": "worker-class",
@@ -181,7 +181,7 @@ var _ = Describe("Generate NTP patches", func() {
 					VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": "worker-class",

@@ -198,7 +198,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					v1alpha1.GlobalMirrorVariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": names.SimpleNameGenerator.GenerateName("worker-"),
@@ -238,7 +238,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					v1alpha1.GlobalMirrorVariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": names.SimpleNameGenerator.GenerateName("worker-"),
@@ -281,7 +281,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					v1alpha1.GlobalMirrorVariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": names.SimpleNameGenerator.GenerateName("worker-"),
@@ -321,7 +321,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					v1alpha1.ImageRegistriesVariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": names.SimpleNameGenerator.GenerateName("worker-"),
@@ -382,7 +382,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 					[]string{"addons", v1alpha1.RegistryAddonVariableName}...,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": names.SimpleNameGenerator.GenerateName("worker-"),

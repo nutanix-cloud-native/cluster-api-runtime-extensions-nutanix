@@ -47,7 +47,7 @@ var _ = Describe("Generate containerd metrics patches", func() {
 			Name: "containerd metrics config added to worker node kubeadm config template",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": "*",
