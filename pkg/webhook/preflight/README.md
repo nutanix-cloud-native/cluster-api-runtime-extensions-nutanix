@@ -1,3 +1,8 @@
+<!--
+ Copyright 2024 Nutanix. All rights reserved.
+ SPDX-License-Identifier: Apache-2.0
+ -->
+
 # Preflight Checks Framework
 
 The preflight checks framework is a validating admission webhook that runs a series of checks before a `Cluster` resource is created. It helps ensure that a cluster's configuration is valid, and that the underlying infrastructure is ready, preventing common issues before they occur.
