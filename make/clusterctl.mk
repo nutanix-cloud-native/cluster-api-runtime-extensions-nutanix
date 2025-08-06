@@ -25,9 +25,9 @@ clusterctl.init:
 	      --infrastructure docker:$(CAPD_VERSION),aws:$(CAPA_VERSION),nutanix:$(CAPX_VERSION) \
 	      --addon helm:$(CAAPH_VERSION) \
 	      --wait-providers
-	kubectl apply --server-side --force-conflicts \
+	kubectl --kubeconfig=$(KIND_KUBECONFIG) apply --server-side --force-conflicts \
 		-k 'https://github.com/jimmidyson/cluster-api-provider-aws/config/crd?ref=$(CAPA_VERSION)-eksclusterclass'
-	kubectl set image -n capa-system deployment/capa-controller-manager \
+	kubectl --kubeconfig=$(KIND_KUBECONFIG) set image -n capa-system deployment/capa-controller-manager \
 		manager=ghcr.io/jimmidyson/cluster-api-aws/cluster-api-aws-controller:$(CAPA_VERSION)-eksclusterclass
 
 .PHONY: clusterctl.delete
