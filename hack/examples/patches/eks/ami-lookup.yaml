@@ -1,0 +1,12 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables/1/value"
+  value:
+    eks:
+      ami:
+        lookup:
+          baseOS: "${AMI_LOOKUP_BASEOS}"
+          format: "${AMI_LOOKUP_FORMAT}"
+          org: "${AMI_LOOKUP_ORG}"
