@@ -165,7 +165,7 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeIPTables,
 							},
@@ -214,7 +214,7 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeIPTables,
 							},
@@ -263,7 +263,7 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.DockerClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeIPTables,
 							},
@@ -312,7 +312,7 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.NutanixClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeNFTables,
 							},
@@ -361,7 +361,7 @@ mode: nftables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeNFTables,
 							},
@@ -410,7 +410,7 @@ mode: nftables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.DockerClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeNFTables,
 							},

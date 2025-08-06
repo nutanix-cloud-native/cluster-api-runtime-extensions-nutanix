@@ -18,10 +18,12 @@ import (
 var testDefs = []capitest.VariableTestDef{{
 	Name: "valid proxy config",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		Proxy: &v1alpha1.HTTPProxy{
-			HTTP:         "http://a.b.c.example.com",
-			HTTPS:        "https://a.b.c.example.com",
-			AdditionalNo: []string{"d.e.f.example.com"},
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			Proxy: &v1alpha1.HTTPProxy{
+				HTTP:         "http://a.b.c.example.com",
+				HTTPS:        "https://a.b.c.example.com",
+				AdditionalNo: []string{"d.e.f.example.com"},
+			},
 		},
 	},
 }}

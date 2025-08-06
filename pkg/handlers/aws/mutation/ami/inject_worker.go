@@ -9,7 +9,7 @@ import (
 )
 
 func NewWorkerPatch() *awsAMISpecPatchHandler {
-	return newAWSAMISpecPatchHandler(
+	return NewAWSAMISpecPatchHandler(
 		v1alpha1.WorkerConfigVariableName,
 		[]string{
 			v1alpha1.AWSVariableName,
