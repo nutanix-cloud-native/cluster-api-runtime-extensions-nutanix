@@ -1,0 +1,21 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables"
+  value:
+    - name: "clusterConfig"
+      value:
+        addons:
+          clusterAutoscaler: {}
+          nfd: {}
+          cni:
+            provider: Cilium
+            values:
+              sourceRef:
+                name: ${CLUSTER_NAME}-cilium-cni-helm-values-template
+                kind: ConfigMap
+    - name: "workerConfig"
+      value:
+        eks:
+          instanceType: m5.2xlarge
