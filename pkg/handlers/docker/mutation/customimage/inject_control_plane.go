@@ -95,7 +95,7 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 		),
 		log,
 		func(obj *capdv1.DockerMachineTemplate) error {
-			variablePath := []string{"builtin", "controlPlane", "version"}
+			variablePath := []string{runtimehooksv1.BuiltinsName, "controlPlane", "version"}
 
 			if customImageVar == "" {
 				kubernetesVersion, err := variables.Get[string](

@@ -80,7 +80,7 @@ func (h *testHandler) Mutate(
 
 func machineVars() map[string]apiextensionsv1.JSON {
 	return map[string]apiextensionsv1.JSON{
-		"builtin": {Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`)},
+		runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`)},
 	}
 }
 
