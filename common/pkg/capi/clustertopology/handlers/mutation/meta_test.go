@@ -463,7 +463,7 @@ func TestMergeVariableDefinitions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewWithT(t)
-			got, err := mergeVariableDefinitions(tt.args.vars, tt.args.globalVars)
+			got, err := mergeVariableOverridesWithGlobal(tt.args.vars, tt.args.globalVars)
 			if tt.wantErr {
 				g.Expect(err).To(gomega.HaveOccurred())
 				g.Expect(err.Error()).To(gomega.ContainSubstring(tt.errString))
