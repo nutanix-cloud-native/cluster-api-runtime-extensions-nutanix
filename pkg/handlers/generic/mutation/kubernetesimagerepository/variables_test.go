@@ -15,12 +15,16 @@ import (
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
-var testDefs = []capitest.VariableTestDef{{
-	Name: "set",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		KubernetesImageRepository: "my-registry.io/my-org/my-repo",
+var testDefs = []capitest.VariableTestDef{
+	{
+		Name: "set",
+		Vals: v1alpha1.GenericClusterConfigSpec{
+			GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+				KubernetesImageRepository: "my-registry.io/my-org/my-repo",
+			},
+		},
 	},
-}}
+}
 
 func TestVariableValidation_AWS(t *testing.T) {
 	capitest.ValidateDiscoverVariables(

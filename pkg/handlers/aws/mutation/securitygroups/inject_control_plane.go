@@ -10,7 +10,7 @@ import (
 )
 
 func NewControlPlanePatch() *awsSecurityGroupSpecPatchHandler {
-	return newAWSSecurityGroupSpecPatchHandler(
+	return NewAWSSecurityGroupSpecPatchHandler(
 		v1alpha1.ClusterConfigVariableName,
 		[]string{
 			v1alpha1.ControlPlaneConfigVariableName,

@@ -1,0 +1,355 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: eksclusterconfigs.caren.nutanix.com
+spec:
+  group: caren.nutanix.com
+  names:
+    kind: EKSClusterConfig
+    listKind: EKSClusterConfigList
+    plural: eksclusterconfigs
+    singular: eksclusterconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: EKSClusterConfig is the Schema for the eksclusterconfigs API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: EKSClusterConfigSpec defines the desired state of ClusterConfig.
+            properties:
+              addons:
+                properties:
+                  ccm:
+                    description: CCM tells us to enable or disable the cloud provider
+                      interface.
+                    properties:
+                      credentials:
+                        description: A reference to the Secret for credential information
+                          for the target Prism Central instance
+                        properties:
+                          secretRef:
+                            description: A reference to the Secret containing the
+                              credentials used by the CCM provider.
+                            properties:
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        required:
+                        - secretRef
+                        type: object
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy the CCM to the
+                          workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  clusterAutoscaler:
+                    description: ClusterAutoscaler tells us to enable or disable the
+                      cluster-autoscaler addon.
+                    properties:
+                      strategy:
+                        default: HelmAddon
+                        description: |-
+                          Addon strategy used to deploy cluster-autoscaler to the management cluster
+                          targeting the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  cni:
+                    description: CNI required for providing CNI configuration.
+                    properties:
+                      provider:
+                        description: CNI provider to deploy.
+                        enum:
+                        - Calico
+                        - Cilium
+                        type: string
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy the CNI provider
+                          to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                      values:
+                        description: Values contains the helm values for the CNI when
+                          HelmAddon is the strategy.
+                        properties:
+                          sourceRef:
+                            description: |-
+                              SourceRef is an object reference to Configmap/Secret inside the same namespace
+                              which contains inline YAML representing the values for the Helm chart.
+                            properties:
+                              kind:
+                                description: Kind is the type of resource being referenced,
+                                  valid values are ('ConfigMap').
+                                enum:
+                                - ConfigMap
+                                type: string
+                              name:
+                                description: Name is the name of resource being referenced.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                        type: object
+                    required:
+                    - provider
+                    type: object
+                  csi:
+                    properties:
+                      defaultStorage:
+                        properties:
+                          provider:
+                            description: Name of the CSI Provider for the default
+                              storage class.
+                            enum:
+                            - aws-ebs
+                            - nutanix
+                            - local-path
+                            type: string
+                          storageClassConfig:
+                            description: Name of the default storage class config
+                              the specified default provider.
+                            maxLength: 242
+                            minLength: 1
+                            type: string
+                        required:
+                        - provider
+                        - storageClassConfig
+                        type: object
+                      providers:
+                        properties:
+                          aws-ebs:
+                            properties:
+                              credentials:
+                                description: The reference to any secret used by the
+                                  CSI Provider.
+                                properties:
+                                  secretRef:
+                                    description: A reference to the Secret containing
+                                      the credentials used by the CSI provider.
+                                    properties:
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                required:
+                                - secretRef
+                                type: object
+                              storageClassConfigs:
+                                additionalProperties:
+                                  properties:
+                                    allowExpansion:
+                                      description: If the storage class should allow
+                                        volume expanding
+                                      type: boolean
+                                    parameters:
+                                      additionalProperties:
+                                        type: string
+                                      description: Parameters passed into the storage
+                                        class object.
+                                      type: object
+                                    reclaimPolicy:
+                                      default: Delete
+                                      description: PersistentVolumeReclaimPolicy describes
+                                        a policy for end-of-life maintenance of persistent
+                                        volumes.
+                                      enum:
+                                      - Delete
+                                      - Retain
+                                      - Recycle
+                                      type: string
+                                    volumeBindingMode:
+                                      default: WaitForFirstConsumer
+                                      description: VolumeBindingMode indicates how
+                                        PersistentVolumeClaims should be bound.
+                                      enum:
+                                      - Immediate
+                                      - WaitForFirstConsumer
+                                      type: string
+                                  type: object
+                                description: StorageClassConfigs is a map of storage
+                                  class configurations for this CSI provider.
+                                type: object
+                              strategy:
+                                default: HelmAddon
+                                description: Addon strategy used to deploy the CSI
+                                  provider to the workload cluster.
+                                enum:
+                                - ClusterResourceSet
+                                - HelmAddon
+                                type: string
+                            required:
+                            - storageClassConfigs
+                            type: object
+                        required:
+                        - aws-ebs
+                        type: object
+                      snapshotController:
+                        description: Deploy the CSI snapshot controller and associated
+                          CRDs.
+                        properties:
+                          strategy:
+                            default: HelmAddon
+                            description: Addon strategy used to deploy the snapshot
+                              controller to the workload cluster.
+                            enum:
+                            - ClusterResourceSet
+                            - HelmAddon
+                            type: string
+                        type: object
+                    required:
+                    - defaultStorage
+                    - providers
+                    type: object
+                  nfd:
+                    description: NFD tells us to enable or disable the node feature
+                      discovery addon.
+                    properties:
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy Node Feature Discovery
+                          (NFD) to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  registry:
+                    properties:
+                      provider:
+                        default: CNCF Distribution
+                        description: The OCI registry provider to deploy.
+                        enum:
+                        - CNCF Distribution
+                        type: string
+                    required:
+                    - provider
+                    type: object
+                  serviceLoadBalancer:
+                    properties:
+                      configuration:
+                        description: Configuration for the chosen ServiceLoadBalancer
+                          provider.
+                        properties:
+                          addressRanges:
+                            description: |-
+                              AddressRanges is a list of IPv4 address ranges the
+                              provider uses to choose an address for a load balancer.
+                            items:
+                              description: AddressRange defines an IPv4 range.
+                              properties:
+                                end:
+                                  format: ipv4
+                                  type: string
+                                start:
+                                  format: ipv4
+                                  type: string
+                              required:
+                              - end
+                              - start
+                              type: object
+                            maxItems: 10
+                            minItems: 1
+                            type: array
+                        required:
+                        - addressRanges
+                        type: object
+                      provider:
+                        description: |-
+                          The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
+                          the CCM acts as the provider.
+                        enum:
+                        - MetalLB
+                        type: string
+                    required:
+                    - provider
+                    type: object
+                type: object
+              eks:
+                description: EKS cluster configuration.
+                properties:
+                  network:
+                    description: AWS network configuration.
+                    properties:
+                      subnets:
+                        description: AWS Subnet configuration.
+                        items:
+                          description: SubnetSpec configures an AWS Subnet.
+                          properties:
+                            id:
+                              description: Existing Subnet ID to use for the cluster.
+                              format: ^subnet-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                              type: string
+                          required:
+                          - id
+                          type: object
+                        maxItems: 10
+                        type: array
+                      vpc:
+                        properties:
+                          id:
+                            description: Existing VPC ID to use for the cluster.
+                            format: ^vpc-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                            type: string
+                        required:
+                        - id
+                        type: object
+                    type: object
+                  region:
+                    description: AWS region to create cluster in.
+                    maxLength: 16
+                    minLength: 4
+                    type: string
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true

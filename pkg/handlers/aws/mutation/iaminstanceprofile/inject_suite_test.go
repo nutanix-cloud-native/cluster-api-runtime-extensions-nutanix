@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestIAMInstnaceProfilePatch(t *testing.T) {
+func TestIAMInstanceProfilePatch(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "IAMInstanceProfile patches for ControlPlane and Workers suite")
 }

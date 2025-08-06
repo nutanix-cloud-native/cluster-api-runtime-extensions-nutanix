@@ -5,6 +5,7 @@ package taints
 
 import (
 	"context"
+	"strings"
 
 	"github.com/samber/lo"
 	v1 "k8s.io/api/core/v1"
@@ -15,6 +16,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
@@ -80,7 +82,7 @@ func (h *taintsWorkerPatchHandler) Mutate(
 		taintsVar,
 	)
 
-	return patches.MutateIfApplicable(
+	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
 		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 			log.WithValues(
@@ -95,7 +97,37 @@ func (h *taintsWorkerPatchHandler) Mutate(
 				taintsVar,
 			)
 			return nil
-		})
+		}); err != nil {
+		return err
+	}
+
+	if err := patches.MutateIfApplicable(
+		obj, vars, &holderRef,
+		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "EKSConfigTemplate"), log,
+		func(obj *eksbootstrapv1.EKSConfigTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("adding taints to worker node EKS config template")
+			if obj.Spec.Template.Spec.KubeletExtraArgs == nil {
+				obj.Spec.Template.Spec.KubeletExtraArgs = make(map[string]string, 1)
+			}
+
+			existingTaintsFlagValue := obj.Spec.Template.Spec.KubeletExtraArgs["register-with-taints"]
+
+			newTaintsFlagValue := toEKSConfigTaints(taintsVar)
+
+			if existingTaintsFlagValue != "" {
+				newTaintsFlagValue = existingTaintsFlagValue + "," + newTaintsFlagValue
+			}
+
+			obj.Spec.Template.Spec.KubeletExtraArgs["register-with-taints"] = newTaintsFlagValue
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func toCoreTaints(existingTaints []v1.Taint, newTaints []v1alpha1.Taint) []v1.Taint {
@@ -123,4 +155,17 @@ func toCoreTaints(existingTaints []v1.Taint, newTaints []v1alpha1.Taint) []v1.Ta
 	default:
 		return append(existingTaints, newCoreTaints...)
 	}
+}
+
+func toEKSConfigTaints(newTaints []v1alpha1.Taint) string {
+	taintValues := lo.Map(newTaints, func(t v1alpha1.Taint, _ int) string {
+		taint := t.Key
+		if t.Value != "" {
+			taint += "=" + t.Value
+		}
+		taint += ":" + string(t.Effect)
+		return taint
+	})
+
+	return strings.Join(taintValues, ",")
 }
