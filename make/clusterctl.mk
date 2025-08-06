@@ -13,6 +13,7 @@ clusterctl.init:
 	env CLUSTER_TOPOLOGY=true \
 	    EXP_RUNTIME_SDK=true \
 	    EXP_MACHINE_POOL=true \
+	    CAPA_EKS=true \
 	    AWS_B64ENCODED_CREDENTIALS=$$(clusterctl-aws bootstrap credentials encode-as-profile) \
 	    NUTANIX_ENDPOINT="" NUTANIX_PASSWORD="" NUTANIX_USER="" \
 	    clusterctl init \
@@ -27,3 +28,9 @@ clusterctl.init:
 .PHONY: clusterctl.delete
 clusterctl.delete:
 	clusterctl delete --kubeconfig=$(KIND_KUBECONFIG) --all
+
+.PHONY: capa.update-credentials-secret
+capa.update-credentials-secret:
+	kubectl patch secret capa-manager-bootstrap-credentials -n capa-system -p="{\"data\":{\"credentials\": \"$$(clusterctl-aws bootstrap credentials encode-as-profile)\"}}"
+	kubectl rollout restart deployment capa-controller-manager -n capa-system
+	kubectl rollout status deployment capa-controller-manager -n capa-system
