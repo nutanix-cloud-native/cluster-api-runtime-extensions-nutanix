@@ -101,7 +101,7 @@ func (mgp metaGeneratePatches) GeneratePatches(
 	globalVars := lo.FilterSliceToMap(
 		req.Variables,
 		func(v runtimehooksv1.Variable) (string, apiextensionsv1.JSON, bool) {
-			if v.Name == "builtin" {
+			if v.Name == runtimehooksv1.BuiltinsName {
 				return "", apiextensionsv1.JSON{}, false
 			}
 			return v.Name, v.Value, true

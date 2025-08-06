@@ -36,7 +36,7 @@ var _ = Describe("Generate InstanceType patches for Worker", func() {
 					awsinstancetype.VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{
 						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
 					},
