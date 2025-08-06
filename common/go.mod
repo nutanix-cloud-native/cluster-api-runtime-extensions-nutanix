@@ -8,6 +8,7 @@ go 1.23.0
 toolchain go1.24.5
 
 require (
+	dario.cat/mergo v1.0.1
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.23.4
