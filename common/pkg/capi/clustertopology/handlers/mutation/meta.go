@@ -130,7 +130,7 @@ func (mgp metaGeneratePatches) GeneratePatches(
 			// Merge the global variables to the current resource vars. This allows the handlers to access
 			// the variables defined in the cluster class or cluster configuration and use these correctly when
 			// overrides are specified on machine deployment or control plane configuration.
-			mergedVars, err := mergeVariableDefinitions(vars, globalVars)
+			mergedVars, err := mergeVariableOverridesWithGlobal(vars, globalVars)
 			if err != nil {
 				log.Error(err, "Failed to merge global variables")
 				return err
@@ -139,7 +139,7 @@ func (mgp metaGeneratePatches) GeneratePatches(
 			for i, h := range mgp.mutators {
 				mutatorType := fmt.Sprintf("%T", h)
 				log.V(5).
-					Info("Running mutator", "index", i, "handler", mutatorType, "vars", vars)
+					Info("Running mutator", "index", i, "handler", mutatorType, "vars", mergedVars)
 
 				if err := h.Mutate(
 					ctx,
@@ -162,10 +162,12 @@ func (mgp metaGeneratePatches) GeneratePatches(
 	)
 }
 
-func mergeVariableDefinitions(
-	vars, globalVars map[string]apiextensionsv1.JSON,
+// mergeVariableOverridesWithGlobal merges the provided variable overrides with the global variables.
+// It performs a deep merge, ensuring that if a variable exists in both maps, the value from the overrides is used.
+func mergeVariableOverridesWithGlobal(
+	overrideVars, globalVars map[string]apiextensionsv1.JSON,
 ) (map[string]apiextensionsv1.JSON, error) {
-	mergedVars := maps.Clone(vars)
+	mergedVars := maps.Clone(overrideVars)
 
 	for k, v := range globalVars {
 		// If the value of v is nil, skip it.
