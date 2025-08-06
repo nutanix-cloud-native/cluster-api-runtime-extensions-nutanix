@@ -21,6 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/testutils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -165,7 +166,7 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeIPTables,
 							},
@@ -214,7 +215,7 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeIPTables,
 							},
@@ -263,7 +264,7 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.DockerClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeIPTables,
 							},
@@ -312,7 +313,7 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.NutanixClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeNFTables,
 							},
@@ -361,7 +362,7 @@ mode: nftables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeNFTables,
 							},
@@ -410,7 +411,7 @@ mode: nftables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.DockerClusterConfigSpec{
-						GenericClusterConfigSpec: v1alpha1.GenericClusterConfigSpec{
+						GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
 							KubeProxy: &v1alpha1.KubeProxy{
 								Mode: v1alpha1.KubeProxyModeNFTables,
 							},
@@ -449,6 +450,44 @@ mode: nftables
 				Namespace: request.Namespace,
 				Labels: map[string]string{
 					clusterv1.ProviderNameLabel: "docker",
+				},
+			},
+		},
+	}, {
+		patchTest: capitest.PatchTestDef{
+			Name: "disable kube proxy with EKS",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.EKSClusterConfigSpec{},
+				),
+			},
+			RequestItem: testutils.NewEKSControlPlaneRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/kubeProxy/disable",
+				ValueMatcher: gomega.Equal(true),
+			}},
+		},
+		cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cluster",
+				Namespace: request.Namespace,
+				Labels: map[string]string{
+					clusterv1.ProviderNameLabel: "eks",
+				},
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: &clusterv1.Topology{
+					Version: "dummy-version",
+					Class:   "dummy-class",
+					ControlPlane: clusterv1.ControlPlaneTopology{
+						Metadata: clusterv1.ObjectMeta{
+							Annotations: map[string]string{
+								controlplanev1.SkipKubeProxyAnnotation: "",
+							},
+						},
+					},
 				},
 			},
 		},

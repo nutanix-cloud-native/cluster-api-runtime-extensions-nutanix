@@ -18,18 +18,22 @@ import (
 var testDefs = []capitest.VariableTestDef{{
 	Name: "without a credentials secret",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
-			URL: "http://a.b.c.example.com",
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+				URL: "http://a.b.c.example.com",
+			},
 		},
 	},
 }, {
 	Name: "with a credentials CA secret",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
-			URL: "http://a.b.c.example.com",
-			Credentials: &v1alpha1.RegistryCredentials{
-				SecretRef: &v1alpha1.LocalObjectReference{
-					Name: "a.b.c.example.com-ca-cert-creds",
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+				URL: "http://a.b.c.example.com",
+				Credentials: &v1alpha1.RegistryCredentials{
+					SecretRef: &v1alpha1.LocalObjectReference{
+						Name: "a.b.c.example.com-ca-cert-creds",
+					},
 				},
 			},
 		},
@@ -37,16 +41,20 @@ var testDefs = []capitest.VariableTestDef{{
 }, {
 	Name: "invalid mirror registry URL",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
-			URL: "unsupportedformat://a.b.c.example.com",
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+				URL: "unsupportedformat://a.b.c.example.com",
+			},
 		},
 	},
 	ExpectError: true,
 }, {
 	Name: "mirror URL without format",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
-			URL: "a.b.c.example.com/a/b/c",
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			GlobalImageRegistryMirror: &v1alpha1.GlobalImageRegistryMirror{
+				URL: "a.b.c.example.com/a/b/c",
+			},
 		},
 	},
 	ExpectError: true,

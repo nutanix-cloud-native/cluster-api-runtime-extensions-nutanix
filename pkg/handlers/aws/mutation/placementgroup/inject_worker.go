@@ -26,14 +26,14 @@ type awsPlacementGroupWorkerPatchHandler struct {
 }
 
 func NewWorkerPatch() *awsPlacementGroupWorkerPatchHandler {
-	return newAWSPlacementGroupWorkerPatchHandler(
+	return NewAWSPlacementGroupWorkerPatchHandler(
 		v1alpha1.WorkerConfigVariableName,
 		v1alpha1.AWSVariableName,
 		VariableName,
 	)
 }
 
-func newAWSPlacementGroupWorkerPatchHandler(
+func NewAWSPlacementGroupWorkerPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *awsPlacementGroupWorkerPatchHandler {

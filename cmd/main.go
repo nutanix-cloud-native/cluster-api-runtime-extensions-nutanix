@@ -39,6 +39,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/feature"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
@@ -124,6 +125,10 @@ func main() {
 	// It allows to specify configuration under a single variable.
 	genericMetaHandlers := generic.New()
 
+	// eksMetaHandlers combines all EKS patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	eksMetaHandlers := eks.New(globalOptions)
+
 	namespacesyncOptions := namespacesync.Options{}
 	enforceClusterAutoscalerLimitsOptions := enforceclusterautoscalerlimits.Options{}
 	failureDomainRolloutOptions := failuredomainrollout.Options{}
@@ -173,6 +178,7 @@ func main() {
 	allHandlers = append(allHandlers, dockerMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, nutanixMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, genericMetaHandlers.AllHandlers(mgr)...)
+	allHandlers = append(allHandlers, eksMetaHandlers.AllHandlers(mgr)...)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
 

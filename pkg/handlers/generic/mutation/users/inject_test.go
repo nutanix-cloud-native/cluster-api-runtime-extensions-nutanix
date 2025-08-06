@@ -18,6 +18,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/testutils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -186,6 +187,30 @@ var _ = Describe("Generate Users patches", func() {
 				),
 			},
 			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/users",
+				ValueMatcher: gomega.HaveLen(2),
+			}},
+		},
+		{
+			Name: "users set for EKSConfigTemplate generic worker",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					[]v1alpha1.User{testUser1, testUser2},
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					map[string]any{
+						"machineDeployment": map[string]any{
+							"class": names.SimpleNameGenerator.GenerateName("worker-"),
+						},
+					},
+				),
+			},
+			RequestItem: testutils.NewEKSConfigTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/users",
