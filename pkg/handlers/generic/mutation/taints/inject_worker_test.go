@@ -17,6 +17,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/testutils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
 
@@ -54,6 +55,34 @@ var _ = Describe("Generate taints patches for Worker", func() {
 				Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/taints",
 				ValueMatcher: gomega.ConsistOf(
 					map[string]interface{}{"key": "key", "effect": "NoExecute", "value": "value"},
+				),
+			}},
+		},
+		{
+			Name: "taints for workers set for EKSConfigTemplate",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.WorkerConfigVariableName,
+					[]v1alpha1.Taint{{
+						Key:    "key",
+						Effect: v1alpha1.TaintEffectNoExecute,
+						Value:  "value",
+					}},
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+					},
+				),
+			},
+			RequestItem: testutils.NewEKSConfigTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeletExtraArgs",
+				ValueMatcher: gomega.HaveKeyWithValue(
+					"register-with-taints", "key=value:NoExecute",
 				),
 			}},
 		},
@@ -112,6 +141,43 @@ func Test_toCoreTaints(t *testing.T) {
 			t.Parallel()
 
 			assert.Equal(t, tt.want, toCoreTaints(tt.existingTaints, tt.newTaints))
+		})
+	}
+}
+
+func Test_toEKSConfigTaints(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		newTaints []v1alpha1.Taint
+		want      string
+	}{{
+		name: "nil taints",
+		want: "",
+	}, {
+		name: "new taints",
+		newTaints: []v1alpha1.Taint{
+			{Key: "key", Effect: v1alpha1.TaintEffectNoExecute, Value: "value"},
+		},
+		want: "key=value:NoExecute",
+	}, {
+		name: "multiple new taints",
+		newTaints: []v1alpha1.Taint{
+			{Key: "key", Effect: v1alpha1.TaintEffectNoExecute, Value: "value"},
+			{Key: "key2", Effect: v1alpha1.TaintEffectNoExecute, Value: "value2"},
+		},
+		want: "key=value:NoExecute,key2=value2:NoExecute",
+	}, {
+		name:      "empty but non-nil new taints",
+		newTaints: []v1alpha1.Taint{},
+		want:      "",
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, toEKSConfigTaints(tt.newTaints))
 		})
 	}
 }

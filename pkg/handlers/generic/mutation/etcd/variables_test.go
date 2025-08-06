@@ -18,24 +18,30 @@ import (
 var testDefs = []capitest.VariableTestDef{{
 	Name: "unset",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		Etcd: &v1alpha1.Etcd{},
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			Etcd: &v1alpha1.Etcd{},
+		},
 	},
 }, {
 	Name: "set with valid image values",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		Etcd: &v1alpha1.Etcd{
-			Image: &v1alpha1.Image{
-				Repository: "my-registry.io/my-org/my-repo",
-				Tag:        "v3.5.99_custom.0",
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			Etcd: &v1alpha1.Etcd{
+				Image: &v1alpha1.Image{
+					Repository: "my-registry.io/my-org/my-repo",
+					Tag:        "v3.5.99_custom.0",
+				},
 			},
 		},
 	},
 }, {
 	Name: "set with invalid image repository",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		Etcd: &v1alpha1.Etcd{
-			Image: &v1alpha1.Image{
-				Repository: "https://this.should.not.have.a.scheme",
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			Etcd: &v1alpha1.Etcd{
+				Image: &v1alpha1.Image{
+					Repository: "https://this.should.not.have.a.scheme",
+				},
 			},
 		},
 	},
@@ -43,9 +49,11 @@ var testDefs = []capitest.VariableTestDef{{
 }, {
 	Name: "set with invalid image tag",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		Etcd: &v1alpha1.Etcd{
-			Image: &v1alpha1.Image{
-				Tag: "this:is:not:a:valid:tag",
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			Etcd: &v1alpha1.Etcd{
+				Image: &v1alpha1.Image{
+					Tag: "this:is:not:a:valid:tag",
+				},
 			},
 		},
 	},

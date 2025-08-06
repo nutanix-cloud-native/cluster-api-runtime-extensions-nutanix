@@ -402,8 +402,10 @@ func TestNewRegistryCheck(t *testing.T) {
 		{
 			name: "only registry mirror configuration",
 			genericClusterConfigSpec: &carenv1.GenericClusterConfigSpec{
-				GlobalImageRegistryMirror: &carenv1.GlobalImageRegistryMirror{
-					URL: testRegistryURL,
+				GenericClusterConfigResource: carenv1.GenericClusterConfigResource{
+					GlobalImageRegistryMirror: &carenv1.GlobalImageRegistryMirror{
+						URL: testRegistryURL,
+					},
 				},
 			},
 			expectedChecks: 1,
@@ -411,12 +413,14 @@ func TestNewRegistryCheck(t *testing.T) {
 		{
 			name: "only image registries configuration",
 			genericClusterConfigSpec: &carenv1.GenericClusterConfigSpec{
-				ImageRegistries: []carenv1.ImageRegistry{
-					{
-						URL: "https://registry1.example.com",
-					},
-					{
-						URL: "https://registry2.example.com",
+				GenericClusterConfigResource: carenv1.GenericClusterConfigResource{
+					ImageRegistries: []carenv1.ImageRegistry{
+						{
+							URL: "https://registry1.example.com",
+						},
+						{
+							URL: "https://registry2.example.com",
+						},
 					},
 				},
 			},
@@ -425,12 +429,14 @@ func TestNewRegistryCheck(t *testing.T) {
 		{
 			name: "both registry mirror and image registries configuration",
 			genericClusterConfigSpec: &carenv1.GenericClusterConfigSpec{
-				GlobalImageRegistryMirror: &carenv1.GlobalImageRegistryMirror{
-					URL: testRegistryURL,
-				},
-				ImageRegistries: []carenv1.ImageRegistry{
-					{
-						URL: "https://registry1.example.com",
+				GenericClusterConfigResource: carenv1.GenericClusterConfigResource{
+					GlobalImageRegistryMirror: &carenv1.GlobalImageRegistryMirror{
+						URL: testRegistryURL,
+					},
+					ImageRegistries: []carenv1.ImageRegistry{
+						{
+							URL: "https://registry1.example.com",
+						},
 					},
 				},
 			},

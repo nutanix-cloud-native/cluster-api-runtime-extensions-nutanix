@@ -9,7 +9,7 @@ import (
 )
 
 func NewWorkerPatch() *awsSecurityGroupSpecPatchHandler {
-	return newAWSSecurityGroupSpecPatchHandler(
+	return NewAWSSecurityGroupSpecPatchHandler(
 		v1alpha1.WorkerConfigVariableName,
 		[]string{
 			v1alpha1.AWSVariableName,
