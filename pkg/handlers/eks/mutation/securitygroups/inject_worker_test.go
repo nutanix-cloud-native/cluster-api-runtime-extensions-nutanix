@@ -40,7 +40,7 @@ var _ = Describe("Generate AWS SecurityGroups patches for Worker", func() {
 					securitygroups.VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{
 						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
 					},
