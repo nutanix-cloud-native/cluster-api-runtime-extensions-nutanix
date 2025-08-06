@@ -32,7 +32,7 @@ type awsSecurityGroupSpecPatchHandler struct {
 	patchSelector     clusterv1.PatchSelector
 }
 
-func newAWSSecurityGroupSpecPatchHandler(
+func NewAWSSecurityGroupSpecPatchHandler(
 	metaVariableName string,
 	variableFieldPath []string,
 	patchSelector clusterv1.PatchSelector,

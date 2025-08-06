@@ -10,7 +10,7 @@ import (
 )
 
 func NewControlPlanePatch() *awsAMISpecPatchHandler {
-	return newAWSAMISpecPatchHandler(
+	return NewAWSAMISpecPatchHandler(
 		v1alpha1.ClusterConfigVariableName,
 		[]string{
 			v1alpha1.ControlPlaneConfigVariableName,

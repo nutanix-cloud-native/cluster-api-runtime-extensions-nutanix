@@ -52,6 +52,162 @@ spec:
           spec:
             description: GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
             properties:
+              addons:
+                properties:
+                  ccm:
+                    description: CCM tells us to enable or disable the cloud provider
+                      interface.
+                    properties:
+                      credentials:
+                        description: A reference to the Secret for credential information
+                          for the target Prism Central instance
+                        properties:
+                          secretRef:
+                            description: A reference to the Secret containing the
+                              credentials used by the CCM provider.
+                            properties:
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        required:
+                        - secretRef
+                        type: object
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy the CCM to the
+                          workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  clusterAutoscaler:
+                    description: ClusterAutoscaler tells us to enable or disable the
+                      cluster-autoscaler addon.
+                    properties:
+                      strategy:
+                        default: HelmAddon
+                        description: |-
+                          Addon strategy used to deploy cluster-autoscaler to the management cluster
+                          targeting the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  cni:
+                    description: CNI required for providing CNI configuration.
+                    properties:
+                      provider:
+                        description: CNI provider to deploy.
+                        enum:
+                        - Calico
+                        - Cilium
+                        type: string
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy the CNI provider
+                          to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                      values:
+                        description: Values contains the helm values for the CNI when
+                          HelmAddon is the strategy.
+                        properties:
+                          sourceRef:
+                            description: |-
+                              SourceRef is an object reference to Configmap/Secret inside the same namespace
+                              which contains inline YAML representing the values for the Helm chart.
+                            properties:
+                              kind:
+                                description: Kind is the type of resource being referenced,
+                                  valid values are ('ConfigMap').
+                                enum:
+                                - ConfigMap
+                                type: string
+                              name:
+                                description: Name is the name of resource being referenced.
+                                minLength: 1
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                        type: object
+                    required:
+                    - provider
+                    type: object
+                  nfd:
+                    description: NFD tells us to enable or disable the node feature
+                      discovery addon.
+                    properties:
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy Node Feature Discovery
+                          (NFD) to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  registry:
+                    properties:
+                      provider:
+                        default: CNCF Distribution
+                        description: The OCI registry provider to deploy.
+                        enum:
+                        - CNCF Distribution
+                        type: string
+                    required:
+                    - provider
+                    type: object
+                  serviceLoadBalancer:
+                    properties:
+                      configuration:
+                        description: Configuration for the chosen ServiceLoadBalancer
+                          provider.
+                        properties:
+                          addressRanges:
+                            description: |-
+                              AddressRanges is a list of IPv4 address ranges the
+                              provider uses to choose an address for a load balancer.
+                            items:
+                              description: AddressRange defines an IPv4 range.
+                              properties:
+                                end:
+                                  format: ipv4
+                                  type: string
+                                start:
+                                  format: ipv4
+                                  type: string
+                              required:
+                              - end
+                              - start
+                              type: object
+                            minItems: 1
+                            type: array
+                        required:
+                        - addressRanges
+                        type: object
+                      provider:
+                        description: |-
+                          The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
+                          the CCM acts as the provider.
+                        enum:
+                        - MetalLB
+                        type: string
+                    required:
+                    - provider
+                    type: object
+                type: object
               dns:
                 description: DNS defines the DNS configuration for the cluster.
                 properties:

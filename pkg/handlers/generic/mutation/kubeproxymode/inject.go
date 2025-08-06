@@ -13,12 +13,14 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	eksv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/controlplane/eks/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
@@ -115,7 +117,7 @@ func (h *kubeProxyMode) Mutate(
 		return nil
 	}
 
-	return patches.MutateIfApplicable(
+	if err := patches.MutateIfApplicable(
 		obj,
 		vars,
 		&holderRef,
@@ -153,7 +155,44 @@ func (h *kubeProxyMode) Mutate(
 				return fmt.Errorf("unknown kube proxy mode %q", kubeProxyMode)
 			}
 		},
-	)
+	); err != nil {
+		return err
+	}
+
+	if err := patches.MutateIfApplicable(
+		obj,
+		vars,
+		&holderRef,
+		clusterv1.PatchSelector{
+			APIVersion: eksv1.GroupVersion.String(),
+			Kind:       "AWSManagedControlPlaneTemplate",
+			MatchResources: clusterv1.PatchSelectorMatch{
+				ControlPlane: true,
+			},
+		},
+		log,
+		func(obj *eksv1.AWSManagedControlPlaneTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", client.ObjectKeyFromObject(obj),
+			).Info("adding kube proxy mode to AWSManagedControlPlaneTemplate spec")
+
+			if isSkipProxy {
+				log.Info(
+					"cluster controlplane contains controlplane.cluster.x-k8s.io/skip-kube-proxy annotation, " +
+						"skipping kube-proxy addon",
+				)
+
+				obj.Spec.Template.Spec.KubeProxy.Disable = true
+			}
+
+			return nil
+		},
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // addKubeProxyConfigFileAndCommand adds the kube-proxy configuration file and command to the KCPTemplate.

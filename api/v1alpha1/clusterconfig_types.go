@@ -34,6 +34,8 @@ var (
 	nutanixClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_genericclusterconfigs.yaml
 	genericClusterConfigCRDDefinition []byte
+	//go:embed crds/caren.nutanix.com_eksclusterconfigs.yaml
+	eksClusterConfigCRDDefinition []byte
 
 	dockerClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		dockerClusterConfigCRDDefinition,
@@ -46,6 +48,9 @@ var (
 	)
 	genericClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		genericClusterConfigCRDDefinition,
+	)
+	eksClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		eksClusterConfigCRDDefinition,
 	)
 )
 
@@ -70,7 +75,7 @@ type AWSClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	AWS *AWSSpec `json:"aws,omitempty"`
 
-	GenericClusterConfigSpec `json:",inline"`
+	GenericClusterConfigResource `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	Addons *AWSAddons `json:"addons,omitempty"`
@@ -107,7 +112,7 @@ type DockerClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Docker *DockerSpec `json:"docker,omitempty"`
 
-	GenericClusterConfigSpec `json:",inline"`
+	GenericClusterConfigResource `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	Addons *DockerAddons `json:"addons,omitempty"`
@@ -149,7 +154,7 @@ type NutanixClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Nutanix *NutanixSpec `json:"nutanix,omitempty"`
 
-	GenericClusterConfigSpec `json:",inline"`
+	GenericClusterConfigResource `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	Addons *NutanixAddons `json:"addons,omitempty"`
@@ -195,6 +200,13 @@ func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //noli
 
 // GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
 type GenericClusterConfigSpec struct {
+	GenericClusterConfigResource `json:",inline"`
+
+	// +kubebuilder:validation:Optional
+	Addons *GenericAddons `json:"addons,omitempty"`
+}
+
+type GenericClusterConfigResource struct {
 	// Sets the Kubernetes image repository used for the KubeadmControlPlane.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
@@ -232,6 +244,31 @@ type GenericClusterConfigSpec struct {
 	// NTP defines the NTP configuration for the cluster.
 	// +kubebuilder:validation:Optional
 	NTP *NTP `json:"ntp,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// EKSClusterConfig is the Schema for the eksclusterconfigs API.
+type EKSClusterConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Spec EKSClusterConfigSpec `json:"spec,omitempty"`
+}
+
+func (s EKSClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return eksClusterConfigVariableSchema
+}
+
+// EKSClusterConfigSpec defines the desired state of ClusterConfig.
+type EKSClusterConfigSpec struct {
+	// EKS cluster configuration.
+	// +kubebuilder:validation:Optional
+	EKS *EKSSpec `json:"eks,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Addons *AWSAddons `json:"addons,omitempty"`
 }
 
 type Image struct {
