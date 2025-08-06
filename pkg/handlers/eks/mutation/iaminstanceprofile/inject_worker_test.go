@@ -36,7 +36,7 @@ var _ = Describe("Generate IAMInstanceProfile patches for Worker", func() {
 					iaminstanceprofile.VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{
 						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
 					},

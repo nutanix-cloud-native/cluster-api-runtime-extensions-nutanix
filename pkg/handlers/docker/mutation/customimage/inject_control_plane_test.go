@@ -29,7 +29,7 @@ var _ = Describe("Docker CustomImage patches for ControlPlane", func() {
 			Name: "image unset for control plane",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{Raw: []byte(`{"controlPlane": {"version": "v1.2.3"}}`)},
 				),
 			},
@@ -51,7 +51,7 @@ var _ = Describe("Docker CustomImage patches for ControlPlane", func() {
 					VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{
 						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
 					},
