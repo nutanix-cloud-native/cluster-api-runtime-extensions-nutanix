@@ -1,0 +1,81 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+metadata:
+  name: quick-start
+spec:
+  controlPlane:
+    ref:
+      apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+      kind: AWSManagedControlPlaneTemplate
+      name: "quick-start-control-plane"
+  infrastructure:
+    ref:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSManagedClusterTemplate
+      name: "quick-start"
+  workers:
+    machineDeployments:
+      - class: default-worker
+        template:
+          bootstrap:
+            ref:
+              name: "quick-start-worker-configtemplate"
+              apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+              kind: EKSConfigTemplate
+          infrastructure:
+            ref:
+              name: "quick-start-worker-machinetemplate"
+              apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+              kind: AWSMachineTemplate
+      - class: system-worker
+        template:
+          bootstrap:
+            ref:
+              name: "quick-start-worker-configtemplate"
+              apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+              kind: EKSConfigTemplate
+          infrastructure:
+            ref:
+              name: "quick-start-worker-machinetemplate"
+              apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+              kind: AWSMachineTemplate
+---
+kind: AWSManagedClusterTemplate
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+metadata:
+  name: "quick-start"
+spec:
+  template:
+    spec: {}
+---
+kind: AWSManagedControlPlaneTemplate
+apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+metadata:
+  name: "quick-start-control-plane"
+spec:
+  template:
+    spec:
+      vpcCni:
+        disable: true
+      kubeProxy:
+        disable: true
+      bootstrapSelfManagedAddons: false
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  name: "quick-start-worker-machinetemplate"
+spec:
+  template:
+    spec: {}
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+kind: EKSConfigTemplate
+metadata:
+  name: "quick-start-worker-configtemplate"
+spec:
+  template:
+    spec: {}
