@@ -341,6 +341,7 @@ spec:
                           type: array
                           x-kubernetes-list-type: set
                         machineDetails:
+                          description: machineDetails specifies the details of the Nutanix machine that will be created
                           properties:
                             additionalCategories:
                               description: |-
@@ -553,6 +554,8 @@ spec:
                           - key
                         type: object
                       type: array
+                  required:
+                    - nutanix
                   type: object
                 dns:
                   description: DNS defines the DNS configuration for the cluster.
