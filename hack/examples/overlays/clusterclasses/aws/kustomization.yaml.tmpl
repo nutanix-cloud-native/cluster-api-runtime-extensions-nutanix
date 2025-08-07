@@ -65,32 +65,49 @@ patches:
       - op: "remove"
         path: "/spec/template/spec/iamInstanceProfile"
 
+  # BEGIN Initialize lists and maps
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize/kubeadmcontrolplanetemplate/files.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize/kubeadmcontrolplanetemplate/postkubeadmcommands.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize/kubeadmcontrolplanetemplate/extravolumes.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize/kubeadmcontrolplanetemplate/patches.yaml
+
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../patches/initialize/kubeadmconfigtemplate/files.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../patches/initialize/kubeadmconfigtemplate/postkubeadmcommands.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../patches/initialize/kubeadmconfigtemplate/patches.yaml
+  # END Initialize lists and maps
+
   # BEGIN CIS patches
   - target:
       kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/cis-kubeadmcontrolplanetemplate.yaml
+    path: ../../../patches/cis/kubeadmcontrolplanetemplate/control-plane-flags.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/cis/kubeadmcontrolplanetemplate/kubelet-configuration.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/cis/kubeadmcontrolplanetemplate/kubelet-file-permissions.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/cis/admissionconfiguration.yaml
+
   - target:
       kind: KubeadmConfigTemplate
-    path: ../../../patches/cis-kubeadmconfigtemplate.yaml
-  - target:
-      kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/initialize-kubeadmcontrolplanetemplate-postkubeadmcommands.yaml
-  - target:
-      kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/cis-kubeadmcontrolplanetemplate-kubelet-file-permissions.yaml
+    path: ../../../patches/cis/kubeadmconfigtemplate/kubelet-configuration.yaml
   - target:
       kind: KubeadmConfigTemplate
-    path: ../../../patches/initialize-kubeadmconfigtemplate-postkubeadmcommands.yaml
-  - target:
-      kind: KubeadmConfigTemplate
-    path: ../../../patches/cis-kubeadmconfigtemplate-kubelet-file-permissions.yaml
-  - target:
-      kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/initialize-files.yaml
-  - target:
-      kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/initialize-extravolumes.yaml
-  - target:
-      kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/cis-admissionconfiguration.yaml
+    path: ../../../patches/cis/kubeadmconfigtemplate/kubelet-file-permissions.yaml
   # END CIS patches

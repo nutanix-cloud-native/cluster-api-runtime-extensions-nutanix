@@ -1,0 +1,22 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: add
+  path: /spec/template/spec/files/-
+  value:
+    path: /etc/kubernetes/patches/kubeletconfiguration1+strategic.json
+    permissions: "0600"
+    content: |
+      apiVersion: kubelet.config.k8s.io/v1beta1
+      kind: KubeletConfiguration
+      # 4.2.4 Ensure that the --read-only-port argument is set to 0
+      readOnlyPort: 0
+      # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+      # Recommendation: Set to 5m instead of 4h as per CIS guidelines
+      streamingConnectionIdleTimeout: "5m"
+      # 4.2.8 Ensure that the event-qps argument is set to a level which ensures appropriate event capture
+      eventRecordQPS: 5
+      # 4.2.12 Updated with recommended strong cipher suites
+      tlsCipherSuites: [TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384]
+      # 4.2.13 Ensure that a limit is set on pod PIDs
+      podPidsLimit: 4096

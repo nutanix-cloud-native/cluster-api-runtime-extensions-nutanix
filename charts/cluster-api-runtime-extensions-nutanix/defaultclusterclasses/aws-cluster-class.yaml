@@ -109,6 +109,22 @@ spec:
               profiling: "false"
         files:
         - content: |
+            apiVersion: kubelet.config.k8s.io/v1beta1
+            kind: KubeletConfiguration
+            # 4.2.4 Ensure that the --read-only-port argument is set to 0
+            readOnlyPort: 0
+            # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+            # Recommendation: Set to 5m instead of 4h as per CIS guidelines
+            streamingConnectionIdleTimeout: "5m"
+            # 4.2.8 Ensure that the event-qps argument is set to a level which ensures appropriate event capture
+            eventRecordQPS: 5
+            # 4.2.12 Updated with recommended strong cipher suites
+            tlsCipherSuites: [TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384]
+            # 4.2.13 Ensure that a limit is set on pod PIDs
+            podPidsLimit: 4096
+          path: /etc/kubernetes/patches/kubeletconfiguration1+strategic.json
+          permissions: "0600"
+        - content: |
             apiVersion: apiserver.config.k8s.io/v1
             kind: AdmissionConfiguration
             plugins:
@@ -129,24 +145,16 @@ spec:
           nodeRegistration:
             kubeletExtraArgs:
               cloud-provider: external
-              event-qps: "5"
-              make-iptables-util-chains: "true"
-              pod-max-pids: "4096"
-              read-only-port: "0"
-              streaming-connection-idle-timeout: 5m
-              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
             name: '{{ ds.meta_data.local_hostname }}'
+          patches:
+            directory: /etc/kubernetes/patches
         joinConfiguration:
           nodeRegistration:
             kubeletExtraArgs:
               cloud-provider: external
-              event-qps: "5"
-              make-iptables-util-chains: "true"
-              pod-max-pids: "4096"
-              read-only-port: "0"
-              streaming-connection-idle-timeout: 5m
-              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
             name: '{{ ds.meta_data.local_hostname }}'
+          patches:
+            directory: /etc/kubernetes/patches
         postKubeadmCommands:
         - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
         - chmod 600 $(systemctl show -P DropInPaths kubelet.service)
@@ -185,16 +193,30 @@ metadata:
 spec:
   template:
     spec:
+      files:
+      - content: |
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          kind: KubeletConfiguration
+          # 4.2.4 Ensure that the --read-only-port argument is set to 0
+          readOnlyPort: 0
+          # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+          # Recommendation: Set to 5m instead of 4h as per CIS guidelines
+          streamingConnectionIdleTimeout: "5m"
+          # 4.2.8 Ensure that the event-qps argument is set to a level which ensures appropriate event capture
+          eventRecordQPS: 5
+          # 4.2.12 Updated with recommended strong cipher suites
+          tlsCipherSuites: [TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384]
+          # 4.2.13 Ensure that a limit is set on pod PIDs
+          podPidsLimit: 4096
+        path: /etc/kubernetes/patches/kubeletconfiguration1+strategic.json
+        permissions: "0600"
       joinConfiguration:
         nodeRegistration:
           kubeletExtraArgs:
             cloud-provider: external
-            event-qps: "5"
-            pod-max-pids: "4096"
-            read-only-port: "0"
-            streaming-connection-idle-timeout: 5m
-            tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
           name: '{{ ds.meta_data.local_hostname }}'
+        patches:
+          directory: /etc/kubernetes/patches
       postKubeadmCommands:
       - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
       - chmod 600 $(systemctl show -P DropInPaths kubelet.service)
