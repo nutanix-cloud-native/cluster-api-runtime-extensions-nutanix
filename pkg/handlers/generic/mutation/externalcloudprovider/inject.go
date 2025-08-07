@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/blang/semver/v4"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
@@ -15,16 +16,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/blang/semver/v4"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
-var (
-	versionGreaterOrEqualTo133Range = semver.MustParseRange(">=1.33.0-0")
-)
+var versionGreaterOrEqualTo133Range = semver.MustParseRange(">=1.33.0-0")
 
 type externalCloudProviderPatchHandler struct{}
 
@@ -58,7 +56,8 @@ func (h *externalCloudProviderPatchHandler) Mutate(
 		}
 
 		// This is a fatal error, we can't proceed without the control plane version.
-		log.WithValues("variables", vars).Error(err, "failed to get control plane Kubernetes version from builtin variable")
+		log.WithValues("variables", vars).
+			Error(err, "failed to get control plane Kubernetes version from builtin variable")
 		return fmt.Errorf("failed to get control plane Kubernetes version from builtin variable: %w", err)
 	}
 
@@ -87,7 +86,7 @@ func (h *externalCloudProviderPatchHandler) Mutate(
 			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs == nil {
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs = make(map[string]string, 1)
 			}
-			if _, ok := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs["cloud-provider"]; !ok {
+			if _, ok := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs["cloud-provider"]; !ok { //nolint:lll // Easier to read this way.
 				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs["cloud-provider"] = "external"
 			}
 

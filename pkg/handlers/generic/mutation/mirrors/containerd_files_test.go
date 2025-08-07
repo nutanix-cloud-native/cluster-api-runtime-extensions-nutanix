@@ -23,7 +23,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 			name: "ECR mirror image registry and no CA certificate",
 			configs: []containerdConfig{
 				{
-					URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+					URL:    "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
 					Mirror: true,
 				},
 			},
@@ -33,7 +33,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 				Permissions: "0600",
 				Encoding:    "",
 				Append:      false,
-				Content: `[host."https://123456789.dkr.ecr.us-east-1.amazonaws.com/v2"]
+				Content: `[host."https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com/v2"]
   capabilities = ["pull", "resolve"]
   # don't rely on Containerd to add the v2/ suffix
   # there is a bug where it is added incorrectly for mirrors with a path
@@ -45,7 +45,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 			name: "ECR mirror image registry with a path and no CA certificate",
 			configs: []containerdConfig{
 				{
-					URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com/myproject",
+					URL:    "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com/myproject",
 					Mirror: true,
 				},
 			},
@@ -55,7 +55,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 				Permissions: "0600",
 				Encoding:    "",
 				Append:      false,
-				Content: `[host."https://123456789.dkr.ecr.us-east-1.amazonaws.com/v2/myproject"]
+				Content: `[host."https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com/v2/myproject"]
   capabilities = ["pull", "resolve"]
   # don't rely on Containerd to add the v2/ suffix
   # there is a bug where it is added incorrectly for mirrors with a path
@@ -155,7 +155,7 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 			name: "ECR mirror image registry with no CA certificate",
 			configs: []containerdConfig{
 				{
-					URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+					URL:    "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
 					Mirror: true,
 				},
 			},

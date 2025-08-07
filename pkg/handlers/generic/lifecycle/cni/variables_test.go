@@ -23,7 +23,7 @@ var testDefs = []capitest.VariableTestDef{{
 			GenericAddons: v1alpha1.GenericAddons{
 				CNI: &v1alpha1.CNI{
 					Provider: v1alpha1.CNIProviderCalico,
-					Strategy: ptr.To(v1alpha1.AddonStrategyClusterResourceSet),
+					Strategy: v1alpha1.AddonStrategyClusterResourceSet,
 				},
 			},
 		},
@@ -35,7 +35,7 @@ var testDefs = []capitest.VariableTestDef{{
 			GenericAddons: v1alpha1.GenericAddons{
 				CNI: &v1alpha1.CNI{
 					Provider: v1alpha1.CNIProviderCalico,
-					Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
+					Strategy: v1alpha1.AddonStrategyHelmAddon,
 				},
 			},
 		},
@@ -47,7 +47,7 @@ var testDefs = []capitest.VariableTestDef{{
 			GenericAddons: v1alpha1.GenericAddons{
 				CNI: &v1alpha1.CNI{
 					Provider: v1alpha1.CNIProviderCilium,
-					Strategy: ptr.To(v1alpha1.AddonStrategyHelmAddon),
+					Strategy: v1alpha1.AddonStrategyHelmAddon,
 					AddonConfig: v1alpha1.AddonConfig{
 						Values: &v1alpha1.AddonValues{
 							SourceRef: &v1alpha1.ValuesReference{
@@ -67,7 +67,7 @@ var testDefs = []capitest.VariableTestDef{{
 			GenericAddons: v1alpha1.GenericAddons{
 				CNI: &v1alpha1.CNI{
 					Provider: "invalid-provider",
-					Strategy: ptr.To(v1alpha1.AddonStrategyClusterResourceSet),
+					Strategy: v1alpha1.AddonStrategyClusterResourceSet,
 				},
 			},
 		},
@@ -80,7 +80,7 @@ var testDefs = []capitest.VariableTestDef{{
 			GenericAddons: v1alpha1.GenericAddons{
 				CNI: &v1alpha1.CNI{
 					Provider: v1alpha1.CNIProviderCalico,
-					Strategy: ptr.To[v1alpha1.AddonStrategy]("invalid-strategy"),
+					Strategy: v1alpha1.AddonStrategy("invalid-strategy"),
 				},
 			},
 		},

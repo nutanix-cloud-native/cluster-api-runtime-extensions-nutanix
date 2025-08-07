@@ -75,6 +75,7 @@ spec:
                                 description: value is the category value linked to the category key in PC
                                 type: string
                             type: object
+                          maxItems: 32
                           type: array
                         bootType:
                           description: Defines the boot type of the virtual machine. Only supports UEFI and Legacy
@@ -122,6 +123,7 @@ spec:
                             required:
                               - type
                             type: object
+                          maxItems: 32
                           type: array
                         image:
                           description: |-
@@ -217,6 +219,7 @@ spec:
                             required:
                               - type
                             type: object
+                          maxItems: 16
                           type: array
                         systemDiskSize:
                           description: |-
@@ -264,14 +267,18 @@ spec:
                         type: string
                       key:
                         description: The taint key to be applied to a node.
+                        maxLength: 253
                         type: string
                       value:
                         description: The taint value corresponding to the taint key.
+                        maxLength: 63
+                        minLength: 1
                         type: string
                     required:
                       - effect
                       - key
                     type: object
+                  maxItems: 32
                   type: array
               type: object
           type: object
