@@ -79,6 +79,8 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 
 	for _, tt := range variableTestDefs {
 		t.Run(tt.Name, func(t *testing.T) {
+			t.Helper()
+
 			t.Parallel()
 
 			g := gomega.NewWithT(t)
