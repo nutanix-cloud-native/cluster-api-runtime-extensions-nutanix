@@ -141,6 +141,7 @@ func runUnstructuredTests(t *testing.T, fn func([]string) ([]client.Object, erro
 	t.Parallel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Helper()
 			t.Parallel()
 			got, err := fn(tt.inputs)
 			if tt.wantErr != "" {
