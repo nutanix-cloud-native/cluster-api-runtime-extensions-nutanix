@@ -29,6 +29,9 @@ patches:
   # BEGIN Initialize lists and maps
   - target:
       kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize/kubeadmcontrolplanetemplate/kubelet-configuration.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
     path: ../../../patches/initialize/kubeadmcontrolplanetemplate/postkubeadmcommands.yaml
   - target:
       kind: KubeadmControlPlaneTemplate
@@ -40,6 +43,9 @@ patches:
   - target:
       kind: KubeadmConfigTemplate
     path: ../../../patches/initialize/kubeadmconfigtemplate/files.yaml
+  - target:
+      kind: KubeadmConfigTemplate
+    path: ../../../patches/initialize/kubeadmconfigtemplate/kubelet-configuration.yaml
   - target:
       kind: KubeadmConfigTemplate
     path: ../../../patches/initialize/kubeadmconfigtemplate/patches.yaml

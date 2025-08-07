@@ -11,6 +11,17 @@ spec:
       - content: |
           apiVersion: kubelet.config.k8s.io/v1beta1
           kind: KubeletConfiguration
+          evictionHard:
+            nodefs.available: "10%"
+            nodefs.inodesFree: "5%"
+            imagefs.available: "15%"
+            memory.available: "100Mi"
+            imagefs.inodesFree: "10%"
+        path: /etc/kubernetes/patches/kubeletconfiguration0+strategic.json
+        permissions: "0600"
+      - content: |
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          kind: KubeletConfiguration
           # 4.2.4 Ensure that the --read-only-port argument is set to 0
           readOnlyPort: 0
           # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
@@ -28,8 +39,6 @@ spec:
         nodeRegistration:
           kubeletExtraArgs:
             cloud-provider: external
-            eviction-hard: nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<15%,memory.available<100Mi,imagefs.inodesFree<10%
-            tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
         patches:
           directory: /etc/kubernetes/patches
       postKubeadmCommands:
@@ -238,6 +247,17 @@ spec:
         - content: |
             apiVersion: kubelet.config.k8s.io/v1beta1
             kind: KubeletConfiguration
+            evictionHard:
+              nodefs.available: "10%"
+              nodefs.inodesFree: "5%"
+              imagefs.available: "15%"
+              memory.available: "100Mi"
+              imagefs.inodesFree: "10%"
+          path: /etc/kubernetes/patches/kubeletconfiguration0+strategic.json
+          permissions: "0600"
+        - content: |
+            apiVersion: kubelet.config.k8s.io/v1beta1
+            kind: KubeletConfiguration
             # 4.2.4 Ensure that the --read-only-port argument is set to 0
             readOnlyPort: 0
             # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
@@ -272,16 +292,12 @@ spec:
           nodeRegistration:
             kubeletExtraArgs:
               cloud-provider: external
-              eviction-hard: nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<15%,memory.available<100Mi,imagefs.inodesFree<10%
-              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
           patches:
             directory: /etc/kubernetes/patches
         joinConfiguration:
           nodeRegistration:
             kubeletExtraArgs:
               cloud-provider: external
-              eviction-hard: nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<15%,memory.available<100Mi,imagefs.inodesFree<10%
-              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
           patches:
             directory: /etc/kubernetes/patches
         postKubeadmCommands:
