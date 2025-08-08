@@ -1,0 +1,29 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+
+# Some kubelet configuration options are only supported through flags
+- op: replace
+  path: /spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/kubeletExtraArgs
+  value:
+    cloud-provider: external
+- op: replace
+  path: /spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/kubeletExtraArgs
+  value:
+    cloud-provider: external
+
+# But most should be set through the KubeletConfiguration object
+- op: add
+  path: /spec/template/spec/kubeadmConfigSpec/files/-
+  value:
+    path: /etc/kubernetes/patches/kubeletconfiguration0+strategic.json
+    permissions: "0600"
+    content: |
+      apiVersion: kubelet.config.k8s.io/v1beta1
+      kind: KubeletConfiguration
+      evictionHard:
+        nodefs.available: "10%"
+        nodefs.inodesFree: "5%"
+        imagefs.available: "15%"
+        memory.available: "100Mi"
+        imagefs.inodesFree: "10%"
