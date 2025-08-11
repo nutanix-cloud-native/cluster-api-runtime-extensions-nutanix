@@ -101,11 +101,6 @@ hooks:
       defaultValueTemplateConfigMap:
         create: true
         name: default-metallb-helm-values-template
-  virtualIP:
-    kubeVip:
-      defaultTemplateConfigMap:
-        create: true
-        name: default-kube-vip-template
   cosi:
     controller:
       helmAddonStrategy:
