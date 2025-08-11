@@ -169,7 +169,7 @@ func createTestCluster(
 			},
 			Topology: &clusterv1.Topology{
 				Class:   "dummy-class",
-				Version: "dummy-version",
+				Version: "v1.30.100",
 				Variables: []clusterv1.ClusterVariable{
 					*variable,
 				},

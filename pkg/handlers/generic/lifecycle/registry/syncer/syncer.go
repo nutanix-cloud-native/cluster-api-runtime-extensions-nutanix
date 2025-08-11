@@ -17,6 +17,7 @@ import (
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/versions"
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/feature"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
@@ -223,9 +224,14 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		RegistryCASecretName string
 	}
 
+	coreKubernetesVersion, err := versions.GetCoreKubernetesVersion(cluster.Spec.Topology.Version)
+	if err != nil {
+		return "", fmt.Errorf("failed to get core Kubernetes version: %w", err)
+	}
+
 	templateInput := input{
 		CusterName:        cluster.Name,
-		KubernetesVersion: cluster.Spec.Topology.Version,
+		KubernetesVersion: coreKubernetesVersion,
 		// FIXME: This assumes that the source and destination registry names are the same.
 		// This is true now with a single registry addon provider, but may not be true in the future.
 		SourceRegistryAddress:                       registryMetadata.AddressFromClusterNetwork,

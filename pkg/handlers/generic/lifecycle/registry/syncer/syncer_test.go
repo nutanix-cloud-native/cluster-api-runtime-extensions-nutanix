@@ -29,7 +29,7 @@ var (
 
 func Test_shouldApplyRegistrySyncer(t *testing.T) {
 	// Pre-create a cluster so it can be used in a test case that requires the same name and namespace.
-	clusterWithSameNameAndNamespace := clusterWithRegistry(t)
+	clusterWithSameNameAndNamespace := newTestCluster(t).withRegistry().build()
 	tests := []struct {
 		name              string
 		cluster           *clusterv1.Cluster
@@ -39,14 +39,14 @@ func Test_shouldApplyRegistrySyncer(t *testing.T) {
 	}{
 		{
 			name:              "should apply",
-			cluster:           clusterWithRegistry(t),
-			managementCluster: clusterWithRegistry(t),
+			cluster:           newTestCluster(t).withRegistry().build(),
+			managementCluster: newTestCluster(t).withRegistry().build(),
 			enableFeatureGate: true,
 			shouldApply:       true,
 		},
 		{
 			name:              "should not apply when management cluster is nil",
-			cluster:           clusterWithRegistry(t),
+			cluster:           newTestCluster(t).withRegistry().build(),
 			managementCluster: nil,
 			enableFeatureGate: true,
 			shouldApply:       false,
@@ -60,8 +60,8 @@ func Test_shouldApplyRegistrySyncer(t *testing.T) {
 		},
 		{
 			name:              "should not apply when feature gate is disabled",
-			cluster:           clusterWithRegistry(t),
-			managementCluster: clusterWithRegistry(t),
+			cluster:           newTestCluster(t).withRegistry().build(),
+			managementCluster: newTestCluster(t).withRegistry().build(),
 			enableFeatureGate: false,
 			shouldApply:       false,
 		},
@@ -74,21 +74,21 @@ func Test_shouldApplyRegistrySyncer(t *testing.T) {
 					},
 				},
 			},
-			managementCluster: clusterWithRegistry(t),
+			managementCluster: newTestCluster(t).withRegistry().build(),
 			enableFeatureGate: true,
 			shouldApply:       false,
 		},
 		{
 			name:              "should not apply when cluster does not have registry enabled",
-			cluster:           clusterWithoutRegistry(t),
-			managementCluster: clusterWithRegistry(t),
+			cluster:           newTestCluster(t).build(),
+			managementCluster: newTestCluster(t).withRegistry().build(),
 			enableFeatureGate: true,
 			shouldApply:       false,
 		},
 		{
 			name:              "should not apply when management cluster does not have registry enabled",
-			cluster:           clusterWithRegistry(t),
-			managementCluster: clusterWithoutRegistry(t),
+			cluster:           newTestCluster(t).withRegistry().build(),
+			managementCluster: newTestCluster(t).build(),
 			enableFeatureGate: true,
 			shouldApply:       false,
 		},
@@ -104,55 +104,58 @@ func Test_shouldApplyRegistrySyncer(t *testing.T) {
 }
 
 func Test_templateValues(t *testing.T) {
-	result, err := templateValues(namedClusterWithRegistry(t, "test-cluster"), testRegistrySyncerTemplate)
+	result, err := templateValues(
+		newTestCluster(t).withRegistry().withName("test-cluster").build(),
+		testRegistrySyncerTemplate,
+	)
 	require.NoError(t, err)
 	assert.Equal(t, expectedRegistrySyncerValues, result)
 }
 
-func clusterWithRegistry(t *testing.T) *clusterv1.Cluster {
-	t.Helper()
-
-	return namedClusterWithRegistry(t, names.SimpleNameGenerator.GenerateName("with-registry-"))
-}
-
-func namedClusterWithRegistry(t *testing.T, name string) *clusterv1.Cluster {
-	t.Helper()
-
-	clusterConfigSpec := &carenv1.DockerClusterConfigSpec{
-		Addons: &carenv1.DockerAddons{
-			GenericAddons: carenv1.GenericAddons{
-				CNI:      &carenv1.CNI{},
-				Registry: &carenv1.RegistryAddon{},
-			},
-		},
-	}
-	variable, err := variables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfigSpec)
+func Test_templateValues_withDirtyVersion(t *testing.T) {
+	result, err := templateValues(
+		newTestCluster(t).withRegistry().withName("test-cluster").withVersion("v1.30.100+build.1").build(),
+		testRegistrySyncerTemplate,
+	)
 	require.NoError(t, err)
-	return &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: &clusterv1.ClusterNetwork{
-				Services: &clusterv1.NetworkRanges{
-					CIDRBlocks: []string{
-						"192.168.0.0/16",
-					},
-				},
-			},
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{
-					*variable,
-				},
-				Version: "v1.30.100",
-			},
-		},
+	assert.Equal(t, expectedRegistrySyncerValues, result)
+}
+
+type testCluster struct {
+	t *testing.T
+
+	name           string
+	enableRegistry bool
+	version        string
+}
+
+func newTestCluster(t *testing.T) *testCluster {
+	t.Helper()
+
+	return &testCluster{
+		t:       t,
+		name:    names.SimpleNameGenerator.GenerateName("test-cluster-"),
+		version: "v1.30.100",
 	}
 }
 
-func clusterWithoutRegistry(t *testing.T) *clusterv1.Cluster {
-	t.Helper()
+func (t *testCluster) withName(name string) *testCluster {
+	t.name = name
+	return t
+}
 
+func (t *testCluster) withRegistry() *testCluster {
+	t.name = names.SimpleNameGenerator.GenerateName("with-registry-")
+	t.enableRegistry = true
+	return t
+}
+
+func (t *testCluster) withVersion(version string) *testCluster {
+	t.version = version
+	return t
+}
+
+func (t *testCluster) build() *clusterv1.Cluster {
 	clusterConfigSpec := &carenv1.DockerClusterConfigSpec{
 		Addons: &carenv1.DockerAddons{
 			GenericAddons: carenv1.GenericAddons{
@@ -160,11 +163,16 @@ func clusterWithoutRegistry(t *testing.T) *clusterv1.Cluster {
 			},
 		},
 	}
+	if t.enableRegistry {
+		clusterConfigSpec.Addons.Registry = &carenv1.RegistryAddon{}
+	}
+
 	variable, err := variables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfigSpec)
-	require.NoError(t, err)
+	require.NoError(t.t, err)
+
 	return &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: names.SimpleNameGenerator.GenerateName("without-registry-"),
+			Name: t.name,
 		},
 		Spec: clusterv1.ClusterSpec{
 			ClusterNetwork: &clusterv1.ClusterNetwork{
@@ -178,6 +186,7 @@ func clusterWithoutRegistry(t *testing.T) *clusterv1.Cluster {
 				Variables: []clusterv1.ClusterVariable{
 					*variable,
 				},
+				Version: t.version,
 			},
 		},
 	}
