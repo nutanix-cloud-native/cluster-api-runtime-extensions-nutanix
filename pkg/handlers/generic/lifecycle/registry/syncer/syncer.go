@@ -211,8 +211,6 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	type input struct {
 		CusterName string
 
-		KubernetesVersion string
-
 		SourceRegistryAddress string
 
 		DestinationRegistryAnyPodName               string
@@ -224,8 +222,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	templateInput := input{
-		CusterName:        cluster.Name,
-		KubernetesVersion: cluster.Spec.Topology.Version,
+		CusterName: cluster.Name,
 		// FIXME: This assumes that the source and destination registry names are the same.
 		// This is true now with a single registry addon provider, but may not be true in the future.
 		SourceRegistryAddress:                       registryMetadata.AddressFromClusterNetwork,
