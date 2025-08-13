@@ -26,14 +26,14 @@ type awsIAMInstanceProfileWorkerPatchHandler struct {
 }
 
 func NewWorkerPatch() *awsIAMInstanceProfileWorkerPatchHandler {
-	return newAWSIAMInstanceProfileWorkerPatchHandler(
+	return NewAWSIAMInstanceProfileWorkerPatchHandler(
 		v1alpha1.WorkerConfigVariableName,
 		v1alpha1.AWSVariableName,
 		VariableName,
 	)
 }
 
-func newAWSIAMInstanceProfileWorkerPatchHandler(
+func NewAWSIAMInstanceProfileWorkerPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *awsIAMInstanceProfileWorkerPatchHandler {

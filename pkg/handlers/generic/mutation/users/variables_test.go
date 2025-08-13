@@ -18,18 +18,20 @@ import (
 var testDefs = []capitest.VariableTestDef{{
 	Name: "valid users",
 	Vals: v1alpha1.GenericClusterConfigSpec{
-		Users: []v1alpha1.User{
-			{
-				Name:           "complete",
-				HashedPassword: "password",
-				SSHAuthorizedKeys: []string{
-					"key1",
-					"key2",
+		GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
+			Users: []v1alpha1.User{
+				{
+					Name:           "complete",
+					HashedPassword: "password",
+					SSHAuthorizedKeys: []string{
+						"key1",
+						"key2",
+					},
+					Sudo: "ALL=(ALL) NOPASSWD:ALL",
 				},
-				Sudo: "ALL=(ALL) NOPASSWD:ALL",
-			},
-			{
-				Name: "onlyname",
+				{
+					Name: "onlyname",
+				},
 			},
 		},
 	},
