@@ -15,14 +15,15 @@ endif
 dev.run-on-kind: SNAPSHOT_VERSION = $(shell gojq -r '.version+"-"+.runtime.goarch' dist/metadata.json)
 dev.run-on-kind:
 	kind load docker-image --name $(KIND_CLUSTER_NAME) \
-		ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION) \
-		ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:$(SNAPSHOT_VERSION)
+	  ko.local/cluster-api-runtime-extensions-nutanix:$(SNAPSHOT_VERSION) \
+	  ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:$(SNAPSHOT_VERSION)
 	helm upgrade --install cluster-api-runtime-extensions-nutanix ./charts/cluster-api-runtime-extensions-nutanix \
-		--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
-		--set-string image.tag=$(SNAPSHOT_VERSION) \
-		--set-string helmRepository.images.bundleInitializer.tag=$(SNAPSHOT_VERSION) \
-		--set extraArgs.feature-gates="$(CAREN_FEATURE_GATES)" \
-		--wait --wait-for-jobs
+	  --set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix \
+	  --set-string image.tag=$(SNAPSHOT_VERSION) \
+	  --set-string helmRepository.images.bundleInitializer.tag=$(SNAPSHOT_VERSION) \
+	  --set extraArgs.feature-gates="$(CAREN_FEATURE_GATES)" \
+	  --set extraArgs.v=5 \
+	  --wait --wait-for-jobs
 	kubectl rollout restart deployment cluster-api-runtime-extensions-nutanix
 	kubectl rollout restart deployment helm-repository
 	kubectl rollout status deployment cluster-api-runtime-extensions-nutanix
