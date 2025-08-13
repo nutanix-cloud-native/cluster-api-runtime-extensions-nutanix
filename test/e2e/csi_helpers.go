@@ -18,7 +18,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
@@ -57,7 +56,7 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 			waitForLocalPathCSIToBeReadyInWorkloadCluster(
 				ctx,
 				waitForLocalPathCSIToBeReadyInWorkloadClusterInput{
-					strategy:                    ptr.Deref(providerConfig.Strategy, ""),
+					strategy:                    providerConfig.Strategy,
 					workloadCluster:             input.WorkloadCluster,
 					clusterProxy:                input.ClusterProxy,
 					deploymentIntervals:         input.DeploymentIntervals,
@@ -70,7 +69,7 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 			waitForAWSEBSCSIToBeReadyInWorkloadCluster(
 				ctx,
 				waitForAWSEBSCSIToBeReadyInWorkloadClusterInput{
-					strategy:                    ptr.Deref(providerConfig.Strategy, ""),
+					strategy:                    providerConfig.Strategy,
 					workloadCluster:             input.WorkloadCluster,
 					clusterProxy:                input.ClusterProxy,
 					deploymentIntervals:         input.DeploymentIntervals,
@@ -84,7 +83,7 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 			waitForNutanixCSIToBeReadyInWorkloadCluster(
 				ctx,
 				waitForNutanixCSIToBeReadyInWorkloadClusterInput{
-					strategy:             ptr.Deref(providerConfig.Strategy, ""),
+					strategy:             providerConfig.Strategy,
 					workloadCluster:      input.WorkloadCluster,
 					clusterProxy:         input.ClusterProxy,
 					deploymentIntervals:  input.DeploymentIntervals,
@@ -119,7 +118,7 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 		waitForSnapshotControllerToBeReadyInWorkloadCluster(
 			ctx,
 			waitForSnapshotControllerToBeReadyInWorkloadClusterInput{
-				strategy:                    ptr.Deref(input.CSI.SnapshotController.Strategy, ""),
+				strategy:                    input.CSI.SnapshotController.Strategy,
 				workloadCluster:             input.WorkloadCluster,
 				clusterProxy:                input.ClusterProxy,
 				deploymentIntervals:         input.DeploymentIntervals,

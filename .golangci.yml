@@ -23,6 +23,7 @@ linters:
     - govet
     - importas
     - ineffassign
+    - kubeapilinter
     - lll
     - misspell
     - nolintlint
@@ -74,8 +75,55 @@ linters:
         - github.com/onsi/gomega
     testifylint:
       enable-all: true
+    custom:
+      kubeapilinter:
+        type: module
+        description: KAL is the Kube-API-Linter and lints Kube like APIs based on API conventions and best practices.
+        settings:
+          linters:
+            enable:
+              # - "commentstart" # Ensure comments start with the serialized version of the field name.
+              # - "conditions" # Ensure conditions have the correct json tags and markers.
+              - "duplicatemarkers" # Ensure there are no exact duplicate markers. for types and fields.
+              - "integers" # Ensure only int32 and int64 are used for integers.
+              - "jsontags" # Ensure every field has a json tag.
+              - "maxlength" # Ensure all strings and arrays have maximum lengths/maximum items.
+              - "nobools" # Bools do not evolve over time, should use enums instead.
+              - "nofloats" # Ensure floats are not used.
+              # - "nomaps" # Ensure maps are not used.
+              # - "nophase" # Ensure phases are not used, as they are not extensible.
+              - "optionalfields" # Ensure that all fields marked as optional adhere to being pointers and
+                                 # having the `omitempty` value in their `json` tag where appropriate.
+              - "optionalorrequired" # Every field should be marked as `+optional` or `+required`.
+              - "requiredfields" # Required fields should not be pointers, and should not have `omitempty`.
+              # - "ssatags" # Ensure array fields have the appropriate listType markers
+              # - "statusoptional" # Ensure all first children within status should be optional.
+              # - "statussubresource" # All root objects that have a `status` field should have a status subresource.
+              - "uniquemarkers" # Ensure that types and fields do not contain more than a single definition of a marker that should only be present once.
+
+            # Linters below this line are disabled, pending conversation on how and when to enable them.
+            disable:
+            - "*" # We will manually enable new linters after understanding the impact. Disable all by default.
+          lintersConfig:
+            optionalfields:
+              pointers:
+                preference: WhenRequired # Always | WhenRequired # Whether to always require pointers, or only when required. Defaults to `Always`.
+            jsontags:
+              jsonTagRegex: "^[a-z][a-z0-9-]*(?:[A-Z][a-z0-9]*)*$" # The default regex is appropriate for our use case.
+            optionalorrequired:
+              preferredOptionalMarker: kubebuilder:validation:Optional # The preferred optional marker to use, fixes will suggest to use this marker. Defaults to `optional`.
+              preferredRequiredMarker: kubebuilder:validation:Required # The preferred required marker to use, fixes will suggest to use this marker. Defaults to `required`.
   exclusions:
-    generated: lax
+    generated: strict
+    paths:
+      # Ignore generated files.
+      - zz_generated.*\.go$
+      # Ignore external API packages.
+      - external/
+      # Ignore test files.
+      - '.+_test\.go$'
+      # Ignore aggregate types.
+      - 'aggregate_types\.go$'
     presets:
       - comments
       - common-false-positives
@@ -103,11 +151,36 @@ linters:
           - gocritic
         path: internal/test/envtest
         text: 'hugeParam: input is heavy'
-    paths:
-      - external
-      - third_party$
-      - builtin$
-      - examples$
+
+      # START kube-api-linter rules
+      - path: ".*"
+        text: "optionalorrequired: embedded field  must be marked as kubebuilder:validation:Optional or kubebuilder:validation:Required"
+        linters:
+          - kubeapilinter
+
+      # kube-api-linter does not handle formats correctly yet.
+      - path: '/addon_types\.go$'
+        text: "maxlength: field (Start|End) must have a maximum length, add kubebuilder:validation:MaxLength marker"
+        linters:
+          - kubeapilinter
+      - path: '/common_types\.go$'
+        text: "maxlength: field Address must have a maximum length, add kubebuilder:validation:MaxLength marker"
+        linters:
+          - kubeapilinter
+
+      # kube-api-linter does not handle patterns correctly yet.
+      - path: '/aws_(clusterconfig|node)_types\.go$'
+        text: "maxlength: field (ID|IAMInstanceProfile|InstanceType|Org) must have a maximum length, add kubebuilder:validation:MaxLength marker"
+        linters:
+          - kubeapilinter
+      - path: '/(nutanix_)?(clusterconfig)_types\.go$'
+        text: "maxlength: field (URL|Tag) must have a maximum length, add kubebuilder:validation:MaxLength marker"
+        linters:
+          - kubeapilinter
+      - path-except: "^/api/"
+        linters:
+          - kubeapilinter
+      # END kube-api-linter rules
 formatters:
   enable:
     - gci

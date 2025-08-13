@@ -67,7 +67,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.GlobalImageRegistryMirror{
-						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+						URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
 					},
 					v1alpha1.GlobalMirrorVariableName,
 				),
@@ -193,7 +193,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.GlobalImageRegistryMirror{
-						URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+						URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
 					},
 					v1alpha1.GlobalMirrorVariableName,
 				),
@@ -581,7 +581,7 @@ func Test_needContainerdConfiguration(t *testing.T) {
 			name: "ECR mirror image registry with no CA certificate",
 			configs: []containerdConfig{
 				{
-					URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+					URL:    "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
 					Mirror: true,
 				},
 			},
@@ -591,7 +591,7 @@ func Test_needContainerdConfiguration(t *testing.T) {
 			name: "ECR mirror image registry with a path and no CA certificate",
 			configs: []containerdConfig{
 				{
-					URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com/myproject",
+					URL:    "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com/myproject",
 					Mirror: true,
 				},
 			},
