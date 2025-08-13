@@ -33,7 +33,7 @@ var _ = Describe("Generate AMI patches for Worker", func() {
 					ami.VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{
 						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
 					},
@@ -64,7 +64,7 @@ var _ = Describe("Generate AMI patches for Worker", func() {
 					ami.VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{
 						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
 					},

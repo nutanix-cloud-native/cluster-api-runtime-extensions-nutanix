@@ -225,7 +225,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.template.spec.bootstrap.configRef",
 		},
 		templateVariables: map[string]apiextensionsv1.JSON{
-			"builtin": {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
+			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
@@ -253,7 +253,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.template.spec.bootstrap.configRef",
 		},
 		templateVariables: map[string]apiextensionsv1.JSON{
-			"builtin": {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
+			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
@@ -281,7 +281,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.template.spec.bootstrap.configRef",
 		},
 		templateVariables: map[string]apiextensionsv1.JSON{
-			"builtin": {Raw: []byte(`{"machineDeployment":{"class":"class-A"}}`)},
+			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"class-A"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
@@ -309,7 +309,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.template.spec.bootstrap.configRef",
 		},
 		templateVariables: map[string]apiextensionsv1.JSON{
-			"builtin": {Raw: []byte(`{"machineDeployment":{"class":"class-A"}}`)},
+			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"class-A"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
@@ -337,7 +337,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.template.spec.bootstrap.configRef",
 		},
 		templateVariables: map[string]apiextensionsv1.JSON{
-			"builtin": {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
+			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
@@ -365,7 +365,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.template.spec.bootstrap.configRef",
 		},
 		templateVariables: map[string]apiextensionsv1.JSON{
-			"builtin": {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
+			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
@@ -391,7 +391,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.template.spec.bootstrap.configRef",
 		},
 		templateVariables: map[string]apiextensionsv1.JSON{
-			"builtin": {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
+			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
 			APIVersion:     "bootstrap.cluster.x-k8s.io/v1beta1",
@@ -415,7 +415,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.template.spec.bootstrap.configRef",
 		},
 		templateVariables: map[string]apiextensionsv1.JSON{
-			"builtin": {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
+			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
@@ -443,7 +443,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.template.spec.infrastructureRef",
 		},
 		templateVariables: map[string]apiextensionsv1.JSON{
-			"builtin": {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
+			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
