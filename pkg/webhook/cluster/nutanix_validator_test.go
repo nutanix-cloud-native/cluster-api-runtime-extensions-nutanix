@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -366,6 +367,16 @@ func TestValidateTopologyFailureDomainConfig(t *testing.T) {
 			expectedErr:         false,
 			expectedErrMessages: nil,
 		},
+		{
+			name:          "worker cluster and subnet configured in default with failure domain in variables overrides violates XOR", //nolint:lll // name is long.
+			clusterConfig: fakeClusterConfigSpec(false, true, true),
+			cluster:       fakeCluster(t, true, false, false, workerConfigDefaultOverridesConflicting),
+			expectedErr:   true,
+			expectedErrMessages: []string{
+				"spec.topology.workers.machineDeployments.variables.overrides.workerConfig.value.nutanix.machineDetails.cluster: Forbidden: \"cluster\" must not be set when failureDomain is configured.", //nolint:lll // Message is long.
+				"spec.topology.workers.machineDeployments.variables.overrides.workerConfig.value.nutanix.machineDetails.subnets: Forbidden: \"subnets\" must not be set when failureDomain is configured.", //nolint:lll // Message is long.
+			},
+		},
 	}
 
 	for _, tc := range testcases {
@@ -432,10 +443,11 @@ func fakeClusterConfigSpec(fd, pe, subnets bool) *variables.ClusterConfigSpec {
 type workerConfigExistence string
 
 const (
-	workerConfigDefaultOnly          workerConfigExistence = "workerConfigDefaultOnly"
-	workerConfigOverridesOnly        workerConfigExistence = "workerConfigOverridesOnly"
-	workerConfigDefaultOverridesBoth workerConfigExistence = "workerConfigDefaultOverridesBoth"
-	workerConfigNone                 workerConfigExistence = "workerConfigNone"
+	workerConfigDefaultOnly                 workerConfigExistence = "workerConfigDefaultOnly"
+	workerConfigOverridesOnly               workerConfigExistence = "workerConfigOverridesOnly"
+	workerConfigDefaultOverridesBoth        workerConfigExistence = "workerConfigDefaultOverridesBoth"
+	workerConfigDefaultOverridesConflicting workerConfigExistence = "workerConfigDefaultOverridesConflicting"
+	workerConfigNone                        workerConfigExistence = "workerConfigNone"
 )
 
 func fakeCluster(t *testing.T, fd, pe, subnets bool, wcfg workerConfigExistence) *clusterv1.Cluster {
@@ -469,8 +481,8 @@ func fakeCluster(t *testing.T, fd, pe, subnets bool, wcfg workerConfigExistence)
 			MachineDetails: *fakeMachineDetails(pe, subnets),
 		},
 	}
-	workerConfigVar, err := variables.MarshalToClusterVariable("workerConfig", workerConfig)
-	assert.NoError(t, err)
+	workerConfigVar, err := variables.MarshalToClusterVariable(string(v1alpha1.WorkerConfigVariableName), workerConfig)
+	require.NoError(t, err)
 
 	switch wcfg {
 	case workerConfigDefaultOnly:
@@ -482,6 +494,26 @@ func fakeCluster(t *testing.T, fd, pe, subnets bool, wcfg workerConfigExistence)
 		)
 	case workerConfigDefaultOverridesBoth:
 		cluster.Spec.Topology.Variables = append(cluster.Spec.Topology.Variables, *workerConfigVar)
+		cluster.Spec.Topology.Workers.MachineDeployments[0].Variables.Overrides = append(
+			cluster.Spec.Topology.Workers.MachineDeployments[0].Variables.Overrides,
+			*workerConfigVar,
+		)
+	case workerConfigDefaultOverridesConflicting:
+		// If a failure domain is defined, create a default worker config with cluster and subnet to force
+		// conflict and therefore error.
+		defaultWorkerConfig := variables.WorkerNodeConfigSpec{
+			Nutanix: &v1alpha1.NutanixWorkerNodeSpec{
+				MachineDetails: *fakeMachineDetails(fd, fd),
+			},
+		}
+
+		defaultWorkerConfigVar, err := variables.MarshalToClusterVariable(
+			string(v1alpha1.WorkerConfigVariableName),
+			defaultWorkerConfig,
+		)
+		require.NoError(t, err)
+
+		cluster.Spec.Topology.Variables = append(cluster.Spec.Topology.Variables, *defaultWorkerConfigVar)
 		cluster.Spec.Topology.Workers.MachineDeployments[0].Variables.Overrides = append(
 			cluster.Spec.Topology.Workers.MachineDeployments[0].Variables.Overrides,
 			*workerConfigVar,

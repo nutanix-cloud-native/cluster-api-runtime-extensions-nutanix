@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/samber/lo"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
 type MutateFunc func(
@@ -89,6 +91,21 @@ func (mgp metaGeneratePatches) GeneratePatches(
 ) {
 	clusterKey := handlers.ClusterKeyFromReq(req)
 	clusterGetter := mgp.CreateClusterGetter(clusterKey)
+
+	// Create a map of variables from the request that can be overridden by machine deployment or control plane
+	// configuration.
+	// Filter out the "builtin" variable, which is already present in the vars map and should not be overridden by
+	// the global variables.
+	globalVars := lo.FilterSliceToMap(
+		req.Variables,
+		func(v runtimehooksv1.Variable) (string, apiextensionsv1.JSON, bool) {
+			if v.Name == "builtin" {
+				return "", apiextensionsv1.JSON{}, false
+			}
+			return v.Name, v.Value, true
+		},
+	)
+
 	topologymutation.WalkTemplates(
 		ctx,
 		unstructured.UnstructuredJSONScheme,
@@ -108,16 +125,33 @@ func (mgp metaGeneratePatches) GeneratePatches(
 
 			log.V(3).Info("Starting mutation pipeline", "handlerCount", len(mgp.mutators))
 
-			for i, h := range mgp.mutators {
-				handlerName := fmt.Sprintf("%T", h)
-				log.V(5).Info("Running mutator", "index", i, "handler", handlerName)
+			// Merge the global variables to the current resource vars. This allows the handlers to access
+			// the variables defined in the cluster class or cluster configuration and use these correctly when
+			// overrides are specified on machine deployment or control plane configuration.
+			mergedVars, err := variables.MergeVariableOverridesWithGlobal(vars, globalVars)
+			if err != nil {
+				log.Error(err, "Failed to merge global variables")
+				return err
+			}
 
-				if err := h.Mutate(ctx, obj.(*unstructured.Unstructured), vars, holderRef, clusterKey, clusterGetter); err != nil {
-					log.Error(err, "Mutator failed", "index", i, "handler", handlerName)
+			for i, h := range mgp.mutators {
+				mutatorType := fmt.Sprintf("%T", h)
+				log.V(5).
+					Info("Running mutator", "index", i, "handler", mutatorType, "vars", mergedVars)
+
+				if err := h.Mutate(
+					ctx,
+					obj.(*unstructured.Unstructured),
+					mergedVars,
+					holderRef,
+					clusterKey,
+					clusterGetter,
+				); err != nil {
+					log.Error(err, "Mutator failed", "index", i, "handler", mutatorType)
 					return err
 				}
 
-				log.V(5).Info("Mutator completed successfully", "index", i, "handler", handlerName)
+				log.V(5).Info("Mutator completed successfully", "index", i, "handler", mutatorType)
 			}
 
 			log.V(3).Info("Mutation pipeline completed successfully", "handlerCount", len(mgp.mutators))
