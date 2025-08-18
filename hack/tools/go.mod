@@ -12,8 +12,8 @@ require (
 	github.com/d2iq-labs/helm-list-images v0.12.0
 	github.com/google/go-github/v72 v72.0.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.32.7
-	k8s.io/apimachinery v0.32.7
+	k8s.io/api v0.32.8
+	k8s.io/apimachinery v0.32.8
 	sigs.k8s.io/cluster-api v1.10.4
 	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/yaml v1.6.0
@@ -172,11 +172,11 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.16.1 // indirect
-	k8s.io/apiextensions-apiserver v0.32.7 // indirect
-	k8s.io/apiserver v0.32.7 // indirect
+	k8s.io/apiextensions-apiserver v0.32.8 // indirect
+	k8s.io/apiserver v0.32.8 // indirect
 	k8s.io/cli-runtime v0.31.0 // indirect
-	k8s.io/client-go v0.32.7 // indirect
-	k8s.io/component-base v0.32.7 // indirect
+	k8s.io/client-go v0.32.8 // indirect
+	k8s.io/component-base v0.32.8 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	k8s.io/kubectl v0.31.0 // indirect
