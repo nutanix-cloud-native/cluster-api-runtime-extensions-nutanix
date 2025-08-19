@@ -52,18 +52,6 @@ spec:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: AWSMachineTemplate
             name: eks-quick-start-worker-machinetemplate
-    - class: system-worker
-      template:
-        bootstrap:
-          ref:
-            apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
-            kind: EKSConfigTemplate
-            name: eks-quick-start-worker-configtemplate
-        infrastructure:
-          ref:
-            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
-            kind: AWSMachineTemplate
-            name: eks-quick-start-worker-machinetemplate
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: AWSManagedClusterTemplate
