@@ -89,10 +89,6 @@ spec:
           nfd: {}
         eks:
           region: us-west-2
-    - name: workerConfig
-      value:
-        eks:
-          instanceType: m5.2xlarge
     version: ${KUBERNETES_VERSION}
     workers:
       machineDeployments:
@@ -102,3 +98,9 @@ spec:
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
         name: md-0
+        variables:
+          overrides:
+          - name: workerConfig
+            value:
+              eks:
+                instanceType: m5.2xlarge

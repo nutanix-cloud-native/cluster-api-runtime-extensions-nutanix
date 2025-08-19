@@ -15,7 +15,3 @@
               sourceRef:
                 name: ${CLUSTER_NAME}-cilium-cni-helm-values-template
                 kind: ConfigMap
-    - name: "workerConfig"
-      value:
-        eks:
-          instanceType: m5.2xlarge

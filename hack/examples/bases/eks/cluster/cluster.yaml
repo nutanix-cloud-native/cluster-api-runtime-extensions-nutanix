@@ -69,10 +69,6 @@ spec:
                 sourceRef:
                   name: ${CLUSTER_NAME}-cilium-cni-helm-values-template
                   kind: ConfigMap
-      - name: workerConfig
-        value:
-          eks:
-            instanceType: m5.2xlarge
     controlPlane:
       metadata:
         annotations:
@@ -82,3 +78,9 @@ spec:
         - class: default-worker
           name: md-0
           replicas: ${WORKER_MACHINE_COUNT}
+          variables:
+            overrides:
+              - name: workerConfig
+                value:
+                  eks:
+                    instanceType: m5.2xlarge
