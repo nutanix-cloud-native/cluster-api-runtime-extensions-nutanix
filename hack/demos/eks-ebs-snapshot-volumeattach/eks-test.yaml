@@ -1,0 +1,109 @@
+apiVersion: v1
+data:
+  values.yaml: |-
+    cni:
+      exclusive: false
+    hubble:
+      enabled: true
+      tls:
+        auto:
+          enabled: true               # enable automatic TLS certificate generation
+          method: cronJob             # auto generate certificates using cronJob method
+          certValidityDuration: 60    # certificates validity duration in days (default 2 months)
+          schedule: "0 0 1 * *"       # schedule on the 1st day regeneration of each month
+      relay:
+        enabled: true
+        tls:
+          server:
+            enabled: true
+            mtls: true
+        image:
+          useDigest: false
+        priorityClassName: system-cluster-critical
+    image:
+      useDigest: false
+    operator:
+      image:
+        useDigest: false
+    certgen:
+      image:
+        useDigest: false
+    socketLB:
+      hostNamespaceOnly: true
+    envoy:
+      image:
+        useDigest: false
+    kubeProxyReplacement: true
+    k8sServiceHost: "{{ trimPrefix "https://" .Cluster.spec.controlPlaneEndpoint.host }}"
+    k8sServicePort: "{{ .Cluster.spec.controlPlaneEndpoint.port }}"
+    ipam:
+      mode: eni
+    enableIPv4Masquerade: false
+    eni:
+      enabled: true
+      awsReleaseExcessIPs: true
+    routingMode: native
+    endpointRoutes:
+      enabled: true
+kind: ConfigMap
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: "${EKS_CLUSTER_NAME}-cilium-cni-helm-values-template"
+  namespace: default
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  annotations:
+    preflight.cluster.caren.nutanix.com/skip: all
+  labels:
+    cluster.x-k8s.io/provider: eks
+    caren.nutanix.com/demo-name: "EBSSnapshotVolumeAttach"
+  name: "${EKS_CLUSTER_NAME}"
+  namespace: default
+spec:
+  topology:
+    class: eks-quick-start
+    controlPlane:
+      metadata:
+        annotations:
+          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
+    variables:
+    - name: clusterConfig
+      value:
+        addons:
+          clusterAutoscaler: {}
+          cni:
+            provider: Cilium
+            values:
+              sourceRef:
+                kind: ConfigMap
+                name: ${EKS_CLUSTER_NAME}-cilium-cni-helm-values-template
+          csi:
+            defaultStorage:
+              provider: aws-ebs
+              storageClassConfig: default
+            providers:
+              aws-ebs:
+                storageClassConfigs:
+                  default: {}
+                  immediate-binding:
+                    volumeBindingMode: Immediate
+            snapshotController: {}
+          nfd: {}
+        eks:
+          region: us-west-2
+    - name: workerConfig
+      value:
+        eks:
+          instanceType: m5.2xlarge
+    version: v1.32.7
+    workers:
+      machineDeployments:
+      - class: default-worker
+        metadata:
+          annotations:
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "1"
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "1"
+        name: md-0
