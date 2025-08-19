@@ -62,7 +62,7 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 					VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": names.SimpleNameGenerator.GenerateName("worker-"),

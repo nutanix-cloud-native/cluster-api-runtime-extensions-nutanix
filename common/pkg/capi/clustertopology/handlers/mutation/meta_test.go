@@ -34,13 +34,38 @@ var _ MetaMutator = &testHandler{}
 func (h *testHandler) Mutate(
 	_ context.Context,
 	obj *unstructured.Unstructured,
-	_ map[string]apiextensionsv1.JSON,
+	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ client.ObjectKey,
 	_ ClusterGetter,
 ) error {
 	if h.returnErr {
 		return fmt.Errorf("This is a failure")
+	}
+
+	varAVal, ok := vars["varA"]
+	if !ok {
+		return fmt.Errorf("varA not found in vars")
+	}
+	if string(varAVal.Raw) != `{"a":1,"b":2}` {
+		return fmt.Errorf("varA value mismatch: %s", string(varAVal.Raw))
+	}
+
+	varBVal, ok := vars["varB"]
+	if !ok {
+		return fmt.Errorf("varB not found in vars")
+	}
+	switch obj.GetKind() {
+	case "KubeadmControlPlaneTemplate":
+		if string(varBVal.Raw) != `{"c":3,"d":{"e":4,"f":5}}` {
+			return fmt.Errorf("varB value mismatch: %s", string(varBVal.Raw))
+		}
+	case "KubeadmConfigTemplate":
+		if string(varBVal.Raw) != `{"c":3,"d":{"e":5,"f":5}}` {
+			return fmt.Errorf("varB value mismatch: %s", string(varBVal.Raw))
+		}
+	default:
+		return fmt.Errorf("unexpected object kind: %s", obj.GetKind())
 	}
 
 	if h.mutateControlPlane {
@@ -61,7 +86,7 @@ func (h *testHandler) Mutate(
 
 	return patches.MutateIfApplicable(
 		obj,
-		machineVars(),
+		vars,
 		&holderRef,
 		selectors.WorkersKubeadmConfigTemplateSelector(),
 		logr.Discard(),
@@ -78,10 +103,32 @@ func (h *testHandler) Mutate(
 	)
 }
 
-func machineVars() map[string]apiextensionsv1.JSON {
-	return map[string]apiextensionsv1.JSON{
-		"builtin": {Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`)},
-	}
+func globalVars() []runtimehooksv1.Variable {
+	return []runtimehooksv1.Variable{{
+		Name: "varA",
+		Value: apiextensionsv1.JSON{
+			Raw: []byte(`{"a": 1, "b": 2}`),
+		},
+	}, {
+		Name: "varB",
+		Value: apiextensionsv1.JSON{
+			Raw: []byte(`{"c": 3, "d": {"e": 4, "f": 5}}`),
+		},
+	}}
+}
+
+func overrideVars() []runtimehooksv1.Variable {
+	return []runtimehooksv1.Variable{{
+		Name: "builtin",
+		Value: apiextensionsv1.JSON{
+			Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+		},
+	}, {
+		Name: "varB",
+		Value: apiextensionsv1.JSON{
+			Raw: []byte(`{"d": {"e": 5}}`),
+		},
+	}}
 }
 
 func TestMetaGeneratePatches(t *testing.T) {
@@ -221,9 +268,12 @@ func TestMetaGeneratePatches(t *testing.T) {
 			h := NewMetaGeneratePatchesHandler("", nil, tt.mutaters...).(GeneratePatches)
 
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
+			kctReq := request.NewKubeadmConfigTemplateRequestItem("kubeadm-config")
+			kctReq.Variables = overrideVars()
 			h.GeneratePatches(context.Background(), &runtimehooksv1.GeneratePatchesRequest{
+				Variables: globalVars(),
 				Items: []runtimehooksv1.GeneratePatchesRequestItem{
-					request.NewKubeadmConfigTemplateRequestItem("kubeadm-config"),
+					kctReq,
 					request.NewKubeadmControlPlaneTemplateRequestItem("kubeadm-control-plane"),
 				},
 			}, resp)
@@ -238,4 +288,199 @@ func jsonPatch(operations ...jsonpatch.Operation) []byte {
 		operations,
 	)
 	return b
+}
+
+func TestMergeVariableDefinitions(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		vars       map[string]apiextensionsv1.JSON
+		globalVars map[string]apiextensionsv1.JSON
+	}
+	tests := []struct {
+		name      string
+		args      args
+		want      map[string]apiextensionsv1.JSON
+		wantErr   bool
+		errString string
+	}{
+		{
+			name: "no overlap, globalVars added",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`1`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"b": {Raw: []byte(`2`)},
+				},
+			},
+			want: map[string]apiextensionsv1.JSON{
+				"a": {Raw: []byte(`1`)},
+				"b": {Raw: []byte(`2`)},
+			},
+		},
+		{
+			name: "globalVars value is nil, skipped",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`1`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"b": {Raw: nil},
+				},
+			},
+			want: map[string]apiextensionsv1.JSON{
+				"a": {Raw: []byte(`1`)},
+			},
+		},
+		{
+			name: "existing value is nil, globalVars value used",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: nil},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`2`)},
+				},
+			},
+			want: map[string]apiextensionsv1.JSON{
+				"a": {Raw: []byte(`2`)},
+			},
+		},
+		{
+			name: "both values are scalars, globalVars ignored",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`1`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`2`)},
+				},
+			},
+			want: map[string]apiextensionsv1.JSON{
+				"a": {Raw: []byte(`1`)},
+			},
+		},
+		{
+			name: "both values are objects, merged",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"x":1,"y":2}`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"y":3,"z":4}`)},
+				},
+			},
+			want: map[string]apiextensionsv1.JSON{
+				"a": {Raw: []byte(`{"x":1,"y":2,"z":4}`)},
+			},
+		},
+		{
+			name: "both values are objects with nested objects, merged",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"x":1,"y":{"a": 2,"b":{"c": 3}}}`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"y":{"a": 2,"b":{"c": 5, "d": 6}},"z":4}`)},
+				},
+			},
+			want: map[string]apiextensionsv1.JSON{
+				"a": {Raw: []byte(`{"x":1,"y":{"a": 2,"b":{"c": 3, "d": 6}},"z":4}`)},
+			},
+		},
+		{
+			name: "both values are objects with nested objects with vars having nil object explicitly, merged",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"x":1,"y":{"a": 2,"b": null}}`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"y":{"a": 2,"b":{"c": 5, "d": 6}},"z":4}`)},
+				},
+			},
+			want: map[string]apiextensionsv1.JSON{
+				"a": {Raw: []byte(`{"x":1,"y":{"a": 2,"b":{"c": 5, "d": 6}},"z":4}`)},
+			},
+		},
+		{
+			name: "globalVars is scalar, vars is object, keep object",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"x":1}`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`2`)},
+				},
+			},
+			want: map[string]apiextensionsv1.JSON{
+				"a": {Raw: []byte(`{"x":1}`)},
+			},
+		},
+		{
+			name: "vars is scalar, globalVars is object, keep scalar",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`2`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"x":1}`)},
+				},
+			},
+			want: map[string]apiextensionsv1.JSON{
+				"a": {Raw: []byte(`2`)},
+			},
+		},
+		{
+			name: "invalid JSON in vars",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{invalid}`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"x":1}`)},
+				},
+			},
+			wantErr:   true,
+			errString: "failed to unmarshal existing value for key \"a\"",
+		},
+		{
+			name: "invalid JSON in globalVars",
+			args: args{
+				vars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{"x":1}`)},
+				},
+				globalVars: map[string]apiextensionsv1.JSON{
+					"a": {Raw: []byte(`{invalid}`)},
+				},
+			},
+			wantErr:   true,
+			errString: "failed to unmarshal global value for key \"a\"",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			g := gomega.NewWithT(t)
+			got, err := mergeVariableDefinitions(tt.args.vars, tt.args.globalVars)
+			if tt.wantErr {
+				g.Expect(err).To(gomega.HaveOccurred())
+				g.Expect(err.Error()).To(gomega.ContainSubstring(tt.errString))
+				return
+			}
+			g.Expect(err).ToNot(gomega.HaveOccurred())
+			// Compare JSON values
+			for k, wantVal := range tt.want {
+				gotVal, ok := got[k]
+				g.Expect(ok).To(gomega.BeTrue(), "missing key %q", k)
+				var wantObj, gotObj interface{}
+				_ = json.Unmarshal(wantVal.Raw, &wantObj)
+				_ = json.Unmarshal(gotVal.Raw, &gotObj)
+				g.Expect(gotObj).To(gomega.Equal(wantObj), "key %q", k)
+			}
+			// Check for unexpected keys
+			g.Expect(len(got)).To(gomega.Equal(len(tt.want)))
+		})
+	}
 }

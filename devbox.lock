@@ -49,6 +49,54 @@
         }
       }
     },
+    "aws-iam-authenticator@latest": {
+      "last_modified": "2025-08-02T08:13:18Z",
+      "resolved": "github:NixOS/nixpkgs/c02d05bcf73fb496c604798c2268ed424a09e73e#aws-iam-authenticator",
+      "source": "devbox-search",
+      "version": "0.7.5",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/z9wbarpnj6gkp5kqny48vg2fy9vk757s-aws-iam-authenticator-0.7.5",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/z9wbarpnj6gkp5kqny48vg2fy9vk757s-aws-iam-authenticator-0.7.5"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0pf34s8z43mqc9hi98kljra376y2rh0s-aws-iam-authenticator-0.7.5",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/0pf34s8z43mqc9hi98kljra376y2rh0s-aws-iam-authenticator-0.7.5"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/07639nsd35gy4d7gbzgywn1kab52jdyr-aws-iam-authenticator-0.7.5",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/07639nsd35gy4d7gbzgywn1kab52jdyr-aws-iam-authenticator-0.7.5"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/cnpdb16wvd0qx2x6smi6v9v1c2c8wlmb-aws-iam-authenticator-0.7.5",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/cnpdb16wvd0qx2x6smi6v9v1c2c8wlmb-aws-iam-authenticator-0.7.5"
+        }
+      }
+    },
     "chart-testing@latest": {
       "last_modified": "2025-07-13T22:45:35Z",
       "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#chart-testing",
