@@ -82,19 +82,3 @@ spec:
         - class: default-worker
           name: md-0
           replicas: ${WORKER_MACHINE_COUNT}
-        - class: system-worker
-          name: system
-          metadata:
-            labels:
-              node-restriction.kubernetes.io/capi-controllers: ""
-          replicas: 1
-          variables:
-            overrides:
-            - name: workerConfig
-              value:
-                taints:
-                  - effect: NoSchedule
-                    key: node-restriction.kubernetes.io/capi-controllers
-                    value: "true"
-                eks:
-                  iamInstanceProfile: "control-plane.cluster-api-provider-aws.sigs.k8s.io"

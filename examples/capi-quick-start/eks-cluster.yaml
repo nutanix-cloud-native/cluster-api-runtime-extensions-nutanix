@@ -102,19 +102,3 @@ spec:
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
         name: md-0
-      - class: system-worker
-        metadata:
-          labels:
-            node-restriction.kubernetes.io/capi-controllers: ""
-        name: system
-        replicas: 1
-        variables:
-          overrides:
-          - name: workerConfig
-            value:
-              eks:
-                iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
-              taints:
-              - effect: NoSchedule
-                key: node-restriction.kubernetes.io/capi-controllers
-                value: "true"
