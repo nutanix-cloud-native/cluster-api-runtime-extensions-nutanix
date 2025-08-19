@@ -70,6 +70,7 @@ spec:
                                 description: |-
                                   Name of the referent.
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                maxLength: 253
                                 minLength: 1
                                 type: string
                             required:
@@ -135,6 +136,7 @@ spec:
                                 type: string
                               name:
                                 description: Name is the name of resource being referenced.
+                                maxLength: 253
                                 minLength: 1
                                 type: string
                             required:
@@ -192,6 +194,7 @@ spec:
                               - end
                               - start
                               type: object
+                            maxItems: 10
                             minItems: 1
                             type: array
                         required:

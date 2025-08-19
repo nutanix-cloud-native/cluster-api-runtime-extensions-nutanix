@@ -59,6 +59,7 @@ spec:
                                 description: |-
                                   Name of the referent.
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                maxLength: 253
                                 minLength: 1
                                 type: string
                             required:
@@ -124,6 +125,7 @@ spec:
                                 type: string
                               name:
                                 description: Name is the name of resource being referenced.
+                                maxLength: 253
                                 minLength: 1
                                 type: string
                             required:
@@ -149,6 +151,7 @@ spec:
                           storageClassConfig:
                             description: Name of the default storage class config
                               the specified default provider.
+                            maxLength: 242
                             minLength: 1
                             type: string
                         required:
@@ -171,6 +174,7 @@ spec:
                                         description: |-
                                           Name of the referent.
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        maxLength: 253
                                         minLength: 1
                                         type: string
                                     required:
@@ -183,7 +187,6 @@ spec:
                                 additionalProperties:
                                   properties:
                                     allowExpansion:
-                                      default: false
                                       description: If the storage class should allow
                                         volume expanding
                                       type: boolean
@@ -293,6 +296,7 @@ spec:
                               - end
                               - start
                               type: object
+                            maxItems: 10
                             minItems: 1
                             type: array
                         required:
@@ -322,17 +326,18 @@ spec:
                           properties:
                             id:
                               description: Existing Subnet ID to use for the cluster.
-                              minLength: 1
+                              format: ^subnet-[0-9a-f]{8}(?:[0-9a-f]{9})?$
                               type: string
                           required:
                           - id
                           type: object
+                        maxItems: 10
                         type: array
                       vpc:
                         properties:
                           id:
                             description: Existing VPC ID to use for the cluster.
-                            minLength: 1
+                            format: ^vpc-[0-9a-f]{8}(?:[0-9a-f]{9})?$
                             type: string
                         required:
                         - id
@@ -340,6 +345,8 @@ spec:
                     type: object
                   region:
                     description: AWS region to create cluster in.
+                    maxLength: 16
+                    minLength: 4
                     type: string
                 type: object
             type: object
