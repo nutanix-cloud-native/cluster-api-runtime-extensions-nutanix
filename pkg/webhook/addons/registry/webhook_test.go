@@ -188,7 +188,7 @@ func TestDefaultingShouldBeSkippedWhenGlobalImageRegistryMirrorIsSet(t *testing.
 		t,
 		nil,
 		&carenv1.DockerClusterConfigSpec{
-			GenericClusterConfigSpec: carenv1.GenericClusterConfigSpec{
+			GenericClusterConfigResource: carenv1.GenericClusterConfigResource{
 				GlobalImageRegistryMirror: &carenv1.GlobalImageRegistryMirror{
 					URL: "mirror.com",
 				},

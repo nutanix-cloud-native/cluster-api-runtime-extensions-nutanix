@@ -34,6 +34,20 @@ func WorkersKubeadmConfigTemplateSelector() clusterv1.PatchSelector {
 	}
 }
 
+func WorkersConfigTemplateSelector(capiInfrastructureAPIVersion, kind string) clusterv1.PatchSelector {
+	return clusterv1.PatchSelector{
+		APIVersion: capiInfrastructureAPIVersion,
+		Kind:       kind,
+		MatchResources: clusterv1.PatchSelectorMatch{
+			MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
+				Names: []string{
+					"*",
+				},
+			},
+		},
+	}
+}
+
 // InfrastructureCluster selector matches against infrastructure clusters.
 // Passing in the API version (not the API group) is required because different providers could support different API
 // versions. This also allows for a patch to select multiple infrastructure versions for the same provider.

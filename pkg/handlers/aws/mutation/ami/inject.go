@@ -31,7 +31,7 @@ type awsAMISpecPatchHandler struct {
 	patchSelector     clusterv1.PatchSelector
 }
 
-func newAWSAMISpecPatchHandler(
+func NewAWSAMISpecPatchHandler(
 	metaVariableName string,
 	variableFieldPath []string,
 	patchSelector clusterv1.PatchSelector,
