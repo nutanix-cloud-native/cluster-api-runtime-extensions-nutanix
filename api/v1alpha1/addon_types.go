@@ -120,7 +120,7 @@ type CNI struct {
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitzero"`
 
 	// AddonConfig contains the configuration for the CNI provider.
 	// +kubebuilder:validation:Optional
@@ -164,7 +164,7 @@ type NFD struct {
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitzero"`
 }
 
 // ClusterAutoscaler tells us to enable or disable the cluster-autoscaler addon.
@@ -174,7 +174,7 @@ type ClusterAutoscaler struct {
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitzero"`
 }
 
 type GenericCSI struct {
@@ -191,7 +191,7 @@ type GenericCOSI struct {
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitzero"`
 }
 
 type SnapshotController struct {
@@ -199,7 +199,7 @@ type SnapshotController struct {
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitzero"`
 }
 
 type DefaultStorage struct {
@@ -260,7 +260,7 @@ type CSIProvider struct {
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitzero"`
 
 	// The reference to any secret used by the CSI Provider.
 	// +kubebuilder:validation:Optional
@@ -311,7 +311,7 @@ type CCM struct {
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitempty"`
+	Strategy AddonStrategy `json:"strategy,omitzero"`
 }
 
 type CCMCredentials struct {
