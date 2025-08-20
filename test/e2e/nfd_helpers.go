@@ -14,7 +14,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
@@ -40,7 +39,7 @@ func WaitForNFDToBeReadyInWorkloadCluster(
 		return
 	}
 
-	switch ptr.Deref(input.NFD.Strategy, "") {
+	switch input.NFD.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		crs := &addonsv1.ClusterResourceSet{}
 		Expect(input.ClusterProxy.GetClient().Get(
@@ -77,7 +76,7 @@ func WaitForNFDToBeReadyInWorkloadCluster(
 		Fail(
 			fmt.Sprintf(
 				"Do not know how to wait for NFD using strategy %s to be ready",
-				*input.NFD.Strategy,
+				input.NFD.Strategy,
 			),
 		)
 	}

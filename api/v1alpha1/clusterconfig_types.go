@@ -57,7 +57,7 @@ type AWSClusterConfig struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Spec AWSClusterConfigSpec `json:"spec,omitempty"`
+	Spec *AWSClusterConfigSpec `json:"spec,omitempty"`
 }
 
 func (s AWSClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
@@ -82,6 +82,8 @@ type AWSClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:UniqueItems=true
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxItems=100
+	// +kubebuilder:validation:items:MaxLength=253
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
@@ -93,7 +95,7 @@ type DockerClusterConfig struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Spec DockerClusterConfigSpec `json:"spec,omitempty"`
+	Spec *DockerClusterConfigSpec `json:"spec,omitempty"`
 }
 
 func (s DockerClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
@@ -122,6 +124,8 @@ type DockerClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:UniqueItems=true
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxItems=100
+	// +kubebuilder:validation:items:MaxLength=253
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
@@ -133,7 +137,7 @@ type NutanixClusterConfig struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Spec NutanixClusterConfigSpec `json:"spec,omitempty"`
+	Spec *NutanixClusterConfigSpec `json:"spec,omitempty"`
 }
 
 func (s NutanixClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
@@ -161,6 +165,8 @@ type NutanixClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:UniqueItems=true
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxItems=100
+	// +kubebuilder:validation:items:MaxLength=253
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
@@ -171,13 +177,15 @@ type GenericClusterConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// +optional
-	Spec GenericClusterConfigSpec `json:"spec,omitempty"`
+	// +kubebuilder:validation:Optional
+	Spec *GenericClusterConfigSpec `json:"spec,omitempty"`
 
 	// Extra Subject Alternative Names for the API Server signing cert.
 	// +kubebuilder:validation:UniqueItems=true
 	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
-	// +optional
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=100
+	// +kubebuilder:validation:items:MaxLength=253
 	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
@@ -190,7 +198,9 @@ type GenericClusterConfigSpec struct {
 	// Sets the Kubernetes image repository used for the KubeadmControlPlane.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
-	KubernetesImageRepository *string `json:"kubernetesImageRepository,omitempty"`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=2048
+	KubernetesImageRepository string `json:"kubernetesImageRepository,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Etcd *Etcd `json:"etcd,omitempty"`
@@ -199,12 +209,14 @@ type GenericClusterConfigSpec struct {
 	Proxy *HTTPProxy `json:"proxy,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=32
 	ImageRegistries []ImageRegistry `json:"imageRegistries,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	GlobalImageRegistryMirror *GlobalImageRegistryMirror `json:"globalImageRegistryMirror,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=32
 	Users []User `json:"users,omitempty"`
 
 	// +kubebuilder:validation:Optional
@@ -226,11 +238,15 @@ type Image struct {
 	// Repository is used to override the image repository to pull from.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=2048
 	Repository string `json:"repository,omitempty"`
 
 	// Tag is used to override the default image tag.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Pattern=`^[\w][\w.-]{0,127}$`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=128
 	Tag string `json:"tag,omitempty"`
 }
 
@@ -277,6 +293,7 @@ type ImageRegistry struct {
 type User struct {
 	// Name specifies the user name.
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength=256
 	Name string `json:"name"`
 
 	// HashedPassword is a hashed password for the user, formatted as described
@@ -284,18 +301,24 @@ type User struct {
 	// instructions to create a hashed password.
 	// An empty string is not marshalled, because it is not a valid value.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=106
 	HashedPassword string `json:"hashedPassword,omitempty"`
 
 	// SSHAuthorizedKeys is a list of public SSH keys to write to the
 	// machine. Use the corresponding private SSH keys to authenticate. See SSH
 	// documentation for instructions to create a key pair.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=32
+	// +kubebuilder:validation:items:MaxLength=256
 	SSHAuthorizedKeys []string `json:"sshAuthorizedKeys,omitempty"`
 
 	// Sudo is a sudo user specification, formatted as described in the sudo
 	// documentation.
 	// An empty string is not marshalled, because it is not a valid value.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=1024
 	Sudo string `json:"sudo,omitempty"`
 }
 
@@ -362,6 +385,8 @@ type NTP struct {
 	// Servers is a list of NTP servers to use for time synchronization.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=16
+	// +kubebuilder:validation:items:MaxLength=253
 	Servers []string `json:"servers"`
 }
 

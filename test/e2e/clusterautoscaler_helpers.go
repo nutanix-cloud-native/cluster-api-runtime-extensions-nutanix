@@ -17,7 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
@@ -58,7 +57,7 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 		return
 	}
 
-	switch ptr.Deref(input.ClusterAutoscaler.Strategy, "") {
+	switch input.ClusterAutoscaler.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		crs := &addonsv1.ClusterResourceSet{}
 		Expect(input.ClusterProxy.GetClient().Get(
@@ -99,7 +98,7 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 		Fail(
 			fmt.Sprintf(
 				"Do not know how to wait for cluster autoscaler using strategy %s to be ready",
-				*input.ClusterAutoscaler.Strategy,
+				input.ClusterAutoscaler.Strategy,
 			),
 		)
 	}

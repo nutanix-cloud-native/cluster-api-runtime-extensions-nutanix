@@ -14,7 +14,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
@@ -74,7 +73,7 @@ func WaitForAWSCCMToBeReadyInWorkloadCluster(
 	workloadClusterClient client.Client,
 	input WaitForCCMToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
 ) {
-	switch ptr.Deref(input.CCM.Strategy, "") {
+	switch input.CCM.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		crs := &addonsv1.ClusterResourceSet{}
 		Expect(input.ClusterProxy.GetClient().Get(
@@ -111,7 +110,7 @@ func WaitForAWSCCMToBeReadyInWorkloadCluster(
 		Fail(
 			fmt.Sprintf(
 				"Do not know how to wait for AWS CCM using strategy %s to be ready",
-				*input.CCM.Strategy,
+				input.CCM.Strategy,
 			),
 		)
 	}
@@ -132,7 +131,7 @@ func WaitForNutanixCCMToBeReadyInWorkloadCluster(
 	workloadClusterClient client.Client,
 	input WaitForCCMToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
 ) {
-	switch ptr.Deref(input.CCM.Strategy, "") {
+	switch input.CCM.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
 		WaitForHelmReleaseProxyReadyForCluster(
 			ctx,
@@ -149,7 +148,7 @@ func WaitForNutanixCCMToBeReadyInWorkloadCluster(
 		Fail(
 			fmt.Sprintf(
 				"Do not know how to wait for Nutanix CCM using strategy %s to be ready",
-				*input.CCM.Strategy,
+				input.CCM.Strategy,
 			),
 		)
 	}

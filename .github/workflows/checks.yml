@@ -132,21 +132,16 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Export golang and golangci-lint versions
-        id: versions
-        run: |
-          echo "golangci-lint=$(devbox run -- golangci-lint version --short)" >>"${GITHUB_OUTPUT}"
-          echo "golang=$(devbox run -- go version | grep -o "[[:digit:]]\+.[[:digit:]]\+\(.[[:digit:]]\+\)\?")" >>"${GITHUB_OUTPUT}"
+      - name: Install custom golangci-lint
+        run: devbox run -- make hack/tools/golangci-lint-kube-api-linter
 
       - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v2
-        with:
-          fail_level: error
-          reporter: github-pr-review
-          golangci_lint_version: v${{ steps.versions.outputs.golangci-lint }}
-          go_version: v${{ steps.versions.outputs.golang }}
-          workdir: ${{ matrix.module }}
-          golangci_lint_flags: "--config=${{ github.workspace }}/.golangci.yml"
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ${{ github.workspace }}/hack/tools/golangci-lint-kube-api-linter run --config=${{ github.workspace }}/.golangci.yml --output.text.path=stdout ./... | \
+            devbox run -- reviewdog -f=golangci-lint -reporter=github-pr-review --fail-level=any
+        working-directory: ${{ matrix.module }}
 
   lint-gha:
     runs-on: ubuntu-24.04

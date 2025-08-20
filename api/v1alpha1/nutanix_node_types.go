@@ -10,16 +10,20 @@ import (
 )
 
 type NutanixControlPlaneNodeSpec struct {
+	// +kubebuilder:validation:Required
 	MachineDetails NutanixMachineDetails `json:"machineDetails"`
 
 	// failureDomains specifies a list of NutanixFailureDomains (by names)
 	// that the cluster uses to deploy its control-plane machines.
 	// +listType=set
-	// +optional
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=5
+	// +kubebuilder:validation:items:MaxLength=253
 	FailureDomains []string `json:"failureDomains,omitempty"`
 }
 
 type NutanixWorkerNodeSpec struct {
+	// +kubebuilder:validation:Required
 	MachineDetails NutanixMachineDetails `json:"machineDetails"`
 }
 
@@ -40,35 +44,33 @@ type NutanixMachineDetails struct {
 	// image identifies the image uploaded to Prism Central (PC). The identifier
 	// (uuid or name) can be obtained from the console or API.
 	// +kubebuilder:validation:Optional
-	// +optional
 	Image *capxv1.NutanixResourceIdentifier `json:"image,omitempty"`
 
 	// imageLookup is a container that holds how to look up vm images for the cluster.
 	// +kubebuilder:validation:Optional
-	// +optional
 	ImageLookup *capxv1.NutanixImageLookup `json:"imageLookup,omitempty"`
 
 	// cluster identifies the Prism Element in which the machine will be created.
 	// The identifier (uuid or name) can be obtained from the console or API.
 	// +kubebuilder:validation:Optional
-	// +optional
 	Cluster *capxv1.NutanixResourceIdentifier `json:"cluster,omitempty"`
 
 	// subnet identifies the network subnet to use for the machine.
 	// The identifier (uuid or name) can be obtained from the console or API.
 	// +kubebuilder:validation:Optional
-	// +optional
+	// +kubebuilder:validation:MaxItems=16
 	Subnets []capxv1.NutanixResourceIdentifier `json:"subnets,omitempty"`
 
 	// List of categories that need to be added to the machines. Categories must already
 	// exist in Prism Central. One category key can have more than one value.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=32
 	AdditionalCategories []capxv1.NutanixCategoryIdentifier `json:"additionalCategories,omitempty"`
 
 	// Defines the boot type of the virtual machine. Only supports UEFI and Legacy
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum:=legacy;uefi
-	BootType capxv1.NutanixBootType `json:"bootType"`
+	BootType capxv1.NutanixBootType `json:"bootType,omitempty"`
 
 	// systemDiskSize is size (in Quantity format) of the system disk of the VM
 	// The minimum systemDiskSize is 20Gi bytes
@@ -82,6 +84,7 @@ type NutanixMachineDetails struct {
 
 	// List of GPU devices that need to be added to the machines.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=32
 	GPUs []capxv1.NutanixGPU `json:"gpus,omitempty"`
 }
 

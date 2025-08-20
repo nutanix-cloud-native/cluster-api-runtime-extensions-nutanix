@@ -28,6 +28,7 @@ type ControlPlaneEndpointSpec struct {
 	// The hostname on which the API server is serving.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
 	Host string `json:"host"`
 
 	// The port on which the API server is serving.
@@ -58,6 +59,7 @@ type ControlPlaneVirtualIPConfiguration struct {
 	// If left empty, the value from controlPlaneEndpoint.host will be used.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Format=ipv4
+	// +kubebuilder:validation:MinLength=1
 	Address string `json:"address,omitempty"`
 
 	// The port on which the API server is serving.
@@ -75,6 +77,7 @@ type LocalObjectReference struct {
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
 	Name string `json:"name"`
 }
 

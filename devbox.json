@@ -28,6 +28,7 @@
     "kubernetes-controller-tools@latest",
     "kustomize@latest",
     "pre-commit@latest",
+    "reviewdog@latest",
     "rsync@latest",
     "setup-envtest@latest",
     "shfmt@latest",

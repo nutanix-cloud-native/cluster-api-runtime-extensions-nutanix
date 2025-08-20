@@ -56,6 +56,7 @@ spec:
                                   description: |-
                                     Name of the referent.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  maxLength: 253
                                   minLength: 1
                                   type: string
                               required:
@@ -116,6 +117,7 @@ spec:
                                   type: string
                                 name:
                                   description: Name is the name of resource being referenced.
+                                  maxLength: 253
                                   minLength: 1
                                   type: string
                               required:
@@ -137,6 +139,7 @@ spec:
                               type: string
                             storageClassConfig:
                               description: Name of the default storage class config the specified default provider.
+                              maxLength: 242
                               minLength: 1
                               type: string
                           required:
@@ -157,6 +160,7 @@ spec:
                                           description: |-
                                             Name of the referent.
                                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          maxLength: 253
                                           minLength: 1
                                           type: string
                                       required:
@@ -169,7 +173,6 @@ spec:
                                   additionalProperties:
                                     properties:
                                       allowExpansion:
-                                        default: false
                                         description: If the storage class should allow volume expanding
                                         type: boolean
                                       parameters:
@@ -267,6 +270,7 @@ spec:
                                   - end
                                   - start
                                 type: object
+                              maxItems: 10
                               minItems: 1
                               type: array
                           required:
@@ -307,17 +311,18 @@ spec:
                             properties:
                               id:
                                 description: Existing Subnet ID to use for the cluster.
-                                minLength: 1
+                                format: ^subnet-[0-9a-f]{8}(?:[0-9a-f]{9})?$
                                 type: string
                             required:
                               - id
                             type: object
+                          maxItems: 10
                           type: array
                         vpc:
                           properties:
                             id:
                               description: Existing VPC ID to use for the cluster.
-                              minLength: 1
+                              format: ^vpc-[0-9a-f]{8}(?:[0-9a-f]{9})?$
                               type: string
                           required:
                             - id
@@ -325,6 +330,8 @@ spec:
                       type: object
                     region:
                       description: AWS region to create cluster in.
+                      maxLength: 16
+                      minLength: 4
                       type: string
                   type: object
                 controlPlane:
@@ -355,8 +362,11 @@ spec:
                             properties:
                               id:
                                 description: ID is the id of the security group
+                                format: ^sg-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                                minLength: 1
                                 type: string
                             type: object
+                          maxItems: 32
                           type: array
                         ami:
                           description: |-
@@ -365,30 +375,43 @@ spec:
                           properties:
                             id:
                               description: AMI ID is the reference to the AMI from which to create the machine instance.
+                              format: ^ami-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                              minLength: 1
                               type: string
                             lookup:
                               description: Lookup is the lookup arguments for the AMI.
                               properties:
                                 baseOS:
                                   description: The name of the base os for image lookup
+                                  maxLength: 32
+                                  minLength: 1
                                   type: string
                                 format:
                                   description: |-
                                     AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
                                     base OS and kubernetes version.
                                   example: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
+                                  maxLength: 128
+                                  minLength: 1
                                   type: string
                                 org:
                                   description: The AWS Organization ID to use for image lookup.
+                                  format: ^o-[0-9a-z]{10,32}$
+                                  maxLength: 34
+                                  minLength: 12
                                   type: string
                               type: object
                           type: object
                         iamInstanceProfile:
                           default: control-plane.cluster-api-provider-aws.sigs.k8s.io
                           description: The IAM instance profile to use for the cluster Machines.
+                          maxLength: 128
+                          minLength: 1
                           type: string
                         instanceType:
                           default: m5.xlarge
+                          maxLength: 32
+                          minLength: 1
                           type: string
                         placementGroup:
                           description: PlacementGroup specifies the placement group in which to launch the instance.
@@ -438,14 +461,18 @@ spec:
                             type: string
                           key:
                             description: The taint key to be applied to a node.
+                            maxLength: 253
                             type: string
                           value:
                             description: The taint value corresponding to the taint key.
+                            maxLength: 63
+                            minLength: 1
                             type: string
                         required:
                           - effect
                           - key
                         type: object
+                      maxItems: 32
                       type: array
                   type: object
                 dns:
@@ -462,10 +489,14 @@ spec:
                           properties:
                             repository:
                               description: Repository is used to override the image repository to pull from.
+                              maxLength: 2048
+                              minLength: 1
                               pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
                               type: string
                             tag:
                               description: Tag is used to override the default image tag.
+                              maxLength: 128
+                              minLength: 1
                               pattern: ^[\w][\w.-]{0,127}$
                               type: string
                           type: object
@@ -498,10 +529,14 @@ spec:
                       properties:
                         repository:
                           description: Repository is used to override the image repository to pull from.
+                          maxLength: 2048
+                          minLength: 1
                           pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
                           type: string
                         tag:
                           description: Tag is used to override the default image tag.
+                          maxLength: 128
+                          minLength: 1
                           pattern: ^[\w][\w.-]{0,127}$
                           type: string
                       type: object
@@ -509,8 +544,10 @@ spec:
                 extraAPIServerCertSANs:
                   description: Extra Subject Alternative Names for the API Server signing cert.
                   items:
+                    maxLength: 253
                     pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
+                  maxItems: 100
                   type: array
                   uniqueItems: true
                 globalImageRegistryMirror:
@@ -529,6 +566,7 @@ spec:
                               description: |-
                                 Name of the referent.
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              maxLength: 253
                               minLength: 1
                               type: string
                           required:
@@ -559,6 +597,7 @@ spec:
                                 description: |-
                                   Name of the referent.
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                maxLength: 253
                                 minLength: 1
                                 type: string
                             required:
@@ -573,6 +612,7 @@ spec:
                     required:
                       - url
                     type: object
+                  maxItems: 32
                   type: array
                 kubeProxy:
                   description: KubeProxy defines the configuration for kube-proxy.
@@ -592,6 +632,8 @@ spec:
                   type: object
                 kubernetesImageRepository:
                   description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
+                  maxLength: 2048
+                  minLength: 1
                   pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
                   type: string
                 ntp:
@@ -600,7 +642,9 @@ spec:
                     servers:
                       description: Servers is a list of NTP servers to use for time synchronization.
                       items:
+                        maxLength: 253
                         type: string
+                      maxItems: 16
                       minItems: 1
                       type: array
                   required:
@@ -616,13 +660,20 @@ spec:
                         Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
                           ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
                       items:
+                        maxLength: 253
+                        minLength: 1
                         type: string
+                      maxItems: 128
                       type: array
                     http:
                       description: HTTP proxy value.
+                      maxLength: 2048
+                      minLength: 1
                       type: string
                     https:
                       description: HTTPS proxy value.
+                      maxLength: 2048
+                      minLength: 1
                       type: string
                   type: object
                 users:
@@ -635,9 +686,12 @@ spec:
                           by the crypt(5) man page. See your distribution's documentation for
                           instructions to create a hashed password.
                           An empty string is not marshalled, because it is not a valid value.
+                        maxLength: 106
+                        minLength: 1
                         type: string
                       name:
                         description: Name specifies the user name.
+                        maxLength: 256
                         type: string
                       sshAuthorizedKeys:
                         description: |-
@@ -645,17 +699,22 @@ spec:
                           machine. Use the corresponding private SSH keys to authenticate. See SSH
                           documentation for instructions to create a key pair.
                         items:
+                          maxLength: 256
                           type: string
+                        maxItems: 32
                         type: array
                       sudo:
                         description: |-
                           Sudo is a sudo user specification, formatted as described in the sudo
                           documentation.
                           An empty string is not marshalled, because it is not a valid value.
+                        maxLength: 1024
+                        minLength: 1
                         type: string
                     required:
                       - name
                     type: object
+                  maxItems: 32
                   type: array
               type: object
           type: object

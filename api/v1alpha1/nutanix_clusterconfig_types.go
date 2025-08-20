@@ -35,13 +35,15 @@ type NutanixPrismCentralEndpointSpec struct {
 
 	// use insecure connection to Prism Central endpoint
 	// +kubebuilder:validation:Optional
-	Insecure bool `json:"insecure"`
+	Insecure bool `json:"insecure,omitempty"`
 
 	// A base64 PEM encoded x509 cert for the RootCA that was used to create
 	// the certificate for a Prism Central that uses certificates that were issued by a non-publicly trusted RootCA.
 	// The trust bundle is added to the cert pool used to authenticate the TLS connection to the Prism Central.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Format=`byte`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=1048576
 	AdditionalTrustBundle string `json:"additionalTrustBundle,omitempty"`
 
 	// A reference to the Secret for credential information for the target Prism Central instance.

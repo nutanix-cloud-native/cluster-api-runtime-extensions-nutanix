@@ -45,10 +45,10 @@ func Test_providerConfigsThatNeedConfiguration(t *testing.T) {
 		{
 			name: "ECR registry with no credentials",
 			configs: []providerConfig{
-				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+				{URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			},
 			expected: []providerConfig{
-				{URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com"},
+				{URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com"},
 			},
 		},
 		{
@@ -67,11 +67,11 @@ func Test_providerConfigsThatNeedConfiguration(t *testing.T) {
 		{
 			name: "ECR mirror with no credentials",
 			configs: []providerConfig{{
-				URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+				URL:    "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
 				Mirror: true,
 			}},
 			expected: []providerConfig{{
-				URL:    "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+				URL:    "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
 				Mirror: true,
 			}},
 		},
@@ -203,7 +203,7 @@ var _ = Describe("Generate Image registry patches", func() {
 					capitest.VariableWithValue(
 						v1alpha1.ClusterConfigVariableName,
 						[]v1alpha1.ImageRegistry{{
-							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+							URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
 						}},
 						v1alpha1.ImageRegistriesVariableName,
 					),
@@ -338,7 +338,7 @@ var _ = Describe("Generate Image registry patches", func() {
 					capitest.VariableWithValue(
 						v1alpha1.ClusterConfigVariableName,
 						[]v1alpha1.ImageRegistry{{
-							URL: "https://123456789.dkr.ecr.us-east-1.amazonaws.com",
+							URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
 						}},
 						v1alpha1.ImageRegistriesVariableName,
 					),
