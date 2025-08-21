@@ -89,6 +89,14 @@ spec:
                     default: m5.2xlarge
                     description: The AWS instance type to use for the cluster Machines.
                     type: string
+                  nodeType:
+                    description: |-
+                      nodeType specifies the node type to use for the node. This affects the bootstrap format created
+                      for the node. If `nodeType` is specified as `al2023`, the bootstrap format will be `nodeadm`, otherwise
+                      the format will be `cloud-init`.
+                    enum:
+                    - al2023
+                    type: string
                   placementGroup:
                     description: PlacementGroup specifies the placement group in which
                       to launch the instance.
