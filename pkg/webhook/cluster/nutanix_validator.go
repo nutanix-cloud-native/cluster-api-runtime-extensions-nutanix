@@ -11,6 +11,7 @@ import (
 	"net/netip"
 
 	v1 "k8s.io/api/admission/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	commonvariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/helpers"
 )
@@ -220,41 +222,69 @@ func validateWorkerFailureDomainConfig(
 		"workerConfig",
 	)
 
-	// Get the machineDetails from cluster variable "workerConfig" if it is configured
-	defaultWorkerConfig, err := variables.UnmarshalWorkerConfigVariable(cluster.Spec.Topology.Variables)
-	if err != nil {
-		fldErrs = append(fldErrs, field.InternalError(workerConfigVarPath,
-			fmt.Errorf("failed to unmarshal cluster topology variable %q: %w", v1alpha1.WorkerConfigVariableName, err)))
-	}
+	// Merge the global cluster variables with the worker config overrides.
+	mdVariables := commonvariables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 
 	if cluster.Spec.Topology.Workers != nil {
 		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
 			md := cluster.Spec.Topology.Workers.MachineDeployments[i]
 			hasFailureDomain := md.FailureDomain != nil && *md.FailureDomain != ""
+			wcfgPath := workerConfigVarPath
 
-			// Get the machineDetails from the overrides variable "workerConfig" if it is configured,
-			// otherwise use the defaultWorkerConfig if it is configured.
-			var workerConfig *variables.WorkerNodeConfigSpec
+			// Get the md variable overrides.
+			var mdVariableOverrides map[string]apiextensionsv1.JSON
 			if md.Variables != nil && len(md.Variables.Overrides) > 0 {
-				workerConfig, err = variables.UnmarshalWorkerConfigVariable(md.Variables.Overrides)
-				if err != nil {
-					fldErrs = append(fldErrs, field.InternalError(
-						workerConfigMDVarOverridePath,
-						fmt.Errorf(
-							"failed to unmarshal worker overrides variable %q: %w",
-							v1alpha1.WorkerConfigVariableName,
-							err,
-						),
-					))
+				wcfgPath = workerConfigMDVarOverridePath
+				mdVariableOverrides = commonvariables.ClusterVariablesToVariablesMap(md.Variables.Overrides)
+
+				// If mdVariables is nil, initialize it with mdVariableOverrides, otherwise merge global and
+				// variable overrides.
+				if mdVariables == nil {
+					mdVariables = mdVariableOverrides
+				} else {
+					// Merge global and variable overrides if global variables are present.
+					mergedVariables, err := commonvariables.MergeVariableOverridesWithGlobal(
+						mdVariableOverrides,
+						mdVariables,
+					)
+					if err != nil {
+						fldErrs = append(fldErrs, field.InternalError(
+							workerConfigMDVarOverridePath,
+							fmt.Errorf(
+								"failed to merge global and worker variable overrides for MachineDeployment %q: %w",
+								md.Name,
+								err,
+							),
+						))
+					}
+
+					mdVariables = mergedVariables
 				}
 			}
 
-			wcfgPath := workerConfigMDVarOverridePath
-			if workerConfig == nil {
-				workerConfig = defaultWorkerConfig
-				wcfgPath = workerConfigVarPath
+			workerConfigVarJSON, workerConfigPresent := mdVariables[v1alpha1.WorkerConfigVariableName]
+			if !workerConfigPresent {
+				continue
 			}
-			if workerConfig == nil || workerConfig.Nutanix == nil {
+
+			workerConfigClusterVar := clusterv1.ClusterVariable{
+				Name:  v1alpha1.WorkerConfigVariableName,
+				Value: *workerConfigVarJSON.DeepCopy(),
+			}
+
+			workerConfig := variables.WorkerNodeConfigSpec{}
+			if err := variables.UnmarshalClusterVariable(&workerConfigClusterVar, &workerConfig); err != nil {
+				fldErrs = append(fldErrs, field.InternalError(
+					workerConfigMDVarOverridePath,
+					fmt.Errorf(
+						"failed to unmarshal worker overrides variable %q: %w",
+						v1alpha1.WorkerConfigVariableName,
+						err,
+					),
+				))
+			}
+
+			if workerConfig.Nutanix == nil {
 				continue
 			}
 

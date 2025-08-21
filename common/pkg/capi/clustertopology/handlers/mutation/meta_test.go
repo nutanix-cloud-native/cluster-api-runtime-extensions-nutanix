@@ -34,13 +34,38 @@ var _ MetaMutator = &testHandler{}
 func (h *testHandler) Mutate(
 	_ context.Context,
 	obj *unstructured.Unstructured,
-	_ map[string]apiextensionsv1.JSON,
+	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ client.ObjectKey,
 	_ ClusterGetter,
 ) error {
 	if h.returnErr {
 		return fmt.Errorf("This is a failure")
+	}
+
+	varAVal, ok := vars["varA"]
+	if !ok {
+		return fmt.Errorf("varA not found in vars")
+	}
+	if string(varAVal.Raw) != `{"a":1,"b":2}` {
+		return fmt.Errorf("varA value mismatch: %s", string(varAVal.Raw))
+	}
+
+	varBVal, ok := vars["varB"]
+	if !ok {
+		return fmt.Errorf("varB not found in vars")
+	}
+	switch obj.GetKind() {
+	case "KubeadmControlPlaneTemplate":
+		if string(varBVal.Raw) != `{"c":3,"d":{"e":4,"f":5}}` {
+			return fmt.Errorf("varB value mismatch: %s", string(varBVal.Raw))
+		}
+	case "KubeadmConfigTemplate":
+		if string(varBVal.Raw) != `{"c":3,"d":{"e":5,"f":5}}` {
+			return fmt.Errorf("varB value mismatch: %s", string(varBVal.Raw))
+		}
+	default:
+		return fmt.Errorf("unexpected object kind: %s", obj.GetKind())
 	}
 
 	if h.mutateControlPlane {
@@ -61,7 +86,7 @@ func (h *testHandler) Mutate(
 
 	return patches.MutateIfApplicable(
 		obj,
-		machineVars(),
+		vars,
 		&holderRef,
 		selectors.WorkersKubeadmConfigTemplateSelector(),
 		logr.Discard(),
@@ -78,10 +103,32 @@ func (h *testHandler) Mutate(
 	)
 }
 
-func machineVars() map[string]apiextensionsv1.JSON {
-	return map[string]apiextensionsv1.JSON{
-		"builtin": {Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`)},
-	}
+func globalVars() []runtimehooksv1.Variable {
+	return []runtimehooksv1.Variable{{
+		Name: "varA",
+		Value: apiextensionsv1.JSON{
+			Raw: []byte(`{"a": 1, "b": 2}`),
+		},
+	}, {
+		Name: "varB",
+		Value: apiextensionsv1.JSON{
+			Raw: []byte(`{"c": 3, "d": {"e": 4, "f": 5}}`),
+		},
+	}}
+}
+
+func overrideVars() []runtimehooksv1.Variable {
+	return []runtimehooksv1.Variable{{
+		Name: "builtin",
+		Value: apiextensionsv1.JSON{
+			Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+		},
+	}, {
+		Name: "varB",
+		Value: apiextensionsv1.JSON{
+			Raw: []byte(`{"d": {"e": 5}}`),
+		},
+	}}
 }
 
 func TestMetaGeneratePatches(t *testing.T) {
@@ -221,9 +268,12 @@ func TestMetaGeneratePatches(t *testing.T) {
 			h := NewMetaGeneratePatchesHandler("", nil, tt.mutaters...).(GeneratePatches)
 
 			resp := &runtimehooksv1.GeneratePatchesResponse{}
+			kctReq := request.NewKubeadmConfigTemplateRequestItem("kubeadm-config")
+			kctReq.Variables = overrideVars()
 			h.GeneratePatches(context.Background(), &runtimehooksv1.GeneratePatchesRequest{
+				Variables: globalVars(),
 				Items: []runtimehooksv1.GeneratePatchesRequestItem{
-					request.NewKubeadmConfigTemplateRequestItem("kubeadm-config"),
+					kctReq,
 					request.NewKubeadmControlPlaneTemplateRequestItem("kubeadm-control-plane"),
 				},
 			}, resp)
