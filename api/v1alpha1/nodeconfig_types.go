@@ -136,12 +136,23 @@ func (s EKSWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolin
 // Otherwise, it should go into the ClusterConfigSpec.
 type EKSWorkerNodeConfigSpec struct {
 	// +kubebuilder:validation:Optional
-	EKS *AWSWorkerNodeSpec `json:"eks,omitempty"`
+	EKS *EKSWorkerNodeSpec `json:"eks,omitempty"`
 
-	EKSNodeSpec `json:",inline"`
+	EKSGenericNodeSpec `json:",inline"`
 }
 
-type EKSNodeSpec struct {
+type EKSWorkerNodeSpec struct {
+	AWSWorkerNodeSpec `json:",inline"`
+
+	// nodeType specifies the node type to use for the node. This affects the bootstrap format created
+	// for the node. If `nodeType` is specified as `al2023`, the bootstrap format will be `nodeadm`, otherwise
+	// the format will be `cloud-init`.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum:=al2023
+	NodeType string `json:"nodeType,omitempty"`
+}
+
+type EKSGenericNodeSpec struct {
 	// Taints specifies the taints the Node API object should be registered with.
 	// +kubebuilder:validation:Optional
 	Taints []Taint `json:"taints,omitempty"`

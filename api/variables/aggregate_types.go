@@ -50,7 +50,7 @@ type WorkerNodeConfigSpec struct {
 
 	Nutanix *carenv1.NutanixWorkerNodeSpec `json:"nutanix,omitempty"`
 
-	EKS *carenv1.AWSWorkerNodeSpec `json:"eks,omitempty"`
+	EKS *carenv1.EKSWorkerNodeSpec `json:"eks,omitempty"`
 
 	carenv1.GenericNodeSpec `json:",inline"`
 }

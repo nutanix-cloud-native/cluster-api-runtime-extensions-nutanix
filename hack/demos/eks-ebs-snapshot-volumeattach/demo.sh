@@ -34,6 +34,7 @@ envsubst --no-unset -i eks-test.yaml | kubectl apply --server-side -f -
 kubectl wait --for=condition=Ready cluster/"${EKS_CLUSTER_NAME}" --timeout=20m
 
 echo "Cluster is ready, getting kubeconfig"
+kubectl wait --for=create secret "${EKS_CLUSTER_NAME}-user-kubeconfig" --timeout=30s
 EKS_KUBECONFIG="$(mktemp -p "${TMPDIR:-/tmp}")"
 kubectl get secrets "${EKS_CLUSTER_NAME}-user-kubeconfig" -oyaml |
   gojq --yaml-input -r '.data.value | @base64d' >"${EKS_KUBECONFIG}"
@@ -147,7 +148,37 @@ kubectl -n "${NAMESPACE}" wait --for=jsonpath='{.status.readyToUse}'=true volume
 kubectl -n "${NAMESPACE}" get volumesnapshot "${SNAPSHOT_NAME}"
 
 echo
-echo "Step 6: Restore the snapshot to a new PVC"
+echo "Step 6: Create standard performance VolumeAttributesClass"
+cat <<EOF | kubectl apply --server-side -f -
+apiVersion: storage.k8s.io/v1beta1
+kind: VolumeAttributesClass
+metadata:
+  name: ${STORAGE_CLASS_IMMEDIATE}-standard-performance
+driverName: ebs.csi.aws.com
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+EOF
+kubectl -n "${NAMESPACE}" get volumeattributesclass "${STORAGE_CLASS_IMMEDIATE}-standard-performance" -oyaml
+
+echo
+echo "Step 7: Create enhanced performance VolumeAttributesClass"
+cat <<EOF | kubectl apply --server-side -f -
+apiVersion: storage.k8s.io/v1beta1
+kind: VolumeAttributesClass
+metadata:
+  name: ${STORAGE_CLASS_IMMEDIATE}-enhanced-performance
+driverName: ebs.csi.aws.com
+parameters:
+  type: gp3
+  iops: "4000"
+  throughput: "130"
+EOF
+kubectl -n "${NAMESPACE}" get volumeattributesclass "${STORAGE_CLASS_IMMEDIATE}-enhanced-performance" -oyaml
+
+echo
+echo "Step 8: Restore the snapshot to a new PVC with standard performance"
 cat <<EOF | kubectl apply --server-side -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -159,8 +190,9 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 10Gi
   storageClassName: ${STORAGE_CLASS_IMMEDIATE}
+  volumeAttributesClassName: ${STORAGE_CLASS_IMMEDIATE}-standard-performance
   dataSource:
     name: ${SNAPSHOT_NAME}
     kind: VolumeSnapshot
@@ -172,8 +204,11 @@ echo "Waiting for restored PVC to be bound..."
 kubectl -n "${NAMESPACE}" wait --for=jsonpath='{.status.phase}'=Bound pvc/"${RESTORED_PVC}" --timeout=120s
 kubectl -n "${NAMESPACE}" get pvc "${RESTORED_PVC}"
 
+echo "Waiting for PVC to have standard performance volume attributes..."
+kubectl -n "${NAMESPACE}" wait --for=jsonpath='{.status.currentVolumeAttributesClassName}'="${STORAGE_CLASS_IMMEDIATE}-standard-performance" pvc/"${RESTORED_PVC}" --timeout=120s
+
 echo
-echo "Step 7: Attach the restored volume to a node via VolumeAttachment"
+echo "Step 9: Attach the restored volume to a node via VolumeAttachment"
 # Find the PV backing the restored PVC
 RESTORED_PV="$(kubectl -n "${NAMESPACE}" get pvc "${RESTORED_PVC}" -o jsonpath='{.spec.volumeName}')"
 # Find a node to attach to
@@ -199,10 +234,17 @@ kubectl wait --for=jsonpath='{.status.attached}'=true volumeattachment/"${ATTACH
 kubectl -n "${NAMESPACE}" get volumeattachment "${ATTACHMENT_NAME}"
 
 echo
-echo "Step 8: Show that the restored volume is attached directly to the node with the correct data"
+echo "Step 10: Show that the restored volume is attached directly to the node with the correct data"
 ATTACHMENT_DEVICE_PATH=$(kubectl -n "${NAMESPACE}" get volumeattachment "${ATTACHMENT_NAME}" -o jsonpath='{.status.attachmentMetadata.devicePath}')
 kubectl debug "node/${NODE_NAME}" --image=ubuntu -it --profile=sysadmin --quiet -- \
   bash -ec "chroot /host bash -ec \"mkdir -p /tmp/attached; mount \"${ATTACHMENT_DEVICE_PATH}\" /tmp/attached; cat /tmp/attached/hello.txt; umount /tmp/attached\""
+
+echo
+echo "Step 11: Patch the restored PVC to use enhanced performance via VolumeAttributesClass"
+kubectl -n "${NAMESPACE}" patch pvc "${RESTORED_PVC}" --type='merge' -p='{"spec":{"volumeAttributesClassName":"'"${STORAGE_CLASS_IMMEDIATE}"'-enhanced-performance"}}'
+
+echo "Waiting for PVC to have enhanced performance volume attributes..."
+kubectl -n "${NAMESPACE}" wait --for=jsonpath='{.status.currentVolumeAttributesClassName}'="${STORAGE_CLASS_IMMEDIATE}-enhanced-performance" pvc/"${RESTORED_PVC}" --timeout=120s
 
 echo
 echo

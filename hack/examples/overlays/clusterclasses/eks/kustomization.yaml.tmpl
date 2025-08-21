@@ -57,3 +57,8 @@ patches:
       - op: "add"
         path: "/spec/template/spec/instanceType"
         value: "PLACEHOLDER"
+      - op: "add"
+        path: "/spec/template/spec/instanceMetadataOptions"
+        value:
+          httpTokens: required
+          httpPutResponseHopLimit: 2

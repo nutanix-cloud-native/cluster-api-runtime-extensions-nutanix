@@ -10,6 +10,7 @@ export CAAPH_VERSION := $(shell cd hack/third-party/caaph && GOWORK=off go list 
 
 # Leave Nutanix credentials empty here and set it when creating the clusters
 .PHONY: clusterctl.init
+clusterctl.init: CAPA_PATCHED_IMAGE := ghcr.io/jimmidyson/cluster-api-aws/cluster-api-aws-controller:$(CAPA_VERSION)-eksclusterclass-al2023
 clusterctl.init:
 	env CLUSTER_TOPOLOGY=true \
 	    EXP_RUNTIME_SDK=true \
@@ -26,9 +27,10 @@ clusterctl.init:
 	      --addon helm:$(CAAPH_VERSION) \
 	      --wait-providers
 	kubectl --kubeconfig=$(KIND_KUBECONFIG) apply --server-side --force-conflicts \
-		-k 'https://github.com/jimmidyson/cluster-api-provider-aws/config/crd?ref=$(CAPA_VERSION)-eksclusterclass'
+		-k 'https://github.com/jimmidyson/cluster-api-provider-aws/config/crd?ref=$(CAPA_VERSION)-eksclusterclass-al2023'
 	kubectl --kubeconfig=$(KIND_KUBECONFIG) set image -n capa-system deployment/capa-controller-manager \
-		manager=ghcr.io/jimmidyson/cluster-api-aws/cluster-api-aws-controller:$(CAPA_VERSION)-eksclusterclass
+		manager=$(CAPA_PATCHED_IMAGE)@$(shell crane digest $(CAPA_PATCHED_IMAGE))
+	kubectl --kubeconfig=$(KIND_KUBECONFIG) rollout status -n capa-system deployment/capa-controller-manager
 
 .PHONY: clusterctl.delete
 clusterctl.delete:

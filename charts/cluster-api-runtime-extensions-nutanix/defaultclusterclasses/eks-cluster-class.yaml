@@ -87,6 +87,9 @@ metadata:
 spec:
   template:
     spec:
+      instanceMetadataOptions:
+        httpPutResponseHopLimit: 2
+        httpTokens: required
       instanceType: PLACEHOLDER
       sshKeyName: ""
 ---

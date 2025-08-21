@@ -32,14 +32,14 @@ type eksNetworkPatchHandler struct {
 }
 
 func NewPatch() *eksNetworkPatchHandler {
-	return newEKSPatchPatchHandler(
+	return newEKNetworkPatchHandler(
 		v1alpha1.ClusterConfigVariableName,
 		v1alpha1.EKSVariableName,
 		VariableName,
 	)
 }
 
-func newEKSPatchPatchHandler(
+func newEKNetworkPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *eksNetworkPatchHandler {
