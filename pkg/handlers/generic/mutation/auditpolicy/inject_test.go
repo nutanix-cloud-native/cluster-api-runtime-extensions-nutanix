@@ -49,11 +49,12 @@ var _ = Describe("Generate Audit Policy patches", func() {
 						gomega.HaveKeyWithValue(
 							"extraArgs",
 							map[string]interface{}{
-								"audit-log-maxbackup": "10",
+								"audit-log-maxbackup": "90",
 								"audit-log-maxsize":   "100",
 								"audit-log-path":      "/var/log/audit/kube-apiserver-audit.log",
 								"audit-policy-file":   "/etc/kubernetes/audit-policy.yaml",
 								"audit-log-maxage":    "30",
+								"audit-log-compress":  "true",
 							},
 						),
 						gomega.HaveKeyWithValue(
