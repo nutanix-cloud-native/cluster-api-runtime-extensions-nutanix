@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.33.2 (2025-08-26)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Correct placementGroup variable name in API by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1256
+* fix: hardcode the kubectl tag in registry syncer Pods by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1262
+### Other Changes
+* test: Add t.Helper() calls in nested tests by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1258
+* build: remove legacy kube-vip manifest by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1260
+* refactor: move deprecated Kubelet flags to KubeletConfiguration by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1259
+* build: Add kube-api-linter by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1209
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.33.1...v0.33.2
+
 ## 0.33.1 (2025-07-31)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
