@@ -538,11 +538,6 @@ data:
                     - auto
                     - hybrid
                 weight: 1
-              requiredDuringSchedulingIgnoredDuringExecution:
-                nodeSelectorTerms:
-                - matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: Exists
             podAntiAffinity:
               preferredDuringSchedulingIgnoredDuringExecution:
               - podAffinityTerm:
