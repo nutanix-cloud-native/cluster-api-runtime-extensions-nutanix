@@ -10,7 +10,6 @@ providers to our management cluster via `clusterctl`:
 ```shell
 env CLUSTER_TOPOLOGY=true \
     EXP_RUNTIME_SDK=true  \
-    EXP_CLUSTER_RESOURCE_SET=true  \
     NUTANIX_ENDPOINT= NUTANIX_PASSWORD= NUTANIX_USER=  \
     AWS_B64ENCODED_CREDENTIALS=  \
     clusterctl init \
