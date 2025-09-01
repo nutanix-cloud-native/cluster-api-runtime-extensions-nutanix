@@ -48,6 +48,7 @@ func TestReturnsCorrectMappingForGetKubernetesToCoreDNSVersionMap(t *testing.T) 
 		"v1.31": "v1.11.3",
 		"v1.32": "v1.11.3",
 		"v1.33": "v1.12.0",
+		"v1.34": "v1.12.1",
 	}
 	assert.Equal(t, expected, mapping)
 }
