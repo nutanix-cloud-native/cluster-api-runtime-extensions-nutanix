@@ -9,6 +9,8 @@ toolchain go1.24.4
 
 require sigs.k8s.io/cluster-api-provider-aws/v2 v2.9.0
 
+replace sigs.k8s.io/cluster-api-provider-aws/v2 => github.com/dkoshkin/cluster-api-provider-aws/v2 v2.9.0-al2023
+
 require (
 	github.com/aws/aws-sdk-go-v2 v1.38.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.233.0 // indirect
