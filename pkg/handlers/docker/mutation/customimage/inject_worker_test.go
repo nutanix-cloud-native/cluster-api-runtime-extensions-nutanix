@@ -26,7 +26,7 @@ var _ = Describe("Docker CustomImage patches for workers", func() {
 			Name: "image unset for workers",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{
 						Raw: []byte(
 							`{"machineDeployment": {"class": "a-worker", "version": "v1.2.3"}}`,
@@ -51,7 +51,7 @@ var _ = Describe("Docker CustomImage patches for workers", func() {
 					VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{
 						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
 					},

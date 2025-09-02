@@ -42,7 +42,7 @@ var _ = Describe("Generate taints patches for Worker", func() {
 					VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					apiextensionsv1.JSON{
 						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
 					},
