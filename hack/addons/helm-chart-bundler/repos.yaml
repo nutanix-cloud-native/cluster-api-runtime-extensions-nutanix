@@ -15,7 +15,7 @@ repositories:
     repoURL: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
     charts:
       aws-ebs-csi-driver:
-      - 2.44.0
+      - 2.48.0
   cilium:
     repoURL: https://helm.cilium.io/
     charts:
