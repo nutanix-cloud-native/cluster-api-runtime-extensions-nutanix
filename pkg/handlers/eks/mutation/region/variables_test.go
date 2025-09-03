@@ -24,7 +24,7 @@ func TestVariableValidation(t *testing.T) {
 			Name: "specified region",
 			Vals: v1alpha1.EKSClusterConfigSpec{
 				EKS: &v1alpha1.EKSSpec{
-					Region: ptr.To(v1alpha1.Region("a-specified-region")),
+					Region: ptr.To(v1alpha1.Region("specified-region")),
 				},
 			},
 		},

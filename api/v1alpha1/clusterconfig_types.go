@@ -75,7 +75,7 @@ type AWSClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	AWS *AWSSpec `json:"aws,omitempty"`
 
-	GenericClusterConfigResource `json:",inline"`
+	GenericClusterConfigSpec `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	Addons *AWSAddons `json:"addons,omitempty"`
@@ -112,7 +112,7 @@ type DockerClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Docker *DockerSpec `json:"docker,omitempty"`
 
-	GenericClusterConfigResource `json:",inline"`
+	GenericClusterConfigSpec `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	Addons *DockerAddons `json:"addons,omitempty"`
@@ -154,7 +154,7 @@ type NutanixClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Nutanix *NutanixSpec `json:"nutanix,omitempty"`
 
-	GenericClusterConfigResource `json:",inline"`
+	GenericClusterConfigSpec `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	Addons *NutanixAddons `json:"addons,omitempty"`
@@ -200,13 +200,6 @@ func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //noli
 
 // GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
 type GenericClusterConfigSpec struct {
-	GenericClusterConfigResource `json:",inline"`
-
-	// +kubebuilder:validation:Optional
-	Addons *GenericAddons `json:"addons,omitempty"`
-}
-
-type GenericClusterConfigResource struct {
 	// Sets the Kubernetes image repository used for the KubeadmControlPlane.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`

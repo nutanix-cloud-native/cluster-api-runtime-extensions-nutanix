@@ -22,7 +22,7 @@ type ClusterConfigSpec struct {
 
 	EKS *carenv1.EKSSpec `json:"eks,omitempty"`
 
-	carenv1.GenericClusterConfigResource `json:",inline"`
+	carenv1.GenericClusterConfigSpec `json:",inline"`
 
 	Addons *Addons `json:"addons,omitempty"`
 

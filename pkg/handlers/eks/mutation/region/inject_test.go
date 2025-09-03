@@ -37,7 +37,7 @@ var _ = Describe("Generate EKS Region patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					"a-specific-region",
+					"specific-region",
 					v1alpha1.EKSVariableName,
 					VariableName,
 				),
@@ -46,7 +46,7 @@ var _ = Describe("Generate EKS Region patches", func() {
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/region",
-				ValueMatcher: gomega.Equal("a-specific-region"),
+				ValueMatcher: gomega.Equal("specific-region"),
 			}},
 		},
 	}

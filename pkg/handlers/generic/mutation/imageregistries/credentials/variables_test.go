@@ -19,25 +19,21 @@ var testDefs = []capitest.VariableTestDef{
 	{
 		Name: "without a credentials secret",
 		Vals: v1alpha1.GenericClusterConfigSpec{
-			GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "http://a.b.c.example.com",
-					},
+			ImageRegistries: []v1alpha1.ImageRegistry{
+				{
+					URL: "http://a.b.c.example.com",
 				},
 			},
 		},
 	}, {
 		Name: "with a credentials secret",
 		Vals: v1alpha1.GenericClusterConfigSpec{
-			GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "https://a.b.c.example.com/a/b/c",
-						Credentials: &v1alpha1.RegistryCredentials{
-							SecretRef: &v1alpha1.LocalObjectReference{
-								Name: "a.b.c.example.com-creds",
-							},
+			ImageRegistries: []v1alpha1.ImageRegistry{
+				{
+					URL: "https://a.b.c.example.com/a/b/c",
+					Credentials: &v1alpha1.RegistryCredentials{
+						SecretRef: &v1alpha1.LocalObjectReference{
+							Name: "a.b.c.example.com-creds",
 						},
 					},
 				},
@@ -46,25 +42,21 @@ var testDefs = []capitest.VariableTestDef{
 	}, {
 		Name: "support for multiple image registries",
 		Vals: v1alpha1.GenericClusterConfigSpec{
-			GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "http://first-image-registry.example.com",
-					},
-					{
-						URL: "http://second-image-registry.example.com",
-					},
+			ImageRegistries: []v1alpha1.ImageRegistry{
+				{
+					URL: "http://first-image-registry.example.com",
+				},
+				{
+					URL: "http://second-image-registry.example.com",
 				},
 			},
 		},
 	}, {
 		Name: "invalid registry URL",
 		Vals: v1alpha1.GenericClusterConfigSpec{
-			GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "unsupportedformat://a.b.c.example.com",
-					},
+			ImageRegistries: []v1alpha1.ImageRegistry{
+				{
+					URL: "unsupportedformat://a.b.c.example.com",
 				},
 			},
 		},
@@ -72,11 +64,9 @@ var testDefs = []capitest.VariableTestDef{
 	}, {
 		Name: "registry URL without format",
 		Vals: v1alpha1.GenericClusterConfigSpec{
-			GenericClusterConfigResource: v1alpha1.GenericClusterConfigResource{
-				ImageRegistries: []v1alpha1.ImageRegistry{
-					{
-						URL: "a.b.c.example.com/a/b/c",
-					},
+			ImageRegistries: []v1alpha1.ImageRegistry{
+				{
+					URL: "a.b.c.example.com/a/b/c",
 				},
 			},
 		},

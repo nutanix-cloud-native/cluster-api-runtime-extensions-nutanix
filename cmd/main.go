@@ -121,13 +121,13 @@ func main() {
 	// It allows to specify configuration under a single variable.
 	nutanixMetaHandlers := nutanix.New(globalOptions)
 
-	// genericMetaHandlers combines all generic patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	genericMetaHandlers := generic.New()
-
 	// eksMetaHandlers combines all EKS patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
 	eksMetaHandlers := eks.New(globalOptions)
+
+	// genericMetaHandlers combines all generic patch and variable handlers under a single handler.
+	// It allows to specify configuration under a single variable.
+	genericMetaHandlers := generic.New()
 
 	namespacesyncOptions := namespacesync.Options{}
 	enforceClusterAutoscalerLimitsOptions := enforceclusterautoscalerlimits.Options{}
@@ -177,8 +177,8 @@ func main() {
 	allHandlers = append(allHandlers, awsMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, dockerMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, nutanixMetaHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, genericMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, eksMetaHandlers.AllHandlers(mgr)...)
+	allHandlers = append(allHandlers, genericMetaHandlers.AllHandlers(mgr)...)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
 
