@@ -177,7 +177,7 @@ var _ = Describe("Generate Users patches", func() {
 					VariableName,
 				),
 				capitest.VariableWithValue(
-					"builtin",
+					runtimehooksv1.BuiltinsName,
 					map[string]any{
 						"machineDeployment": map[string]any{
 							"class": names.SimpleNameGenerator.GenerateName("worker-"),
