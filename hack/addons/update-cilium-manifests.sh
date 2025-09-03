@@ -21,13 +21,18 @@ readonly FILE_NAME="cilium.yaml"
 
 readonly KUSTOMIZE_BASE_DIR="${SCRIPT_DIR}/kustomize/cilium"
 mkdir -p "${ASSETS_DIR}/cilium"
-envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${KUSTOMIZE_BASE_DIR}/kustomization.yaml"
-trap_add "rm -f ${KUSTOMIZE_BASE_DIR}/kustomization.yaml" EXIT
+envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
+
+cat <<EOF >"${ASSETS_DIR}/gomplate-context.yaml"
+EnableKubeProxyReplacement: true
+EOF
+gomplate -f "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml" \
+  --context .="${ASSETS_DIR}/gomplate-context.yaml" \
+  >"${ASSETS_DIR}/helm-values.yaml"
 
 kustomize build \
   --load-restrictor LoadRestrictionsNone \
-  --enable-helm "${KUSTOMIZE_BASE_DIR}/" >"${ASSETS_DIR}/${FILE_NAME}"
-trap_add "rm -rf ${KUSTOMIZE_BASE_DIR}/charts/" EXIT
+  --enable-helm "${ASSETS_DIR}/" >"${ASSETS_DIR}/${FILE_NAME}"
 
 # The operator manifest in YAML format is pretty big. It turns out that much of that is whitespace. Converting the
 # manifest to JSON without indentation allows us to remove most of the whitespace, reducing the size by more than half.

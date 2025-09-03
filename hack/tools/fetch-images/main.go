@@ -259,7 +259,25 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (strin
 	case "snapshot-controller":
 		return filepath.Join(carenChartDirectory, "addons", "csi", "snapshot-controller", defaultHelmAddonFilename), nil
 	case "cilium":
-		return filepath.Join(carenChartDirectory, "addons", "cni", "cilium", defaultHelmAddonFilename), nil
+		f := filepath.Join(carenChartDirectory, "addons", "cni", "cilium", defaultHelmAddonFilename)
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+
+		type input struct {
+			EnableKubeProxyReplacement bool
+		}
+		templateInput := input{
+			EnableKubeProxyReplacement: true,
+		}
+
+		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
+		if err != nil {
+			return "", fmt.Errorf("failed to execute helm values template %w", err)
+		}
+
+		return tempFile.Name(), nil
 	// Calico values differ slightly per provider, but that does not have a material imapct on the images required
 	// so we can use the default values file for AWS provider.
 	case "tigera-operator":

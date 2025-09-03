@@ -33,3 +33,7 @@ socketLB:
 envoy:
   image:
     useDigest: false
+{{- if .EnableKubeProxyReplacement }}
+kubeProxyReplacement: true
+k8sServiceHost: auto
+{{- end }}

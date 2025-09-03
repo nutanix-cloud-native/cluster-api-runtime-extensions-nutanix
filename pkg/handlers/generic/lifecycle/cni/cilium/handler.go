@@ -221,7 +221,8 @@ func (c *CiliumCNI) apply(
 			),
 			c.client,
 			helmChart,
-		)
+		).
+			WithValueTemplater(templateValues)
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage("strategy not specified for Cilium CNI addon")
