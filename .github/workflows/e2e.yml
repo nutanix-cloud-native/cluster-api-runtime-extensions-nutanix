@@ -39,13 +39,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Install nix using cachix/install-nix-action if running on ARC runners
-      # See: https://github.com/DeterminateSystems/nix-installer-action/issues/68
       - name: Install Nix on self-hosted ARC runners
-        uses: cachix/install-nix-action@v31
+        uses: DeterminateSystems/nix-installer-action@v19
         if: inputs.runs-on == 'self-hosted-ncn-dind'
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          logger: pretty
+          extra-conf: experimental-features = ca-derivations fetch-closure
 
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.13.0
