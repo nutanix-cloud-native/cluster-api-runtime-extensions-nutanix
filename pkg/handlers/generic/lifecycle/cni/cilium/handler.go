@@ -6,11 +6,15 @@ package cilium
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,10 +23,12 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/wait"
 )
 
 type CNIConfig struct {
@@ -221,7 +227,8 @@ func (c *CiliumCNI) apply(
 			),
 			c.client,
 			helmChart,
-		)
+		).
+			WithDefaultWaiter()
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage("strategy not specified for Cilium CNI addon")
@@ -231,11 +238,129 @@ func (c *CiliumCNI) apply(
 		return
 	}
 
-	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
+	if err := runApply(ctx, c.client, cluster, strategy, targetNamespace, log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
 	}
 
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+}
+
+func runApply(
+	ctx context.Context,
+	client ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+	strategy addons.Applier,
+	targetNamespace string,
+	log logr.Logger,
+) error {
+	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
+		return err
+	}
+
+	// If skip kube-proxy is not set, return early.
+	// Otherwise, wait for Cilium to be rolled out and then cleanup kube-proxy if installed.
+	if !capiutils.ShouldSkipKubeProxy(cluster) {
+		return nil
+	}
+
+	log.Info(
+		fmt.Sprintf("Waiting for Cilium to be ready for cluster %s", ctrlclient.ObjectKeyFromObject(cluster)),
+	)
+	if err := waitForCiliumToBeReady(ctx, client, cluster); err != nil {
+		return fmt.Errorf("failed to wait for Cilium to be ready: %w", err)
+	}
+
+	log.Info(
+		fmt.Sprintf("Cleaning up kube-proxy for cluster %s", ctrlclient.ObjectKeyFromObject(cluster)),
+	)
+	if err := cleanupKubeProxy(ctx, client, cluster); err != nil {
+		return fmt.Errorf("failed to cleanup kube-proxy: %w", err)
+	}
+
+	return nil
+}
+
+const (
+	kubeProxyName      = "kube-proxy"
+	kubeProxyNamespace = "kube-system"
+)
+
+func waitForCiliumToBeReady(
+	ctx context.Context,
+	c ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+) error {
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		c,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating remote cluster client: %w", err)
+	}
+
+	ds := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaultCiliumReleaseName,
+			Namespace: defaultCiliumNamespace,
+		},
+	}
+	if err := wait.ForObject(
+		ctx,
+		wait.ForObjectInput[*appsv1.DaemonSet]{
+			Reader: remoteClient,
+			Target: ds.DeepCopy(),
+			Check: func(_ context.Context, obj *appsv1.DaemonSet) (bool, error) {
+				return obj.Status.NumberAvailable == obj.Status.DesiredNumberScheduled && obj.Status.NumberUnavailable == 0, nil
+			},
+			Interval: 1 * time.Second,
+			Timeout:  30 * time.Second,
+		},
+	); err != nil {
+		return fmt.Errorf(
+			"failed to wait for DaemonSet %s to be Ready: %w",
+			ctrlclient.ObjectKeyFromObject(ds),
+			err,
+		)
+	}
+
+	return nil
+}
+
+// cleanupKubeProxy cleans up kube-proxy DaemonSet and ConfigMap on the remote cluster when kube-proxy is disabled.
+func cleanupKubeProxy(ctx context.Context, c ctrlclient.Client, cluster *clusterv1.Cluster) error {
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		c,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating remote cluster client: %w", err)
+	}
+
+	objs := []ctrlclient.Object{
+		&appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kubeProxyName,
+				Namespace: kubeProxyNamespace,
+			},
+		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kubeProxyName,
+				Namespace: kubeProxyNamespace,
+			},
+		},
+	}
+	for _, obj := range objs {
+		if err := ctrlclient.IgnoreNotFound(remoteClient.Delete(ctx, obj)); err != nil {
+			return fmt.Errorf("failed to delete %s/%s: %w", obj.GetNamespace(), obj.GetName(), err)
+		}
+	}
+
+	return nil
 }
