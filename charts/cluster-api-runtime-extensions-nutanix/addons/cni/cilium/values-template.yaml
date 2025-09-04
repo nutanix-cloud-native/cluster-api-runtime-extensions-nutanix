@@ -33,3 +33,11 @@ socketLB:
 envoy:
   image:
     useDigest: false
+k8sServiceHost: auto
+{{- with .ControlPlane }}
+{{- range $key, $val := .metadata.annotations }}
+{{- if eq $key "controlplane.cluster.x-k8s.io/skip-kube-proxy" }}
+kubeProxyReplacement: true{{ break }}
+{{- end }}
+{{- end }}
+{{- end }}

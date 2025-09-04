@@ -19,7 +19,8 @@ helmCharts:
   skipTests: true
   namespace: kube-system
   kubeVersion: ${E2E_KUBERNETES_VERSION}
-  valuesFile: ../../../../charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml
+  # This values file will be created by the update-cilium-manifests.sh script when generating the CRS manifests.
+  valuesFile: helm-values.yaml
   # The CRS manifests are generated from the Cilium Helm chart using Kustomize. The Cilium
   # Helm chart uses a Helm hook to generate TLS certificates for Hubble. As the
   # CRS manifests are static those Helm hooks don't apply and so for now Hubble is
@@ -29,5 +30,6 @@ helmCharts:
       enabled: false
       relay:
         enabled: false
+    k8sServiceHost: ""
 
 namespace: kube-system
