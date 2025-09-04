@@ -16,9 +16,6 @@ spec:
   topology:
     class: aws-quick-start
     controlPlane:
-      metadata:
-        annotations:
-          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}
     variables:
     - name: clusterConfig
