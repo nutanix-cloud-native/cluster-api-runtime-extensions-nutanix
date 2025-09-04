@@ -15,6 +15,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
@@ -80,6 +81,11 @@ func (h *usersPatchHandler) Mutate(
 		usersVariable,
 	)
 
+	bootstrapUsers := []bootstrapv1.User{}
+	for _, userFromVariable := range usersVariable {
+		bootstrapUsers = append(bootstrapUsers, generateBootstrapUser(userFromVariable))
+	}
+
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
@@ -87,10 +93,7 @@ func (h *usersPatchHandler) Mutate(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("setting users in control plane kubeadm config template")
-			bootstrapUsers := []bootstrapv1.User{}
-			for _, userFromVariable := range usersVariable {
-				bootstrapUsers = append(bootstrapUsers, generateBootstrapUser(userFromVariable))
-			}
+
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Users = bootstrapUsers
 			return nil
 		}); err != nil {
@@ -104,11 +107,48 @@ func (h *usersPatchHandler) Mutate(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("setting users in worker node kubeadm config template")
-			bootstrapUsers := []bootstrapv1.User{}
-			for _, userFromVariable := range usersVariable {
-				bootstrapUsers = append(bootstrapUsers, generateBootstrapUser(userFromVariable))
-			}
 			obj.Spec.Template.Spec.Users = bootstrapUsers
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	if err := patches.MutateIfApplicable(
+		obj, vars, &holderRef,
+		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "EKSConfigTemplate"), log,
+		func(obj *eksbootstrapv1.EKSConfigTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("setting users in worker node EKS config template")
+			eksBootstrapUsers := make([]eksbootstrapv1.User, 0, len(bootstrapUsers))
+			for _, user := range bootstrapUsers {
+				var passwdFrom *eksbootstrapv1.PasswdSource
+				if user.PasswdFrom != nil {
+					passwdFrom = &eksbootstrapv1.PasswdSource{
+						Secret: eksbootstrapv1.SecretPasswdSource{
+							Name: user.PasswdFrom.Secret.Name,
+							Key:  user.PasswdFrom.Secret.Key,
+						},
+					}
+				}
+				eksBootstrapUsers = append(eksBootstrapUsers, eksbootstrapv1.User{
+					Name:              user.Name,
+					Gecos:             user.Gecos,
+					Groups:            user.Groups,
+					HomeDir:           user.HomeDir,
+					Inactive:          user.Inactive,
+					Shell:             user.Shell,
+					Passwd:            user.Passwd,
+					PasswdFrom:        passwdFrom,
+					PrimaryGroup:      user.PrimaryGroup,
+					LockPassword:      user.LockPassword,
+					Sudo:              user.Sudo,
+					SSHAuthorizedKeys: user.SSHAuthorizedKeys,
+				})
+			}
+
+			obj.Spec.Template.Spec.Users = eksBootstrapUsers
 			return nil
 		}); err != nil {
 		return err

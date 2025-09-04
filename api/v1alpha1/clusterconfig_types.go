@@ -34,6 +34,8 @@ var (
 	nutanixClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_genericclusterconfigs.yaml
 	genericClusterConfigCRDDefinition []byte
+	//go:embed crds/caren.nutanix.com_eksclusterconfigs.yaml
+	eksClusterConfigCRDDefinition []byte
 
 	dockerClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		dockerClusterConfigCRDDefinition,
@@ -46,6 +48,9 @@ var (
 	)
 	genericClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		genericClusterConfigCRDDefinition,
+	)
+	eksClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		eksClusterConfigCRDDefinition,
 	)
 )
 
@@ -232,6 +237,31 @@ type GenericClusterConfigSpec struct {
 	// NTP defines the NTP configuration for the cluster.
 	// +kubebuilder:validation:Optional
 	NTP *NTP `json:"ntp,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// EKSClusterConfig is the Schema for the eksclusterconfigs API.
+type EKSClusterConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Spec EKSClusterConfigSpec `json:"spec,omitempty"`
+}
+
+func (s EKSClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return eksClusterConfigVariableSchema
+}
+
+// EKSClusterConfigSpec defines the desired state of ClusterConfig.
+type EKSClusterConfigSpec struct {
+	// EKS cluster configuration.
+	// +kubebuilder:validation:Optional
+	EKS *EKSSpec `json:"eks,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Addons *AWSAddons `json:"addons,omitempty"`
 }
 
 type Image struct {

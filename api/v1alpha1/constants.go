@@ -17,6 +17,8 @@ const (
 	DockerVariableName = "docker"
 	// NutanixVariableName is the Nutanix config patch variable name.
 	NutanixVariableName = "nutanix"
+	// AWSVariableName is the EKS config patch variable name.
+	EKSVariableName = "eks"
 
 	// CNIVariableName is the CNI external patch variable name.
 	CNIVariableName = "cni"

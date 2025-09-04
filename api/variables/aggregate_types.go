@@ -20,6 +20,8 @@ type ClusterConfigSpec struct {
 
 	Nutanix *carenv1.NutanixSpec `json:"nutanix,omitempty"`
 
+	EKS *carenv1.EKSSpec `json:"eks,omitempty"`
+
 	carenv1.GenericClusterConfigSpec `json:",inline"`
 
 	Addons *Addons `json:"addons,omitempty"`
@@ -47,6 +49,8 @@ type WorkerNodeConfigSpec struct {
 	Docker *carenv1.DockerNodeSpec `json:"docker,omitempty"`
 
 	Nutanix *carenv1.NutanixWorkerNodeSpec `json:"nutanix,omitempty"`
+
+	EKS *carenv1.AWSWorkerNodeSpec `json:"eks,omitempty"`
 
 	carenv1.GenericNodeSpec `json:",inline"`
 }

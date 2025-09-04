@@ -19,14 +19,17 @@ var (
 	awsNodeConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_nutanixworkernodeconfigs.yaml
 	nutanixNodeConfigCRDDefinition []byte
+	//go:embed crds/caren.nutanix.com_eksworkernodeconfigs.yaml
+	eksNodeConfigCRDDefinition []byte
 
 	dockerNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		dockerNodeConfigCRDDefinition,
 	)
-	awsWorkerNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(awsNodeConfigCRDDefinition)
-	nutanixNodeConfigVariableSchema   = variables.MustSchemaFromCRDYAML(
+	awsNodeConfigVariableSchema     = variables.MustSchemaFromCRDYAML(awsNodeConfigCRDDefinition)
+	nutanixNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		nutanixNodeConfigCRDDefinition,
 	)
+	eksNodeConfigVariableSchema = variables.MustSchemaFromCRDYAML(eksNodeConfigCRDDefinition)
 )
 
 // +kubebuilder:object:root=true
@@ -41,7 +44,7 @@ type AWSWorkerNodeConfig struct {
 }
 
 func (s AWSWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
-	return awsWorkerNodeConfigVariableSchema
+	return awsNodeConfigVariableSchema
 }
 
 // AWSWorkerNodeConfigSpec defines the desired state of AWSNodeConfig.
@@ -114,6 +117,37 @@ type GenericNodeSpec struct {
 	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
 }
 
+// +kubebuilder:object:root=true
+
+// EKSWorkerNodeConfig is the Schema for the eksnodeconfigs API.
+type EKSWorkerNodeConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Spec EKSWorkerNodeConfigSpec `json:"spec,omitempty"`
+}
+
+func (s EKSWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return eksNodeConfigVariableSchema
+}
+
+// EKSWorkerNodeConfigSpec defines the desired state of EKSNodeConfig.
+// Place any configuration that can be applied to individual Nodes here.
+// Otherwise, it should go into the ClusterConfigSpec.
+type EKSWorkerNodeConfigSpec struct {
+	// +kubebuilder:validation:Optional
+	EKS *AWSWorkerNodeSpec `json:"eks,omitempty"`
+
+	EKSNodeSpec `json:",inline"`
+}
+
+type EKSNodeSpec struct {
+	// Taints specifies the taints the Node API object should be registered with.
+	// +kubebuilder:validation:Optional
+	Taints []Taint `json:"taints,omitempty"`
+}
+
 // The node this Taint is attached to has the "effect" on
 // any pod that does not tolerate the Taint.
 type Taint struct {
@@ -174,5 +208,6 @@ func init() {
 		&AWSWorkerNodeConfig{},
 		&DockerWorkerNodeConfig{},
 		&NutanixWorkerNodeConfig{},
+		&EKSWorkerNodeConfig{},
 	)
 }
