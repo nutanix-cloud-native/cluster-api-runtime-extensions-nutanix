@@ -24,7 +24,10 @@ mkdir -p "${ASSETS_DIR}/cilium"
 envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_DIR}/kustomization.yaml"
 
 cat <<EOF >"${ASSETS_DIR}/gomplate-context.yaml"
-EnableKubeProxyReplacement: true
+ControlPlane:
+  metadata:
+    annotations:
+      controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
 EOF
 gomplate -f "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml" \
   --context .="${ASSETS_DIR}/gomplate-context.yaml" \
