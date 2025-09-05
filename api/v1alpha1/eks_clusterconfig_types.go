@@ -12,3 +12,12 @@ type EKSSpec struct {
 	// +kubebuilder:validation:Optional
 	Network *AWSNetwork `json:"network,omitempty"`
 }
+
+type EKSKubeProxy struct {
+	// Mode specifies the mode for kube-proxy:
+	// - disabled means that kube-proxy is disabled.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=disabled
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
+	Mode KubeProxyMode `json:"mode,omitempty"`
+}

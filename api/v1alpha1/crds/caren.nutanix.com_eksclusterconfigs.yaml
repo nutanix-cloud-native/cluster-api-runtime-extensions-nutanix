@@ -349,6 +349,19 @@ spec:
                     minLength: 4
                     type: string
                 type: object
+              kubeProxy:
+                properties:
+                  mode:
+                    description: |-
+                      Mode specifies the mode for kube-proxy:
+                      - disabled means that kube-proxy is disabled.
+                    enum:
+                    - disabled
+                    type: string
+                    x-kubernetes-validations:
+                    - message: Value cannot be changed after cluster creation
+                      rule: self == oldSelf
+                type: object
             type: object
         type: object
     served: true

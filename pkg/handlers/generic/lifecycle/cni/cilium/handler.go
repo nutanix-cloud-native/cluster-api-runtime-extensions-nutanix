@@ -20,10 +20,10 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -228,6 +228,7 @@ func (c *CiliumCNI) apply(
 			c.client,
 			helmChart,
 		).
+			WithValueTemplater(templateValues).
 			WithDefaultWaiter()
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -259,9 +260,13 @@ func runApply(
 		return err
 	}
 
-	// If skip kube-proxy is not set, return early.
+	// If kube-proxy is not disabled, return early.
 	// Otherwise, wait for Cilium to be rolled out and then cleanup kube-proxy if installed.
-	if !capiutils.ShouldSkipKubeProxy(cluster) {
+	isKuberProxyDisabled, err := isKubeProxyDisabled(cluster)
+	if err != nil {
+		return fmt.Errorf("failed to check if kube-proxy is disabled: %w", err)
+	}
+	if !isKuberProxyDisabled {
 		return nil
 	}
 
@@ -363,4 +368,27 @@ func cleanupKubeProxy(ctx context.Context, c ctrlclient.Client, cluster *cluster
 	}
 
 	return nil
+}
+
+func isKubeProxyDisabled(cluster *clusterv1.Cluster) (bool, error) {
+	clusterVariable := apivariables.GetClusterVariableByName(
+		v1alpha1.ClusterConfigVariableName,
+		cluster.Spec.Topology.Variables,
+	)
+	if clusterVariable == nil {
+		return false, nil
+	}
+
+	genericClusterConfigSpec := &v1alpha1.GenericClusterConfigSpec{}
+	err := apivariables.UnmarshalClusterVariable(
+		clusterVariable,
+		genericClusterConfigSpec,
+	)
+	if err != nil {
+		return false, err
+	}
+	if genericClusterConfigSpec.KubeProxy == nil {
+		return false, nil
+	}
+	return genericClusterConfigSpec.KubeProxy.Mode == v1alpha1.KubeProxyModeDisabled, nil
 }

@@ -719,9 +719,11 @@ spec:
                         Mode specifies the mode for kube-proxy:
                         - iptables means that kube-proxy is installed in iptables mode.
                         - nftables means that kube-proxy is installed in nftables mode.
+                        - disabled means that kube-proxy is disabled.
                       enum:
                         - iptables
                         - nftables
+                        - disabled
                       type: string
                       x-kubernetes-validations:
                         - message: Value cannot be changed after cluster creation

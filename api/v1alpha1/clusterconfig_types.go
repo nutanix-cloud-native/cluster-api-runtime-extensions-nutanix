@@ -261,6 +261,9 @@ type EKSClusterConfigSpec struct {
 	EKS *EKSSpec `json:"eks,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	KubeProxy *EKSKubeProxy `json:"kubeProxy,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	Addons *AWSAddons `json:"addons,omitempty"`
 }
 
@@ -398,14 +401,17 @@ const (
 	// KubeProxyModeNFTables indicates that kube-proxy should be installed in nftables
 	// mode.
 	KubeProxyModeNFTables KubeProxyMode = "nftables"
+	// KubeProxyModeDisabled indicates that kube-proxy should be disabled.
+	KubeProxyModeDisabled KubeProxyMode = "disabled"
 )
 
 type KubeProxy struct {
 	// Mode specifies the mode for kube-proxy:
 	// - iptables means that kube-proxy is installed in iptables mode.
 	// - nftables means that kube-proxy is installed in nftables mode.
+	// - disabled means that kube-proxy is disabled.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Enum=iptables;nftables
+	// +kubebuilder:validation:Enum=iptables;nftables;disabled
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
 	Mode KubeProxyMode `json:"mode,omitempty"`
 }
