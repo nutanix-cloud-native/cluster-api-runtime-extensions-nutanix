@@ -1,3 +1,39 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixFailureDomain
+metadata:
+  name: fd-1
+spec:
+  prismElementCluster:
+    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+    type: name
+  subnets:
+  - name: ${NUTANIX_SUBNET_NAME}
+    type: name
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixFailureDomain
+metadata:
+  name: fd-2
+spec:
+  prismElementCluster:
+    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+    type: name
+  subnets:
+  - name: ${NUTANIX_SUBNET_NAME}
+    type: name
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixFailureDomain
+metadata:
+  name: fd-3
+spec:
+  prismElementCluster:
+    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+    type: name
+  subnets:
+  - name: ${NUTANIX_SUBNET_NAME}
+    type: name
+---
 apiVersion: v1
 kind: Secret
 metadata:
@@ -37,42 +73,6 @@ stringData:
         }
       }
     ]
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: NutanixFailureDomain
-metadata:
-  name: fd-1
-spec:
-  prismElementCluster:
-    type: name
-    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
-  subnets:
-  - type: name
-    name: ${NUTANIX_SUBNET_NAME}
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: NutanixFailureDomain
-metadata:
-  name: fd-2
-spec:
-  prismElementCluster:
-    type: name
-    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
-  subnets:
-  - type: name
-    name: ${NUTANIX_SUBNET_NAME}
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: NutanixFailureDomain
-metadata:
-  name: fd-3
-spec:
-  prismElementCluster:
-    type: name
-    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
-  subnets:
-  - type: name
-    name: ${NUTANIX_SUBNET_NAME}
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
@@ -201,12 +201,12 @@ spec:
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
         name: md-0
       - class: default-worker
+        failureDomain: fd-3
         metadata:
           annotations:
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
         name: md-1
-        failureDomain: fd-3
         variables:
           overrides:
           - name: workerConfig

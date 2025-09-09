@@ -37,6 +37,18 @@ for provider in "aws" "docker" "nutanix"; do
   done
 done
 
+for provider in "nutanix"; do
+  for modifier in "failuredomain"; do
+    for cni in "cilium"; do
+      for strategy in "helm-addon" "crs"; do
+        kustomize build --load-restrictor LoadRestrictionsNone \
+            ./hack/examples/overlays/clusters/"${provider}"-with-"${modifier}"/"${cni}"/"${strategy}" \
+            >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${modifier}-${cni}-${strategy}.yaml"
+        done
+    done
+  done
+done  
+
 # TODO Remove once kustomize supports retaining quotes in what will be numeric values.
 #shellcheck disable=SC2016
 sed -i'' 's/${AMI_LOOKUP_ORG}/"${AMI_LOOKUP_ORG}"/' "${EXAMPLE_CLUSTERS_DIR}"/*.yaml

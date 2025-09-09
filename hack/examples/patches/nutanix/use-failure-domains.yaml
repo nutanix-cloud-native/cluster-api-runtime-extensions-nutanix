@@ -1,0 +1,38 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables/0/value/controlPlane/nutanix/failureDomains"
+  value:
+    - fd-1
+    - fd-2
+    - fd-3
+- op: "remove"
+  path: "/spec/topology/variables/0/value/controlPlane/nutanix/machineDetails/cluster"
+- op: "remove"
+  path: "/spec/topology/variables/0/value/controlPlane/nutanix/machineDetails/subnets"
+
+- op: "add"
+  path: "/spec/topology/workers/machineDeployments/-"
+  value:
+    class: default-worker
+    metadata:
+      annotations:
+        cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"
+        cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
+    name: md-1
+    failureDomain: fd-3
+    variables:
+      overrides:
+      - name: workerConfig
+        value:
+          nutanix:
+            machineDetails:
+              bootType: uefi
+              imageLookup:
+                baseOS: ${NUTANIX_MACHINE_TEMPLATE_BASE_OS}
+                format: ${NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT}
+              memorySize: 4Gi
+              systemDiskSize: 40Gi
+              vcpuSockets: 2
+              vcpusPerSocket: 1
