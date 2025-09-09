@@ -93,7 +93,9 @@ spec:
   topology:
     class: nutanix-quick-start
     controlPlane:
-      metadata: {}
+      metadata:
+        annotations:
+          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}
     variables:
     - name: clusterConfig
