@@ -38,12 +38,12 @@ for provider in "aws" "docker" "nutanix"; do
 done
 
 for provider in "nutanix"; do
-  for modifier in "failuredomain"; do
+  for modifier in "failuredomains"; do
     for cni in "cilium"; do
       for strategy in "helm-addon" "crs"; do
         kustomize build --load-restrictor LoadRestrictionsNone \
           ./hack/examples/overlays/clusters/"${provider}"-with-"${modifier}"/"${cni}"/"${strategy}" \
-          >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${modifier}-${cni}-${strategy}.yaml"
+          >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-with-${modifier}-${cni}-${strategy}.yaml"
       done
     done
   done

@@ -63,7 +63,10 @@ var _ = Describe("Quick start", func() {
 							if provider == "Nutanix" && cniProvider == "Cilium" {
 								flavors = append(
 									flavors,
-									fmt.Sprintf("topology-failuredomain-%s-%s", strings.ToLower(cniProvider), strategy),
+									fmt.Sprintf(
+										"topology-with-failuredomains-%s-%s",
+										strings.ToLower(cniProvider),
+										strategy),
 								)
 							}
 							for _, flavor := range flavors {
