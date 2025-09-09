@@ -42,12 +42,12 @@ for provider in "nutanix"; do
     for cni in "cilium"; do
       for strategy in "helm-addon" "crs"; do
         kustomize build --load-restrictor LoadRestrictionsNone \
-            ./hack/examples/overlays/clusters/"${provider}"-with-"${modifier}"/"${cni}"/"${strategy}" \
-            >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${modifier}-${cni}-${strategy}.yaml"
-        done
+          ./hack/examples/overlays/clusters/"${provider}"-with-"${modifier}"/"${cni}"/"${strategy}" \
+          >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${modifier}-${cni}-${strategy}.yaml"
+      done
     done
   done
-done  
+done
 
 # TODO Remove once kustomize supports retaining quotes in what will be numeric values.
 #shellcheck disable=SC2016
