@@ -37,6 +37,7 @@ for provider in "aws" "docker" "nutanix"; do
   done
 done
 
+# shellcheck disable=SC2043 # Keep the loop for future use.
 for provider in "nutanix"; do
   for modifier in "failuredomains"; do
     for cni in "cilium"; do
