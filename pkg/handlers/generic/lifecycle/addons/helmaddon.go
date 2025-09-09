@@ -231,7 +231,7 @@ func waitToBeReady(
 				if obj.Generation != obj.Status.ObservedGeneration {
 					return false, nil
 				}
-				return conditions.IsTrue(obj, caaphv1.HelmReleaseProxiesReadyCondition), nil
+				return conditions.IsTrue(obj, clusterv1.ReadyCondition), nil
 			},
 			Interval: 5 * time.Second,
 			Timeout:  30 * time.Second,

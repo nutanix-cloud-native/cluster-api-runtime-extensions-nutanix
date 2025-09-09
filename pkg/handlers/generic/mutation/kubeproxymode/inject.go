@@ -26,6 +26,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 const (
@@ -89,11 +90,6 @@ func (h *kubeProxyMode) Mutate(
 		return fmt.Errorf("failed to get cluster for kube proxy mode mutation: %w", err)
 	}
 
-	isSkipProxy := false
-	if cluster.Spec.Topology != nil {
-		_, isSkipProxy = cluster.Spec.Topology.ControlPlane.Metadata.Annotations[controlplanev1.SkipKubeProxyAnnotation]
-	}
-
 	kubeProxyMode, err := variables.Get[v1alpha1.KubeProxyMode](
 		vars,
 		h.variableName,
@@ -111,6 +107,8 @@ func (h *kubeProxyMode) Mutate(
 		"variableValue",
 		kubeProxyMode,
 	)
+
+	isSkipProxy := capiutils.ShouldSkipKubeProxy(cluster)
 
 	if kubeProxyMode == "" && !isSkipProxy {
 		log.V(5).Info("kube proxy mode is not set or skipped, skipping mutation")
