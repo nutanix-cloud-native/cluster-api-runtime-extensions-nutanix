@@ -69,10 +69,15 @@ func (h *auditPolicyPatchHandler) Mutate(
 				apiServer.ExtraArgs = make(map[string]string, 5)
 			}
 
+			// Originally, we had 1 log of 100MB, and 10 rotated logs of 100MB each, for a total of 1100MB.
+			// We wanted to increase retention, but keep the total disk usage about the same.
+			// Now, we have 1 log of 100MB, and 90 compressed, rotated logs of approximately 10MB each,
+			// for a total of approximately 1000MB.
 			apiServer.ExtraArgs["audit-log-path"] = "/var/log/audit/kube-apiserver-audit.log"
-			apiServer.ExtraArgs["audit-log-maxage"] = "30"
-			apiServer.ExtraArgs["audit-log-maxbackup"] = "10"
-			apiServer.ExtraArgs["audit-log-maxsize"] = "100"
+			apiServer.ExtraArgs["audit-log-maxage"] = "30"     // Maximum number of days to retain audit log files.
+			apiServer.ExtraArgs["audit-log-maxbackup"] = "90"  // Maximum number of audit log files to retain.
+			apiServer.ExtraArgs["audit-log-maxsize"] = "100"   // Maximum size of log file in MB before it is rotated.
+			apiServer.ExtraArgs["audit-log-compress"] = "true" // Compress (gzip) audit log file when it is rotated.
 			apiServer.ExtraArgs["audit-policy-file"] = auditPolicyPath
 
 			if apiServer.ExtraVolumes == nil {
