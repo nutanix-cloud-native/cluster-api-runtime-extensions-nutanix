@@ -39,12 +39,11 @@ envoy:
 # Although its safe to set k8sServiceHost in all cases,
 # we're keeping it here to force a Cilium Pod rollout when enabling the kubeProxyReplacement feature.
 k8sServiceHost: auto
-kubeProxyReplacement: true{{ break }}
-routingMode: tunnel
+kubeProxyReplacement: true
 tunnelProtocol: geneve
 loadBalancer:
   mode: dsr
-  dsrDispatch: geneve
+  dsrDispatch: geneve{{ break }}
 {{- end }}
 {{- end }}
 {{- end }}
