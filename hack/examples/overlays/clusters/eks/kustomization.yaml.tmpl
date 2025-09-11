@@ -9,3 +9,8 @@ resources:
 
 sortOptions:
   order: fifo
+
+patches:
+  - target:
+      kind: Cluster
+    path: ../../../patches/skip-kube-proxy.yaml
