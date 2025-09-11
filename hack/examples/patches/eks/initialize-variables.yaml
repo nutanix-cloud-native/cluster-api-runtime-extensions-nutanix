@@ -11,3 +11,7 @@
           nfd: {}
           cni:
             provider: Cilium
+            values:
+              sourceRef:
+                name: ${CLUSTER_NAME}-cilium-cni-helm-values-template
+                kind: ConfigMap
