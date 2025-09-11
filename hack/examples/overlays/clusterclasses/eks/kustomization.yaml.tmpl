@@ -24,11 +24,11 @@ patches:
         value:
           - name: "cluster-config"
             external:
-              generateExtension: "eksclusterv1configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generateExtension: "eksclusterv4configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "eksclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix"
           - name: "worker-config"
             external:
-              generateExtension: "eksworkerv1configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generateExtension: "eksworkerv4configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "eksworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
           - name: identityRef
             definitions:
