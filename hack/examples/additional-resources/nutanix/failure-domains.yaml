@@ -1,0 +1,39 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixFailureDomain
+metadata:
+  name: fd-1
+spec:
+  prismElementCluster:
+    type: name
+    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+  subnets:
+  - type: name
+    name: ${NUTANIX_SUBNET_NAME}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixFailureDomain
+metadata:
+  name: fd-2
+spec:
+  prismElementCluster:
+    type: name
+    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+  subnets:
+  - type: name
+    name: ${NUTANIX_SUBNET_NAME}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixFailureDomain
+metadata:
+  name: fd-3
+spec:
+  prismElementCluster:
+    type: name
+    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+  subnets:
+  - type: name
+    name: ${NUTANIX_SUBNET_NAME}
