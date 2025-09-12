@@ -349,6 +349,153 @@ spec:
                     minLength: 4
                     type: string
                 type: object
+              globalImageRegistryMirror:
+                description: GlobalImageRegistryMirror sets default mirror configuration
+                  for all the image registries.
+                properties:
+                  credentials:
+                    description: Credentials and CA certificate for the image registry
+                      mirror
+                    properties:
+                      secretRef:
+                        description: |-
+                          A reference to the Secret containing the registry credentials and optional CA certificate
+                          using the keys `username`, `password` and `ca.crt`.
+                          This credentials Secret is not required for some registries, e.g. ECR.
+                        properties:
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            maxLength: 253
+                            minLength: 1
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    type: object
+                  url:
+                    description: Registry mirror URL.
+                    format: uri
+                    pattern: ^https?://
+                    type: string
+                required:
+                - url
+                type: object
+              imageRegistries:
+                items:
+                  properties:
+                    credentials:
+                      description: Credentials and CA certificate for the image registry
+                      properties:
+                        secretRef:
+                          description: |-
+                            A reference to the Secret containing the registry credentials and optional CA certificate
+                            using the keys `username`, `password` and `ca.crt`.
+                            This credentials Secret is not required for some registries, e.g. ECR.
+                          properties:
+                            name:
+                              description: |-
+                                Name of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              maxLength: 253
+                              minLength: 1
+                              type: string
+                          required:
+                          - name
+                          type: object
+                      type: object
+                    url:
+                      description: Registry URL.
+                      format: uri
+                      pattern: ^https?://
+                      type: string
+                  required:
+                  - url
+                  type: object
+                maxItems: 32
+                type: array
+              ntp:
+                description: NTP defines the NTP configuration for the cluster.
+                properties:
+                  servers:
+                    description: Servers is a list of NTP servers to use for time
+                      synchronization.
+                    items:
+                      maxLength: 253
+                      type: string
+                    maxItems: 16
+                    minItems: 1
+                    type: array
+                required:
+                - servers
+                type: object
+              proxy:
+                description: HTTPProxy required for providing proxy configuration.
+                properties:
+                  additionalNo:
+                    description: |-
+                      AdditionalNo Proxy list that will be added to the automatically calculated
+                      values that will apply no_proxy configuration for cluster internal network.
+                      Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
+                        ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
+                    items:
+                      maxLength: 253
+                      minLength: 1
+                      type: string
+                    maxItems: 128
+                    type: array
+                  http:
+                    description: HTTP proxy value.
+                    maxLength: 2048
+                    minLength: 1
+                    type: string
+                  https:
+                    description: HTTPS proxy value.
+                    maxLength: 2048
+                    minLength: 1
+                    type: string
+                type: object
+              users:
+                items:
+                  description: User defines the input for a generated user in cloud-init.
+                  properties:
+                    hashedPassword:
+                      description: |-
+                        HashedPassword is a hashed password for the user, formatted as described
+                        by the crypt(5) man page. See your distribution's documentation for
+                        instructions to create a hashed password.
+                        An empty string is not marshalled, because it is not a valid value.
+                      maxLength: 106
+                      minLength: 1
+                      type: string
+                    name:
+                      description: Name specifies the user name.
+                      maxLength: 256
+                      type: string
+                    sshAuthorizedKeys:
+                      description: |-
+                        SSHAuthorizedKeys is a list of public SSH keys to write to the
+                        machine. Use the corresponding private SSH keys to authenticate. See SSH
+                        documentation for instructions to create a key pair.
+                      items:
+                        maxLength: 256
+                        type: string
+                      maxItems: 32
+                      type: array
+                    sudo:
+                      description: |-
+                        Sudo is a sudo user specification, formatted as described in the sudo
+                        documentation.
+                        An empty string is not marshalled, because it is not a valid value.
+                      maxLength: 1024
+                      minLength: 1
+                      type: string
+                  required:
+                  - name
+                  type: object
+                maxItems: 32
+                type: array
             type: object
         type: object
     served: true
