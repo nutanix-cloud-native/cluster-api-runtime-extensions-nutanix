@@ -1,0 +1,22 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+nameReference:
+  - kind: AWSMachineTemplate
+    fieldSpecs:
+    - kind: ClusterClass
+      path: spec/controlPlane/machineInfrastructure/ref/name
+    - kind: ClusterClass
+      path: spec/workers/machineDeployments/template/infrastructure/ref/name
+  - kind: AWSManagedClusterTemplate
+    fieldSpecs:
+    - kind: ClusterClass
+      path: spec/infrastructure/ref/name
+  - kind: AWSManagedControlPlaneTemplate
+    fieldSpecs:
+    - kind: ClusterClass
+      path: spec/controlPlane/ref/name
+  - kind: EKSConfigTemplate
+    fieldSpecs:
+    - kind: ClusterClass
+      path: spec/workers/machineDeployments/template/bootstrap/ref/name

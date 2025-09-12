@@ -1,0 +1,6 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if and .Values.deployDefaultClusterClasses (.Capabilities.APIVersions.Has "infrastructure.cluster.x-k8s.io/v1beta2/AWSManagedClusterTemplate") }}
+{{ .Files.Get "defaultclusterclasses/eks-cluster-class.yaml" }}
+{{- end}}

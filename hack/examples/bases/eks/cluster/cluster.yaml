@@ -1,0 +1,22 @@
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+  annotations:
+    preflight.cluster.caren.nutanix.com/skip: all
+spec:
+  topology:
+    class: eks-quick-start
+    version: ${KUBERNETES_VERSION}
+    variables: []
+    controlPlane: {}
+    workers:
+      machineDeployments:
+        - class: default-worker
+          name: md-0
+          replicas: ${WORKER_MACHINE_COUNT}
+          variables:
+            overrides:
+              - name: workerConfig
+                value: {}
