@@ -446,5 +446,6 @@ func init() {
 		&AWSClusterConfig{},
 		&DockerClusterConfig{},
 		&NutanixClusterConfig{},
+		&EKSClusterConfig{},
 	)
 }
