@@ -230,14 +230,6 @@ type GenericClusterConfig struct {
 
 	// +kubebuilder:validation:Optional
 	Spec *GenericClusterConfigSpec `json:"spec,omitempty"`
-
-	// Extra Subject Alternative Names for the API Server signing cert.
-	// +kubebuilder:validation:UniqueItems=true
-	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:MaxItems=100
-	// +kubebuilder:validation:items:MaxLength=253
-	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
 }
 
 func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
