@@ -17,12 +17,12 @@ import (
 
 var testDefs = []capitest.VariableTestDef{{
 	Name: "unset",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		DNS: &v1alpha1.DNS{},
 	},
 }, {
 	Name: "set with valid image values",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		DNS: &v1alpha1.DNS{
 			CoreDNS: &v1alpha1.CoreDNS{
 				Image: &v1alpha1.Image{
@@ -34,7 +34,7 @@ var testDefs = []capitest.VariableTestDef{{
 	},
 }, {
 	Name: "set with valid image repository",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		DNS: &v1alpha1.DNS{
 			CoreDNS: &v1alpha1.CoreDNS{
 				Image: &v1alpha1.Image{
@@ -45,7 +45,7 @@ var testDefs = []capitest.VariableTestDef{{
 	},
 }, {
 	Name: "set with valid image tag",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		DNS: &v1alpha1.DNS{
 			CoreDNS: &v1alpha1.CoreDNS{
 				Image: &v1alpha1.Image{
@@ -56,7 +56,7 @@ var testDefs = []capitest.VariableTestDef{{
 	},
 }, {
 	Name: "set with invalid image repository",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		DNS: &v1alpha1.DNS{
 			CoreDNS: &v1alpha1.CoreDNS{
 				Image: &v1alpha1.Image{
@@ -68,7 +68,7 @@ var testDefs = []capitest.VariableTestDef{{
 	ExpectError: true,
 }, {
 	Name: "set with invalid image tag",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		DNS: &v1alpha1.DNS{
 			CoreDNS: &v1alpha1.CoreDNS{
 				Image: &v1alpha1.Image{
