@@ -26,6 +26,7 @@ type DockerControlPlaneSpec struct {
 
 	GenericControlPlaneSpec `json:",inline"`
 
+	KubeadmNodeSpec `json:",inline"`
 	GenericNodeSpec `json:",inline"`
 }
 
@@ -36,6 +37,7 @@ type NutanixControlPlaneSpec struct {
 
 	GenericControlPlaneSpec `json:",inline"`
 
+	KubeadmNodeSpec `json:",inline"`
 	GenericNodeSpec `json:",inline"`
 }
 
@@ -46,5 +48,6 @@ type AWSControlPlaneSpec struct {
 
 	GenericControlPlaneSpec `json:",inline"`
 
+	KubeadmNodeSpec `json:",inline"`
 	GenericNodeSpec `json:",inline"`
 }
