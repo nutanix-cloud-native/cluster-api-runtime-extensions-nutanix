@@ -108,20 +108,6 @@ type NutanixWorkerNodeConfigSpec struct {
 	GenericNodeSpec `json:",inline"`
 }
 
-type KubeadmNodeSpec struct {
-	// NodeRegistration holds fields that relate to registering the new node to the cluster.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={}
-	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
-}
-
-type GenericNodeSpec struct {
-	// Taints specifies the taints the Node API object should be registered with.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:MaxItems=32
-	Taints []Taint `json:"taints,omitempty"`
-}
-
 // +kubebuilder:object:root=true
 
 // EKSWorkerNodeConfig is the Schema for the eksnodeconfigs API.
@@ -144,12 +130,23 @@ type EKSWorkerNodeConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	EKS *AWSWorkerNodeSpec `json:"eks,omitempty"`
 
-	EKSNodeSpec `json:",inline"`
+	EKSNodeSpec     `json:",inline"`
+	GenericNodeSpec `json:",inline"`
 }
 
-type EKSNodeSpec struct {
+type EKSNodeSpec struct{}
+
+type KubeadmNodeSpec struct {
+	// NodeRegistration holds fields that relate to registering the new node to the cluster.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={}
+	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
+}
+
+type GenericNodeSpec struct {
 	// Taints specifies the taints the Node API object should be registered with.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=32
 	Taints []Taint `json:"taints,omitempty"`
 }
 
