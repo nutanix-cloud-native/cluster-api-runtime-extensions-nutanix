@@ -17,12 +17,12 @@ import (
 
 var testDefs = []capitest.VariableTestDef{{
 	Name: "unset",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		Etcd: &v1alpha1.Etcd{},
 	},
 }, {
 	Name: "set with valid image values",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		Etcd: &v1alpha1.Etcd{
 			Image: &v1alpha1.Image{
 				Repository: "my-registry.io/my-org/my-repo",
@@ -32,7 +32,7 @@ var testDefs = []capitest.VariableTestDef{{
 	},
 }, {
 	Name: "set with invalid image repository",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		Etcd: &v1alpha1.Etcd{
 			Image: &v1alpha1.Image{
 				Repository: "https://this.should.not.have.a.scheme",
@@ -42,7 +42,7 @@ var testDefs = []capitest.VariableTestDef{{
 	ExpectError: true,
 }, {
 	Name: "set with invalid image tag",
-	Vals: v1alpha1.GenericClusterConfigSpec{
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		Etcd: &v1alpha1.Etcd{
 			Image: &v1alpha1.Image{
 				Tag: "this:is:not:a:valid:tag",

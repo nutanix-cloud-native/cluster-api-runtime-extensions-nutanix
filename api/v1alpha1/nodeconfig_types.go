@@ -54,6 +54,7 @@ type AWSWorkerNodeConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	AWS *AWSWorkerNodeSpec `json:"aws,omitempty"`
 
+	KubeadmNodeSpec `json:",inline"`
 	GenericNodeSpec `json:",inline"`
 }
 
@@ -79,6 +80,7 @@ type DockerWorkerNodeConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Docker *DockerNodeSpec `json:"docker,omitempty"`
 
+	KubeadmNodeSpec `json:",inline"`
 	GenericNodeSpec `json:",inline"`
 }
 
@@ -102,7 +104,15 @@ type NutanixWorkerNodeConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Nutanix *NutanixWorkerNodeSpec `json:"nutanix,omitempty"`
 
+	KubeadmNodeSpec `json:",inline"`
 	GenericNodeSpec `json:",inline"`
+}
+
+type KubeadmNodeSpec struct {
+	// NodeRegistration holds fields that relate to registering the new control-plane node to the cluster.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={}
+	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
 }
 
 type GenericNodeSpec struct {
@@ -110,11 +120,6 @@ type GenericNodeSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems=32
 	Taints []Taint `json:"taints,omitempty"`
-
-	// NodeRegistration holds fields that relate to registering the new control-plane node to the cluster.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={}
-	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
 }
 
 // +kubebuilder:object:root=true

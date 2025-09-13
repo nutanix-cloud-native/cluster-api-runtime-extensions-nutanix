@@ -24,7 +24,7 @@ func TestVariableValidation(t *testing.T) {
 			Name: "specified IgnorePreflightErrors",
 			Vals: v1alpha1.NutanixClusterConfigSpec{
 				ControlPlane: &v1alpha1.NutanixControlPlaneSpec{
-					GenericNodeSpec: v1alpha1.GenericNodeSpec{
+					KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
 						NodeRegistration: &v1alpha1.NodeRegistrationOptions{
 							IgnorePreflightErrors: []string{"all"},
 						},
