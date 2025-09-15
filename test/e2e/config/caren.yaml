@@ -226,6 +226,7 @@ intervals:
   default/wait-deployment: ["10m", "10s"]
   default/wait-daemonset: [ "5m", "10s" ]
   default/wait-statefulset: [ "10m", "10s" ]
+  default/wait-service: [ "10m", "10s" ]
   default/wait-clusterresourceset: [ "5m", "10s" ]
   default/wait-helmrelease: [ "5m", "10s" ]
   default/wait-resource: [ "5m", "10s" ]

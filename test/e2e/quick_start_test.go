@@ -96,18 +96,36 @@ var _ = Describe("Quick start", func() {
 												)
 											}
 
-											// For Nutanix provider, reserve an IP address for the workload cluster control plane endpoint -
-											// remember to unreserve it!
+											// For Nutanix provider, reserve an IP address for the workload cluster:
+											// 1. control plane endpoint
+											// 2. service load balancer
+											// Remember to unreserve it after the test!
 											if provider == "Nutanix" {
-												By(
-													"Reserving an IP address for the workload cluster control plane endpoint",
-												)
 												nutanixClient, err := nutanix.NewV4Client(
 													nutanix.CredentialsFromCAPIE2EConfig(testE2EConfig),
 												)
 												Expect(err).ToNot(HaveOccurred())
+												subnetName := testE2EConfig.MustGetVariable("NUTANIX_SUBNET_NAME")
+												prismElementClusterName := testE2EConfig.MustGetVariable(
+													"NUTANIX_PRISM_ELEMENT_CLUSTER_NAME",
+												)
 
+												By(
+													"Reserving an IP address for the workload cluster control plane endpoint",
+												)
 												controlPlaneEndpointIP, unreserveControlPlaneEndpointIP, err := nutanix.ReserveIP(
+													subnetName,
+													prismElementClusterName,
+													nutanixClient,
+												)
+												Expect(err).ToNot(HaveOccurred())
+												DeferCleanup(unreserveControlPlaneEndpointIP)
+												testE2EConfig.Variables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
+
+												By(
+													"Reserving an IP address for the workload cluster kubernetes Service load balancer",
+												)
+												kubernetesServiceLoadBalancerIP, unreservekubernetesServiceLoadBalancerIP, err := nutanix.ReserveIP(
 													testE2EConfig.MustGetVariable("NUTANIX_SUBNET_NAME"),
 													testE2EConfig.MustGetVariable(
 														"NUTANIX_PRISM_ELEMENT_CLUSTER_NAME",
@@ -115,8 +133,8 @@ var _ = Describe("Quick start", func() {
 													nutanixClient,
 												)
 												Expect(err).ToNot(HaveOccurred())
-												DeferCleanup(unreserveControlPlaneEndpointIP)
-												testE2EConfig.Variables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
+												DeferCleanup(unreservekubernetesServiceLoadBalancerIP)
+												testE2EConfig.Variables["KUBERNETES_SERVICE_LOAD_BALANCER_IP"] = kubernetesServiceLoadBalancerIP
 											}
 
 											clusterLocalTempDir, err := os.MkdirTemp("", "clusterctl-")
@@ -326,7 +344,6 @@ var _ = Describe("Quick start", func() {
 															ClusterProxy:    proxy,
 														},
 													)
-
 													EnsureAntiAffnityForRegistryAddon(
 														ctx,
 														EnsureAntiAffnityForRegistryAddonInput{
@@ -335,6 +352,21 @@ var _ = Describe("Quick start", func() {
 															ClusterProxy:    proxy,
 														},
 													)
+
+													// TODO: Test for other providers.
+													if provider == "Nutanix" {
+														EnsureLoadBalancerService(
+															ctx,
+															EnsureLoadBalancerServiceInput{
+																WorkloadCluster: workloadCluster,
+																ClusterProxy:    proxy,
+																ServciceIntervals: testE2EConfig.GetIntervals(
+																	flavor,
+																	"wait-service",
+																),
+															},
+														)
+													}
 												},
 											}
 										})
