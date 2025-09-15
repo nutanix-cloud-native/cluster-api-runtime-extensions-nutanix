@@ -40,7 +40,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install Nix on self-hosted ARC runners
-        uses: DeterminateSystems/nix-installer-action@v19
+        uses: DeterminateSystems/nix-installer-action@v20
         if: inputs.runs-on == 'self-hosted-ncn-dind'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
