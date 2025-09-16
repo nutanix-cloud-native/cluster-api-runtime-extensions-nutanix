@@ -146,9 +146,9 @@ func waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadCluster(
 }
 
 type EnsureLoadBalancerServiceInput struct {
-	WorkloadCluster   *clusterv1.Cluster
-	ClusterProxy      framework.ClusterProxy
-	ServciceIntervals []interface{}
+	WorkloadCluster  *clusterv1.Cluster
+	ClusterProxy     framework.ClusterProxy
+	ServiceIntervals []interface{}
 }
 
 // EnsureLoadBalancerService creates a test Service of type LoadBalancer and tests that the assigned IP responds.
@@ -160,7 +160,7 @@ func EnsureLoadBalancerService(
 		ctx, input.WorkloadCluster.Namespace, input.WorkloadCluster.Name,
 	).GetClient()
 
-	svc := createTestService(ctx, workloadClusterClient, input.ServciceIntervals)
+	svc := createTestService(ctx, workloadClusterClient, input.ServiceIntervals)
 
 	By("Testing the LoadBalancer Service responds")
 	getClientIPURL := &url.URL{
@@ -168,7 +168,7 @@ func EnsureLoadBalancerService(
 		Host:   getLoadBalancerAddress(svc),
 		Path:   "/clientip",
 	}
-	output := testServiceLoadBalancer(ctx, getClientIPURL, input.ServciceIntervals)
+	output := testServiceLoadBalancer(ctx, getClientIPURL, input.ServiceIntervals)
 	Expect(output).ToNot(BeEmpty())
 }
 

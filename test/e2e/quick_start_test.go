@@ -360,7 +360,7 @@ var _ = Describe("Quick start", func() {
 															EnsureLoadBalancerServiceInput{
 																WorkloadCluster: workloadCluster,
 																ClusterProxy:    proxy,
-																ServciceIntervals: testE2EConfig.GetIntervals(
+																ServiceIntervals: testE2EConfig.GetIntervals(
 																	flavor,
 																	"wait-service",
 																),
