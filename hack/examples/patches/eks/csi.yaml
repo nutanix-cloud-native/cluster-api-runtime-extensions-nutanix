@@ -1,0 +1,14 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables/0/value/addons/csi"
+  value:
+    defaultStorage:
+      provider: aws-ebs
+      storageClassConfig: default
+    providers:
+      aws-ebs:
+        storageClassConfigs:
+          default: {}
+    snapshotController: {}

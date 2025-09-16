@@ -49,6 +49,15 @@ for provider in "nutanix"; do
     done
   done
 done
+unset provider cni strategy
+
+kustomize build --load-restrictor LoadRestrictionsNone \
+  ./hack/examples/overlays/clusterclasses/eks |
+  sed 's/ name: eks-eks-/ name: eks-/' >"${EXAMPLE_CLUSTERCLASSES_DIR}"/eks-cluster-class.yaml
+
+kustomize build --load-restrictor LoadRestrictionsNone \
+  ./hack/examples/overlays/clusters/eks \
+  >"${EXAMPLE_CLUSTERS_DIR}/eks-cluster.yaml"
 
 # TODO Remove once kustomize supports retaining quotes in what will be numeric values.
 #shellcheck disable=SC2016

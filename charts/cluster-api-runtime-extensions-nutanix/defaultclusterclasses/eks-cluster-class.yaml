@@ -1,0 +1,101 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start
+spec:
+  controlPlane:
+    ref:
+      apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+      kind: AWSManagedControlPlaneTemplate
+      name: eks-quick-start-control-plane
+  infrastructure:
+    ref:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSManagedClusterTemplate
+      name: eks-quick-start
+  patches:
+  - external:
+      discoverVariablesExtension: eksclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
+      generateExtension: eksclusterv4configpatch-gp.cluster-api-runtime-extensions-nutanix
+    name: cluster-config
+  - external:
+      discoverVariablesExtension: eksworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
+      generateExtension: eksworkerv4configpatch-gp.cluster-api-runtime-extensions-nutanix
+    name: worker-config
+  - definitions:
+    - jsonPatches:
+      - op: add
+        path: /spec/template/spec/identityRef
+        value:
+          kind: AWSClusterControllerIdentity
+          name: default
+      selector:
+        apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+        kind: AWSManagedControlPlaneTemplate
+        matchResources:
+          controlPlane: true
+    description: AWSClusterStaticIdentity identityRef to use when creating the cluster
+    name: identityRef
+  workers:
+    machineDeployments:
+    - class: default-worker
+      template:
+        bootstrap:
+          ref:
+            apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+            kind: EKSConfigTemplate
+            name: eks-quick-start-worker-configtemplate
+        infrastructure:
+          ref:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+            kind: AWSMachineTemplate
+            name: eks-quick-start-worker-machinetemplate
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSManagedClusterTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start
+spec:
+  template:
+    spec: {}
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+kind: AWSManagedControlPlaneTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start-control-plane
+spec:
+  template:
+    spec:
+      bootstrapSelfManagedAddons: false
+      kubeProxy:
+        disable: true
+      vpcCni:
+        disable: true
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start-worker-machinetemplate
+spec:
+  template:
+    spec:
+      instanceType: PLACEHOLDER
+      sshKeyName: ""
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+kind: EKSConfigTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start-worker-configtemplate
+spec:
+  template:
+    spec: {}
