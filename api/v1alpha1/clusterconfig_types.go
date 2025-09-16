@@ -198,7 +198,7 @@ func (s KubeadmClusterConfig) VariableSchema() clusterv1.VariableSchema { //noli
 	return kubeadmClusterConfigVariableSchema
 }
 
-// KubeadmConfigSpec defines configuratiion that can be set when using kubeadm to bootstrap the cluster.
+// KubeadmConfigSpec defines configuration that can be set when using kubeadm to bootstrap the cluster.
 type KubeadmClusterConfigSpec struct {
 	// Sets the Kubernetes image repository used for the KubeadmControlPlane.
 	// +kubebuilder:validation:Optional

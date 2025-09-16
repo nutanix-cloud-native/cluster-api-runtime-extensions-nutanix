@@ -109,7 +109,7 @@ type NutanixWorkerNodeConfigSpec struct {
 }
 
 type KubeadmNodeSpec struct {
-	// NodeRegistration holds fields that relate to registering the new control-plane node to the cluster.
+	// NodeRegistration holds fields that relate to registering the new node to the cluster.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default={}
 	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`

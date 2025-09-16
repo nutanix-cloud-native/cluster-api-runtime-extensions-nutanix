@@ -39,8 +39,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: KubeadmConfigSpec defines configuratiion that can be set
-              when using kubeadm to bootstrap the cluster.
+            description: KubeadmConfigSpec defines configuration that can be set when
+              using kubeadm to bootstrap the cluster.
             properties:
               dns:
                 description: DNS defines the DNS configuration for the cluster.

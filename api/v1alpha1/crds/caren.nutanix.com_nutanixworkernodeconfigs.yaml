@@ -43,7 +43,7 @@ spec:
               properties:
                 nodeRegistration:
                   default: {}
-                  description: NodeRegistration holds fields that relate to registering the new control-plane node to the cluster.
+                  description: NodeRegistration holds fields that relate to registering the new node to the cluster.
                   properties:
                     ignorePreflightErrors:
                       default:
