@@ -12,6 +12,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
+	eksclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/clusterconfig"
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
@@ -64,6 +65,17 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		nutanixclusterconfig.NewVariable,
+		testDefs...,
+	)
+}
+
+func TestVariableValidation_EKS(t *testing.T) {
+	capitest.ValidateDiscoverVariables(
+		t,
+		v1alpha1.ClusterConfigVariableName,
+		ptr.To(v1alpha1.EKSClusterConfig{}.VariableSchema()),
+		true,
+		eksclusterconfig.NewVariable,
 		testDefs...,
 	)
 }
