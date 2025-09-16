@@ -22,6 +22,7 @@ type ClusterConfigSpec struct {
 
 	EKS *carenv1.EKSSpec `json:"eks,omitempty"`
 
+	carenv1.KubeadmClusterConfigSpec `json:",inline"`
 	carenv1.GenericClusterConfigSpec `json:",inline"`
 
 	Addons *Addons `json:"addons,omitempty"`
@@ -40,6 +41,7 @@ type ControlPlaneSpec struct {
 
 	carenv1.GenericControlPlaneSpec `json:",inline"`
 
+	carenv1.KubeadmNodeSpec `json:",inline"`
 	carenv1.GenericNodeSpec `json:",inline"`
 }
 
@@ -52,6 +54,7 @@ type WorkerNodeConfigSpec struct {
 
 	EKS *carenv1.AWSWorkerNodeSpec `json:"eks,omitempty"`
 
+	carenv1.KubeadmNodeSpec `json:",inline"`
 	carenv1.GenericNodeSpec `json:",inline"`
 }
 

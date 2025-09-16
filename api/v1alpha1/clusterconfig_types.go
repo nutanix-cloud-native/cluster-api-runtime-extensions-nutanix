@@ -32,6 +32,8 @@ var (
 	awsClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_nutanixclusterconfigs.yaml
 	nutanixClusterConfigCRDDefinition []byte
+	//go:embed crds/caren.nutanix.com_kubeadmclusterconfigs.yaml
+	kubeadmClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_genericclusterconfigs.yaml
 	genericClusterConfigCRDDefinition []byte
 	//go:embed crds/caren.nutanix.com_eksclusterconfigs.yaml
@@ -45,6 +47,9 @@ var (
 	)
 	nutanixClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		nutanixClusterConfigCRDDefinition,
+	)
+	kubeadmClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
+		kubeadmClusterConfigCRDDefinition,
 	)
 	genericClusterConfigVariableSchema = variables.MustSchemaFromCRDYAML(
 		genericClusterConfigCRDDefinition,
@@ -75,6 +80,7 @@ type AWSClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	AWS *AWSSpec `json:"aws,omitempty"`
 
+	KubeadmClusterConfigSpec `json:",inline"`
 	GenericClusterConfigSpec `json:",inline"`
 
 	// +kubebuilder:validation:Optional
@@ -112,6 +118,7 @@ type DockerClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Docker *DockerSpec `json:"docker,omitempty"`
 
+	KubeadmClusterConfigSpec `json:",inline"`
 	GenericClusterConfigSpec `json:",inline"`
 
 	// +kubebuilder:validation:Optional
@@ -154,6 +161,7 @@ type NutanixClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Nutanix *NutanixSpec `json:"nutanix,omitempty"`
 
+	KubeadmClusterConfigSpec `json:",inline"`
 	GenericClusterConfigSpec `json:",inline"`
 
 	// +kubebuilder:validation:Optional
@@ -177,29 +185,21 @@ type NutanixClusterConfigSpec struct {
 
 // +kubebuilder:object:root=true
 
-// GenericClusterConfig is the Schema for the genericclusterconfigs API.
-type GenericClusterConfig struct {
+// KubeadmClusterConfig is the Schema for the kubeadmconfigs API.
+type KubeadmClusterConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Spec *GenericClusterConfigSpec `json:"spec,omitempty"`
-
-	// Extra Subject Alternative Names for the API Server signing cert.
-	// +kubebuilder:validation:UniqueItems=true
-	// +kubebuilder:validation:items:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:MaxItems=100
-	// +kubebuilder:validation:items:MaxLength=253
-	ExtraAPIServerCertSANs []string `json:"extraAPIServerCertSANs,omitempty"`
+	Spec KubeadmClusterConfigSpec `json:"spec,omitempty"`
 }
 
-func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
-	return genericClusterConfigVariableSchema
+func (s KubeadmClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return kubeadmClusterConfigVariableSchema
 }
 
-// GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
-type GenericClusterConfigSpec struct {
+// KubeadmConfigSpec defines configuration that can be set when using kubeadm to bootstrap the cluster.
+type KubeadmClusterConfigSpec struct {
 	// Sets the Kubernetes image repository used for the KubeadmControlPlane.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Pattern=`^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$`
@@ -210,6 +210,34 @@ type GenericClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Etcd *Etcd `json:"etcd,omitempty"`
 
+	// +kubebuilder:validation:Optional
+	EncryptionAtRest *EncryptionAtRest `json:"encryptionAtRest,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	DNS *DNS `json:"dns,omitempty"`
+
+	// KubeProxy defines the configuration for kube-proxy.
+	// +kubebuilder:validation:Optional
+	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// GenericClusterConfig is the Schema for the genericclusterconfigs API.
+type GenericClusterConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Spec *GenericClusterConfigSpec `json:"spec,omitempty"`
+}
+
+func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+	return genericClusterConfigVariableSchema
+}
+
+// GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
+type GenericClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Proxy *HTTPProxy `json:"proxy,omitempty"`
 
@@ -223,16 +251,6 @@ type GenericClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems=32
 	Users []User `json:"users,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	EncryptionAtRest *EncryptionAtRest `json:"encryptionAtRest,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	DNS *DNS `json:"dns,omitempty"`
-
-	// KubeProxy defines the configuration for kube-proxy.
-	// +kubebuilder:validation:Optional
-	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
 
 	// NTP defines the NTP configuration for the cluster.
 	// +kubebuilder:validation:Optional
