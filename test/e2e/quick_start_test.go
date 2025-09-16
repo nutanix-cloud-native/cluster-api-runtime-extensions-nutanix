@@ -126,10 +126,8 @@ var _ = Describe("Quick start", func() {
 													"Reserving an IP address for the workload cluster kubernetes Service load balancer",
 												)
 												kubernetesServiceLoadBalancerIP, unreservekubernetesServiceLoadBalancerIP, err := nutanix.ReserveIP(
-													testE2EConfig.MustGetVariable("NUTANIX_SUBNET_NAME"),
-													testE2EConfig.MustGetVariable(
-														"NUTANIX_PRISM_ELEMENT_CLUSTER_NAME",
-													),
+													subnetName,
+													prismElementClusterName,
 													nutanixClient,
 												)
 												Expect(err).ToNot(HaveOccurred())
