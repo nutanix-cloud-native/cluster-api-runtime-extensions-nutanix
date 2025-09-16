@@ -81,7 +81,7 @@ repos:
   - id: check-yaml
     args: ["-m", "--unsafe"]
     stages: [pre-commit]
-    exclude: ^charts/.+/(templates|addons)/.+\.ya?ml$
+    exclude: (embedded/kubeletconfigpatch.yaml|^charts/.+/(templates|addons)/.+\.ya?ml)$
   - id: mixed-line-ending
     args: ["-f", "lf"]
     exclude: \.bat$
