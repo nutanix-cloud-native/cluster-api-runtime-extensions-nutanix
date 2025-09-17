@@ -181,7 +181,7 @@ func loadE2EConfig(configPath string) *clusterctl.E2EConfig {
 
 	config.Providers = slices.DeleteFunc(config.Providers, func(p clusterctl.ProviderConfig) bool {
 		switch p.Name {
-		case "aws":
+		case "aws", "eks":
 			_, found := os.LookupEnv("AWS_B64ENCODED_CREDENTIALS")
 			return !found
 		default:

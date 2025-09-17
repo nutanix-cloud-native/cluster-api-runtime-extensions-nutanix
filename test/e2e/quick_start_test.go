@@ -42,10 +42,17 @@ var _ = Describe("Quick start", func() {
 		// Run the Docker tests with the Serial decorator to ensure the machine running the Docker e2e tests
 		// doesn't have resources exhausted and lead to flaky tests.
 		{provider: "Docker", cniProvider: "Cilium", addonStrategy: "HelmAddon", decorators: []interface{}{Serial}},
-		{provider: "Docker", cniProvider: "Cilium", addonStrategy: "ClusterResourceSet", decorators: []interface{}{Serial}},
+		{
+			provider:      "Docker",
+			cniProvider:   "Cilium",
+			addonStrategy: "ClusterResourceSet",
+			decorators:    []interface{}{Serial},
+		},
 
 		{provider: "AWS", cniProvider: "Cilium", addonStrategy: "HelmAddon"},
 		{provider: "AWS", cniProvider: "Cilium", addonStrategy: "ClusterResourceSet"},
+
+		{provider: "EKS", cniProvider: "Cilium", addonStrategy: "HelmAddon"},
 
 		{provider: "Nutanix", cniProvider: "Cilium", addonStrategy: "HelmAddon"},
 		{provider: "Nutanix", cniProvider: "Cilium", addonStrategy: "ClusterResourceSet"},
@@ -206,6 +213,7 @@ var _ = Describe("Quick start", func() {
 											capiframework.KubeadmBootstrapOwnerReferenceAssertions,
 											capiframework.KubeadmControlPlaneOwnerReferenceAssertions,
 											AWSInfraOwnerReferenceAssertions,
+											EKSInfraOwnerReferenceAssertions,
 											NutanixInfraOwnerReferenceAssertions,
 											AddonReferenceAssertions,
 											KubernetesReferenceAssertions,
