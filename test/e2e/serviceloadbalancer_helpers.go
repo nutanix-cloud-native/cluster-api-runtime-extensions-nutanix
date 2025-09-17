@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -20,12 +21,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer/metallb"
 )
 
@@ -168,8 +171,34 @@ func EnsureLoadBalancerService(
 		Host:   getLoadBalancerAddress(svc),
 		Path:   "/clientip",
 	}
+	klog.Infof("Testing the LoadBalancer Service on: %q", getClientIPURL.String())
 	output := testServiceLoadBalancer(ctx, getClientIPURL, input.ServiceIntervals)
 	Expect(output).ToNot(BeEmpty())
+	klog.Infof("Kubernetes LoadBalancer Service output: %q", output)
+
+	By("Verifying that the source IP is as expected")
+	// It is not simple to get the source IP of the runner because its possible connect through a VPN.
+	//
+	// When source IP preservation is not enabled,
+	// the source IP that the LoadBalancer Service responds with an IP from the Cluster's Pod subnet.
+	// When source IP preservation is enabled, we test the source IP is different from the Pod IP.
+	// The output will be something like:
+	// 192.168.1.141:32768 - when source IP preservation is not enabled.
+	// 10.22.24.12:32768 - when source IP preservation is enabled.
+	// Get the source IP from the output.
+	sourceIPStr := strings.Split(output, ":")[0]
+	sourceIP := net.ParseIP(sourceIPStr)
+	Expect(sourceIP).ToNot(BeNil())
+	// Get the Cluster's Pod subnet.
+	podCIDRStr := input.WorkloadCluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0]
+	_, podCIDR, err := net.ParseCIDR(podCIDRStr)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(podCIDR).ToNot(BeNil())
+
+	// When skip kube-proxy is false (i.e. kube-proxy is enabled), sourceIP should be from the Pod subnet.
+	// Otherwise, sourceIP will be some external IP.
+	expectIPFromPodSubnet := !capiutils.ShouldSkipKubeProxy(input.WorkloadCluster)
+	Expect(podCIDR.Contains(sourceIP)).To(Equal(expectIPFromPodSubnet))
 }
 
 func createTestService(
