@@ -3,6 +3,10 @@
 
 package v1alpha1
 
+import (
+	capav1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+)
+
 type AWSControlPlaneNodeSpec struct {
 	// The IAM instance profile to use for the cluster Machines.
 	// +kubebuilder:validation:Optional
@@ -50,6 +54,10 @@ type AWSGenericNodeSpec struct {
 	// PlacementGroup specifies the placement group in which to launch the instance.
 	// +kubebuilder:validation:Optional
 	PlacementGroup *PlacementGroup `json:"placementGroup,omitempty"`
+
+	// Configuration options for the root storage volume.
+	// +kubebuilder:validation:Optional
+	RootVolume *Volume `json:"rootVolume,omitempty"`
 }
 
 // +kubebuilder:validation:MaxItems=32
@@ -104,4 +112,39 @@ type AMILookup struct {
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=32
 	BaseOS string `json:"baseOS,omitempty"`
+}
+
+type Volume struct {
+	// Device name
+	// +kubebuilder:validation:Optional
+	DeviceName string `json:"deviceName,omitempty"`
+
+	// Size specifies size (in Gi) of the storage device.
+	// Must be greater than the image snapshot size or 8 (whichever is greater).
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=8
+	// +kubebuilder:default=80
+	Size int64 `json:"size,omitempty"`
+
+	// Type is the type of the volume (e.g. gp2, io1, etc...).
+	// +kubebuilder:validation:Optional
+	Type capav1.VolumeType `json:"type,omitempty"`
+
+	// IOPS is the number of IOPS requested for the disk. Not applicable to all types.
+	// +kubebuilder:validation:Optional
+	IOPS int64 `json:"iops,omitempty"`
+
+	// Throughput to provision in MiB/s supported for the volume type. Not applicable to all types.
+	// +kubebuilder:validation:Optional
+	Throughput int64 `json:"throughput,omitempty"`
+
+	// Encrypted is whether the volume should be encrypted or not.
+	// +kubebuilder:validation:Optional
+	Encrypted bool `json:"encrypted,omitempty"`
+
+	// EncryptionKey is the KMS key to use to encrypt the volume. Can be either a KMS key ID or ARN.
+	// If Encrypted is set and this is omitted, the default AWS key will be used.
+	// The key must already exist and be accessible by the controller.
+	// +kubebuilder:validation:Optional
+	EncryptionKey string `json:"encryptionKey,omitempty"`
 }
