@@ -57,7 +57,7 @@ kustomize build --load-restrictor LoadRestrictionsNone \
 
 kustomize build --load-restrictor LoadRestrictionsNone \
   ./hack/examples/overlays/clusters/eks \
-  >"${EXAMPLE_CLUSTERS_DIR}/eks-cluster.yaml"
+  >"${EXAMPLE_CLUSTERS_DIR}/eks-cluster-cilium-helm-addon.yaml"
 
 # TODO Remove once kustomize supports retaining quotes in what will be numeric values.
 #shellcheck disable=SC2016
