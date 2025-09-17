@@ -34,14 +34,10 @@ envoy:
   image:
     useDigest: false
 k8sServiceHost: auto
-{{- with .ControlPlane }}
-{{- range $key, $val := .metadata.annotations }}
-{{- if eq $key "controlplane.cluster.x-k8s.io/skip-kube-proxy" }}
+{{- if .EnableKubeProxyReplacement }}
 kubeProxyReplacement: true
 tunnelProtocol: geneve
 loadBalancer:
   mode: dsr
-  dsrDispatch: geneve{{ break }}
-{{- end }}
-{{- end }}
+  dsrDispatch: geneve
 {{- end }}

@@ -266,16 +266,10 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (strin
 		}
 
 		type input struct {
-			ControlPlane map[string]interface{}
+			EnableKubeProxyReplacement bool
 		}
 		templateInput := input{
-			ControlPlane: map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"annotations": map[string]interface{}{
-						"controlplane.cluster.x-k8s.io/skip-kube-proxy": "",
-					},
-				},
-			},
+			EnableKubeProxyReplacement: true,
 		}
 
 		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
