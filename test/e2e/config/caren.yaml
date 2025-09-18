@@ -174,7 +174,7 @@ variables:
   # Override Kubernetes version for test workload clusters for specific providers by setting the env variables
   # `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
   # `KUBERNETES_VERSION_DOCKER: v1.31.0`.
-  KUBERNETES_VERSION_NUTANIX: v1.33.1
+  KUBERNETES_VERSION_NUTANIX: v1.33.2
   SERVICE_CIDR: "10.128.0.0/12"
   POD_CIDR: "192.168.0.0/16"
   NODE_DRAIN_TIMEOUT: "60s"
