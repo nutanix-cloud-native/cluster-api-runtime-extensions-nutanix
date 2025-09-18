@@ -55,9 +55,9 @@ type AWSGenericNodeSpec struct {
 	// +kubebuilder:validation:Optional
 	PlacementGroup *PlacementGroup `json:"placementGroup,omitempty"`
 
-	// Configuration options for the root storage volume.
+	// Configuration options for the root and additional storage volume.
 	// +kubebuilder:validation:Optional
-	RootVolume *Volume `json:"rootVolume,omitempty"`
+	Volumes *AWSVolumes `json:"volumes,omitempty"`
 }
 
 // +kubebuilder:validation:MaxItems=32
@@ -114,7 +114,17 @@ type AMILookup struct {
 	BaseOS string `json:"baseOS,omitempty"`
 }
 
-type Volume struct {
+type AWSVolumes struct {
+	// Configuration options for the root storage volume.
+	// +kubebuilder:validation:Optional
+	Root *AWSVolume `json:"root,omitempty"`
+
+	// Configuration options for non-root storage volumes.
+	// +kubebuilder:validation:Optional
+	NonRoot []AWSVolume `json:"nonroot,omitempty"`
+}
+
+type AWSVolume struct {
 	// Device name
 	// +kubebuilder:validation:Optional
 	DeviceName string `json:"deviceName,omitempty"`
@@ -123,7 +133,6 @@ type Volume struct {
 	// Must be greater than the image snapshot size or 8 (whichever is greater).
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Minimum=8
-	// +kubebuilder:default=80
 	Size int64 `json:"size,omitempty"`
 
 	// Type is the type of the volume (e.g. gp2, io1, etc...).

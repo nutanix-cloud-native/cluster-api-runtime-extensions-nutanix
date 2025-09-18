@@ -1,7 +1,7 @@
 // Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package rootvolume
+package volumes
 
 import (
 	"testing"
@@ -22,19 +22,31 @@ func TestVariableValidation(t *testing.T) {
 		true,
 		awsclusterconfig.NewVariable,
 		capitest.VariableTestDef{
-			Name: "Root Volume Specification",
+			Name: "Volumes Specification",
 			Vals: v1alpha1.AWSClusterConfigSpec{
 				ControlPlane: &v1alpha1.AWSControlPlaneSpec{
 					AWS: &v1alpha1.AWSControlPlaneNodeSpec{
 						AWSGenericNodeSpec: v1alpha1.AWSGenericNodeSpec{
-							RootVolume: &v1alpha1.Volume{
-								DeviceName:    "/dev/sda1",
-								Size:          100,
-								Type:          capav1.VolumeTypeGP3,
-								IOPS:          3000,
-								Throughput:    125,
-								Encrypted:     true,
-								EncryptionKey: "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012",
+							Volumes: &v1alpha1.AWSVolumes{
+								Root: &v1alpha1.AWSVolume{
+									DeviceName:    "/dev/sda1",
+									Size:          100,
+									Type:          capav1.VolumeTypeGP3,
+									IOPS:          3000,
+									Throughput:    125,
+									Encrypted:     true,
+									EncryptionKey: "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012",
+								},
+								NonRoot: []v1alpha1.AWSVolume{
+									{
+										DeviceName: "/dev/sdf",
+										Size:       200,
+										Type:       capav1.VolumeTypeGP3,
+										IOPS:       4000,
+										Throughput: 250,
+										Encrypted:  true,
+									},
+								},
 							},
 						},
 					},
