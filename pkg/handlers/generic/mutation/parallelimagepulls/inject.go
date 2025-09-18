@@ -78,12 +78,17 @@ func (h *maxParallelImagePullsPerNode) Mutate(
 		h.variableName,
 		h.variableFieldPath...,
 	)
-	switch {
-	case err != nil && !variables.IsNotFoundError(err):
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("max parallel image pulls is not set, skipping mutation")
+			return nil
+		}
 		return err
-	case variables.IsNotFoundError(err):
-		log.V(5).Info("max parallel image pulls is not set, using default value of 1")
-		maxParallelImagePullsPerNode = 1
+	}
+
+	if maxParallelImagePullsPerNode == 1 {
+		log.V(5).Info("max parallel image pulls is set to 1, skipping mutation resulting in serialized image pulls")
+		return nil
 	}
 
 	log = log.WithValues(

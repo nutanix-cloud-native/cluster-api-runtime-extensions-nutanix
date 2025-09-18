@@ -44,25 +44,14 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 			),
 		},
 		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
-		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-				ValueMatcher: gomega.ConsistOf(
-					gomega.SatisfyAll(
-						gomega.HaveKeyWithValue(
-							"path",
-							"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
-						),
-						gomega.HaveKeyWithValue("owner", "root:root"),
-						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `---
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-serializeImagePulls: false
-maxParallelImagePulls: 1
-`,
-						),
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
 					),
 				),
 			},
@@ -76,25 +65,14 @@ maxParallelImagePulls: 1
 			),
 		},
 		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
-		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-				ValueMatcher: gomega.ConsistOf(
-					gomega.SatisfyAll(
-						gomega.HaveKeyWithValue(
-							"path",
-							"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
-						),
-						gomega.HaveKeyWithValue("owner", "root:root"),
-						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `---
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-serializeImagePulls: false
-maxParallelImagePulls: 1
-`,
-						),
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
 					),
 				),
 			},
@@ -108,25 +86,14 @@ maxParallelImagePulls: 1
 			),
 		},
 		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
-		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-				ValueMatcher: gomega.ConsistOf(
-					gomega.SatisfyAll(
-						gomega.HaveKeyWithValue(
-							"path",
-							"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
-						),
-						gomega.HaveKeyWithValue("owner", "root:root"),
-						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `---
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-serializeImagePulls: false
-maxParallelImagePulls: 1
-`,
-						),
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
 					),
 				),
 			},
@@ -146,25 +113,14 @@ maxParallelImagePulls: 1
 			),
 		},
 		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
-		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
-				Path:      "/spec/template/spec/files",
-				ValueMatcher: gomega.ConsistOf(
-					gomega.SatisfyAll(
-						gomega.HaveKeyWithValue(
-							"path",
-							"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
-						),
-						gomega.HaveKeyWithValue("owner", "root:root"),
-						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `---
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-serializeImagePulls: false
-maxParallelImagePulls: 1
-`,
-						),
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
 					),
 				),
 			},
@@ -184,25 +140,14 @@ maxParallelImagePulls: 1
 			),
 		},
 		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
-		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
-				Path:      "/spec/template/spec/files",
-				ValueMatcher: gomega.ConsistOf(
-					gomega.SatisfyAll(
-						gomega.HaveKeyWithValue(
-							"path",
-							"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
-						),
-						gomega.HaveKeyWithValue("owner", "root:root"),
-						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `---
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-serializeImagePulls: false
-maxParallelImagePulls: 1
-`,
-						),
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
 					),
 				),
 			},
@@ -222,25 +167,182 @@ maxParallelImagePulls: 1
 			),
 		},
 		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
-		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
-				Path:      "/spec/template/spec/files",
-				ValueMatcher: gomega.ConsistOf(
-					gomega.SatisfyAll(
-						gomega.HaveKeyWithValue(
-							"path",
-							"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
-						),
-						gomega.HaveKeyWithValue("owner", "root:root"),
-						gomega.HaveKeyWithValue("permissions", "0644"),
-						gomega.HaveKeyWithValue("content", `---
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-serializeImagePulls: false
-maxParallelImagePulls: 1
-`,
-						),
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
+					),
+				),
+			},
+		},
+	}),
+	Entry("max parallel image pulls set to 1 with AWS control plane", capitest.PatchTestDef{
+		Vars: []runtimehooksv1.Variable{
+			capitest.VariableWithValue(
+				v1alpha1.ClusterConfigVariableName,
+				v1alpha1.AWSClusterConfigSpec{
+					KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+						MaxParallelImagePullsPerNode: ptr.To(int32(1)),
+					},
+				},
+			),
+		},
+		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
+			{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
+					),
+				),
+			},
+		},
+	}),
+	Entry("max parallel image pulls set to 1 with Nutanix control plane", capitest.PatchTestDef{
+		Vars: []runtimehooksv1.Variable{
+			capitest.VariableWithValue(
+				v1alpha1.ClusterConfigVariableName,
+				v1alpha1.NutanixClusterConfigSpec{
+					KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+						MaxParallelImagePullsPerNode: ptr.To(int32(1)),
+					},
+				},
+			),
+		},
+		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
+			{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
+					),
+				),
+			},
+		},
+	}),
+	Entry("max parallel image pulls set to 1 with Docker control plane", capitest.PatchTestDef{
+		Vars: []runtimehooksv1.Variable{
+			capitest.VariableWithValue(
+				v1alpha1.ClusterConfigVariableName,
+				v1alpha1.DockerClusterConfigSpec{
+					KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+						MaxParallelImagePullsPerNode: ptr.To(int32(1)),
+					},
+				},
+			),
+		},
+		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
+			{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
+					),
+				),
+			},
+		},
+	}),
+	Entry("max parallel image pulls set to 1 with AWS workers", capitest.PatchTestDef{
+		Vars: []runtimehooksv1.Variable{
+			capitest.VariableWithValue(
+				v1alpha1.ClusterConfigVariableName,
+				v1alpha1.AWSClusterConfigSpec{
+					KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+						MaxParallelImagePullsPerNode: ptr.To(int32(1)),
+					},
+				},
+			),
+			capitest.VariableWithValue(
+				runtimehooksv1.BuiltinsName,
+				apiextensionsv1.JSON{
+					Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+				},
+			),
+		},
+		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
+			{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
+					),
+				),
+			},
+		},
+	}),
+	Entry("max parallel image pulls set to 1 with Nutanix workers", capitest.PatchTestDef{
+		Vars: []runtimehooksv1.Variable{
+			capitest.VariableWithValue(
+				v1alpha1.ClusterConfigVariableName,
+				v1alpha1.NutanixClusterConfigSpec{
+					KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+						MaxParallelImagePullsPerNode: ptr.To(int32(1)),
+					},
+				},
+			),
+			capitest.VariableWithValue(
+				runtimehooksv1.BuiltinsName,
+				apiextensionsv1.JSON{
+					Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+				},
+			),
+		},
+		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
+			{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
+					),
+				),
+			},
+		},
+	}),
+	Entry("max parallel image pulls set to 1 with Docker workers", capitest.PatchTestDef{
+		Vars: []runtimehooksv1.Variable{
+			capitest.VariableWithValue(
+				v1alpha1.ClusterConfigVariableName,
+				v1alpha1.DockerClusterConfigSpec{
+					KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+						MaxParallelImagePullsPerNode: ptr.To(int32(1)),
+					},
+				},
+			),
+			capitest.VariableWithValue(
+				runtimehooksv1.BuiltinsName,
+				apiextensionsv1.JSON{
+					Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+				},
+			),
+		},
+		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
+			{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.HaveKeyWithValue(
+						"path",
+						"/etc/kubernetes/patches/kubeletconfigurationmaxparallelimagepulls+strategic.json",
 					),
 				),
 			},
