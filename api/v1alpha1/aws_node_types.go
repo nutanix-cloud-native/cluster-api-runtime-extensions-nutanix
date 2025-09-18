@@ -114,6 +114,7 @@ type AMILookup struct {
 	BaseOS string `json:"baseOS,omitempty"`
 }
 
+// +kubebuilder:validation:XValidation:rule="has(self.root) || size(self.nonroot) > 0",message="either root or nonroot must be specified"
 type AWSVolumes struct {
 	// Configuration options for the root storage volume.
 	// +kubebuilder:validation:Optional

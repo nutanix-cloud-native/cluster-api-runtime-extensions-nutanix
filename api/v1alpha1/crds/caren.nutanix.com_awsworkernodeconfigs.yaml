@@ -200,6 +200,9 @@ spec:
                             type: string
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: either root or nonroot must be specified
+                      rule: has(self.root) || size(self.nonroot) > 0
                 type: object
               nodeRegistration:
                 default: {}
