@@ -25,20 +25,6 @@ patches:
             external:
               generateExtension: "awsworkerv4configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "awsworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
-          - name: identityRef
-            definitions:
-              - jsonPatches:
-                  - op: add
-                    path: /spec/template/spec/identityRef
-                    value:
-                      kind: AWSClusterControllerIdentity
-                      name: default
-                selector:
-                  apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
-                  kind: AWSClusterTemplate
-                  matchResources:
-                    infrastructureCluster: true
-            description: AWSClusterStaticIdentity identityRef to use when creating the cluster
   - target:
       kind: AWSMachineTemplate
     patch: |-
