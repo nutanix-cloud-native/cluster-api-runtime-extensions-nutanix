@@ -14,8 +14,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/network"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/placementgroup"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/region"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/rootvolume"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/securitygroups"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/volumes"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
@@ -40,7 +40,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 		instancetype.NewWorkerPatch(),
 		ami.NewWorkerPatch(),
 		securitygroups.NewWorkerPatch(),
-		rootvolume.NewWorkerPatch(),
+		volumes.NewWorkerPatch(),
 		placementgroup.NewWorkerPatch(),
 	}
 	patchHandlers = append(patchHandlers, workerMetaMutators()...)

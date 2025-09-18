@@ -1,7 +1,7 @@
 // Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package rootvolume
+package volumes
 
 import (
 	"context"
@@ -23,28 +23,28 @@ import (
 
 const (
 	// VariableName is the external patch variable name.
-	VariableName = "rootVolume"
+	VariableName = "volumes"
 )
 
-type awsRootVolumeSpecPatchHandler struct {
+type awsVolumesSpecPatchHandler struct {
 	metaVariableName  string
 	variableFieldPath []string
 	patchSelector     clusterv1.PatchSelector
 }
 
-func NewAWSRootVolumeSpecPatchHandler(
+func NewAWSVolumesSpecPatchHandler(
 	metaVariableName string,
 	variableFieldPath []string,
 	patchSelector clusterv1.PatchSelector,
-) *awsRootVolumeSpecPatchHandler {
-	return &awsRootVolumeSpecPatchHandler{
+) *awsVolumesSpecPatchHandler {
+	return &awsVolumesSpecPatchHandler{
 		metaVariableName:  metaVariableName,
 		variableFieldPath: variableFieldPath,
 		patchSelector:     patchSelector,
 	}
 }
 
-func (h *awsRootVolumeSpecPatchHandler) Mutate(
+func (h *awsVolumesSpecPatchHandler) Mutate(
 	ctx context.Context,
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
@@ -55,7 +55,7 @@ func (h *awsRootVolumeSpecPatchHandler) Mutate(
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"holderRef", holderRef,
 	)
-	rootVolumeVar, err := variables.Get[v1alpha1.Volume](
+	volumesVar, err := variables.Get[v1alpha1.AWSVolumes](
 		vars,
 		h.metaVariableName,
 		h.variableFieldPath...,
@@ -63,7 +63,7 @@ func (h *awsRootVolumeSpecPatchHandler) Mutate(
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).
-				Info("No root volume configuration provided. Skipping.")
+				Info("No volumes configuration provided. Skipping.")
 			return nil
 		}
 		return err
@@ -75,7 +75,7 @@ func (h *awsRootVolumeSpecPatchHandler) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		rootVolumeVar,
+		volumesVar,
 	)
 
 	return patches.MutateIfApplicable(
@@ -88,25 +88,46 @@ func (h *awsRootVolumeSpecPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting root volume configuration")
+			).Info("setting volumes configuration")
 
-			// Convert the v1alpha1.Volume to capav1.Volume
-			rootVolume := capav1.Volume{
-				DeviceName:    rootVolumeVar.DeviceName,
-				Size:          rootVolumeVar.Size,
-				Type:          rootVolumeVar.Type,
-				IOPS:          rootVolumeVar.IOPS,
-				EncryptionKey: rootVolumeVar.EncryptionKey,
-			}
-			if rootVolumeVar.Throughput != 0 {
-				rootVolume.Throughput = ptr.To(rootVolumeVar.Throughput)
-			}
-			if rootVolumeVar.Encrypted {
-				rootVolume.Encrypted = ptr.To(rootVolumeVar.Encrypted)
+			// Handle root volume
+			if volumesVar.Root != nil {
+				rootVolume := h.toCAPAVolume(volumesVar.Root)
+				obj.Spec.Template.Spec.RootVolume = rootVolume
 			}
 
-			obj.Spec.Template.Spec.RootVolume = &rootVolume
+			// Handle non-root volumes
+			if len(volumesVar.NonRoot) > 0 {
+				nonRootVolumes := make([]capav1.Volume, 0, len(volumesVar.NonRoot))
+				for n := range volumesVar.NonRoot {
+					vol := &volumesVar.NonRoot[n]
+					nonRootVolumes = append(nonRootVolumes, *h.toCAPAVolume(vol))
+				}
+				obj.Spec.Template.Spec.NonRootVolumes = nonRootVolumes
+			}
+
 			return nil
 		},
 	)
+}
+
+// toCAPAVolume converts v1alpha1.AWSVolume to capav1.Volume.
+func (h *awsVolumesSpecPatchHandler) toCAPAVolume(vol *v1alpha1.AWSVolume) *capav1.Volume {
+	capav1Volume := &capav1.Volume{
+		DeviceName:    vol.DeviceName,
+		Size:          vol.Size,
+		Type:          vol.Type,
+		IOPS:          vol.IOPS,
+		EncryptionKey: vol.EncryptionKey,
+	}
+
+	// Handle pointer fields - convert non-pointer v1alpha1 fields to pointer capav1 fields
+	if vol.Throughput != 0 {
+		capav1Volume.Throughput = ptr.To(vol.Throughput)
+	}
+	if vol.Encrypted {
+		capav1Volume.Encrypted = ptr.To(vol.Encrypted)
+	}
+
+	return capav1Volume
 }
