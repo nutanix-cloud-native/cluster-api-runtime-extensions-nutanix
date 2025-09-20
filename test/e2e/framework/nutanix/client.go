@@ -55,8 +55,8 @@ func WaitForTaskCompletion(
 
 	if err := wait.PollUntilContextCancel(
 		ctx,
-		100*time.Millisecond,
-		true,
+		1*time.Second,
+		false,
 		func(ctx context.Context) (done bool, err error) {
 			task, err := v4Client.TasksApiInstance.GetTaskById(ptr.To(taskID))
 			if err != nil {
