@@ -165,11 +165,9 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.AWSClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeIPTables,
-							},
+					v1alpha1.NutanixClusterConfigSpec{
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeIPTables,
 						},
 					},
 				),
@@ -215,10 +213,8 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeIPTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeIPTables,
 						},
 					},
 				),
@@ -264,10 +260,8 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.DockerClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeIPTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeIPTables,
 						},
 					},
 				),
@@ -313,10 +307,8 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.NutanixClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeNFTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeNFTables,
 						},
 					},
 				),
@@ -362,10 +354,8 @@ mode: nftables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeNFTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeNFTables,
 						},
 					},
 				),
@@ -411,10 +401,8 @@ mode: nftables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.DockerClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeNFTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeNFTables,
 						},
 					},
 				),

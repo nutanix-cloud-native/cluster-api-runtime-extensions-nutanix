@@ -159,6 +159,11 @@ func (in *AWSClusterConfigSpec) DeepCopyInto(out *AWSClusterConfigSpec) {
 	}
 	in.KubeadmClusterConfigSpec.DeepCopyInto(&out.KubeadmClusterConfigSpec)
 	in.GenericClusterConfigSpec.DeepCopyInto(&out.GenericClusterConfigSpec)
+	if in.KubeProxy != nil {
+		in, out := &in.KubeProxy, &out.KubeProxy
+		*out = new(KubeProxy)
+		**out = **in
+	}
 	if in.Addons != nil {
 		in, out := &in.Addons, &out.Addons
 		*out = new(AWSAddons)
@@ -872,6 +877,11 @@ func (in *DockerClusterConfigSpec) DeepCopyInto(out *DockerClusterConfigSpec) {
 	}
 	in.KubeadmClusterConfigSpec.DeepCopyInto(&out.KubeadmClusterConfigSpec)
 	in.GenericClusterConfigSpec.DeepCopyInto(&out.GenericClusterConfigSpec)
+	if in.KubeProxy != nil {
+		in, out := &in.KubeProxy, &out.KubeProxy
+		*out = new(KubeProxy)
+		**out = **in
+	}
 	if in.Addons != nil {
 		in, out := &in.Addons, &out.Addons
 		*out = new(DockerAddons)
@@ -1039,6 +1049,11 @@ func (in *EKSClusterConfigSpec) DeepCopyInto(out *EKSClusterConfigSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.GenericClusterConfigSpec.DeepCopyInto(&out.GenericClusterConfigSpec)
+	if in.KubeProxy != nil {
+		in, out := &in.KubeProxy, &out.KubeProxy
+		*out = new(KubeProxy)
+		**out = **in
+	}
 	if in.Addons != nil {
 		in, out := &in.Addons, &out.Addons
 		*out = new(AWSAddons)
@@ -1545,11 +1560,6 @@ func (in *KubeadmClusterConfigSpec) DeepCopyInto(out *KubeadmClusterConfigSpec) 
 		*out = new(DNS)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.KubeProxy != nil {
-		in, out := &in.KubeProxy, &out.KubeProxy
-		*out = new(KubeProxy)
-		**out = **in
-	}
 	if in.MaxParallelImagePullsPerNode != nil {
 		in, out := &in.MaxParallelImagePullsPerNode, &out.MaxParallelImagePullsPerNode
 		*out = new(int32)
@@ -1772,6 +1782,11 @@ func (in *NutanixClusterConfigSpec) DeepCopyInto(out *NutanixClusterConfigSpec) 
 	}
 	in.KubeadmClusterConfigSpec.DeepCopyInto(&out.KubeadmClusterConfigSpec)
 	in.GenericClusterConfigSpec.DeepCopyInto(&out.GenericClusterConfigSpec)
+	if in.KubeProxy != nil {
+		in, out := &in.KubeProxy, &out.KubeProxy
+		*out = new(KubeProxy)
+		**out = **in
+	}
 	if in.Addons != nil {
 		in, out := &in.Addons, &out.Addons
 		*out = new(NutanixAddons)

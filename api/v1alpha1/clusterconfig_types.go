@@ -83,6 +83,10 @@ type AWSClusterConfigSpec struct {
 	KubeadmClusterConfigSpec `json:",inline"`
 	GenericClusterConfigSpec `json:",inline"`
 
+	// KubeProxy defines the configuration for kube-proxy.
+	// +kubebuilder:validation:Optional
+	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	Addons *AWSAddons `json:"addons,omitempty"`
 
@@ -120,6 +124,10 @@ type DockerClusterConfigSpec struct {
 
 	KubeadmClusterConfigSpec `json:",inline"`
 	GenericClusterConfigSpec `json:",inline"`
+
+	// KubeProxy defines the configuration for kube-proxy.
+	// +kubebuilder:validation:Optional
+	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Addons *DockerAddons `json:"addons,omitempty"`
@@ -164,6 +172,10 @@ type NutanixClusterConfigSpec struct {
 	KubeadmClusterConfigSpec `json:",inline"`
 	GenericClusterConfigSpec `json:",inline"`
 
+	// KubeProxy defines the configuration for kube-proxy.
+	// +kubebuilder:validation:Optional
+	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	Addons *NutanixAddons `json:"addons,omitempty"`
 
@@ -206,6 +218,10 @@ type EKSClusterConfigSpec struct {
 
 	GenericClusterConfigSpec `json:",inline"`
 
+	// KubeProxy defines the configuration for kube-proxy.
+	// +kubebuilder:validation:Optional
+	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	Addons *AWSAddons `json:"addons,omitempty"`
 }
@@ -242,10 +258,6 @@ type KubeadmClusterConfigSpec struct {
 
 	// +kubebuilder:validation:Optional
 	DNS *DNS `json:"dns,omitempty"`
-
-	// KubeProxy defines the configuration for kube-proxy.
-	// +kubebuilder:validation:Optional
-	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
 
 	// MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
 	// If not set, the default value of 1 will be used.

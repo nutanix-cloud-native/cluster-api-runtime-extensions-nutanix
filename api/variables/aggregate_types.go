@@ -25,6 +25,8 @@ type ClusterConfigSpec struct {
 	carenv1.KubeadmClusterConfigSpec `json:",inline"`
 	carenv1.GenericClusterConfigSpec `json:",inline"`
 
+	KubeProxy *carenv1.KubeProxy `json:"kubeProxy,omitempty"`
+
 	Addons *Addons `json:"addons,omitempty"`
 
 	ControlPlane *ControlPlaneSpec `json:"controlPlane,omitempty"`
