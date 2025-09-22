@@ -246,6 +246,13 @@ type KubeadmClusterConfigSpec struct {
 	// KubeProxy defines the configuration for kube-proxy.
 	// +kubebuilder:validation:Optional
 	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
+
+	// MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
+	// If not set, the default value of 1 will be used.
+	// If set to 0, the maximum number of parallel image pulls will be unlimited.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
+	MaxParallelImagePullsPerNode *int32 `json:"maxParallelImagePullsPerNode,omitempty"`
 }
 
 // +kubebuilder:object:root=true
