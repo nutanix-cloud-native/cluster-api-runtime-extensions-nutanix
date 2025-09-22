@@ -20,12 +20,12 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api v0.0.0-00010101000000-000000000000
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
-	github.com/nutanix-cloud-native/prism-go-client v0.5.3
+	github.com/nutanix-cloud-native/prism-go-client v0.5.4
 	github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4 v4.0.1-beta.2
 	github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4 v4.0.2-beta.1
 	github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.0.1-beta.1
 	github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4 v4.0.1-beta.1
-	github.com/onsi/ginkgo/v2 v2.25.2
+	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/pkg/errors v0.9.1
 	github.com/regclient/regclient v0.9.2
@@ -33,14 +33,14 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.32.8
-	k8s.io/apiextensions-apiserver v0.32.8
-	k8s.io/apimachinery v0.32.8
-	k8s.io/apiserver v0.32.8
-	k8s.io/client-go v0.32.8
-	k8s.io/component-base v0.32.8
+	k8s.io/api v0.32.9
+	k8s.io/apiextensions-apiserver v0.32.9
+	k8s.io/apimachinery v0.32.9
+	k8s.io/apiserver v0.32.9
+	k8s.io/client-go v0.32.9
+	k8s.io/component-base v0.32.9
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubelet v0.31.12
+	k8s.io/kubelet v0.31.13
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	sigs.k8s.io/cluster-api v1.10.4
 	sigs.k8s.io/cluster-api/test v1.10.4
@@ -64,9 +64,9 @@ require (
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.38.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.250.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/eks v1.73.1 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.39.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.253.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/eks v1.73.3 // indirect
 	github.com/aws/smithy-go v1.23.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect

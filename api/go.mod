@@ -10,18 +10,18 @@ toolchain go1.24.5
 replace github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common => ../common
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.38.3
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.250.0
-	github.com/aws/aws-sdk-go-v2/service/eks v1.73.1
+	github.com/aws/aws-sdk-go-v2 v1.39.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.253.0
+	github.com/aws/aws-sdk-go-v2/service/eks v1.73.3
 	github.com/blang/semver/v4 v4.0.0
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
-	github.com/nutanix-cloud-native/prism-go-client v0.5.3
+	github.com/nutanix-cloud-native/prism-go-client v0.5.4
 	github.com/onsi/gomega v1.38.2
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
-	k8s.io/api v0.32.8
-	k8s.io/apiextensions-apiserver v0.32.8
-	k8s.io/apimachinery v0.32.8
+	k8s.io/api v0.32.9
+	k8s.io/apiextensions-apiserver v0.32.9
+	k8s.io/apimachinery v0.32.9
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	sigs.k8s.io/cluster-api v1.10.4
 	sigs.k8s.io/controller-runtime v0.20.4
@@ -75,7 +75,7 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/client-go v0.32.8 // indirect
+	k8s.io/client-go v0.32.9 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
