@@ -45,6 +45,8 @@ endif
 
 .PHONY: test.%
 test.%: ## Runs go tests for a specific module
+# TODO: Remove once https://github.com/golang/go/issues/75031 is fixed.
+test.%: export GOTOOLCHAIN := $(shell go version | cut -d ' ' -f3)+auto
 test.%: go-generate ; $(info $(M) running tests$(if $(GOTEST_RUN), matching "$(GOTEST_RUN)") for $* module)
 	$(if $(filter-out root,$*),cd $* && )$(call go_test)
 
@@ -156,9 +158,19 @@ lint.%: ## Runs golangci-lint run for a specific module
 lint.%: hack/tools/golangci-lint-kube-api-linter fmt.% ; $(info $(M) linting $* module)
 	$(if $(filter-out root,$*),cd $* && )$(PWD)/hack/tools/golangci-lint-kube-api-linter run --fix --config=$(GOLANGCI_CONFIG_FILE)
 
+# Ensure that the golangci-lint-kube-api-linter tool is using the same version of Go as the golangci-lint tool, which
+# should in turn be the same language version as the project.
+GOLANGCI_LINT_VERSION := $(shell golangci-lint version --json 2>/dev/null | gojq --raw-output '.goVersion')
+GOLANGCI_LINT_KUBE_API_LINTER_VERSION := $(shell hack/tools/golangci-lint-kube-api-linter version --json 2>/dev/null | gojq --raw-output '.goVersion')
+ifneq ($(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_KUBE_API_LINTER_VERSION))
+.PHONY: hack/tools/golangci-lint-kube-api-linter
+endif
+# Explicitly set the GOTOOLCHAIN environment variable to the same version of Go as the golangci-lint tool
+# to ensure that the go version is the same as the golangci-lint tool.
+hack/tools/golangci-lint-kube-api-linter: export GOTOOLCHAIN := $(GOLANGCI_LINT_VERSION)
 hack/tools/golangci-lint-kube-api-linter: hack/tools/.custom-gcl.yml
 hack/tools/golangci-lint-kube-api-linter: ; $(info $(M) installing golangci-lint-kube-api-linter tool)
-	cd hack/tools && golangci-lint custom
+	cd hack/tools && golangci-lint custom --verbose
 
 .PHONY: mod-tidy
 mod-tidy: ## Run go mod tidy for all modules
@@ -258,6 +270,9 @@ go-mod-edit-toolchain: go-mod-edit-toolchain.root
 endif
 ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
 go-mod-edit-toolchain: $(addprefix go-mod-edit-toolchain.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
+endif
+ifneq ($(wildcard $(REPO_ROOT)/hack/tools/go.mod),)
+	cd hack/tools && go mod edit -toolchain=$(GO_TOOLCHAIN_VERSION)
 endif
 
 .PHONY: go-mod-edit-toolchain.%
