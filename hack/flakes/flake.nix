@@ -10,6 +10,12 @@
     flake-utils.lib.eachDefaultSystem (system:
       with nixpkgs.legacyPackages.${system}; rec {
         packages = rec {
+          # Versions available via Devbox are currently behind due to nixhubi.io not being updated
+          # correctly. Referencing the package in this flake directly from nixpkgs is the workaround.
+          # This is required to support Go 1.25.
+          # Once https://github.com/jetify-com/devbox/issues/2609 is fixed, this can be removed.
+          golangci-lint = pkgs.golangci-lint;
+
           goprintconst = buildGo124Module rec {
             name = "goprintconst";
             version = "0.0.1-dev";

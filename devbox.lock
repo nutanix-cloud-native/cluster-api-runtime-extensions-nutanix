@@ -49,6 +49,34 @@
         }
       }
     },
+    "apple-sdk_12@latest": {
+      "last_modified": "2025-07-28T17:09:23Z",
+      "resolved": "github:NixOS/nixpkgs/648f70160c03151bc2121d179291337ad6bc564b#apple-sdk_12",
+      "source": "devbox-search",
+      "version": "12.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kvs20yk8vvs0201i1xczafjibvklcacc-apple-sdk-12.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kvs20yk8vvs0201i1xczafjibvklcacc-apple-sdk-12.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0lwhprmdl5qfhca48jhg3r9zsyv2a7p2-apple-sdk-12.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/0lwhprmdl5qfhca48jhg3r9zsyv2a7p2-apple-sdk-12.3"
+        }
+      }
+    },
     "chart-testing@latest": {
       "last_modified": "2025-07-13T22:45:35Z",
       "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#chart-testing",
@@ -853,54 +881,6 @@
         }
       }
     },
-    "golangci-lint@latest": {
-      "last_modified": "2025-07-18T03:30:42Z",
-      "resolved": "github:NixOS/nixpkgs/e821e03193486359aa942372be2d9c1f377b7a18#golangci-lint",
-      "source": "devbox-search",
-      "version": "2.2.2",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/00sy2bp921ax5cxphxz0ifgax6i97mx7-golangci-lint-2.2.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/00sy2bp921ax5cxphxz0ifgax6i97mx7-golangci-lint-2.2.2"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/gvay3vc5ll70dfryiy6qa16w3ybagiq7-golangci-lint-2.2.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/gvay3vc5ll70dfryiy6qa16w3ybagiq7-golangci-lint-2.2.2"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/9pxfg0y3hiaf08vnzk2fs4qh76r2kd22-golangci-lint-2.2.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/9pxfg0y3hiaf08vnzk2fs4qh76r2kd22-golangci-lint-2.2.2"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/z0d7708yc7d0z6nj0mwalbi6hf79yj68-golangci-lint-2.2.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/z0d7708yc7d0z6nj0mwalbi6hf79yj68-golangci-lint-2.2.2"
-        }
-      }
-    },
     "gomplate@latest": {
       "last_modified": "2025-07-13T22:45:35Z",
       "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#gomplate",
@@ -1142,50 +1122,50 @@
       }
     },
     "hugo@latest": {
-      "last_modified": "2025-05-16T20:19:48Z",
-      "resolved": "github:NixOS/nixpkgs/12a55407652e04dcf2309436eb06fef0d3713ef3#hugo",
+      "last_modified": "2025-07-28T17:09:23Z",
+      "resolved": "github:NixOS/nixpkgs/648f70160c03151bc2121d179291337ad6bc564b#hugo",
       "source": "devbox-search",
-      "version": "0.147.3",
+      "version": "0.148.2",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/2wcphqjdn02ym0ps4jj9rimakxffjkhh-hugo-0.147.3",
+              "path": "/nix/store/9yj3fphpkjkkhhr8pfxk5r6ws41n17qy-hugo-0.148.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/2wcphqjdn02ym0ps4jj9rimakxffjkhh-hugo-0.147.3"
+          "store_path": "/nix/store/9yj3fphpkjkkhhr8pfxk5r6ws41n17qy-hugo-0.148.2"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/msavmv3qsw5dxbffdinl8r6gabljc3lq-hugo-0.147.3",
+              "path": "/nix/store/zg314jwfh6q428ymnl57nv7jqyyaq1qz-hugo-0.148.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/msavmv3qsw5dxbffdinl8r6gabljc3lq-hugo-0.147.3"
+          "store_path": "/nix/store/zg314jwfh6q428ymnl57nv7jqyyaq1qz-hugo-0.148.2"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ahhy6049rlifzxr2y5azy2mnvpqpbk32-hugo-0.147.3",
+              "path": "/nix/store/wyhy996fyn61b1cgbl5b7xpha74kxzcq-hugo-0.148.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ahhy6049rlifzxr2y5azy2mnvpqpbk32-hugo-0.147.3"
+          "store_path": "/nix/store/wyhy996fyn61b1cgbl5b7xpha74kxzcq-hugo-0.148.2"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/i9xazh3hcy7q364vns26c19jwqv6xgik-hugo-0.147.3",
+              "path": "/nix/store/ji15a88bnlzhpkinvbmbb9vnkhmmx3m2-hugo-0.148.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/i9xazh3hcy7q364vns26c19jwqv6xgik-hugo-0.147.3"
+          "store_path": "/nix/store/ji15a88bnlzhpkinvbmbb9vnkhmmx3m2-hugo-0.148.2"
         }
       }
     },
