@@ -19,9 +19,10 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/helpers"
 )
@@ -38,7 +39,7 @@ var _ = Describe("Test runApply", func() {
 		cluster, remoteClient := setupTestCluster(ctx, c)
 		strategy := addons.NewTestStrategy(nil)
 
-		By("Should not delete kube-proxy when skip kube-proxy is not set")
+		By("Should not delete kube-proxy is not disabled")
 		err = runApply(ctx, c, cluster, strategy, cluster.Namespace, logr.Discard())
 		Expect(err).To(BeNil())
 
@@ -71,10 +72,10 @@ var _ = Describe("Test runApply", func() {
 		Expect(err).To(BeNil())
 		Expect(configMap).ToNot(BeNil())
 
-		By("Should not delete kube-proxy when Cilium DaemonSet is not updated")
-		cluster.Spec.Topology.ControlPlane.Metadata.Annotations = map[string]string{
-			controlplanev1.SkipKubeProxyAnnotation: "",
-		}
+		By("Should delete kube-proxy when kube-proxy is disabled")
+		err = disableKubeProxy(cluster)
+		Expect(err).To(BeNil())
+
 		// Speed up the test.
 		waitTimeout = 1 * time.Second
 		err = runApply(ctx, c, cluster, strategy, cluster.Namespace, logr.Discard())
@@ -263,4 +264,28 @@ func setupTestCluster(
 	Expect(remoteClient.Create(ctx, configMap)).To(Succeed())
 
 	return cluster, remoteClient
+}
+
+func disableKubeProxy(cluster *clusterv1.Cluster) error {
+	spec, err := apivariables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal cluster variable: %w", err)
+	}
+
+	if spec == nil {
+		spec = &apivariables.ClusterConfigSpec{}
+	}
+	if spec.KubeProxy == nil {
+		spec.KubeProxy = &v1alpha1.KubeProxy{
+			Mode: v1alpha1.KubeProxyModeDisabled,
+		}
+	}
+
+	variable, err := apivariables.MarshalToClusterVariable(v1alpha1.ClusterConfigVariableName, spec)
+	if err != nil {
+		return fmt.Errorf("failed to marshal cluster variable: %w", err)
+	}
+	cluster.Spec.Topology.Variables = apivariables.UpdateClusterVariable(variable, cluster.Spec.Topology.Variables)
+
+	return nil
 }
