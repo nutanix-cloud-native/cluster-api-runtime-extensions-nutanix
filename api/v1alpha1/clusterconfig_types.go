@@ -252,7 +252,6 @@ type KubeadmClusterConfigSpec struct {
 	// If set to 0, the maximum number of parallel image pulls will be unlimited.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Minimum=0
-	// +kubebuilder:validation:Default=1
 	MaxParallelImagePullsPerNode *int32 `json:"maxParallelImagePullsPerNode,omitempty"`
 }
 
