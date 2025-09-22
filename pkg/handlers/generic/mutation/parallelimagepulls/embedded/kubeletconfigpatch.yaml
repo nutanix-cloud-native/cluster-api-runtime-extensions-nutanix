@@ -1,0 +1,7 @@
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+serializeImagePulls: false
+{{- if gt .MaxParallelImagePullsPerNode 0 }}
+maxParallelImagePulls: {{ .MaxParallelImagePullsPerNode }}
+{{- end }}
