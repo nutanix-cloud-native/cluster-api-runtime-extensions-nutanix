@@ -26,6 +26,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	type input struct {
+		Cluster                    *clusterv1.Cluster
 		EnableKubeProxyReplacement bool
 	}
 
