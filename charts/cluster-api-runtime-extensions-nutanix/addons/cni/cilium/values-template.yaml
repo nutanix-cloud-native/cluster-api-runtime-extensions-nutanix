@@ -45,8 +45,8 @@ kubeProxyReplacement: true
 {{- end }}
 
 {{- if eq $capiProvider "eks" }}
-k8sServiceHost: "{{ trimPrefix "https://" .Cluster.spec.controlPlaneEndpoint.host }}"
-k8sServicePort: "{{ .Cluster.spec.controlPlaneEndpoint.port }}"
+k8sServiceHost: "{{ trimPrefix .Cluster.Spec.ControlPlaneEndpoint.Host "https://" }}"
+k8sServicePort: "{{ .Cluster.Spec.ControlPlaneEndpoint.Port }}"
 {{- else }}
 k8sServiceHost: auto
 {{- end }}
