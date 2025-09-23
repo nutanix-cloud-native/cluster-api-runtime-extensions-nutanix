@@ -262,7 +262,7 @@ func runApply(
 	}
 
 	// It is possible to disable kube-proxy and migrate to Cilium's kube-proxy replacement feature in a running cluster.
-	// In this case, we need to wait for Cilium to be restated with new configuration and then cleanup kube-proxy.
+	// In this case, we need to wait for Cilium to be restarted with new configuration and then cleanup kube-proxy.
 
 	// If skip kube-proxy is not set, return early.
 	if !capiutils.ShouldSkipKubeProxy(cluster) {
