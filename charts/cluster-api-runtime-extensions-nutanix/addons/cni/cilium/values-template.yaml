@@ -60,4 +60,3 @@ routingMode: native
 endpointRoutes:
   enabled: true
 {{- end }}
-   

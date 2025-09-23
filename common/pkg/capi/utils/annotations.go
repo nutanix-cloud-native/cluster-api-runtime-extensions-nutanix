@@ -8,12 +8,11 @@ import (
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 )
 
-// ShouldSkipKubeProxy returns true if the cluster is configured to skip kube proxy installation
-// or if the cluster is an EKS cluster where kube proxy is always disabled on AWSManagedControlPlaneTemplate.
+// ShouldSkipKubeProxy returns true if the cluster is configured to skip kube proxy installation.
 func ShouldSkipKubeProxy(cluster *clusterv1.Cluster) bool {
 	if cluster.Spec.Topology != nil {
-		_, isSkipKubeProxyAnnotation := cluster.Spec.Topology.ControlPlane.Metadata.Annotations[controlplanev1.SkipKubeProxyAnnotation]
-		return isSkipKubeProxyAnnotation
+		_, isSkipKubeProxy := cluster.Spec.Topology.ControlPlane.Metadata.Annotations[controlplanev1.SkipKubeProxyAnnotation]
+		return isSkipKubeProxy
 	}
 	return false
 }
