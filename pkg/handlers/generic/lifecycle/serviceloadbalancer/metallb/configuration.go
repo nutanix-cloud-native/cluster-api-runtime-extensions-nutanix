@@ -5,19 +5,12 @@ package metallb
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	metallbv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
-
-func GroupVersionKind(kind string) schema.GroupVersionKind {
-	return schema.GroupVersionKind{
-		Group:   "metallb.io",
-		Version: "v1beta1",
-		Kind:    kind,
-	}
-}
 
 type ConfigurationInput struct {
 	Name          string
@@ -25,46 +18,43 @@ type ConfigurationInput struct {
 	AddressRanges []v1alpha1.AddressRange
 }
 
-func ConfigurationObjects(input *ConfigurationInput) ([]*unstructured.Unstructured, error) {
+func ConfigurationObjects(input *ConfigurationInput) ([]client.Object, error) {
 	if len(input.AddressRanges) == 0 {
 		return nil, fmt.Errorf("must define one or more AddressRanges")
 	}
 
-	ipAddressPool := &unstructured.Unstructured{}
-	ipAddressPool.SetGroupVersionKind(GroupVersionKind("IPAddressPool"))
-	ipAddressPool.SetName(input.Name)
-	ipAddressPool.SetNamespace(input.Namespace)
+	ipAddressPool := &metallbv1.IPAddressPool{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "IPAddressPool",
+			APIVersion: metallbv1.GroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      input.Name,
+			Namespace: input.Namespace,
+		},
+	}
 
 	addresses := []string{}
 	for _, ar := range input.AddressRanges {
 		addresses = append(addresses, fmt.Sprintf("%s-%s", ar.Start, ar.End))
 	}
-	if err := unstructured.SetNestedStringSlice(
-		ipAddressPool.Object,
-		addresses,
-		"spec",
-		"addresses",
-	); err != nil {
-		return nil, fmt.Errorf("failed to set IPAddressPool .spec.addresses: %w", err)
-	}
 
-	l2Advertisement := &unstructured.Unstructured{}
-	l2Advertisement.SetGroupVersionKind(GroupVersionKind("L2Advertisement"))
-	l2Advertisement.SetName(input.Name)
-	l2Advertisement.SetNamespace(input.Namespace)
+	ipAddressPool.Spec.Addresses = addresses
 
-	if err := unstructured.SetNestedStringSlice(
-		l2Advertisement.Object,
-		[]string{
-			ipAddressPool.GetName(),
+	l2Advertisement := &metallbv1.L2Advertisement{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "L2Advertisement",
+			APIVersion: metallbv1.GroupVersion.String(),
 		},
-		"spec",
-		"ipAddressPools",
-	); err != nil {
-		return nil, fmt.Errorf("failed to set L2Advertisement .spec.ipAddressPools: %w", err)
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      input.Name,
+			Namespace: input.Namespace,
+		},
 	}
 
-	return []*unstructured.Unstructured{
+	l2Advertisement.Spec.IPAddressPools = []string{ipAddressPool.GetName()}
+
+	return []client.Object{
 		ipAddressPool,
 		l2Advertisement,
 	}, nil

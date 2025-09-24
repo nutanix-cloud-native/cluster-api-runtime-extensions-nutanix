@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	metallbv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
@@ -149,9 +150,8 @@ func (n *MetalLB) Apply(
 		2*time.Second,
 		10*time.Second,
 		true,
-		func(ctx context.Context) (done bool, err error) {
-			for i := range cos {
-				o := cos[i]
+		func(ctx context.Context) (bool, error) {
+			for _, o := range cos {
 				if err = client.ServerSideApply(
 					ctx,
 					remoteClient,
@@ -162,37 +162,46 @@ func (n *MetalLB) Apply(
 						},
 					},
 				); err != nil {
-					if apierrors.IsConflict(err) {
-						switch o.GetKind() {
-						case "IPAddressPool":
-							err = fmt.Errorf(
-								"%w. This resource has been modified in the workload cluster: it must contain exactly the addresses listed in the Cluster configuration", //nolint:lll // Long error message,
-								err,
-							)
-						case "L2Advertisement":
-							err = fmt.Errorf(
-								"%w. This resource has been modified in the workload cluster, it must only contain the %q IP Address Pool", //nolint:lll // Long error message,
-								err,
-								configInput.Name,
-							)
-						}
+					// Return early if the error is not a conflict.
+					if !apierrors.IsConflict(err) {
+						return false, err
 					}
+
+					// Set the error message based on the type of the object.
+					switch o.(type) {
+					case *metallbv1.IPAddressPool:
+						err = fmt.Errorf(
+							"%w. This resource has been modified in the workload cluster: it must contain exactly the addresses listed in the Cluster configuration", //nolint:lll // Long error message,
+							err,
+						)
+					case *metallbv1.L2Advertisement:
+						err = fmt.Errorf(
+							"%w. This resource has been modified in the workload cluster, it must only contain the %q IP Address Pool", //nolint:lll // Long error message,
+							err,
+							configInput.Name,
+						)
+					}
+
 					applyErr = fmt.Errorf(
 						"failed to apply MetalLB configuration %s %s: %w",
-						o.GetKind(),
+						o.GetObjectKind().GroupVersionKind().Kind,
 						ctrlclient.ObjectKeyFromObject(o),
 						err,
 					)
+
+					// Return false with no error to retry the apply.
 					return false, nil
 				}
 			}
+
 			return true, nil
 		},
 	); waitErr != nil {
 		if applyErr != nil {
 			return fmt.Errorf("%w: last apply error: %w", waitErr, applyErr)
 		}
-		return fmt.Errorf("%w: failed to apply MetalLB configuration", waitErr)
+
+		return fmt.Errorf("failed to apply MetalLB configuration: %w", waitErr)
 	}
 
 	return nil
