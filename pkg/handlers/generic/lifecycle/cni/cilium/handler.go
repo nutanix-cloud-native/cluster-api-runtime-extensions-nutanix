@@ -377,7 +377,7 @@ func forceCiliumRollout(ctx context.Context, c ctrlclient.Client) error {
 	}
 	if _, ok := annotations[restartedAtAnnotation]; !ok {
 		// Only set the annotation once to avoid a race conditition where rollouts are triggered repeatedly.
-		annotations[restartedAtAnnotation] = time.Now().UTC().Format(time.RFC3339Nano)
+		annotations[restartedAtAnnotation] = time.Now().UTC().Format(time.RFC3339)
 	}
 	ds.Spec.Template.Annotations = annotations
 	if err := c.Update(ctx, ds); err != nil {
