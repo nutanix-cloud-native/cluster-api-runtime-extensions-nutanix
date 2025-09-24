@@ -33,7 +33,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	err = ciliumTemplate.Execute(&b, templateInput)
 	if err != nil {
 		return "", fmt.Errorf(
-			"`failed setting target Cluster name and namespa`ce in template: %w",
+			"failed templating Cilium values: %w",
 			err,
 		)
 	}
