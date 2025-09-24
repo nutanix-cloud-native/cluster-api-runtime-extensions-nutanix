@@ -29,7 +29,7 @@ spec:
 
 Applying this configuration will result in the following value being set:
 
-- `AWSClusterTemplate`:
+- `AWSCluster`:
 
   - ```yaml
     spec:
