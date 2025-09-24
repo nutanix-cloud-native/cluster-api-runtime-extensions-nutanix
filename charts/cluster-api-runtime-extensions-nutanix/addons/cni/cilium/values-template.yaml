@@ -39,18 +39,11 @@ socketLB:
 envoy:
   image:
     useDigest: false
-
 {{- if .EnableKubeProxyReplacement }}
 kubeProxyReplacement: true
 {{- end }}
-
-{{- if eq $capiProvider "eks" }}
 k8sServiceHost: "{{ trimPrefix .Cluster.Spec.ControlPlaneEndpoint.Host "https://" }}"
 k8sServicePort: "{{ .Cluster.Spec.ControlPlaneEndpoint.Port }}"
-{{- else }}
-k8sServiceHost: auto
-{{- end }}
-
 {{- if eq $capiProvider "eks" }}
 enableIPv4Masquerade: false
 eni:
