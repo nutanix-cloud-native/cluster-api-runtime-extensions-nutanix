@@ -373,7 +373,7 @@ func forceCiliumRollout(ctx context.Context, c ctrlclient.Client) error {
 	// Update the DaemonSet to force a rollout.
 	annotations := ds.Spec.Template.Annotations
 	if annotations == nil {
-		annotations = make(map[string]string)
+		annotations = make(map[string]string, 1)
 	}
 	if _, ok := annotations[restartedAtAnnotation]; !ok {
 		// Only set the annotation once to avoid a race conditition where rollouts are triggered repeatedly.
