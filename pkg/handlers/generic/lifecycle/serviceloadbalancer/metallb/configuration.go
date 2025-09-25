@@ -5,6 +5,7 @@ package metallb
 import (
 	"fmt"
 
+	"github.com/samber/lo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,14 +33,12 @@ func ConfigurationObjects(input *ConfigurationInput) ([]client.Object, error) {
 			Name:      input.Name,
 			Namespace: input.Namespace,
 		},
+		Spec: metallbv1.IPAddressPoolSpec{
+			Addresses: lo.Map(input.AddressRanges, func(ar v1alpha1.AddressRange, _ int) string {
+				return fmt.Sprintf("%s-%s", ar.Start, ar.End)
+			}),
+		},
 	}
-
-	addresses := []string{}
-	for _, ar := range input.AddressRanges {
-		addresses = append(addresses, fmt.Sprintf("%s-%s", ar.Start, ar.End))
-	}
-
-	ipAddressPool.Spec.Addresses = addresses
 
 	l2Advertisement := &metallbv1.L2Advertisement{
 		TypeMeta: metav1.TypeMeta{
@@ -50,9 +49,10 @@ func ConfigurationObjects(input *ConfigurationInput) ([]client.Object, error) {
 			Name:      input.Name,
 			Namespace: input.Namespace,
 		},
+		Spec: metallbv1.L2AdvertisementSpec{
+			IPAddressPools: []string{ipAddressPool.GetName()},
+		},
 	}
-
-	l2Advertisement.Spec.IPAddressPools = []string{ipAddressPool.GetName()}
 
 	return []client.Object{
 		ipAddressPool,
