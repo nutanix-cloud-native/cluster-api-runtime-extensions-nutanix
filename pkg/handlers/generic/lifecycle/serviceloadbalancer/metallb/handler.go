@@ -162,12 +162,19 @@ func (n *MetalLB) Apply(
 						},
 					},
 				); err != nil {
-					// Return early if the error is not a conflict or an internal error.
-					// Internal errors are generally seen when the necessary CRD webhooks are not yet registered so are
-					// retryable.
-					if !apierrors.IsConflict(err) && !apierrors.IsInternalError(err) {
+					if apierrors.IsInternalError(err) {
+						// Retry on internal errors as these are generally seen when the necessary
+						// CRD webhooks are not yet registered.
+						return false, nil
+					}
+
+					// Return early if the error is not a conflict.
+					if !apierrors.IsConflict(err) {
 						return false, err
 					}
+
+					// At this point, we have handled both internal and non-conflict errors,
+					// so we must be dealing with a conflict.
 
 					// Set the error message based on the type of the object.
 					switch o.(type) {
