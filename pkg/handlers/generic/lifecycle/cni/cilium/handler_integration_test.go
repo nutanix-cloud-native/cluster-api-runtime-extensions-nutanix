@@ -5,6 +5,7 @@ package cilium
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
@@ -51,7 +52,7 @@ var _ = Describe("Test runApply", func() {
 		Expect(err).To(BeNil())
 		Expect(configMap).ToNot(BeNil())
 
-		By("Should not delete when the addon is not applied")
+		By("Should not delete kube-proxy when the addon is not applied")
 		err = runApply(
 			ctx,
 			c,
@@ -70,13 +71,64 @@ var _ = Describe("Test runApply", func() {
 		Expect(err).To(BeNil())
 		Expect(configMap).ToNot(BeNil())
 
-		By("Should delete kube-proxy when skip kube-proxy is set")
+		By("Should not delete kube-proxy when Cilium DaemonSet is not updated")
 		cluster.Spec.Topology.ControlPlane.Metadata.Annotations = map[string]string{
 			controlplanev1.SkipKubeProxyAnnotation: "",
 		}
+		// Speed up the test.
+		waitTimeout = 1 * time.Second
+		err = runApply(ctx, c, cluster, strategy, cluster.Namespace, logr.Discard())
+		Expect(err).ToNot(BeNil())
+
+		// Verify that the kube-proxy DaemonSet and ConfigMap are not deleted when Cilium DaemonSet is not updated
+		err = remoteClient.Get(ctx, ctrlclient.ObjectKey{Name: kubeProxyName, Namespace: kubeProxyNamespace}, daemonSet)
+		Expect(err).To(BeNil())
+		Expect(daemonSet).ToNot(BeNil())
+		err = remoteClient.Get(ctx, ctrlclient.ObjectKey{Name: kubeProxyName, Namespace: kubeProxyNamespace}, configMap)
+		Expect(err).To(BeNil())
+		Expect(configMap).ToNot(BeNil())
+
+		By("Should delete kube-proxy when skip kube-proxy is set")
+		// Update the status of the Cilium DaemonSet to simulate a roll out.
+		ciliumDaemonSet := &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      defaultCiliumReleaseName,
+				Namespace: defaultCiliumNamespace,
+			},
+		}
+		err = remoteClient.Get(
+			ctx,
+			ctrlclient.ObjectKey{Name: defaultCiliumReleaseName, Namespace: defaultCiliumNamespace},
+			ciliumDaemonSet,
+		)
+		Expect(err).To(BeNil())
+		ciliumDaemonSet.Status = appsv1.DaemonSetStatus{
+			ObservedGeneration:     2,
+			NumberAvailable:        2,
+			DesiredNumberScheduled: 2,
+			UpdatedNumberScheduled: 2,
+			NumberUnavailable:      0,
+		}
+		Expect(remoteClient.Status().Update(ctx, ciliumDaemonSet)).To(Succeed())
 
 		err = runApply(ctx, c, cluster, strategy, cluster.Namespace, logr.Discard())
 		Expect(err).To(BeNil())
+
+		// Verify that the Cilium DaemonSet was updated.
+		ciliumDaemonSet = &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      defaultCiliumReleaseName,
+				Namespace: defaultCiliumNamespace,
+			},
+		}
+		err = remoteClient.Get(
+			ctx,
+			ctrlclient.ObjectKeyFromObject(ciliumDaemonSet),
+			ciliumDaemonSet,
+		)
+		Expect(err).To(BeNil())
+		Expect(ciliumDaemonSet).ToNot(BeNil())
+		Expect(ciliumDaemonSet.Spec.Template.Annotations).To(HaveKey(restartedAtAnnotation))
 
 		// Verify that the kube-proxy DaemonSet and ConfigMap are deleted.
 		err = remoteClient.Get(ctx, ctrlclient.ObjectKey{Name: kubeProxyName, Namespace: kubeProxyNamespace}, daemonSet)
@@ -158,6 +210,7 @@ func setupTestCluster(
 	}
 	Expect(remoteClient.Create(ctx, configMap)).To(Succeed())
 
+	// Cilium DaemonSet, Pods and ConfigMap
 	ciliumDaemonSet := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaultCiliumReleaseName,
@@ -165,6 +218,7 @@ func setupTestCluster(
 			Labels: map[string]string{
 				"app": defaultCiliumReleaseName,
 			},
+			Generation: 1,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -192,6 +246,21 @@ func setupTestCluster(
 		},
 	}
 	Expect(remoteClient.Create(ctx, ciliumDaemonSet)).To(Succeed())
+	ciliumDaemonSet.Status = appsv1.DaemonSetStatus{
+		ObservedGeneration: 1,
+	}
+	Expect(remoteClient.Status().Update(ctx, ciliumDaemonSet)).To(Succeed())
+
+	configMap = &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ciliumConfigMapName,
+			Namespace: defaultCiliumNamespace,
+		},
+		Data: map[string]string{
+			kubeProxyReplacementConfigKey: "true",
+		},
+	}
+	Expect(remoteClient.Create(ctx, configMap)).To(Succeed())
 
 	return cluster, remoteClient
 }

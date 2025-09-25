@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/pflag"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
@@ -228,6 +229,7 @@ func (c *CiliumCNI) apply(
 			c.client,
 			helmChart,
 		).
+			WithValueTemplater(templateValues).
 			WithDefaultWaiter()
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -259,23 +261,58 @@ func runApply(
 		return err
 	}
 
+	// It is possible to disable kube-proxy and migrate to Cilium's kube-proxy replacement feature in a running cluster.
+	// In this case, we need to wait for Cilium to be restarted with new configuration and then cleanup kube-proxy.
+
 	// If skip kube-proxy is not set, return early.
-	// Otherwise, wait for Cilium to be rolled out and then cleanup kube-proxy if installed.
 	if !capiutils.ShouldSkipKubeProxy(cluster) {
 		return nil
 	}
 
-	log.Info(
-		fmt.Sprintf("Waiting for Cilium to be ready for cluster %s", ctrlclient.ObjectKeyFromObject(cluster)),
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		client,
+		ctrlclient.ObjectKeyFromObject(cluster),
 	)
-	if err := waitForCiliumToBeReady(ctx, client, cluster); err != nil {
-		return fmt.Errorf("failed to wait for Cilium to be ready: %w", err)
+	if err != nil {
+		return fmt.Errorf("error creating remote cluster client: %w", err)
+	}
+
+	// If kube-proxy is not installed,
+	// assume that the one-time migration of kube-proxy is complete and return early.
+	isKubeProxyInstalled, err := isKubeProxyInstalled(ctx, remoteClient)
+	if err != nil {
+		return fmt.Errorf("failed to check if kube-proxy is installed: %w", err)
+	}
+	if !isKubeProxyInstalled {
+		return nil
+	}
+
+	log.Info(
+		fmt.Sprintf(
+			"Waiting for Cilium ConfigMap to be updated with new configuration for cluster %s",
+			ctrlclient.ObjectKeyFromObject(cluster),
+		),
+	)
+	if err := waitForCiliumConfigMapToBeUpdatedWithKubeProxyReplacement(ctx, remoteClient); err != nil {
+		return fmt.Errorf("failed to wait for Cilium ConfigMap to be updated: %w", err)
+	}
+
+	log.Info(
+		fmt.Sprintf(
+			"Trigger a rollout of Cilium DaemonSet Pods for cluster %s",
+			ctrlclient.ObjectKeyFromObject(cluster),
+		),
+	)
+	if err := forceCiliumRollout(ctx, remoteClient); err != nil {
+		return fmt.Errorf("failed to force trigger a rollout of Cilium DaemonSet Pods: %w", err)
 	}
 
 	log.Info(
 		fmt.Sprintf("Cleaning up kube-proxy for cluster %s", ctrlclient.ObjectKeyFromObject(cluster)),
 	)
-	if err := cleanupKubeProxy(ctx, client, cluster); err != nil {
+	if err := cleanupKubeProxy(ctx, remoteClient); err != nil {
 		return fmt.Errorf("failed to cleanup kube-proxy: %w", err)
 	}
 
@@ -283,41 +320,86 @@ func runApply(
 }
 
 const (
+	kubeProxyReplacementConfigKey = "kube-proxy-replacement"
+	ciliumConfigMapName           = "cilium-config"
+
+	restartedAtAnnotation = "caren.nutanix.com/restartedAt"
+
 	kubeProxyName      = "kube-proxy"
 	kubeProxyNamespace = "kube-system"
 )
 
-func waitForCiliumToBeReady(
-	ctx context.Context,
-	c ctrlclient.Client,
-	cluster *clusterv1.Cluster,
-) error {
-	remoteClient, err := remote.NewClusterClient(
-		ctx,
-		"",
-		c,
-		ctrlclient.ObjectKeyFromObject(cluster),
-	)
-	if err != nil {
-		return fmt.Errorf("error creating remote cluster client: %w", err)
-	}
+// Use vars to override in integration tests.
+var (
+	waitInterval = 1 * time.Second
+	waitTimeout  = 30 * time.Second
+)
 
+func waitForCiliumConfigMapToBeUpdatedWithKubeProxyReplacement(ctx context.Context, c ctrlclient.Client) error {
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ciliumConfigMapName,
+			Namespace: defaultCiliumNamespace,
+		},
+	}
+	if err := wait.ForObject(
+		ctx,
+		wait.ForObjectInput[*corev1.ConfigMap]{
+			Reader: c,
+			Target: cm.DeepCopy(),
+			Check: func(_ context.Context, obj *corev1.ConfigMap) (bool, error) {
+				return obj.Data[kubeProxyReplacementConfigKey] == "true", nil
+			},
+			Interval: waitInterval,
+			Timeout:  waitTimeout,
+		},
+	); err != nil {
+		return fmt.Errorf("failed to wait for ConfigMap %s to be updated: %w", ctrlclient.ObjectKeyFromObject(cm), err)
+	}
+	return nil
+}
+
+func forceCiliumRollout(ctx context.Context, c ctrlclient.Client) error {
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaultCiliumReleaseName,
 			Namespace: defaultCiliumNamespace,
 		},
 	}
+	if err := c.Get(ctx, ctrlclient.ObjectKeyFromObject(ds), ds); err != nil {
+		return fmt.Errorf("failed to get cilium daemon set: %w", err)
+	}
+
+	// Update the DaemonSet to force a rollout.
+	annotations := ds.Spec.Template.Annotations
+	if annotations == nil {
+		annotations = make(map[string]string, 1)
+	}
+	if _, ok := annotations[restartedAtAnnotation]; !ok {
+		// Only set the annotation once to avoid a race conditition where rollouts are triggered repeatedly.
+		annotations[restartedAtAnnotation] = time.Now().UTC().Format(time.RFC3339)
+	}
+	ds.Spec.Template.Annotations = annotations
+	if err := c.Update(ctx, ds); err != nil {
+		return fmt.Errorf("failed to update cilium daemon set: %w", err)
+	}
+
 	if err := wait.ForObject(
 		ctx,
 		wait.ForObjectInput[*appsv1.DaemonSet]{
-			Reader: remoteClient,
+			Reader: c,
 			Target: ds.DeepCopy(),
 			Check: func(_ context.Context, obj *appsv1.DaemonSet) (bool, error) {
-				return obj.Status.NumberAvailable == obj.Status.DesiredNumberScheduled && obj.Status.NumberUnavailable == 0, nil
+				if obj.Generation != obj.Status.ObservedGeneration {
+					return false, nil
+				}
+				isUpdated := obj.Status.NumberAvailable == obj.Status.DesiredNumberScheduled &&
+					// We're forcing a rollout so we expect the UpdatedNumberScheduled to be always set.
+					obj.Status.UpdatedNumberScheduled == obj.Status.DesiredNumberScheduled
+				return isUpdated, nil
 			},
-			Interval: 1 * time.Second,
-			Timeout:  30 * time.Second,
+			Interval: waitInterval,
+			Timeout:  waitTimeout,
 		},
 	); err != nil {
 		return fmt.Errorf(
@@ -331,17 +413,7 @@ func waitForCiliumToBeReady(
 }
 
 // cleanupKubeProxy cleans up kube-proxy DaemonSet and ConfigMap on the remote cluster when kube-proxy is disabled.
-func cleanupKubeProxy(ctx context.Context, c ctrlclient.Client, cluster *clusterv1.Cluster) error {
-	remoteClient, err := remote.NewClusterClient(
-		ctx,
-		"",
-		c,
-		ctrlclient.ObjectKeyFromObject(cluster),
-	)
-	if err != nil {
-		return fmt.Errorf("error creating remote cluster client: %w", err)
-	}
-
+func cleanupKubeProxy(ctx context.Context, c ctrlclient.Client) error {
 	objs := []ctrlclient.Object{
 		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
@@ -357,10 +429,27 @@ func cleanupKubeProxy(ctx context.Context, c ctrlclient.Client, cluster *cluster
 		},
 	}
 	for _, obj := range objs {
-		if err := ctrlclient.IgnoreNotFound(remoteClient.Delete(ctx, obj)); err != nil {
+		if err := ctrlclient.IgnoreNotFound(c.Delete(ctx, obj)); err != nil {
 			return fmt.Errorf("failed to delete %s/%s: %w", obj.GetNamespace(), obj.GetName(), err)
 		}
 	}
 
 	return nil
+}
+
+func isKubeProxyInstalled(ctx context.Context, c ctrlclient.Client) (bool, error) {
+	ds := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      kubeProxyName,
+			Namespace: kubeProxyNamespace,
+		},
+	}
+	err := c.Get(ctx, ctrlclient.ObjectKeyFromObject(ds), ds)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
