@@ -6,7 +6,7 @@ package credentialprovider_test
 import (
 	"testing"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries/credentials/credentialprovider"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/imageregistries/credentials/credentialprovider"
 )
 
 func TestURLsMatch(t *testing.T) {
