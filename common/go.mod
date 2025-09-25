@@ -10,17 +10,17 @@ toolchain go1.25.1
 require (
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/go-logr/logr v1.4.3
-	github.com/onsi/ginkgo/v2 v2.25.2
+	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/samber/lo v1.51.0
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	gomodules.xyz/jsonpatch/v2 v2.5.0
-	k8s.io/api v0.32.8
-	k8s.io/apiextensions-apiserver v0.32.8
-	k8s.io/apimachinery v0.32.8
-	k8s.io/apiserver v0.32.8
-	k8s.io/client-go v0.32.8
+	k8s.io/api v0.32.9
+	k8s.io/apiextensions-apiserver v0.32.9
+	k8s.io/apimachinery v0.32.9
+	k8s.io/apiserver v0.32.9
+	k8s.io/client-go v0.32.9
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	sigs.k8s.io/cluster-api v1.10.4
 	sigs.k8s.io/cluster-api/test v1.10.4
@@ -91,7 +91,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/cluster-bootstrap v0.32.3 // indirect
-	k8s.io/component-base v0.32.8 // indirect
+	k8s.io/component-base v0.32.9 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
