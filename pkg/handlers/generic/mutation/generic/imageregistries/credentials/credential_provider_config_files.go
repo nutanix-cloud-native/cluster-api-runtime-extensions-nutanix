@@ -17,7 +17,7 @@ import (
 	credentialproviderv1 "k8s.io/kubelet/pkg/apis/credentialprovider/v1"
 	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/imageregistries/credentials/credentialprovider"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/imageregistries/credentials/credentialprovider"
 )
 
 const (
