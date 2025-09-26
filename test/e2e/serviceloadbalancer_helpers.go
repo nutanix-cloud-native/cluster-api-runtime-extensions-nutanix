@@ -135,14 +135,9 @@ func waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadCluster(
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	resources := make([]client.Object, len(cos))
-	for i := range cos {
-		resources[i] = cos[i]
-	}
-
 	WaitForResources(ctx, WaitForResourcesInput{
 		Getter:    workloadClusterClient,
-		Resources: resources,
+		Resources: cos,
 	}, input.resourceIntervals...)
 }
 

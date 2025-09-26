@@ -30,11 +30,14 @@ PROVIDER_API_PATHS_caaph := api/v1alpha1
 PROVIDER_MODULE_capx := github.com/nutanix-cloud-native/cluster-api-provider-nutanix
 PROVIDER_API_PATHS_capx := api/v1beta1
 
+PROVIDER_MODULE_metallb := go.universe.tf/metallb
+PROVIDER_API_PATHS_metallb := api/v1beta1 api/v1beta2
+
 # Add third-party CAPI provider types above
 
 .PHONY: apis.sync
 apis.sync: ## Syncs third-party CAPI providers' types
-apis.sync: $(addprefix api.sync.,capa caaph capx) mod-tidy.api go-fix.api
+apis.sync: $(addprefix api.sync.,capa caaph capx metallb) mod-tidy.api go-fix.api
 
 .PHONY: api.sync.%
 api.sync.%: ## Syncs a third-party CAPI provider's API types

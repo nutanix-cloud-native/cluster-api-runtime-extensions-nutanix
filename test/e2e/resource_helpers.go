@@ -11,6 +11,7 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,8 +31,8 @@ func WaitForResources(
 ) {
 	start := time.Now()
 
-	for i := range input.Resources {
-		obj := input.Resources[i].DeepCopyObject().(client.Object)
+	for _, obj := range input.Resources {
+		obj = obj.DeepCopyObject().(client.Object)
 		key := client.ObjectKeyFromObject(obj)
 		capie2e.Byf("waiting for resource %s %s to be present",
 			obj.GetObjectKind().GroupVersionKind(),
@@ -41,11 +42,14 @@ func WaitForResources(
 			obj.GetObjectKind().GroupVersionKind(),
 			key,
 		)
-		Eventually(func() bool {
+		Eventually(func() (bool, error) {
 			if err := input.Getter.Get(ctx, key, obj); err != nil {
-				return false
+				if apierrors.IsNotFound(err) {
+					return false, nil
+				}
+				return false, err
 			}
-			return true
+			return true, nil
 		}, intervals...).Should(BeTrue(),
 			fmt.Sprintf("Resource %s %s was not found",
 				obj.GetObjectKind().GroupVersionKind(),
