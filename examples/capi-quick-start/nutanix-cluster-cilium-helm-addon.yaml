@@ -74,6 +74,7 @@ spec:
           cni:
             provider: Cilium
           cosi: {}
+          k8sRegistrationAgent: {}
           csi:
             defaultStorage:
               provider: nutanix

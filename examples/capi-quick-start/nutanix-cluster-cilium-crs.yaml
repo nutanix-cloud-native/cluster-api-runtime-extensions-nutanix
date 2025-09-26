@@ -74,6 +74,7 @@ spec:
             provider: Cilium
             strategy: ClusterResourceSet
           cosi: {}
+          k8sRegistrationAgent: {}
           csi:
             defaultStorage:
               provider: nutanix

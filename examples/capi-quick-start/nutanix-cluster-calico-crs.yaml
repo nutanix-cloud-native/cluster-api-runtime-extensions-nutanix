@@ -74,6 +74,7 @@ spec:
             provider: Calico
             strategy: ClusterResourceSet
           cosi: {}
+          k8sRegistrationAgent: {}
           csi:
             defaultStorage:
               provider: nutanix
