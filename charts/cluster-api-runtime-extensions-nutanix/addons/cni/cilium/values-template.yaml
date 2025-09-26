@@ -18,8 +18,7 @@ hubble:
     image:
       useDigest: false
     priorityClassName: system-cluster-critical
-{{- $capiProvider := index .Cluster.Labels "cluster.x-k8s.io/provider" }}
-{{- if eq $capiProvider "eks" }}
+{{- if eq .Provider "eks" }}
 ipam:
   mode: eni
 {{- else }}
@@ -42,9 +41,9 @@ envoy:
 {{- if .EnableKubeProxyReplacement }}
 kubeProxyReplacement: true
 {{- end }}
-k8sServiceHost: "{{ trimPrefix .Cluster.Spec.ControlPlaneEndpoint.Host "https://" }}"
-k8sServicePort: "{{ .Cluster.Spec.ControlPlaneEndpoint.Port }}"
-{{- if eq $capiProvider "eks" }}
+k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
+k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
+{{- if eq .Provider "eks" }}
 enableIPv4Masquerade: false
 eni:
   enabled: true
