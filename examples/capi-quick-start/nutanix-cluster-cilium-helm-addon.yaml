@@ -57,9 +57,7 @@ spec:
   topology:
     class: nutanix-quick-start
     controlPlane:
-      metadata:
-        annotations:
-          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
+      metadata: {}
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}
     variables:
     - name: clusterConfig
@@ -125,6 +123,8 @@ spec:
             secretRef:
               name: ${CLUSTER_NAME}-dockerhub-credentials
           url: https://docker.io
+        kubeProxy:
+          mode: disabled
         nutanix:
           controlPlaneEndpoint:
             host: ${CONTROL_PLANE_ENDPOINT_IP}

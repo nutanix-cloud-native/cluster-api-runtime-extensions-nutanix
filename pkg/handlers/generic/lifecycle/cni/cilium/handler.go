@@ -21,10 +21,10 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -264,8 +264,13 @@ func runApply(
 	// It is possible to disable kube-proxy and migrate to Cilium's kube-proxy replacement feature in a running cluster.
 	// In this case, we need to wait for Cilium to be restarted with new configuration and then cleanup kube-proxy.
 
-	// If skip kube-proxy is not set, return early.
-	if !capiutils.ShouldSkipKubeProxy(cluster) {
+	// If kube-proxy is not disabled, return early.
+	kubeProxyIsDisabled, err := apivariables.KubeProxyIsDisabled(cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get kube proxy mode: %w", err)
+	}
+
+	if !kubeProxyIsDisabled {
 		return nil
 	}
 

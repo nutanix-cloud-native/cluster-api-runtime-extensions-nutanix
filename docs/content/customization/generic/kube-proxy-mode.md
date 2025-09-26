@@ -60,10 +60,11 @@ metadata:
   name: <NAME>
 spec:
   topology:
-    controlPlane:
-      metadata:
-        annotations:
-          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
+    variables:
+      - name: clusterConfig
+        value:
+          kubeProxy:
+            mode: disabled
 ```
 
 Applying this configuration will result in the following configuration being applied:
