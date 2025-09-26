@@ -38,11 +38,11 @@ socketLB:
 envoy:
   image:
     useDigest: false
+k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
+k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 {{- if .EnableKubeProxyReplacement }}
 kubeProxyReplacement: true
 {{- end }}
-k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
-k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 {{- if eq .Provider "eks" }}
 enableIPv4Masquerade: false
 eni:
