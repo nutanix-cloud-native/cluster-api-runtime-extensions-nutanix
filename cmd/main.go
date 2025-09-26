@@ -41,7 +41,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/addons"
@@ -107,7 +107,7 @@ func main() {
 
 	globalOptions := options.NewGlobalOptions()
 
-	genericLifecycleHandlers := lifecycle.New(globalOptions)
+	lifecycleHandlers := lifecycle.New(globalOptions)
 
 	// awsMetaHandlers combines all AWS patch and variable handlers under a single handler.
 	// It allows to specify configuration under a single variable.
@@ -138,7 +138,7 @@ func main() {
 	logsv1.AddFlags(logOptions, pflag.CommandLine)
 	globalOptions.AddFlags(pflag.CommandLine)
 	runtimeWebhookServerOpts.AddFlags(pflag.CommandLine)
-	genericLifecycleHandlers.AddFlags(pflag.CommandLine)
+	lifecycleHandlers.AddFlags(pflag.CommandLine)
 	awsMetaHandlers.AddFlags(pflag.CommandLine)
 	dockerMetaHandlers.AddFlags(pflag.CommandLine)
 	nutanixMetaHandlers.AddFlags(pflag.CommandLine)
@@ -173,7 +173,7 @@ func main() {
 	}
 
 	var allHandlers []handlers.Named
-	allHandlers = append(allHandlers, genericLifecycleHandlers.AllHandlers(mgr)...)
+	allHandlers = append(allHandlers, lifecycleHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, awsMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, dockerMetaHandlers.AllHandlers(mgr)...)
 	allHandlers = append(allHandlers, nutanixMetaHandlers.AllHandlers(mgr)...)
