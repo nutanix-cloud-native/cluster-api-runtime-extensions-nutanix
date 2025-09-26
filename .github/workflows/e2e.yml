@@ -38,20 +38,10 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-
-      - name: Install Nix on self-hosted ARC runners
-        uses: DeterminateSystems/nix-installer-action@v20
-        if: inputs.runs-on == 'self-hosted-ncn-dind'
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          logger: pretty
-          extra-conf: experimental-features = ca-derivations fetch-closure
-
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.13.0
+        uses: jetify-com/devbox-install-action@v0.14.0
         with:
           enable-cache: ${{ inputs.runs-on != 'self-hosted-ncn-dind' }}
-          skip-nix-installation: ${{ inputs.runs-on == 'self-hosted-ncn-dind' }}
 
       - name: Go cache
         uses: actions/cache@v4
