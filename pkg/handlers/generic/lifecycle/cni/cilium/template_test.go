@@ -117,7 +117,7 @@ func createTestCluster(t *testing.T, name, namespace, provider, host string, por
 
 	cluster := builder.Cluster(namespace, name).
 		WithLabels(map[string]string{
-			"cluster.x-k8s.io/provider": provider,
+			clusterv1.ProviderNameLabel: provider,
 		}).
 		WithTopology(topology).
 		Build()
