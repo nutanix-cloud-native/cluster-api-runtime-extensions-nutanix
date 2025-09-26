@@ -19,7 +19,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
@@ -28,6 +27,7 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	metallbv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta1"
 	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/bootstrap"
@@ -209,7 +209,7 @@ func initScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
 	capie2eframework.TryAddDefaultSchemes(scheme)
 	Expect(helmaddonsv1.AddToScheme(scheme)).To(Succeed())
-	Expect(storagev1.AddToScheme(scheme)).To(Succeed())
+	Expect(metallbv1.AddToScheme(scheme)).To(Succeed())
 	return scheme
 }
 
