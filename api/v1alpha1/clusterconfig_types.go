@@ -441,6 +441,9 @@ const (
 	KubeProxyModeDisabled KubeProxyMode = "disabled"
 )
 
+// KubeProxy defines the configuration for kube-proxy.
+// This struct is shared across all providers, but EKS only supports the disabled mode.
+// The CRD is updated manually to reflect this.
 type KubeProxy struct {
 	// Mode specifies the mode for kube-proxy:
 	// - iptables means that kube-proxy is installed in iptables mode.
