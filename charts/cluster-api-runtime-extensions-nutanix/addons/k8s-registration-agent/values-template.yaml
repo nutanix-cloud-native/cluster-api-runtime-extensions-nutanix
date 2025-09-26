@@ -1,0 +1,31 @@
+agent:
+  namespaceOverride: ntnx-system
+  name: nutanix-agent
+  port: 8080
+  image:
+    repository: docker.io/nutanix
+    name: nke-k8s-agent
+    pullPolicy: IfNotPresent
+    tag: "688"
+    privateRegistry: true
+    imageCredentials:
+      dockerconfig: replace_base64_encoded_creds
+  updateConfigInMin: 10
+  updateMetricsInMin: 360
+  config:
+    registration:
+      delete:
+        force: false
+    kubeconfig:
+      delete:
+        force: false  
+
+pc:
+  port: {{ .PrismCentralPort }}
+  insecure: {{ .PrismCentralInsecure }} #set this to true if PC does not have https enabled
+  endpoint: {{ .PrismCentralHost }} # eg: ip or fqdn
+  username: "DCFSPpwNEOuG" # eg: admin or any other user with Kubernetes Infrastructure provision role
+  password: "gHVU2vO64xwIt3Lz09aSQ85p1su7mKDr"
+k8sClusterName: {{ .ClusterName }}
+k8sDistribution: "CAPX" # eg: CAPX or NKE or OCP or EKSA or NKP
+categoryMappings: "" # "one or more comma separated key=value" eg: "key1=value1" or "key1=value1\,key2=value2"
