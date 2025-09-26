@@ -26,7 +26,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 const (
@@ -84,12 +83,6 @@ func (h *kubeProxyMode) Mutate(
 		"holderRef", holderRef,
 	)
 
-	cluster, err := clusterGetter(ctx)
-	if err != nil {
-		log.Error(err, "failed to get cluster for kube proxy mode mutation")
-		return fmt.Errorf("failed to get cluster for kube proxy mode mutation: %w", err)
-	}
-
 	kubeProxyMode, err := variables.Get[v1alpha1.KubeProxyMode](
 		vars,
 		h.variableName,
@@ -108,10 +101,8 @@ func (h *kubeProxyMode) Mutate(
 		kubeProxyMode,
 	)
 
-	isSkipProxy := capiutils.ShouldSkipKubeProxy(cluster)
-
-	if kubeProxyMode == "" && !isSkipProxy {
-		log.V(5).Info("kube proxy mode is not set or skipped, skipping mutation")
+	if kubeProxyMode == "" {
+		log.V(5).Info("kube proxy mode is not set, skipping mutation")
 		return nil
 	}
 
@@ -127,11 +118,10 @@ func (h *kubeProxyMode) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("adding kube proxy mode to control plane kubeadm config spec")
 
-			if isSkipProxy {
-				log.Info(
-					"cluster controlplane contains controlplane.cluster.x-k8s.io/skip-kube-proxy annotation, " +
-						"skipping kube-proxy addon",
-				)
+			switch kubeProxyMode {
+			case v1alpha1.KubeProxyModeDisabled:
+				log.Info("disabling kube-proxy addon")
+
 				if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
 					obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1.InitConfiguration{}
 				}
@@ -144,9 +134,6 @@ func (h *kubeProxyMode) Mutate(
 				}
 
 				return nil
-			}
-
-			switch kubeProxyMode {
 			case v1alpha1.KubeProxyModeIPTables, v1alpha1.KubeProxyModeNFTables:
 				return addKubeProxyConfigFileAndCommand(obj, kubeProxyMode)
 			default:
@@ -175,11 +162,8 @@ func (h *kubeProxyMode) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("adding kube proxy mode to AWSManagedControlPlaneTemplate spec")
 
-			if isSkipProxy {
-				log.Info(
-					"cluster controlplane contains controlplane.cluster.x-k8s.io/skip-kube-proxy annotation, " +
-						"skipping kube-proxy addon",
-				)
+			if kubeProxyMode == v1alpha1.KubeProxyModeDisabled {
+				log.Info("disabling kube-proxy addon")
 
 				obj.Spec.Template.Spec.KubeProxy.Disable = true
 			}

@@ -62,10 +62,7 @@ metadata:
 spec:
   topology:
     class: eks-quick-start
-    controlPlane:
-      metadata:
-        annotations:
-          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
+    controlPlane: {}
     variables:
     - name: clusterConfig
       value:
@@ -89,6 +86,8 @@ spec:
           nfd: {}
         eks:
           region: us-west-2
+        kubeProxy:
+          mode: disabled
     version: ${KUBERNETES_VERSION}
     workers:
       machineDeployments:

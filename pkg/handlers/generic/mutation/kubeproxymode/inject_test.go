@@ -14,7 +14,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -51,7 +50,11 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.AWSClusterConfigSpec{},
+					v1alpha1.AWSClusterConfigSpec{
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeDisabled,
+						},
+					},
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -69,19 +72,6 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 					clusterv1.ProviderNameLabel: "aws",
 				},
 			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: &clusterv1.Topology{
-					Version: "dummy-version",
-					Class:   "dummy-class",
-					ControlPlane: clusterv1.ControlPlaneTopology{
-						Metadata: clusterv1.ObjectMeta{
-							Annotations: map[string]string{
-								controlplanev1.SkipKubeProxyAnnotation: "",
-							},
-						},
-					},
-				},
-			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -89,7 +79,11 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.DockerClusterConfigSpec{},
+					v1alpha1.DockerClusterConfigSpec{
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeDisabled,
+						},
+					},
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -107,19 +101,6 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 					clusterv1.ProviderNameLabel: "docker",
 				},
 			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: &clusterv1.Topology{
-					Version: "dummy-version",
-					Class:   "dummy-class",
-					ControlPlane: clusterv1.ControlPlaneTopology{
-						Metadata: clusterv1.ObjectMeta{
-							Annotations: map[string]string{
-								controlplanev1.SkipKubeProxyAnnotation: "",
-							},
-						},
-					},
-				},
-			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -127,7 +108,11 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.NutanixClusterConfigSpec{},
+					v1alpha1.NutanixClusterConfigSpec{
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeDisabled,
+						},
+					},
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
@@ -145,19 +130,6 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 					clusterv1.ProviderNameLabel: "nutanix",
 				},
 			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: &clusterv1.Topology{
-					Version: "dummy-version",
-					Class:   "dummy-class",
-					ControlPlane: clusterv1.ControlPlaneTopology{
-						Metadata: clusterv1.ObjectMeta{
-							Annotations: map[string]string{
-								controlplanev1.SkipKubeProxyAnnotation: "",
-							},
-						},
-					},
-				},
-			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -165,11 +137,9 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.AWSClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeIPTables,
-							},
+					v1alpha1.NutanixClusterConfigSpec{
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeIPTables,
 						},
 					},
 				),
@@ -215,10 +185,8 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeIPTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeIPTables,
 						},
 					},
 				),
@@ -264,10 +232,8 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.DockerClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeIPTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeIPTables,
 						},
 					},
 				),
@@ -313,10 +279,8 @@ mode: iptables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.NutanixClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeNFTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeNFTables,
 						},
 					},
 				),
@@ -362,10 +326,8 @@ mode: nftables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.AWSClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeNFTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeNFTables,
 						},
 					},
 				),
@@ -411,10 +373,8 @@ mode: nftables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.DockerClusterConfigSpec{
-						KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-							KubeProxy: &v1alpha1.KubeProxy{
-								Mode: v1alpha1.KubeProxyModeNFTables,
-							},
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeNFTables,
 						},
 					},
 				),
@@ -459,7 +419,11 @@ mode: nftables
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.EKSClusterConfigSpec{},
+					v1alpha1.EKSClusterConfigSpec{
+						KubeProxy: &v1alpha1.KubeProxy{
+							Mode: v1alpha1.KubeProxyModeDisabled,
+						},
+					},
 				),
 			},
 			RequestItem: testutils.NewEKSControlPlaneRequestItem("1234"),
@@ -475,19 +439,6 @@ mode: nftables
 				Namespace: request.Namespace,
 				Labels: map[string]string{
 					clusterv1.ProviderNameLabel: "eks",
-				},
-			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: &clusterv1.Topology{
-					Version: "dummy-version",
-					Class:   "dummy-class",
-					ControlPlane: clusterv1.ControlPlaneTopology{
-						Metadata: clusterv1.ObjectMeta{
-							Annotations: map[string]string{
-								controlplanev1.SkipKubeProxyAnnotation: "",
-							},
-						},
-					},
 				},
 			},
 		},

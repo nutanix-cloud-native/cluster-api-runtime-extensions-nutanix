@@ -1,13 +1,7 @@
 # Copyright 2025 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: Cluster
-metadata:
-  name: not-used
-spec:
-  topology:
-    controlPlane:
-      metadata:
-        annotations:
-          controlplane.cluster.x-k8s.io/skip-kube-proxy: ""
+- op: "add"
+  path: "/spec/topology/variables/0/value/kubeProxy"
+  value:
+    mode: disabled
