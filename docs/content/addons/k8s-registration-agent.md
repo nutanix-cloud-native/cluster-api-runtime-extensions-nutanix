@@ -26,5 +26,9 @@ spec:
             k8sRegistrationAgent: {}
 ```
 
+<<<<<<< HEAD
 [Kubernetes cluster registration agent]: https://github.com/nutanix-core/k8s-agent
+=======
+[Container Object Storage Interface]: https://github.com/nutanix-core/k8s-agent
+>>>>>>> aa86f03e (K8s agent as addon)
 [Cluster API Add-on Provider for Helm]: https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm

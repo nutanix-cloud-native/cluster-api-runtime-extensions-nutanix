@@ -34,7 +34,7 @@ data:
   k8s-registration-agent: |
     ChartName: nutanix-k8s-agent
     ChartVersion: 0.0.1-alpha.1
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}http://192.168.1.16:8080{{ end }}'
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}http://192.168.1.3:8080{{ end }}'
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
     ChartVersion: 0.0.31
