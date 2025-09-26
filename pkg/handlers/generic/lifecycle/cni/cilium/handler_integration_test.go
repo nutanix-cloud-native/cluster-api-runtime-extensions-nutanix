@@ -39,7 +39,7 @@ var _ = Describe("Test runApply", func() {
 		cluster, remoteClient := setupTestCluster(ctx, c)
 		strategy := addons.NewTestStrategy(nil)
 
-		By("Should not delete kube-proxy is not disabled")
+		By("Should not delete kube-proxy when it is not disabled")
 		err = runApply(ctx, c, cluster, strategy, cluster.Namespace, logr.Discard())
 		Expect(err).To(BeNil())
 

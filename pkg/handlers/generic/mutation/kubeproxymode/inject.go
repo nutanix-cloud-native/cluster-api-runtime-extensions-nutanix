@@ -102,7 +102,7 @@ func (h *kubeProxyMode) Mutate(
 	)
 
 	if kubeProxyMode == "" {
-		log.V(5).Info("kube proxy mode is not set or disabled, skipping mutation")
+		log.V(5).Info("kube proxy mode is not set, skipping mutation")
 		return nil
 	}
 
@@ -118,7 +118,8 @@ func (h *kubeProxyMode) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("adding kube proxy mode to control plane kubeadm config spec")
 
-			if kubeProxyMode == v1alpha1.KubeProxyModeDisabled {
+			switch kubeProxyMode {
+			case v1alpha1.KubeProxyModeDisabled:
 				log.Info("disabling kube-proxy addon")
 
 				if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
@@ -133,9 +134,6 @@ func (h *kubeProxyMode) Mutate(
 				}
 
 				return nil
-			}
-
-			switch kubeProxyMode {
 			case v1alpha1.KubeProxyModeIPTables, v1alpha1.KubeProxyModeNFTables:
 				return addKubeProxyConfigFileAndCommand(obj, kubeProxyMode)
 			default:
