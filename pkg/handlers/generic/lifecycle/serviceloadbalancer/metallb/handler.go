@@ -152,7 +152,7 @@ func (n *MetalLB) Apply(
 		true,
 		func(ctx context.Context) (bool, error) {
 			for _, o := range cos {
-				if err = client.ServerSideApply(
+				err := client.ServerSideApply(
 					ctx,
 					remoteClient,
 					o,
@@ -161,21 +161,16 @@ func (n *MetalLB) Apply(
 							FieldValidation: metav1.FieldValidationStrict,
 						},
 					},
-				); err != nil {
-					if apierrors.IsInternalError(err) {
-						// Retry on internal errors as these are generally seen when the necessary
-						// CRD webhooks are not yet registered.
-						return false, nil
-					}
+				)
 
-					// Return early if the error is not a conflict.
-					if !apierrors.IsConflict(err) {
-						return false, err
-					}
-
-					// At this point, we have handled both internal and non-conflict errors,
-					// so we must be dealing with a conflict.
-
+				switch {
+				case err == nil:
+					continue
+				case apierrors.IsInternalError(err):
+					// Retry on internal errors as these are generally seen when the necessary
+					// CRD webhooks are not yet registered.
+					return false, nil
+				case apierrors.IsConflict(err):
 					// Set the error message based on the type of the object.
 					switch o.(type) {
 					case *metallbv1.IPAddressPool:
@@ -200,6 +195,9 @@ func (n *MetalLB) Apply(
 
 					// Return false with no error to retry the apply.
 					return false, nil
+				default:
+					// Otherwise return the error early and do not retry.
+					return false, err
 				}
 			}
 
