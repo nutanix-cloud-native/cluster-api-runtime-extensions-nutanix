@@ -85,6 +85,9 @@ type NutanixAddons struct {
 
 	// +kubebuilder:validation:Optional
 	COSI *NutanixCOSI `json:"cosi,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	K8sRegistrationAgent *NutanixK8sRegistrationAgent `json:"k8sRegistrationAgent,omitempty"`
 }
 
 type GenericAddons struct {
@@ -358,4 +361,22 @@ type RegistryAddon struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum="CNCF Distribution"
 	Provider string `json:"provider"`
+}
+
+type NutanixK8sRegistrationAgent struct {
+	// A reference to the Secret for credential information for the target Prism Central instance
+	// +kubebuilder:validation:Optional
+	Credentials *NutanixK8sAgentCredentials `json:"credentials,omitempty"`
+
+	// Addon strategy used to deploy the Nutanix k8s-registration-agent to the k8s cluster.
+	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	Strategy AddonStrategy `json:"strategy,omitzero"`
+}
+
+type NutanixK8sAgentCredentials struct {
+	// A reference to the Secret containing the credentials used by the CCM provider.
+	// +kubebuilder:validation:Required
+	SecretRef LocalObjectReference `json:"secretRef"`
 }

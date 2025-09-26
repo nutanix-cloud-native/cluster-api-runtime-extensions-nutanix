@@ -11,43 +11,45 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ccm"
-	awsccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ccm/aws"
-	nutanixccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ccm/nutanix"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/clusterautoscaler"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/calico"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/cilium"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cosi"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/awsebs"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/localpath"
-	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/nutanix"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/snapshotcontroller"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/nfd"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry/cncfdistribution"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/servicelbgc"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/metallb"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm"
+	awsccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/aws"
+	nutanixccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/ccm/nutanix"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/clusterautoscaler"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/calico"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cni/cilium"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/cosi"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/awsebs"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/localpath"
+	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/nutanix"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/csi/snapshotcontroller"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/k8sregistrationagent"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/nfd"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registry"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/registry/cncfdistribution"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/servicelbgc"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/serviceloadbalancer/metallb"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
 type Handlers struct {
-	globalOptions            *options.GlobalOptions
-	calicoCNIConfig          *calico.CNIConfig
-	ciliumCNIConfig          *cilium.CNIConfig
-	nfdConfig                *nfd.Config
-	clusterAutoscalerConfig  *clusterautoscaler.Config
-	ebsConfig                *awsebs.Config
-	nutanixCSIConfig         *nutanixcsi.Config
-	awsccmConfig             *awsccm.AWSCCMConfig
-	nutanixCCMConfig         *nutanixccm.Config
-	metalLBConfig            *metallb.Config
-	localPathCSIConfig       *localpath.Config
-	snapshotControllerConfig *snapshotcontroller.Config
-	cosiControllerConfig     *cosi.ControllerConfig
-	distributionConfig       *cncfdistribution.Config
+	globalOptions              *options.GlobalOptions
+	calicoCNIConfig            *calico.CNIConfig
+	ciliumCNIConfig            *cilium.CNIConfig
+	nfdConfig                  *nfd.Config
+	clusterAutoscalerConfig    *clusterautoscaler.Config
+	ebsConfig                  *awsebs.Config
+	nutanixCSIConfig           *nutanixcsi.Config
+	awsccmConfig               *awsccm.AWSCCMConfig
+	nutanixCCMConfig           *nutanixccm.Config
+	metalLBConfig              *metallb.Config
+	localPathCSIConfig         *localpath.Config
+	snapshotControllerConfig   *snapshotcontroller.Config
+	cosiControllerConfig       *cosi.ControllerConfig
+	k8sRegistrationAgentConfig *k8sregistrationagent.ControllerConfig
+	distributionConfig         *cncfdistribution.Config
 }
 
 func New(
@@ -58,18 +60,19 @@ func New(
 		calicoCNIConfig: &calico.CNIConfig{
 			GlobalOptions: globalOptions,
 		},
-		ciliumCNIConfig:          &cilium.CNIConfig{GlobalOptions: globalOptions},
-		nfdConfig:                nfd.NewConfig(globalOptions),
-		clusterAutoscalerConfig:  &clusterautoscaler.Config{GlobalOptions: globalOptions},
-		ebsConfig:                awsebs.NewConfig(globalOptions),
-		awsccmConfig:             awsccm.NewConfig(globalOptions),
-		nutanixCSIConfig:         nutanixcsi.NewConfig(globalOptions),
-		nutanixCCMConfig:         &nutanixccm.Config{GlobalOptions: globalOptions},
-		metalLBConfig:            &metallb.Config{GlobalOptions: globalOptions},
-		localPathCSIConfig:       localpath.NewConfig(globalOptions),
-		snapshotControllerConfig: snapshotcontroller.NewConfig(globalOptions),
-		cosiControllerConfig:     cosi.NewControllerConfig(globalOptions),
-		distributionConfig:       &cncfdistribution.Config{GlobalOptions: globalOptions},
+		ciliumCNIConfig:            &cilium.CNIConfig{GlobalOptions: globalOptions},
+		nfdConfig:                  nfd.NewConfig(globalOptions),
+		clusterAutoscalerConfig:    &clusterautoscaler.Config{GlobalOptions: globalOptions},
+		ebsConfig:                  awsebs.NewConfig(globalOptions),
+		awsccmConfig:               awsccm.NewConfig(globalOptions),
+		nutanixCSIConfig:           nutanixcsi.NewConfig(globalOptions),
+		nutanixCCMConfig:           &nutanixccm.Config{GlobalOptions: globalOptions},
+		metalLBConfig:              &metallb.Config{GlobalOptions: globalOptions},
+		localPathCSIConfig:         localpath.NewConfig(globalOptions),
+		snapshotControllerConfig:   snapshotcontroller.NewConfig(globalOptions),
+		cosiControllerConfig:       cosi.NewControllerConfig(globalOptions),
+		k8sRegistrationAgentConfig: k8sregistrationagent.NewControllerConfig(globalOptions),
+		distributionConfig:         &cncfdistribution.Config{GlobalOptions: globalOptions},
 	}
 }
 
@@ -127,6 +130,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		csi.New(mgr.GetClient(), csiHandlers),
 		snapshotcontroller.New(mgr.GetClient(), h.snapshotControllerConfig, helmChartInfoGetter),
 		cosi.New(mgr.GetClient(), h.cosiControllerConfig, helmChartInfoGetter),
+		k8sregistrationagent.New(mgr.GetClient(), h.k8sRegistrationAgentConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
 		registry.New(mgr.GetClient(), registryHandlers),
 		// The order of the handlers in the list is important and are called consecutively.
@@ -230,5 +234,6 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.nutanixCCMConfig.AddFlags("ccm.nutanix", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
 	h.cosiControllerConfig.AddFlags("cosi.controller", flagSet)
+	h.k8sRegistrationAgentConfig.AddFlags("k8s-registration-agent", flagSet)
 	h.distributionConfig.AddFlags("registry.cncf-distribution", flagSet)
 }

@@ -351,6 +351,8 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (strin
 		return tempFile.Name(), nil
 	case "cosi-controller":
 		return filepath.Join(carenChartDirectory, "addons", "cosi", "controller", defaultHelmAddonFilename), nil
+	case "k8s-registration-agent":
+		return filepath.Join(carenChartDirectory, "addons", "k8s-registration-agent", defaultHelmAddonFilename), nil
 	case "metallb":
 		return filepath.Join(
 			carenChartDirectory,

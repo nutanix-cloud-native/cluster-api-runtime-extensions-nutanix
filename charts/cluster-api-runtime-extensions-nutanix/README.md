@@ -96,6 +96,8 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.registrySyncer.defaultValueTemplateConfigMap.name | string | `"default-registry-syncer-helm-values-template"` |  |
 | hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.name | string | `"default-metallb-helm-values-template"` |  |
+| hooks.k8sRegistrationAgent.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
+| hooks.k8sRegistrationAgent.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-k8s-registrationagent-helm-values-template"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix"` |  |
 | image.tag | string | `""` |  |
