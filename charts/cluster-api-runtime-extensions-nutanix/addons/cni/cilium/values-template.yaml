@@ -37,6 +37,9 @@ k8sServiceHost: auto
 {{- if .EnableKubeProxyReplacement }}
 kubeProxyReplacement: true
 tunnelProtocol: geneve
+# Always set the port to what it is is for vxlan (the defeault tunnel protocol).
+# This avoids new port requirements when updating existing clusters from vxlan to geneve.
+tunnelPort: 8472
 loadBalancer:
   mode: dsr
   dsrDispatch: geneve
