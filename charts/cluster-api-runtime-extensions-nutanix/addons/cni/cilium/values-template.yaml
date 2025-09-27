@@ -36,4 +36,8 @@ envoy:
 k8sServiceHost: auto
 {{- if .EnableKubeProxyReplacement }}
 kubeProxyReplacement: true
+tunnelProtocol: geneve
+loadBalancer:
+  mode: dsr
+  dsrDispatch: geneve
 {{- end }}
