@@ -1,0 +1,6 @@
+CLUSTERCTL_DISABLE_VERSIONCHECK: "true"
+
+providers:
+  - name: "aws"
+    url: "https://github.com/nutanix-cloud-native/cluster-api-provider-aws/releases/${CAPA_VERSION}/infrastructure-components.yaml"
+    type: "InfrastructureProvider"
