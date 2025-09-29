@@ -18,8 +18,13 @@ hubble:
     image:
       useDigest: false
     priorityClassName: system-cluster-critical
+{{- if eq .Provider "eks" }}
+ipam:
+  mode: eni
+{{- else }}
 ipam:
   mode: kubernetes
+{{- end }}
 image:
   useDigest: false
 operator:
@@ -33,7 +38,17 @@ socketLB:
 envoy:
   image:
     useDigest: false
-k8sServiceHost: auto
+k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
+k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 {{- if .EnableKubeProxyReplacement }}
 kubeProxyReplacement: true
+{{- end }}
+{{- if eq .Provider "eks" }}
+enableIPv4Masquerade: false
+eni:
+  enabled: true
+  awsReleaseExcessIPs: true
+routingMode: native
+endpointRoutes:
+  enabled: true
 {{- end }}

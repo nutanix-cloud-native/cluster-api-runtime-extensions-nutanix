@@ -25,10 +25,18 @@ envsubst -no-unset <"${KUSTOMIZE_BASE_DIR}/kustomization.yaml.tmpl" >"${ASSETS_D
 
 cat <<EOF >"${ASSETS_DIR}/gomplate-context.yaml"
 EnableKubeProxyReplacement: false
+Provider: tmpl-capiprovider-tmpl
+ControlPlaneEndpoint:
+  Host: tmpl-controlplaneendpointhost-tmpl
+  Port: 6443
 EOF
-gomplate -f "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml" \
-  --context .="${ASSETS_DIR}/gomplate-context.yaml" \
-  >"${ASSETS_DIR}/helm-values.yaml"
+# Replace trimPrefix with strings.TrimPrefix to use the in built go function in gomplate.
+sed -e 's/trimPrefix/strings.TrimPrefix/g' \
+  -e '/k8sServiceHost:.*/,/k8sServicePort:/c\
+k8sServiceHost: auto' \
+  "${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml" |
+  gomplate --context .="${ASSETS_DIR}/gomplate-context.yaml" \
+    >"${ASSETS_DIR}/helm-values.yaml"
 
 kustomize build \
   --load-restrictor LoadRestrictionsNone \
