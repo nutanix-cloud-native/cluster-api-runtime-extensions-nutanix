@@ -1,9 +1,12 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
     "properties": {
         "certificates": {
+            "type": "object",
             "properties": {
                 "issuer": {
+                    "type": "object",
                     "properties": {
                         "kind": {
                             "type": "string"
@@ -14,57 +17,60 @@
                         "selfSigned": {
                             "type": "boolean"
                         }
-                    },
-                    "type": "object"
+                    }
                 }
-            },
-            "type": "object"
+            }
         },
         "deployDefaultClusterClasses": {
             "type": "boolean"
         },
         "deployment": {
+            "type": "object",
             "properties": {
                 "replicas": {
                     "type": "integer"
                 }
-            },
-            "type": "object"
+            }
         },
         "enforceClusterAutoscalerLimits": {
+            "type": "object",
             "properties": {
                 "enabled": {
                     "type": "boolean"
                 }
-            },
-            "type": "object"
+            }
         },
         "env": {
-            "properties": {},
             "type": "object"
         },
         "failureDomainRollout": {
+            "description": "Runtime configuration for the failure domain rollout controller. This controller monitors cluster.status.failureDomains and triggers rollouts on KubeadmControlPlane when there are meaningful changes to failure domains. e.g. when an active failure domain is disabled or removed, or when adding a new failure domain can improve the distribution of control plane nodes across failure domains.",
+            "type": "object",
             "properties": {
                 "concurrency": {
+                    "description": "Concurrency of the failure domain rollout controller",
                     "type": "integer"
                 },
                 "enabled": {
+                    "description": "Enable the failure domain rollout controller",
                     "type": "boolean"
                 }
-            },
-            "type": "object"
+            }
         },
         "helmAddonsConfigMap": {
             "type": "string"
         },
         "helmRepository": {
+            "type": "object",
             "properties": {
                 "enabled": {
                     "type": "boolean"
                 },
                 "images": {
+                    "type": "object",
                     "properties": {
                         "bundleInitializer": {
+                            "type": "object",
                             "properties": {
                                 "pullPolicy": {
                                     "type": "string"
@@ -75,10 +81,10 @@
                                 "tag": {
                                     "type": "string"
                                 }
-                            },
-                            "type": "object"
+                            }
                         },
                         "mindthegap": {
+                            "type": "object",
                             "properties": {
                                 "pullPolicy": {
                                     "type": "string"
@@ -89,13 +95,12 @@
                                 "tag": {
                                     "type": "string"
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "securityContext": {
+                    "type": "object",
                     "properties": {
                         "fsGroup": {
                             "type": "integer"
@@ -106,21 +111,24 @@
                         "runAsUser": {
                             "type": "integer"
                         }
-                    },
-                    "type": "object"
+                    }
                 }
-            },
-            "type": "object"
+            }
         },
         "hooks": {
+            "type": "object",
             "properties": {
                 "ccm": {
+                    "type": "object",
                     "properties": {
                         "aws": {
+                            "type": "object",
                             "properties": {
                                 "helmAddonStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultValueTemplateConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "create": {
                                                     "type": "boolean"
@@ -128,13 +136,12 @@
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 },
                                 "k8sMinorVersionToCCMVersion": {
+                                    "type": "object",
                                     "properties": {
                                         "1.30": {
                                             "type": "string"
@@ -148,17 +155,18 @@
                                         "1.33": {
                                             "type": "string"
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         },
                         "nutanix": {
+                            "type": "object",
                             "properties": {
                                 "helmAddonStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultValueTemplateConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "create": {
                                                     "type": "boolean"
@@ -166,36 +174,35 @@
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "clusterAutoscaler": {
+                    "type": "object",
                     "properties": {
                         "crsStrategy": {
+                            "type": "object",
                             "properties": {
                                 "defaultInstallationConfigMap": {
+                                    "type": "object",
                                     "properties": {
                                         "name": {
                                             "type": "string"
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         },
                         "helmAddonStrategy": {
+                            "type": "object",
                             "properties": {
                                 "defaultValueTemplateConfigMap": {
+                                    "type": "object",
                                     "properties": {
                                         "create": {
                                             "type": "boolean"
@@ -203,26 +210,29 @@
                                         "name": {
                                             "type": "string"
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "cni": {
+                    "type": "object",
                     "properties": {
                         "calico": {
+                            "type": "object",
                             "properties": {
                                 "crsStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultInstallationConfigMaps": {
+                                            "type": "object",
                                             "properties": {
                                                 "AWSCluster": {
+                                                    "type": "object",
                                                     "properties": {
                                                         "configMap": {
+                                                            "type": "object",
                                                             "properties": {
                                                                 "content": {
                                                                     "type": "string"
@@ -230,18 +240,18 @@
                                                                 "name": {
                                                                     "type": "string"
                                                                 }
-                                                            },
-                                                            "type": "object"
+                                                            }
                                                         },
                                                         "create": {
                                                             "type": "boolean"
                                                         }
-                                                    },
-                                                    "type": "object"
+                                                    }
                                                 },
                                                 "DockerCluster": {
+                                                    "type": "object",
                                                     "properties": {
                                                         "configMap": {
+                                                            "type": "object",
                                                             "properties": {
                                                                 "content": {
                                                                     "type": "string"
@@ -249,18 +259,18 @@
                                                                 "name": {
                                                                     "type": "string"
                                                                 }
-                                                            },
-                                                            "type": "object"
+                                                            }
                                                         },
                                                         "create": {
                                                             "type": "boolean"
                                                         }
-                                                    },
-                                                    "type": "object"
+                                                    }
                                                 },
                                                 "NutanixCluster": {
+                                                    "type": "object",
                                                     "properties": {
                                                         "configMap": {
+                                                            "type": "object",
                                                             "properties": {
                                                                 "content": {
                                                                     "type": "string"
@@ -268,37 +278,36 @@
                                                                 "name": {
                                                                     "type": "string"
                                                                 }
-                                                            },
-                                                            "type": "object"
+                                                            }
                                                         },
                                                         "create": {
                                                             "type": "boolean"
                                                         }
-                                                    },
-                                                    "type": "object"
+                                                    }
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         },
                                         "defaultTigeraOperatorConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 },
                                 "defaultPodSubnet": {
                                     "type": "string"
                                 },
                                 "helmAddonStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultValueTemplatesConfigMaps": {
+                                            "type": "object",
                                             "properties": {
                                                 "AWSCluster": {
+                                                    "type": "object",
                                                     "properties": {
                                                         "create": {
                                                             "type": "boolean"
@@ -306,10 +315,10 @@
                                                         "name": {
                                                             "type": "string"
                                                         }
-                                                    },
-                                                    "type": "object"
+                                                    }
                                                 },
                                                 "DockerCluster": {
+                                                    "type": "object",
                                                     "properties": {
                                                         "create": {
                                                             "type": "boolean"
@@ -317,10 +326,10 @@
                                                         "name": {
                                                             "type": "string"
                                                         }
-                                                    },
-                                                    "type": "object"
+                                                    }
                                                 },
                                                 "NutanixCluster": {
+                                                    "type": "object",
                                                     "properties": {
                                                         "create": {
                                                             "type": "boolean"
@@ -328,36 +337,35 @@
                                                         "name": {
                                                             "type": "string"
                                                         }
-                                                    },
-                                                    "type": "object"
+                                                    }
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         },
                         "cilium": {
+                            "type": "object",
                             "properties": {
                                 "crsStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultCiliumConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 },
                                 "helmAddonStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultValueTemplateConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "create": {
                                                     "type": "boolean"
@@ -365,25 +373,25 @@
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "cosi": {
+                    "type": "object",
                     "properties": {
                         "controller": {
+                            "type": "object",
                             "properties": {
                                 "helmAddonStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultValueTemplateConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "create": {
                                                     "type": "boolean"
@@ -391,17 +399,13 @@
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "k8sRegistrationAgent": {
                     "properties": {
@@ -425,12 +429,16 @@
                     "type": "object"
                 },
                 "csi": {
+                    "type": "object",
                     "properties": {
                         "aws-ebs": {
+                            "type": "object",
                             "properties": {
                                 "helmAddonStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultValueTemplateConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "create": {
                                                     "type": "boolean"
@@ -438,20 +446,20 @@
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         },
                         "local-path": {
+                            "type": "object",
                             "properties": {
                                 "helmAddonStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultValueTemplateConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "create": {
                                                     "type": "boolean"
@@ -459,20 +467,20 @@
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         },
                         "nutanix": {
+                            "type": "object",
                             "properties": {
                                 "helmAddonStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultValueTemplateConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "create": {
                                                     "type": "boolean"
@@ -480,20 +488,20 @@
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         },
                         "snapshot-controller": {
+                            "type": "object",
                             "properties": {
                                 "helmAddonStrategy": {
+                                    "type": "object",
                                     "properties": {
                                         "defaultValueTemplateConfigMap": {
+                                            "type": "object",
                                             "properties": {
                                                 "create": {
                                                     "type": "boolean"
@@ -501,36 +509,35 @@
                                                 "name": {
                                                     "type": "string"
                                                 }
-                                            },
-                                            "type": "object"
+                                            }
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "nfd": {
+                    "type": "object",
                     "properties": {
                         "crsStrategy": {
+                            "type": "object",
                             "properties": {
                                 "defaultInstallationConfigMap": {
+                                    "type": "object",
                                     "properties": {
                                         "name": {
                                             "type": "string"
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         },
                         "helmAddonStrategy": {
+                            "type": "object",
                             "properties": {
                                 "defaultValueTemplateConfigMap": {
+                                    "type": "object",
                                     "properties": {
                                         "create": {
                                             "type": "boolean"
@@ -538,20 +545,20 @@
                                         "name": {
                                             "type": "string"
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "registry": {
+                    "type": "object",
                     "properties": {
                         "cncfDistribution": {
+                            "type": "object",
                             "properties": {
                                 "defaultValueTemplateConfigMap": {
+                                    "type": "object",
                                     "properties": {
                                         "create": {
                                             "type": "boolean"
@@ -559,18 +566,17 @@
                                         "name": {
                                             "type": "string"
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "registrySyncer": {
+                    "type": "object",
                     "properties": {
                         "defaultValueTemplateConfigMap": {
+                            "type": "object",
                             "properties": {
                                 "create": {
                                     "type": "boolean"
@@ -578,17 +584,18 @@
                                 "name": {
                                     "type": "string"
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "serviceLoadBalancer": {
+                    "type": "object",
                     "properties": {
                         "metalLB": {
+                            "type": "object",
                             "properties": {
                                 "defaultValueTemplateConfigMap": {
+                                    "type": "object",
                                     "properties": {
                                         "create": {
                                             "type": "boolean"
@@ -596,40 +603,16 @@
                                         "name": {
                                             "type": "string"
                                         }
-                                    },
-                                    "type": "object"
+                                    }
                                 }
-                            },
-                            "type": "object"
+                            }
                         }
-                    },
-                    "type": "object"
-                },
-                "virtualIP": {
-                    "properties": {
-                        "kubeVip": {
-                            "properties": {
-                                "defaultTemplateConfigMap": {
-                                    "properties": {
-                                        "create": {
-                                            "type": "boolean"
-                                        },
-                                        "name": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            },
-                            "type": "object"
-                        }
-                    },
-                    "type": "object"
+                    }
                 }
-            },
-            "type": "object"
+            }
         },
         "image": {
+            "type": "object",
             "properties": {
                 "pullPolicy": {
                     "type": "string"
@@ -640,13 +623,14 @@
                 "tag": {
                     "type": "string"
                 }
-            },
-            "type": "object"
+            }
         },
         "imagePullSecrets": {
+            "description": "Optional secrets used for pulling the container image",
             "type": "array"
         },
         "namespaceSync": {
+            "type": "object",
             "properties": {
                 "enabled": {
                     "type": "boolean"
@@ -657,19 +641,20 @@
                 "targetNamespaceLabelKey": {
                     "type": "string"
                 }
-            },
-            "type": "object"
+            }
         },
         "nodeSelector": {
-            "properties": {},
             "type": "object"
         },
         "priorityClassName": {
+            "description": "Priority class to be used for the pod.",
             "type": "string"
         },
         "resources": {
+            "type": "object",
             "properties": {
                 "limits": {
+                    "type": "object",
                     "properties": {
                         "cpu": {
                             "type": "string"
@@ -677,10 +662,10 @@
                         "memory": {
                             "type": "string"
                         }
-                    },
-                    "type": "object"
+                    }
                 },
                 "requests": {
+                    "type": "object",
                     "properties": {
                         "cpu": {
                             "type": "string"
@@ -688,24 +673,22 @@
                         "memory": {
                             "type": "string"
                         }
-                    },
-                    "type": "object"
+                    }
                 }
-            },
-            "type": "object"
+            }
         },
         "securityContext": {
+            "type": "object",
             "properties": {
                 "runAsUser": {
                     "type": "integer"
                 }
-            },
-            "type": "object"
+            }
         },
         "service": {
+            "type": "object",
             "properties": {
                 "annotations": {
-                    "properties": {},
                     "type": "object"
                 },
                 "port": {
@@ -714,11 +697,13 @@
                 "type": {
                     "type": "string"
                 }
-            },
-            "type": "object"
+            }
         },
         "tolerations": {
+            "description": "Kubernetes pod tolerations",
+            "type": "array",
             "items": {
+                "type": "object",
                 "properties": {
                     "effect": {
                         "type": "string"
@@ -729,11 +714,8 @@
                     "operator": {
                         "type": "string"
                     }
-                },
-                "type": "object"
-            },
-            "type": "array"
+                }
+            }
         }
-    },
-    "type": "object"
+    }
 }

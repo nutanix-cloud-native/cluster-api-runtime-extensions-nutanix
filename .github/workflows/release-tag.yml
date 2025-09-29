@@ -32,15 +32,20 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Export go version and mod cache path
+        id: export-go-version-and-mod-cache-path
+        run: |
+          echo go-version="$(devbox run -- go version | cut -d ' ' -f 3)" >>"${GITHUB_OUTPUT}"
+          echo mod-cache-path="$(devbox run -- go env GOMODCACHE)" >>"${GITHUB_OUTPUT}"
+
       - name: Go cache
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+            ${{ steps.export-go-version-and-mod-cache-path.outputs.mod-cache-path }}
+          key: ${{ runner.os }}-${{ steps.export-go-version-and-mod-cache-path.outputs.go-version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-${{ steps.export-go-version-and-mod-cache-path.outputs.go-version }}-
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
