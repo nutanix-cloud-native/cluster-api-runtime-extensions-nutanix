@@ -22,5 +22,5 @@ schema-chart: ## Updates helm values JSON schema
 schema-chart:
 	helm schema \
 	  --use-helm-docs \
-	  --input charts/cluster-api-runtime-extensions-nutanix/values.yaml \
+	  --values charts/cluster-api-runtime-extensions-nutanix/values.yaml \
 	  --output charts/cluster-api-runtime-extensions-nutanix/values.schema.json

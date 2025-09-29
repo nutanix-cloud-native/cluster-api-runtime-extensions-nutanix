@@ -69,12 +69,12 @@ repos:
     files: "^devbox.(yaml|lock)$"
     pass_filenames: false
 - repo: https://github.com/tekwizely/pre-commit-golang
-  rev: v1.0.0-rc.1
+  rev: v1.0.0-rc.2
   hooks:
   - id: go-mod-tidy
     exclude: ^docs/
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
   - id: trailing-whitespace
     stages: [pre-commit]
@@ -123,7 +123,7 @@ repos:
     stages: [pre-commit]
     exclude: ^\.envrc$
 - repo: https://github.com/shellcheck-py/shellcheck-py
-  rev: v0.10.0.1
+  rev: v0.11.0.1
   hooks:
   - id: shellcheck
     stages: [pre-commit]

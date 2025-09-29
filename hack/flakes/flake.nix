@@ -27,16 +27,16 @@
 
           clusterctl-aws = buildGo124Module rec {
             name = "clusterctl-aws";
-            version = "2.8.4";
+            version = "2.9.1";
             src = fetchFromGitHub {
               owner = "kubernetes-sigs";
               repo = "cluster-api-provider-aws";
               rev = "v${version}";
-              hash = "sha256-YGM9iHYyU4oafPz6FICrhesdZ4dO65K/kMnEvzT7dAA=";
+              hash = "sha256-wMk57wBTl7xXp5qTL0KA4crX506WCOV0fvQiRYtsYv4=";
             };
             doCheck = false;
             subPackages = [ "cmd/clusterawsadm" ];
-            vendorHash = "sha256-Cd8nb7cnTjHl48BkYVlyNIqTdJCT127W8ug2Y01gErw=";
+            vendorHash = "sha256-ow208a42dvMDQf8KbI/tFmsZD91qXRi1lFNIMmnPIso=";
             ldflags = let modPrefix = "sigs.k8s.io/cluster-api-provider-aws/v2";
                           v = "${modPrefix}/version";
                           c = "${modPrefix}/cmd/clusterawsadm/cmd/version"; in [
@@ -58,29 +58,29 @@
 
           release-please = buildNpmPackage rec {
             pname = "release-please";
-            version = "17.1.1";
+            version = "17.1.2";
             src = fetchFromGitHub {
               owner = "googleapis";
               repo = "release-please";
               rev = "v${version}";
-              hash = "sha256-Gv/DR/ltDpc1ELa9Ko1JEQVF5AKQSX1mHAPaepa7gN4=";
+              hash = "sha256-tyxyyiPE9BkZKLDQATZwySM5qFobBPSGsvYs8gZ2K2k=";
             };
-            npmDepsHash = "sha256-dnzDUGpxPQUr0R8mo7RR3mvbQIimO4SD5C2omZ9t9uw=";
+            npmDepsHash = "sha256-NULg1LXGML0J6fEI74hyhT53eFBxpjmyjNn0pIcRApw=";
             dontNpmBuild = true;
           };
 
           helm-schema = buildGo124Module rec {
             pname = "helm-schema";
-            version = "2.2.0";
+            version = "2.3.0";
 
             src = fetchFromGitHub {
               owner = "losisin";
               repo = "helm-values-schema-json";
               rev = "v${version}";
-              hash = "sha256-CiH3N/Ji4KaJheqI0aTkt3GkJgalREAZgOfVM48oI2g=";
+              hash = "sha256-q5A+tCnuHTtUyejP4flID7XhsoBfWGge2jCgsL0uEOc=";
             };
             doCheck = false;
-            vendorHash = "sha256-yp1zcMa3rXC0M5Kww4VAY2sRFKkb2rKcOYkoLRlfgt4=";
+            vendorHash = "sha256-xmj2i1WNI/9ItbxRk8mPIygjq83xuvNu6THyPqZsysY=";
             ldflags = let t = "main"; in [
               "-s"
               "-w"
