@@ -266,13 +266,24 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (strin
 		}
 
 		type input struct {
+			Provider                   string
+			ControlPlaneEndpoint       clusterv1.APIEndpoint
 			EnableKubeProxyReplacement bool
 		}
 		templateInput := input{
+			Provider: "test",
+			ControlPlaneEndpoint: clusterv1.APIEndpoint{
+				Host: "https://test.dummy.com",
+				Port: 443,
+			},
 			EnableKubeProxyReplacement: true,
 		}
 
-		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
+		funcMap := template.FuncMap{
+			"trimPrefix": strings.TrimPrefix,
+		}
+		err = template.Must(
+			template.New(defaultHelmAddonFilename).Funcs(funcMap).ParseFiles(f)).Execute(tempFile, &templateInput)
 		if err != nil {
 			return "", fmt.Errorf("failed to execute helm values template %w", err)
 		}
