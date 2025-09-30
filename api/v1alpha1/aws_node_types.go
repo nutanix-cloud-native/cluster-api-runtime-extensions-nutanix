@@ -43,6 +43,11 @@ type AWSWorkerNodeSpec struct {
 }
 
 type AWSGenericNodeSpec struct {
+	// AdditionalTags is an optional set of tags to add to an instance,
+	// in addition to the ones added by default by the AWS provider.
+	// +optional
+	AdditionalTags capav1.Tags `json:"additionalTags,omitempty"`
+
 	// AMI or AMI Lookup arguments for machine image of a AWS machine.
 	// If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
 	// +kubebuilder:validation:Optional

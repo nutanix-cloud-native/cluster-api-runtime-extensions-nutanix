@@ -57,6 +57,13 @@ spec:
                       type: object
                     maxItems: 32
                     type: array
+                  additionalTags:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      AdditionalTags is an optional set of tags to add to an instance,
+                      in addition to the ones added by default by the AWS provider.
+                    type: object
                   ami:
                     description: |-
                       AMI or AMI Lookup arguments for machine image of a AWS machine.
