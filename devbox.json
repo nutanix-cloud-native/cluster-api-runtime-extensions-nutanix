@@ -2,7 +2,7 @@
   "packages": {
     "actionlint":                           "latest",
     "chart-testing":                        "latest",
-    "clusterctl":                           "latest",
+    "clusterctl":                           "1.10.4",
     "coreutils":                            "latest",
     "crane":                                "latest",
     "envsubst":                             "latest",
