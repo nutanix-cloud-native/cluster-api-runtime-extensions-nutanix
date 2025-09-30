@@ -5,12 +5,14 @@ package taints
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/samber/lo"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,6 +48,10 @@ func newTaintsWorkerPatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
+}
+
+type KubeletRegisterOptions struct {
+	RegisterWithTaints []v1.Taint `json:"registerWithTaints,omitempty"`
 }
 
 func (h *taintsWorkerPatchHandler) Mutate(
@@ -103,25 +109,40 @@ func (h *taintsWorkerPatchHandler) Mutate(
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef,
-		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "EKSConfigTemplate"), log,
-		func(obj *eksbootstrapv1.EKSConfigTemplate) error {
+		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "NodeadmConfigTemplate"), log,
+		func(obj *eksbootstrapv1.NodeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding taints to worker node EKS config template")
-			if obj.Spec.Template.Spec.KubeletExtraArgs == nil {
-				obj.Spec.Template.Spec.KubeletExtraArgs = make(map[string]string, 1)
+			).Info("adding taints to worker NodeadmConfig template")
+			kubeletOptions := obj.Spec.Template.Spec.Kubelet
+			var runtimeConfigFromNodeadm *runtime.RawExtension
+			var flags []string
+			newTaints := toEKSConfigTaints(taintsVar)
+			hasRegisterTaintsFlag := false
+			if kubeletOptions != nil {
+				runtimeConfigFromNodeadm = kubeletOptions.Config
+				for _, flag := range kubeletOptions.Flags {
+					if strings.HasPrefix(flag, "--register-with-taints=") {
+						hasRegisterTaintsFlag = true
+						existingTaints := strings.Split(flag, "--register-with-taints=")
+						if len(existingTaints) != 2 {
+							return fmt.Errorf("expected flag register-with-taints to be able to split got %v", existingTaints)
+						}
+						taintsFromFlags := existingTaints[1]
+						flags = append(flags, fmt.Sprintf("--register-with-taints=%s,%s", taintsFromFlags, newTaints))
+						continue
+					}
+					flags = append(flags, flag)
+				}
 			}
-
-			existingTaintsFlagValue := obj.Spec.Template.Spec.KubeletExtraArgs["register-with-taints"]
-
-			newTaintsFlagValue := toEKSConfigTaints(taintsVar)
-
-			if existingTaintsFlagValue != "" {
-				newTaintsFlagValue = existingTaintsFlagValue + "," + newTaintsFlagValue
+			if !hasRegisterTaintsFlag {
+				flags = append(flags, fmt.Sprintf("--register-with-taints=%s", newTaints))
 			}
-
-			obj.Spec.Template.Spec.KubeletExtraArgs["register-with-taints"] = newTaintsFlagValue
+			obj.Spec.Template.Spec.Kubelet = &eksbootstrapv1.KubeletOptions{
+				Flags:  flags,
+				Config: runtimeConfigFromNodeadm,
+			}
 			return nil
 		}); err != nil {
 		return err

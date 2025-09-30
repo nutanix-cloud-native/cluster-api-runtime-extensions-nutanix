@@ -194,7 +194,7 @@ var _ = Describe("Generate Users patches", func() {
 			}},
 		},
 		{
-			Name: "users set for EKSConfigTemplate generic worker",
+			Name: "users set for NodeadmConfigTemplate generic worker",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -210,7 +210,7 @@ var _ = Describe("Generate Users patches", func() {
 					},
 				),
 			},
-			RequestItem: testutils.NewEKSConfigTemplateRequestItem(""),
+			RequestItem: testutils.NewNodeadmConfigTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/users",

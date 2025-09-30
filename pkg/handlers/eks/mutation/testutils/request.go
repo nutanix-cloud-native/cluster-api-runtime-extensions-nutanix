@@ -47,14 +47,14 @@ func NewEKSControlPlaneRequestItem(
 	)
 }
 
-func NewEKSConfigTemplateRequestItem(
+func NewNodeadmConfigTemplateRequestItem(
 	uid types.UID,
-	existingSpec ...eksbootstrapv1.EKSConfigTemplateSpec,
+	existingSpec ...eksbootstrapv1.NodeadmConfigTemplateSpec,
 ) runtimehooksv1.GeneratePatchesRequestItem {
-	eksConfigTemplate := &eksbootstrapv1.EKSConfigTemplate{
+	nodeadmConfigTemplate := &eksbootstrapv1.NodeadmConfigTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: eksbootstrapv1.GroupVersion.String(),
-			Kind:       "EKSConfigTemplate",
+			Kind:       "NodeadmConfigTemplate",
 		},
 	}
 
@@ -62,13 +62,13 @@ func NewEKSConfigTemplateRequestItem(
 	case 0:
 		// Do nothing.
 	case 1:
-		eksConfigTemplate.Spec = existingSpec[0]
+		nodeadmConfigTemplate.Spec = existingSpec[0]
 	default:
 		panic("can only take at most one existing spec")
 	}
 
 	return request.NewRequestItem(
-		eksConfigTemplate,
+		nodeadmConfigTemplate,
 		&runtimehooksv1.HolderReference{
 			Kind:      "MachineDeployment",
 			FieldPath: "spec.template.spec.bootstrap.configRef",
