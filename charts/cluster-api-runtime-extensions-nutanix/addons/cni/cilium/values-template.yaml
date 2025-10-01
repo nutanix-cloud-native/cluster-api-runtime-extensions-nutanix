@@ -42,6 +42,10 @@ k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
 k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 {{- if .EnableKubeProxyReplacement }}
 kubeProxyReplacement: true
+tunnelProtocol: geneve
+loadBalancer:
+  mode: dsr
+  dsrDispatch: geneve
 {{- end }}
 {{- if eq .Provider "eks" }}
 enableIPv4Masquerade: false
