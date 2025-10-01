@@ -12,7 +12,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -115,19 +115,10 @@ func (h *taintsWorkerPatchHandler) Mutate(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding taints to worker NodeadmConfig template")
-			kubeletOptions := obj.Spec.Template.Spec.Kubelet
-			var runtimeConfigFromNodeadm *runtime.RawExtension
-			var flags []string
 			newTaints := toEKSConfigTaints(taintsVar)
-			if kubeletOptions != nil {
-				runtimeConfigFromNodeadm = kubeletOptions.Config
-				flags = kubeletOptions.Flags
-			}
-			flags = append(flags, fmt.Sprintf("--register-with-taints=%s", newTaints))
-			obj.Spec.Template.Spec.Kubelet = &eksbootstrapv1.KubeletOptions{
-				Flags:  flags,
-				Config: runtimeConfigFromNodeadm,
-			}
+			kubeletOptions := ptr.Deref(obj.Spec.Template.Spec.Kubelet, eksbootstrapv1.KubeletOptions{})
+			kubeletOptions.Flags = append(kubeletOptions.Flags, fmt.Sprintf("--register-with-taints=%s", newTaints))
+			obj.Spec.Template.Spec.Kubelet = &kubeletOptions
 			return nil
 		}); err != nil {
 		return err

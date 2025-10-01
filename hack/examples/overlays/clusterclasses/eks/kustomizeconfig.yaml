@@ -16,7 +16,7 @@ nameReference:
     fieldSpecs:
     - kind: ClusterClass
       path: spec/controlPlane/ref/name
-  - kind: EKSConfigTemplate
+  - kind: NodeadmConfigTemplate
     fieldSpecs:
     - kind: ClusterClass
       path: spec/workers/machineDeployments/template/bootstrap/ref/name

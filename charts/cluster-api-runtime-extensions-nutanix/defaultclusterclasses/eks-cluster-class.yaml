@@ -31,8 +31,8 @@ spec:
         bootstrap:
           ref:
             apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
-            kind: EKSConfigTemplate
-            name: quick-start-worker-configtemplate
+            kind: NodeadmConfigTemplate
+            name: eks-quick-start-worker-configtemplate
         infrastructure:
           ref:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
@@ -73,6 +73,11 @@ metadata:
 spec:
   template:
     spec:
+      ami:
+        eksLookupType: AmazonLinux2023
+      instanceMetadataOptions:
+        httpPutResponseHopLimit: 2
+        httpTokens: required
       instanceType: PLACEHOLDER
       sshKeyName: ""
 ---
