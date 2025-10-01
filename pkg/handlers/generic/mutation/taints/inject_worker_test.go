@@ -155,9 +155,9 @@ var _ = Describe("Generate taints patches for Worker", func() {
 				},
 			}),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation:    "replace",
-				Path:         "/spec/template/spec/kubelet/flags/0",
-				ValueMatcher: gomega.Equal("--register-with-taints=key1=value1:NoSchedule,key=value:NoExecute"),
+				Operation:    "add",
+				Path:         "/spec/template/spec/kubelet/flags/1",
+				ValueMatcher: gomega.Equal("--register-with-taints=key=value:NoExecute"),
 			}},
 		},
 	}

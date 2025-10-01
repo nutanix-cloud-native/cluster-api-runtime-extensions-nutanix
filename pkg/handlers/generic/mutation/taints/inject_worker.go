@@ -119,26 +119,11 @@ func (h *taintsWorkerPatchHandler) Mutate(
 			var runtimeConfigFromNodeadm *runtime.RawExtension
 			var flags []string
 			newTaints := toEKSConfigTaints(taintsVar)
-			hasRegisterTaintsFlag := false
 			if kubeletOptions != nil {
 				runtimeConfigFromNodeadm = kubeletOptions.Config
-				for _, flag := range kubeletOptions.Flags {
-					if strings.HasPrefix(flag, "--register-with-taints=") {
-						hasRegisterTaintsFlag = true
-						existingTaints := strings.Split(flag, "--register-with-taints=")
-						if len(existingTaints) != 2 {
-							return fmt.Errorf("expected flag register-with-taints to be able to split got %v", existingTaints)
-						}
-						taintsFromFlags := existingTaints[1]
-						flags = append(flags, fmt.Sprintf("--register-with-taints=%s,%s", taintsFromFlags, newTaints))
-						continue
-					}
-					flags = append(flags, flag)
-				}
+				flags = kubeletOptions.Flags
 			}
-			if !hasRegisterTaintsFlag {
-				flags = append(flags, fmt.Sprintf("--register-with-taints=%s", newTaints))
-			}
+			flags = append(flags, fmt.Sprintf("--register-with-taints=%s", newTaints))
 			obj.Spec.Template.Spec.Kubelet = &eksbootstrapv1.KubeletOptions{
 				Flags:  flags,
 				Config: runtimeConfigFromNodeadm,
