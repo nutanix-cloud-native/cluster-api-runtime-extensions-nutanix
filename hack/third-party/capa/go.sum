@@ -88,6 +88,8 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
+github.com/nutanix-cloud-native/cluster-api-provider-aws/v2 v2.10.0-ncn.0 h1:vD7oex8Dy4AiY/8i0UcP1VSQUwcAAdGf/ErAbezhYnw=
+github.com/nutanix-cloud-native/cluster-api-provider-aws/v2 v2.10.0-ncn.0/go.mod h1:WY3AVEBesaq6mSdQDfnI42nHQCjDtGh7lWxFk/rcBcY=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
 github.com/onsi/ginkgo/v2 v2.23.3 h1:edHxnszytJ4lD9D5Jjc4tiDkPBZ3siDeJJkUZJJVkp0=
 github.com/onsi/ginkgo/v2 v2.23.3/go.mod h1:zXTP6xIp3U8aVuXN8ENK9IXRaTjFnpVB9mGmaSRvxnM=
@@ -203,8 +205,6 @@ k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738 h1:M3sRQVHv7vB20Xc2ybTt7ODCeFj6J
 k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 sigs.k8s.io/cluster-api v1.10.2 h1:xfvtNu4Fy/41grL0ryH5xSKQjpJEWdO8HiV2lPCCozQ=
 sigs.k8s.io/cluster-api v1.10.2/go.mod h1:/b9Un5Imprib6S7ZOcJitC2ep/5wN72b0pXpMQFfbTw=
-sigs.k8s.io/cluster-api-provider-aws/v2 v2.9.1 h1:VQT0hJ5wbD3qS3icucjMfpBWkc1gpIuXYsOAG6Kw25A=
-sigs.k8s.io/cluster-api-provider-aws/v2 v2.9.1/go.mod h1:wdqD8SRkgbIAoj0L2geEItos4X4xmCr8yQpEOqIwLp4=
 sigs.k8s.io/controller-runtime v0.20.4 h1:X3c+Odnxz+iPTRobG4tp092+CvBU9UK0t/bRf+n0DGU=
 sigs.k8s.io/controller-runtime v0.20.4/go.mod h1:xg2XB0K5ShQzAgsoujxuKN4LNXR2LfwwHsPj7Iaw+XY=
 sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 h1:/Rv+M11QRah1itp8VhT6HoVx1Ray9eB4DBr+K+/sCJ8=

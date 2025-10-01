@@ -3,11 +3,11 @@
 
 module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/external/capa
 
-go 1.23.1
+go 1.24.0
 
-toolchain go1.24.4
+toolchain go1.24.3
 
-require sigs.k8s.io/cluster-api-provider-aws/v2 v2.9.1
+require sigs.k8s.io/cluster-api-provider-aws/v2 v2.10.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.38.0 // indirect
@@ -76,3 +76,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+replace sigs.k8s.io/cluster-api-provider-aws/v2 => github.com/nutanix-cloud-native/cluster-api-provider-aws/v2 v2.10.0-ncn.0
