@@ -61,7 +61,7 @@ spec:
     spec: {}
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
-kind: EKSConfigTemplate
+kind: NodeadmConfigTemplate
 metadata:
   name: "quick-start-worker-configtemplate"
 spec:
