@@ -58,7 +58,12 @@ metadata:
   name: "quick-start-worker-machinetemplate"
 spec:
   template:
-    spec: {}
+    spec:
+      ami:
+        eksLookupType: AmazonLinux2023
+      instanceMetadataOptions:
+        httpTokens: required
+        httpPutResponseHopLimit: 2
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
 kind: NodeadmConfigTemplate
