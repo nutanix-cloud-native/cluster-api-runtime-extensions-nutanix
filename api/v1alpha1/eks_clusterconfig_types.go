@@ -8,6 +8,11 @@ import (
 )
 
 type EKSSpec struct {
+	// AdditionalTags is an optional set of tags to add to an instance,
+	// in addition to the ones added by default by the AWS provider.
+	// +optional
+	AdditionalTags capav1.Tags `json:"additionalTags,omitempty"`
+
 	// IdentityRef is a reference to an identity to be used when reconciling the managed control plane.
 	// If no identity is specified, the default identity for this controller will be used.
 	// +kubebuilder:validation:Optional
