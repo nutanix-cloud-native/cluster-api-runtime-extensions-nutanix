@@ -115,12 +115,12 @@ func (h *usersPatchHandler) Mutate(
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef,
-		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "EKSConfigTemplate"), log,
-		func(obj *eksbootstrapv1.EKSConfigTemplate) error {
+		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "NodeadmConfigTemplate"), log,
+		func(obj *eksbootstrapv1.NodeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("setting users in worker node EKS config template")
+			).Info("setting users in worker node NodeadmConfig template")
 			eksBootstrapUsers := make([]eksbootstrapv1.User, 0, len(bootstrapUsers))
 			for _, user := range bootstrapUsers {
 				var passwdFrom *eksbootstrapv1.PasswdSource

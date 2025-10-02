@@ -13,6 +13,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 
+	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
@@ -59,7 +60,7 @@ var _ = Describe("Generate taints patches for Worker", func() {
 			}},
 		},
 		{
-			Name: "taints for workers set for EKSConfigTemplate",
+			Name: "taints for workers set for NodeadmConfigTemplate",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.WorkerConfigVariableName,
@@ -77,13 +78,86 @@ var _ = Describe("Generate taints patches for Worker", func() {
 					},
 				),
 			},
-			RequestItem: testutils.NewEKSConfigTemplateRequestItem(""),
+			RequestItem: testutils.NewNodeadmConfigTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
-				Path:      "/spec/template/spec/kubeletExtraArgs",
+				Path:      "/spec/template/spec/kubelet",
 				ValueMatcher: gomega.HaveKeyWithValue(
-					"register-with-taints", "key=value:NoExecute",
+					"flags",
+					gomega.ContainElement("--register-with-taints=key=value:NoExecute"),
 				),
+			}},
+		},
+		{
+			Name: "taints for workers set for NodeadmConfigTemplate with existing flags argument",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.WorkerConfigVariableName,
+					[]v1alpha1.Taint{{
+						Key:    "key",
+						Effect: v1alpha1.TaintEffectNoExecute,
+						Value:  "value",
+					}},
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+					},
+				),
+			},
+			RequestItem: testutils.NewNodeadmConfigTemplateRequestItem("", eksbootstrapv1.NodeadmConfigTemplateSpec{
+				Template: eksbootstrapv1.NodeadmConfigTemplateResource{
+					Spec: eksbootstrapv1.NodeadmConfigSpec{
+						Kubelet: &eksbootstrapv1.KubeletOptions{
+							Flags: []string{
+								"--max-pods=110",
+							},
+						},
+					},
+				},
+			}),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/kubelet/flags/1",
+				ValueMatcher: gomega.Equal("--register-with-taints=key=value:NoExecute"),
+			}},
+		},
+		{
+			Name: "taints for workers set for NodeadmConfigTemplate with existing flags with register-with-taints ",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.WorkerConfigVariableName,
+					[]v1alpha1.Taint{{
+						Key:    "key",
+						Effect: v1alpha1.TaintEffectNoExecute,
+						Value:  "value",
+					}},
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					"builtin",
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+					},
+				),
+			},
+			RequestItem: testutils.NewNodeadmConfigTemplateRequestItem("", eksbootstrapv1.NodeadmConfigTemplateSpec{
+				Template: eksbootstrapv1.NodeadmConfigTemplateResource{
+					Spec: eksbootstrapv1.NodeadmConfigSpec{
+						Kubelet: &eksbootstrapv1.KubeletOptions{
+							Flags: []string{
+								"--register-with-taints=key1=value1:NoSchedule",
+							},
+						},
+					},
+				},
+			}),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/kubelet/flags/1",
+				ValueMatcher: gomega.Equal("--register-with-taints=key=value:NoExecute"),
 			}},
 		},
 	}

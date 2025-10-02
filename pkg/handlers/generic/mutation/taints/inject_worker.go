@@ -5,12 +5,14 @@ package taints
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/samber/lo"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,6 +48,10 @@ func newTaintsWorkerPatchHandler(
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
+}
+
+type KubeletRegisterOptions struct {
+	RegisterWithTaints []v1.Taint `json:"registerWithTaints,omitempty"`
 }
 
 func (h *taintsWorkerPatchHandler) Mutate(
@@ -103,25 +109,16 @@ func (h *taintsWorkerPatchHandler) Mutate(
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef,
-		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "EKSConfigTemplate"), log,
-		func(obj *eksbootstrapv1.EKSConfigTemplate) error {
+		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "NodeadmConfigTemplate"), log,
+		func(obj *eksbootstrapv1.NodeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding taints to worker node EKS config template")
-			if obj.Spec.Template.Spec.KubeletExtraArgs == nil {
-				obj.Spec.Template.Spec.KubeletExtraArgs = make(map[string]string, 1)
-			}
-
-			existingTaintsFlagValue := obj.Spec.Template.Spec.KubeletExtraArgs["register-with-taints"]
-
-			newTaintsFlagValue := toEKSConfigTaints(taintsVar)
-
-			if existingTaintsFlagValue != "" {
-				newTaintsFlagValue = existingTaintsFlagValue + "," + newTaintsFlagValue
-			}
-
-			obj.Spec.Template.Spec.KubeletExtraArgs["register-with-taints"] = newTaintsFlagValue
+			).Info("adding taints to worker NodeadmConfig template")
+			newTaints := toEKSConfigTaints(taintsVar)
+			kubeletOptions := ptr.Deref(obj.Spec.Template.Spec.Kubelet, eksbootstrapv1.KubeletOptions{})
+			kubeletOptions.Flags = append(kubeletOptions.Flags, fmt.Sprintf("--register-with-taints=%s", newTaints))
+			obj.Spec.Template.Spec.Kubelet = &kubeletOptions
 			return nil
 		}); err != nil {
 		return err
