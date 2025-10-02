@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.35.0 (2025-10-02)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: enable Cilium source IP preservation by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1295
+* feat: update capa with nutanix fork by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1329
+* feat: additionalTags handlers for AWS and EKS by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1333
+### Fixes 🔧
+* fix: use nodeadm mutations by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1332
+### Other Changes
+* build: downgrade clusterctl version by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1330
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.34.0...v0.35.0
+
 ## 0.34.0 (2025-09-29)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
