@@ -124,12 +124,12 @@ func (h *ntpPatchHandler) Mutate(
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef,
-		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "EKSConfigTemplate"), log,
-		func(obj *eksbootstrapv1.EKSConfigTemplate) error {
+		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "NodeadmConfigTemplate"), log,
+		func(obj *eksbootstrapv1.NodeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting users in worker node EKS config template")
+			).Info("setting users in worker node NodeadmConfig template")
 			obj.Spec.Template.Spec.NTP = &eksbootstrapv1.NTP{
 				Enabled: ptr.To(true),
 				Servers: ntp.Servers,

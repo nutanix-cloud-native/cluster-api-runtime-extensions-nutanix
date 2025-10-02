@@ -160,8 +160,8 @@ var _ = Describe("Generate NTP patches", func() {
 			},
 		},
 		{
-			Name:        "NTP configuration is set for worker nodes with single server for EKSConfigTemplate",
-			RequestItem: testutils.NewEKSConfigTemplateRequestItem(""),
+			Name:        "NTP configuration is set for worker nodes with single server for NodeadmConfigTemplate",
+			RequestItem: testutils.NewNodeadmConfigTemplateRequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
