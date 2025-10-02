@@ -59,6 +59,8 @@ metadata:
 spec:
   template:
     spec:
+      cloudInit:
+        insecureSkipSecretsManager: true
       ami:
         eksLookupType: AmazonLinux2023
       instanceMetadataOptions:

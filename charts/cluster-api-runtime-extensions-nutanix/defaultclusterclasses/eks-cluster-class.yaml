@@ -75,6 +75,8 @@ spec:
     spec:
       ami:
         eksLookupType: AmazonLinux2023
+      cloudInit:
+        insecureSkipSecretsManager: true
       instanceMetadataOptions:
         httpPutResponseHopLimit: 2
         httpTokens: required
