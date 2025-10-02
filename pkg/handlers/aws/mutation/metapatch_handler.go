@@ -18,6 +18,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/placementgroup"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/region"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/securitygroups"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/tags"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/volumes"
 	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
 )
@@ -26,9 +27,11 @@ import (
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		calico.NewPatch(),
+		tags.NewClusterPatch(),
 		region.NewPatch(),
 		network.NewPatch(),
 		controlplaneloadbalancer.NewPatch(),
+		tags.NewControlPlanePatch(),
 		identityref.NewPatch(),
 		iaminstanceprofile.NewControlPlanePatch(),
 		instancetype.NewControlPlanePatch(),
@@ -50,6 +53,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
+		tags.NewWorkerPatch(),
 		iaminstanceprofile.NewWorkerPatch(),
 		instancetype.NewWorkerPatch(),
 		ami.NewWorkerPatch(),

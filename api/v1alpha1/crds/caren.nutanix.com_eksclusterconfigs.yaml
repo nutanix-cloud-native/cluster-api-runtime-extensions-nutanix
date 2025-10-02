@@ -292,6 +292,13 @@ spec:
                 eks:
                   description: EKS cluster configuration.
                   properties:
+                    additionalTags:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        AdditionalTags is an optional set of tags to add to an instance,
+                        in addition to the ones added by default by the AWS provider.
+                      type: object
                     identityRef:
                       description: |-
                         IdentityRef is a reference to an identity to be used when reconciling the managed control plane.
