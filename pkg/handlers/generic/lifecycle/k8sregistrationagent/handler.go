@@ -249,7 +249,7 @@ func (n *DefaultK8sRegistrtionAgent) apply(
 			n.config.helmAddonConfig,
 			n.client,
 			helmChart,
-		).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix))
+		).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster))
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
@@ -283,7 +283,7 @@ func (n *DefaultK8sRegistrtionAgent) apply(
 }
 
 func templateValuesFunc(
-	nutanixConfig *v1alpha1.NutanixSpec,
+	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1.Cluster,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
@@ -314,7 +314,7 @@ func templateValuesFunc(
 			PrismCentralHost:     address,
 			PrismCentralPort:     port,
 			PrismCentralInsecure: nutanixConfig.PrismCentralEndpoint.Insecure,
-			ClusterName:          nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
+			ClusterName:          cluster.Name,
 		}
 
 		var b bytes.Buffer
