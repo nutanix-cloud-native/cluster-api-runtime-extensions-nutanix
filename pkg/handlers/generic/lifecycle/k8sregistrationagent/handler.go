@@ -31,7 +31,8 @@ import (
 const (
 	defaultHelmReleaseName       = "k8s-registration-agent"
 	defaultHelmReleaseNamespace  = "ntnx-system"
-	defaultCredentialsSecretName = "nutanix-k8s-agent-credentials"
+	defaultK8sAgentName          = "nutanix-agent"
+	defaultCredentialsSecretName = defaultK8sAgentName
 )
 
 type ControllerConfig struct {
@@ -149,7 +150,7 @@ func (n *DefaultK8sRegistrtionAgent) apply(
 		return
 	}
 
-	// 🔹 Ensure credentials are provided
+	// Ensure credentials are provided
 	if k8sAgentVar.Credentials == nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage("name of the Secret containing PC credentials must be set")
@@ -300,6 +301,7 @@ func templateValuesFunc(
 		}
 
 		type input struct {
+			AgentName            string
 			PrismCentralHost     string
 			PrismCentralPort     uint16
 			PrismCentralInsecure bool
@@ -311,6 +313,7 @@ func templateValuesFunc(
 			return "", err
 		}
 		templateInput := input{
+			AgentName:            defaultK8sAgentName,
 			PrismCentralHost:     address,
 			PrismCentralPort:     port,
 			PrismCentralInsecure: nutanixConfig.PrismCentralEndpoint.Insecure,
