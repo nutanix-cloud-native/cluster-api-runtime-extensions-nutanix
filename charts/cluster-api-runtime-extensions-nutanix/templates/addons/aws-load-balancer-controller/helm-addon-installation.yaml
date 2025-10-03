@@ -1,0 +1,12 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.hooks.addons.awsLoadBalancerController.defaultValueTemplateConfigMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.hooks.addons.awsLoadBalancerController.defaultValueTemplateConfigMap.name }}'
+data:
+  values.yaml: |-
+    {{- .Files.Get "addons/aws-load-balancer-controller/values-template.yaml" | nindent 4 }}
+{{- end -}}

@@ -46,6 +46,8 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | helmRepository.securityContext.fsGroup | int | `65532` |  |
 | helmRepository.securityContext.runAsGroup | int | `65532` |  |
 | helmRepository.securityContext.runAsUser | int | `65532` |  |
+| hooks.addons.awsLoadBalancerController.defaultValueTemplateConfigMap.create | bool | `true` |  |
+| hooks.addons.awsLoadBalancerController.defaultValueTemplateConfigMap.name | string | `"default-aws-load-balancer-controller-helm-values-template"` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-aws-ccm-helm-values-template"` |  |
 | hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.30" | string | `"v1.30.9"` |  |

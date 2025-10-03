@@ -118,6 +118,12 @@ hooks:
       create: true
       name: default-registry-syncer-helm-values-template
 
+  addons:
+    awsLoadBalancerController:
+      defaultValueTemplateConfigMap:
+        create: true
+        name: default-aws-load-balancer-controller-helm-values-template
+
 helmAddonsConfigMap: default-helm-addons-config
 
 deployDefaultClusterClasses: true

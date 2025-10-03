@@ -16,6 +16,11 @@ repositories:
     charts:
       aws-ebs-csi-driver:
       - 2.51.0
+  aws-load-balancer-controller:
+    repoURL: https://aws.github.io/eks-charts
+    charts:
+      aws-load-balancer-controller:
+      - 1.13.4
   cilium:
     repoURL: https://helm.cilium.io/
     charts:
