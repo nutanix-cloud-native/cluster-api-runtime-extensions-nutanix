@@ -37,7 +37,6 @@ const (
 
 type ControllerConfig struct {
 	*options.GlobalOptions
-
 	helmAddonConfig *addons.HelmAddonConfig
 }
 
@@ -124,7 +123,6 @@ func (n *DefaultK8sRegistrtionAgent) apply(
 	)
 
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	// log.Info("debug 1: %v", varMap)
 	k8sAgentVar, err := variables.Get[apivariables.NutanixK8sRegistrationAgent](
 		varMap,
 		n.variableName,
@@ -150,7 +148,7 @@ func (n *DefaultK8sRegistrtionAgent) apply(
 		return
 	}
 
-	// Ensure credentials are provided
+	// Ensure pc credentials are provided
 	if k8sAgentVar.Credentials == nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage("name of the Secret containing PC credentials must be set")
@@ -201,11 +199,9 @@ func (n *DefaultK8sRegistrtionAgent) apply(
 		}
 	}
 
-	log.Info("debug 2: %v", k8sAgentVar.Strategy)
 	var strategy addons.Applier
 	switch k8sAgentVar.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
-		log.Info("debug 3: inside helm strategy")
 		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.K8sRegistrationAgent)
 		if err != nil {
 			log.Error(
@@ -220,15 +216,6 @@ func (n *DefaultK8sRegistrtionAgent) apply(
 			)
 			return
 		}
-		log.Info(
-			"debug: helmChart info",
-			"name",
-			helmChart.Name,
-			"repo",
-			helmChart.Repository,
-			"version",
-			helmChart.Version,
-		)
 		clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
 			varMap,
 			v1alpha1.ClusterConfigVariableName,
@@ -272,14 +259,12 @@ func (n *DefaultK8sRegistrtionAgent) apply(
 	}
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
-		log.Info("debug 5: inside apply error")
 		log.Error(err, "Helm strategy Apply failed")
 		err = fmt.Errorf("failed to apply K8s Registration Agent addon: %w", err)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
 	}
-	log.Info("debug 7: successfully applied")
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
 
