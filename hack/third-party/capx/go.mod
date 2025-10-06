@@ -7,7 +7,7 @@ go 1.24.0
 
 toolchain go1.24.3
 
-require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.7.0
+require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.7.1
 
 require (
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
