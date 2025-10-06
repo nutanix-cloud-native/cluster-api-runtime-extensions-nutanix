@@ -1,4 +1,0 @@
-- op: remove
-  path: /spec/template/spec/cluster
-- op: remove
-  path: /spec/template/spec/subnet
