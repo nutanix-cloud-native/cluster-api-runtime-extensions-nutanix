@@ -11,6 +11,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/awsloadbalancercontroller"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ccm"
 	awsccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ccm/aws"
 	nutanixccm "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ccm/nutanix"
@@ -34,20 +35,21 @@ import (
 )
 
 type Handlers struct {
-	globalOptions            *options.GlobalOptions
-	calicoCNIConfig          *calico.CNIConfig
-	ciliumCNIConfig          *cilium.CNIConfig
-	nfdConfig                *nfd.Config
-	clusterAutoscalerConfig  *clusterautoscaler.Config
-	ebsConfig                *awsebs.Config
-	nutanixCSIConfig         *nutanixcsi.Config
-	awsccmConfig             *awsccm.AWSCCMConfig
-	nutanixCCMConfig         *nutanixccm.Config
-	metalLBConfig            *metallb.Config
-	localPathCSIConfig       *localpath.Config
-	snapshotControllerConfig *snapshotcontroller.Config
-	cosiControllerConfig     *cosi.ControllerConfig
-	distributionConfig       *cncfdistribution.Config
+	globalOptions                   *options.GlobalOptions
+	calicoCNIConfig                 *calico.CNIConfig
+	ciliumCNIConfig                 *cilium.CNIConfig
+	nfdConfig                       *nfd.Config
+	clusterAutoscalerConfig         *clusterautoscaler.Config
+	ebsConfig                       *awsebs.Config
+	nutanixCSIConfig                *nutanixcsi.Config
+	awsccmConfig                    *awsccm.AWSCCMConfig
+	nutanixCCMConfig                *nutanixccm.Config
+	metalLBConfig                   *metallb.Config
+	localPathCSIConfig              *localpath.Config
+	snapshotControllerConfig        *snapshotcontroller.Config
+	cosiControllerConfig            *cosi.ControllerConfig
+	awsLoadBalancerControllerConfig *awsloadbalancercontroller.ControllerConfig
+	distributionConfig              *cncfdistribution.Config
 }
 
 func New(
@@ -58,18 +60,19 @@ func New(
 		calicoCNIConfig: &calico.CNIConfig{
 			GlobalOptions: globalOptions,
 		},
-		ciliumCNIConfig:          &cilium.CNIConfig{GlobalOptions: globalOptions},
-		nfdConfig:                nfd.NewConfig(globalOptions),
-		clusterAutoscalerConfig:  &clusterautoscaler.Config{GlobalOptions: globalOptions},
-		ebsConfig:                awsebs.NewConfig(globalOptions),
-		awsccmConfig:             awsccm.NewConfig(globalOptions),
-		nutanixCSIConfig:         nutanixcsi.NewConfig(globalOptions),
-		nutanixCCMConfig:         &nutanixccm.Config{GlobalOptions: globalOptions},
-		metalLBConfig:            &metallb.Config{GlobalOptions: globalOptions},
-		localPathCSIConfig:       localpath.NewConfig(globalOptions),
-		snapshotControllerConfig: snapshotcontroller.NewConfig(globalOptions),
-		cosiControllerConfig:     cosi.NewControllerConfig(globalOptions),
-		distributionConfig:       &cncfdistribution.Config{GlobalOptions: globalOptions},
+		ciliumCNIConfig:                 &cilium.CNIConfig{GlobalOptions: globalOptions},
+		nfdConfig:                       nfd.NewConfig(globalOptions),
+		clusterAutoscalerConfig:         &clusterautoscaler.Config{GlobalOptions: globalOptions},
+		ebsConfig:                       awsebs.NewConfig(globalOptions),
+		awsccmConfig:                    awsccm.NewConfig(globalOptions),
+		awsLoadBalancerControllerConfig: awsloadbalancercontroller.NewControllerConfig(globalOptions),
+		nutanixCSIConfig:                nutanixcsi.NewConfig(globalOptions),
+		nutanixCCMConfig:                &nutanixccm.Config{GlobalOptions: globalOptions},
+		metalLBConfig:                   &metallb.Config{GlobalOptions: globalOptions},
+		localPathCSIConfig:              localpath.NewConfig(globalOptions),
+		snapshotControllerConfig:        snapshotcontroller.NewConfig(globalOptions),
+		cosiControllerConfig:            cosi.NewControllerConfig(globalOptions),
+		distributionConfig:              &cncfdistribution.Config{GlobalOptions: globalOptions},
 	}
 }
 
@@ -127,6 +130,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		csi.New(mgr.GetClient(), csiHandlers),
 		snapshotcontroller.New(mgr.GetClient(), h.snapshotControllerConfig, helmChartInfoGetter),
 		cosi.New(mgr.GetClient(), h.cosiControllerConfig, helmChartInfoGetter),
+		awsloadbalancercontroller.New(mgr.GetClient(), h.awsLoadBalancerControllerConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
 		registry.New(mgr.GetClient(), registryHandlers),
 		// The order of the handlers in the list is important and are called consecutively.
