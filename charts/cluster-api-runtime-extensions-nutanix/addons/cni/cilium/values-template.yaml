@@ -1,5 +1,7 @@
 cni:
+{{- if not .EnableKubeProxyReplacement }}
   chainingMode: portmap
+{{- end }}
   exclusive: false
 hubble:
   enabled: true
