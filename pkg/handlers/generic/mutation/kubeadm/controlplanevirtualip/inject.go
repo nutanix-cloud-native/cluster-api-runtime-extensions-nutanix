@@ -21,7 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	providers2 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/controlplanevirtualip/providers"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/controlplanevirtualip/providers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
@@ -108,15 +108,15 @@ func (h *ControlPlaneVirtualIP) Mutate(
 				// as we do not want them to end up in the generated KCP
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files = deleteFiles(
 					obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-					providers2.VirtualIPProviderFileNames...,
+					providers.VirtualIPProviderFileNames...,
 				)
 				return nil
 			}
 
-			var virtualIPProvider providers2.Provider
+			var virtualIPProvider providers.Provider
 			// only kube-vip is supported, but more providers can be added in the future
 			if controlPlaneEndpointVar.VirtualIPSpec.Provider == v1alpha1.VirtualIPProviderKubeVIP {
-				virtualIPProvider = providers2.NewKubeVIPFromKCPTemplateProvider(obj)
+				virtualIPProvider = providers.NewKubeVIPFromKCPTemplateProvider(obj)
 			}
 
 			files, preKubeadmCommands, postKubeadmCommands, generateErr := virtualIPProvider.GenerateFilesAndCommands(
