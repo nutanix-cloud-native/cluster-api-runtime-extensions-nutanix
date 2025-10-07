@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.35.1 (2025-10-07)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Remove Cilium chainingMode when kubeproxyreplacement is enabled by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1340
+* fix: Align validation with upstream Kubeadm Bootstrap Provider types by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1342
+### Other Changes
+* refactor: move handler directories by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1321
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.35.0...v0.35.1
+
 ## 0.35.0 (2025-10-02)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
