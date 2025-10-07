@@ -479,12 +479,13 @@ spec:
                           by the crypt(5) man page. See your distribution's documentation for
                           instructions to create a hashed password.
                           An empty string is not marshalled, because it is not a valid value.
-                        maxLength: 106
+                        maxLength: 256
                         minLength: 1
                         type: string
                       name:
                         description: Name specifies the user name.
                         maxLength: 256
+                        minLength: 1
                         type: string
                       sshAuthorizedKeys:
                         description: |-
@@ -492,16 +493,17 @@ spec:
                           machine. Use the corresponding private SSH keys to authenticate. See SSH
                           documentation for instructions to create a key pair.
                         items:
-                          maxLength: 256
+                          maxLength: 2048
+                          minLength: 1
                           type: string
-                        maxItems: 32
+                        maxItems: 100
                         type: array
                       sudo:
                         description: |-
                           Sudo is a sudo user specification, formatted as described in the sudo
                           documentation.
                           An empty string is not marshalled, because it is not a valid value.
-                        maxLength: 1024
+                        maxLength: 256
                         minLength: 1
                         type: string
                     required:

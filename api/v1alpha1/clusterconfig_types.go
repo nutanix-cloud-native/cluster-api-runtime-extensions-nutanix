@@ -362,6 +362,7 @@ type ImageRegistry struct {
 type User struct {
 	// Name specifies the user name.
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
 	Name string `json:"name"`
 
@@ -371,15 +372,16 @@ type User struct {
 	// An empty string is not marshalled, because it is not a valid value.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=106
+	// +kubebuilder:validation:MaxLength=256
 	HashedPassword string `json:"hashedPassword,omitempty"`
 
 	// SSHAuthorizedKeys is a list of public SSH keys to write to the
 	// machine. Use the corresponding private SSH keys to authenticate. See SSH
 	// documentation for instructions to create a key pair.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:MaxItems=32
-	// +kubebuilder:validation:items:MaxLength=256
+	// +kubebuilder:validation:MaxItems=100
+	// +kubebuilder:validation:items:MinLength=1
+	// +kubebuilder:validation:items:MaxLength=2048
 	SSHAuthorizedKeys []string `json:"sshAuthorizedKeys,omitempty"`
 
 	// Sudo is a sudo user specification, formatted as described in the sudo
@@ -387,7 +389,7 @@ type User struct {
 	// An empty string is not marshalled, because it is not a valid value.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=1024
+	// +kubebuilder:validation:MaxLength=256
 	Sudo string `json:"sudo,omitempty"`
 }
 
