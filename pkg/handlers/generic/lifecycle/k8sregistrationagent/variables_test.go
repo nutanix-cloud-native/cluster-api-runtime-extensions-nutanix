@@ -5,20 +5,19 @@ import (
 	"testing"
 
 	"github.com/spf13/pflag"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 var testScheme = runtime.NewScheme()
@@ -28,14 +27,14 @@ func init() {
 	_ = clusterv1.AddToScheme(testScheme)
 }
 
-func newTestHandler(t *testing.T) *DefaultK8sRegistrtionAgent {
+func newTestHandler(t *testing.T) *DefaultK8sRegistrationAgent {
 	t.Helper()
 
 	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
 	cfg := NewControllerConfig(&options.GlobalOptions{})
 	getter := &config.HelmChartGetter{} // not used directly in test
 
-	return &DefaultK8sRegistrtionAgent{
+	return &DefaultK8sRegistrationAgent{
 		client:              client,
 		config:              cfg,
 		helmChartInfoGetter: getter,
@@ -69,8 +68,10 @@ func TestApply_FailsWhenCredentialsMissing(t *testing.T) {
 		Spec: clusterv1.ClusterSpec{
 			Topology: &clusterv1.Topology{
 				Variables: []clusterv1.ClusterVariable{{
-					Name:  v1alpha1.ClusterConfigVariableName,
-					Value: apiextensionsv1.JSON{Raw: []byte(`{"addons":{"k8sRegistrationAgent":{"strategy":"HelmAddon"}}}`)},
+					Name: v1alpha1.ClusterConfigVariableName,
+					Value: apiextensionsv1.JSON{
+						Raw: []byte(`{"addons":{"k8sRegistrationAgent":{"strategy":"HelmAddon"}}}`),
+					},
 				}},
 			},
 		},
@@ -571,7 +572,7 @@ func TestApply_SuccessfulWithFullNutanixConfig(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
 	cfg := NewControllerConfig(&options.GlobalOptions{})
 
-	handler := &DefaultK8sRegistrtionAgent{
+	handler := &DefaultK8sRegistrationAgent{
 		client:              client,
 		config:              cfg,
 		helmChartInfoGetter: &config.HelmChartGetter{},
