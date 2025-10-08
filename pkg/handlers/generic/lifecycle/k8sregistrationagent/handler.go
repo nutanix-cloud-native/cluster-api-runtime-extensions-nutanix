@@ -131,7 +131,8 @@ func (n *DefaultK8sRegistrationAgent) apply(
 		if variables.IsNotFoundError(err) {
 			log.
 				Info(
-					"Skipping K8s Registration Agent handler, cluster does not specify request K8s Registration Agent addon deployment",
+					"Skipping K8s Registration Agent handler," +
+						"cluster does not specify request K8s Registration Agent addon deployment",
 				)
 			return
 		}
