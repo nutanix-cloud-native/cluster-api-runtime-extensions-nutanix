@@ -44,7 +44,7 @@ func NewControllerConfig(globalOptions *options.GlobalOptions) *ControllerConfig
 	return &ControllerConfig{
 		GlobalOptions: globalOptions,
 		helmAddonConfig: addons.NewHelmAddonConfig(
-			"default-k8sRegistrationAgent--helm-values-template",
+			"default-k8s-registrationagent-helm-values-template",
 			defaultHelmReleaseNamespace,
 			defaultHelmReleaseName,
 		),
@@ -55,7 +55,7 @@ func (c *ControllerConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
-type DefaultK8sRegistrtionAgent struct {
+type DefaultK8sRegistrationAgent struct {
 	client              ctrlclient.Client
 	config              *ControllerConfig
 	helmChartInfoGetter *config.HelmChartGetter
@@ -65,17 +65,17 @@ type DefaultK8sRegistrtionAgent struct {
 }
 
 var (
-	_ commonhandlers.Named                   = &DefaultK8sRegistrtionAgent{}
-	_ lifecycle.AfterControlPlaneInitialized = &DefaultK8sRegistrtionAgent{}
-	_ lifecycle.BeforeClusterUpgrade         = &DefaultK8sRegistrtionAgent{}
+	_ commonhandlers.Named                   = &DefaultK8sRegistrationAgent{}
+	_ lifecycle.AfterControlPlaneInitialized = &DefaultK8sRegistrationAgent{}
+	_ lifecycle.BeforeClusterUpgrade         = &DefaultK8sRegistrationAgent{}
 )
 
 func New(
 	c ctrlclient.Client,
 	cfg *ControllerConfig,
 	helmChartInfoGetter *config.HelmChartGetter,
-) *DefaultK8sRegistrtionAgent {
-	return &DefaultK8sRegistrtionAgent{
+) *DefaultK8sRegistrationAgent {
+	return &DefaultK8sRegistrationAgent{
 		client:              c,
 		config:              cfg,
 		helmChartInfoGetter: helmChartInfoGetter,
@@ -84,11 +84,11 @@ func New(
 	}
 }
 
-func (n *DefaultK8sRegistrtionAgent) Name() string {
+func (n *DefaultK8sRegistrationAgent) Name() string {
 	return "K8sRegistrationAgentHandler"
 }
 
-func (n *DefaultK8sRegistrtionAgent) AfterControlPlaneInitialized(
+func (n *DefaultK8sRegistrationAgent) AfterControlPlaneInitialized(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
@@ -99,7 +99,7 @@ func (n *DefaultK8sRegistrtionAgent) AfterControlPlaneInitialized(
 	resp.Message = commonResponse.GetMessage()
 }
 
-func (n *DefaultK8sRegistrtionAgent) BeforeClusterUpgrade(
+func (n *DefaultK8sRegistrationAgent) BeforeClusterUpgrade(
 	ctx context.Context,
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
@@ -110,7 +110,7 @@ func (n *DefaultK8sRegistrtionAgent) BeforeClusterUpgrade(
 	resp.Message = commonResponse.GetMessage()
 }
 
-func (n *DefaultK8sRegistrtionAgent) apply(
+func (n *DefaultK8sRegistrationAgent) apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	resp *runtimehooksv1.CommonResponse,

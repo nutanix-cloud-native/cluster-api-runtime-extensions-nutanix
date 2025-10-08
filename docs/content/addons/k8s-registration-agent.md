@@ -1,5 +1,5 @@
 +++
-title = " Kubernets cluster registration addon"
+title = "Kubernetes cluster registration addon"
 icon = "fa-solid fa-object-group"
 +++
 
@@ -26,5 +26,5 @@ spec:
             k8sRegistrationAgent: {}
 ```
 
-[Container Object Storage Interface]: https://github.com/nutanix-core/k8s-agent
+[Kubernetes cluster registration agent]: https://github.com/nutanix-core/k8s-agent
 [Cluster API Add-on Provider for Helm]: https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm
