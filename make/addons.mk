@@ -26,6 +26,8 @@ export METALLB_CHART_VERSION := 0.15.2
 
 export COSI_CONTROLLER_VERSION := 0.0.1-alpha.5
 
+export K8S_REGISTRATION_AGENT_VERSION := 0.0.1-alpha.1
+
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi kube-vip)
 addons.sync: $(addprefix update-addon.aws-ccm.,130 131 132 133)

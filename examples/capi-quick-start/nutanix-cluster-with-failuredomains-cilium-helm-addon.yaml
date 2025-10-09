@@ -124,6 +124,7 @@ spec:
                 strategy: HelmAddon
             snapshotController:
               strategy: HelmAddon
+          k8sRegistrationAgent: {}
           nfd: {}
           serviceLoadBalancer:
             configuration:

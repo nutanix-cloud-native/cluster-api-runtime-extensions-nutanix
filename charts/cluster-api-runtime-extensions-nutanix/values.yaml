@@ -101,6 +101,11 @@ hooks:
       defaultValueTemplateConfigMap:
         create: true
         name: default-metallb-helm-values-template
+  k8sRegistrationAgent:
+    helmAddonStrategy:
+      defaultValueTemplateConfigMap:
+        create: true
+        name: default-k8s-registrationagent-helm-values-template
   cosi:
     controller:
       helmAddonStrategy:

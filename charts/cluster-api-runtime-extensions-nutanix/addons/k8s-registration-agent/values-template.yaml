@@ -1,0 +1,10 @@
+agent:
+  name: {{ .AgentName}}
+
+pc:
+  port: {{ .PrismCentralPort }}
+  insecure: {{ .PrismCentralInsecure }} #set this to true if PC does not have https enabled
+  endpoint: {{ .PrismCentralHost }} # eg: ip or fqdn
+k8sClusterName: {{ .ClusterName }}
+
+createSecret: false
