@@ -110,7 +110,6 @@ spec:
             provider: Cilium
             strategy: ClusterResourceSet
           cosi: {}
-          k8sRegistrationAgent: {}
           csi:
             defaultStorage:
               provider: nutanix
@@ -127,6 +126,7 @@ spec:
                 strategy: HelmAddon
             snapshotController:
               strategy: HelmAddon
+          k8sRegistrationAgent: {}
           nfd:
             strategy: ClusterResourceSet
           serviceLoadBalancer:

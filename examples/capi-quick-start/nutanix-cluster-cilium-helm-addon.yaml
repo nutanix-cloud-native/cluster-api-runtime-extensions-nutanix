@@ -72,7 +72,6 @@ spec:
           cni:
             provider: Cilium
           cosi: {}
-          k8sRegistrationAgent: {}
           csi:
             defaultStorage:
               provider: nutanix
@@ -89,6 +88,7 @@ spec:
                 strategy: HelmAddon
             snapshotController:
               strategy: HelmAddon
+          k8sRegistrationAgent: {}
           nfd: {}
           serviceLoadBalancer:
             configuration:

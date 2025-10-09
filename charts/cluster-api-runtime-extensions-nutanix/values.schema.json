@@ -407,27 +407,6 @@
                         }
                     }
                 },
-                "k8sRegistrationAgent": {
-                    "properties": {
-                        "helmAddonStrategy": {
-                            "properties": {
-                                "defaultValueTemplateConfigMap": {
-                                    "properties": {
-                                        "create": {
-                                            "type": "boolean"
-                                        },
-                                        "name": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            },
-                            "type": "object"
-                        }
-                    },
-                    "type": "object"
-                },
                 "csi": {
                     "type": "object",
                     "properties": {
@@ -510,6 +489,27 @@
                                                     "type": "string"
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "k8sRegistrationAgent": {
+                    "type": "object",
+                    "properties": {
+                        "helmAddonStrategy": {
+                            "type": "object",
+                            "properties": {
+                                "defaultValueTemplateConfigMap": {
+                                    "type": "object",
+                                    "properties": {
+                                        "create": {
+                                            "type": "boolean"
+                                        },
+                                        "name": {
+                                            "type": "string"
                                         }
                                     }
                                 }

@@ -87,6 +87,8 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-csi-helm-values-template"` |  |
 | hooks.csi.snapshot-controller.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.csi.snapshot-controller.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-snapshot-controller-helm-values-template"` |  |
+| hooks.k8sRegistrationAgent.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
+| hooks.k8sRegistrationAgent.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-k8s-registrationagent-helm-values-template"` |  |
 | hooks.nfd.crsStrategy.defaultInstallationConfigMap.name | string | `"node-feature-discovery"` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nfd-helm-values-template"` |  |
@@ -96,8 +98,6 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.registrySyncer.defaultValueTemplateConfigMap.name | string | `"default-registry-syncer-helm-values-template"` |  |
 | hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.serviceLoadBalancer.metalLB.defaultValueTemplateConfigMap.name | string | `"default-metallb-helm-values-template"` |  |
-| hooks.k8sRegistrationAgent.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
-| hooks.k8sRegistrationAgent.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-k8s-registrationagent-helm-values-template"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix"` |  |
 | image.tag | string | `""` |  |
