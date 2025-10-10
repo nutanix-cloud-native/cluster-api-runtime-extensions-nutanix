@@ -1,4 +1,4 @@
-ARG MINDTHEGAP_VERSION=v1.24.0
+ARG MINDTHEGAP_VERSION=v1.17.0
 
 FROM --platform=${BUILDPLATFORM} ghcr.io/mesosphere/mindthegap:${MINDTHEGAP_VERSION} as bundle_builder
 # This gets called by goreleaser so the copy source has to be the path relative to the repo root.
