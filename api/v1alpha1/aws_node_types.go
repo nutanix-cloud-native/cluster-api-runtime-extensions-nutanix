@@ -25,6 +25,11 @@ type AWSControlPlaneNodeSpec struct {
 }
 
 type AWSWorkerNodeSpec struct {
+	// The failureDomain the machine deployment will use.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=128
+	FailureDomain string `json:"failureDomain,omitempty"`
 	// The IAM instance profile to use for the cluster Machines.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=nodes.cluster-api-provider-aws.sigs.k8s.io
