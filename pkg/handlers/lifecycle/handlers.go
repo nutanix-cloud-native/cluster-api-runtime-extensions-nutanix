@@ -17,6 +17,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/clusterautoscaler"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/calico"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/cilium"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/multus"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cosi"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi"
@@ -37,6 +38,7 @@ type Handlers struct {
 	globalOptions            *options.GlobalOptions
 	calicoCNIConfig          *calico.CNIConfig
 	ciliumCNIConfig          *cilium.CNIConfig
+	multusCNIConfig          *multus.CNIConfig
 	nfdConfig                *nfd.Config
 	clusterAutoscalerConfig  *clusterautoscaler.Config
 	ebsConfig                *awsebs.Config
@@ -59,6 +61,7 @@ func New(
 			GlobalOptions: globalOptions,
 		},
 		ciliumCNIConfig:          &cilium.CNIConfig{GlobalOptions: globalOptions},
+		multusCNIConfig:          &multus.CNIConfig{GlobalOptions: globalOptions},
 		nfdConfig:                nfd.NewConfig(globalOptions),
 		clusterAutoscalerConfig:  &clusterautoscaler.Config{GlobalOptions: globalOptions},
 		ebsConfig:                awsebs.NewConfig(globalOptions),
@@ -121,6 +124,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	allHandlers := []handlers.Named{
 		calico.New(mgr.GetClient(), h.calicoCNIConfig, helmChartInfoGetter),
 		cilium.New(mgr.GetClient(), h.ciliumCNIConfig, helmChartInfoGetter),
+		multus.New(mgr.GetClient(), h.multusCNIConfig, helmChartInfoGetter),
 		ccm.New(mgr.GetClient(), ccmHandlers),
 		nfd.New(mgr.GetClient(), h.nfdConfig, helmChartInfoGetter),
 		clusterautoscaler.New(mgr.GetClient(), h.clusterAutoscalerConfig, helmChartInfoGetter),
@@ -222,6 +226,7 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.clusterAutoscalerConfig.AddFlags("cluster-autoscaler", flagSet)
 	h.calicoCNIConfig.AddFlags("cni.calico", flagSet)
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
+	h.multusCNIConfig.AddFlags("cni.multus", flagSet)
 	h.ebsConfig.AddFlags("csi.aws-ebs", pflag.CommandLine)
 	h.nutanixCSIConfig.AddFlags("csi.nutanix", flagSet)
 	h.localPathCSIConfig.AddFlags("csi.local-path", flagSet)

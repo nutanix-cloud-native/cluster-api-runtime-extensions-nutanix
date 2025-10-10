@@ -46,6 +46,11 @@ repositories:
     charts:
       metallb:
       - 0.15.2
+  multus:
+    repoURL: file:///Users/raj.surve/DKP/charts/staging
+    charts:
+      multus:
+      - 0.1.0
   node-feature-discovery:
     repoURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
     charts:

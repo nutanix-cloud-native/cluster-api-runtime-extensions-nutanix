@@ -39,6 +39,10 @@ data:
     ChartName: metallb
     ChartVersion: 0.15.2
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://metallb.github.io/metallb{{ end }}'
+  multus: |
+    ChartName: multus
+    ChartVersion: 0.1.0
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}file:///Users/raj.surve/DKP/charts/staging{{ end }}'
   nfd: |
     ChartName: node-feature-discovery
     ChartVersion: 0.17.3

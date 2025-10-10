@@ -20,6 +20,7 @@ const (
 	Autoscaler               Component = "cluster-autoscaler"
 	Tigera                   Component = "tigera-operator"
 	Cilium                   Component = "cilium"
+	Multus                   Component = "multus"
 	NFD                      Component = "nfd"
 	NutanixStorageCSI        Component = "nutanix-storage-csi"
 	SnapshotController       Component = "snapshot-controller"
