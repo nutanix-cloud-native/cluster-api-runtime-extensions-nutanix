@@ -12,7 +12,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.26.0
 	github.com/onsi/gomega v1.38.2
-	github.com/samber/lo v1.51.0
+	github.com/samber/lo v1.52.0
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	gomodules.xyz/jsonpatch/v2 v2.5.0
