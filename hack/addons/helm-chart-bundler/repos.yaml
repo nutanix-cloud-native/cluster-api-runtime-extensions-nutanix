@@ -62,10 +62,10 @@ repositories:
       nutanix-csi-storage:
       - 3.3.4
   nutanix-k8s-agent:
-    repoURL: http://192.168.1.10:8080
+    repoURL: http://192.168.1.21:8080
     charts:
       nutanix-k8s-agent:
-      - 0.0.1-alpha.1
+      - 1.3.0-rc.0
   registry-syncer:
     repoURL: https://mesosphere.github.io/charts/staging/
     charts:
