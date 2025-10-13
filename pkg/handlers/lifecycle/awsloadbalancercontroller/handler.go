@@ -118,8 +118,8 @@ func (n *DefaultAWSLoadBalancerController) apply(
 
 	// For now, always enable the AWS Load Balancer Controller
 	// FIXME: Add proper variable checking when APIs are added
-	if provider := utils.GetProvider(cluster); provider != "eks" {
-		log.V(5).Info("Skipping AWS Load Balancer Controller handler,not an EKS cluster", provider)
+	if provider := utils.GetProvider(cluster); provider != "eks" && provider != "aws" {
+		log.V(5).Info("Skipping AWS Load Balancer Controller handler, not an EKS or AWS cluster", provider)
 		return
 	}
 
