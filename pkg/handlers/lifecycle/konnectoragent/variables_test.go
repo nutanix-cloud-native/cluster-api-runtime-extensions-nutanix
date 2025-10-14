@@ -1,7 +1,7 @@
 // Copyright 2024 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package k8sregistrationagent
+package konnectoragent
 
 import (
 	"context"
@@ -30,19 +30,19 @@ func init() {
 	_ = clusterv1.AddToScheme(testScheme)
 }
 
-func newTestHandler(t *testing.T) *DefaultK8sRegistrationAgent {
+func newTestHandler(t *testing.T) *DefaultKonnectorAgent {
 	t.Helper()
 
 	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
-	cfg := NewControllerConfig(&options.GlobalOptions{})
+	cfg := NewConfig(&options.GlobalOptions{})
 	getter := &config.HelmChartGetter{} // not used directly in test
 
-	return &DefaultK8sRegistrationAgent{
+	return &DefaultKonnectorAgent{
 		client:              client,
 		config:              cfg,
 		helmChartInfoGetter: getter,
 		variableName:        v1alpha1.ClusterConfigVariableName,
-		variablePath:        []string{"addons", v1alpha1.K8sRegistrationAgentVariableName},
+		variablePath:        []string{"addons", v1alpha1.KonnectorAgentVariableName},
 	}
 }
 
@@ -73,7 +73,7 @@ func TestApply_FailsWhenCredentialsMissing(t *testing.T) {
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{
-						Raw: []byte(`{"addons":{"k8sRegistrationAgent":{"strategy":"HelmAddon"}}}`),
+						Raw: []byte(`{"addons":{"konnectorAgent":{"strategy":"HelmAddon"}}}`),
 					},
 				}},
 			},
@@ -97,7 +97,7 @@ func TestApply_FailsWhenCopySecretFails(t *testing.T) {
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
-							"k8sRegistrationAgent": {
+							"konnectorAgent": {
 								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"missing-secret"} }
 							}
@@ -131,7 +131,7 @@ func TestApply_SuccessfulHelmStrategy(t *testing.T) {
 							}
 						},
 						"addons": {
-							"k8sRegistrationAgent": {
+							"konnectorAgent": {
 								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
@@ -174,7 +174,7 @@ func TestApply_HelmApplyFails(t *testing.T) {
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
-							"k8sRegistrationAgent": {
+							"konnectorAgent": {
 								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
@@ -210,17 +210,17 @@ func TestApply_HelmApplyFails(t *testing.T) {
 }
 
 // Test constructor functions
-func TestNewControllerConfig(t *testing.T) {
+func TestNewConfig(t *testing.T) {
 	globalOpts := &options.GlobalOptions{}
-	cfg := NewControllerConfig(globalOpts)
+	cfg := NewConfig(globalOpts)
 
 	assert.NotNil(t, cfg)
 	assert.Equal(t, globalOpts, cfg.GlobalOptions)
 	assert.NotNil(t, cfg.helmAddonConfig)
 }
 
-func TestControllerConfigAddFlags(t *testing.T) {
-	cfg := NewControllerConfig(&options.GlobalOptions{})
+func TestConfigAddFlags(t *testing.T) {
+	cfg := NewConfig(&options.GlobalOptions{})
 	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	cfg.AddFlags("k8s-agent", flags)
@@ -232,7 +232,7 @@ func TestControllerConfigAddFlags(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
-	cfg := NewControllerConfig(&options.GlobalOptions{})
+	cfg := NewConfig(&options.GlobalOptions{})
 	getter := &config.HelmChartGetter{}
 
 	handler := New(client, cfg, getter)
@@ -242,12 +242,12 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, cfg, handler.config)
 	assert.Equal(t, getter, handler.helmChartInfoGetter)
 	assert.Equal(t, v1alpha1.ClusterConfigVariableName, handler.variableName)
-	assert.Equal(t, []string{"addons", v1alpha1.K8sRegistrationAgentVariableName}, handler.variablePath)
+	assert.Equal(t, []string{"addons", v1alpha1.KonnectorAgentVariableName}, handler.variablePath)
 }
 
 func TestName(t *testing.T) {
 	handler := newTestHandler(t)
-	assert.Equal(t, "K8sRegistrationAgentHandler", handler.Name())
+	assert.Equal(t, "KonnectorAgentHandler", handler.Name())
 }
 
 // Test lifecycle hooks
@@ -306,7 +306,7 @@ func TestApply_ClusterResourceSetStrategy(t *testing.T) {
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
-							"k8sRegistrationAgent": {
+							"konnectorAgent": {
 								"strategy": "ClusterResourceSet",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
@@ -348,7 +348,7 @@ func TestApply_EmptyStrategy(t *testing.T) {
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
-							"k8sRegistrationAgent": {
+							"konnectorAgent": {
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
 						}
@@ -389,7 +389,7 @@ func TestApply_UnknownStrategy(t *testing.T) {
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
-							"k8sRegistrationAgent": {
+							"konnectorAgent": {
 								"strategy": "UnknownStrategy",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
@@ -537,7 +537,7 @@ func TestApply_ClusterConfigVariableFailure(t *testing.T) {
 					// Missing nutanix config, which will cause cluster config variable parsing to fail
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
-							"k8sRegistrationAgent": {
+							"konnectorAgent": {
 								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
@@ -573,14 +573,14 @@ func TestApply_ClusterConfigVariableFailure(t *testing.T) {
 
 func TestApply_SuccessfulWithFullNutanixConfig(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
-	cfg := NewControllerConfig(&options.GlobalOptions{})
+	cfg := NewConfig(&options.GlobalOptions{})
 
-	handler := &DefaultK8sRegistrationAgent{
+	handler := &DefaultKonnectorAgent{
 		client:              client,
 		config:              cfg,
 		helmChartInfoGetter: &config.HelmChartGetter{},
 		variableName:        v1alpha1.ClusterConfigVariableName,
-		variablePath:        []string{"addons", v1alpha1.K8sRegistrationAgentVariableName},
+		variablePath:        []string{"addons", v1alpha1.KonnectorAgentVariableName},
 	}
 
 	cluster := &clusterv1.Cluster{
@@ -597,7 +597,7 @@ func TestApply_SuccessfulWithFullNutanixConfig(t *testing.T) {
 							}
 						},
 						"addons": {
-							"k8sRegistrationAgent": {
+							"konnectorAgent": {
 								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}

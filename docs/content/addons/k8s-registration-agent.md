@@ -23,7 +23,7 @@ spec:
       - name: clusterConfig
         value:
           addons:
-            k8sRegistrationAgent: {}
+            konnectorAgent: {}
 ```
 
 [Kubernetes cluster registration agent]: https://github.com/nutanix-core/k8s-agent

@@ -496,7 +496,7 @@
                         }
                     }
                 },
-                "k8sRegistrationAgent": {
+                "konnectorAgent": {
                     "type": "object",
                     "properties": {
                         "helmAddonStrategy": {

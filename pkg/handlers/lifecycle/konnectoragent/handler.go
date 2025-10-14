@@ -1,7 +1,7 @@
 // Copyright 2023 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package k8sregistrationagent
+package konnectoragent
 
 import (
 	"bytes"
@@ -35,33 +35,33 @@ import (
 )
 
 const (
-	defaultHelmReleaseName       = "k8s-registration-agent"
+	defaultHelmReleaseName       = "konnector-agent"
 	defaultHelmReleaseNamespace  = "ntnx-system"
 	defaultK8sAgentName          = "konnector-agent"
 	defaultCredentialsSecretName = defaultK8sAgentName
 )
 
-type ControllerConfig struct {
+type Config struct {
 	*options.GlobalOptions
 	helmAddonConfig *addons.HelmAddonConfig
 }
 
-func NewControllerConfig(globalOptions *options.GlobalOptions) *ControllerConfig {
-	return &ControllerConfig{
+func NewConfig(globalOptions *options.GlobalOptions) *Config {
+	return &Config{
 		GlobalOptions: globalOptions,
 		helmAddonConfig: addons.NewHelmAddonConfig(
-			"default-k8s-registrationagent-helm-values-template",
+			"default-konnector-agent-helm-values-template",
 			defaultHelmReleaseNamespace,
 			defaultHelmReleaseName,
 		),
 	}
 }
 
-func (c *ControllerConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
 	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
-type DefaultK8sRegistrationAgent struct {
+type DefaultKonnectorAgent struct {
 	client              ctrlclient.Client
 	config              *Config
 	helmChartInfoGetter *config.HelmChartGetter
@@ -71,31 +71,31 @@ type DefaultK8sRegistrationAgent struct {
 }
 
 var (
-	_ commonhandlers.Named                   = &DefaultK8sRegistrationAgent{}
-	_ lifecycle.AfterControlPlaneInitialized = &DefaultK8sRegistrationAgent{}
-	_ lifecycle.BeforeClusterUpgrade         = &DefaultK8sRegistrationAgent{}
-	_ lifecycle.BeforeClusterDelete          = &DefaultK8sRegistrationAgent{}
+	_ commonhandlers.Named                   = &DefaultKonnectorAgent{}
+	_ lifecycle.AfterControlPlaneInitialized = &DefaultKonnectorAgent{}
+	_ lifecycle.BeforeClusterUpgrade         = &DefaultKonnectorAgent{}
+	_ lifecycle.BeforeClusterDelete          = &DefaultKonnectorAgent{}
 )
 
 func New(
 	c ctrlclient.Client,
-	cfg *ControllerConfig,
+	cfg *Config,
 	helmChartInfoGetter *config.HelmChartGetter,
-) *DefaultK8sRegistrationAgent {
-	return &DefaultK8sRegistrationAgent{
+) *DefaultKonnectorAgent {
+	return &DefaultKonnectorAgent{
 		client:              c,
 		config:              cfg,
 		helmChartInfoGetter: helmChartInfoGetter,
 		variableName:        v1alpha1.ClusterConfigVariableName,
-		variablePath:        []string{"addons", v1alpha1.K8sRegistrationAgentVariableName},
+		variablePath:        []string{"addons", v1alpha1.KonnectorAgentVariableName},
 	}
 }
 
-func (n *DefaultK8sRegistrationAgent) Name() string {
-	return "K8sRegistrationAgentHandler"
+func (n *DefaultKonnectorAgent) Name() string {
+	return "KonnectorAgentHandler"
 }
 
-func (n *DefaultK8sRegistrationAgent) AfterControlPlaneInitialized(
+func (n *DefaultKonnectorAgent) AfterControlPlaneInitialized(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
@@ -106,7 +106,7 @@ func (n *DefaultK8sRegistrationAgent) AfterControlPlaneInitialized(
 	resp.Message = commonResponse.GetMessage()
 }
 
-func (n *DefaultK8sRegistrationAgent) BeforeClusterUpgrade(
+func (n *DefaultKonnectorAgent) BeforeClusterUpgrade(
 	ctx context.Context,
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
@@ -117,7 +117,7 @@ func (n *DefaultK8sRegistrationAgent) BeforeClusterUpgrade(
 	resp.Message = commonResponse.GetMessage()
 }
 
-func (n *DefaultK8sRegistrationAgent) apply(
+func (n *DefaultKonnectorAgent) apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	resp *runtimehooksv1.CommonResponse,
@@ -130,7 +130,7 @@ func (n *DefaultK8sRegistrationAgent) apply(
 	)
 
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	k8sAgentVar, err := variables.Get[apivariables.NutanixK8sRegistrationAgent](
+	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
 		varMap,
 		n.variableName,
 		n.variablePath...)
@@ -210,7 +210,7 @@ func (n *DefaultK8sRegistrationAgent) apply(
 	var strategy addons.Applier
 	switch k8sAgentVar.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
-		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.K8sRegistrationAgent)
+		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.KonnectorAgent)
 		if err != nil {
 			log.Error(
 				err,
@@ -298,10 +298,12 @@ func templateValuesFunc(
 			return "", err
 		}
 		templateInput := input{
-			AgentName:            defaultK8sAgentName,
-			PrismCentralHost:     address,
-			PrismCentralPort:     port,
-			PrismCentralInsecure: nutanixConfig.PrismCentralEndpoint.Insecure,
+			AgentName:        defaultK8sAgentName,
+			PrismCentralHost: address,
+			PrismCentralPort: port,
+			// TODO: remove this once we have a way to set this.
+			// need to add support to accept PC's trust bundle in agent(it's not implemented currently)
+			PrismCentralInsecure: true,
 			ClusterName:          cluster.Name,
 		}
 
@@ -315,7 +317,7 @@ func templateValuesFunc(
 	}
 }
 
-func (n *DefaultK8sRegistrationAgent) BeforeClusterDelete(
+func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	ctx context.Context,
 	req *runtimehooksv1.BeforeClusterDeleteRequest,
 	resp *runtimehooksv1.BeforeClusterDeleteResponse,
@@ -329,7 +331,7 @@ func (n *DefaultK8sRegistrationAgent) BeforeClusterDelete(
 	)
 
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	k8sAgentVar, err := variables.Get[apivariables.NutanixK8sRegistrationAgent](
+	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
 		varMap,
 		n.variableName,
 		n.variablePath...)
@@ -409,7 +411,7 @@ func (n *DefaultK8sRegistrationAgent) BeforeClusterDelete(
 	}
 }
 
-func (n *DefaultK8sRegistrationAgent) deleteHelmChart(
+func (n *DefaultKonnectorAgent) deleteHelmChart(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
@@ -488,7 +490,7 @@ func (n *DefaultK8sRegistrationAgent) deleteHelmChart(
 
 // checkCleanupStatus checks the current status of K8s Registration Agent cleanup
 // Returns: "completed", "in-progress", or "not-started"
-func (n *DefaultK8sRegistrationAgent) checkCleanupStatus(
+func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
@@ -528,7 +530,7 @@ func (n *DefaultK8sRegistrationAgent) checkCleanupStatus(
 
 // waitForHelmUninstallCompletion waits for CAAPH to complete the helm uninstall process
 // before allowing cluster deletion to proceed. This ensures graceful deletion order.
-func (n *DefaultK8sRegistrationAgent) waitForHelmUninstallCompletion(
+func (n *DefaultKonnectorAgent) waitForHelmUninstallCompletion(
 	ctx context.Context,
 	hcp *caaphv1.HelmChartProxy,
 	log logr.Logger,

@@ -235,13 +235,13 @@ spec:
                         - defaultStorage
                         - providers
                       type: object
-                    k8sRegistrationAgent:
+                    konnectorAgent:
                       properties:
                         credentials:
                           description: A reference to the Secret for credential information for the target Prism Central instance
                           properties:
                             secretRef:
-                              description: A reference to the Secret containing the credentials used by the CCM provider.
+                              description: A reference to the Secret containing the credentials used by the Konnector agent.
                               properties:
                                 name:
                                   description: |-
@@ -258,7 +258,7 @@ spec:
                           type: object
                         strategy:
                           default: HelmAddon
-                          description: Addon strategy used to deploy the Nutanix k8s-registration-agent to the k8s cluster.
+                          description: Addon strategy used to deploy the Nutanix konnector-agent to the k8s cluster.
                           enum:
                             - ClusterResourceSet
                             - HelmAddon

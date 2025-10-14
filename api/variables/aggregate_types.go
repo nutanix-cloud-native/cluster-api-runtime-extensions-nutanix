@@ -67,11 +67,11 @@ type Addons struct {
 
 	COSI *COSI `json:"cosi,omitempty"`
 
-	NutanixK8sRegistrationAgent *NutanixK8sRegistrationAgent `json:"k8sRegistrationAgent,omitempty"`
+	NutanixKonnectorAgent *NutanixKonnectorAgent `json:"konnectorAgent,omitempty"`
 }
 
-type NutanixK8sRegistrationAgent struct {
-	carenv1.NutanixK8sRegistrationAgent `json:",inline"`
+type NutanixKonnectorAgent struct {
+	carenv1.NutanixKonnectorAgent `json:",inline"`
 }
 
 type CSI struct {

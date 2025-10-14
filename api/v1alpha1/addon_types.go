@@ -87,7 +87,7 @@ type NutanixAddons struct {
 	COSI *NutanixCOSI `json:"cosi,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	KonnectorAgent *NutanixKonnectorAgent`json:"konnectorAgent,omitempty"`
+	KonnectorAgent *NutanixKonnectorAgent `json:"konnectorAgent,omitempty"`
 }
 
 type GenericAddons struct {
@@ -366,16 +366,16 @@ type RegistryAddon struct {
 type NutanixKonnectorAgent struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
 	// +kubebuilder:validation:Optional
-	Credentials *NutanixK8sAgentCredentials `json:"credentials,omitempty"`
+	Credentials *NutanixKonnectorAgentCredentials `json:"credentials,omitempty"`
 
-	// Addon strategy used to deploy the Nutanix k8s-registration-agent to the k8s cluster.
+	// Addon strategy used to deploy the Nutanix konnector-agent to the k8s cluster.
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
 	Strategy AddonStrategy `json:"strategy,omitzero"`
 }
 
-type NutanixK8sAgentCredentials struct {
+type NutanixKonnectorAgentCredentials struct {
 	// A reference to the Secret containing the credentials used by the Konnector agent.
 	// +kubebuilder:validation:Required
 	SecretRef LocalObjectReference `json:"secretRef"`
