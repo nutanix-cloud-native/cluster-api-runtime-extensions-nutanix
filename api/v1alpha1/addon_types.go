@@ -29,6 +29,8 @@ const (
 
 	RegistryProviderCNCFDistribution = "CNCF Distribution"
 
+	IngressProviderAWSLoadBalancerController = "aws-lb-controller"
+
 	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
 	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
 
@@ -65,6 +67,9 @@ type AWSAddons struct {
 
 	// +kubebuilder:validation:Optional
 	CSI *AWSCSI `json:"csi,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Ingress *Ingress `json:"ingress,omitempty"`
 }
 
 type DockerAddons struct {
@@ -357,5 +362,12 @@ type RegistryAddon struct {
 	// +kubebuilder:default="CNCF Distribution"
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum="CNCF Distribution"
+	Provider string `json:"provider"`
+}
+
+type Ingress struct {
+	// The Ingress provider to deploy.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum="aws-lb-controller"
 	Provider string `json:"provider"`
 }
