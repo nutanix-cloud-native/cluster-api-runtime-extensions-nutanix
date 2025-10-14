@@ -117,8 +117,7 @@ hooks:
     defaultValueTemplateConfigMap:
       create: true
       name: default-registry-syncer-helm-values-template
-
-  addons:
+  ingress:
     awsLoadBalancerController:
       defaultValueTemplateConfigMap:
         create: true

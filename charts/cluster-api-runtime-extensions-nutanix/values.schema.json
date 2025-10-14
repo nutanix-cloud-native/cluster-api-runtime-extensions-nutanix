@@ -118,27 +118,6 @@
         "hooks": {
             "type": "object",
             "properties": {
-                "addons": {
-                    "type": "object",
-                    "properties": {
-                        "awsLoadBalancerController": {
-                            "type": "object",
-                            "properties": {
-                                "defaultValueTemplateConfigMap": {
-                                    "type": "object",
-                                    "properties": {
-                                        "create": {
-                                            "type": "boolean"
-                                        },
-                                        "name": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
                 "ccm": {
                     "type": "object",
                     "properties": {
@@ -513,6 +492,27 @@
                                                     "type": "string"
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "ingress": {
+                    "type": "object",
+                    "properties": {
+                        "awsLoadBalancerController": {
+                            "type": "object",
+                            "properties": {
+                                "defaultValueTemplateConfigMap": {
+                                    "type": "object",
+                                    "properties": {
+                                        "create": {
+                                            "type": "boolean"
+                                        },
+                                        "name": {
+                                            "type": "string"
                                         }
                                     }
                                 }
