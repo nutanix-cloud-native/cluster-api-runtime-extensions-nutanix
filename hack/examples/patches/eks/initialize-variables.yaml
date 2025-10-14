@@ -11,3 +11,5 @@
           nfd: {}
           cni:
             provider: Cilium
+          ingress:
+            provider: aws-lb-controller

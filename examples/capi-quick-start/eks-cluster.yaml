@@ -26,6 +26,8 @@ spec:
                 storageClassConfigs:
                   default: {}
             snapshotController: {}
+          ingress:
+            provider: aws-lb-controller
           nfd: {}
         eks:
           region: us-west-2

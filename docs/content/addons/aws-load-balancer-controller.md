@@ -31,7 +31,8 @@ spec:
       - name: clusterConfig
         value:
           addons:
-            # TODO: Define an API
+            ingress:
+              provider: "aws-lb-controller"
 ```
 
 ## IAM Permissions

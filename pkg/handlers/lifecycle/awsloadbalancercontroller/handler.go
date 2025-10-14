@@ -16,7 +16,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -74,7 +74,7 @@ func New(
 		config:              cfg,
 		helmChartInfoGetter: helmChartInfoGetter,
 		variableName:        v1alpha1.ClusterConfigVariableName,
-		variablePath:        []string{"addons", "loadBalancerController"},
+		variablePath:        []string{"addons", "ingress"},
 	}
 }
 
@@ -116,10 +116,35 @@ func (n *DefaultAWSLoadBalancerController) apply(
 		clusterKey,
 	)
 
-	// For now, always enable the AWS Load Balancer Controller
-	// FIXME: Add proper variable checking when APIs are added
-	if provider := utils.GetProvider(cluster); provider != "eks" && provider != "aws" {
-		log.V(5).Info("Skipping AWS Load Balancer Controller handler, not an EKS or AWS cluster", provider)
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+
+	ingressVar, err := variables.Get[v1alpha1.Ingress](varMap, n.variableName, n.variablePath...)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info(
+				"Skipping AWS Load Balancer Controller handler, cluster does not specify ingress addon",
+			)
+			return
+		}
+		log.Error(
+			err,
+			"failed to read ingress variable from cluster definition",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("failed to read ingress variable from cluster definition: %v",
+				err,
+			),
+		)
+		return
+	}
+
+	if ingressVar.Provider != v1alpha1.IngressProviderAWSLoadBalancerController {
+		log.V(5).Info(
+			"Skipping AWS Load Balancer Controller handler, provider is not aws-lb-controller",
+			"provider",
+			ingressVar.Provider,
+		)
 		return
 	}
 
