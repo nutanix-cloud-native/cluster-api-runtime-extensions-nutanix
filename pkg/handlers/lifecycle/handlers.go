@@ -48,7 +48,7 @@ type Handlers struct {
 	localPathCSIConfig         *localpath.Config
 	snapshotControllerConfig   *snapshotcontroller.Config
 	cosiControllerConfig       *cosi.ControllerConfig
-	k8sRegistrationAgentConfig *k8sregistrationagent.ControllerConfig
+	k8sRegistrationAgentConfig *k8sregistrationagent.Config
 	distributionConfig         *cncfdistribution.Config
 }
 
@@ -71,7 +71,7 @@ func New(
 		localPathCSIConfig:         localpath.NewConfig(globalOptions),
 		snapshotControllerConfig:   snapshotcontroller.NewConfig(globalOptions),
 		cosiControllerConfig:       cosi.NewControllerConfig(globalOptions),
-		k8sRegistrationAgentConfig: k8sregistrationagent.NewControllerConfig(globalOptions),
+		k8sRegistrationAgentConfig: k8sregistrationagent.NewConfig(globalOptions),
 		distributionConfig:         &cncfdistribution.Config{GlobalOptions: globalOptions},
 	}
 }

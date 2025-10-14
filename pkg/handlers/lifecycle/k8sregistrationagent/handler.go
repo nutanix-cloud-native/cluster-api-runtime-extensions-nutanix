@@ -37,7 +37,7 @@ import (
 const (
 	defaultHelmReleaseName       = "k8s-registration-agent"
 	defaultHelmReleaseNamespace  = "ntnx-system"
-	defaultK8sAgentName          = "nutanix-agent"
+	defaultK8sAgentName          = "konnector-agent"
 	defaultCredentialsSecretName = defaultK8sAgentName
 )
 
@@ -63,7 +63,7 @@ func (c *ControllerConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 
 type DefaultK8sRegistrationAgent struct {
 	client              ctrlclient.Client
-	config              *ControllerConfig
+	config              *Config
 	helmChartInfoGetter *config.HelmChartGetter
 
 	variableName string   // points to the global config variable
@@ -246,14 +246,6 @@ func (n *DefaultK8sRegistrationAgent) apply(
 			n.client,
 			helmChart,
 		).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster))
-	case v1alpha1.AddonStrategyClusterResourceSet:
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf(
-				"strategy %q not provided for K8s Registration Agent", v1alpha1.AddonStrategyClusterResourceSet,
-			),
-		)
-		return
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage("strategy not provided for K8s Registration Agent")
