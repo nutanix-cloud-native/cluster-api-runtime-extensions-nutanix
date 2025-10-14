@@ -245,3 +245,33 @@ func NewWorkerDockerMachineTemplateRequestItem(
 		uid,
 	)
 }
+
+func NewWorkerMachineDeploymentRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		&clusterv1.MachineDeployment{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: clusterv1.GroupVersion.String(),
+				Kind:       "MachineDeployment",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-machinedeployment",
+				Namespace: Namespace,
+			},
+			Spec: clusterv1.MachineDeploymentSpec{
+				Template: clusterv1.MachineTemplateSpec{
+					Spec: clusterv1.MachineSpec{
+						ClusterName: ClusterName,
+					},
+				},
+			},
+		},
+		&runtimehooksv1.HolderReference{
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       "MachineDeployment",
+			FieldPath:  "",
+		},
+		uid,
+	)
+}

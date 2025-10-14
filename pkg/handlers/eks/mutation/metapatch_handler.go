@@ -9,6 +9,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/ami"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/failuredomain"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/iaminstanceprofile"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/identityref"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/instancetype"
@@ -40,6 +41,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
+		failuredomain.NewWorkerPatch(),
 		iaminstanceprofile.NewWorkerPatch(),
 		instancetype.NewWorkerPatch(),
 		ami.NewWorkerPatch(),
