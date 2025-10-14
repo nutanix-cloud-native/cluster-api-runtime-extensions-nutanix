@@ -30,7 +30,8 @@ type AWSWorkerNodeSpec struct {
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=128
 	FailureDomain string `json:"failureDomain,omitempty"`
-	// The IAM instance profile to use for the cluster Machines.
+
+// The IAM instance profile to use for the cluster Machines.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=nodes.cluster-api-provider-aws.sigs.k8s.io
 	// +kubebuilder:validation:MinLength=1
