@@ -39,6 +39,10 @@ const (
 	defaultHelmReleaseNamespace  = "ntnx-system"
 	defaultK8sAgentName          = "konnector-agent"
 	defaultCredentialsSecretName = defaultK8sAgentName
+
+	cleanupStatusCompleted  = "completed"
+	cleanupStatusInProgress = "in-progress"
+	cleanupStatusNotStarted = "not-started"
 )
 
 type Config struct {
@@ -166,45 +170,43 @@ func (n *DefaultKonnectorAgent) apply(
 	// It's possible to have the credentials Secret be created by the Helm chart.
 	// However, that would leave the credentials visible in the HelmChartProxy.
 	// Instead, we'll create the Secret on the remote cluster and reference it in the Helm values.
-	if k8sAgentVar.Credentials != nil {
-		err := handlersutils.EnsureClusterOwnerReferenceForObject(
-			ctx,
-			n.client,
-			corev1.TypedLocalObjectReference{
-				Kind: "Secret",
-				Name: k8sAgentVar.Credentials.SecretRef.Name,
-			},
-			cluster,
+	err = handlersutils.EnsureClusterOwnerReferenceForObject(
+		ctx,
+		n.client,
+		corev1.TypedLocalObjectReference{
+			Kind: "Secret",
+			Name: k8sAgentVar.Credentials.SecretRef.Name,
+		},
+		cluster,
+	)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("error updating owner references on Nutanix k8s agent source Secret: %v",
+				err,
+			),
 		)
-		if err != nil {
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				fmt.Sprintf("error updating owner references on Nutanix k8s agent source Secret: %v",
-					err,
-				),
-			)
-			return
-		}
-		key := ctrlclient.ObjectKey{
-			Name:      defaultCredentialsSecretName,
-			Namespace: defaultHelmReleaseNamespace,
-		}
-		err = handlersutils.CopySecretToRemoteCluster(
-			ctx,
-			n.client,
-			k8sAgentVar.Credentials.SecretRef.Name,
-			key,
-			cluster,
+		return
+	}
+	key := ctrlclient.ObjectKey{
+		Name:      defaultCredentialsSecretName,
+		Namespace: defaultHelmReleaseNamespace,
+	}
+	err = handlersutils.CopySecretToRemoteCluster(
+		ctx,
+		n.client,
+		k8sAgentVar.Credentials.SecretRef.Name,
+		key,
+		cluster,
+	)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("error creating Nutanix k8s agent Credentials Secret on the remote cluster: %v",
+				err,
+			),
 		)
-		if err != nil {
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				fmt.Sprintf("error creating Nutanix k8s agent Credentials Secret on the remote cluster: %v",
-					err,
-				),
-			)
-			return
-		}
+		return
 	}
 
 	var strategy addons.Applier
@@ -369,16 +371,16 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		}
 
 		switch cleanupStatus {
-		case "completed":
+		case cleanupStatusCompleted:
 			log.Info("K8s Registration Agent cleanup already completed")
 			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 			return
-		case "in-progress":
+		case cleanupStatusInProgress:
 			log.Info("K8s Registration Agent cleanup in progress, requesting retry")
 			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 			resp.SetRetryAfterSeconds(10) // Retry after 10 seconds
 			return
-		case "not-started":
+		case cleanupStatusNotStarted:
 			log.Info("Starting K8s Registration Agent cleanup")
 			// Proceed with cleanup below
 		}
@@ -488,8 +490,8 @@ func (n *DefaultKonnectorAgent) deleteHelmChart(
 	return nil
 }
 
-// checkCleanupStatus checks the current status of K8s Registration Agent cleanup
-// Returns: "completed", "in-progress", or "not-started"
+// checkCleanupStatus checks the current status of K8s Registration Agent cleanup.
+// Returns: "completed", "in-progress", or "not-started".
 func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
@@ -497,7 +499,7 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 ) (string, error) {
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
 	if !ok {
-		return "completed", nil // If no UUID, assume no agent was installed
+		return cleanupStatusCompleted, nil // If no UUID, assume no agent was installed
 	}
 
 	// Check if HelmChartProxy exists
@@ -512,7 +514,7 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("HelmChartProxy not found, cleanup completed", "name", hcp.Name)
-			return "completed", nil
+			return cleanupStatusCompleted, nil
 		}
 		return "", fmt.Errorf("failed to get HelmChartProxy %q: %w", ctrlclient.ObjectKeyFromObject(hcp), err)
 	}
@@ -520,12 +522,12 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	// HCP exists - check if it's being deleted
 	if hcp.DeletionTimestamp != nil {
 		log.Info("HelmChartProxy is being deleted, cleanup in progress", "name", hcp.Name)
-		return "in-progress", nil
+		return cleanupStatusInProgress, nil
 	}
 
 	// HCP exists and is not being deleted
 	log.Info("HelmChartProxy exists, cleanup not started", "name", hcp.Name)
-	return "not-started", nil
+	return cleanupStatusNotStarted, nil
 }
 
 // waitForHelmUninstallCompletion waits for CAAPH to complete the helm uninstall process
