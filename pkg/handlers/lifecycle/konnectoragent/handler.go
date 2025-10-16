@@ -142,18 +142,18 @@ func (n *DefaultKonnectorAgent) apply(
 		if variables.IsNotFoundError(err) {
 			log.
 				Info(
-					"Skipping K8s Registration Agent handler," +
-						"cluster does not specify request K8s Registration Agent addon deployment",
+					"Skipping Konnector Agent handler," +
+						"cluster does not specify request Konnector Agent addon deployment",
 				)
 			return
 		}
 		log.Error(
 			err,
-			"failed to read K8s Registration Agent variable from cluster definition",
+			"failed to read Konnector Agent variable from cluster definition",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to read K8s Registration agent variable from cluster definition: %v",
+			fmt.Sprintf("failed to read Konnector Agent variable from cluster definition: %v",
 				err,
 			),
 		)
@@ -250,19 +250,19 @@ func (n *DefaultKonnectorAgent) apply(
 		).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster))
 	case "":
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage("strategy not provided for K8s Registration Agent")
+		resp.SetMessage("strategy not provided for Konnector Agent")
 		return
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("unknown K8s registration agent addon deployment strategy %q", k8sAgentVar.Strategy),
+			fmt.Sprintf("unknown Konnector Agent addon deployment strategy %q", k8sAgentVar.Strategy),
 		)
 		return
 	}
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		log.Error(err, "Helm strategy Apply failed")
-		err = fmt.Errorf("failed to apply K8s Registration Agent addon: %w", err)
+		err = fmt.Errorf("failed to apply Konnector Agent addon: %w", err)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
@@ -340,18 +340,18 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.Info(
-				"Skipping K8s Registration Agent cleanup, addon not specified in cluster definition",
+				"Skipping Konnector Agent cleanup, addon not specified in cluster definition",
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 			return
 		}
 		log.Error(
 			err,
-			"failed to read K8s Registration Agent variable from cluster definition",
+			"failed to read Konnector Agent variable from cluster definition",
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to read K8s Registration Agent variable from cluster definition: %v",
+			fmt.Sprintf("failed to read Konnector Agent variable from cluster definition: %v",
 				err,
 			),
 		)
@@ -372,20 +372,20 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 
 		switch cleanupStatus {
 		case cleanupStatusCompleted:
-			log.Info("K8s Registration Agent cleanup already completed")
+			log.Info("Konnector Agent cleanup already completed")
 			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 			return
 		case cleanupStatusInProgress:
-			log.Info("K8s Registration Agent cleanup in progress, requesting retry")
+			log.Info("Konnector Agent cleanup in progress, requesting retry")
 			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 			resp.SetRetryAfterSeconds(10) // Retry after 10 seconds
 			return
 		case cleanupStatusNotStarted:
-			log.Info("Starting K8s Registration Agent cleanup")
+			log.Info("Starting Konnector Agent cleanup")
 			// Proceed with cleanup below
 		}
 
-		err = n.deleteHelmChart(ctx, cluster, log)
+		err = n.deleteHelmChartProxy(ctx, cluster, log)
 		if err != nil {
 			log.Error(err, "Failed to delete helm chart")
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -394,7 +394,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		}
 
 		// After initiating cleanup, request a retry to monitor completion
-		log.Info("K8s Registration Agent cleanup initiated, will monitor progress")
+		log.Info("Konnector Agent cleanup initiated, will monitor progress")
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
 
@@ -403,7 +403,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	default:
 		log.Info(
-			"Unknown K8s Registration Agent strategy, skipping cleanup",
+			"Unknown Konnector Agent strategy, skipping cleanup",
 			"strategy", k8sAgentVar.Strategy,
 		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
@@ -432,7 +432,7 @@ func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 	}
 
 	// First, try to gracefully trigger helm uninstall while cluster is still accessible
-	log.Info("Initiating graceful deletion of K8s Registration Agent", "name", hcp.Name, "namespace", hcp.Namespace)
+	log.Info("Initiating graceful deletion of Konnector Agent", "name", hcp.Name, "namespace", hcp.Namespace)
 
 	// Get the current HCP to check if it exists and get its current state
 	currentHCP := &caaphv1.HelmChartProxy{}
@@ -459,14 +459,14 @@ func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 	}
 
 	// Now delete the HelmChartProxy - CAAPH will handle the helm uninstall
-	log.Info("Deleting K8s Registration Agent HelmChartProxy", "name", hcp.Name, "namespace", hcp.Namespace)
+	log.Info("Deleting Konnector Agent HelmChartProxy", "name", hcp.Name, "namespace", hcp.Namespace)
 	if err := n.client.Delete(ctx, currentHCP); err != nil {
 		if ctrlclient.IgnoreNotFound(err) == nil {
-			log.Info("K8s Registration Agent HelmChartProxy already deleted", "name", hcp.Name)
+			log.Info("Konnector Agent HelmChartProxy already deleted", "name", hcp.Name)
 			return nil
 		}
 		return fmt.Errorf(
-			"failed to delete K8s Registration Agent HelmChartProxy %q: %w",
+			"failed to delete Konnector Agent HelmChartProxy %q: %w",
 			ctrlclient.ObjectKeyFromObject(hcp),
 			err,
 		)
@@ -487,7 +487,7 @@ func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 	return nil
 }
 
-// checkCleanupStatus checks the current status of K8s Registration Agent cleanup.
+// checkCleanupStatus checks the current status of Konnector Agent cleanup.
 // Returns: "completed", "in-progress", or "not-started".
 func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	ctx context.Context,

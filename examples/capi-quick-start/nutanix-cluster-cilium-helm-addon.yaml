@@ -88,7 +88,11 @@ spec:
                 strategy: HelmAddon
             snapshotController:
               strategy: HelmAddon
-          konnectorAgent: {}
+          konnectorAgent:
+            credentials:
+              secretRef:
+                name: ${CLUSTER_NAME}-pc-creds-for-konnector-agent
+            strategy: HelmAddon
           nfd: {}
           serviceLoadBalancer:
             configuration:

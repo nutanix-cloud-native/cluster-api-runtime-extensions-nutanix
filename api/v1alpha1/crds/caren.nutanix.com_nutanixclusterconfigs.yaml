@@ -260,7 +260,6 @@ spec:
                           default: HelmAddon
                           description: Addon strategy used to deploy the Nutanix konnector-agent to the k8s cluster.
                           enum:
-                            - ClusterResourceSet
                             - HelmAddon
                           type: string
                       type: object

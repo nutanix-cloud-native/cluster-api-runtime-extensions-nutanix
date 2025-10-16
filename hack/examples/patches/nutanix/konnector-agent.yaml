@@ -3,4 +3,8 @@
 
 - op: "add"
   path: "/spec/topology/variables/0/value/addons/konnectorAgent"
-  value: {}
+  value:
+    credentials:
+      secretRef:
+        name: ${CLUSTER_NAME}-pc-creds-for-konnector-agent
+    strategy: HelmAddon
