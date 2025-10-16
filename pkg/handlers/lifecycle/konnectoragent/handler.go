@@ -398,9 +398,6 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
 
-	case v1alpha1.AddonStrategyClusterResourceSet:
-		log.Info("ClusterResourceSet strategy does not require cleanup")
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	case "":
 		log.Info("No strategy specified, skipping cleanup")
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
@@ -413,7 +410,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	}
 }
 
-func (n *DefaultKonnectorAgent) deleteHelmChart(
+func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
@@ -442,7 +439,7 @@ func (n *DefaultKonnectorAgent) deleteHelmChart(
 	err := n.client.Get(ctx, ctrlclient.ObjectKeyFromObject(hcp), currentHCP)
 	if err != nil {
 		if ctrlclient.IgnoreNotFound(err) == nil {
-			log.Info("K8s Registration Agent HelmChartProxy already deleted", "name", hcp.Name)
+			log.Info("Konnector Agent HelmChartProxy is not present on cluster", "name", hcp.Name)
 			return nil
 		}
 		return fmt.Errorf("failed to get HelmChartProxy %q: %w", ctrlclient.ObjectKeyFromObject(hcp), err)

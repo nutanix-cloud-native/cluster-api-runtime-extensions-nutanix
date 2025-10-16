@@ -7,7 +7,7 @@ The Konnector Agent addon enables automatic registration of Kubernetes clusters 
 
 ## Overview
 
-The Konnector Agent addon provides:
+Konnector Agent's addon management via CAREN(Cluster API Runtime Extensions - Nutanix) provides:
 
 - **Automatic cluster registration** with Nutanix Prism Central
 - **Lifecycle management** through Cluster API hooks
@@ -193,6 +193,6 @@ kubectl logs hook-preinstall -n ntnx-system
 
 ## References
 
-- [Konnector Agent Repository](https://github.com/nutanix-core/k8s-agent)
+- [Konnector Agent ](https://portal.nutanix.com/page/documents/details?targetId=Prism-Central-Guide-vpc_7_3:mul-cluster-kubernetes-clusters-manage-pc-c.html)
 - [Cluster API Add-on Provider for Helm](https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm)
 - [Cluster API Runtime Hooks](https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/hooks.html)

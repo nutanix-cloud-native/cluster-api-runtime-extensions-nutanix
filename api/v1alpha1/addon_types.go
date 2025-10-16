@@ -371,7 +371,7 @@ type NutanixKonnectorAgent struct {
 	// Addon strategy used to deploy the Nutanix konnector-agent to the k8s cluster.
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	// +kubebuilder:validation:Enum=HelmAddon
 	Strategy AddonStrategy `json:"strategy,omitzero"`
 }
 
