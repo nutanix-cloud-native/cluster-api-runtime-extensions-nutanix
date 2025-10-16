@@ -439,7 +439,7 @@ func TestApply_InvalidVariableJSON(t *testing.T) {
 	handler.apply(context.Background(), cluster, resp)
 
 	assert.Equal(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
-	assert.Contains(t, resp.Message, "failed to read K8s Registration agent variable from cluster definition")
+	assert.Contains(t, resp.Message, "failed to read Konnector Agent variable from cluster definition")
 }
 
 // Test template values function

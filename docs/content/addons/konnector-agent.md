@@ -3,7 +3,7 @@ title = "Konnector Agent Addon"
 icon = "fa-solid fa-plug"
 +++
 
-The Konnector Agent addon enables automatic registration of Kubernetes clusters with Nutanix Prism Central. This addon leverages Cluster API lifecycle hooks to deploy the [Konnector Agent](https://github.com/nutanix-core/k8s-agent) on the new clusters.
+The Konnector Agent addon enables automatic registration of Kubernetes clusters with Nutanix Prism Central. This addon leverages Cluster API lifecycle hooks to deploy the [Konnector Agent](https://portal.nutanix.com/page/documents/details?targetId=Prism-Central-Guide-vpc_7_3:mul-cluster-kubernetes-clusters-manage-pc-c.html) on the new clusters.
 
 ## Overview
 
@@ -43,24 +43,6 @@ The addon implements the following Cluster API lifecycle hooks:
 
 ## Configuration
 
-### Basic Configuration
-
-```yaml
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: Cluster
-metadata:
-  name: my-cluster
-spec:
-  topology:
-    variables:
-      - name: clusterConfig
-        value:
-          addons:
-            konnectorAgent: {}
-```
-
-### Advanced Configuration
-
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
@@ -76,7 +58,7 @@ spec:
               strategy: HelmAddon
               credentials:
                 secretRef:
-                  name: prism-central-credentials-for-konnector-agent
+                  name: cluster-name-pc-credentials-for-konnector-agent
 ```
 
 ## Configuration Reference
@@ -104,7 +86,7 @@ Create a secret containing Prism Central credentials:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: prism-central-credentials-for-konnector-agent
+  name: cluster-name-pc-credentials-for-konnector-agent
   namespace: default
 type: Opaque
 stringData:
@@ -114,23 +96,7 @@ stringData:
 
 ## Examples
 
-### Minimal Configuration
-
-```yaml
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: Cluster
-metadata:
-  name: minimal-cluster
-spec:
-  topology:
-    variables:
-      - name: clusterConfig
-        value:
-          addons:
-            konnectorAgent: {}
-```
-
-### With Custom Credentials
+### Configuration
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -147,7 +113,7 @@ spec:
               strategy: HelmAddon
               credentials:
                 secretRef:
-                  name: prism-central-credentials-for-konnector-agent
+                  name: cluster-name-pc-credentials-for-konnector-agent
 ```
 
 ## Default Values
@@ -185,7 +151,7 @@ Monitor the Konnector Agent deployment:
 
 ```bash
 # Check HelmChartProxy status
-kubectl get helmchartproxy -A
+kubectl get hcp -A
 
 # Check agent logs
 kubectl logs hook-preinstall -n ntnx-system
@@ -193,6 +159,6 @@ kubectl logs hook-preinstall -n ntnx-system
 
 ## References
 
-- [Konnector Agent ](https://portal.nutanix.com/page/documents/details?targetId=Prism-Central-Guide-vpc_7_3:mul-cluster-kubernetes-clusters-manage-pc-c.html)
+- [Konnector Agent](https://portal.nutanix.com/page/documents/details?targetId=Prism-Central-Guide-vpc_7_3:mul-cluster-kubernetes-clusters-manage-pc-c.html)
 - [Cluster API Add-on Provider for Helm](https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm)
 - [Cluster API Runtime Hooks](https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/hooks.html)
