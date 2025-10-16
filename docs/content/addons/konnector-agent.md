@@ -8,6 +8,7 @@ The Konnector Agent addon enables automatic registration of Kubernetes clusters 
 ## Overview
 
 The Konnector Agent addon provides:
+
 - **Automatic cluster registration** with Nutanix Prism Central
 - **Lifecycle management** through Cluster API hooks
 - **Credential management** for secure Prism Central connectivity
@@ -17,19 +18,22 @@ The Konnector Agent addon provides:
 The addon implements the following Cluster API lifecycle hooks:
 
 ### AfterControlPlaneInitialized
+
 - **Purpose**: Deploys the Konnector Agent after the control plane is ready
 - **Timing**: Executes when the cluster control plane is fully initialized
-- **Actions**: 
+- **Actions**:
   - Creates credentials secret on the target cluster
   - Deploys the Konnector Agent using the specified strategy
   - Configures Prism Central connectivity
 
 ### BeforeClusterUpgrade
+
 - **Purpose**: Ensures the agent is properly configured before cluster upgrades
 - **Timing**: Executes before cluster upgrade operations
 - **Actions**: Re-applies the agent configuration if needed
 
 ### BeforeClusterDelete
+
 - **Purpose**: Gracefully removes the Konnector Agent before cluster deletion
 - **Timing**: Executes before cluster deletion begins
 - **Actions**:
@@ -184,7 +188,7 @@ Monitor the Konnector Agent deployment:
 kubectl get helmchartproxy -A
 
 # Check agent logs
-kubectl logs hook-preinstall -n ntnx-system 
+kubectl logs hook-preinstall -n ntnx-system
 ```
 
 ## References

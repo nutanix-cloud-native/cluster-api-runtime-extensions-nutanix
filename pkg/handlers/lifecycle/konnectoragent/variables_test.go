@@ -469,7 +469,7 @@ clusterName: {{ .ClusterName }}
 		result, err := templateFunc(cluster, valuesTemplate)
 		require.NoError(t, err)
 
-		assert.Contains(t, result, "agentName: nutanix-agent")
+		assert.Contains(t, result, "agentName: konnector-agent")
 		assert.Contains(t, result, "prismCentralHost: prism-central.example.com")
 		assert.Contains(t, result, "prismCentralPort: 9440")
 		assert.Contains(t, result, "prismCentralInsecure: true")

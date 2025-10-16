@@ -126,11 +126,7 @@ spec:
                 strategy: HelmAddon
             snapshotController:
               strategy: HelmAddon
-          konnectorAgent:
-              strategy: HelmAddon
-              credentials:
-                secretRef:
-                  name: prism-central-credentials-for-konnector-agent
+          konnectorAgent: {}
           nfd:
             strategy: ClusterResourceSet
           serviceLoadBalancer:
