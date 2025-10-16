@@ -94,9 +94,7 @@ stringData:
   password: password
 ```
 
-## Examples
-
-### Configuration
+### Example Configuration
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1

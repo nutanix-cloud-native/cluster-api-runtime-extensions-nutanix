@@ -378,7 +378,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		case cleanupStatusInProgress:
 			log.Info("Konnector Agent cleanup in progress, requesting retry")
 			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-			resp.SetRetryAfterSeconds(10) // Retry after 10 seconds
+			resp.SetRetryAfterSeconds(5) // Retry after 5 seconds
 			return
 		case cleanupStatusNotStarted:
 			log.Info("Starting Konnector Agent cleanup")
@@ -443,19 +443,6 @@ func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 			return nil
 		}
 		return fmt.Errorf("failed to get HelmChartProxy %q: %w", ctrlclient.ObjectKeyFromObject(hcp), err)
-	}
-
-	// Add a deletion timestamp annotation to help CAAPH prioritize this deletion
-	// and set a shorter timeout to fail fast if cluster becomes unreachable
-	if currentHCP.Annotations == nil {
-		currentHCP.Annotations = make(map[string]string)
-	}
-	currentHCP.Annotations["cluster.x-k8s.io/delete-priority"] = "high"
-	currentHCP.Annotations["cluster.x-k8s.io/delete-timeout"] = "60s"
-
-	// Update the HCP with priority annotations before deletion
-	if err := n.client.Update(ctx, currentHCP); err != nil {
-		log.Info("Failed to update HCP annotations, proceeding with deletion", "error", err)
 	}
 
 	// Now delete the HelmChartProxy - CAAPH will handle the helm uninstall
