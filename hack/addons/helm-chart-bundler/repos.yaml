@@ -10,12 +10,12 @@ repositories:
     repoURL: https://kubernetes.github.io/cloud-provider-aws
     charts:
       aws-cloud-controller-manager:
-      - 0.0.8
+      - 0.0.9
   aws-ebs-csi-driver:
     repoURL: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
     charts:
       aws-ebs-csi-driver:
-      - 2.48.0
+      - 2.51.0
   cilium:
     repoURL: https://helm.cilium.io/
     charts:
@@ -25,7 +25,7 @@ repositories:
     repoURL: https://kubernetes.github.io/autoscaler
     charts:
       cluster-autoscaler:
-      - 9.48.0
+      - 9.52.0
   cosi:
     repoURL: https://mesosphere.github.io/charts/stable/
     charts:
@@ -40,7 +40,7 @@ repositories:
     repoURL: https://charts.containeroo.ch
     charts:
       local-path-provisioner:
-      - 0.0.31
+      - 0.0.32
   metallb:
     repoURL: https://metallb.github.io/metallb
     charts:
@@ -50,7 +50,7 @@ repositories:
     repoURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
     charts:
       node-feature-discovery:
-      - 0.17.3
+      - 0.18.1
   nutanix-cloud-provider:
     repoURL: https://nutanix.github.io/helm/
     charts:
@@ -70,9 +70,9 @@ repositories:
     repoURL: https://piraeus.io/helm-charts/
     charts:
       snapshot-controller:
-      - 4.0.2
+      - 4.1.0
   tigera-operator:
     repoURL: https://docs.tigera.io/calico/charts
     charts:
       tigera-operator:
-      - v3.29.4
+      - v3.29.6

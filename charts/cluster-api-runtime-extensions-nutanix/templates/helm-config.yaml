@@ -9,11 +9,11 @@ apiVersion: v1
 data:
   aws-ccm: |
     ChartName: aws-cloud-controller-manager
-    ChartVersion: 0.0.8
+    ChartVersion: 0.0.9
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/cloud-provider-aws{{ end }}'
   aws-ebs-csi: |
     ChartName: aws-ebs-csi-driver
-    ChartVersion: 2.48.0
+    ChartVersion: 2.51.0
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/aws-ebs-csi-driver{{ end }}'
   cilium: |
     ChartName: cilium
@@ -21,7 +21,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}'
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
-    ChartVersion: 9.48.0
+    ChartVersion: 9.52.0
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}'
   cncf-distribution-registry: |
     ChartName: docker-registry
@@ -33,7 +33,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/stable/{{ end }}'
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
-    ChartVersion: 0.0.31
+    ChartVersion: 0.0.32
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://charts.containeroo.ch{{ end }}'
   metallb: |
     ChartName: metallb
@@ -41,7 +41,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://metallb.github.io/metallb{{ end }}'
   nfd: |
     ChartName: node-feature-discovery
-    ChartVersion: 0.17.3
+    ChartVersion: 0.18.1
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/node-feature-discovery/charts{{ end }}'
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
@@ -57,11 +57,11 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/staging/{{ end }}'
   snapshot-controller: |
     ChartName: snapshot-controller
-    ChartVersion: 4.0.2
+    ChartVersion: 4.1.0
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://piraeus.io/helm-charts/{{ end }}'
   tigera-operator: |
     ChartName: tigera-operator
-    ChartVersion: v3.29.4
+    ChartVersion: v3.29.6
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}'
 kind: ConfigMap
 metadata:
