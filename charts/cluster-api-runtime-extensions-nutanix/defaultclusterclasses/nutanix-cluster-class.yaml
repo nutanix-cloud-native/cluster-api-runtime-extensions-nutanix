@@ -344,7 +344,7 @@ spec:
     spec:
       bootType: legacy
       image:
-        name: ""
+        name: PLACEHOLDER
         type: name
       memorySize: 4Gi
       systemDiskSize: 40Gi
@@ -362,7 +362,7 @@ spec:
     spec:
       bootType: legacy
       image:
-        name: ""
+        name: PLACEHOLDER
         type: name
       memorySize: 4Gi
       systemDiskSize: 40Gi
