@@ -180,7 +180,7 @@ func (s *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-// intToInt32Ptr converts an int to *int32 for use with TimeoutSeconds
+// intToInt32Ptr converts an int to *int32 for use with TimeoutSeconds.
 func intToInt32Ptr(value int) *int32 {
 	t := int32(value)
 	return &t

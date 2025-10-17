@@ -34,7 +34,7 @@ data:
   konnector-agent: |
     ChartName: konnector-agent
     ChartVersion: 1.3.0-rc.0
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/stable/{{ end }}'
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/stable{{ end }}'
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
     ChartVersion: 0.0.31
