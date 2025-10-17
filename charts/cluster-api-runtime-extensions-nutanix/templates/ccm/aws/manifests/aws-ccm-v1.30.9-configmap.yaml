@@ -7,12 +7,12 @@
 #=================================================================
 apiVersion: v1
 data:
-  aws-ccm-v1.32.1.yaml: |
+  aws-ccm-v1.30.9.yaml: |
     apiVersion: v1
     kind: ServiceAccount
     metadata:
       labels:
-        helm.sh/chart: aws-cloud-controller-manager-0.0.8
+        helm.sh/chart: aws-cloud-controller-manager-0.0.9
       name: cloud-controller-manager
       namespace: kube-system
     ---
@@ -20,7 +20,7 @@ data:
     kind: ClusterRole
     metadata:
       labels:
-        helm.sh/chart: aws-cloud-controller-manager-0.0.8
+        helm.sh/chart: aws-cloud-controller-manager-0.0.9
       name: system:cloud-controller-manager
     rules:
     - apiGroups:
@@ -102,12 +102,24 @@ data:
       - serviceaccounts/token
       verbs:
       - create
+    - apiGroups:
+      - authentication.k8s.io
+      resources:
+      - tokenreviews
+      verbs:
+      - create
+    - apiGroups:
+      - authorization.k8s.io
+      resources:
+      - subjectaccessreviews
+      verbs:
+      - create
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
     metadata:
       labels:
-        helm.sh/chart: aws-cloud-controller-manager-0.0.8
+        helm.sh/chart: aws-cloud-controller-manager-0.0.9
       name: cloud-controller-manager:apiserver-authentication-reader
       namespace: kube-system
     roleRef:
@@ -124,7 +136,7 @@ data:
     kind: ClusterRoleBinding
     metadata:
       labels:
-        helm.sh/chart: aws-cloud-controller-manager-0.0.8
+        helm.sh/chart: aws-cloud-controller-manager-0.0.9
       name: system:cloud-controller-manager
     roleRef:
       apiGroup: rbac.authorization.k8s.io
@@ -140,7 +152,7 @@ data:
     kind: DaemonSet
     metadata:
       labels:
-        helm.sh/chart: aws-cloud-controller-manager-0.0.8
+        helm.sh/chart: aws-cloud-controller-manager-0.0.9
         k8s-app: aws-cloud-controller-manager
       name: aws-cloud-controller-manager
       namespace: kube-system
@@ -160,7 +172,7 @@ data:
             - --cloud-provider=aws
             - --configure-cloud-routes=false
             env: []
-            image: registry.k8s.io/provider-aws/cloud-controller-manager:v1.32.1
+            image: registry.k8s.io/provider-aws/cloud-controller-manager:v1.30.9
             name: aws-cloud-controller-manager
             resources:
               requests:
@@ -184,4 +196,4 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: aws-ccm-v1.32.1
+  name: aws-ccm-v1.30.9
