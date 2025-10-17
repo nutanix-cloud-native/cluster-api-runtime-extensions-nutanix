@@ -66,6 +66,12 @@ type Addons struct {
 	CSI *CSI `json:"csi,omitempty"`
 
 	COSI *COSI `json:"cosi,omitempty"`
+
+	NutanixKonnectorAgent *NutanixKonnectorAgent `json:"konnectorAgent,omitempty"`
+}
+
+type NutanixKonnectorAgent struct {
+	carenv1.NutanixKonnectorAgent `json:",inline"`
 }
 
 type CSI struct {

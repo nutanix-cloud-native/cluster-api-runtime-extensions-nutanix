@@ -31,6 +31,7 @@ const (
 	COSIController           Component = "cosi-controller"
 	CNCFDistributionRegistry Component = "cncf-distribution-registry"
 	RegistrySyncer           Component = "registry-syncer"
+	KonnectorAgent           Component = "konnector-agent"
 )
 
 type HelmChartGetter struct {
