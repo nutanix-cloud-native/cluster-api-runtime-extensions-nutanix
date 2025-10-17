@@ -522,8 +522,8 @@ func (n *DefaultKonnectorAgent) waitForHelmUninstallCompletion(
 	log logr.Logger,
 ) error {
 	// Create a context with timeout to avoid blocking cluster deletion indefinitely
-	// 90 seconds should be enough for most helm uninstalls while still being reasonable
-	waitCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
+	// 30 seconds should be enough for most helm uninstalls while still being reasonable
+	waitCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	log.Info("Monitoring HelmChartProxy deletion progress", "name", hcp.Name)
@@ -532,7 +532,7 @@ func (n *DefaultKonnectorAgent) waitForHelmUninstallCompletion(
 	// This indicates CAAPH has acknowledged the deletion request
 	err := wait.PollUntilContextTimeout(
 		waitCtx,
-		2*time.Second,
+		3*time.Second,
 		30*time.Second,
 		true,
 		func(pollCtx context.Context) (bool, error) {
@@ -565,21 +565,6 @@ func (n *DefaultKonnectorAgent) waitForHelmUninstallCompletion(
 			return fmt.Errorf("timeout waiting for HelmChartProxy deletion to complete")
 		}
 		return fmt.Errorf("error waiting for HelmChartProxy deletion: %w", err)
-	}
-
-	// Additional wait to give CAAPH more time to complete the helm uninstall
-	// even after the HCP is deleted. This accounts for any cleanup operations.
-	log.Info("HelmChartProxy deleted, allowing additional time for helm uninstall completion")
-
-	// Use a shorter additional wait to not delay cluster deletion too much
-	additionalWaitCtx, additionalCancel := context.WithTimeout(ctx, 30*time.Second)
-	defer additionalCancel()
-
-	select {
-	case <-additionalWaitCtx.Done():
-		log.Info("Additional wait period completed, proceeding with cluster deletion")
-	case <-time.After(10 * time.Second):
-		log.Info("Reasonable wait time elapsed, proceeding with cluster deletion")
 	}
 
 	return nil
