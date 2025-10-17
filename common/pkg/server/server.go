@@ -181,6 +181,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 // intToInt32Ptr converts an int to *int32 for use with TimeoutSeconds.
+// #nosec G115 -- TimeoutSeconds is always within int32 safe range.
 func intToInt32Ptr(value int) *int32 {
 	t := int32(value)
 	return &t
