@@ -126,9 +126,10 @@ func (s *Server) Start(ctx context.Context) error {
 
 		if t, ok := h.(lifecycle.BeforeClusterDelete); ok {
 			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
-				Hook:        runtimehooksv1.BeforeClusterDelete,
-				Name:        strings.ToLower(h.Name()) + "-bcd",
-				HandlerFunc: t.BeforeClusterDelete,
+				Hook:           runtimehooksv1.BeforeClusterDelete,
+				Name:           strings.ToLower(h.Name()) + "-bcd",
+				HandlerFunc:    t.BeforeClusterDelete,
+				TimeoutSeconds: intToInt32Ptr(30), // 30 seconds timeout
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
 				return err
@@ -177,4 +178,10 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// intToInt32Ptr converts an int to *int32 for use with TimeoutSeconds
+func intToInt32Ptr(value int) *int32 {
+	t := int32(value)
+	return &t
 }
