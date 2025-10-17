@@ -41,7 +41,7 @@ The AWS Load Balancer Controller requires specific IAM permissions to manage loa
 See [AWS Load Balancer IAM Policies] for the full list of permissions.
 The provided configuration assumes the permissions will be attached to the Nodes.
 
-If attaching these policies to the non-default isntance-profile, you may specify the name in the Cluster using the following configuration:
+If attaching these policies to the non-default instance-profile, you may specify the name in the Cluster using the following configuration:
 
 ```yaml
         - name: workerConfig
