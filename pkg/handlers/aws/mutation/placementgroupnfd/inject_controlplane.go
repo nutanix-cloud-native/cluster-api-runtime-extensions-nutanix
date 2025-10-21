@@ -79,11 +79,18 @@ func (h *controlPlanePatchHandler) Mutate(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting placement group for local node feature discovery in AWS controlplane KubeadmControlPlaneTemplate")
-			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(obj.Spec.Template.Spec.KubeadmConfigSpec.Files, cabpkv1.File{
-				Path:        PlacementGroupDiscoveryScriptFileOnRemote,
-				Content:     string(PlacementgroupDiscoveryScript),
-				Permissions: "0700",
-			})
+			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
+				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
+				cabpkv1.File{
+					Path:        PlacementGroupDiscoveryScriptFileOnRemote,
+					Content:     string(PlacementgroupDiscoveryScript),
+					Permissions: "0700",
+				},
+			)
+			obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
+				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
+				PlacementGroupDiscoveryScriptFileOnRemote,
+			)
 			return nil
 		},
 	)

@@ -82,6 +82,10 @@ func (h *workerPatchHandler) Mutate(
 				Content:     string(PlacementgroupDiscoveryScript),
 				Permissions: "0700",
 			})
+			obj.Spec.Template.Spec.PreKubeadmCommands = append(
+				obj.Spec.Template.Spec.PreKubeadmCommands,
+				PlacementGroupDiscoveryScriptFileOnRemote,
+			)
 			return nil
 		},
 	)

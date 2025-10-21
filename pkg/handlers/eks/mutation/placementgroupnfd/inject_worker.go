@@ -83,6 +83,10 @@ func (h *workerPatchHandler) Mutate(
 				Content:     string(awsplacementgroupnfd.PlacementgroupDiscoveryScript),
 				Permissions: "0700",
 			})
+			obj.Spec.Template.Spec.PreNodeadmCommands = append(
+				obj.Spec.Template.Spec.PreNodeadmCommands,
+				awsplacementgroupnfd.PlacementGroupDiscoveryScriptFileOnRemote,
+			)
 			return nil
 		},
 	)
