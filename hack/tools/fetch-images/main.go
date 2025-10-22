@@ -253,7 +253,25 @@ func getHelmValues(carenChartDirectory string) (map[string]interface{}, error) {
 func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (string, error) {
 	switch chartName {
 	case "nutanix-csi-storage":
-		return filepath.Join(carenChartDirectory, "addons", "csi", "nutanix", defaultHelmAddonFilename), nil
+		// The Helm template expects the Secrets to already exist.
+		// Read the default value file and append override values to workaround this.
+		sourceValuesFile := filepath.Join(carenChartDirectory, "addons", "csi", "nutanix", defaultHelmAddonFilename)
+		overrideValues := `
+createPrismCentralSecret: true
+pcUsername: admin
+pcPassword: admin
+prismCentralEndPoint: endpoint
+createSecret: true
+username: admin
+password: admin
+prismEndPoint: endpoint
+`
+		updatedValuesFile, err := getUpdatedValuesFile(sourceValuesFile, overrideValues)
+		if err != nil {
+			return "", fmt.Errorf("failed to modify values file: %w", err)
+		}
+
+		return updatedValuesFile.Name(), nil
 	case "node-feature-discovery":
 		return filepath.Join(carenChartDirectory, "addons", "nfd", defaultHelmAddonFilename), nil
 	case "snapshot-controller":
@@ -441,4 +459,31 @@ func getImagesFromYAMLFiles(files []string) ([]string, error) {
 		}
 	}
 	return images, nil
+}
+
+// getUpdatedValuesFile reads the default values file and returns a new file with the override values appended.
+func getUpdatedValuesFile(valuesFilePath, overrideValues string) (*os.File, error) {
+	defaultValuesFile, err := os.Open(valuesFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open default values file: %w", err)
+	}
+	defer defaultValuesFile.Close()
+
+	tempFile, err := os.CreateTemp("", "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer tempFile.Close()
+
+	_, err = io.Copy(tempFile, defaultValuesFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to copy default values file to temp file: %w", err)
+	}
+
+	_, err = tempFile.WriteString(overrideValues)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write to temp file: %w", err)
+	}
+
+	return tempFile, nil
 }
