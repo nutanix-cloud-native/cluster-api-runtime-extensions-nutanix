@@ -77,4 +77,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace sigs.k8s.io/cluster-api-provider-aws/v2 => github.com/nutanix-cloud-native/cluster-api-provider-aws/v2 v2.10.0-ncn.0
+replace sigs.k8s.io/cluster-api-provider-aws/v2 => github.com/nutanix-cloud-native/cluster-api-provider-aws/v2 v2.10.0-ncn.1

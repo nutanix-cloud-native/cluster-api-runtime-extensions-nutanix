@@ -23,7 +23,7 @@ type NodeadmConfigSpec struct {
 
 	// PreNodeadmCommands specifies extra commands to run before bootstrapping nodes.
 	// +optional
-	PreNodeadmCommands []string `json:"PreNodeadmCommands,omitempty"`
+	PreNodeadmCommands []string `json:"preNodeadmCommands,omitempty"`
 
 	// Files specifies extra files to be passed to user_data upon creation.
 	// +optional
