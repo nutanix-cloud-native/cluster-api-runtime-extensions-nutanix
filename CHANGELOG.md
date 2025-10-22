@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.33.2 (2025-10-22)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.33.x -->
+
+## What's Changed
+### Fixes 🔧
+* feat(release/v0.33.0x): update Nutanix CSI to 3.3.8 by @prajnutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1354
+* fix: CoreDNS mapping by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1358
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.33.1...v0.33.2
+
 ## 0.33.1 (2025-07-31)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
