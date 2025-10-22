@@ -7,3 +7,5 @@ clusterName: "{{ .ControlPlane.spec.eksClusterName }}"
 {{- else }}
 clusterName: "{{ .Cluster.metadata.name }}"
 {{- end }}
+# Set this value to avoid stutter in the resource names.
+fullnameOverride: aws-load-balancer-controller
