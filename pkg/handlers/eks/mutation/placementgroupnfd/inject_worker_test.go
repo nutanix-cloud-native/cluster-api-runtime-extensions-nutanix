@@ -59,7 +59,7 @@ var _ = Describe("Generate EKS Placement Group NFD patches for Worker", func() {
 				},
 				{
 					Operation: "add",
-					Path:      "/spec/template/spec/PreNodeadmCommands",
+					Path:      "/spec/template/spec/preNodeadmCommands",
 					ValueMatcher: gomega.ContainElement(
 						"/etc/kubernetes/node-feature-discovery/source.d/placementgroup_discovery.sh",
 					),
