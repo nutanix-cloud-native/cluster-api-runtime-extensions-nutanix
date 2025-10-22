@@ -62,6 +62,12 @@ repos:
     language: system
     files: "hack/addons/helm-chart-bundler/repos.yaml"
     pass_filenames: false
+  - id: check-list-images
+    name: check-list-images
+    entry: make --no-print-directory list-images
+    language: system
+    files: "^(charts/cluster-api-runtime-extensions-nutanix/|hack/tools/fetch-images/main.go$)"
+    pass_filenames: false
   - id: check-devbox-lock
     name: check-devbox-lock
     entry: devbox install
