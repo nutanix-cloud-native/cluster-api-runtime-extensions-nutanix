@@ -42,13 +42,22 @@ var _ = Describe("Generate AWS Placement Group NFD patches for ControlPlane", fu
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem("1234"),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation: "add",
-				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-				ValueMatcher: gomega.ContainElement(gomega.HaveKeyWithValue(
-					"path", PlacementGroupDiscoveryScriptFileOnRemote,
-				)),
-			}},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+					ValueMatcher: gomega.ContainElement(gomega.HaveKeyWithValue(
+						"path", "/etc/kubernetes/node-feature-discovery/source.d/placementgroup_discovery.sh",
+					)),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+					ValueMatcher: gomega.ContainElement(
+						"/etc/kubernetes/node-feature-discovery/source.d/placementgroup_discovery.sh",
+					),
+				},
+			},
 		},
 	}
 
