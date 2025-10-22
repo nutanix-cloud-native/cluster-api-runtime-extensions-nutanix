@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.33.3 (2025-10-22)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.33.x -->
+
+## What's Changed
+### Other Changes
+* build(release/v0.33.x/): handle missing creds Secrets listing CSI images by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1361
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.33.2...v0.33.3
+
 ## 0.33.2 (2025-10-22)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.33.x -->
