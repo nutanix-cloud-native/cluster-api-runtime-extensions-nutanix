@@ -1,5 +1,5 @@
 agent:
-  name: {{ .AgentName}}
+  name: {{ .AgentName }}
   image:
     repository: quay.io/karbon
     name: k8s-agent
