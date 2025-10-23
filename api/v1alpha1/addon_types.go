@@ -390,5 +390,5 @@ type NutanixKonnectorAgent struct {
 type NutanixKonnectorAgentCredentials struct {
 	// A reference to the Secret containing the credentials used by the Konnector agent.
 	// +kubebuilder:validation:Required
-	SecretRef LocalObjectReference `json:"secretRef"
+	SecretRef LocalObjectReference `json:"secretRef"`
 }

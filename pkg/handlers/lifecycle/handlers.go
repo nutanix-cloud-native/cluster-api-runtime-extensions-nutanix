@@ -24,8 +24,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/localpath"
 	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/snapshotcontroller"
-	konnectoragent "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/konnectoragent"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ingress/awsloadbalancercontroller"
+	konnectoragent "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/konnectoragent"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/nfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry/cncfdistribution"
@@ -50,7 +50,7 @@ type Handlers struct {
 	snapshotControllerConfig        *snapshotcontroller.Config
 	cosiControllerConfig            *cosi.ControllerConfig
 	awsLoadBalancerControllerConfig *awsloadbalancercontroller.ControllerConfig
-  konnectorAgentConfig            *konnectoragent.Config
+	konnectorAgentConfig            *konnectoragent.Config
 	distributionConfig              *cncfdistribution.Config
 }
 
@@ -74,7 +74,7 @@ func New(
 		localPathCSIConfig:              localpath.NewConfig(globalOptions),
 		snapshotControllerConfig:        snapshotcontroller.NewConfig(globalOptions),
 		cosiControllerConfig:            cosi.NewControllerConfig(globalOptions),
-    konnectorAgentConfig:            konnectoragent.NewConfig(globalOptions),
+		konnectorAgentConfig:            konnectoragent.NewConfig(globalOptions),
 		distributionConfig:              &cncfdistribution.Config{GlobalOptions: globalOptions},
 	}
 }
