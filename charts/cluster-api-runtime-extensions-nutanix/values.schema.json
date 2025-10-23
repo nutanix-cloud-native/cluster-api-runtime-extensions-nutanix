@@ -154,6 +154,9 @@
                                         },
                                         "1.33": {
                                             "type": "string"
+                                        },
+                                        "1.34": {
+                                            "type": "string"
                                         }
                                     }
                                 }
@@ -496,6 +499,27 @@
                         }
                     }
                 },
+                "ingress": {
+                    "type": "object",
+                    "properties": {
+                        "awsLoadBalancerController": {
+                            "type": "object",
+                            "properties": {
+                                "defaultValueTemplateConfigMap": {
+                                    "type": "object",
+                                    "properties": {
+                                        "create": {
+                                            "type": "boolean"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 "konnectorAgent": {
                     "type": "object",
                     "properties": {
@@ -516,7 +540,7 @@
                             }
                         }
                     }
-                },
+                },          
                 "nfd": {
                     "type": "object",
                     "properties": {

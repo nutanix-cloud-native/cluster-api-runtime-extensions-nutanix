@@ -29,6 +29,8 @@ const (
 
 	RegistryProviderCNCFDistribution = "CNCF Distribution"
 
+	IngressProviderAWSLoadBalancerController = "aws-lb-controller"
+
 	AddonStrategyClusterResourceSet AddonStrategy = "ClusterResourceSet"
 	AddonStrategyHelmAddon          AddonStrategy = "HelmAddon"
 
@@ -65,6 +67,9 @@ type AWSAddons struct {
 
 	// +kubebuilder:validation:Optional
 	CSI *AWSCSI `json:"csi,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Ingress *Ingress `json:"ingress,omitempty"`
 }
 
 type DockerAddons struct {
@@ -363,6 +368,13 @@ type RegistryAddon struct {
 	Provider string `json:"provider"`
 }
 
+type Ingress struct {
+	// The Ingress provider to deploy.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum="aws-lb-controller"
+	Provider string `json:"provider"`
+}
+
 type NutanixKonnectorAgent struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
 	// +kubebuilder:validation:Optional
@@ -378,5 +390,5 @@ type NutanixKonnectorAgent struct {
 type NutanixKonnectorAgentCredentials struct {
 	// A reference to the Secret containing the credentials used by the Konnector agent.
 	// +kubebuilder:validation:Required
-	SecretRef LocalObjectReference `json:"secretRef"`
+	SecretRef LocalObjectReference `json:"secretRef"
 }

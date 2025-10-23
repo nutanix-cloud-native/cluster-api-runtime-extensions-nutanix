@@ -226,6 +226,16 @@ spec:
                         - defaultStorage
                         - providers
                       type: object
+                    ingress:
+                      properties:
+                        provider:
+                          description: The Ingress provider to deploy.
+                          enum:
+                            - aws-lb-controller
+                          type: string
+                      required:
+                        - provider
+                      type: object
                     nfd:
                       description: NFD tells us to enable or disable the node feature discovery addon.
                       properties:

@@ -48,10 +48,11 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | helmRepository.securityContext.runAsUser | int | `65532` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-aws-ccm-helm-values-template"` |  |
-| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.30" | string | `"v1.30.8"` |  |
-| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.31" | string | `"v1.31.5"` |  |
-| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.32" | string | `"v1.32.1"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.30" | string | `"v1.30.9"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.31" | string | `"v1.31.7"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.32" | string | `"v1.32.3"` |  |
 | hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.33" | string | `"v1.33.0"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.34" | string | `"v1.34.0"` |  |
 | hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-ccm-helm-values-template"` |  |
 | hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name | string | `"cluster-autoscaler"` |  |
@@ -87,6 +88,8 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-csi-helm-values-template"` |  |
 | hooks.csi.snapshot-controller.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.csi.snapshot-controller.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-snapshot-controller-helm-values-template"` |  |
+| hooks.ingress.awsLoadBalancerController.defaultValueTemplateConfigMap.create | bool | `true` |  |
+| hooks.ingress.awsLoadBalancerController.defaultValueTemplateConfigMap.name | string | `"default-aws-load-balancer-controller-helm-values-template"` |  |
 | hooks.konnectorAgent.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.konnectorAgent.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-konnector-agent-helm-values-template"` |  |
 | hooks.nfd.crsStrategy.defaultInstallationConfigMap.name | string | `"node-feature-discovery"` |  |
