@@ -100,6 +100,11 @@ spec:
                             type: string
                         type: object
                     type: object
+                  failureDomain:
+                    description: The failureDomain the machine deployment will use.
+                    maxLength: 128
+                    minLength: 1
+                    type: string
                   iamInstanceProfile:
                     default: nodes.cluster-api-provider-aws.sigs.k8s.io
                     description: The IAM instance profile to use for the cluster Machines.
