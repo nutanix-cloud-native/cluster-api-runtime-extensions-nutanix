@@ -540,7 +540,7 @@
                             }
                         }
                     }
-                },          
+                },
                 "nfd": {
                     "type": "object",
                     "properties": {
