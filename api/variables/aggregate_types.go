@@ -66,6 +66,8 @@ type Addons struct {
 	CSI *CSI `json:"csi,omitempty"`
 
 	COSI *COSI `json:"cosi,omitempty"`
+
+	Ingress *Ingress `json:"ingress,omitempty"`
 }
 
 type CSI struct {
@@ -76,4 +78,8 @@ type CSI struct {
 
 type COSI struct {
 	carenv1.GenericCOSI `json:",inline"`
+}
+
+type Ingress struct {
+	carenv1.Ingress `json:",inline"`
 }

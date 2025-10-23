@@ -15,6 +15,10 @@ data:
     ChartName: aws-ebs-csi-driver
     ChartVersion: 2.51.0
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/aws-ebs-csi-driver{{ end }}'
+  aws-load-balancer-controller: |
+    ChartName: aws-load-balancer-controller
+    ChartVersion: 1.13.4
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://aws.github.io/eks-charts{{ end }}'
   cilium: |
     ChartName: cilium
     ChartVersion: 1.18.2

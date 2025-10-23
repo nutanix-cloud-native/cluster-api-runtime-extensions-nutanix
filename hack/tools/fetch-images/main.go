@@ -400,6 +400,27 @@ prismEndPoint: endpoint
 		}
 
 		return tempFile.Name(), nil
+	case "aws-load-balancer-controller":
+		f := filepath.Join(carenChartDirectory, "addons", "aws-load-balancer-controller", defaultHelmAddonFilename)
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+
+		templateInput := map[string]interface{}{
+			"InfraCluster": map[string]interface{}{
+				"spec": map[string]interface{}{
+					"eksClusterName": "tmplCluster",
+				},
+			},
+		}
+
+		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
+		if err != nil {
+			return "", fmt.Errorf("failed to execute helm values template %w", err)
+		}
+
+		return tempFile.Name(), nil
 	default:
 		return "", nil
 	}

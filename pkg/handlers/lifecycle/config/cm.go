@@ -17,20 +17,21 @@ import (
 type Component string
 
 const (
-	Autoscaler               Component = "cluster-autoscaler"
-	Tigera                   Component = "tigera-operator"
-	Cilium                   Component = "cilium"
-	NFD                      Component = "nfd"
-	NutanixStorageCSI        Component = "nutanix-storage-csi"
-	SnapshotController       Component = "snapshot-controller"
-	NutanixCCM               Component = "nutanix-ccm"
-	MetalLB                  Component = "metallb"
-	LocalPathProvisionerCSI  Component = "local-path-provisioner-csi"
-	AWSEBSCSI                Component = "aws-ebs-csi"
-	AWSCCM                   Component = "aws-ccm"
-	COSIController           Component = "cosi-controller"
-	CNCFDistributionRegistry Component = "cncf-distribution-registry"
-	RegistrySyncer           Component = "registry-syncer"
+	Autoscaler                Component = "cluster-autoscaler"
+	Tigera                    Component = "tigera-operator"
+	Cilium                    Component = "cilium"
+	NFD                       Component = "nfd"
+	NutanixStorageCSI         Component = "nutanix-storage-csi"
+	SnapshotController        Component = "snapshot-controller"
+	NutanixCCM                Component = "nutanix-ccm"
+	MetalLB                   Component = "metallb"
+	LocalPathProvisionerCSI   Component = "local-path-provisioner-csi"
+	AWSEBSCSI                 Component = "aws-ebs-csi"
+	AWSCCM                    Component = "aws-ccm"
+	AWSLoadBalancerController Component = "aws-load-balancer-controller"
+	COSIController            Component = "cosi-controller"
+	CNCFDistributionRegistry  Component = "cncf-distribution-registry"
+	RegistrySyncer            Component = "registry-syncer"
 )
 
 type HelmChartGetter struct {

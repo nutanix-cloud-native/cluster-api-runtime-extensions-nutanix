@@ -130,4 +130,15 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 			StatefulSetIntervals: input.StatefulSetIntervals,
 		},
 	)
+
+	WaitForIngressToBeReadyInWorkloadCluster(
+		ctx,
+		WaitForIngressToBeReadyInWorkloadClusterInput{
+			Ingress:              input.AddonsConfig.Ingress,
+			WorkloadCluster:      input.WorkloadCluster,
+			ClusterProxy:         input.ClusterProxy,
+			DeploymentIntervals:  input.DeploymentIntervals,
+			HelmReleaseIntervals: input.HelmReleaseIntervals,
+		},
+	)
 }

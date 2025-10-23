@@ -88,6 +88,8 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.csi.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-csi-helm-values-template"` |  |
 | hooks.csi.snapshot-controller.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.csi.snapshot-controller.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-snapshot-controller-helm-values-template"` |  |
+| hooks.ingress.awsLoadBalancerController.defaultValueTemplateConfigMap.create | bool | `true` |  |
+| hooks.ingress.awsLoadBalancerController.defaultValueTemplateConfigMap.name | string | `"default-aws-load-balancer-controller-helm-values-template"` |  |
 | hooks.nfd.crsStrategy.defaultInstallationConfigMap.name | string | `"node-feature-discovery"` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nfd-helm-values-template"` |  |
