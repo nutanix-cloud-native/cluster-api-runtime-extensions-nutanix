@@ -14,6 +14,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/instancetype"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/network"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/placementgroup"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/placementgroupnfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/region"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/securitygroups"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/tags"
@@ -46,6 +47,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 		securitygroups.NewWorkerPatch(),
 		volumes.NewWorkerPatch(),
 		placementgroup.NewWorkerPatch(),
+		placementgroupnfd.NewWorkerPatch(),
 		tags.NewWorkerPatch(),
 	}
 	patchHandlers = append(patchHandlers, workerMetaMutators()...)
