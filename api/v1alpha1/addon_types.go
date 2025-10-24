@@ -379,7 +379,6 @@ type NutanixKonnectorAgent struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
 	// +kubebuilder:validation:Optional
 	Credentials *NutanixKonnectorAgentCredentials `json:"credentials,omitempty"`
-
 }
 
 type NutanixKonnectorAgentCredentials struct {

@@ -73,7 +73,7 @@ func TestApply_FailsWhenCredentialsMissing(t *testing.T) {
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{
-						Raw: []byte(`{"addons":{"konnectorAgent":{"strategy":"HelmAddon"}}}`),
+						Raw: []byte(`{"addons":{"konnectorAgent":{}}}`),
 					},
 				}},
 			},
@@ -98,7 +98,6 @@ func TestApply_FailsWhenCopySecretFails(t *testing.T) {
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
 							"konnectorAgent": {
-								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"missing-secret"} }
 							}
 						}
@@ -132,7 +131,6 @@ func TestApply_SuccessfulHelmStrategy(t *testing.T) {
 						},
 						"addons": {
 							"konnectorAgent": {
-								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
 						}
@@ -175,7 +173,6 @@ func TestApply_HelmApplyFails(t *testing.T) {
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
 							"konnectorAgent": {
-								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
 						}
@@ -295,132 +292,6 @@ func TestBeforeClusterUpgrade(t *testing.T) {
 	assert.NotEqual(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
 }
 
-// Test different strategy scenarios
-func TestApply_ClusterResourceSetStrategy(t *testing.T) {
-	handler := newTestHandler(t)
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{{
-					Name: v1alpha1.ClusterConfigVariableName,
-					Value: apiextensionsv1.JSON{Raw: []byte(`{
-						"addons": {
-							"konnectorAgent": {
-								"strategy": "ClusterResourceSet",
-								"credentials": { "secretRef": {"name":"dummy-secret"} }
-							}
-						}
-					}`)},
-				}},
-			},
-		},
-	}
-
-	// Create dummy secret
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dummy-secret",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			"username": []byte("user"),
-			"password": []byte("pass"),
-		},
-	}
-	require.NoError(t, handler.client.Create(context.Background(), secret))
-
-	resp := &runtimehooksv1.CommonResponse{}
-	handler.apply(context.Background(), cluster, resp)
-
-	assert.Equal(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
-	// The test may fail at different points depending on infrastructure, but should fail
-	assert.NotEqual(t, "", resp.Message, "error message should be set")
-}
-
-func TestApply_EmptyStrategy(t *testing.T) {
-	handler := newTestHandler(t)
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{{
-					Name: v1alpha1.ClusterConfigVariableName,
-					Value: apiextensionsv1.JSON{Raw: []byte(`{
-						"addons": {
-							"konnectorAgent": {
-								"credentials": { "secretRef": {"name":"dummy-secret"} }
-							}
-						}
-					}`)},
-				}},
-			},
-		},
-	}
-
-	// Create dummy secret
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dummy-secret",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			"username": []byte("user"),
-			"password": []byte("pass"),
-		},
-	}
-	require.NoError(t, handler.client.Create(context.Background(), secret))
-
-	resp := &runtimehooksv1.CommonResponse{}
-	handler.apply(context.Background(), cluster, resp)
-
-	assert.Equal(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
-	// The test may fail at different points depending on infrastructure, but should fail
-	assert.NotEqual(t, "", resp.Message, "error message should be set")
-}
-
-func TestApply_UnknownStrategy(t *testing.T) {
-	handler := newTestHandler(t)
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{{
-					Name: v1alpha1.ClusterConfigVariableName,
-					Value: apiextensionsv1.JSON{Raw: []byte(`{
-						"addons": {
-							"konnectorAgent": {
-								"strategy": "UnknownStrategy",
-								"credentials": { "secretRef": {"name":"dummy-secret"} }
-							}
-						}
-					}`)},
-				}},
-			},
-		},
-	}
-
-	// Create dummy secret
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dummy-secret",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			"username": []byte("user"),
-			"password": []byte("pass"),
-		},
-	}
-	require.NoError(t, handler.client.Create(context.Background(), secret))
-
-	resp := &runtimehooksv1.CommonResponse{}
-	handler.apply(context.Background(), cluster, resp)
-
-	assert.Equal(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
-	// The test may fail at different points depending on infrastructure, but should fail
-	assert.NotEqual(t, "", resp.Message, "error message should be set")
-}
-
 func TestApply_InvalidVariableJSON(t *testing.T) {
 	handler := newTestHandler(t)
 	cluster := &clusterv1.Cluster{
@@ -538,7 +409,6 @@ func TestApply_ClusterConfigVariableFailure(t *testing.T) {
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
 							"konnectorAgent": {
-								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
 						}
@@ -598,7 +468,6 @@ func TestApply_SuccessfulWithFullNutanixConfig(t *testing.T) {
 						},
 						"addons": {
 							"konnectorAgent": {
-								"strategy": "HelmAddon",
 								"credentials": { "secretRef": {"name":"dummy-secret"} }
 							}
 						}

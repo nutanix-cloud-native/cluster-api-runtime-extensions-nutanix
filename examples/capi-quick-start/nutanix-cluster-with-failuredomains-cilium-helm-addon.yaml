@@ -128,7 +128,6 @@ spec:
             credentials:
               secretRef:
                 name: ${CLUSTER_NAME}-pc-creds-for-konnector-agent
-            strategy: HelmAddon
           nfd: {}
           serviceLoadBalancer:
             configuration:

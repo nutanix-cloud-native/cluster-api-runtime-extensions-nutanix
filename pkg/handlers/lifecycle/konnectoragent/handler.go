@@ -210,55 +210,42 @@ func (n *DefaultKonnectorAgent) apply(
 	}
 
 	var strategy addons.Applier
-	switch k8sAgentVar.Strategy {
-	case v1alpha1.AddonStrategyHelmAddon:
-		helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.KonnectorAgent)
-		if err != nil {
-			log.Error(
-				err,
-				"failed to get configmap with helm settings",
-			)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				fmt.Sprintf("failed to get configuration to create helm addon: %v",
-					err,
-				),
-			)
-			return
-		}
-		clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
-			varMap,
-			v1alpha1.ClusterConfigVariableName,
+	helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.KonnectorAgent)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to get configmap with helm settings",
 		)
-		if err != nil {
-			log.Error(
-				err,
-				"failed to read clusterConfig variable from cluster definition",
-			)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				fmt.Sprintf("failed to read clusterConfig variable from cluster definition: %v",
-					err,
-				),
-			)
-			return
-		}
-		strategy = addons.NewHelmAddonApplier(
-			n.config.helmAddonConfig,
-			n.client,
-			helmChart,
-		).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster))
-	case "":
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage("strategy not provided for Konnector Agent")
-		return
-	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("unknown Konnector Agent addon deployment strategy %q", k8sAgentVar.Strategy),
+			fmt.Sprintf("failed to get configuration to create helm addon: %v",
+				err,
+			),
 		)
 		return
 	}
+	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+	)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to read clusterConfig variable from cluster definition",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("failed to read clusterConfig variable from cluster definition: %v",
+				err,
+			),
+		)
+		return
+	}
+	strategy = addons.NewHelmAddonApplier(
+		n.config.helmAddonConfig,
+		n.client,
+		helmChart,
+	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster))
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		log.Error(err, "Helm strategy Apply failed")
@@ -333,7 +320,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	)
 
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
+	_, err := variables.Get[apivariables.NutanixKonnectorAgent](
 		varMap,
 		n.variableName,
 		n.variablePath...)
@@ -358,56 +345,42 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
-	// Only handle HelmAddon strategy for cleanup
-	switch k8sAgentVar.Strategy {
-	case v1alpha1.AddonStrategyHelmAddon:
-		// Check if cleanup is already in progress or completed
-		cleanupStatus, err := n.checkCleanupStatus(ctx, cluster, log)
-		if err != nil {
-			log.Error(err, "Failed to check cleanup status")
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(err.Error())
-			return
-		}
-
-		switch cleanupStatus {
-		case cleanupStatusCompleted:
-			log.Info("Konnector Agent cleanup already completed")
-			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-			return
-		case cleanupStatusInProgress:
-			log.Info("Konnector Agent cleanup in progress, requesting retry")
-			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-			resp.SetRetryAfterSeconds(5) // Retry after 5 seconds
-			return
-		case cleanupStatusNotStarted:
-			log.Info("Starting Konnector Agent cleanup")
-			// Proceed with cleanup below
-		}
-
-		err = n.deleteHelmChartProxy(ctx, cluster, log)
-		if err != nil {
-			log.Error(err, "Failed to delete helm chart")
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(err.Error())
-			return
-		}
-
-		// After initiating cleanup, request a retry to monitor completion
-		log.Info("Konnector Agent cleanup initiated, will monitor progress")
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-		resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
-
-	case "":
-		log.Info("No strategy specified, skipping cleanup")
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-	default:
-		log.Info(
-			"Unknown Konnector Agent strategy, skipping cleanup",
-			"strategy", k8sAgentVar.Strategy,
-		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+	// Check if cleanup is already in progress or completed
+	cleanupStatus, err := n.checkCleanupStatus(ctx, cluster, log)
+	if err != nil {
+		log.Error(err, "Failed to check cleanup status")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+		return
 	}
+
+	switch cleanupStatus {
+	case cleanupStatusCompleted:
+		log.Info("Konnector Agent cleanup already completed")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	case cleanupStatusInProgress:
+		log.Info("Konnector Agent cleanup in progress, requesting retry")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetRetryAfterSeconds(5) // Retry after 5 seconds
+		return
+	case cleanupStatusNotStarted:
+		log.Info("Starting Konnector Agent cleanup")
+		// Proceed with cleanup below
+	}
+
+	err = n.deleteHelmChartProxy(ctx, cluster, log)
+	if err != nil {
+		log.Error(err, "Failed to delete helm chart")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+		return
+	}
+
+	// After initiating cleanup, request a retry to monitor completion
+	log.Info("Konnector Agent cleanup initiated, will monitor progress")
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+	resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
 }
 
 func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
