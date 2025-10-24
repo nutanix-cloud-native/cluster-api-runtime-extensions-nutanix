@@ -1,5 +1,5 @@
 +++
-title = "AWS Placement Group Node Fature Discovery"
+title = "AWS Placement Group Node Feature Discovery"
 +++
 
 The AWS placement group NFD (Node Feature Discovery) customization automatically discovers and labels nodes with their placement group information, enabling workload scheduling based on placement group characteristics.
