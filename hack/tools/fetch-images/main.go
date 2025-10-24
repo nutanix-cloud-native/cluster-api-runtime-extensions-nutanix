@@ -409,12 +409,24 @@ prismEndPoint: endpoint
 			return "", fmt.Errorf("failed to create temp file: %w", err)
 		}
 
-		templateInput := map[string]interface{}{
-			"InfraCluster": map[string]interface{}{
-				"spec": map[string]interface{}{
-					"eksClusterName": "tmplCluster",
+		// CAAPH uses unstructured internally, so we need to create an unstructured copy of a cluster
+		// to pass to the CAAPH values template.
+		c, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "tmplCluster",
+				Labels: map[string]string{
+					"cluster.x-k8s.io/provider": "aws",
 				},
 			},
+		})
+		if err != nil {
+			return "", fmt.Errorf("failed to convert cluster to unstructured %w", err)
+		}
+
+		templateInput := struct {
+			Cluster map[string]interface{}
+		}{
+			Cluster: c,
 		}
 
 		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
