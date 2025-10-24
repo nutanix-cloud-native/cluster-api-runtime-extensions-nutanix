@@ -41,6 +41,11 @@ repositories:
     charts:
       docker-registry:
       - 2.3.5
+  konnector-agent:
+    repoURL: https://mesosphere.github.io/charts/stable
+    charts:
+      konnector-agent:
+      - 1.3.0-rc.1
   local-path-provisioner:
     repoURL: https://charts.containeroo.ch
     charts:

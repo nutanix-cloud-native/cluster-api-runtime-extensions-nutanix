@@ -1,0 +1,9 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables/0/value/addons/konnectorAgent"
+  value:
+    credentials:
+      secretRef:
+        name: ${CLUSTER_NAME}-pc-creds-for-konnector-agent
