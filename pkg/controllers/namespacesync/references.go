@@ -60,13 +60,17 @@ func walkReferences(
 	for _, ref := range []*corev1.ObjectReference{
 		cc.Spec.Infrastructure.Ref,
 		cc.Spec.ControlPlane.Ref,
-		cc.Spec.ControlPlane.MachineInfrastructure.Ref,
 	} {
 		if err := fn(ctx, ref); err != nil {
 			return err
 		}
 	}
-
+	// Managed kubernetes providers like EKS and AKS will not have a MachineInfrastructure reference for control plane.
+	if cpInfra := cc.Spec.ControlPlane.MachineInfrastructure; cpInfra != nil {
+		if err := fn(ctx, cpInfra.Ref); err != nil {
+			return err
+		}
+	}
 	for mdIdx := range cc.Spec.Workers.MachineDeployments {
 		md := &cc.Spec.Workers.MachineDeployments[mdIdx]
 
