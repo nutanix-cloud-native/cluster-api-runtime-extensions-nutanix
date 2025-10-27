@@ -496,7 +496,7 @@ func (n *DefaultKonnectorAgent) waitForHelmUninstallCompletion(
 ) error {
 	// Create a context with timeout to avoid blocking cluster deletion indefinitely
 	// 30 seconds should be enough for most helm uninstalls while still being reasonable
-	waitCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	waitCtx, cancel := context.WithTimeout(ctx, 25*time.Second)
 	defer cancel()
 
 	log.Info("Monitoring HelmChartProxy deletion progress", "name", hcp.Name)
@@ -506,7 +506,7 @@ func (n *DefaultKonnectorAgent) waitForHelmUninstallCompletion(
 	err := wait.PollUntilContextTimeout(
 		waitCtx,
 		3*time.Second,
-		30*time.Second,
+		22*time.Second,
 		true,
 		func(pollCtx context.Context) (bool, error) {
 			currentHCP := &caaphv1.HelmChartProxy{}
