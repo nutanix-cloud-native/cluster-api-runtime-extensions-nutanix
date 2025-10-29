@@ -9,14 +9,12 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -361,7 +359,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	case cleanupStatusInProgress:
 		log.Info("Konnector Agent cleanup in progress, requesting retry")
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetRetryAfterSeconds(5) // Retry after 5 seconds
 		return
 	case cleanupStatusNotStarted:
@@ -379,7 +377,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 
 	// After initiating cleanup, request a retry to monitor completion
 	log.Info("Konnector Agent cleanup initiated, will monitor progress")
-	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+	resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 	resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
 }
 
@@ -432,18 +430,6 @@ func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 		)
 	}
 
-	// Wait for CAAPH to complete the helm uninstall before allowing cluster deletion to proceed
-	// This ensures graceful deletion order - helm uninstall completes before infrastructure teardown
-	log.Info("Waiting for helm uninstall to complete before proceeding with cluster deletion", "name", hcp.Name)
-
-	if err := n.waitForHelmUninstallCompletion(ctx, hcp, log); err != nil {
-		log.Error(err, "Helm uninstall did not complete gracefully, proceeding with cluster deletion", "name", hcp.Name)
-		// Don't return error here - we want cluster deletion to proceed even if helm uninstall times out
-		// The important thing is we gave it a reasonable chance to complete
-	} else {
-		log.Info("Helm uninstall completed successfully", "name", hcp.Name)
-	}
-
 	return nil
 }
 
@@ -485,60 +471,4 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	// HCP exists and is not being deleted
 	log.Info("HelmChartProxy exists, cleanup not started", "name", hcp.Name)
 	return cleanupStatusNotStarted, nil
-}
-
-// waitForHelmUninstallCompletion waits for CAAPH to complete the helm uninstall process
-// before allowing cluster deletion to proceed. This ensures graceful deletion order.
-func (n *DefaultKonnectorAgent) waitForHelmUninstallCompletion(
-	ctx context.Context,
-	hcp *caaphv1.HelmChartProxy,
-	log logr.Logger,
-) error {
-	// Create a context with timeout to avoid blocking cluster deletion indefinitely
-	// 30 seconds should be enough for most helm uninstalls while still being reasonable
-	waitCtx, cancel := context.WithTimeout(ctx, 25*time.Second)
-	defer cancel()
-
-	log.Info("Monitoring HelmChartProxy deletion progress", "name", hcp.Name)
-
-	// First wait for the HelmChartProxy to be fully processed for deletion
-	// This indicates CAAPH has acknowledged the deletion request
-	err := wait.PollUntilContextTimeout(
-		waitCtx,
-		3*time.Second,
-		22*time.Second,
-		true,
-		func(pollCtx context.Context) (bool, error) {
-			currentHCP := &caaphv1.HelmChartProxy{}
-			err := n.client.Get(pollCtx, ctrlclient.ObjectKeyFromObject(hcp), currentHCP)
-			if err != nil {
-				if apierrors.IsNotFound(err) {
-					log.Info("HelmChartProxy has been deleted", "name", hcp.Name)
-					return true, nil
-				}
-				// If we can't reach the API server, the cluster might be shutting down
-				// In this case, we should not block cluster deletion
-				log.Info("Error checking HelmChartProxy status, cluster may be shutting down", "error", err)
-				return true, nil
-			}
-
-			// Check if the HCP is in deletion phase
-			if currentHCP.DeletionTimestamp != nil {
-				log.Info("HelmChartProxy is being deleted, waiting for completion", "name", hcp.Name)
-				return false, nil
-			}
-
-			// If HCP still exists without deletion timestamp, something might be wrong
-			log.Info("HelmChartProxy still exists, waiting for deletion to start", "name", hcp.Name)
-			return false, nil
-		},
-	)
-	if err != nil {
-		if wait.Interrupted(err) {
-			return fmt.Errorf("timeout waiting for HelmChartProxy deletion to complete")
-		}
-		return fmt.Errorf("error waiting for HelmChartProxy deletion: %w", err)
-	}
-
-	return nil
 }

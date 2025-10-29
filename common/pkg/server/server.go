@@ -126,10 +126,9 @@ func (s *Server) Start(ctx context.Context) error {
 
 		if t, ok := h.(lifecycle.BeforeClusterDelete); ok {
 			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
-				Hook:           runtimehooksv1.BeforeClusterDelete,
-				Name:           strings.ToLower(h.Name()) + "-bcd",
-				HandlerFunc:    t.BeforeClusterDelete,
-				TimeoutSeconds: intToInt32Ptr(30), // 30 seconds timeout
+				Hook:        runtimehooksv1.BeforeClusterDelete,
+				Name:        strings.ToLower(h.Name()) + "-bcd",
+				HandlerFunc: t.BeforeClusterDelete,
 			}); err != nil {
 				setupLog.Error(err, "error adding handler")
 				return err
