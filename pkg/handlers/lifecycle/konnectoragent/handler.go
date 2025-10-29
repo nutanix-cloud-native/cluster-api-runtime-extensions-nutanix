@@ -45,7 +45,7 @@ const (
 	cleanupStatusTimedOut   = "timed-out"
 
 	// helmUninstallTimeout is the maximum time to wait for HelmChartProxy deletion
-	// before giving up and allowing cluster deletion to proceed
+	// before giving up and allowing cluster deletion to proceed.
 	helmUninstallTimeout = 5 * time.Minute
 )
 
@@ -468,7 +468,7 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
-) (string, string, error) {
+) (status, statusMsg string, err error) {
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
 	if !ok {
 		return cleanupStatusCompleted, "No cluster UUID found, assuming no agent installed", nil
@@ -482,7 +482,7 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 		},
 	}
 
-	err := n.client.Get(ctx, ctrlclient.ObjectKeyFromObject(hcp), hcp)
+	err = n.client.Get(ctx, ctrlclient.ObjectKeyFromObject(hcp), hcp)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("HelmChartProxy not found, cleanup completed", "name", hcp.Name)
