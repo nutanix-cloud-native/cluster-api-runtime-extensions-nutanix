@@ -85,24 +85,40 @@ func TestReconcileNewClusterClass(t *testing.T) {
 	targetNamespaces, err := createTargetNamespaces(3)
 	g.Expect(err).ToNot(HaveOccurred())
 
-	sourceClusterClassName, _, cleanup, err := createUniqueClusterClassAndTemplates(
-		sourceClusterClassNamespace,
-	)
-	g.Expect(err).ToNot(HaveOccurred())
-	defer func() {
-		g.Expect(cleanup()).To(Succeed())
-	}()
-
-	for _, targetNamespace := range targetNamespaces {
-		g.Eventually(func() error {
-			return verifyClusterClassAndTemplates(
-				env.Client,
-				sourceClusterClassName,
-				targetNamespace.Name,
-			)
+	testCases := []struct {
+		name   string
+		create func(namespace string) (string, []client.Object, func() error, error)
+	}{
+		{
+			name:   "cluster class",
+			create: createUniqueClusterClassAndTemplates,
 		},
-			timeout,
-		).Should(Succeed())
+		{
+			name:   "managed cluster class",
+			create: createUniqueManagedClusterClassAndTemplates,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			g := NewWithT(t)
+			sourceClusterClassName, _, cleanup, err := tc.create(sourceClusterClassNamespace)
+			g.Expect(err).ToNot(HaveOccurred())
+			defer func() {
+				g.Expect(cleanup()).To(Succeed())
+			}()
+			for _, targetNamespace := range targetNamespaces {
+				g.Eventually(func() error {
+					return verifyClusterClassAndTemplates(
+						env.Client,
+						sourceClusterClassName,
+						targetNamespace.Name,
+					)
+				},
+					timeout,
+				).Should(Succeed())
+			}
+		})
 	}
 }
 
@@ -267,6 +283,89 @@ func createClusterClassAndTemplates(
 		bootstrapTemplate,
 		infraMachineTemplateWorker,
 		infraMachineTemplateControlPlane,
+		controlPlaneTemplate,
+		infraClusterTemplate,
+	}
+
+	for _, obj := range templates {
+		if err := env.CreateAndWait(ctx, obj); err != nil {
+			return "", nil, nil, err
+		}
+	}
+	if err := env.CreateAndWait(ctx, clusterClass); err != nil {
+		return "", nil, nil, err
+	}
+
+	cleanup = func() error {
+		for _, obj := range templates {
+			if err := env.CleanupAndWait(ctx, obj); err != nil {
+				return err
+			}
+		}
+		return env.CleanupAndWait(ctx, clusterClass)
+	}
+
+	return clusterClass.Name, templates, cleanup, nil
+}
+
+func createUniqueManagedClusterClassAndTemplates(namespace string) (
+	clusterClassName string,
+	templates []client.Object,
+	cleanup func() error,
+	err error,
+) {
+	return createManagedClusterClassAndTemplates(
+		names.SimpleNameGenerator.GenerateName("test-managed-"),
+		namespace,
+	)
+}
+
+// createManagedClusterClassAndTemplates creates a ClusterClass with a ControlPlane that does not have a MachineInfrastructure reference.
+func createManagedClusterClassAndTemplates(
+	prefix,
+	namespace string,
+) (
+	clusterClassName string,
+	templates []client.Object,
+	cleanup func() error,
+	err error,
+) {
+	// The below objects are created in order to feed the reconcile loop all the information it needs to create a
+	// full tree of ClusterClass objects (the objects should have owner references to the ClusterClass).
+
+	// Bootstrap templates for the workers.
+	bootstrapTemplate := builder.BootstrapTemplate(namespace, prefix).Build()
+
+	// InfraMachineTemplates for the workers
+	infraMachineTemplateWorker := builder.InfrastructureMachineTemplate(
+		namespace,
+		fmt.Sprintf("%s-worker", prefix),
+	).Build()
+
+	// Control plane template.
+	controlPlaneTemplate := builder.ControlPlaneTemplate(namespace, prefix).Build()
+
+	// InfraClusterTemplate.
+	infraClusterTemplate := builder.InfrastructureClusterTemplate(namespace, prefix).Build()
+
+	// MachineDeploymentClasses that will be part of the ClusterClass.
+	machineDeploymentClass := builder.MachineDeploymentClass(fmt.Sprintf("%s-worker", prefix)).
+		WithBootstrapTemplate(bootstrapTemplate).
+		WithInfrastructureTemplate(infraMachineTemplateWorker).
+		Build()
+
+	// ClusterClass.
+	clusterClass := builder.ClusterClass(namespace, prefix).
+		WithInfrastructureClusterTemplate(infraClusterTemplate).
+		WithControlPlaneTemplate(controlPlaneTemplate).
+		WithWorkerMachineDeploymentClasses(*machineDeploymentClass).
+		Build()
+
+	// Create the set of initObjects from the objects above to add to the API server when the test environment starts.
+
+	templates = []client.Object{
+		bootstrapTemplate,
+		infraMachineTemplateWorker,
 		controlPlaneTemplate,
 		infraClusterTemplate,
 	}
