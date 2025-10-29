@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
@@ -41,6 +42,11 @@ const (
 	cleanupStatusCompleted  = "completed"
 	cleanupStatusInProgress = "in-progress"
 	cleanupStatusNotStarted = "not-started"
+	cleanupStatusTimedOut   = "timed-out"
+
+	// helmUninstallTimeout is the maximum time to wait for HelmChartProxy deletion
+	// before giving up and allowing cluster deletion to proceed
+	helmUninstallTimeout = 5 * time.Minute
 )
 
 type Config struct {
@@ -344,7 +350,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	}
 
 	// Check if cleanup is already in progress or completed
-	cleanupStatus, err := n.checkCleanupStatus(ctx, cluster, log)
+	cleanupStatus, statusMsg, err := n.checkCleanupStatus(ctx, cluster, log)
 	if err != nil {
 		log.Error(err, "Failed to check cleanup status")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -357,10 +363,32 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		log.Info("Konnector Agent cleanup already completed")
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
+	case cleanupStatusTimedOut:
+		// Log the error prominently and block cluster deletion
+		log.Error(
+			fmt.Errorf("konnector Agent helm uninstallation timed out"),
+			"ERROR: Konnector Agent cleanup timed out - blocking cluster deletion",
+			"details", statusMsg,
+			"action", "Manual intervention required - check HelmChartProxy status and remove finalizers if needed",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf(
+			"Konnector Agent helm uninstallation timed out after %v. "+
+				"The HelmChartProxy is stuck in deletion state. "+
+				"Manual intervention required: Check HelmChartProxy status and remove finalizers if needed. "+
+				"Details: %s",
+			helmUninstallTimeout,
+			statusMsg,
+		))
+		return
 	case cleanupStatusInProgress:
-		log.Info("Konnector Agent cleanup in progress, requesting retry")
+		log.Info("Konnector Agent cleanup in progress, requesting retry", "details", statusMsg)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetRetryAfterSeconds(5) // Retry after 5 seconds
+		resp.SetMessage(fmt.Sprintf(
+			"Konnector Agent cleanup in progress. Waiting for HelmChartProxy deletion to complete. %s",
+			statusMsg,
+		))
 		return
 	case cleanupStatusNotStarted:
 		log.Info("Starting Konnector Agent cleanup")
@@ -369,9 +397,9 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 
 	err = n.deleteHelmChartProxy(ctx, cluster, log)
 	if err != nil {
-		log.Error(err, "Failed to delete helm chart")
+		log.Error(err, "Failed to delete HelmChartProxy")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(err.Error())
+		resp.SetMessage(fmt.Sprintf("Failed to delete Konnector Agent HelmChartProxy: %v", err))
 		return
 	}
 
@@ -379,6 +407,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	log.Info("Konnector Agent cleanup initiated, will monitor progress")
 	resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 	resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
+	resp.SetMessage("Konnector Agent cleanup initiated. Waiting for HelmChartProxy deletion to start.")
 }
 
 func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
@@ -434,15 +463,15 @@ func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 }
 
 // checkCleanupStatus checks the current status of Konnector Agent cleanup.
-// Returns: "completed", "in-progress", or "not-started".
+// Returns: status ("completed", "in-progress", "not-started", or "timed-out"), status message, and error.
 func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
-) (string, error) {
+) (string, string, error) {
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
 	if !ok {
-		return cleanupStatusCompleted, nil // If no UUID, assume no agent was installed
+		return cleanupStatusCompleted, "No cluster UUID found, assuming no agent installed", nil
 	}
 
 	// Check if HelmChartProxy exists
@@ -457,18 +486,52 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("HelmChartProxy not found, cleanup completed", "name", hcp.Name)
-			return cleanupStatusCompleted, nil
+			return cleanupStatusCompleted, "HelmChartProxy successfully deleted", nil
 		}
-		return "", fmt.Errorf("failed to get HelmChartProxy %q: %w", ctrlclient.ObjectKeyFromObject(hcp), err)
+		return "", "", fmt.Errorf("failed to get HelmChartProxy %q: %w", ctrlclient.ObjectKeyFromObject(hcp), err)
 	}
 
 	// HCP exists - check if it's being deleted
 	if hcp.DeletionTimestamp != nil {
-		log.Info("HelmChartProxy is being deleted, cleanup in progress", "name", hcp.Name)
-		return cleanupStatusInProgress, nil
+		// Check if deletion has timed out
+		deletionDuration := time.Since(hcp.DeletionTimestamp.Time)
+		if deletionDuration > helmUninstallTimeout {
+			statusMsg := fmt.Sprintf(
+				"HelmChartProxy %q has been in deletion state for %v (timeout: %v). "+
+					"Possible causes: stuck finalizers, helm uninstall failure, or workload cluster unreachable. "+
+					"HelmChartProxy status: %+v",
+				ctrlclient.ObjectKeyFromObject(hcp),
+				deletionDuration,
+				helmUninstallTimeout,
+				hcp.Status,
+			)
+			log.Error(
+				fmt.Errorf("helm uninstall timeout exceeded"),
+				"HelmChartProxy deletion timed out",
+				"name", hcp.Name,
+				"deletionTimestamp", hcp.DeletionTimestamp.Time,
+				"duration", deletionDuration,
+				"timeout", helmUninstallTimeout,
+				"finalizers", hcp.Finalizers,
+				"status", hcp.Status,
+			)
+			return cleanupStatusTimedOut, statusMsg, nil
+		}
+
+		statusMsg := fmt.Sprintf(
+			"HelmChartProxy is being deleted (in progress for %v, timeout in %v)",
+			deletionDuration,
+			helmUninstallTimeout-deletionDuration,
+		)
+		log.Info("HelmChartProxy is being deleted, cleanup in progress",
+			"name", hcp.Name,
+			"deletionDuration", deletionDuration,
+			"remainingTime", helmUninstallTimeout-deletionDuration,
+		)
+		return cleanupStatusInProgress, statusMsg, nil
 	}
 
 	// HCP exists and is not being deleted
 	log.Info("HelmChartProxy exists, cleanup not started", "name", hcp.Name)
-	return cleanupStatusNotStarted, nil
+	return cleanupStatusNotStarted, "HelmChartProxy exists and needs to be deleted", nil
 }
