@@ -94,26 +94,58 @@ jobs:
       - name: Collect bootstrap cluster pod logs on failure
         if: failure()
         run: |
-          echo "Collecting pod logs from bootstrap cluster..."
+          set -x  # Enable debug mode to see all commands
+          echo "===== Starting log collection ====="
           mkdir -p bootstrap-pod-logs
 
-          # Get kubeconfig path for bootstrap cluster
-          BOOTSTRAP_KUBECONFIG=$(find _artifacts/clusters/bootstrap -name kubeconfig 2>/dev/null | head -n 1)
+          # Check if Kind cluster exists first
+          echo "Checking for Kind clusters..."
+          devbox run -- kind get clusters > bootstrap-pod-logs/kind-clusters.txt 2>&1 || true
+          cat bootstrap-pod-logs/kind-clusters.txt
 
-          if [[ -n "$BOOTSTRAP_KUBECONFIG" ]]; then
-            export KUBECONFIG="$BOOTSTRAP_KUBECONFIG"
+          # Get kubeconfig from Kind cluster (name: caren-e2e from test/e2e/config/caren.yaml)
+          echo "Getting kubeconfig from Kind cluster 'caren-e2e'..."
+          if devbox run -- kind get kubeconfig --name caren-e2e > bootstrap-pod-logs/kubeconfig.yaml 2>&1; then
+            echo "✓ Successfully retrieved kubeconfig from Kind cluster"
+
+            # Use absolute path for KUBECONFIG
+            export KUBECONFIG="${PWD}/bootstrap-pod-logs/kubeconfig.yaml"
+            echo "✓ KUBECONFIG set to: $KUBECONFIG"
+
+            # Verify kubectl works
+            echo "Verifying kubectl connectivity..."
+            if kubectl cluster-info &> bootstrap-pod-logs/cluster-info.txt; then
+              echo "✓ kubectl can connect to cluster"
+              cat bootstrap-pod-logs/cluster-info.txt
+            else
+              echo "✗ kubectl cannot connect to cluster"
+              cat bootstrap-pod-logs/cluster-info.txt
+              exit 0  # Exit gracefully, don't fail the workflow
+            fi
 
             # Get all pods overview
+            echo "Getting all pods..."
             kubectl get pods -A -o wide > bootstrap-pod-logs/all-pods.txt 2>&1 || echo "Failed to get pods" > bootstrap-pod-logs/all-pods.txt
+            echo "✓ Saved all-pods.txt"
 
-            # Get CAREN controller logs (main focus)
+            # Get all namespaces
+            kubectl get namespaces > bootstrap-pod-logs/namespaces.txt 2>&1 || true
+            echo "✓ Saved namespaces.txt"
+
+            # Get CAREN controller logs (main focus - this is what you need for konnector-agent debugging)
             echo "Collecting CAREN controller logs..."
             kubectl logs -n caren-system -l app.kubernetes.io/name=cluster-api-runtime-extensions-nutanix --all-containers=true --tail=1000 > bootstrap-pod-logs/caren-controller.log 2>&1 || echo "Failed to get CAREN logs" > bootstrap-pod-logs/caren-controller.log
+            echo "✓ Saved caren-controller.log ($(wc -l < bootstrap-pod-logs/caren-controller.log) lines)"
+
+            # Get CAREN controller pod descriptions
+            kubectl describe pods -n caren-system -l app.kubernetes.io/name=cluster-api-runtime-extensions-nutanix > bootstrap-pod-logs/caren-pods-describe.txt 2>&1 || true
+            echo "✓ Saved caren-pods-describe.txt"
 
             # Get all CAPI provider logs
             echo "Collecting CAPI provider logs..."
             for ns in capi-system capi-kubeadm-bootstrap-system capi-kubeadm-control-plane-system capd-system capn-system capa-system caaph-system; do
               if kubectl get namespace "$ns" >/dev/null 2>&1; then
+                echo "  ✓ Collecting logs from namespace: $ns"
                 mkdir -p "bootstrap-pod-logs/$ns"
                 kubectl get pods -n "$ns" -o wide > "bootstrap-pod-logs/$ns/pods.txt" 2>&1 || true
                 for pod in $(kubectl get pods -n "$ns" -o name 2>/dev/null); do
@@ -123,12 +155,24 @@ jobs:
               fi
             done
 
-            # Get HelmReleaseProxy and HelmChartProxy resources
+            # Get HelmReleaseProxy and HelmChartProxy resources (critical for konnector-agent debugging)
             echo "Collecting Helm addon resources..."
             kubectl get helmreleaseproxies -A -o yaml > bootstrap-pod-logs/helmreleaseproxies.yaml 2>&1 || true
             kubectl get helmchartproxies -A -o yaml > bootstrap-pod-logs/helmchartproxies.yaml 2>&1 || true
+            echo "✓ Saved Helm resources"
+
+            # Get all events (helpful for debugging)
+            echo "Collecting cluster events..."
+            kubectl get events -A --sort-by='.lastTimestamp' > bootstrap-pod-logs/events.txt 2>&1 || true
+            echo "✓ Saved events.txt"
+
+            echo "===== ✓ Log collection completed successfully ====="
+            ls -lh bootstrap-pod-logs/
           else
-            echo "Bootstrap kubeconfig not found" > bootstrap-pod-logs/error.txt
+            echo "===== ✗ Failed to get kubeconfig ====="
+            cat bootstrap-pod-logs/kubeconfig.yaml || echo "No kubeconfig file"
+            echo "Checking Docker containers..."
+            docker ps -a > bootstrap-pod-logs/docker-ps.txt 2>&1 || true
           fi
 
       - name: Upload bootstrap pod logs
