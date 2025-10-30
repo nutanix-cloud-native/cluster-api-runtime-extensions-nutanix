@@ -15,4 +15,3 @@ func TestMultusHandler(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Multus Handler Integration Tests")
 }
-

@@ -141,4 +141,17 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 			HelmReleaseIntervals: input.HelmReleaseIntervals,
 		},
 	)
+
+	// Multus is auto-deployed for EKS and Nutanix clusters with supported CNI
+	WaitForMultusToBeReadyInWorkloadCluster(
+		ctx,
+		WaitForMultusToBeReadyInWorkloadClusterInput{
+			CNI:                   input.AddonsConfig.CNI,
+			WorkloadCluster:       input.WorkloadCluster,
+			InfrastructureProvider: input.InfrastructureProvider,
+			ClusterProxy:          input.ClusterProxy,
+			DaemonSetIntervals:    input.DaemonSetIntervals,
+			HelmReleaseIntervals:  input.HelmReleaseIntervals,
+		},
+	)
 }

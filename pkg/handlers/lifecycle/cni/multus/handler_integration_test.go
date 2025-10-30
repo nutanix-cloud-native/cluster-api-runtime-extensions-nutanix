@@ -6,6 +6,7 @@ package multus
 import (
 	"context"
 
+	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +18,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -39,9 +39,9 @@ func init() {
 
 var _ = Describe("Test Multus Handler Integration", func() {
 	var (
-		c              ctrlclient.Client
-		cluster        *clusterv1.Cluster
-		handler        *MultusHandler
+		c               ctrlclient.Client
+		cluster         *clusterv1.Cluster
+		handler         *MultusHandler
 		helmChartGetter *config.HelmChartGetter
 	)
 
@@ -209,4 +209,3 @@ RepositoryURL: 'oci://helm-repository.default.svc/charts'`,
 		c,
 	)
 }
-
