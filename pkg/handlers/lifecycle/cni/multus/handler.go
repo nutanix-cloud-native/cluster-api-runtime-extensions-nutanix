@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,30 +18,43 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
 
+const (
+	defaultMultusReleaseName = "multus"
+	defaultMultusNamespace   = metav1.NamespaceSystem
+)
+
 type MultusConfig struct {
 	*options.GlobalOptions
+
+	helmAddonConfig *addons.HelmAddonConfig
 }
 
 func NewMultusConfig(globalOptions *options.GlobalOptions) *MultusConfig {
 	return &MultusConfig{
 		GlobalOptions: globalOptions,
+		helmAddonConfig: addons.NewHelmAddonConfig(
+			"default-multus-values-template",
+			defaultMultusNamespace,
+			defaultMultusReleaseName,
+		),
 	}
 }
 
 func (m *MultusConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	// No flags needed for Multus - it's auto-deployed
+	m.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
 type MultusHandler struct {
 	client              ctrlclient.Client
 	config              *MultusConfig
 	helmChartInfoGetter *config.HelmChartGetter
-	deployer            *MultusDeployer
 }
 
 var (
@@ -58,7 +72,6 @@ func New(
 		client:              c,
 		config:              cfg,
 		helmChartInfoGetter: helmChartInfoGetter,
-		deployer:            NewMultusDeployer(c, helmChartInfoGetter),
 	}
 }
 
@@ -101,16 +114,15 @@ func (m *MultusHandler) apply(
 	)
 
 	// Check if Multus is supported for this cloud provider
-	isSupported, providerName := m.deployer.isCloudProviderSupported(cluster)
-
-	if !isSupported {
+	provider := capiutils.GetProvider(cluster)
+	if provider != "eks" && provider != "nutanix" {
 		log.V(5).Info(
 			"Multus is not supported for this cloud provider. Skipping Multus deployment.",
 		)
 		return
 	}
 
-	log.Info(fmt.Sprintf("Cluster is %s. Checking CNI configuration for Multus deployment.", providerName))
+	log.Info(fmt.Sprintf("Cluster is %s. Checking CNI configuration for Multus deployment.", provider))
 
 	// Read CNI configuration to detect which CNI is deployed
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
@@ -130,19 +142,43 @@ func (m *MultusHandler) apply(
 		return
 	}
 
-	// Get readiness socket path for the CNI provider
-	readinessSocketPath, err := cni.ReadinessSocketPath(cniVar.Provider)
+	// Get socket path for the CNI provider
+	socketPath, err := cni.SocketPath(cniVar.Provider)
 	if err != nil {
 		log.V(5).
 			Info(fmt.Sprintf("Multus does not support CNI provider: %s. Skipping Multus deployment.", cniVar.Provider))
 		return
 	}
 
-	log.Info(fmt.Sprintf("Auto-deploying Multus for %s cluster with %s CNI", providerName, cniVar.Provider))
+	log.Info(fmt.Sprintf("Auto-deploying Multus for %s cluster with %s CNI", provider, cniVar.Provider))
 
-	// Deploy Multus using the deployer
+	// Get helm chart configuration
+	helmChart, err := m.helmChartInfoGetter.For(ctx, log, config.Multus)
+	if err != nil {
+		log.Error(
+			err,
+			"failed to get configmap with helm settings",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("failed to get configuration to create helm addon: %v",
+				err,
+			),
+		)
+		return
+	}
+
+	// Create and apply helm addon using existing addons package
 	targetNamespace := m.config.DefaultsNamespace()
-	if err := m.deployer.Deploy(ctx, cluster, readinessSocketPath, targetNamespace, log); err != nil {
+	strategy := addons.NewHelmAddonApplier(
+		m.config.helmAddonConfig,
+		m.client,
+		helmChart,
+	).
+		WithValueTemplater(templateValuesFunc(socketPath)).
+		WithDefaultWaiter()
+
+	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
 		log.Error(err, "failed to deploy Multus")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(fmt.Sprintf("failed to deploy Multus: %v", err))

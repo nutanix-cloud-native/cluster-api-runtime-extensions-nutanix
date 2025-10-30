@@ -9,15 +9,15 @@
 // MultusHandler implements the cluster lifecycle hooks and:
 // - Detects the cloud provider from the cluster infrastructure
 // - Reads CNI configuration from cluster variables
-// - Gets the readiness socket path for the configured CNI (via cni.ReadinessSocketPath)
+// - Gets the socket path for the configured CNI (via cni.SocketPath)
 // - Automatically deploys Multus with socket-based configuration
 //
-// MultusDeployer is the internal deployer that handles:
-// - Templating Helm values with the CNI readiness socket path
+// helmAddonStrategy is the internal strategy that handles:
+// - Templating Helm values with the CNI socket path
 // - Deploying Multus using HelmAddon strategy with Go template-based values
 //
 // Multus relies on the readinessIndicatorFile configuration to wait for the primary CNI
-// to be ready, eliminating the need for explicit wait logic in the deployer.
+// to be ready, eliminating the need for explicit wait logic in the strategy.
 //
 // This package does NOT expose Multus in the API - it's an internal addon
 // that deploys automatically based on cloud provider and CNI selection.
