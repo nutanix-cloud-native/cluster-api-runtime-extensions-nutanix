@@ -3,13 +3,13 @@
 
 // Package multus provides a standalone lifecycle handler for Multus CNI that automatically
 // deploys Multus when:
-// - The cluster is on a supported cloud provider (EKS or Nutanix)
+// - The cluster is on EKS cloud provider
 // - A supported CNI provider is configured (Cilium or Calico)
 //
 // MultusHandler implements the cluster lifecycle hooks and:
 // - Detects the cloud provider from the cluster infrastructure
 // - Reads CNI configuration from cluster variables
-// - Gets the socket path for the configured CNI (via cni.SocketPath)
+// - Gets the readiness socket path for the configured CNI (via cni.ReadinessSocketPath)
 // - Automatically deploys Multus with socket-based configuration
 //
 // helmAddonStrategy is the internal strategy that handles:

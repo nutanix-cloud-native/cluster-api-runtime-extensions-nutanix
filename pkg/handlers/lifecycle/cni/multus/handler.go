@@ -20,7 +20,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
@@ -115,7 +114,7 @@ func (m *MultusHandler) apply(
 
 	// Check if Multus is supported for this cloud provider
 	provider := capiutils.GetProvider(cluster)
-	if provider != "eks" && provider != "nutanix" {
+	if provider != "eks" {
 		log.V(5).Info(
 			"Multus is not supported for this cloud provider. Skipping Multus deployment.",
 		)
@@ -139,14 +138,6 @@ func (m *MultusHandler) apply(
 		log.Error(err, "failed to read CNI configuration from cluster definition")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(fmt.Sprintf("failed to read CNI configuration: %v", err))
-		return
-	}
-
-	// Get socket path for the CNI provider
-	socketPath, err := cni.SocketPath(cniVar.Provider)
-	if err != nil {
-		log.V(5).
-			Info(fmt.Sprintf("Multus does not support CNI provider: %s. Skipping Multus deployment.", cniVar.Provider))
 		return
 	}
 
@@ -175,7 +166,7 @@ func (m *MultusHandler) apply(
 		m.client,
 		helmChart,
 	).
-		WithValueTemplater(templateValuesFunc(socketPath)).
+		WithValueTemplater(templateValuesFunc(cniVar)).
 		WithDefaultWaiter()
 
 	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {

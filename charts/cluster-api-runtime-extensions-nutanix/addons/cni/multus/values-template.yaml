@@ -1,18 +1,18 @@
 # Multus daemon configuration overrides
 daemonConfig:
-  readinessIndicatorFile: "{{ .SocketPath }}"
+  readinessIndicatorFile: "{{ .ReadinessSocketPath }}"
 
-{{- if .SocketPath }}
+{{- if .ReadinessSocketPath }}
 # Volumes for CNI readiness socket
 volumes:
   - name: cni-readiness-sock
     hostPath:
-      path: "{{ .SocketPath }}"
+      path: "{{ .ReadinessSocketPath }}"
       type: Socket
 
 # Volume mounts for CNI readiness socket
 volumeMounts:
   - name: cni-readiness-sock
-    mountPath: "{{ .SocketPath }}"
+    mountPath: "{{ .ReadinessSocketPath }}"
     readOnly: true
 {{- end }}
