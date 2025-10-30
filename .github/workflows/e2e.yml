@@ -91,6 +91,54 @@ jobs:
           KINDEST_IMAGE_TAG: ${{ inputs.kubernetes-version }}
           E2E_KUBERNETES_VERSION: ${{ inputs.kubernetes-version }}
 
+      - name: Collect bootstrap cluster pod logs on failure
+        if: failure()
+        run: |
+          echo "Collecting pod logs from bootstrap cluster..."
+          mkdir -p bootstrap-pod-logs
+          
+          # Get kubeconfig path for bootstrap cluster
+          BOOTSTRAP_KUBECONFIG=$(find _artifacts/clusters/bootstrap -name kubeconfig 2>/dev/null | head -n 1)
+          
+          if [[ -n "$BOOTSTRAP_KUBECONFIG" ]]; then
+            export KUBECONFIG="$BOOTSTRAP_KUBECONFIG"
+            
+            # Get all pods overview
+            kubectl get pods -A -o wide > bootstrap-pod-logs/all-pods.txt 2>&1 || echo "Failed to get pods" > bootstrap-pod-logs/all-pods.txt
+            
+            # Get CAREN controller logs (main focus)
+            echo "Collecting CAREN controller logs..."
+            kubectl logs -n caren-system -l app.kubernetes.io/name=cluster-api-runtime-extensions-nutanix --all-containers=true --tail=1000 > bootstrap-pod-logs/caren-controller.log 2>&1 || echo "Failed to get CAREN logs" > bootstrap-pod-logs/caren-controller.log
+            
+            # Get all CAPI provider logs
+            echo "Collecting CAPI provider logs..."
+            for ns in capi-system capi-kubeadm-bootstrap-system capi-kubeadm-control-plane-system capd-system capn-system capa-system caaph-system; do
+              if kubectl get namespace "$ns" >/dev/null 2>&1; then
+                mkdir -p "bootstrap-pod-logs/$ns"
+                kubectl get pods -n "$ns" -o wide > "bootstrap-pod-logs/$ns/pods.txt" 2>&1 || true
+                for pod in $(kubectl get pods -n "$ns" -o name 2>/dev/null); do
+                  pod_name=$(basename "$pod")
+                  kubectl logs -n "$ns" "$pod_name" --all-containers=true --tail=500 > "bootstrap-pod-logs/$ns/${pod_name}.log" 2>&1 || true
+                done
+              fi
+            done
+            
+            # Get HelmReleaseProxy and HelmChartProxy resources
+            echo "Collecting Helm addon resources..."
+            kubectl get helmreleaseproxies -A -o yaml > bootstrap-pod-logs/helmreleaseproxies.yaml 2>&1 || true
+            kubectl get helmchartproxies -A -o yaml > bootstrap-pod-logs/helmchartproxies.yaml 2>&1 || true
+          else
+            echo "Bootstrap kubeconfig not found" > bootstrap-pod-logs/error.txt
+          fi
+
+      - name: Upload bootstrap pod logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-pod-logs-${{ inputs.provider }}-${{ inputs.kubernetes-version }}
+          path: bootstrap-pod-logs/
+          if-no-files-found: warn
+
       - if: success() || failure() # always run even if the previous step fails
         name: Publish e2e test report
         uses: mikepenz/action-junit-report@v5
