@@ -397,6 +397,34 @@ func TestTemplateValuesFunc_ParseURLError(t *testing.T) {
 	assert.Error(t, err, "ParseURL should fail with invalid URL")
 }
 
+func TestTemplateValuesFunc_TruncatesLongClusterName(t *testing.T) {
+	// Create a cluster name longer than 40 characters (Prism Central's limit)
+	longClusterName := "quick-start-mgz51rkcx7ul1m6h1lbsb824zdf7kyfj62rvhhii044bmdksil5"
+	cluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: longClusterName,
+		},
+	}
+
+	nutanixConfig := &v1alpha1.NutanixSpec{
+		PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+			URL: "https://prism-central.example.com:9440",
+		},
+	}
+
+	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+
+	valuesTemplate := `clusterName: {{ .ClusterName }}`
+	result, err := templateFunc(cluster, valuesTemplate)
+
+	assert.NoError(t, err)
+	// Verify the cluster name is truncated to 40 characters
+	expectedTruncated := longClusterName[:maxClusterNameLength]
+	assert.Contains(t, result, "clusterName: "+expectedTruncated)
+	assert.NotContains(t, result, longClusterName)
+	assert.Equal(t, maxClusterNameLength, len(expectedTruncated), "Truncated name should be exactly 40 characters")
+}
+
 func TestApply_ClusterConfigVariableFailure(t *testing.T) {
 	handler := newTestHandler(t)
 	cluster := &clusterv1.Cluster{

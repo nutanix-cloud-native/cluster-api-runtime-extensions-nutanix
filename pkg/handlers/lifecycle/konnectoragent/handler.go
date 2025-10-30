@@ -47,6 +47,9 @@ const (
 	// helmUninstallTimeout is the maximum time to wait for HelmChartProxy deletion
 	// before giving up and allowing cluster deletion to proceed.
 	helmUninstallTimeout = 5 * time.Minute
+
+	// maxClusterNameLength is the maximum cluster name length supported by Prism Central.
+	maxClusterNameLength = 40
 )
 
 type Config struct {
@@ -290,6 +293,14 @@ func templateValuesFunc(
 		if err != nil {
 			return "", err
 		}
+
+		// Prism Central has a limit on cluster name length
+		// Truncate the cluster name if it exceeds this limit
+		clusterName := cluster.Name
+		if len(clusterName) > maxClusterNameLength {
+			clusterName = clusterName[:maxClusterNameLength]
+		}
+
 		templateInput := input{
 			AgentName:        defaultK8sAgentName,
 			PrismCentralHost: address,
@@ -297,7 +308,7 @@ func templateValuesFunc(
 			// TODO: remove this once we have a way to set this.
 			// need to add support to accept PC's trust bundle in agent(it's not implemented currently)
 			PrismCentralInsecure: true,
-			ClusterName:          cluster.Name,
+			ClusterName:          clusterName,
 		}
 
 		var b bytes.Buffer
