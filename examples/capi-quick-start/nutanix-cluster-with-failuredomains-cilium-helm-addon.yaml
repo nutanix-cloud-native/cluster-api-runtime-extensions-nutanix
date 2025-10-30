@@ -61,18 +61,8 @@ metadata:
     cluster.x-k8s.io/provider: nutanix
   name: ${CLUSTER_NAME}-pc-creds-for-konnector-agent
 stringData:
-  credentials: |
-    [
-      {
-        "type": "basic_auth",
-        "data": {
-          "prismCentral":{
-            "username": "${NUTANIX_USER}",
-            "password": "${NUTANIX_PASSWORD}"
-          }
-        }
-      }
-    ]
+  password: ${NUTANIX_PASSWORD}
+  username: ${NUTANIX_USER}
 ---
 apiVersion: v1
 kind: Secret
