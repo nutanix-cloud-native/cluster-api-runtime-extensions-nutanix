@@ -49,7 +49,7 @@ spec:
               lookup:
                 baseOS: ${AMI_LOOKUP_BASEOS}
                 format: ${AMI_LOOKUP_FORMAT}
-                org: ${AMI_LOOKUP_ORG}
+                org: "${AMI_LOOKUP_ORG}"
         dns:
           coreDNS: {}
         encryptionAtRest:
@@ -62,13 +62,13 @@ spec:
             lookup:
               baseOS: ${AMI_LOOKUP_BASEOS}
               format: ${AMI_LOOKUP_FORMAT}
-              org: ${AMI_LOOKUP_ORG}
+              org: "${AMI_LOOKUP_ORG}"
     version: ${KUBERNETES_VERSION}
     workers:
       machineDeployments:
       - class: default-worker
         metadata:
           annotations:
-            cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: ${WORKER_MACHINE_COUNT}
-            cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: ${WORKER_MACHINE_COUNT}
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
         name: md-0

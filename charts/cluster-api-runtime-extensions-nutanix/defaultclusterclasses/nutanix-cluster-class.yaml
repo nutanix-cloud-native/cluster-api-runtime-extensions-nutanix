@@ -1,0 +1,370 @@
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
+  name: nutanix-quick-start-kcfg-0
+spec:
+  template:
+    spec:
+      files:
+      - content: |
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          kind: KubeletConfiguration
+          evictionHard:
+            nodefs.available: "10%"
+            nodefs.inodesFree: "5%"
+            imagefs.available: "15%"
+            memory.available: "100Mi"
+            imagefs.inodesFree: "10%"
+        path: /etc/kubernetes/patches/kubeletconfiguration0+strategic.json
+        permissions: "0600"
+      - content: |
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          kind: KubeletConfiguration
+          # 4.2.4 Ensure that the --read-only-port argument is set to 0
+          readOnlyPort: 0
+          # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+          # Recommendation: Set to 5m instead of 4h as per CIS guidelines
+          streamingConnectionIdleTimeout: "5m"
+          # 4.2.8 Ensure that the event-qps argument is set to a level which ensures appropriate event capture
+          eventRecordQPS: 5
+          # 4.2.12 Updated with recommended strong cipher suites
+          tlsCipherSuites: [TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384]
+          # 4.2.13 Ensure that a limit is set on pod PIDs
+          podPidsLimit: 4096
+        path: /etc/kubernetes/patches/kubeletconfiguration1+strategic.json
+        permissions: "0600"
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: external
+        patches:
+          directory: /etc/kubernetes/patches
+      postKubeadmCommands:
+      - echo "after kubeadm call" > /var/log/postkubeadm.log
+      - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+      - chmod 600 $(systemctl show -P DropInPaths kubelet.service)
+      - chmod 600 /var/lib/kubelet/config.yaml
+      preKubeadmCommands:
+      - echo "before kubeadm call" > /var/log/prekubeadm.log
+      - hostnamectl set-hostname "{{ ds.meta_data.hostname }}"
+      verbosity: 10
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
+  name: nutanix-quick-start
+spec:
+  controlPlane:
+    machineHealthCheck:
+      maxUnhealthy: 40%
+      nodeStartupTimeout: 10m
+      unhealthyConditions:
+      - status: "False"
+        timeout: 300s
+        type: Ready
+      - status: Unknown
+        timeout: 300s
+        type: Ready
+      - status: "True"
+        timeout: 300s
+        type: MemoryPressure
+      - status: "True"
+        timeout: 300s
+        type: DiskPressure
+      - status: "True"
+        timeout: 300s
+        type: PIDPressure
+      - status: "True"
+        timeout: 300s
+        type: NetworkUnavailable
+    machineInfrastructure:
+      ref:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: NutanixMachineTemplate
+        name: nutanix-quick-start-cp-nmt
+    ref:
+      apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+      kind: KubeadmControlPlaneTemplate
+      name: nutanix-quick-start-kcpt
+  infrastructure:
+    ref:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: NutanixClusterTemplate
+      name: nutanix-quick-start-nct
+  patches:
+  - external:
+      discoverVariablesExtension: nutanixclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
+      generateExtension: nutanixclusterv4configpatch-gp.cluster-api-runtime-extensions-nutanix
+    name: cluster-config
+  - external:
+      discoverVariablesExtension: nutanixworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
+      generateExtension: nutanixworkerv4configpatch-gp.cluster-api-runtime-extensions-nutanix
+    name: worker-config
+  workers:
+    machineDeployments:
+    - class: default-worker
+      machineHealthCheck:
+        maxUnhealthy: 40%
+        nodeStartupTimeout: 10m
+        unhealthyConditions:
+        - status: "False"
+          timeout: 300s
+          type: Ready
+        - status: Unknown
+          timeout: 300s
+          type: Ready
+        - status: "True"
+          timeout: 300s
+          type: MemoryPressure
+        - status: "True"
+          timeout: 300s
+          type: DiskPressure
+        - status: "True"
+          timeout: 300s
+          type: PIDPressure
+        - status: "True"
+          timeout: 300s
+          type: NetworkUnavailable
+      template:
+        bootstrap:
+          ref:
+            apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+            kind: KubeadmConfigTemplate
+            name: nutanix-quick-start-kcfg-0
+        infrastructure:
+          ref:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            kind: NutanixMachineTemplate
+            name: nutanix-quick-start-md-nmt
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlaneTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
+  name: nutanix-quick-start-kcpt
+spec:
+  template:
+    spec:
+      kubeadmConfigSpec:
+        clusterConfiguration:
+          apiServer:
+            extraArgs:
+              admission-control-config-file: /etc/kubernetes/admission.yaml
+              enable-admission-plugins: DenyServiceExternalIPs,EventRateLimit,NodeRestriction
+              profiling: "false"
+              service-account-lookup: "true"
+            extraVolumes:
+            - hostPath: /etc/kubernetes/admission.yaml
+              mountPath: /etc/kubernetes/admission.yaml
+              name: admission-config
+              pathType: File
+              readOnly: true
+            - hostPath: /etc/kubernetes/eventratelimit-config.yaml
+              mountPath: /etc/kubernetes/eventratelimit-config.yaml
+              name: eventratelimit-config
+              pathType: File
+              readOnly: true
+          controllerManager:
+            extraArgs:
+              cloud-provider: external
+              profiling: "false"
+              terminated-pod-gc-threshold: "10000"
+              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+          scheduler:
+            extraArgs:
+              profiling: "false"
+              tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+        files:
+        - content: |-
+            apiVersion: v1
+            kind: Pod
+            metadata:
+              name: kube-vip
+              namespace: kube-system
+            spec:
+              containers:
+                - args:
+                    - manager
+                  env:
+                    - name: vip_arp
+                      value: "true"
+                    - name: port
+                      value: '{{ .Port }}'
+                    - name: vip_nodename
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: spec.nodeName
+                    - name: vip_subnet
+                      value: "32"
+                    - name: dns_mode
+                      value: first
+                    - name: cp_enable
+                      value: "true"
+                    - name: cp_namespace
+                      value: kube-system
+                    - name: vip_leaderelection
+                      value: "true"
+                    - name: vip_leasename
+                      value: plndr-cp-lock
+                    - name: vip_leaseduration
+                      value: "15"
+                    - name: vip_renewdeadline
+                      value: "10"
+                    - name: vip_retryperiod
+                      value: "2"
+                    - name: address
+                      value: '{{ .Address }}'
+                    - name: prometheus_server
+                  image: ghcr.io/kube-vip/kube-vip:v0.9.2
+                  imagePullPolicy: IfNotPresent
+                  name: kube-vip
+                  resources: {}
+                  securityContext:
+                    capabilities:
+                      add:
+                        - NET_ADMIN
+                        - NET_RAW
+                      drop:
+                        - ALL
+                  volumeMounts:
+                    - mountPath: /etc/kubernetes/admin.conf
+                      name: kubeconfig
+              hostAliases:
+                - hostnames:
+                    - kubernetes
+                  ip: 127.0.0.1
+              hostNetwork: true
+              volumes:
+                - hostPath:
+                    path: /etc/kubernetes/admin.conf
+                  name: kubeconfig
+          path: /etc/kubernetes/manifests/kube-vip.yaml
+        - content: |
+            apiVersion: kubelet.config.k8s.io/v1beta1
+            kind: KubeletConfiguration
+            evictionHard:
+              nodefs.available: "10%"
+              nodefs.inodesFree: "5%"
+              imagefs.available: "15%"
+              memory.available: "100Mi"
+              imagefs.inodesFree: "10%"
+          path: /etc/kubernetes/patches/kubeletconfiguration0+strategic.json
+          permissions: "0600"
+        - content: |
+            apiVersion: kubelet.config.k8s.io/v1beta1
+            kind: KubeletConfiguration
+            # 4.2.4 Ensure that the --read-only-port argument is set to 0
+            readOnlyPort: 0
+            # 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+            # Recommendation: Set to 5m instead of 4h as per CIS guidelines
+            streamingConnectionIdleTimeout: "5m"
+            # 4.2.8 Ensure that the event-qps argument is set to a level which ensures appropriate event capture
+            eventRecordQPS: 5
+            # 4.2.12 Updated with recommended strong cipher suites
+            tlsCipherSuites: [TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384]
+            # 4.2.13 Ensure that a limit is set on pod PIDs
+            podPidsLimit: 4096
+          path: /etc/kubernetes/patches/kubeletconfiguration1+strategic.json
+          permissions: "0600"
+        - content: |
+            apiVersion: apiserver.config.k8s.io/v1
+            kind: AdmissionConfiguration
+            plugins:
+            - name: EventRateLimit
+              path: /etc/kubernetes/eventratelimit-config.yaml
+          path: /etc/kubernetes/admission.yaml
+          permissions: "0600"
+        - content: |
+            apiVersion: eventratelimit.admission.k8s.io/v1alpha1
+            kind: Configuration
+            limits:
+            - type: Server
+              qps: 10000
+              burst: 40000
+          path: /etc/kubernetes/eventratelimit-config.yaml
+          permissions: "0600"
+        initConfiguration:
+          nodeRegistration:
+            kubeletExtraArgs:
+              cloud-provider: external
+          patches:
+            directory: /etc/kubernetes/patches
+        joinConfiguration:
+          nodeRegistration:
+            kubeletExtraArgs:
+              cloud-provider: external
+          patches:
+            directory: /etc/kubernetes/patches
+        postKubeadmCommands:
+        - chmod 600 "$(systemctl show -P FragmentPath kubelet.service)"
+        - chmod 600 $(systemctl show -P DropInPaths kubelet.service)
+        - chmod 600 /var/lib/kubelet/config.yaml
+        preKubeadmCommands:
+        - echo "before kubeadm call" > /var/log/prekubeadm.log
+        - hostnamectl set-hostname "{{ ds.meta_data.hostname }}"
+        - echo "::1         ipv6-localhost ipv6-loopback" >/etc/hosts
+        - echo "127.0.0.1   localhost" >>/etc/hosts
+        - echo "127.0.0.1   {{ ds.meta_data.hostname }}" >> /etc/hosts
+        useExperimentalRetryJoin: true
+        verbosity: 10
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixClusterTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
+  name: nutanix-quick-start-nct
+spec:
+  template:
+    spec:
+      controlPlaneEndpoint:
+        host: PLACEHOLDER
+        port: 6443
+      prismCentral:
+        address: PLACEHOLDER
+        credentialRef:
+          kind: Secret
+          name: PLACEHOLDER
+          namespace: default
+        port: 9440
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixMachineTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
+  name: nutanix-quick-start-cp-nmt
+spec:
+  template:
+    spec:
+      bootType: legacy
+      image:
+        name: placeholder-image
+        type: name
+      memorySize: 4Gi
+      systemDiskSize: 40Gi
+      vcpuSockets: 2
+      vcpusPerSocket: 1
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixMachineTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
+  name: nutanix-quick-start-md-nmt
+spec:
+  template:
+    spec:
+      bootType: legacy
+      image:
+        name: placeholder-image
+        type: name
+      memorySize: 4Gi
+      systemDiskSize: 40Gi
+      vcpuSockets: 2
+      vcpusPerSocket: 1
