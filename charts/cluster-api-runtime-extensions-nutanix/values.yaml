@@ -43,6 +43,11 @@ hooks:
         defaultValueTemplateConfigMap:
           create: true
           name: default-cilium-cni-helm-values-template
+    multus:
+      helmAddonStrategy:
+        defaultValueTemplateConfigMap:
+          create: true
+          name: default-multus-values-template
   csi:
     nutanix:
       helmAddonStrategy:

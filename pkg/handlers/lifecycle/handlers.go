@@ -17,6 +17,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/clusterautoscaler"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/calico"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/cilium"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/multus"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cosi"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi"
@@ -38,6 +39,7 @@ type Handlers struct {
 	globalOptions                   *options.GlobalOptions
 	calicoCNIConfig                 *calico.CNIConfig
 	ciliumCNIConfig                 *cilium.CNIConfig
+	multusConfig                    *multus.MultusConfig
 	nfdConfig                       *nfd.Config
 	clusterAutoscalerConfig         *clusterautoscaler.Config
 	ebsConfig                       *awsebs.Config
@@ -61,6 +63,7 @@ func New(
 			GlobalOptions: globalOptions,
 		},
 		ciliumCNIConfig:                 &cilium.CNIConfig{GlobalOptions: globalOptions},
+		multusConfig:                    multus.NewMultusConfig(globalOptions),
 		nfdConfig:                       nfd.NewConfig(globalOptions),
 		clusterAutoscalerConfig:         &clusterautoscaler.Config{GlobalOptions: globalOptions},
 		ebsConfig:                       awsebs.NewConfig(globalOptions),
@@ -124,6 +127,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 	allHandlers := []handlers.Named{
 		calico.New(mgr.GetClient(), h.calicoCNIConfig, helmChartInfoGetter),
 		cilium.New(mgr.GetClient(), h.ciliumCNIConfig, helmChartInfoGetter),
+		multus.New(mgr.GetClient(), h.multusConfig, helmChartInfoGetter),
 		ccm.New(mgr.GetClient(), ccmHandlers),
 		nfd.New(mgr.GetClient(), h.nfdConfig, helmChartInfoGetter),
 		clusterautoscaler.New(mgr.GetClient(), h.clusterAutoscalerConfig, helmChartInfoGetter),
