@@ -135,7 +135,8 @@ jobs:
             # Get CAREN controller logs (main focus - this is what you need for konnector-agent debugging)
             echo "Collecting CAREN controller logs..."
             kubectl logs -n caren-system -l app.kubernetes.io/name=cluster-api-runtime-extensions-nutanix --all-containers=true --tail=1000 > bootstrap-pod-logs/caren-controller.log 2>&1 || echo "Failed to get CAREN logs" > bootstrap-pod-logs/caren-controller.log
-            echo "✓ Saved caren-controller.log ($(wc -l < bootstrap-pod-logs/caren-controller.log) lines)"
+            CAREN_LOG_LINES=$(wc -l < bootstrap-pod-logs/caren-controller.log)
+            echo "✓ Saved caren-controller.log (${CAREN_LOG_LINES} lines)"
 
             # Get CAREN controller pod descriptions
             kubectl describe pods -n caren-system -l app.kubernetes.io/name=cluster-api-runtime-extensions-nutanix > bootstrap-pod-logs/caren-pods-describe.txt 2>&1 || true
@@ -160,6 +161,28 @@ jobs:
             kubectl get helmreleaseproxies -A -o yaml > bootstrap-pod-logs/helmreleaseproxies.yaml 2>&1 || true
             kubectl get helmchartproxies -A -o yaml > bootstrap-pod-logs/helmchartproxies.yaml 2>&1 || true
             echo "✓ Saved Helm resources"
+
+            # Get Prism Central credentials info from bootstrap cluster
+            echo "Collecting Prism Central configuration..."
+            {
+              echo "=== Prism Central Configuration from Environment ==="
+              echo "NUTANIX_ENDPOINT: ${NUTANIX_ENDPOINT:-NOT_SET}"
+              echo "NUTANIX_PORT: ${NUTANIX_PORT:-NOT_SET}"
+              echo "NUTANIX_USER: ${NUTANIX_USER:-NOT_SET}"
+              echo "NUTANIX_PASSWORD: ${NUTANIX_PASSWORD:-NOT_SET}"
+              echo ""
+              echo "=== Checking for Nutanix credentials in bootstrap cluster ==="
+
+              # Check for any nutanix-related secrets
+              kubectl get secrets -A | grep -i nutanix || echo "No nutanix secrets found"
+              echo ""
+
+              # Get konnector-agent HelmReleaseProxy values (shows what's being passed)
+              echo "=== Konnector-Agent HelmReleaseProxy Values ==="
+              kubectl get helmreleaseproxies -A -l helmreleaseproxy.addons.cluster.x-k8s.io/helmchartproxy-name=~konnector-agent -o jsonpath='{.items[0].spec.values}' 2>/dev/null || echo "No HelmReleaseProxy found yet"
+              echo ""
+            } > bootstrap-pod-logs/prism-central-config.txt 2>&1 || true
+            echo "✓ Saved Prism Central config"
 
             # Get all events (helpful for debugging)
             echo "Collecting cluster events..."
@@ -187,58 +210,111 @@ jobs:
                 export WORKLOAD_KUBECONFIG="${PWD}/bootstrap-pod-logs/workload-cluster/kubeconfig.yaml"
                 echo "✓ Retrieved workload cluster kubeconfig"
 
-                # Test connectivity
-                if kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" cluster-info &> bootstrap-pod-logs/workload-cluster/cluster-info.txt; then
-                  echo "✓ Can connect to workload cluster"
+                # Verify kubeconfig has content
+                if [[ -s "$WORKLOAD_KUBECONFIG" ]]; then
+                  WORKLOAD_KC_LINES=$(wc -l < "$WORKLOAD_KUBECONFIG")
+                  echo "✓ Kubeconfig file has content (${WORKLOAD_KC_LINES} lines)"
 
-                  # Get all pods in ntnx-system namespace
+                  # Test connectivity (use --request-timeout to avoid hanging)
+                  echo "Testing connectivity to workload cluster..."
+                  if kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=10s get nodes &> bootstrap-pod-logs/workload-cluster/cluster-info.txt; then
+                    echo "✓ Can connect to workload cluster"
+                  else
+                    echo "⚠ Cannot connect to workload cluster yet, but will try collecting logs anyway"
+                    cat bootstrap-pod-logs/workload-cluster/cluster-info.txt
+                  fi
+
+                  # Get all pods in ntnx-system namespace (try with timeout)
                   echo "Getting pods in ntnx-system namespace..."
-                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" get pods -n ntnx-system -o wide > bootstrap-pod-logs/workload-cluster/ntnx-system-pods.txt 2>&1 || true
+                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get pods -n ntnx-system -o wide > bootstrap-pod-logs/workload-cluster/ntnx-system-pods.txt 2>&1 || echo "Could not get pods (cluster may not be ready yet)" > bootstrap-pod-logs/workload-cluster/ntnx-system-pods.txt
 
                   # Get konnector-agent pod descriptions (THIS IS WHAT YOU WANT!)
                   echo "Getting konnector-agent pod descriptions..."
-                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" describe pods -n ntnx-system -l app.kubernetes.io/name=konnector-agent > bootstrap-pod-logs/workload-cluster/konnector-agent-describe.txt 2>&1 || true
+                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s describe pods -n ntnx-system -l app.kubernetes.io/name=konnector-agent > bootstrap-pod-logs/workload-cluster/konnector-agent-describe.txt 2>&1 || echo "Could not describe konnector-agent pods" > bootstrap-pod-logs/workload-cluster/konnector-agent-describe.txt
 
                   # Get konnector-agent pod logs
                   echo "Getting konnector-agent pod logs..."
-                  for pod in $(kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" get pods -n ntnx-system -l app.kubernetes.io/name=konnector-agent -o name 2>/dev/null); do
+                  for pod in $(kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get pods -n ntnx-system -l app.kubernetes.io/name=konnector-agent -o name 2>/dev/null); do
                     pod_name=$(basename "$pod")
                     echo "  Getting logs for $pod_name..."
-                    kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" logs -n ntnx-system "$pod_name" --all-containers=true --tail=1000 > "bootstrap-pod-logs/workload-cluster/${pod_name}.log" 2>&1 || true
-                    kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" logs -n ntnx-system "$pod_name" --all-containers=true --previous --tail=500 > "bootstrap-pod-logs/workload-cluster/${pod_name}-previous.log" 2>&1 || true
+                    kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s logs -n ntnx-system "$pod_name" --all-containers=true --tail=1000 > "bootstrap-pod-logs/workload-cluster/${pod_name}.log" 2>&1 || true
+                    kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s logs -n ntnx-system "$pod_name" --all-containers=true --previous --tail=500 > "bootstrap-pod-logs/workload-cluster/${pod_name}-previous.log" 2>&1 || true
                   done
 
                   # Get hook pod descriptions and logs (hook-preinstall is what fails)
                   echo "Getting hook pod information..."
-                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" get pods -n ntnx-system | grep hook > bootstrap-pod-logs/workload-cluster/hook-pods.txt 2>&1 || true
+                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get pods -n ntnx-system 2>/dev/null | grep hook > bootstrap-pod-logs/workload-cluster/hook-pods.txt 2>&1 || echo "No hook pods found or cluster not accessible" > bootstrap-pod-logs/workload-cluster/hook-pods.txt
 
                   for hook_pod in hook-preinstall hook-postinstall; do
-                    if kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" get pod -n ntnx-system "$hook_pod" &>/dev/null; then
+                    echo "  Checking for $hook_pod..."
+                    if kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get pod -n ntnx-system "$hook_pod" &>/dev/null; then
                       echo "  Found $hook_pod, collecting info..."
-                      kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" describe pod -n ntnx-system "$hook_pod" > "bootstrap-pod-logs/workload-cluster/${hook_pod}-describe.txt" 2>&1 || true
-                      kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" logs -n ntnx-system "$hook_pod" --all-containers=true --tail=1000 > "bootstrap-pod-logs/workload-cluster/${hook_pod}.log" 2>&1 || true
+                      kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s describe pod -n ntnx-system "$hook_pod" > "bootstrap-pod-logs/workload-cluster/${hook_pod}-describe.txt" 2>&1 || true
+                      kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s logs -n ntnx-system "$hook_pod" --all-containers=true --tail=1000 > "bootstrap-pod-logs/workload-cluster/${hook_pod}.log" 2>&1 || true
+                    else
+                      echo "  $hook_pod not found or not accessible"
                     fi
                   done
 
-                  # Get konnector-agent secret info (without credentials)
+                  # Get konnector-agent secret info with credential details
                   echo "Getting konnector-agent secret info..."
-                  if kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" get secret -n ntnx-system konnector-agent &>/dev/null; then
-                    kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" get secret -n ntnx-system konnector-agent -o yaml | grep -v "password\|credential" > bootstrap-pod-logs/workload-cluster/konnector-agent-secret.yaml 2>&1 || true
-                    echo "Secret keys present:" > bootstrap-pod-logs/workload-cluster/konnector-agent-secret-keys.txt
-                    kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" get secret -n ntnx-system konnector-agent -o jsonpath='{.data}' | grep -o '"[^"]*":' | tr -d '":' >> bootstrap-pod-logs/workload-cluster/konnector-agent-secret-keys.txt 2>&1 || true
+                  if kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get secret -n ntnx-system konnector-agent &>/dev/null; then
+                    {
+                      echo "=== Konnector-Agent Secret in Workload Cluster ==="
+                      echo ""
+                      echo "Secret keys present:"
+                      kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get secret -n ntnx-system konnector-agent -o jsonpath='{.data}' 2>/dev/null | grep -o '"[^"]*":' | tr -d '":' || echo "Could not get keys"
+                      echo ""
+                      echo "=== Secret Data (base64 decoded - FULL VALUES) ==="
+
+                      # Get username if it exists
+                      USERNAME=$(kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get secret -n ntnx-system konnector-agent -o jsonpath='{.data.username}' 2>/dev/null | base64 -d 2>/dev/null)
+                      if [[ -n "$USERNAME" ]]; then
+                        echo "username: $USERNAME"
+                      else
+                        echo "username: NOT_FOUND"
+                      fi
+
+                      # Get password (FULL VALUE - NO MASKING)
+                      PASSWORD=$(kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get secret -n ntnx-system konnector-agent -o jsonpath='{.data.password}' 2>/dev/null | base64 -d 2>/dev/null)
+                      if [[ -n "$PASSWORD" ]]; then
+                        echo "password: $PASSWORD"
+                      else
+                        echo "password: NOT_FOUND"
+                      fi
+
+                      # Check for old 'credentials' format (should NOT exist)
+                      CREDENTIALS=$(kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get secret -n ntnx-system konnector-agent -o jsonpath='{.data.credentials}' 2>/dev/null | base64 -d 2>/dev/null)
+                      if [[ -n "$CREDENTIALS" ]]; then
+                        echo "credentials: FOUND (OLD FORMAT - THIS IS THE PROBLEM!)"
+                        echo "credentials value: $CREDENTIALS"
+                      else
+                        echo "credentials: NOT_FOUND (good - using new format)"
+                      fi
+
+                      echo ""
+                      echo "=== Full Secret YAML ==="
+                      kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get secret -n ntnx-system konnector-agent -o yaml || true
+
+                    } > bootstrap-pod-logs/workload-cluster/konnector-agent-secret-details.txt 2>&1 || true
+                  else
+                    echo "konnector-agent secret not found or not accessible" > bootstrap-pod-logs/workload-cluster/konnector-agent-secret-details.txt
                   fi
 
                   # Get workload cluster events
                   echo "Getting workload cluster events..."
-                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" get events -n ntnx-system --sort-by='.lastTimestamp' > bootstrap-pod-logs/workload-cluster/events.txt 2>&1 || true
+                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get events -n ntnx-system --sort-by='.lastTimestamp' > bootstrap-pod-logs/workload-cluster/events.txt 2>&1 || echo "Could not get events" > bootstrap-pod-logs/workload-cluster/events.txt
 
                   # Get all namespaces in workload cluster
-                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" get namespaces > bootstrap-pod-logs/workload-cluster/namespaces.txt 2>&1 || true
+                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get namespaces > bootstrap-pod-logs/workload-cluster/namespaces.txt 2>&1 || echo "Could not get namespaces" > bootstrap-pod-logs/workload-cluster/namespaces.txt
 
-                  echo "✓ Workload cluster logs collected successfully"
+                  # Try to get nodes
+                  echo "Getting workload cluster nodes..."
+                  kubectl --kubeconfig="$WORKLOAD_KUBECONFIG" --request-timeout=30s get nodes -o wide > bootstrap-pod-logs/workload-cluster/nodes.txt 2>&1 || echo "Could not get nodes" > bootstrap-pod-logs/workload-cluster/nodes.txt
+
+                  echo "✓ Workload cluster log collection attempted (check individual files for results)"
                 else
-                  echo "✗ Cannot connect to workload cluster"
-                  cat bootstrap-pod-logs/workload-cluster/cluster-info.txt
+                  echo "✗ Kubeconfig file is empty"
                 fi
               else
                 echo "✗ Failed to retrieve workload cluster kubeconfig"
