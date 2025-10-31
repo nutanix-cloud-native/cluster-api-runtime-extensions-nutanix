@@ -56,6 +56,11 @@ repositories:
     charts:
       metallb:
       - 0.15.2
+  multus:
+    repoURL: https://mesosphere.github.io/charts/stable/
+    charts:
+      multus:
+      - 0.1.0
   node-feature-discovery:
     repoURL: https://kubernetes-sigs.github.io/node-feature-discovery/charts
     charts:

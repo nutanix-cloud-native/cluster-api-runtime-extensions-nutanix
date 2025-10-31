@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.36.0 (2025-10-28)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: update Nutanix CSI to 3.3.8 by @prajnutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1320
+* feat: update all addon versions by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1352
+* feat: deploy AWS Load Balancer controller in EKS clusters by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1341
+* feat: NFD local feature discovery for aws placement groups by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1363
+### Fixes 🔧
+* fix: update CAPA to v2.10.0-ncn.1 by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1360
+* fix: skip syncing controlplane's infrastructure templates for EKS Clusterclass by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1366
+### Other Changes
+* build: handle missing creds Secrets listing CSI images by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1359
+* build: fix list-images for AWS LB controller by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1364
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.35.1...v0.36.0
+
 ## 0.35.1 (2025-10-07)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->

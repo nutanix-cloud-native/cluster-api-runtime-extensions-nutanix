@@ -57,24 +57,36 @@ func walkReferences(
 		ref *corev1.ObjectReference,
 	) error,
 ) error {
-	for _, ref := range []*corev1.ObjectReference{
-		cc.Spec.Infrastructure.Ref,
-		cc.Spec.ControlPlane.Ref,
-		cc.Spec.ControlPlane.MachineInfrastructure.Ref,
-	} {
-		if err := fn(ctx, ref); err != nil {
+	if cc == nil {
+		return nil
+	}
+	if cc.Spec.Infrastructure.Ref != nil {
+		if err := fn(ctx, cc.Spec.Infrastructure.Ref); err != nil {
+			return err
+		}
+	}
+
+	if cc.Spec.ControlPlane.Ref != nil {
+		if err := fn(ctx, cc.Spec.ControlPlane.Ref); err != nil {
+			return err
+		}
+	}
+
+	if cpInfra := cc.Spec.ControlPlane.MachineInfrastructure; cpInfra != nil && cpInfra.Ref != nil {
+		if err := fn(ctx, cpInfra.Ref); err != nil {
 			return err
 		}
 	}
 
 	for mdIdx := range cc.Spec.Workers.MachineDeployments {
 		md := &cc.Spec.Workers.MachineDeployments[mdIdx]
-
-		for _, ref := range []*corev1.ObjectReference{
-			md.Template.Infrastructure.Ref,
-			md.Template.Bootstrap.Ref,
-		} {
-			if err := fn(ctx, ref); err != nil {
+		if md.Template.Infrastructure.Ref != nil {
+			if err := fn(ctx, md.Template.Infrastructure.Ref); err != nil {
+				return err
+			}
+		}
+		if md.Template.Bootstrap.Ref != nil {
+			if err := fn(ctx, md.Template.Bootstrap.Ref); err != nil {
 				return err
 			}
 		}

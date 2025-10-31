@@ -33,6 +33,7 @@ const (
 	CNCFDistributionRegistry  Component = "cncf-distribution-registry"
 	RegistrySyncer            Component = "registry-syncer"
 	KonnectorAgent            Component = "konnector-agent"
+	Multus                    Component = "multus"
 )
 
 type HelmChartGetter struct {
