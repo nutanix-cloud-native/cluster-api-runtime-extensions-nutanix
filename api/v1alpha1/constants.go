@@ -58,4 +58,8 @@ const (
 	// PreflightChecksSkipAllAnnotationValue is the value used in the cluster's annotations to indicate
 	// that all checks are skipped.
 	PreflightChecksSkipAllAnnotationValue = "all"
+
+	// SkipCiliumKubeProxyReplacementValidation is the key of the annotation on the Cluster
+	// used to skip Cilium kube-proxy replacement validation.
+	SkipCiliumKubeProxyReplacementValidation = APIGroup + "/skip-cilium-kube-proxy-replacement-validation"
 )
