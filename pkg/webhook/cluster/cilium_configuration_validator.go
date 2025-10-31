@@ -98,7 +98,11 @@ func (a *advancedCiliumConfigurationValidator) validate(
 	}
 
 	// Validate that kubeProxyReplacement is enabled
-	if err := validateCiliumKubeProxyReplacement(ciliumValues, cluster.Namespace, clusterConfig.Addons.CNI.Values.SourceRef.Name); err != nil {
+	if err := validateCiliumKubeProxyReplacement(
+		ciliumValues,
+		cluster.Namespace,
+		clusterConfig.Addons.CNI.Values.SourceRef.Name,
+	); err != nil {
 		return admission.Denied(err.Error())
 	}
 
