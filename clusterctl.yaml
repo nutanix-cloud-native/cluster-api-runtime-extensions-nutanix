@@ -4,3 +4,11 @@ providers:
   - name: "aws"
     url: "https://github.com/nutanix-cloud-native/cluster-api-provider-aws/releases/${CAPA_VERSION}/infrastructure-components.yaml"
     type: "InfrastructureProvider"
+  - name: "nutanix"
+    url: "http://uranus.corp.nutanix.com/~abhay.aggrawal/infrastructure-components.yaml"
+    type: "InfrastructureProvider"
+
+images:
+  infrastructure-nutanix/capx-controller-manager:
+    repository: harbor.eng.nutanix.com/abhay-dev/cluster-api-provider-nutanix
+    tag: 1.8.0-beta1
