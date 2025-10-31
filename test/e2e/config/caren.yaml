@@ -72,6 +72,23 @@ providers:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
 
+- name: eks
+  type: InfrastructureProvider
+  versions:
+  - name: "${CAPA_VERSION}"
+    value: "https://github.com/nutanix-cloud-native/cluster-api-provider-aws/releases/download/${CAPA_VERSION}/infrastructure-components.yaml"
+    type: "url"
+    contract: v1beta1
+    files:
+    - sourcePath: "../data/shared/v1beta1-capa/metadata.yaml"
+    - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/eks-cluster-class.yaml"
+      targetName: clusterclass-eks-quick-start.yaml
+    - sourcePath: "../../../examples/capi-quick-start/eks-cluster-cilium-helm-addon.yaml"
+      targetName: cluster-template-topology-cilium-helm-addon.yaml
+    replacements:
+    - old: --metrics-addr=127.0.0.1:8080
+      new: --metrics-addr=:8080
+
 - name: docker
   type: InfrastructureProvider
   versions:
