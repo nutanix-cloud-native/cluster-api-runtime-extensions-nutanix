@@ -56,6 +56,11 @@ func (a *advancedCiliumConfigurationValidator) validate(
 		return admission.Allowed("")
 	}
 
+	// Skip validation if the skip annotation is present
+	if hasSkipAnnotation(cluster) {
+		return admission.Allowed("")
+	}
+
 	clusterConfig, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
 		return admission.Denied(
@@ -98,6 +103,14 @@ func (a *advancedCiliumConfigurationValidator) validate(
 	}
 
 	return admission.Allowed("")
+}
+
+func hasSkipAnnotation(cluster *clusterv1.Cluster) bool {
+	if cluster.Annotations == nil {
+		return false
+	}
+	val, ok := cluster.Annotations[v1alpha1.SkipCiliumKubeProxyReplacementValidation]
+	return ok && val == "true"
 }
 
 type ciliumValues struct {

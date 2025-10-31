@@ -76,6 +76,131 @@ var _ = Describe("AdvancedCiliumConfigurationValidator", func() {
 		})
 	})
 
+	Context("when skip annotation is present", func() {
+		It("should skip validation when annotation is true", func() {
+			cni := &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCilium,
+				AddonConfig: v1alpha1.AddonConfig{
+					Values: &v1alpha1.AddonValues{
+						SourceRef: &v1alpha1.ValuesReference{
+							Kind: "ConfigMap",
+							Name: "cilium-values",
+						},
+					},
+				},
+			}
+			cluster := createTestCluster("test-cluster", "test-namespace", v1alpha1.KubeProxyModeDisabled, cni)
+
+			// Add skip annotation
+			cluster.Annotations = map[string]string{
+				v1alpha1.SkipCiliumKubeProxyReplacementValidation: "true",
+			}
+
+			req := createAdmissionRequest(cluster)
+
+			// Create ConfigMap with kubeProxyReplacement set to false - should still allow due to annotation
+			configMap := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cilium-values",
+					Namespace: "test-namespace",
+				},
+				Data: map[string]string{
+					"values.yaml": `
+ipam:
+  mode: kubernetes
+kubeProxyReplacement: false
+`,
+				},
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(configMap).Build()
+			validator = NewAdvancedCiliumConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+		})
+
+		It("should not skip validation when annotation is false", func() {
+			cni := &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCilium,
+				AddonConfig: v1alpha1.AddonConfig{
+					Values: &v1alpha1.AddonValues{
+						SourceRef: &v1alpha1.ValuesReference{
+							Kind: "ConfigMap",
+							Name: "cilium-values",
+						},
+					},
+				},
+			}
+			cluster := createTestCluster("test-cluster", "test-namespace", v1alpha1.KubeProxyModeDisabled, cni)
+
+			// Add skip annotation with false value
+			cluster.Annotations = map[string]string{
+				v1alpha1.SkipCiliumKubeProxyReplacementValidation: "false",
+			}
+
+			req := createAdmissionRequest(cluster)
+
+			// Create ConfigMap with kubeProxyReplacement set to false - should deny
+			configMap := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cilium-values",
+					Namespace: "test-namespace",
+				},
+				Data: map[string]string{
+					"values.yaml": `
+ipam:
+  mode: kubernetes
+kubeProxyReplacement: false
+`,
+				},
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(configMap).Build()
+			validator = NewAdvancedCiliumConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+		})
+
+		It("should not skip validation when annotation is missing", func() {
+			cni := &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCilium,
+				AddonConfig: v1alpha1.AddonConfig{
+					Values: &v1alpha1.AddonValues{
+						SourceRef: &v1alpha1.ValuesReference{
+							Kind: "ConfigMap",
+							Name: "cilium-values",
+						},
+					},
+				},
+			}
+			cluster := createTestCluster("test-cluster", "test-namespace", v1alpha1.KubeProxyModeDisabled, cni)
+			req := createAdmissionRequest(cluster)
+
+			// Create ConfigMap with kubeProxyReplacement set to false - should deny
+			configMap := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cilium-values",
+					Namespace: "test-namespace",
+				},
+				Data: map[string]string{
+					"values.yaml": `
+ipam:
+  mode: kubernetes
+kubeProxyReplacement: false
+`,
+				},
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(configMap).Build()
+			validator = NewAdvancedCiliumConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+		})
+	})
+
 	Context("when kube-proxy is not disabled", func() {
 		It("should allow the cluster", func() {
 			cluster := createTestCluster("test-cluster", "test-namespace", v1alpha1.KubeProxyModeIPTables, nil)
