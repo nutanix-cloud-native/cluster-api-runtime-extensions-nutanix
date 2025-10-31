@@ -140,8 +140,8 @@ providers:
   versions:
   # Upgrade e2e tests will use this as the "upgrade from" version.
   # This should reference the most recent successful release.
-  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.34}"
-    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.34}/runtime-extensions-components.yaml"
+  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.35}"
+    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.35}/runtime-extensions-components.yaml"
     type: "url"
     contract: v1beta1
     files:
@@ -151,7 +151,7 @@ providers:
       new: "--v=8"
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
-  - name: v0.36.99 # "vNext"; use manifests from local source files
+  - name: v0.37.99 # "vNext"; use manifests from local source files
     value: "file://../../../runtime-extensions-components.yaml"
     type: "url"
     contract: v1beta1
@@ -217,16 +217,16 @@ variables:
   # DOCKER_HUB_PASSWORD: ""
 
 intervals:
-  default/wait-controllers: ["15m", "10s"]
-  default/wait-cluster: ["15m", "10s"]
-  default/wait-control-plane: ["15m", "10s"]
-  default/wait-worker-nodes: ["15m", "10s"]
-  default/wait-delete-cluster: ["15m", "10s"]
-  default/wait-nodes-ready: ["15m", "10s"]
-  default/wait-deployment: ["15m", "10s"]
-  default/wait-daemonset: [ "10m", "10s" ]
-  default/wait-statefulset: [ "15m", "10s" ]
-  default/wait-service: [ "15m", "10s" ]
-  default/wait-clusterresourceset: [ "10m", "10s" ]
-  default/wait-helmrelease: [ "15m", "10s" ]
-  default/wait-resource: [ "10m", "10s" ]
+  default/wait-controllers: ["3m", "10s"]
+  default/wait-cluster: ["10m", "10s"]
+  default/wait-control-plane: ["10m", "10s"]
+  default/wait-worker-nodes: ["10m", "10s"]
+  default/wait-delete-cluster: ["30m", "10s"]
+  default/wait-nodes-ready: ["10m", "10s"]
+  default/wait-deployment: ["10m", "10s"]
+  default/wait-daemonset: [ "5m", "10s" ]
+  default/wait-statefulset: [ "10m", "10s" ]
+  default/wait-service: [ "10m", "10s" ]
+  default/wait-clusterresourceset: [ "5m", "10s" ]
+  default/wait-helmrelease: [ "5m", "10s" ]
+  default/wait-resource: [ "5m", "10s" ]
