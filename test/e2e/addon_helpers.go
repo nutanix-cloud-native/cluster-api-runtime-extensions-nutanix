@@ -141,15 +141,4 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 			HelmReleaseIntervals: input.HelmReleaseIntervals,
 		},
 	)
-
-	WaitForKonnectorAgentToBeReadyInWorkloadCluster(
-		ctx,
-		WaitForKonnectorAgentToBeReadyInWorkloadClusterInput{
-			KonnectorAgent:       input.AddonsConfig.NutanixKonnectorAgent,
-			WorkloadCluster:      input.WorkloadCluster,
-			ClusterProxy:         input.ClusterProxy,
-			DeploymentIntervals:  input.DeploymentIntervals,
-			HelmReleaseIntervals: input.HelmReleaseIntervals,
-		},
-	)
 }
