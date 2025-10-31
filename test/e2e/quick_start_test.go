@@ -31,12 +31,11 @@ import (
 var _ = Describe("Quick start", func() {
 	for _, provider := range []string{"Docker", "AWS", "Nutanix"} {
 		// Add any provider specific decorators here.
-		// Docker and Nutanix require Serial decorator to ensure the machine running the e2e tests
+		// Currently, only Docker requires Serial decorator to ensure the machine running the Docker e2e tests
 		// doesn't have resources exhausted and lead to flaky tests.
-		// This prevents parallel execution which can cause IP address pool exhaustion,
-		// VM capacity limits, and Prism Central API rate limiting.
+		// Other provider tests will run in parallel.
 		var providerSpecificDecorators []interface{}
-		if provider == "Docker" || provider == "Nutanix" {
+		if provider == "Docker" {
 			providerSpecificDecorators = append(providerSpecificDecorators, Serial)
 		}
 
