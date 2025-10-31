@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.37.0 (2025-10-31)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: add Multus CNI integration with socket-based readiness by @legacyrj in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1367
+
+## New Contributors
+* @legacyrj made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1367
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.36.0...v0.37.0
+
 ## 0.36.0 (2025-10-28)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
