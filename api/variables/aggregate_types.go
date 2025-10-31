@@ -68,6 +68,12 @@ type Addons struct {
 	COSI *COSI `json:"cosi,omitempty"`
 
 	Ingress *Ingress `json:"ingress,omitempty"`
+
+	NutanixKonnectorAgent *NutanixKonnectorAgent `json:"konnectorAgent,omitempty"`
+}
+
+type NutanixKonnectorAgent struct {
+	carenv1.NutanixKonnectorAgent `json:",inline"`
 }
 
 type CSI struct {

@@ -26,6 +26,7 @@ import (
 	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/snapshotcontroller"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ingress/awsloadbalancercontroller"
+	konnectoragent "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/konnectoragent"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/nfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry/cncfdistribution"
@@ -51,6 +52,7 @@ type Handlers struct {
 	snapshotControllerConfig        *snapshotcontroller.Config
 	cosiControllerConfig            *cosi.ControllerConfig
 	awsLoadBalancerControllerConfig *awsloadbalancercontroller.ControllerConfig
+	konnectorAgentConfig            *konnectoragent.Config
 	distributionConfig              *cncfdistribution.Config
 }
 
@@ -75,6 +77,7 @@ func New(
 		localPathCSIConfig:              localpath.NewConfig(globalOptions),
 		snapshotControllerConfig:        snapshotcontroller.NewConfig(globalOptions),
 		cosiControllerConfig:            cosi.NewControllerConfig(globalOptions),
+		konnectorAgentConfig:            konnectoragent.NewConfig(globalOptions),
 		distributionConfig:              &cncfdistribution.Config{GlobalOptions: globalOptions},
 	}
 }
@@ -134,6 +137,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		csi.New(mgr.GetClient(), csiHandlers),
 		snapshotcontroller.New(mgr.GetClient(), h.snapshotControllerConfig, helmChartInfoGetter),
 		cosi.New(mgr.GetClient(), h.cosiControllerConfig, helmChartInfoGetter),
+		konnectoragent.New(mgr.GetClient(), h.konnectorAgentConfig, helmChartInfoGetter),
 		awsloadbalancercontroller.New(mgr.GetClient(), h.awsLoadBalancerControllerConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
 		registry.New(mgr.GetClient(), registryHandlers),
@@ -238,5 +242,6 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.nutanixCCMConfig.AddFlags("ccm.nutanix", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
 	h.cosiControllerConfig.AddFlags("cosi.controller", flagSet)
+	h.konnectorAgentConfig.AddFlags("konnector-agent", flagSet)
 	h.distributionConfig.AddFlags("registry.cncf-distribution", flagSet)
 }

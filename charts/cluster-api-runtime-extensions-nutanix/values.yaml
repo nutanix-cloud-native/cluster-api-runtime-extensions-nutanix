@@ -107,6 +107,11 @@ hooks:
       defaultValueTemplateConfigMap:
         create: true
         name: default-metallb-helm-values-template
+  konnectorAgent:
+    helmAddonStrategy:
+      defaultValueTemplateConfigMap:
+        create: true
+        name: default-konnector-agent-helm-values-template
   cosi:
     controller:
       helmAddonStrategy:
