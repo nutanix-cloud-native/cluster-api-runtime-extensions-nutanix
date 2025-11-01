@@ -265,6 +265,44 @@ func TestDefaultingShouldBeSkippedForAManagementCluster(t *testing.T) {
 	g.Expect(clusterConfig.Addons.Registry).To(BeNil())
 }
 
+func TestDefaultingShouldBeSkippedWhenManagementClusterHasNoTopology(t *testing.T) {
+	g := NewWithT(t)
+
+	// Create a non-ClusterClass management cluster.
+	managementCluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-mgmt-cluster-",
+			Namespace:    metav1.NamespaceDefault,
+		},
+		Spec: clusterv1.ClusterSpec{
+			// No Topology field - simulates a non-ClusterClass management cluster
+		},
+	}
+	g.Expect(env.Client.Create(ctx, managementCluster)).To(Succeed())
+	t.Cleanup(func() {
+		g.Expect(env.Client.Delete(ctx, managementCluster)).To(Succeed())
+	})
+
+	// Create a workload cluster with topology.
+	workloadCluster := createTestCluster(
+		t,
+		nil,
+		&carenv1.DockerClusterConfigSpec{
+			Addons: &carenv1.DockerAddons{
+				GenericAddons: carenv1.GenericAddons{
+					CNI: &carenv1.CNI{},
+				},
+			},
+		},
+	)
+
+	// Validate that the registry addon is not automatically enabled because
+	// the management cluster has no topology (non-ClusterClass).
+	clusterConfig, err := variables.UnmarshalClusterConfigVariable(workloadCluster.Spec.Topology.Variables)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(clusterConfig.Addons.Registry).To(BeNil())
+}
+
 func createTestManagementCluster(
 	t *testing.T,
 	clusterConfigSpec *carenv1.DockerClusterConfigSpec,
