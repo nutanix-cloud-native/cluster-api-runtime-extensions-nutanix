@@ -32,6 +32,8 @@ const (
 	ServiceLoadBalancerVariableName = "serviceLoadBalancer"
 	// RegistryAddonVariableName is the OCI registry config patch variable name.
 	RegistryAddonVariableName = "registry"
+	// KonnectorAgentVariableName is the Nutanix konnector-agent addon config patch variable name.
+	KonnectorAgentVariableName = "konnectorAgent"
 
 	// GlobalMirrorVariableName is the global image registry mirror patch variable name.
 	GlobalMirrorVariableName = "globalImageRegistryMirror"

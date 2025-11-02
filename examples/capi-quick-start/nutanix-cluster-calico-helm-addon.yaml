@@ -23,6 +23,16 @@ kind: Secret
 metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
+  name: ${CLUSTER_NAME}-pc-creds-for-konnector-agent
+stringData:
+  password: ${NUTANIX_PASSWORD}
+  username: ${NUTANIX_USER}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
   name: ${CLUSTER_NAME}-pc-creds
 stringData:
   credentials: |
@@ -88,6 +98,10 @@ spec:
                 strategy: HelmAddon
             snapshotController:
               strategy: HelmAddon
+          konnectorAgent:
+            credentials:
+              secretRef:
+                name: ${CLUSTER_NAME}-pc-creds-for-konnector-agent
           nfd: {}
           serviceLoadBalancer:
             configuration:
