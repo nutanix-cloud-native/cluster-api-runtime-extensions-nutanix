@@ -90,6 +90,9 @@ type NutanixAddons struct {
 
 	// +kubebuilder:validation:Optional
 	COSI *NutanixCOSI `json:"cosi,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	KonnectorAgent *NutanixKonnectorAgent `json:"konnectorAgent,omitempty"`
 }
 
 type GenericAddons struct {
@@ -370,4 +373,16 @@ type Ingress struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum="aws-lb-controller"
 	Provider string `json:"provider"`
+}
+
+type NutanixKonnectorAgent struct {
+	// A reference to the Secret for credential information for the target Prism Central instance
+	// +kubebuilder:validation:Optional
+	Credentials *NutanixKonnectorAgentCredentials `json:"credentials,omitempty"`
+}
+
+type NutanixKonnectorAgentCredentials struct {
+	// A reference to the Secret containing the credentials used by the Konnector agent.
+	// +kubebuilder:validation:Required
+	SecretRef LocalObjectReference `json:"secretRef"`
 }

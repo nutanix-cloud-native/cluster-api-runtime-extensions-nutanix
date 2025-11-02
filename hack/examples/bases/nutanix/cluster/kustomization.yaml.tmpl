@@ -7,6 +7,7 @@ kind: Kustomization
 resources:
 - ../../../additional-resources/dockerhub-secret.yaml
 - ../../../additional-resources/nutanix/csi-secret.yaml
+- ../../../additional-resources/nutanix/konnector-agent-secret.yaml
 - https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/${CAPX_VERSION}/cluster-template-topology.yaml
 
 sortOptions:
@@ -33,6 +34,9 @@ patches:
 - target:
     kind: Cluster
   path: ../../../patches/nutanix/cosi.yaml
+- target:
+    kind: Cluster
+  path: ../../../patches/nutanix/konnector-agent.yaml
 - target:
     kind: Cluster
   path: ../../../patches/nutanix/ccm.yaml

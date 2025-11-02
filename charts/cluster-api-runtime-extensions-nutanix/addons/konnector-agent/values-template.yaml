@@ -1,0 +1,12 @@
+agent:
+  name: {{ .AgentName }}
+  image:
+    repository: quay.io/karbon
+    name: k8s-agent
+pc:
+  port: {{ .PrismCentralPort }}
+  insecure: {{ .PrismCentralInsecure }} #set this to true if PC does not have https enabled
+  endpoint: {{ .PrismCentralHost }} # eg: ip or fqdn
+k8sClusterName: {{ .ClusterName }}
+k8sDistribution: NKP
+createSecret: false

@@ -369,6 +369,33 @@ prismEndPoint: endpoint
 		return tempFile.Name(), nil
 	case "cosi-controller":
 		return filepath.Join(carenChartDirectory, "addons", "cosi", "controller", defaultHelmAddonFilename), nil
+	case "konnector-agent":
+		f := filepath.Join(carenChartDirectory, "addons", "konnector-agent", defaultHelmAddonFilename)
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+
+		templateInput := struct {
+			AgentName            string
+			PrismCentralHost     string
+			PrismCentralPort     uint16
+			PrismCentralInsecure bool
+			ClusterName          string
+		}{
+			AgentName:            "konnector-agent",
+			PrismCentralHost:     "prism-central.example.com",
+			PrismCentralPort:     9440,
+			PrismCentralInsecure: true,
+			ClusterName:          "test-cluster",
+		}
+
+		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
+		if err != nil {
+			return "", fmt.Errorf("failed to execute helm values template %w", err)
+		}
+
+		return tempFile.Name(), nil
 	case "metallb":
 		return filepath.Join(
 			carenChartDirectory,

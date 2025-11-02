@@ -235,6 +235,28 @@ spec:
                         - defaultStorage
                         - providers
                       type: object
+                    konnectorAgent:
+                      properties:
+                        credentials:
+                          description: A reference to the Secret for credential information for the target Prism Central instance
+                          properties:
+                            secretRef:
+                              description: A reference to the Secret containing the credentials used by the Konnector agent.
+                              properties:
+                                name:
+                                  description: |-
+                                    Name of the referent.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  maxLength: 253
+                                  minLength: 1
+                                  type: string
+                              required:
+                                - name
+                              type: object
+                          required:
+                            - secretRef
+                          type: object
+                      type: object
                     nfd:
                       description: NFD tells us to enable or disable the node feature discovery addon.
                       properties:
