@@ -116,9 +116,10 @@ var _ = Describe("Self-hosted", Serial, func() {
 													WaitForAddonsToBeReadyInWorkloadCluster(
 														ctx,
 														WaitForAddonsToBeReadyInWorkloadClusterInput{
-															AddonsConfig:    addonsConfig,
-															ClusterProxy:    proxy,
-															WorkloadCluster: workloadCluster,
+															AddonsConfig:           addonsConfig,
+															ClusterProxy:           proxy,
+															WorkloadCluster:        workloadCluster,
+															InfrastructureProvider: lowercaseProvider,
 															DeploymentIntervals: e2eConfig.GetIntervals(
 																flavor,
 																"wait-deployment",
