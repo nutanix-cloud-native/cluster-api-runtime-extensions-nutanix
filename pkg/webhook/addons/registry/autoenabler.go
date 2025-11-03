@@ -95,6 +95,10 @@ func (a *workloadClusterAutoEnabler) defaulter(
 	if managementCluster == nil {
 		return admission.Allowed("")
 	}
+	// Check if the management cluster is a ClusterClass based cluster, just return if it is not.
+	if managementCluster.Spec.Topology == nil {
+		return admission.Allowed("")
+	}
 	// Check if the addon is enabled in the management cluster, if not just return.
 	managementClusterRegistry, err := variables.RegistryAddon(managementCluster)
 	if err != nil {
