@@ -27,6 +27,9 @@ webhooks:
         resources:
           - clusters
     sideEffects: None
+    matchConditions:
+      - name: has-topology
+        expression: has(object.spec.topology)
   - admissionReviewVersions:
       - v1
     clientConfig:
@@ -47,6 +50,9 @@ webhooks:
         resources:
           - clusters
     sideEffects: None
+    matchConditions:
+      - name: has-topology
+        expression: has(object.spec.topology)
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -75,6 +81,9 @@ webhooks:
         resources:
           - clusters
     sideEffects: None
+    matchConditions:
+      - name: has-topology
+        expression: has(object.spec.topology)
   - admissionReviewVersions:
       - v1
     clientConfig:
@@ -95,3 +104,6 @@ webhooks:
           - clusters
     sideEffects: None
     timeoutSeconds: 30
+    matchConditions:
+      - name: has-topology
+        expression: has(object.spec.topology)
