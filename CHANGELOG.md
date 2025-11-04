@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.37.0 (2025-11-03)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: add Multus CNI integration with socket-based readiness by @legacyrj in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1367
+* feat: Add support for deploying K8s Agent as Helm Addon during cluster deployment by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1345
+* feat: Build with go 1.25.3 to fix CVEs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1369
+* feat: ensure Cilium kube-proxy is enabled when kube-proxy is disabled by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1371
+### Fixes 🔧
+* fix: webhook panic when management cluster has nil topology by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1372
+
+## New Contributors
+* @legacyrj made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1367
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.36.0...v0.37.0
+
 ## 0.36.0 (2025-10-28)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
