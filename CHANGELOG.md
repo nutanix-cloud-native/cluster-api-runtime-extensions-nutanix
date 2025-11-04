@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.33.4 (2025-11-04)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.33.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix(release/v0.33.x): webhook panic when management cluster has nil topology by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1381
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.33.3...v0.33.4
+
 ## 0.33.3 (2025-10-22)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.33.x -->
