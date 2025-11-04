@@ -76,7 +76,10 @@ jobs:
           - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5"}
           - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.1"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
-          # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
+          # AWS provider tests include both regular AWS clusters and EKS clusters (using eks-quick-start ClusterClass).
+          # EKS tests will automatically run Multus verification when Cilium or Calico CNI is configured.
+          # - {"provider": "AWS", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.9"}
+          # - {"provider": "AWS", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5"}
       fail-fast: false
     name: e2e-quick-start (${{ matrix.config.provider }} provider, Kubernetes ${{ matrix.config.kubernetesMinor }})
     uses: ./.github/workflows/e2e.yml

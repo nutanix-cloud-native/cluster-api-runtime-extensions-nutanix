@@ -69,6 +69,13 @@ var _ = Describe("Quick start", func() {
 										strategy),
 								)
 							}
+							// Add EKS flavor for AWS provider to test Multus with EKS ClusterClass
+							if provider == "AWS" && addonStrategy == "HelmAddon" && cniProvider == "Cilium" {
+								flavors = append(
+									flavors,
+									fmt.Sprintf("topology-eks-%s-%s", strings.ToLower(cniProvider), strategy),
+								)
+							}
 							for _, flavor := range flavors {
 								Context(
 									flavor,

@@ -69,6 +69,12 @@ func WaitForMultusToBeReadyInWorkloadCluster(
 		return
 	}
 
+	// Verify cluster uses eks-quick-start ClusterClass for EKS clusters
+	if input.WorkloadCluster.Labels[clusterv1.ProviderNameLabel] == "eks" {
+		By("Verifying cluster uses eks-quick-start ClusterClass")
+		verifyEKSClusterClass(ctx, input.WorkloadCluster, input.ClusterProxy.GetClient())
+	}
+
 	By("Waiting for Multus HelmChartProxy to be ready")
 	WaitForHelmReleaseProxyReadyForCluster(
 		ctx,
@@ -382,4 +388,29 @@ func createMultusTestPod(name, namespace, netAttachDefName string) *corev1.Pod {
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}
+}
+
+// verifyEKSClusterClass verifies that the cluster uses the eks-quick-start ClusterClass
+// and has the correct provider label. This ensures Multus is being tested with the
+// correct EKS ClusterClass configuration.
+func verifyEKSClusterClass(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	client client.Client,
+) {
+	Expect(cluster.Spec.Topology).ToNot(BeNil())
+	Expect(cluster.Spec.Topology.Class).To(Equal("eks-quick-start"))
+	Expect(cluster.Labels[clusterv1.ProviderNameLabel]).To(Equal("eks"))
+
+	// Verify ClusterClass exists
+	clusterClass := &clusterv1.ClusterClass{}
+	err := client.Get(
+		ctx,
+		types.NamespacedName{
+			Name: "eks-quick-start",
+		},
+		clusterClass,
+	)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(clusterClass.Labels[clusterv1.ProviderNameLabel]).To(Equal("eks"))
 }
