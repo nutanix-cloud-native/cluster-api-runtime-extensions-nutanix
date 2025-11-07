@@ -93,7 +93,7 @@ jobs:
 
       - if: success() || failure() # always run even if the previous step fails
         name: Publish e2e test report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         with:
           report_paths: 'junit-e2e.xml'
           check_name: 'e2e test report'
