@@ -52,7 +52,11 @@ func TestIsLegacyHelmRelease_WithHelmReleaseSecretYAML(t *testing.T) {
 	// The chart name should be "nutanix-k8s-agent" (not the release name "k8sagent")
 	result := handler.isLegacyHelmRelease(secret)
 
-	assert.True(t, result, "isLegacyHelmRelease should return true for helm release with chart name 'nutanix-k8s-agent'")
+	assert.True(
+		t,
+		result,
+		"isLegacyHelmRelease should return true for helm release with chart name 'nutanix-k8s-agent'",
+	)
 	t.Logf("Successfully identified legacy helm release. Secret name: %s, Namespace: %s", secret.Name, secret.Namespace)
 }
 
