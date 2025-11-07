@@ -5,8 +5,12 @@ package konnectoragent
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"text/template"
 	"time"
@@ -17,9 +21,12 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	prismcredentials "github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -27,6 +34,7 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -38,6 +46,10 @@ const (
 	defaultHelmReleaseNamespace  = "ntnx-system"
 	defaultK8sAgentName          = "konnector-agent"
 	defaultCredentialsSecretName = defaultK8sAgentName
+
+	// legacyHelmChartName is the chart name of the old helm release
+	// that needs to be deleted during upgrades.
+	legacyHelmChartName = "nutanix-k8s-agent1"
 
 	cleanupStatusCompleted  = "completed"
 	cleanupStatusInProgress = "in-progress"
@@ -122,6 +134,40 @@ func (n *DefaultKonnectorAgent) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
+	clusterKey := ctrlclient.ObjectKeyFromObject(&req.Cluster)
+	log := ctrl.LoggerFrom(ctx).WithValues("cluster", clusterKey)
+
+	// Check if konnectorAgent is enabled before performing any operations
+	varMap := variables.ClusterVariablesToVariablesMap(req.Cluster.Spec.Topology.Variables)
+	_, err := variables.Get[apivariables.NutanixKonnectorAgent](
+		varMap,
+		n.variableName,
+		n.variablePath...)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.Info("Konnector Agent addon not enabled, skipping all upgrade operations")
+			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+			return
+		}
+		log.Error(err, "Failed to read Konnector Agent variable")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetMessage(fmt.Sprintf("failed to read Konnector Agent variable: %v", err))
+		return
+	}
+
+	// Delete legacy helm release "nutanix-k8s-agent" if it exists
+	_ = n.deleteLegacyHelmRelease(ctx, &req.Cluster, log)
+
+	// Check if konnectorAgent is enabled and ensure secret exists
+	// During upgrade, if konnectorAgent is enabled but secret doesn't exist,
+	// create it from PC global secrets
+	if err := n.ensureKonnectorAgentSecretFromPCGlobalSecret(ctx, &req.Cluster, log); err != nil {
+		log.Error(err, "Failed to ensure konnectorAgent secret from PC global secret")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetMessage(fmt.Sprintf("failed to ensure konnectorAgent secret from PC global secret: %v", err))
+		return
+	}
+
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	n.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -545,4 +591,263 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	// HCP exists and is not being deleted
 	log.Info("HelmChartProxy exists, cleanup not started", "name", hcp.Name)
 	return cleanupStatusNotStarted, "HelmChartProxy exists and needs to be deleted", nil
+}
+
+// deleteLegacyHelmRelease deletes the legacy helm release with chart name "nutanix-k8s-agent"
+// from the remote cluster. This is called during cluster upgrades to clean up old releases
+// before applying the new HelmChartProxy.
+func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+	remoteClient, err := remote.NewClusterClient(ctx, "", n.client, clusterKey)
+	if err != nil {
+		return fmt.Errorf("error creating client for remote cluster: %w", err)
+	}
+
+	// List all helm release secrets in the namespace
+	// Helm v3 stores releases as secrets with label "owner=helm"
+	secretList := &corev1.SecretList{}
+	err = remoteClient.List(
+		ctx,
+		secretList,
+		ctrlclient.InNamespace(defaultHelmReleaseNamespace),
+		ctrlclient.MatchingLabels{"owner": "helm"},
+	)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("No helm release secrets found in namespace", "namespace", defaultHelmReleaseNamespace)
+			return nil
+		}
+		return fmt.Errorf("failed to list helm release secrets: %w", err)
+	}
+
+	// Search for secrets containing the legacy chart name
+	var secretsToDelete []*corev1.Secret
+	for i := range secretList.Items {
+		secret := &secretList.Items[i]
+		// Check if this secret contains a release with chart name "nutanix-k8s-agent"
+		if n.isLegacyHelmRelease(secret) {
+			secretsToDelete = append(secretsToDelete, secret)
+		}
+	}
+
+	if len(secretsToDelete) == 0 {
+		log.Info(
+			"Legacy helm release not found",
+			"chartName",
+			legacyHelmChartName,
+			"namespace",
+			defaultHelmReleaseNamespace,
+		)
+		return nil
+	}
+
+	// Delete all matching helm release secrets
+	for _, secret := range secretsToDelete {
+		log.Info(
+			"Deleting legacy helm release secret",
+			"name",
+			secret.Name,
+			"namespace",
+			secret.Namespace,
+			"chartName",
+			legacyHelmChartName,
+		)
+		if err := remoteClient.Delete(ctx, secret); err != nil {
+			if apierrors.IsNotFound(err) {
+				log.Info("Helm release secret already deleted", "name", secret.Name)
+				continue
+			}
+			return fmt.Errorf("failed to delete helm release secret %q: %w", secret.Name, err)
+		}
+		log.Info("Successfully deleted legacy helm release secret", "name", secret.Name, "namespace", secret.Namespace)
+	}
+
+	return nil
+}
+
+// isLegacyHelmRelease checks if a helm release secret contains the legacy chart name "nutanix-k8s-agent"
+// by examining the release data. We use chart name (not release name) since release names can vary.
+func (n *DefaultKonnectorAgent) isLegacyHelmRelease(secret *corev1.Secret) bool {
+	// Get the release data from the secret
+	releaseData, ok := secret.Data["release"]
+	if !ok {
+		return false
+	}
+
+	// Decode the base64-encoded release data
+	decoded, err := base64.StdEncoding.DecodeString(string(releaseData))
+	if err != nil {
+		return false
+	}
+
+	// Try to decompress with gzip (Helm v3 stores release data as gzip-compressed protobuf)
+	var dataToSearch []byte
+	gzipReader, err := gzip.NewReader(bytes.NewReader(decoded))
+	if err == nil {
+		// Successfully opened as gzip, read the decompressed data
+		decompressed, err := io.ReadAll(gzipReader)
+		_ = gzipReader.Close()
+		if err == nil {
+			dataToSearch = decompressed
+		} else {
+			// If decompression fails, fall back to searching the raw data
+			dataToSearch = decoded
+		}
+	} else {
+		// Not gzip-compressed, use the decoded data directly
+		dataToSearch = decoded
+	}
+
+	// Search for the chart name in the data
+	if strings.Contains(string(dataToSearch), legacyHelmChartName) {
+		return true
+	}
+
+	// Try to parse as JSON (some helm versions might store it differently)
+	var releaseInfo map[string]interface{}
+	if err := json.Unmarshal(dataToSearch, &releaseInfo); err == nil {
+		// Check chart.metadata.name which contains the chart name
+		if chart, ok := releaseInfo["chart"].(map[string]interface{}); ok {
+			if metadata, ok := chart["metadata"].(map[string]interface{}); ok {
+				if name, ok := metadata["name"].(string); ok && name == legacyHelmChartName {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+// ensureKonnectorAgentSecretFromPCGlobalSecret ensures that the konnectorAgent secret exists
+// by creating it from PC global secrets if konnectorAgent is enabled but the secret doesn't exist.
+// This is called during cluster upgrades to handle cases where the secret might be missing.
+// Note: This function assumes konnectorAgent is already enabled (checked by the caller).
+func (n *DefaultKonnectorAgent) ensureKonnectorAgentSecretFromPCGlobalSecret(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
+		varMap,
+		n.variableName,
+		n.variablePath...)
+	if err != nil {
+		// This should not happen if called from BeforeClusterUpgrade, but handle it gracefully
+		return fmt.Errorf("failed to read Konnector Agent variable: %w", err)
+	}
+
+	// If credentials are already specified, check if the secret exists
+	if k8sAgentVar.Credentials != nil && k8sAgentVar.Credentials.SecretRef.Name != "" {
+		secretKey := ctrlclient.ObjectKey{
+			Name:      k8sAgentVar.Credentials.SecretRef.Name,
+			Namespace: cluster.Namespace,
+		}
+		secret := &corev1.Secret{}
+		err := n.client.Get(ctx, secretKey, secret)
+		if err == nil {
+			// Secret exists, nothing to do
+			log.Info("Konnector Agent secret already exists", "secret", secretKey)
+			return nil
+		}
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to check if konnectorAgent secret exists: %w", err)
+		}
+		// Secret doesn't exist, we'll create it from PC global secret below
+		log.Info("Konnector Agent secret not found, will create from PC global secret", "secret", secretKey)
+	}
+
+	// Get PC global secret name from cluster configuration
+	// Path: clusterConfig.nutanix.prismCentralEndpoint.credentials.secretRef.name
+	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+	)
+	if err != nil {
+		log.Info("Failed to read clusterConfig variable, cannot get PC global secret name", "error", err)
+		return nil // Not an error, just skip secret creation
+	}
+
+	if clusterConfigVar.Nutanix == nil ||
+		clusterConfigVar.Nutanix.PrismCentralEndpoint.Credentials.SecretRef.Name == "" {
+		log.Info(
+			"PC credentials secret reference not found in cluster configuration, cannot create konnectorAgent secret",
+		)
+		return nil // Not an error, just skip secret creation
+	}
+
+	pcGlobalSecretName := clusterConfigVar.Nutanix.PrismCentralEndpoint.Credentials.SecretRef.Name
+	pcGlobalSecretKey := ctrlclient.ObjectKey{
+		Name:      pcGlobalSecretName,
+		Namespace: cluster.Namespace,
+	}
+	pcGlobalSecret := &corev1.Secret{}
+	err = n.client.Get(ctx, pcGlobalSecretKey, pcGlobalSecret)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("PC global secret not found, cannot create konnectorAgent secret", "secret", pcGlobalSecretKey)
+			return nil // Not an error, just skip secret creation
+		}
+		return fmt.Errorf("failed to get PC global secret: %w", err)
+	}
+
+	// Parse credentials from PC global secret
+	credentialsData, ok := pcGlobalSecret.Data["credentials"]
+	if !ok {
+		log.Info(
+			"PC global secret does not contain 'credentials' key, cannot create konnectorAgent secret",
+			"secret",
+			pcGlobalSecretKey,
+		)
+		return nil // Not an error, just skip secret creation
+	}
+
+	pcCreds, err := prismcredentials.ParseCredentials(credentialsData)
+	if err != nil {
+		return fmt.Errorf("failed to parse PC credentials from global secret: %w", err)
+	}
+
+	// Determine the secret name for konnectorAgent
+	konnectorAgentSecretName := fmt.Sprintf("%s-pc-credentials-for-konnector-agent", cluster.Name)
+	if k8sAgentVar.Credentials != nil && k8sAgentVar.Credentials.SecretRef.Name != "" {
+		konnectorAgentSecretName = k8sAgentVar.Credentials.SecretRef.Name
+	}
+
+	// Create the konnectorAgent secret
+	konnectorAgentSecret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      konnectorAgentSecretName,
+			Namespace: cluster.Namespace,
+		},
+		StringData: map[string]string{
+			"username": pcCreds.Username,
+			"password": pcCreds.Password,
+		},
+	}
+
+	// Set owner reference to the cluster
+	if err := ctrl.SetControllerReference(cluster, konnectorAgentSecret, n.client.Scheme()); err != nil {
+		return fmt.Errorf("failed to set owner reference on konnectorAgent secret: %w", err)
+	}
+
+	// Create or update the secret
+	err = client.ServerSideApply(ctx, n.client, konnectorAgentSecret, client.ForceOwnership)
+	if err != nil {
+		return fmt.Errorf("failed to create konnectorAgent secret from PC global secret: %w", err)
+	}
+
+	log.Info("Successfully created konnectorAgent secret from PC global secret",
+		"secret", ctrlclient.ObjectKeyFromObject(konnectorAgentSecret),
+		"sourceSecret", pcGlobalSecretKey)
+
+	return nil
 }
