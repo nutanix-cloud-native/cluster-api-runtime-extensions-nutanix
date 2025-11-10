@@ -8,7 +8,6 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -17,16 +16,21 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	"helm.sh/helm/v3/pkg/action"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/discovery/cached/memory"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/tools/clientcmd"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	prismcredentials "github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -34,7 +38,6 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -49,7 +52,7 @@ const (
 
 	// legacyHelmChartName is the chart name of the old helm release
 	// that needs to be deleted during upgrades.
-	legacyHelmChartName = "nutanix-k8s-agent1"
+	legacyHelmChartName = "nutanix-k8s-agent"
 
 	cleanupStatusCompleted  = "completed"
 	cleanupStatusInProgress = "in-progress"
@@ -155,17 +158,11 @@ func (n *DefaultKonnectorAgent) BeforeClusterUpgrade(
 		return
 	}
 
-	// Delete legacy helm release "nutanix-k8s-agent" if it exists
-	_ = n.deleteLegacyHelmRelease(ctx, &req.Cluster, log)
-
-	// Check if konnectorAgent is enabled and ensure secret exists
-	// During upgrade, if konnectorAgent is enabled but secret doesn't exist,
-	// create it from PC global secrets
-	if err := n.ensureKonnectorAgentSecretFromPCGlobalSecret(ctx, &req.Cluster, log); err != nil {
-		log.Error(err, "Failed to ensure konnectorAgent secret from PC global secret")
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-		resp.SetMessage(fmt.Sprintf("failed to ensure konnectorAgent secret from PC global secret: %v", err))
-		return
+	// Delete legacy helm release "nutanix-k8s-agent" if it exists.
+	// This is a best-effort cleanup operation - errors are logged but don't block the upgrade.
+	if err := n.deleteLegacyHelmRelease(ctx, &req.Cluster, log); err != nil {
+		log.Error(err, "Failed to delete legacy helm release during upgrade. Continuing with upgrade anyway.",
+			"chartName", legacyHelmChartName)
 	}
 
 	commonResponse := &runtimehooksv1.CommonResponse{}
@@ -593,7 +590,7 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	return cleanupStatusNotStarted, "HelmChartProxy exists and needs to be deleted", nil
 }
 
-// deleteLegacyHelmRelease deletes the legacy helm release with chart name "nutanix-k8s-agent"
+// deleteLegacyHelmRelease uninstalls the legacy helm release with chart name "nutanix-k8s-agent"
 // from the remote cluster. This is called during cluster upgrades to clean up old releases
 // before applying the new HelmChartProxy.
 func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
@@ -605,6 +602,13 @@ func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
 	remoteClient, err := remote.NewClusterClient(ctx, "", n.client, clusterKey)
 	if err != nil {
 		return fmt.Errorf("error creating client for remote cluster: %w", err)
+	}
+
+	// Get REST config for the remote cluster to use with Helm.
+	// RESTConfig returns a configuration instance to be used with a Kubernetes client.
+	restConfig, err := remote.RESTConfig(ctx, "", n.client, clusterKey)
+	if err != nil {
+		return fmt.Errorf("error getting REST config for remote cluster: %w", err)
 	}
 
 	// List all helm release secrets in the namespace
@@ -624,17 +628,19 @@ func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
 		return fmt.Errorf("failed to list helm release secrets: %w", err)
 	}
 
-	// Search for secrets containing the legacy chart name
-	var secretsToDelete []*corev1.Secret
+	// Search for secrets containing the legacy chart name.
+	// Ideally, there should be only one legacy release with chart name "nutanix-k8s-agent",
+	// but we iterate through all to handle edge cases (e.g., failed upgrades, manual installs).
+	var secretsToUninstall []*corev1.Secret
 	for i := range secretList.Items {
 		secret := &secretList.Items[i]
 		// Check if this secret contains a release with chart name "nutanix-k8s-agent"
 		if n.isLegacyHelmRelease(secret) {
-			secretsToDelete = append(secretsToDelete, secret)
+			secretsToUninstall = append(secretsToUninstall, secret)
 		}
 	}
 
-	if len(secretsToDelete) == 0 {
+	if len(secretsToUninstall) == 0 {
 		log.Info(
 			"Legacy helm release not found",
 			"chartName",
@@ -645,28 +651,170 @@ func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
 		return nil
 	}
 
-	// Delete all matching helm release secrets
-	for _, secret := range secretsToDelete {
+	// Uninstall all matching helm releases
+	for _, secret := range secretsToUninstall {
+		releaseName, err := n.extractReleaseNameFromSecret(secret)
+		if err != nil {
+			log.Error(err, "Failed to extract release name from secret. Cannot uninstall Helm release properly. "+
+				"secretName", secret.Name,
+				"namespace", secret.Namespace)
+			continue
+		}
+
 		log.Info(
-			"Deleting legacy helm release secret",
-			"name",
-			secret.Name,
+			"Uninstalling legacy helm release",
+			"releaseName",
+			releaseName,
 			"namespace",
 			secret.Namespace,
 			"chartName",
 			legacyHelmChartName,
 		)
-		if err := remoteClient.Delete(ctx, secret); err != nil {
-			if apierrors.IsNotFound(err) {
-				log.Info("Helm release secret already deleted", "name", secret.Name)
-				continue
-			}
-			return fmt.Errorf("failed to delete helm release secret %q: %w", secret.Name, err)
+
+		// Uninstall the Helm release using Helm action client
+		if err := n.uninstallHelmRelease(restConfig, releaseName, secret.Namespace, log); err != nil {
+			log.Error(err, "Failed to uninstall helm release via Helm client.",
+				"releaseName", releaseName,
+				"namespace", secret.Namespace)
+			// Continue with other releases even if one fails
+			continue
 		}
-		log.Info("Successfully deleted legacy helm release secret", "name", secret.Name, "namespace", secret.Namespace)
+
+		log.Info("Successfully uninstalled legacy helm release",
+			"releaseName", releaseName,
+			"namespace", secret.Namespace)
 	}
 
 	return nil
+}
+
+// extractReleaseNameFromSecret extracts the Helm release name from a Helm release secret name.
+// Helm v3 stores release secrets with the pattern: sh.helm.release.v1.{release-name}.{version}.
+func (n *DefaultKonnectorAgent) extractReleaseNameFromSecret(secret *corev1.Secret) (string, error) {
+	//nolint:gosec // This is not a credential - it's Helm's standard secret name prefix pattern
+	const helmReleaseSecretPrefix = "sh.helm.release.v1."
+	if !strings.HasPrefix(secret.Name, helmReleaseSecretPrefix) {
+		return "", fmt.Errorf("secret %q does not appear to be a Helm release secret", secret.Name)
+	}
+
+	// Remove the prefix
+	nameWithoutPrefix := strings.TrimPrefix(secret.Name, helmReleaseSecretPrefix)
+
+	// Find the last dot to separate release name from version
+	// The version is always numeric, so we can split on the last dot
+	lastDotIndex := strings.LastIndex(nameWithoutPrefix, ".")
+	if lastDotIndex == -1 {
+		return "", fmt.Errorf("invalid Helm release secret name format: %q", secret.Name)
+	}
+
+	releaseName := nameWithoutPrefix[:lastDotIndex]
+	if releaseName == "" {
+		return "", fmt.Errorf("empty release name extracted from secret %q", secret.Name)
+	}
+
+	return releaseName, nil
+}
+
+// uninstallHelmRelease uninstalls a Helm release using Helm's action client.
+func (n *DefaultKonnectorAgent) uninstallHelmRelease(
+	restConfig *rest.Config,
+	releaseName string,
+	namespace string,
+	log logr.Logger,
+) error {
+	// Create a RESTClientGetter for Helm
+	restClientGetter := &restConfigGetter{
+		restConfig: restConfig,
+		namespace:  namespace,
+	}
+
+	// Create a Helm action configuration
+	actionConfig := new(action.Configuration)
+
+	// Initialize the action configuration with the RESTClientGetter
+	if err := actionConfig.Init(
+		restClientGetter,
+		namespace,
+		"secret", // Helm storage driver (secrets)
+		func(format string, v ...interface{}) {
+			log.Info(fmt.Sprintf(format, v...))
+		},
+	); err != nil {
+		return fmt.Errorf("failed to initialize Helm action config: %w", err)
+	}
+
+	// Create an uninstall action
+	uninstallAction := action.NewUninstall(actionConfig)
+	uninstallAction.Timeout = helmUninstallTimeout
+	uninstallAction.DisableHooks = true
+
+	// Execute the uninstall
+	_, err := uninstallAction.Run(releaseName)
+	if err != nil {
+		return fmt.Errorf("failed to uninstall Helm release %q: %w", releaseName, err)
+	}
+
+	return nil
+}
+
+// restConfigGetter implements Helm's RESTClientGetter interface
+// to use a REST config directly instead of kubeconfig files.
+type restConfigGetter struct {
+	restConfig      *rest.Config
+	namespace       string
+	discoveryClient discovery.CachedDiscoveryInterface
+	restMapper      meta.RESTMapper
+}
+
+func (g *restConfigGetter) ToRESTConfig() (*rest.Config, error) {
+	return g.restConfig, nil
+}
+
+func (g *restConfigGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
+	// Create a minimal client config from the REST config
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	overrides := &clientcmd.ConfigOverrides{}
+	overrides.Context.Namespace = g.namespace
+	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, overrides)
+	return clientConfig
+}
+
+func (g *restConfigGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
+	if g.discoveryClient != nil {
+		return g.discoveryClient, nil
+	}
+
+	// Create a discovery client from the REST config
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(g.restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	// Cache the discovery client
+	cachedDiscoveryClient := memory.NewMemCacheClient(discoveryClient)
+	g.discoveryClient = cachedDiscoveryClient
+	return cachedDiscoveryClient, nil
+}
+
+// ToRESTMapper returns a REST mapper that maps GroupVersionKinds to REST resources.
+// This is required by Helm's RESTClientGetter interface and is used by Helm's kube client
+// to resolve resource types (e.g., when deleting resources during uninstall).
+// The mapper is created from the discovery client and cached for reuse.
+func (g *restConfigGetter) ToRESTMapper() (meta.RESTMapper, error) {
+	if g.restMapper != nil {
+		return g.restMapper, nil
+	}
+
+	// Get the discovery client
+	discoveryClient, err := g.ToDiscoveryClient()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a REST mapper from the discovery client
+	mapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
+	g.restMapper = mapper
+	return mapper, nil
 }
 
 // isLegacyHelmRelease checks if a helm release secret contains the legacy chart name "nutanix-k8s-agent"
@@ -702,152 +850,8 @@ func (n *DefaultKonnectorAgent) isLegacyHelmRelease(secret *corev1.Secret) bool 
 		dataToSearch = decoded
 	}
 
-	// Search for the chart name in the data
-	if strings.Contains(string(dataToSearch), legacyHelmChartName) {
-		return true
-	}
-
-	// Try to parse as JSON (some helm versions might store it differently)
-	var releaseInfo map[string]interface{}
-	if err := json.Unmarshal(dataToSearch, &releaseInfo); err == nil {
-		// Check chart.metadata.name which contains the chart name
-		if chart, ok := releaseInfo["chart"].(map[string]interface{}); ok {
-			if metadata, ok := chart["metadata"].(map[string]interface{}); ok {
-				if name, ok := metadata["name"].(string); ok && name == legacyHelmChartName {
-					return true
-				}
-			}
-		}
-	}
-
-	return false
-}
-
-// ensureKonnectorAgentSecretFromPCGlobalSecret ensures that the konnectorAgent secret exists
-// by creating it from PC global secrets if konnectorAgent is enabled but the secret doesn't exist.
-// This is called during cluster upgrades to handle cases where the secret might be missing.
-// Note: This function assumes konnectorAgent is already enabled (checked by the caller).
-func (n *DefaultKonnectorAgent) ensureKonnectorAgentSecretFromPCGlobalSecret(
-	ctx context.Context,
-	cluster *clusterv1.Cluster,
-	log logr.Logger,
-) error {
-	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
-		varMap,
-		n.variableName,
-		n.variablePath...)
-	if err != nil {
-		// This should not happen if called from BeforeClusterUpgrade, but handle it gracefully
-		return fmt.Errorf("failed to read Konnector Agent variable: %w", err)
-	}
-
-	// If credentials are already specified, check if the secret exists
-	if k8sAgentVar.Credentials != nil && k8sAgentVar.Credentials.SecretRef.Name != "" {
-		secretKey := ctrlclient.ObjectKey{
-			Name:      k8sAgentVar.Credentials.SecretRef.Name,
-			Namespace: cluster.Namespace,
-		}
-		secret := &corev1.Secret{}
-		err := n.client.Get(ctx, secretKey, secret)
-		if err == nil {
-			// Secret exists, nothing to do
-			log.Info("Konnector Agent secret already exists", "secret", secretKey)
-			return nil
-		}
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to check if konnectorAgent secret exists: %w", err)
-		}
-		// Secret doesn't exist, we'll create it from PC global secret below
-		log.Info("Konnector Agent secret not found, will create from PC global secret", "secret", secretKey)
-	}
-
-	// Get PC global secret name from cluster configuration
-	// Path: clusterConfig.nutanix.prismCentralEndpoint.credentials.secretRef.name
-	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
-		varMap,
-		v1alpha1.ClusterConfigVariableName,
-	)
-	if err != nil {
-		log.Info("Failed to read clusterConfig variable, cannot get PC global secret name", "error", err)
-		return nil // Not an error, just skip secret creation
-	}
-
-	if clusterConfigVar.Nutanix == nil ||
-		clusterConfigVar.Nutanix.PrismCentralEndpoint.Credentials.SecretRef.Name == "" {
-		log.Info(
-			"PC credentials secret reference not found in cluster configuration, cannot create konnectorAgent secret",
-		)
-		return nil // Not an error, just skip secret creation
-	}
-
-	pcGlobalSecretName := clusterConfigVar.Nutanix.PrismCentralEndpoint.Credentials.SecretRef.Name
-	pcGlobalSecretKey := ctrlclient.ObjectKey{
-		Name:      pcGlobalSecretName,
-		Namespace: cluster.Namespace,
-	}
-	pcGlobalSecret := &corev1.Secret{}
-	err = n.client.Get(ctx, pcGlobalSecretKey, pcGlobalSecret)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Info("PC global secret not found, cannot create konnectorAgent secret", "secret", pcGlobalSecretKey)
-			return nil // Not an error, just skip secret creation
-		}
-		return fmt.Errorf("failed to get PC global secret: %w", err)
-	}
-
-	// Parse credentials from PC global secret
-	credentialsData, ok := pcGlobalSecret.Data["credentials"]
-	if !ok {
-		log.Info(
-			"PC global secret does not contain 'credentials' key, cannot create konnectorAgent secret",
-			"secret",
-			pcGlobalSecretKey,
-		)
-		return nil // Not an error, just skip secret creation
-	}
-
-	pcCreds, err := prismcredentials.ParseCredentials(credentialsData)
-	if err != nil {
-		return fmt.Errorf("failed to parse PC credentials from global secret: %w", err)
-	}
-
-	// Determine the secret name for konnectorAgent
-	konnectorAgentSecretName := fmt.Sprintf("%s-pc-credentials-for-konnector-agent", cluster.Name)
-	if k8sAgentVar.Credentials != nil && k8sAgentVar.Credentials.SecretRef.Name != "" {
-		konnectorAgentSecretName = k8sAgentVar.Credentials.SecretRef.Name
-	}
-
-	// Create the konnectorAgent secret
-	konnectorAgentSecret := &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      konnectorAgentSecretName,
-			Namespace: cluster.Namespace,
-		},
-		StringData: map[string]string{
-			"username": pcCreds.Username,
-			"password": pcCreds.Password,
-		},
-	}
-
-	// Set owner reference to the cluster
-	if err := ctrl.SetControllerReference(cluster, konnectorAgentSecret, n.client.Scheme()); err != nil {
-		return fmt.Errorf("failed to set owner reference on konnectorAgent secret: %w", err)
-	}
-
-	// Create or update the secret
-	err = client.ServerSideApply(ctx, n.client, konnectorAgentSecret, client.ForceOwnership)
-	if err != nil {
-		return fmt.Errorf("failed to create konnectorAgent secret from PC global secret: %w", err)
-	}
-
-	log.Info("Successfully created konnectorAgent secret from PC global secret",
-		"secret", ctrlclient.ObjectKeyFromObject(konnectorAgentSecret),
-		"sourceSecret", pcGlobalSecretKey)
-
-	return nil
+	// Search for the chart name in the decompressed JSON data
+	// Helm v3 stores releases as gzip-compressed JSON, so a simple string search
+	// is sufficient to find the chart name in the JSON structure.
+	return strings.Contains(string(dataToSearch), legacyHelmChartName)
 }
