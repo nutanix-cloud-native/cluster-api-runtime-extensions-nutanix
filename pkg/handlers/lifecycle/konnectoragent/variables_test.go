@@ -15,6 +15,7 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/release"
+	helmtime "helm.sh/helm/v3/pkg/time"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -849,12 +850,15 @@ func TestCheckLegacyHelmReleaseDeletionStatus_MixedStates(t *testing.T) {
 
 // Test timeout calculation
 func TestCheckLegacyHelmReleaseDeletionStatus_TimeoutCalculation(t *testing.T) {
-	// Create a secret with DeletionTimestamp set to timeout + 1 minute ago
-	oldTime := metav1.NewTime(time.Now().Add(-helmUninstallTimeout - 1*time.Minute))
-	secret := createHelmReleaseSecret("test-secret", "default", &oldTime)
+	// Create a release with StatusUninstalling and Deleted timestamp set to timeout + 1 minute ago
+	oldTime := time.Now().Add(-helmUninstallTimeout - 1*time.Minute)
+	rel := createLegacyRelease("test-release", "default", 1)
+	rel.Info.Status = release.StatusUninstalling
+	rel.Info.Deleted = helmtime.Time{Time: oldTime}
 
-	assert.NotNil(t, secret.DeletionTimestamp)
-	deletionDuration := time.Since(secret.DeletionTimestamp.Time)
+	assert.Equal(t, release.StatusUninstalling, rel.Info.Status)
+	assert.False(t, rel.Info.Deleted.IsZero())
+	deletionDuration := time.Since(rel.Info.Deleted.Time)
 	assert.Greater(t, deletionDuration, helmUninstallTimeout, "Deletion duration should exceed timeout")
 }
 

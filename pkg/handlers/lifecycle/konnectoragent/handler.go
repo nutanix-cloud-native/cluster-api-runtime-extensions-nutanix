@@ -622,7 +622,7 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 }
 
 // checkLegacyHelmReleaseDeletionStatus checks the deletion status of legacy Helm releases
-// by examining the DeletionTimestamp of the underlying Kubernetes Secrets.
+// by examining the release status and Deleted timestamp from the Helm releases list.
 // Returns: status ("completed", "in-progress", "not-started", or "timed-out"), status message, and error.
 func (n *DefaultKonnectorAgent) checkLegacyHelmReleaseDeletionStatus(
 	ctx context.Context,
@@ -645,7 +645,7 @@ func (n *DefaultKonnectorAgent) checkLegacyHelmReleaseDeletionStatus(
 
 	// List Helm releases in the namespace using Helm's List action.
 	listAction := action.NewList(actionConfig)
-	listAction.StateMask = action.ListDeployed | action.ListFailed | action.ListUninstalling
+	listAction.StateMask = action.ListDeployed | action.ListFailed | action.ListUninstalling | action.ListSuperseded
 	releases, err := listAction.Run()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to list Helm releases: %w", err)
@@ -665,88 +665,71 @@ func (n *DefaultKonnectorAgent) checkLegacyHelmReleaseDeletionStatus(
 		return cleanupStatusCompleted, "Legacy helm release successfully deleted", nil
 	}
 
-	// Get remote cluster client to access Secrets
-	remoteClient, err := remote.NewClusterClient(ctx, "", n.client, clusterKey)
-	if err != nil {
-		return "", "", fmt.Errorf("error creating client for remote cluster: %w", err)
-	}
-
-	// Check DeletionTimestamp for each legacy release's Secret
+	// Check deletion status for each legacy release using release status directly
 	var releasesInDeletion []*release.Release
 	var releasesNotInDeletion []*release.Release
 
 	for _, rel := range legacyReleases {
-		// Construct the Secret name: sh.helm.release.v1.{release-name}.{version}
-		secretName := fmt.Sprintf("sh.helm.release.v1.%s.v%d", rel.Name, rel.Version)
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: rel.Namespace,
-			},
-		}
-
-		err := remoteClient.Get(ctx, ctrlclient.ObjectKeyFromObject(secret), secret)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				// Secret not found - release is already deleted
-				log.Info("Helm release secret not found, release already deleted",
-					"releaseName", rel.Name,
-					"secretName", secretName,
-				)
-			} else {
-				// Error getting secret - cannot determine deletion status
-				log.Error(err, "Failed to get Helm release secret, cannot determine deletion status. Skipping this release.",
-					"releaseName", rel.Name,
-					"secretName", secretName,
-				)
-			}
+		// Validate release info - required to access Status and Deleted fields
+		if rel.Info == nil {
+			log.Error(fmt.Errorf("release info is nil"), "Skipping release with nil info",
+				"releaseName", rel.Name,
+				"namespace", rel.Namespace,
+				"version", rel.Version,
+			)
 			continue
 		}
 
-		// Check if Secret has DeletionTimestamp
-		if secret.DeletionTimestamp != nil {
-			// Check if deletion has timed out
-			deletionDuration := time.Since(secret.DeletionTimestamp.Time)
-			if deletionDuration > helmUninstallTimeout {
-				statusMsg := fmt.Sprintf(
-					"Helm release %q (secret %q) has been in deletion state for %v (timeout: %v). "+
-						"Possible causes: stuck finalizers, helm uninstall failure, or workload cluster unreachable.",
-					rel.Name,
-					secretName,
-					deletionDuration,
-					helmUninstallTimeout,
-				)
-				log.Error(
-					fmt.Errorf("helm uninstall timeout exceeded"),
-					"Helm release deletion timed out",
-					"releaseName", rel.Name,
-					"secretName", secretName,
-					"deletionTimestamp", secret.DeletionTimestamp.Time,
-					"duration", deletionDuration,
-					"timeout", helmUninstallTimeout,
-					"finalizers", secret.Finalizers,
-				)
-				return cleanupStatusTimedOut, statusMsg, nil
-			}
+		// Check release status to determine deletion state
+		if rel.Info.Status == release.StatusUninstalling {
+			// Check if deletion has timed out using the Deleted timestamp
+			if !rel.Info.Deleted.IsZero() {
+				deletionDuration := time.Since(rel.Info.Deleted.Time)
+				if deletionDuration > helmUninstallTimeout {
+					statusMsg := fmt.Sprintf(
+						"Helm release %q has been in deletion state for %v (timeout: %v). "+
+							"Possible causes: stuck finalizers, helm uninstall failure, or workload cluster unreachable.",
+						rel.Name,
+						deletionDuration,
+						helmUninstallTimeout,
+					)
+					log.Error(
+						fmt.Errorf("helm uninstall timeout exceeded"),
+						"Helm release deletion timed out",
+						"releaseName", rel.Name,
+						"namespace", rel.Namespace,
+						"deletedTimestamp", rel.Info.Deleted.Time,
+						"duration", deletionDuration,
+						"timeout", helmUninstallTimeout,
+					)
+					return cleanupStatusTimedOut, statusMsg, nil
+				}
 
-			// Deletion in progress
-			releasesInDeletion = append(releasesInDeletion, rel)
-			log.Info("Helm release is being deleted",
-				"releaseName", rel.Name,
-				"secretName", secretName,
-				"deletionDuration", deletionDuration,
-				"remainingTime", helmUninstallTimeout-deletionDuration,
-			)
+				// Deletion in progress
+				releasesInDeletion = append(releasesInDeletion, rel)
+				log.Info("Helm release is being deleted",
+					"releaseName", rel.Name,
+					"namespace", rel.Namespace,
+					"deletionDuration", deletionDuration,
+					"remainingTime", helmUninstallTimeout-deletionDuration,
+				)
+			}
 		} else {
-			// Secret exists but no DeletionTimestamp - deletion not started
+			// Release exists but not in uninstalling status - deletion not started
 			releasesNotInDeletion = append(releasesNotInDeletion, rel)
 		}
 	}
 
-	// If all releases are already deleted (secrets not found), deletion is completed
-	if len(releasesInDeletion) == 0 && len(releasesNotInDeletion) == 0 {
-		log.Info("All legacy helm release secrets not found, deletion completed", "chartName", legacyHelmChartName)
-		return cleanupStatusCompleted, "Legacy helm release successfully deleted", nil
+	if len(releasesNotInDeletion) > 0 {
+		releaseNames := getReleaseNames(releasesNotInDeletion)
+		log.Info("Legacy helm release exists, will start deletion",
+			"chartName", legacyHelmChartName,
+			"releaseNames", releaseNames,
+		)
+		return cleanupStatusNotStarted, fmt.Sprintf(
+			"Legacy helm release exists and needs to be deleted. Release names: %v",
+			releaseNames,
+		), nil
 	}
 
 	// If any releases are in deletion, return in-progress status
@@ -763,16 +746,7 @@ func (n *DefaultKonnectorAgent) checkLegacyHelmReleaseDeletionStatus(
 		return cleanupStatusInProgress, statusMsg, nil
 	}
 
-	// No releases in deletion - need to start deletion
-	releaseNames := getReleaseNames(releasesNotInDeletion)
-	log.Info("Legacy helm release exists, will start deletion",
-		"chartName", legacyHelmChartName,
-		"releaseNames", releaseNames,
-	)
-	return cleanupStatusNotStarted, fmt.Sprintf(
-		"Legacy helm release exists and needs to be deleted. Release names: %v",
-		releaseNames,
-	), nil
+	return cleanupStatusCompleted, "Legacy helm release successfully deleted", nil
 }
 
 // getReleaseNames extracts release names from a slice of releases.
