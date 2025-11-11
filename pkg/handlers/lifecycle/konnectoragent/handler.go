@@ -5,11 +5,8 @@ package konnectoragent
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
-	"encoding/base64"
 	"fmt"
-	"io"
 	"strings"
 	"text/template"
 	"time"
@@ -17,6 +14,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -158,13 +156,46 @@ func (n *DefaultKonnectorAgent) BeforeClusterUpgrade(
 		return
 	}
 
-	// Delete legacy helm release "nutanix-k8s-agent" if it exists.
-	// This is a best-effort cleanup operation - errors are logged but don't block the upgrade.
-	if err := n.deleteLegacyHelmRelease(ctx, &req.Cluster, log); err != nil {
-		log.Error(err, "Failed to delete legacy helm release during upgrade. Continuing with upgrade anyway.",
-			"chartName", legacyHelmChartName)
+	// Check if legacy helm release deletion is already in progress
+	cleanupStatus, statusMsg, err := n.checkLegacyHelmReleaseDeletionStatus(ctx, &req.Cluster, log)
+	if err != nil {
+		log.Error(err, "Failed to check legacy helm release deletion status")
+		// Continue with deletion attempt on error
+		cleanupStatus = cleanupStatusNotStarted // Treat error as not started
 	}
 
+	switch cleanupStatus {
+	case cleanupStatusCompleted:
+		log.Info("Legacy helm release deletion already completed")
+		// Skip deletion since it's already completed
+	case cleanupStatusInProgress:
+		log.Info("Legacy helm release deletion in progress, requesting retry", "details", statusMsg)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetRetryAfterSeconds(10) // Retry after 10 seconds
+		resp.SetMessage(fmt.Sprintf(
+			"Legacy helm release deletion in progress. Waiting for deletion to complete. %s",
+			statusMsg,
+		))
+		return
+	case cleanupStatusTimedOut:
+		log.Error(
+			fmt.Errorf("legacy helm release deletion timed out"),
+			"Legacy helm release deletion timed out, continuing with upgrade",
+			"details",
+			statusMsg,
+		)
+		// Continue with upgrade even if deletion timed out - this is a best-effort cleanup
+	case cleanupStatusNotStarted:
+		log.Info("Starting legacy helm release deletion")
+		// Delete legacy helm release "nutanix-k8s-agent" if it exists.
+		// This is a best-effort cleanup operation - errors are logged but don't block the upgrade.
+		if err := n.deleteLegacyHelmRelease(ctx, &req.Cluster, log); err != nil {
+			log.Error(err, "Failed to delete legacy helm release during upgrade. Continuing with upgrade anyway.",
+				"chartName", legacyHelmChartName)
+		} else {
+			log.Info("Legacy helm release deleted during upgrade")
+		}
+	}
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	n.apply(ctx, &req.Cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -590,6 +621,169 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	return cleanupStatusNotStarted, "HelmChartProxy exists and needs to be deleted", nil
 }
 
+// checkLegacyHelmReleaseDeletionStatus checks the deletion status of legacy Helm releases
+// by examining the DeletionTimestamp of the underlying Kubernetes Secrets.
+// Returns: status ("completed", "in-progress", "not-started", or "timed-out"), status message, and error.
+func (n *DefaultKonnectorAgent) checkLegacyHelmReleaseDeletionStatus(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) (status, statusMsg string, err error) {
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+
+	// Get REST config for the remote cluster to use with Helm.
+	restConfig, err := remote.RESTConfig(ctx, "", n.client, clusterKey)
+	if err != nil {
+		return "", "", fmt.Errorf("error getting REST config for remote cluster: %w", err)
+	}
+
+	// Initialize Helm action configuration
+	actionConfig, err := n.initHelmActionConfig(restConfig, defaultHelmReleaseNamespace, log)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to initialize Helm action config: %w", err)
+	}
+
+	// List Helm releases in the namespace using Helm's List action.
+	listAction := action.NewList(actionConfig)
+	listAction.StateMask = action.ListDeployed | action.ListFailed | action.ListUninstalling
+	releases, err := listAction.Run()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to list Helm releases: %w", err)
+	}
+
+	// Filter releases by chart name to find legacy releases
+	var legacyReleases []*release.Release
+	for _, rel := range releases {
+		if rel.Chart != nil && rel.Chart.Metadata != nil && rel.Chart.Metadata.Name == legacyHelmChartName {
+			legacyReleases = append(legacyReleases, rel)
+		}
+	}
+
+	// Check if legacy releases exist
+	if len(legacyReleases) == 0 {
+		log.Info("Legacy helm release not found, deletion completed", "chartName", legacyHelmChartName)
+		return cleanupStatusCompleted, "Legacy helm release successfully deleted", nil
+	}
+
+	// Get remote cluster client to access Secrets
+	remoteClient, err := remote.NewClusterClient(ctx, "", n.client, clusterKey)
+	if err != nil {
+		return "", "", fmt.Errorf("error creating client for remote cluster: %w", err)
+	}
+
+	// Check DeletionTimestamp for each legacy release's Secret
+	var releasesInDeletion []*release.Release
+	var releasesNotInDeletion []*release.Release
+
+	for _, rel := range legacyReleases {
+		// Construct the Secret name: sh.helm.release.v1.{release-name}.{version}
+		secretName := fmt.Sprintf("sh.helm.release.v1.%s.v%d", rel.Name, rel.Version)
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: rel.Namespace,
+			},
+		}
+
+		err := remoteClient.Get(ctx, ctrlclient.ObjectKeyFromObject(secret), secret)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				// Secret not found - release is already deleted
+				log.Info("Helm release secret not found, release already deleted",
+					"releaseName", rel.Name,
+					"secretName", secretName,
+				)
+			} else {
+				// Error getting secret - cannot determine deletion status
+				log.Error(err, "Failed to get Helm release secret, cannot determine deletion status. Skipping this release.",
+					"releaseName", rel.Name,
+					"secretName", secretName,
+				)
+			}
+			continue
+		}
+
+		// Check if Secret has DeletionTimestamp
+		if secret.DeletionTimestamp != nil {
+			// Check if deletion has timed out
+			deletionDuration := time.Since(secret.DeletionTimestamp.Time)
+			if deletionDuration > helmUninstallTimeout {
+				statusMsg := fmt.Sprintf(
+					"Helm release %q (secret %q) has been in deletion state for %v (timeout: %v). "+
+						"Possible causes: stuck finalizers, helm uninstall failure, or workload cluster unreachable.",
+					rel.Name,
+					secretName,
+					deletionDuration,
+					helmUninstallTimeout,
+				)
+				log.Error(
+					fmt.Errorf("helm uninstall timeout exceeded"),
+					"Helm release deletion timed out",
+					"releaseName", rel.Name,
+					"secretName", secretName,
+					"deletionTimestamp", secret.DeletionTimestamp.Time,
+					"duration", deletionDuration,
+					"timeout", helmUninstallTimeout,
+					"finalizers", secret.Finalizers,
+				)
+				return cleanupStatusTimedOut, statusMsg, nil
+			}
+
+			// Deletion in progress
+			releasesInDeletion = append(releasesInDeletion, rel)
+			log.Info("Helm release is being deleted",
+				"releaseName", rel.Name,
+				"secretName", secretName,
+				"deletionDuration", deletionDuration,
+				"remainingTime", helmUninstallTimeout-deletionDuration,
+			)
+		} else {
+			// Secret exists but no DeletionTimestamp - deletion not started
+			releasesNotInDeletion = append(releasesNotInDeletion, rel)
+		}
+	}
+
+	// If all releases are already deleted (secrets not found), deletion is completed
+	if len(releasesInDeletion) == 0 && len(releasesNotInDeletion) == 0 {
+		log.Info("All legacy helm release secrets not found, deletion completed", "chartName", legacyHelmChartName)
+		return cleanupStatusCompleted, "Legacy helm release successfully deleted", nil
+	}
+
+	// If any releases are in deletion, return in-progress status
+	if len(releasesInDeletion) > 0 {
+		releaseNames := getReleaseNames(releasesInDeletion)
+		statusMsg := fmt.Sprintf(
+			"Legacy helm releases are being deleted (in progress): %v",
+			releaseNames,
+		)
+		log.Info("Legacy helm releases are being deleted",
+			"chartName", legacyHelmChartName,
+			"releaseNames", releaseNames,
+		)
+		return cleanupStatusInProgress, statusMsg, nil
+	}
+
+	// No releases in deletion - need to start deletion
+	releaseNames := getReleaseNames(releasesNotInDeletion)
+	log.Info("Legacy helm release exists, will start deletion",
+		"chartName", legacyHelmChartName,
+		"releaseNames", releaseNames,
+	)
+	return cleanupStatusNotStarted, fmt.Sprintf(
+		"Legacy helm release exists and needs to be deleted. Release names: %v",
+		releaseNames,
+	), nil
+}
+
+// getReleaseNames extracts release names from a slice of releases.
+func getReleaseNames(releases []*release.Release) []string {
+	names := make([]string, 0, len(releases))
+	for _, rel := range releases {
+		names = append(names, rel.Name)
+	}
+	return names
+}
+
 // deleteLegacyHelmRelease uninstalls the legacy helm release with chart name "nutanix-k8s-agent"
 // from the remote cluster. This is called during cluster upgrades to clean up old releases
 // before applying the new HelmChartProxy.
@@ -599,10 +793,6 @@ func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
 	log logr.Logger,
 ) error {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
-	remoteClient, err := remote.NewClusterClient(ctx, "", n.client, clusterKey)
-	if err != nil {
-		return fmt.Errorf("error creating client for remote cluster: %w", err)
-	}
 
 	// Get REST config for the remote cluster to use with Helm.
 	// RESTConfig returns a configuration instance to be used with a Kubernetes client.
@@ -611,36 +801,33 @@ func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
 		return fmt.Errorf("error getting REST config for remote cluster: %w", err)
 	}
 
-	// List all helm release secrets in the namespace
-	// Helm v3 stores releases as secrets with label "owner=helm"
-	secretList := &corev1.SecretList{}
-	err = remoteClient.List(
-		ctx,
-		secretList,
-		ctrlclient.InNamespace(defaultHelmReleaseNamespace),
-		ctrlclient.MatchingLabels{"owner": "helm"},
-	)
+	// Initialize Helm action configuration
+	actionConfig, err := n.initHelmActionConfig(restConfig, defaultHelmReleaseNamespace, log)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Info("No helm release secrets found in namespace", "namespace", defaultHelmReleaseNamespace)
-			return nil
-		}
-		return fmt.Errorf("failed to list helm release secrets: %w", err)
+		return fmt.Errorf("failed to initialize Helm action config: %w", err)
 	}
 
-	// Search for secrets containing the legacy chart name.
-	// Ideally, there should be only one legacy release with chart name "nutanix-k8s-agent",
-	// but we iterate through all to handle edge cases (e.g., failed upgrades, manual installs).
-	var secretsToUninstall []*corev1.Secret
-	for i := range secretList.Items {
-		secret := &secretList.Items[i]
-		// Check if this secret contains a release with chart name "nutanix-k8s-agent"
-		if n.isLegacyHelmRelease(secret) {
-			secretsToUninstall = append(secretsToUninstall, secret)
+	// List Helm releases in the namespace using Helm's List action.
+	listAction := action.NewList(actionConfig)
+	releases, err := listAction.Run()
+	if err != nil {
+		return fmt.Errorf("failed to list Helm releases: %w", err)
+	}
+
+	if len(releases) == 0 {
+		log.Info("No helm releases found in namespace", "namespace", defaultHelmReleaseNamespace)
+		return nil
+	}
+
+	// Filter releases by chart name to find legacy releases
+	var legacyReleases []*release.Release
+	for _, rel := range releases {
+		if rel.Chart != nil && rel.Chart.Metadata != nil && rel.Chart.Metadata.Name == legacyHelmChartName {
+			legacyReleases = append(legacyReleases, rel)
 		}
 	}
 
-	if len(secretsToUninstall) == 0 {
+	if len(legacyReleases) == 0 {
 		log.Info(
 			"Legacy helm release not found",
 			"chartName",
@@ -651,77 +838,41 @@ func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
 		return nil
 	}
 
-	// Uninstall all matching helm releases
-	for _, secret := range secretsToUninstall {
-		releaseName, err := n.extractReleaseNameFromSecret(secret)
-		if err != nil {
-			log.Error(err, "Failed to extract release name from secret. Cannot uninstall Helm release properly. "+
-				"secretName", secret.Name,
-				"namespace", secret.Namespace)
-			continue
-		}
-
+	// Uninstall all matching legacy helm releases
+	for _, rel := range legacyReleases {
 		log.Info(
 			"Uninstalling legacy helm release",
 			"releaseName",
-			releaseName,
+			rel.Name,
 			"namespace",
-			secret.Namespace,
+			rel.Namespace,
 			"chartName",
 			legacyHelmChartName,
 		)
 
 		// Uninstall the Helm release using Helm action client
-		if err := n.uninstallHelmRelease(restConfig, releaseName, secret.Namespace, log); err != nil {
+		if err := n.uninstallHelmRelease(restConfig, rel.Name, rel.Namespace, log); err != nil {
 			log.Error(err, "Failed to uninstall helm release via Helm client.",
-				"releaseName", releaseName,
-				"namespace", secret.Namespace)
+				"releaseName", rel.Name,
+				"namespace", rel.Namespace)
 			// Continue with other releases even if one fails
 			continue
 		}
 
 		log.Info("Successfully uninstalled legacy helm release",
-			"releaseName", releaseName,
-			"namespace", secret.Namespace)
+			"releaseName", rel.Name,
+			"namespace", rel.Namespace)
 	}
 
 	return nil
 }
 
-// extractReleaseNameFromSecret extracts the Helm release name from a Helm release secret name.
-// Helm v3 stores release secrets with the pattern: sh.helm.release.v1.{release-name}.{version}.
-func (n *DefaultKonnectorAgent) extractReleaseNameFromSecret(secret *corev1.Secret) (string, error) {
-	//nolint:gosec // This is not a credential - it's Helm's standard secret name prefix pattern
-	const helmReleaseSecretPrefix = "sh.helm.release.v1."
-	if !strings.HasPrefix(secret.Name, helmReleaseSecretPrefix) {
-		return "", fmt.Errorf("secret %q does not appear to be a Helm release secret", secret.Name)
-	}
-
-	// Remove the prefix
-	nameWithoutPrefix := strings.TrimPrefix(secret.Name, helmReleaseSecretPrefix)
-
-	// Find the last dot to separate release name from version
-	// The version is always numeric, so we can split on the last dot
-	lastDotIndex := strings.LastIndex(nameWithoutPrefix, ".")
-	if lastDotIndex == -1 {
-		return "", fmt.Errorf("invalid Helm release secret name format: %q", secret.Name)
-	}
-
-	releaseName := nameWithoutPrefix[:lastDotIndex]
-	if releaseName == "" {
-		return "", fmt.Errorf("empty release name extracted from secret %q", secret.Name)
-	}
-
-	return releaseName, nil
-}
-
-// uninstallHelmRelease uninstalls a Helm release using Helm's action client.
-func (n *DefaultKonnectorAgent) uninstallHelmRelease(
+// initHelmActionConfig initializes a Helm action configuration for the given namespace.
+func (n *DefaultKonnectorAgent) initHelmActionConfig(
 	restConfig *rest.Config,
-	releaseName string,
 	namespace string,
 	log logr.Logger,
-) error {
+) (*action.Configuration, error) {
 	// Create a RESTClientGetter for Helm
 	restClientGetter := &restConfigGetter{
 		restConfig: restConfig,
@@ -740,16 +891,31 @@ func (n *DefaultKonnectorAgent) uninstallHelmRelease(
 			log.Info(fmt.Sprintf(format, v...))
 		},
 	); err != nil {
-		return fmt.Errorf("failed to initialize Helm action config: %w", err)
+		return nil, fmt.Errorf("failed to initialize Helm action config: %w", err)
+	}
+
+	return actionConfig, nil
+}
+
+// uninstallHelmRelease uninstalls a Helm release using Helm's action client.
+func (n *DefaultKonnectorAgent) uninstallHelmRelease(
+	restConfig *rest.Config,
+	releaseName string,
+	namespace string,
+	log logr.Logger,
+) error {
+	// Initialize Helm action configuration
+	actionConfig, err := n.initHelmActionConfig(restConfig, namespace, log)
+	if err != nil {
+		return err
 	}
 
 	// Create an uninstall action
 	uninstallAction := action.NewUninstall(actionConfig)
 	uninstallAction.Timeout = helmUninstallTimeout
-	uninstallAction.DisableHooks = true
 
 	// Execute the uninstall
-	_, err := uninstallAction.Run(releaseName)
+	_, err = uninstallAction.Run(releaseName)
 	if err != nil {
 		return fmt.Errorf("failed to uninstall Helm release %q: %w", releaseName, err)
 	}
@@ -815,43 +981,4 @@ func (g *restConfigGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
 	g.restMapper = mapper
 	return mapper, nil
-}
-
-// isLegacyHelmRelease checks if a helm release secret contains the legacy chart name "nutanix-k8s-agent"
-// by examining the release data. We use chart name (not release name) since release names can vary.
-func (n *DefaultKonnectorAgent) isLegacyHelmRelease(secret *corev1.Secret) bool {
-	// Get the release data from the secret
-	releaseData, ok := secret.Data["release"]
-	if !ok {
-		return false
-	}
-
-	// Decode the base64-encoded release data
-	decoded, err := base64.StdEncoding.DecodeString(string(releaseData))
-	if err != nil {
-		return false
-	}
-
-	// Try to decompress with gzip (Helm v3 stores release data as gzip-compressed protobuf)
-	var dataToSearch []byte
-	gzipReader, err := gzip.NewReader(bytes.NewReader(decoded))
-	if err == nil {
-		// Successfully opened as gzip, read the decompressed data
-		decompressed, err := io.ReadAll(gzipReader)
-		_ = gzipReader.Close()
-		if err == nil {
-			dataToSearch = decompressed
-		} else {
-			// If decompression fails, fall back to searching the raw data
-			dataToSearch = decoded
-		}
-	} else {
-		// Not gzip-compressed, use the decoded data directly
-		dataToSearch = decoded
-	}
-
-	// Search for the chart name in the decompressed JSON data
-	// Helm v3 stores releases as gzip-compressed JSON, so a simple string search
-	// is sufficient to find the chart name in the JSON structure.
-	return strings.Contains(string(dataToSearch), legacyHelmChartName)
 }
