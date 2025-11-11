@@ -796,7 +796,7 @@ func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
 	// Filter releases by chart name to find legacy releases
 	var legacyReleases []*release.Release
 	for _, rel := range releases {
-		if rel.Chart != nil && rel.Chart.Metadata != nil && rel.Chart.Metadata.Name == legacyHelmChartName {
+		if rel.Chart != nil && rel.Chart.Metadata != nil && rel.Chart.Name() == legacyHelmChartName {
 			legacyReleases = append(legacyReleases, rel)
 		}
 	}
