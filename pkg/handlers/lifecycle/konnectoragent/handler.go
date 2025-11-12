@@ -190,8 +190,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterUpgrade(
 		// Delete legacy helm release "nutanix-k8s-agent" if it exists.
 		// This is a best-effort cleanup operation - errors are logged but don't block the upgrade.
 		if err := n.deleteLegacyHelmRelease(ctx, &req.Cluster, log); err != nil {
-			log.Error(err, "Failed to delete legacy helm release during upgrade. Continuing with upgrade anyway.",
-				"chartName", legacyHelmChartName)
+			log.Error(err, "Failed to delete legacy helm release during upgrade. Continuing with upgrade anyway.")
 		} else {
 			log.Info("Legacy helm release deleted during upgrade")
 		}
@@ -621,6 +620,40 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	return cleanupStatusNotStarted, "HelmChartProxy exists and needs to be deleted", nil
 }
 
+// listLegacyHelmReleases lists and filters Helm releases to find legacy releases
+// with the specified chart name across all namespaces.
+func (n *DefaultKonnectorAgent) listLegacyHelmReleases(
+	restConfig *rest.Config,
+	log logr.Logger,
+) ([]*release.Release, error) {
+	// Initialize Helm action configuration
+	// Namespace doesn't matter since AllNamespaces=true will search across all namespaces
+	actionConfig, err := n.initHelmActionConfig(restConfig, corev1.NamespaceDefault, log)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Helm action config: %w", err)
+	}
+
+	// List Helm releases across all namespaces using Helm's List action.
+	listAction := action.NewList(actionConfig)
+	listAction.AllNamespaces = true
+	listAction.StateMask = action.ListDeployed | action.ListFailed | action.ListUninstalling | action.ListSuperseded
+
+	releases, err := listAction.Run()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list Helm releases: %w", err)
+	}
+
+	// Filter releases by chart name to find legacy releases.
+	var legacyReleases []*release.Release
+	for _, rel := range releases {
+		if rel.Chart != nil && rel.Chart.Name() == legacyHelmChartName {
+			legacyReleases = append(legacyReleases, rel)
+		}
+	}
+
+	return legacyReleases, nil
+}
+
 // checkLegacyHelmReleaseDeletionStatus checks the deletion status of legacy Helm releases
 // by examining the release status and Deleted timestamp from the Helm releases list.
 // Returns: status ("completed", "in-progress", "not-started", or "timed-out"), status message, and error.
@@ -637,26 +670,12 @@ func (n *DefaultKonnectorAgent) checkLegacyHelmReleaseDeletionStatus(
 		return "", "", fmt.Errorf("error getting REST config for remote cluster: %w", err)
 	}
 
-	// Initialize Helm action configuration
-	actionConfig, err := n.initHelmActionConfig(restConfig, defaultHelmReleaseNamespace, log)
+	// List and filter legacy Helm releases
+	legacyReleases, err := n.listLegacyHelmReleases(
+		restConfig, log,
+	)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to initialize Helm action config: %w", err)
-	}
-
-	// List Helm releases in the namespace using Helm's List action.
-	listAction := action.NewList(actionConfig)
-	listAction.StateMask = action.ListDeployed | action.ListFailed | action.ListUninstalling | action.ListSuperseded
-	releases, err := listAction.Run()
-	if err != nil {
-		return "", "", fmt.Errorf("failed to list Helm releases: %w", err)
-	}
-
-	// Filter releases by chart name to find legacy releases
-	var legacyReleases []*release.Release
-	for _, rel := range releases {
-		if rel.Chart != nil && rel.Chart.Name() == legacyHelmChartName {
-			legacyReleases = append(legacyReleases, rel)
-		}
+		return "", "", err
 	}
 
 	// Check if legacy releases exist
@@ -775,45 +794,32 @@ func (n *DefaultKonnectorAgent) deleteLegacyHelmRelease(
 		return fmt.Errorf("error getting REST config for remote cluster: %w", err)
 	}
 
-	// Initialize Helm action configuration
-	actionConfig, err := n.initHelmActionConfig(restConfig, defaultHelmReleaseNamespace, log)
+	// List and filter legacy Helm releases
+	legacyReleases, err := n.listLegacyHelmReleases(restConfig, log)
 	if err != nil {
-		return fmt.Errorf("failed to initialize Helm action config: %w", err)
-	}
-
-	// List Helm releases in the namespace using Helm's List action.
-	listAction := action.NewList(actionConfig)
-	releases, err := listAction.Run()
-	if err != nil {
-		return fmt.Errorf("failed to list Helm releases: %w", err)
-	}
-
-	if len(releases) == 0 {
-		log.Info("No helm releases found in namespace", "namespace", defaultHelmReleaseNamespace)
-		return nil
-	}
-
-	// Filter releases by chart name to find legacy releases
-	var legacyReleases []*release.Release
-	for _, rel := range releases {
-		if rel.Chart != nil && rel.Chart.Metadata != nil && rel.Chart.Name() == legacyHelmChartName {
-			legacyReleases = append(legacyReleases, rel)
-		}
+		return err
 	}
 
 	if len(legacyReleases) == 0 {
 		log.Info(
-			"Legacy helm release not found",
+			"Legacy helm release not found across all namespaces",
 			"chartName",
 			legacyHelmChartName,
-			"namespace",
-			defaultHelmReleaseNamespace,
 		)
 		return nil
 	}
 
 	// Uninstall all matching legacy helm releases
 	for _, rel := range legacyReleases {
+		// Skip releases already in deletion to avoid unnecessary errors
+		if rel.Info != nil && rel.Info.Status == release.StatusUninstalling {
+			log.Info("Skipping release already in deletion",
+				"releaseName", rel.Name,
+				"namespace", rel.Namespace,
+				"status", rel.Info.Status)
+			continue
+		}
+
 		log.Info(
 			"Uninstalling legacy helm release",
 			"releaseName",
@@ -850,7 +856,6 @@ func (n *DefaultKonnectorAgent) initHelmActionConfig(
 	// Create a RESTClientGetter for Helm
 	restClientGetter := &restConfigGetter{
 		restConfig: restConfig,
-		namespace:  namespace,
 	}
 
 	// Create a Helm action configuration
@@ -901,7 +906,6 @@ func (n *DefaultKonnectorAgent) uninstallHelmRelease(
 // to use a REST config directly instead of kubeconfig files.
 type restConfigGetter struct {
 	restConfig      *rest.Config
-	namespace       string
 	discoveryClient discovery.CachedDiscoveryInterface
 	restMapper      meta.RESTMapper
 }
@@ -914,7 +918,6 @@ func (g *restConfigGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
 	// Create a minimal client config from the REST config
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	overrides := &clientcmd.ConfigOverrides{}
-	overrides.Context.Namespace = g.namespace
 	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, overrides)
 	return clientConfig
 }
