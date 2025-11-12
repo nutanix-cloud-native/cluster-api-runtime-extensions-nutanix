@@ -14,6 +14,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -287,6 +288,7 @@ func templateValuesFunc(
 			PrismCentralPort     uint16
 			PrismCentralInsecure bool
 			ClusterName          string
+			CategoryMappings     string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -301,6 +303,9 @@ func templateValuesFunc(
 			clusterName = clusterName[:maxClusterNameLength]
 		}
 
+		// Extract categoryMappings from worker config additionalCategories
+		categoryMappings := extractCategoryMappings(cluster)
+
 		templateInput := input{
 			AgentName:        defaultK8sAgentName,
 			PrismCentralHost: address,
@@ -309,6 +314,7 @@ func templateValuesFunc(
 			// need to add support to accept PC's trust bundle in agent(it's not implemented currently)
 			PrismCentralInsecure: true,
 			ClusterName:          clusterName,
+			CategoryMappings:     categoryMappings,
 		}
 
 		var b bytes.Buffer
@@ -319,6 +325,74 @@ func templateValuesFunc(
 
 		return b.String(), nil
 	}
+}
+
+// extractCategoryMappings extracts additionalCategories from worker config variables
+// and converts them to comma-separated format.
+// Categories are combined from both cluster-level variables and machine deployment overrides,
+// with machine deployment overrides taking precedence for duplicate keys.
+// If multiple machine deployments exist, the first one's categories are used.
+func extractCategoryMappings(cluster *clusterv1.Cluster) string {
+	// Extract cluster-level categories from cluster topology variables
+	var categoryMap map[string]string
+	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Variables != nil {
+		varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+		categoryMap = extractCategoriesMapFromVarMap(varMap)
+	} else {
+		categoryMap = make(map[string]string)
+	}
+
+	// Merge machine deployment overrides (MD categories override cluster-level for duplicate keys)
+	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Workers != nil {
+		for _, md := range cluster.Spec.Topology.Workers.MachineDeployments {
+			if md.Variables != nil && len(md.Variables.Overrides) > 0 {
+				mdVarMap := variables.ClusterVariablesToVariablesMap(md.Variables.Overrides)
+				mdCategoryMap := extractCategoriesMapFromVarMap(mdVarMap)
+				if len(mdCategoryMap) > 0 {
+					// Merge: MD categories override cluster-level for duplicate keys
+					for key, value := range mdCategoryMap {
+						categoryMap[key] = value
+					}
+					// Use the first machine deployment's categories (if multiple, first one wins)
+					break
+				}
+			}
+		}
+	}
+
+	// Convert map to comma-separated string
+	if len(categoryMap) == 0 {
+		return ""
+	}
+
+	categories := make([]string, 0, len(categoryMap))
+	for key, value := range categoryMap {
+		categories = append(categories, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	return strings.Join(categories, ",")
+}
+
+// extractCategoriesMapFromVarMap extracts additionalCategories from a variable map
+// and returns them as a map (key -> value). If duplicate keys exist, the last value wins.
+func extractCategoriesMapFromVarMap(varMap map[string]apiextensionsv1.JSON) map[string]string {
+	categoryMap := make(map[string]string)
+
+	workerConfigVar, err := variables.Get[apivariables.WorkerNodeConfigSpec](
+		varMap,
+		v1alpha1.WorkerConfigVariableName,
+	)
+	if err == nil && workerConfigVar.Nutanix != nil &&
+		len(workerConfigVar.Nutanix.MachineDetails.AdditionalCategories) > 0 {
+		for _, cat := range workerConfigVar.Nutanix.MachineDetails.AdditionalCategories {
+			if cat.Key != "" && cat.Value != "" {
+				// If key already exists, last value wins (for map-based merging)
+				categoryMap[cat.Key] = cat.Value
+			}
+		}
+	}
+
+	return categoryMap
 }
 
 func (n *DefaultKonnectorAgent) BeforeClusterDelete(

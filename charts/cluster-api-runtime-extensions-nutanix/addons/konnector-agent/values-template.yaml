@@ -10,3 +10,8 @@ pc:
 k8sClusterName: {{ .ClusterName }}
 k8sDistribution: NKP
 createSecret: false
+{{- if .CategoryMappings }}
+categoryMappings: {{ .CategoryMappings }}
+{{- else }}
+categoryMappings: ""
+{{- end }}
