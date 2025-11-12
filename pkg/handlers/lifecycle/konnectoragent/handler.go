@@ -344,7 +344,8 @@ func extractCategoryMappings(cluster *clusterv1.Cluster) string {
 
 	// Merge machine deployment overrides (MD categories override cluster-level for duplicate keys)
 	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Workers != nil {
-		for _, md := range cluster.Spec.Topology.Workers.MachineDeployments {
+		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
+			md := &cluster.Spec.Topology.Workers.MachineDeployments[i]
 			if md.Variables != nil && len(md.Variables.Overrides) > 0 {
 				mdVarMap := variables.ClusterVariablesToVariablesMap(md.Variables.Overrides)
 				mdCategoryMap := extractCategoriesMapFromVarMap(mdVarMap)
