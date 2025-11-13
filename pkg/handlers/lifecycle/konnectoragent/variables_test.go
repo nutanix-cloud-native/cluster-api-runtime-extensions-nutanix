@@ -496,10 +496,10 @@ categoryMappings: ""
 		result, err := templateFunc(clusterWithCategories, valuesTemplate)
 
 		require.NoError(t, err)
-		// Should render the actual category mappings (order is non-deterministic)
-		assert.Contains(t, result, "Environment=Production")
-		assert.Contains(t, result, "Department=Engineering")
-		assert.Contains(t, result, "categoryMappings:")
+		// Check for exact categoryMappings value (order is preserved as in input)
+		expectedCategoryMappings := "Environment=Production,Department=Engineering"
+		expectedResult := "\ncategoryMappings: " + expectedCategoryMappings
+		assert.Equal(t, expectedResult, result, "categoryMappings should match exactly")
 	})
 }
 
@@ -837,16 +837,13 @@ func TestExtractCategoryMappings(t *testing.T) {
 			// Check if this is a test case that needs special handling for non-deterministic order
 			switch tt.name {
 			case "worker config with multiple categories":
-				// With map-based approach, duplicate keys are deduplicated (last value wins)
-				assert.Contains(
-					t,
-					result,
-					"Department=Infrastructure",
-					"Should contain Department=Infrastructure (last value)",
-				)
-				assert.Contains(t, result, "Environment=Critical", "Should contain Environment=Critical (last value)")
+				// All categories are preserved, including duplicate keys with different values
+				assert.Contains(t, result, "Environment=Production", "Should contain Environment=Production")
+				assert.Contains(t, result, "Environment=Critical", "Should contain Environment=Critical")
+				assert.Contains(t, result, "Department=Engineering", "Should contain Department=Engineering")
+				assert.Contains(t, result, "Department=Infrastructure", "Should contain Department=Infrastructure")
 				assert.Contains(t, result, "Region=US-East", "Should contain Region=US-East")
-				assert.Equal(t, 3, strings.Count(result, "="), "Should have exactly 3 categories")
+				assert.Equal(t, 5, strings.Count(result, "="), "Should have exactly 5 categories (all preserved)")
 			case "worker config with categories having empty keys or values (should be filtered)":
 				assert.Contains(t, result, "Environment=Production", "Should contain Environment=Production")
 				assert.Contains(t, result, "Region=US-East", "Should contain Region=US-East")
@@ -927,15 +924,14 @@ func TestExtractCategoryMappings_WithMachineDeploymentOverrides(t *testing.T) {
 	}
 
 	// Categories should be combined: cluster-level + machine deployment
-	// Order is non-deterministic (map iteration), so check that both categories are present
+	// Order: cluster-level first, then machine deployment overrides
 	result := extractCategoryMappings(cluster)
-	assert.Contains(t, result, "Environment=Production", "Should contain cluster-level Environment category")
-	assert.Contains(t, result, "Department=Engineering", "Should contain machine deployment Department category")
-	assert.Equal(t, 2, strings.Count(result, "="), "Should have exactly 2 categories")
+	expectedResult := "Environment=Production,Department=Engineering"
+	assert.Equal(t, expectedResult, result, "categoryMappings should match exactly")
 }
 
 func TestExtractCategoryMappings_WithDuplicateKeys(t *testing.T) {
-	// Test that machine deployment overrides take precedence for duplicate keys
+	// Test that all categories are preserved, including duplicate keys with different values
 	cluster := &clusterv1.Cluster{
 		Spec: clusterv1.ClusterSpec{
 			Topology: &clusterv1.Topology{
@@ -998,10 +994,14 @@ func TestExtractCategoryMappings_WithDuplicateKeys(t *testing.T) {
 		},
 	}
 
-	// Machine deployment should override Environment, but both should have Region and Department
+	// All categories are preserved, including duplicates: cluster-level first, then machine deployment overrides
 	result := extractCategoryMappings(cluster)
-	// Environment should be overridden to Staging, Region should remain, Department should be added
-	assert.Contains(t, result, "Environment=Staging", "Machine deployment should override Environment")
-	assert.Contains(t, result, "Region=US-East", "Cluster-level Region should be preserved")
-	assert.Contains(t, result, "Department=Engineering", "Machine deployment Department should be added")
+	// Expected order: cluster-level categories first, then machine deployment override categories
+	expectedResult := "Environment=Production,Region=US-East,Environment=Staging,Department=Engineering"
+	assert.Equal(
+		t,
+		expectedResult,
+		result,
+		"categoryMappings should match exactly (all categories preserved including duplicates)",
+	)
 }

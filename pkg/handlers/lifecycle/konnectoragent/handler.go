@@ -327,33 +327,26 @@ func templateValuesFunc(
 	}
 }
 
-// extractCategoryMappings extracts additionalCategories from worker config variables
+// extractCategoryMappings extracts additionalCategories from both control plane and worker config variables
 // and converts them to comma-separated format.
-// Categories are combined from both cluster-level variables and machine deployment overrides,
-// with machine deployment overrides taking precedence for duplicate keys.
-// If multiple machine deployments exist, the first one's categories are used.
 func extractCategoryMappings(cluster *clusterv1.Cluster) string {
+	var categories []string
+
 	// Extract cluster-level categories from cluster topology variables
-	var categoryMap map[string]string
 	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Variables != nil {
 		varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-		categoryMap = extractCategoriesMapFromVarMap(varMap)
-	} else {
-		categoryMap = make(map[string]string)
+		categories = append(categories, extractCategoriesFromVarMap(varMap)...)
 	}
 
-	// Merge machine deployment overrides (MD categories override cluster-level for duplicate keys)
+	// Append machine deployment overrides
 	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Workers != nil {
 		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
 			md := &cluster.Spec.Topology.Workers.MachineDeployments[i]
 			if md.Variables != nil && len(md.Variables.Overrides) > 0 {
 				mdVarMap := variables.ClusterVariablesToVariablesMap(md.Variables.Overrides)
-				mdCategoryMap := extractCategoriesMapFromVarMap(mdVarMap)
-				if len(mdCategoryMap) > 0 {
-					// Merge: MD categories override cluster-level for duplicate keys
-					for key, value := range mdCategoryMap {
-						categoryMap[key] = value
-					}
+				mdCategories := extractCategoriesFromVarMap(mdVarMap)
+				if len(mdCategories) > 0 {
+					categories = append(categories, mdCategories...)
 					// Use the first machine deployment's categories (if multiple, first one wins)
 					break
 				}
@@ -361,39 +354,50 @@ func extractCategoryMappings(cluster *clusterv1.Cluster) string {
 		}
 	}
 
-	// Convert map to comma-separated string
-	if len(categoryMap) == 0 {
+	if len(categories) == 0 {
 		return ""
-	}
-
-	categories := make([]string, 0, len(categoryMap))
-	for key, value := range categoryMap {
-		categories = append(categories, fmt.Sprintf("%s=%s", key, value))
 	}
 
 	return strings.Join(categories, ",")
 }
 
-// extractCategoriesMapFromVarMap extracts additionalCategories from a variable map
-// and returns them as a map (key -> value). If duplicate keys exist, the last value wins.
-func extractCategoriesMapFromVarMap(varMap map[string]apiextensionsv1.JSON) map[string]string {
-	categoryMap := make(map[string]string)
+// extractCategoriesFromVarMap extracts additionalCategories from a variable map
+// and returns them as a slice of "key=value" strings. It extracts from both control plane and worker config.
+func extractCategoriesFromVarMap(varMap map[string]apiextensionsv1.JSON) []string {
+	var categories []string
 
+	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+	)
+	if err == nil && clusterConfigVar.ControlPlane != nil &&
+		clusterConfigVar.ControlPlane.Nutanix != nil &&
+		clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories != nil &&
+		len(clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories) > 0 {
+		for _, cat := range clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories {
+			if cat.Key != "" && cat.Value != "" {
+				categoryValue := fmt.Sprintf("%s=%s", cat.Key, cat.Value)
+				categories = append(categories, categoryValue)
+			}
+		}
+	}
+
+	// Then, extract worker categories
 	workerConfigVar, err := variables.Get[apivariables.WorkerNodeConfigSpec](
 		varMap,
 		v1alpha1.WorkerConfigVariableName,
 	)
 	if err == nil && workerConfigVar.Nutanix != nil &&
+		workerConfigVar.Nutanix.MachineDetails.AdditionalCategories != nil &&
 		len(workerConfigVar.Nutanix.MachineDetails.AdditionalCategories) > 0 {
 		for _, cat := range workerConfigVar.Nutanix.MachineDetails.AdditionalCategories {
 			if cat.Key != "" && cat.Value != "" {
-				// If key already exists, last value wins (for map-based merging)
-				categoryMap[cat.Key] = cat.Value
+				categoryValue := fmt.Sprintf("%s=%s", cat.Key, cat.Value)
+				categories = append(categories, categoryValue)
 			}
 		}
 	}
-
-	return categoryMap
+	return categories
 }
 
 func (n *DefaultKonnectorAgent) BeforeClusterDelete(
