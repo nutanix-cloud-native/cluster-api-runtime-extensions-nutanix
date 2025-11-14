@@ -410,7 +410,7 @@ func formatCategoriesFromSlice(categories []capxv1.NutanixCategoryIdentifier) []
 }
 
 // removeDuplicateCategories removes duplicate category pairs (same key=value pairs)
-// while preserving the order of first occurrence
+// while preserving the order of first occurrence.
 func removeDuplicateCategories(categories []string) []string {
 	seen := make(map[string]bool)
 	result := make([]string, 0, len(categories))
