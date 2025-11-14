@@ -5,7 +5,6 @@ package konnectoragent
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/spf13/pflag"
@@ -19,6 +18,7 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -749,9 +749,8 @@ func TestExtractCategoryMappings(t *testing.T) {
 					},
 				},
 			},
-			// With map-based approach, duplicate keys are deduplicated (last value wins)
-			// Order is non-deterministic (map iteration), so we'll check contents separately
-			expectedResult: "", // Will be checked manually below
+			// Array order is deterministic, all categories are preserved in order
+			expectedResult: "Environment=Production,Environment=Critical,Department=Engineering,Department=Infrastructure,Region=US-East",
 		},
 		{
 			name: "worker config with categories having empty keys or values (should be filtered)",
@@ -792,8 +791,8 @@ func TestExtractCategoryMappings(t *testing.T) {
 					},
 				},
 			},
-			// Order is non-deterministic (map iteration), so we'll check contents separately
-			expectedResult: "", // Will be checked manually below
+			// Array order is deterministic, empty keys/values are filtered out
+			expectedResult: "Environment=Production,Region=US-East",
 		},
 		{
 			name: "worker config with categories having special characters",
@@ -826,43 +825,23 @@ func TestExtractCategoryMappings(t *testing.T) {
 					},
 				},
 			},
-			// Order is non-deterministic (map iteration), so we'll check contents separately
-			expectedResult: "", // Will be checked manually below
+			// Array order is deterministic
+			expectedResult: "Environment=Production-Env,Cost-Center=12345",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := extractCategoryMappings(tt.cluster)
-			// Check if this is a test case that needs special handling for non-deterministic order
-			switch tt.name {
-			case "worker config with multiple categories":
-				// All categories are preserved, including duplicate keys with different values
-				assert.Contains(t, result, "Environment=Production", "Should contain Environment=Production")
-				assert.Contains(t, result, "Environment=Critical", "Should contain Environment=Critical")
-				assert.Contains(t, result, "Department=Engineering", "Should contain Department=Engineering")
-				assert.Contains(t, result, "Department=Infrastructure", "Should contain Department=Infrastructure")
-				assert.Contains(t, result, "Region=US-East", "Should contain Region=US-East")
-				assert.Equal(t, 5, strings.Count(result, "="), "Should have exactly 5 categories (all preserved)")
-			case "worker config with categories having empty keys or values (should be filtered)":
-				assert.Contains(t, result, "Environment=Production", "Should contain Environment=Production")
-				assert.Contains(t, result, "Region=US-East", "Should contain Region=US-East")
-				assert.Equal(t, 2, strings.Count(result, "="), "Should have exactly 2 categories")
-			case "worker config with categories having special characters":
-				assert.Contains(t, result, "Environment=Production-Env", "Should contain Environment=Production-Env")
-				assert.Contains(t, result, "Cost-Center=12345", "Should contain Cost-Center=12345")
-				assert.Equal(t, 2, strings.Count(result, "="), "Should have exactly 2 categories")
-			default:
-				// For all other tests, use exact match (including empty string cases)
-				assert.Equal(
-					t,
-					tt.expectedResult,
-					result,
-					"extractCategoryMappings() = %v, want %v",
-					result,
-					tt.expectedResult,
-				)
-			}
+			// Array order is deterministic, so we can use exact match for all cases
+			assert.Equal(
+				t,
+				tt.expectedResult,
+				result,
+				"extractCategoryMappings() = %v, want %v",
+				result,
+				tt.expectedResult,
+			)
 		})
 	}
 }
@@ -1004,4 +983,187 @@ func TestExtractCategoryMappings_WithDuplicateKeys(t *testing.T) {
 		result,
 		"categoryMappings should match exactly (all categories preserved including duplicates)",
 	)
+}
+
+func TestRemoveDuplicateCategories(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          []string
+		expectedResult []string
+	}{
+		{
+			name:           "empty slice",
+			input:          []string{},
+			expectedResult: []string{},
+		},
+		{
+			name:           "no duplicates",
+			input:          []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+			expectedResult: []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+		},
+		{
+			name:           "single duplicate",
+			input:          []string{"Environment=Production", "Department=Engineering", "Environment=Production"},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name: "multiple duplicates",
+			input: []string{
+				"Environment=Production",
+				"Department=Engineering",
+				"Environment=Production",
+				"Region=US-East",
+				"Department=Engineering",
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+		},
+		{
+			name:           "all duplicates",
+			input:          []string{"Environment=Production", "Environment=Production", "Environment=Production"},
+			expectedResult: []string{"Environment=Production"},
+		},
+		{
+			name:           "duplicates at beginning",
+			input:          []string{"Environment=Production", "Environment=Production", "Department=Engineering"},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name:           "duplicates at end",
+			input:          []string{"Environment=Production", "Department=Engineering", "Department=Engineering"},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name: "duplicates in middle",
+			input: []string{
+				"Environment=Production",
+				"Department=Engineering",
+				"Department=Engineering",
+				"Region=US-East",
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+		},
+		{
+			name:           "different values for same key are not duplicates",
+			input:          []string{"Environment=Production", "Environment=Staging", "Department=Engineering"},
+			expectedResult: []string{"Environment=Production", "Environment=Staging", "Department=Engineering"},
+		},
+		{
+			name:           "preserves order of first occurrence",
+			input:          []string{"A=1", "B=2", "A=1", "C=3", "B=2", "D=4"},
+			expectedResult: []string{"A=1", "B=2", "C=3", "D=4"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := removeDuplicateCategories(tt.input)
+			assert.Equal(
+				t,
+				tt.expectedResult,
+				result,
+				"removeDuplicateCategories() = %v, want %v",
+				result,
+				tt.expectedResult,
+			)
+		})
+	}
+}
+
+func TestFormatCategoriesFromSlice(t *testing.T) {
+	tests := []struct {
+		name           string
+		categories     []capxv1.NutanixCategoryIdentifier
+		expectedResult []string
+	}{
+		{
+			name:           "empty slice",
+			categories:     []capxv1.NutanixCategoryIdentifier{},
+			expectedResult: nil, // Go returns nil for empty slices
+		},
+		{
+			name: "single valid category",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+			},
+			expectedResult: []string{"Environment=Production"},
+		},
+		{
+			name: "multiple valid categories",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+				{Key: "Department", Value: "Engineering"},
+				{Key: "Region", Value: "US-East"},
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+		},
+		{
+			name: "category with empty key should be filtered",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+				{Key: "", Value: "SomeValue"},
+				{Key: "Department", Value: "Engineering"},
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name: "category with empty value should be filtered",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+				{Key: "Department", Value: ""},
+				{Key: "Region", Value: "US-East"},
+			},
+			expectedResult: []string{"Environment=Production", "Region=US-East"},
+		},
+		{
+			name: "category with both empty key and value should be filtered",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+				{Key: "", Value: ""},
+				{Key: "Department", Value: "Engineering"},
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name: "categories with special characters",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production-Env"},
+				{Key: "Cost-Center", Value: "12345"},
+			},
+			expectedResult: []string{"Environment=Production-Env", "Cost-Center=12345"},
+		},
+		{
+			name: "all categories filtered due to empty keys/values",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "", Value: "SomeValue"},
+				{Key: "Department", Value: ""},
+				{Key: "", Value: ""},
+			},
+			expectedResult: nil, // Go returns nil for empty slices
+		},
+		{
+			name: "mixed valid and invalid categories",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "", Value: "Invalid1"},
+				{Key: "Environment", Value: "Production"},
+				{Key: "Invalid2", Value: ""},
+				{Key: "Department", Value: "Engineering"},
+				{Key: "", Value: ""},
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatCategoriesFromSlice(tt.categories)
+			assert.Equal(
+				t,
+				tt.expectedResult,
+				result,
+				"formatCategoriesFromSlice() = %v, want %v",
+				result,
+				tt.expectedResult,
+			)
+		})
+	}
 }

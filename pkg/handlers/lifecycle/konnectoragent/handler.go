@@ -22,6 +22,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -332,13 +333,13 @@ func templateValuesFunc(
 func extractCategoryMappings(cluster *clusterv1.Cluster) string {
 	var categories []string
 
-	// Extract cluster-level categories from cluster topology variables
+	// Extract control plane nodes categories from cluster topology variables
 	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Variables != nil {
 		varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 		categories = append(categories, extractCategoriesFromVarMap(varMap)...)
 	}
 
-	// Append machine deployment overrides
+	// Append machine deployment overrides from all machine deployments
 	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Workers != nil {
 		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
 			md := &cluster.Spec.Topology.Workers.MachineDeployments[i]
@@ -347,8 +348,6 @@ func extractCategoryMappings(cluster *clusterv1.Cluster) string {
 				mdCategories := extractCategoriesFromVarMap(mdVarMap)
 				if len(mdCategories) > 0 {
 					categories = append(categories, mdCategories...)
-					// Use the first machine deployment's categories (if multiple, first one wins)
-					break
 				}
 			}
 		}
@@ -357,6 +356,9 @@ func extractCategoryMappings(cluster *clusterv1.Cluster) string {
 	if len(categories) == 0 {
 		return ""
 	}
+
+	// Remove duplicate category pairs (same key=value pairs)
+	categories = removeDuplicateCategories(categories)
 
 	return strings.Join(categories, ",")
 }
@@ -374,12 +376,9 @@ func extractCategoriesFromVarMap(varMap map[string]apiextensionsv1.JSON) []strin
 		clusterConfigVar.ControlPlane.Nutanix != nil &&
 		clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories != nil &&
 		len(clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories) > 0 {
-		for _, cat := range clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories {
-			if cat.Key != "" && cat.Value != "" {
-				categoryValue := fmt.Sprintf("%s=%s", cat.Key, cat.Value)
-				categories = append(categories, categoryValue)
-			}
-		}
+		categories = append(
+			categories,
+			formatCategoriesFromSlice(clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories)...)
 	}
 
 	// Then, extract worker categories
@@ -390,14 +389,40 @@ func extractCategoriesFromVarMap(varMap map[string]apiextensionsv1.JSON) []strin
 	if err == nil && workerConfigVar.Nutanix != nil &&
 		workerConfigVar.Nutanix.MachineDetails.AdditionalCategories != nil &&
 		len(workerConfigVar.Nutanix.MachineDetails.AdditionalCategories) > 0 {
-		for _, cat := range workerConfigVar.Nutanix.MachineDetails.AdditionalCategories {
-			if cat.Key != "" && cat.Value != "" {
-				categoryValue := fmt.Sprintf("%s=%s", cat.Key, cat.Value)
-				categories = append(categories, categoryValue)
-			}
-		}
+		categories = append(
+			categories,
+			formatCategoriesFromSlice(workerConfigVar.Nutanix.MachineDetails.AdditionalCategories)...)
 	}
 	return categories
+}
+
+// formatCategoriesFromSlice formats a slice of NutanixCategoryIdentifier into "key=value" strings.
+// It filters out categories with empty keys or values.
+func formatCategoriesFromSlice(categories []capxv1.NutanixCategoryIdentifier) []string {
+	var result []string
+	for _, cat := range categories {
+		if cat.Key != "" && cat.Value != "" {
+			categoryValue := fmt.Sprintf("%s=%s", cat.Key, cat.Value)
+			result = append(result, categoryValue)
+		}
+	}
+	return result
+}
+
+// removeDuplicateCategories removes duplicate category pairs (same key=value pairs)
+// while preserving the order of first occurrence
+func removeDuplicateCategories(categories []string) []string {
+	seen := make(map[string]bool)
+	result := make([]string, 0, len(categories))
+
+	for _, cat := range categories {
+		if !seen[cat] {
+			seen[cat] = true
+			result = append(result, cat)
+		}
+	}
+
+	return result
 }
 
 func (n *DefaultKonnectorAgent) BeforeClusterDelete(
