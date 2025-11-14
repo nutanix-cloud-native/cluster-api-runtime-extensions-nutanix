@@ -18,12 +18,13 @@ import (
 )
 
 var Checker = &nutanixChecker{
-	configurationCheckFactory:             newConfigurationCheck,
-	credentialsCheckFactory:               newCredentialsCheck,
-	failureDomainCheckFactory:             newFailureDomainChecks,
-	vmImageChecksFactory:                  newVMImageChecks,
-	vmImageKubernetesVersionChecksFactory: newVMImageKubernetesVersionChecks,
-	storageContainerChecksFactory:         newStorageContainerChecks,
+	configurationCheckFactory:                  newConfigurationCheck,
+	credentialsCheckFactory:                    newCredentialsCheck,
+	failureDomainCheckFactory:                  newFailureDomainChecks,
+	vmImageChecksFactory:                       newVMImageChecks,
+	vmImageKubernetesVersionChecksFactory:      newVMImageKubernetesVersionChecks,
+	storageContainerChecksFactory:              newStorageContainerChecks,
+	konnectorAgentLegacyDeploymentCheckFactory: newKonnectorAgentLegacyDeploymentCheck,
 }
 
 type nutanixChecker struct {
@@ -52,6 +53,10 @@ type nutanixChecker struct {
 	storageContainerChecksFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
+
+	konnectorAgentLegacyDeploymentCheckFactory func(
+		cd *checkDependencies,
+	) preflight.Check
 }
 
 type checkDependencies struct {
@@ -77,6 +82,16 @@ func (n *nutanixChecker) Init(
 		log:     ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
 	}
 
+	// The upgrade flag is set in preflight.go based on comparing old and new cluster objects
+	isUpgrade := preflight.IsUpgradeFromContext(ctx)
+	if isUpgrade {
+		// Upgrade scenario: only return konnector agent check
+		return []preflight.Check{
+			n.konnectorAgentLegacyDeploymentCheckFactory(cd),
+		}
+	}
+
+	// Create scenario: return all checks except konnector agent
 	checks := []preflight.Check{
 		// The configuration check must run first, because it initializes data used by all other checks,
 		// and the credentials check second, because it initializes the Nutanix clients used by other checks.
@@ -91,6 +106,7 @@ func (n *nutanixChecker) Init(
 	checks = append(checks, n.vmImageChecksFactory(cd)...)
 	checks = append(checks, n.vmImageKubernetesVersionChecksFactory(cd)...)
 	checks = append(checks, n.storageContainerChecksFactory(cd)...)
+	// Note: konnector agent check is excluded during CREATE operations
 
 	// Add more checks here as needed.
 

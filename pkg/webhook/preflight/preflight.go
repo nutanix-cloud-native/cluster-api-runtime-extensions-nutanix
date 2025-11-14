@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
@@ -25,6 +26,24 @@ const (
 	// IMPORTANT Keep in sync timeoutSeconds in the kubebuilder:webhook marker defined in this package.
 	Timeout = 30 * time.Second
 )
+
+type contextKey string
+
+const (
+	// contextKeyIsUpgrade is used to pass the upgrade flag to checkers via context.
+	contextKeyIsUpgrade contextKey = "isUpgrade"
+)
+
+// ContextKeyIsUpgrade returns the context key for checking if this is an upgrade scenario.
+// Checkers can use this to determine if they should run upgrade-specific checks.
+func ContextKeyIsUpgrade() contextKey {
+	return contextKeyIsUpgrade
+}
+
+// IsUpgradeFromContext checks if the context indicates this is an upgrade scenario.
+func IsUpgradeFromContext(ctx context.Context) bool {
+	return ctx.Value(contextKeyIsUpgrade) == true
+}
 
 type (
 	// Checker returns a set of checks that have been initialized with common dependencies,
@@ -118,15 +137,32 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	if req.Operation == admissionv1.Update {
-		log.V(5).Info("Skipping preflight checks for update operation")
-		return admission.Allowed("")
-	}
-
 	cluster := &clusterv1.Cluster{}
 	err := h.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	// Track if this is an upgrade scenario
+	isUpgrade := false
+	// For UPDATE operations, only run preflight checks if this is a cluster upgrade scenario
+	if req.Operation == admissionv1.Update {
+		oldCluster := &clusterv1.Cluster{}
+		err := h.decoder.DecodeRaw(req.OldObject, oldCluster)
+		if err != nil {
+			// If we can't decode the old object, skip preflight checks
+			log.Info("Could not decode old cluster object, skipping preflight checks for update", "error", err)
+			return admission.Allowed("")
+		}
+
+		// Check if this is an upgrade scenario
+		if !isClusterUpgradeScenario(oldCluster, cluster) {
+			log.Info("Update operation is not a cluster upgrade scenario, skipping preflight checks")
+			return admission.Allowed("")
+		}
+
+		isUpgrade = true
+		log.Info("Cluster upgrade detected, running preflight checks")
 	}
 
 	// Checks run only for ClusterClass-based clusters.
@@ -154,8 +190,32 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	// that we have time to summarize the results, and return a response.
 	checkTimeout := Timeout - 2*time.Second
 	checkCtx, checkCtxCancel := context.WithTimeout(ctx, checkTimeout)
+
+	// Pass the upgrade flag to checkers via context
+	if isUpgrade {
+		checkCtx = context.WithValue(checkCtx, contextKeyIsUpgrade, true)
+		log.Info("Upgrade scenario detected, filtering checkers to only run upgrade-specific checks")
+	}
+
+	// During upgrades, only run checks from checkers that support upgrade-only checks
+	// (e.g., nutanix checker which will only return konnector agent check)
+	// Skip generic checker and other checkers during upgrades
+	checkersToRun := h.checkers
+	if isUpgrade {
+		// Filter to only nutanix checker (which will return only konnector agent check during upgrades)
+		checkersToRun = []Checker{}
+		for _, checker := range h.checkers {
+			// Check if this is the nutanix checker by checking the type name
+			checkerType := fmt.Sprintf("%T", checker)
+			// Only include nutanix checker during upgrades
+			if strings.Contains(checkerType, "nutanix") {
+				checkersToRun = append(checkersToRun, checker)
+			}
+		}
+	}
+
 	log.V(5).Info("Running preflight checks")
-	resultsOrderedByCheckerAndCheck := run(checkCtx, h.client, cluster, skipEvaluator, h.checkers)
+	resultsOrderedByCheckerAndCheck := run(checkCtx, h.client, cluster, skipEvaluator, checkersToRun)
 	checkCtxCancel()
 
 	// Summarize the results.
@@ -304,4 +364,32 @@ func run(ctx context.Context,
 	checkersWG.Wait()
 
 	return resultsOrderedByCheckerAndCheck
+}
+
+// isClusterUpgradeScenario determines if the cluster update represents an upgrade scenario.
+// An upgrade scenario is triggered when:
+//   - The Kubernetes version (spec.topology.version) changes
+//   - The ClusterClass (spec.topology.class) changes
+//
+// These changes trigger the BeforeClusterUpgrade hook and may require preflight checks
+// to validate the cluster state before the upgrade proceeds.
+func isClusterUpgradeScenario(oldCluster, newCluster *clusterv1.Cluster) bool {
+	// Both clusters must have topology to be considered for upgrade
+	if oldCluster.Spec.Topology == nil || newCluster.Spec.Topology == nil {
+		return false
+	}
+
+	// Check if Kubernetes version changed (primary upgrade trigger)
+	if oldCluster.Spec.Topology.Version != newCluster.Spec.Topology.Version {
+		return true
+	}
+
+	// Check if ClusterClass changed (may trigger upgrade/reconciliation)
+	// Use GetClassKey() to compare both name and namespace
+	if oldCluster.GetClassKey() != newCluster.GetClassKey() {
+		return true
+	}
+
+	// Not an upgrade scenario
+	return false
 }

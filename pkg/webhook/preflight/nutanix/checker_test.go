@@ -48,7 +48,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			name:                               "basic initialization with no configs",
 			nutanixConfig:                      nil,
 			workerNodeConfigs:                  nil,
-			expectedCheckCount:                 2, // config check and credentials check
+			expectedCheckCount:                 2, // config check and credentials check (konnector agent check excluded during CREATE)
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			vmImageCheckCount:                  0,
@@ -64,7 +64,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 				},
 			},
 			workerNodeConfigs:                  nil,
-			expectedCheckCount:                 6, //nolint:lll // config check, credentials check, 1 VM image check, 1 storage container check, 1 VM image Kubernetes version check, 1 failure domain check
+			expectedCheckCount:                 6, //nolint:lll // config check, credentials check, 1 VM image check, 1 storage container check, 1 VM image Kubernetes version check, 1 failure domain check (konnector agent check excluded during CREATE)
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			vmImageCheckCount:                  1,
@@ -83,7 +83,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
-			expectedCheckCount:                 10, //nolint:lll // config check, credentials check, 2 VM image checks, 2 storage container checks, 2 VM image Kubernetes version checks, 2 failure domain checks
+			expectedCheckCount:                 10, //nolint:lll // config check, credentials check, 2 VM image checks, 2 storage container checks, 2 VM image Kubernetes version checks, 2 failure domain checks (konnector agent check excluded during CREATE)
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			vmImageCheckCount:                  2,
@@ -103,7 +103,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
-			expectedCheckCount:                 10, //nolint:lll // config check, credentials check, 2 VM image checks (1 CP + 1 worker), 2 storage container checks (1 CP + 1 worker), 2 VM image Kubernetes version checks, 2 failure domain checks
+			expectedCheckCount:                 10, //nolint:lll // config check, credentials check, 2 VM image checks (1 CP + 1 worker), 2 storage container checks (1 CP + 1 worker), 2 VM image Kubernetes version checks, 2 failure domain checks (konnector agent check excluded during CREATE)
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			vmImageCheckCount:                  2,
@@ -210,6 +210,13 @@ func TestNutanixChecker_Init(t *testing.T) {
 				return checks
 			}
 
+			checker.konnectorAgentLegacyDeploymentCheckFactory = func(cd *checkDependencies) preflight.Check {
+				return &mockCheck{
+					name:   "NutanixKonnectorAgentLegacyDeployment",
+					result: preflight.CheckResult{Allowed: true},
+				}
+			}
+
 			// Call Init
 			ctx := context.Background()
 			checks := checker.Init(ctx, nil, &clusterv1.Cluster{
@@ -243,6 +250,119 @@ func TestNutanixChecker_Init(t *testing.T) {
 			if len(checks) >= 2 {
 				assert.Equal(t, tt.expectedFirstCheckName, checks[0].Name())
 				assert.Equal(t, tt.expectedSecondCheckName, checks[1].Name())
+			}
+		})
+	}
+}
+
+func TestNutanixChecker_Init_UpgradeScenario(t *testing.T) {
+	tests := []struct {
+		name               string
+		hasUpgradeContext  bool
+		expectedCheckCount int
+		expectedCheckName  string
+	}{
+		{
+			name:               "upgrade scenario - only konnector agent check",
+			hasUpgradeContext:  true,
+			expectedCheckCount: 1,
+			expectedCheckName:  "NutanixKonnectorAgentLegacyDeployment",
+		},
+		{
+			name:               "create scenario - all checks except konnector agent",
+			hasUpgradeContext:  false,
+			expectedCheckCount: 2, // config check and credentials check
+			expectedCheckName:  "NutanixConfiguration",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create the checker
+			checker := &nutanixChecker{}
+
+			configCheckCalled := false
+			credsCheckCalled := false
+			konnectorAgentCheckCalled := false
+
+			checker.configurationCheckFactory = func(cd *checkDependencies) preflight.Check {
+				configCheckCalled = true
+				return &mockCheck{
+					name:   "NutanixConfiguration",
+					result: preflight.CheckResult{Allowed: true},
+				}
+			}
+
+			checker.credentialsCheckFactory = func(
+				ctx context.Context,
+				nclientFactory func(prismgoclient.Credentials) (client, error),
+				cd *checkDependencies,
+			) preflight.Check {
+				credsCheckCalled = true
+				return &mockCheck{
+					name:   "NutanixCredentials",
+					result: preflight.CheckResult{Allowed: true},
+				}
+			}
+
+			checker.konnectorAgentLegacyDeploymentCheckFactory = func(cd *checkDependencies) preflight.Check {
+				konnectorAgentCheckCalled = true
+				return &mockCheck{
+					name:   "NutanixKonnectorAgentLegacyDeployment",
+					result: preflight.CheckResult{Allowed: true},
+				}
+			}
+
+			// Mock other factory functions that might be called during CREATE scenario
+			checker.vmImageChecksFactory = func(cd *checkDependencies) []preflight.Check {
+				return []preflight.Check{}
+			}
+
+			checker.storageContainerChecksFactory = func(cd *checkDependencies) []preflight.Check {
+				return []preflight.Check{}
+			}
+
+			checker.vmImageKubernetesVersionChecksFactory = func(cd *checkDependencies) []preflight.Check {
+				return []preflight.Check{}
+			}
+
+			checker.failureDomainCheckFactory = func(cd *checkDependencies) []preflight.Check {
+				return []preflight.Check{}
+			}
+
+			// Create context with or without upgrade flag
+			ctx := context.Background()
+			if tt.hasUpgradeContext {
+				ctx = context.WithValue(ctx, preflight.ContextKeyIsUpgrade(), true)
+			}
+
+			// Call Init
+			checks := checker.Init(ctx, nil, &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "default",
+				},
+			})
+
+			// Verify correct number of checks
+			assert.Len(t, checks, tt.expectedCheckCount)
+
+			// Verify the first check name
+			if len(checks) > 0 {
+				assert.Equal(t, tt.expectedCheckName, checks[0].Name())
+			}
+
+			// Verify which checks were called
+			if tt.hasUpgradeContext {
+				// During upgrade, only konnector agent check should be called
+				assert.False(t, configCheckCalled, "Configuration check should not be called during upgrade")
+				assert.False(t, credsCheckCalled, "Credentials check should not be called during upgrade")
+				assert.True(t, konnectorAgentCheckCalled, "Konnector agent check should be called during upgrade")
+			} else {
+				// During create, config and credentials checks should be called, but not konnector agent
+				assert.True(t, configCheckCalled, "Configuration check should be called during create")
+				assert.True(t, credsCheckCalled, "Credentials check should be called during create")
+				assert.False(t, konnectorAgentCheckCalled, "Konnector agent check should not be called during create")
 			}
 		})
 	}

@@ -7,22 +7,16 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/release"
-	helmtime "helm.sh/helm/v3/pkg/time"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -277,28 +271,6 @@ func TestAfterControlPlaneInitialized(t *testing.T) {
 	assert.NotEqual(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
 }
 
-func TestBeforeClusterUpgrade(t *testing.T) {
-	handler := newTestHandler(t)
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{},
-			},
-		},
-	}
-
-	req := &runtimehooksv1.BeforeClusterUpgradeRequest{
-		Cluster: *cluster,
-	}
-	resp := &runtimehooksv1.BeforeClusterUpgradeResponse{}
-
-	handler.BeforeClusterUpgrade(context.Background(), req, resp)
-
-	// Should not fail (skip silently when variable missing)
-	assert.NotEqual(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
-}
-
 func TestApply_InvalidVariableJSON(t *testing.T) {
 	handler := newTestHandler(t)
 	cluster := &clusterv1.Cluster{
@@ -533,77 +505,7 @@ func TestApply_SuccessfulWithFullNutanixConfig(t *testing.T) {
 	assert.NotEqual(t, "", resp.Message) // Some response should be set
 }
 
-// Test helper to create a legacy Helm release
-func createLegacyRelease(name, namespace string, version int) *release.Release {
-	return &release.Release{
-		Name:      name,
-		Namespace: namespace,
-		Version:   version,
-		Info:      &release.Info{Status: release.StatusDeployed},
-		Chart: &chart.Chart{
-			Metadata: &chart.Metadata{
-				Name: legacyHelmChartName,
-			},
-		},
-	}
-}
-
-// Test helper to create a Helm release secret
-func createHelmReleaseSecret(name, namespace string, deletionTimestamp *metav1.Time) *corev1.Secret {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels: map[string]string{
-				"owner": "helm",
-			},
-		},
-		Type: corev1.SecretType("helm.sh/release.v1"),
-	}
-	if deletionTimestamp != nil {
-		secret.DeletionTimestamp = deletionTimestamp
-	}
-	return secret
-}
-
-func TestGetReleaseNames(t *testing.T) {
-	tests := []struct {
-		name     string
-		releases []*release.Release
-		want     []string
-	}{
-		{
-			name:     "empty releases",
-			releases: []*release.Release{},
-			want:     []string{},
-		},
-		{
-			name: "single release",
-			releases: []*release.Release{
-				{Name: "test-release"},
-			},
-			want: []string{"test-release"},
-		},
-		{
-			name: "multiple releases",
-			releases: []*release.Release{
-				{Name: "release-1"},
-				{Name: "release-2"},
-				{Name: "release-3"},
-			},
-			want: []string{"release-1", "release-2", "release-3"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := getReleaseNames(tt.releases)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func TestBeforeClusterUpgrade_LegacyHelmReleaseDeletion(t *testing.T) {
+func TestBeforeClusterUpgrade(t *testing.T) {
 	tests := []struct {
 		name           string
 		setupCluster   func() *clusterv1.Cluster
@@ -672,199 +574,4 @@ func TestBeforeClusterUpgrade_LegacyHelmReleaseDeletion(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestCheckLegacyHelmReleaseDeletionStatus_NoReleases(t *testing.T) {
-	// This test would require mocking Helm's list action
-	// For now, we'll test the logic that can be tested without Helm mocks
-	t.Skip("Requires Helm action mocking - to be implemented with proper test infrastructure")
-}
-
-func TestCheckLegacyHelmReleaseDeletionStatus_SecretNotFound(t *testing.T) {
-	// This test would verify that when a release exists but its secret is not found,
-	// it's treated as already deleted
-	t.Skip("Requires Helm action and remote client mocking - to be implemented")
-}
-
-func TestCheckLegacyHelmReleaseDeletionStatus_SecretInDeletion(t *testing.T) {
-	// This test would verify that when a secret has DeletionTimestamp,
-	// it returns in-progress status
-	t.Skip("Requires Helm action and remote client mocking - to be implemented")
-}
-
-func TestCheckLegacyHelmReleaseDeletionStatus_SecretTimedOut(t *testing.T) {
-	// This test would verify that when a secret has been in deletion for too long,
-	// it returns timed-out status
-	t.Skip("Requires Helm action and remote client mocking - to be implemented")
-}
-
-func TestCheckLegacyHelmReleaseDeletionStatus_SecretNotInDeletion(t *testing.T) {
-	// This test would verify that when a secret exists without DeletionTimestamp,
-	// it returns not-started status
-	t.Skip("Requires Helm action and remote client mocking - to be implemented")
-}
-
-func TestBeforeClusterUpgrade_CleanupStatusCompleted(t *testing.T) {
-	// This test verifies that when cleanup is completed, upgrade proceeds
-	handler := newTestHandler(t)
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{{
-					Name: v1alpha1.ClusterConfigVariableName,
-					Value: apiextensionsv1.JSON{
-						Raw: func() []byte {
-							b, _ := json.Marshal(map[string]interface{}{
-								"addons": map[string]interface{}{
-									"konnectorAgent": map[string]interface{}{},
-								},
-							})
-							return b
-						}(),
-					},
-				}},
-			},
-		},
-	}
-
-	req := &runtimehooksv1.BeforeClusterUpgradeRequest{
-		Cluster: *cluster,
-	}
-	resp := &runtimehooksv1.BeforeClusterUpgradeResponse{}
-
-	// This will fail at remote.RESTConfig since we don't have a real cluster
-	// but we can verify the structure is correct
-	handler.BeforeClusterUpgrade(context.Background(), req, resp)
-
-	// The test will fail at remote cluster access, but we verify the hook structure
-	assert.NotNil(t, resp)
-}
-
-func TestBeforeClusterUpgrade_CleanupStatusInProgress(t *testing.T) {
-	// This test would verify that when cleanup is in progress,
-	// it returns a retry response
-	t.Skip("Requires mocking remote cluster and Helm - to be implemented")
-}
-
-func TestBeforeClusterUpgrade_CleanupStatusTimedOut(t *testing.T) {
-	// This test would verify that when cleanup times out,
-	// upgrade continues (best-effort)
-	t.Skip("Requires mocking remote cluster and Helm - to be implemented")
-}
-
-func TestBeforeClusterUpgrade_CleanupStatusNotStarted(t *testing.T) {
-	// This test would verify that when cleanup hasn't started,
-	// it triggers deletion
-	t.Skip("Requires mocking remote cluster and Helm - to be implemented")
-}
-
-// Test that StateMask includes uninstalling releases
-func TestListActionStateMask_IncludesUninstalling(t *testing.T) {
-	// This is a unit test to verify the StateMask configuration
-	// We can't easily test the full Helm integration, but we can verify the constant values
-
-	// Verify that ListUninstalling is defined
-	assert.NotZero(t, action.ListUninstalling, "ListUninstalling should be non-zero")
-
-	// Verify the StateMask includes uninstalling
-	expectedMask := action.ListDeployed | action.ListFailed | action.ListUninstalling
-	assert.True(t, (expectedMask&action.ListUninstalling) != 0, "StateMask should include ListUninstalling")
-	assert.True(t, (expectedMask&action.ListDeployed) != 0, "StateMask should include ListDeployed")
-	assert.True(t, (expectedMask&action.ListFailed) != 0, "StateMask should include ListFailed")
-}
-
-func TestDeleteLegacyHelmRelease_NoReleases(t *testing.T) {
-	// This test would verify that when no releases exist, it returns nil
-	t.Skip("Requires Helm action mocking - to be implemented")
-}
-
-func TestDeleteLegacyHelmRelease_NoLegacyReleases(t *testing.T) {
-	// This test would verify that when releases exist but none are legacy,
-	// it returns nil
-	t.Skip("Requires Helm action mocking - to be implemented")
-}
-
-func TestDeleteLegacyHelmRelease_Success(t *testing.T) {
-	// This test would verify successful deletion of legacy releases
-	t.Skip("Requires Helm action mocking - to be implemented")
-}
-
-func TestDeleteLegacyHelmRelease_PartialFailure(t *testing.T) {
-	// This test would verify that if some releases fail to delete,
-	// it continues with others
-	t.Skip("Requires Helm action mocking - to be implemented")
-}
-
-// Test validation logic for release fields
-func TestCheckLegacyHelmReleaseDeletionStatus_InvalidReleaseFields(t *testing.T) {
-	// This test would verify that releases with invalid fields (empty name, invalid version, etc.)
-	// are skipped properly
-	t.Skip("Requires Helm action mocking - to be implemented")
-}
-
-// Test error handling when remote client creation fails
-func TestCheckLegacyHelmReleaseDeletionStatus_RemoteClientError(t *testing.T) {
-	handler := newTestHandler(t)
-	cluster := &clusterv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{},
-			},
-		},
-	}
-
-	log := ctrl.LoggerFrom(context.Background())
-
-	// This will fail because we don't have a real cluster kubeconfig
-	_, _, err := handler.checkLegacyHelmReleaseDeletionStatus(context.Background(), cluster, log)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "error getting REST config for remote cluster")
-}
-
-// Test error handling when Helm list fails
-func TestCheckLegacyHelmReleaseDeletionStatus_HelmListError(t *testing.T) {
-	// This test would verify error handling when Helm list action fails
-	t.Skip("Requires Helm action mocking - to be implemented")
-}
-
-// Test error handling when Secret get fails (non-NotFound error)
-func TestCheckLegacyHelmReleaseDeletionStatus_SecretGetError(t *testing.T) {
-	// This test would verify that when Secret get fails with a non-NotFound error,
-	// the release is skipped
-	t.Skip("Requires remote client mocking - to be implemented")
-}
-
-// Test multiple releases with mixed states
-func TestCheckLegacyHelmReleaseDeletionStatus_MixedStates(t *testing.T) {
-	// This test would verify handling of multiple releases where:
-	// - Some are in deletion
-	// - Some are not in deletion
-	// - Some secrets are not found
-	t.Skip("Requires comprehensive mocking - to be implemented")
-}
-
-// Test timeout calculation
-func TestCheckLegacyHelmReleaseDeletionStatus_TimeoutCalculation(t *testing.T) {
-	// Create a release with StatusUninstalling and Deleted timestamp set to timeout + 1 minute ago
-	oldTime := time.Now().Add(-helmUninstallTimeout - 1*time.Minute)
-	rel := createLegacyRelease("test-release", "default", 1)
-	rel.Info.Status = release.StatusUninstalling
-	rel.Info.Deleted = helmtime.Time{Time: oldTime}
-
-	assert.Equal(t, release.StatusUninstalling, rel.Info.Status)
-	assert.False(t, rel.Info.Deleted.IsZero())
-	deletionDuration := time.Since(rel.Info.Deleted.Time)
-	assert.Greater(t, deletionDuration, helmUninstallTimeout, "Deletion duration should exceed timeout")
-}
-
-// Test that all releases are checked even if some fail
-func TestCheckLegacyHelmReleaseDeletionStatus_ContinuesOnError(t *testing.T) {
-	// This test would verify that if one release's secret can't be read,
-	// it continues checking other releases
-	t.Skip("Requires remote client mocking - to be implemented")
 }

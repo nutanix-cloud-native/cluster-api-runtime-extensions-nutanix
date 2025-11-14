@@ -1,0 +1,311 @@
+// Copyright 2025 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package nutanix
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/go-logr/logr"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/release"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/discovery/cached/memory"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
+)
+
+const (
+	// legacyHelmChartName is the chart name of the old helm release
+	// that needs to be detected during upgrades.
+	legacyHelmChartName = "nutanix-k8s-agent"
+)
+
+type konnectorAgentLegacyDeploymentCheck struct {
+	kclient ctrlclient.Client
+	cluster *clusterv1.Cluster
+	log     logr.Logger
+}
+
+func (k *konnectorAgentLegacyDeploymentCheck) Name() string {
+	return "NutanixKonnectorAgentLegacyDeployment"
+}
+
+func (k *konnectorAgentLegacyDeploymentCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{
+		Allowed: true,
+	}
+
+	// This check only runs during cluster upgrades, not during cluster creation
+	// During upgrades, InfrastructureReady should already be true (cluster is already running)
+	if !k.cluster.Status.InfrastructureReady {
+		k.log.Info("Cluster infrastructure not ready (likely a CREATE operation), skipping legacy deployment check")
+		return result
+	}
+
+	// Only check if konnector agent is enabled in the cluster configuration
+	// Skip the check if the addon is not configured
+	varMap := variables.ClusterVariablesToVariablesMap(k.cluster.Spec.Topology.Variables)
+	_, err := variables.Get[apivariables.NutanixKonnectorAgent](
+		varMap,
+		carenv1.ClusterConfigVariableName,
+		[]string{"addons", carenv1.KonnectorAgentVariableName}...,
+	)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			k.log.Info("Konnector Agent addon not enabled, skipping legacy deployment check")
+			return result
+		}
+		// If there's an error reading the variable, log it but don't block
+		k.log.Info("Error reading Konnector Agent variable, skipping legacy deployment check", "error", err)
+		return result
+	}
+
+	// Get REST config for the cluster being upgraded
+	// remote.RESTConfig works for both workload clusters (via kubeconfig secret) and management clusters
+	clusterKey := ctrlclient.ObjectKeyFromObject(k.cluster)
+	restConfig, err := remote.RESTConfig(ctx, "", k.kclient, clusterKey)
+	if err != nil {
+		k.log.Info("Could not get REST config for cluster for legacy deployment check",
+			"error", err,
+			"cluster", clusterKey,
+		)
+		// Allow the operation to proceed - this is a best-effort check
+		return result
+	}
+
+	// List and filter legacy Helm releases in the cluster being upgraded
+	k.log.Info("Listing Helm releases to check for legacy deployments")
+	legacyReleases, err := k.listLegacyHelmReleases(restConfig)
+	if err != nil {
+		k.log.Info("Error searching for legacy Helm releases",
+			"error", err,
+			"cluster", clusterKey,
+		)
+		return result
+	}
+
+	if len(legacyReleases) == 0 {
+		// No legacy releases found - check passed
+		k.log.Info("No legacy Helm releases found, check passed")
+		return result
+	}
+
+	// Found legacy Helm releases - return error with instructions
+	releaseDetails := make([]string, 0, len(legacyReleases))
+	uninstallCommands := make([]string, 0, len(legacyReleases))
+	forceUninstallCommands := make([]string, 0, len(legacyReleases))
+	for _, rel := range legacyReleases {
+		releaseDetails = append(releaseDetails, fmt.Sprintf("%s (namespace: %s)", rel.Name, rel.Namespace))
+		uninstallCommands = append(
+			uninstallCommands,
+			fmt.Sprintf("helm uninstall %s -n %s --kubeconfig <kubeconfig-path>", rel.Name, rel.Namespace),
+		)
+		forceUninstallCommands = append(
+			forceUninstallCommands,
+			fmt.Sprintf("helm uninstall %s -n %s --no-hooks --kubeconfig <kubeconfig-path>", rel.Name, rel.Namespace),
+		)
+	}
+
+	releaseInfo := fmt.Sprintf(
+		"%d release(s) for chart %q: %v",
+		len(legacyReleases),
+		legacyHelmChartName,
+		releaseDetails,
+	)
+	uninstallInfo := fmt.Sprintf(
+		"To uninstall, run the following command(s) for each release:\n  %s\n",
+		strings.Join(uninstallCommands, "\n  "),
+	)
+
+	message := fmt.Sprintf(
+		"Enabling onboarding functionality as an addon with the cluster. "+
+			"Found legacy installation(s) of onboarding agent in the cluster: %s. "+
+			"Please uninstall this/these legacy Helm release(s) to proceed with the upgrade and avoid conflicts. %s"+
+			"If the release is stuck or the uninstall fails, use the force removal command:\n "+
+			"  %s\n\n"+
+			"After removing the legacy release(s), re-run the upgrade.",
+		releaseInfo, uninstallInfo, forceUninstallCommands,
+	)
+
+	result.Allowed = false
+	result.Causes = []preflight.Cause{
+		{
+			Message: message,
+			Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.addons.konnectorAgent",
+		},
+	}
+
+	return result
+}
+
+// listLegacyHelmReleases lists and filters Helm releases to find legacy releases
+// with the specified chart name across all namespaces.
+func (k *konnectorAgentLegacyDeploymentCheck) listLegacyHelmReleases(
+	restConfig *rest.Config,
+) ([]*release.Release, error) {
+	// Initialize Helm action configuration
+	// Use empty namespace when AllNamespaces=true to allow listing from all namespaces
+	actionConfig, err := k.initHelmActionConfig(restConfig, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Helm action config: %w", err)
+	}
+
+	// List Helm releases across all namespaces using Helm's List action.
+	listAction := action.NewList(actionConfig)
+	listAction.AllNamespaces = true
+	// Include all release states to catch legacy releases in any state
+	listAction.StateMask = action.ListDeployed | action.ListFailed | action.ListUninstalling |
+		action.ListSuperseded | action.ListPendingInstall | action.ListPendingUpgrade |
+		action.ListPendingRollback
+
+	releases, err := listAction.Run()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list Helm releases: %w", err)
+	}
+
+	// Filter releases by chart name to find legacy releases.
+	var legacyReleases []*release.Release
+	for _, rel := range releases {
+		if rel.Chart != nil && rel.Chart.Name() == legacyHelmChartName {
+			k.log.Info("Found legacy Helm release",
+				"release", rel.Name,
+				"namespace", rel.Namespace,
+				"chart", rel.Chart.Name(),
+			)
+			legacyReleases = append(legacyReleases, rel)
+		}
+	}
+	return legacyReleases, nil
+}
+
+// initHelmActionConfig initializes a Helm action configuration for the given namespace.
+func (k *konnectorAgentLegacyDeploymentCheck) initHelmActionConfig(
+	restConfig *rest.Config,
+	namespace string,
+) (*action.Configuration, error) {
+	// Create a RESTClientGetter for Helm
+	restClientGetter := &restConfigGetter{
+		restConfig: restConfig,
+	}
+
+	// Create a Helm action configuration
+	actionConfig := new(action.Configuration)
+
+	// Initialize the action configuration with the RESTClientGetter
+	if err := actionConfig.Init(
+		restClientGetter,
+		namespace,
+		"secret", // Helm storage driver (secrets)
+		func(format string, v ...interface{}) {
+			k.log.V(5).Info(fmt.Sprintf(format, v...))
+		},
+	); err != nil {
+		return nil, fmt.Errorf("failed to initialize Helm action config: %w", err)
+	}
+
+	return actionConfig, nil
+}
+
+// restConfigGetter implements Helm's RESTClientGetter interface
+// to use a REST config directly instead of kubeconfig files.
+type restConfigGetter struct {
+	restConfig      *rest.Config
+	discoveryClient discovery.CachedDiscoveryInterface
+	restMapper      meta.RESTMapper
+}
+
+func (g *restConfigGetter) ToRESTConfig() (*rest.Config, error) {
+	return g.restConfig, nil
+}
+
+func (g *restConfigGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
+	// Create a client config that uses the REST config directly
+	// This ensures we can access all namespaces when AllNamespaces=true
+	return &restConfigClientConfig{
+		restConfig: g.restConfig,
+	}
+}
+
+// restConfigClientConfig implements clientcmd.ClientConfig using a rest.Config directly.
+type restConfigClientConfig struct {
+	restConfig *rest.Config
+}
+
+func (c *restConfigClientConfig) RawConfig() (clientcmdapi.Config, error) {
+	return clientcmdapi.Config{}, nil
+}
+
+func (c *restConfigClientConfig) ClientConfig() (*rest.Config, error) {
+	return c.restConfig, nil
+}
+
+func (c *restConfigClientConfig) Namespace() (namespace string, overridden bool, err error) {
+	// Return empty namespace to allow access to all namespaces
+	// This is important when AllNamespaces=true in Helm list action
+	return "", false, nil
+}
+
+func (c *restConfigClientConfig) ConfigAccess() clientcmd.ConfigAccess {
+	return &clientcmd.PathOptions{}
+}
+
+func (g *restConfigGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
+	if g.discoveryClient != nil {
+		return g.discoveryClient, nil
+	}
+
+	// Create a discovery client from the REST config
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(g.restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	// Cache the discovery client
+	cachedDiscoveryClient := memory.NewMemCacheClient(discoveryClient)
+	g.discoveryClient = cachedDiscoveryClient
+	return cachedDiscoveryClient, nil
+}
+
+// ToRESTMapper returns a REST mapper that maps GroupVersionKinds to REST resources.
+// This is required by Helm's RESTClientGetter interface and is used by Helm's kube client
+// to resolve resource types.
+func (g *restConfigGetter) ToRESTMapper() (meta.RESTMapper, error) {
+	if g.restMapper != nil {
+		return g.restMapper, nil
+	}
+
+	// Get the discovery client
+	discoveryClient, err := g.ToDiscoveryClient()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a REST mapper from the discovery client
+	mapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
+	g.restMapper = mapper
+	return mapper, nil
+}
+
+func newKonnectorAgentLegacyDeploymentCheck(
+	cd *checkDependencies,
+) preflight.Check {
+	return &konnectorAgentLegacyDeploymentCheck{
+		kclient: cd.kclient,
+		cluster: cd.cluster,
+		log:     cd.log,
+	}
+}
