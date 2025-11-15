@@ -64,4 +64,8 @@ const (
 	// SkipCiliumKubeProxyReplacementValidation is the key of the annotation on the Cluster
 	// used to skip Cilium kube-proxy replacement validation.
 	SkipCiliumKubeProxyReplacementValidation = APIGroup + "/skip-cilium-kube-proxy-replacement-validation"
+
+	// SkipKonnectorAgentLegacyDeploymentValidation is the key of the annotation on the Cluster
+	// used to skip Konnector Agent legacy deployment validation.
+	SkipKonnectorAgentLegacyDeploymentValidation = APIGroup + "/skip-konnector-agent-legacy-deployment-validation"
 )

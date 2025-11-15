@@ -1,16 +1,17 @@
 // Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package nutanix
+package cluster
 
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
+	v1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
@@ -21,11 +22,11 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
 const (
@@ -34,74 +35,87 @@ const (
 	legacyHelmChartName = "nutanix-k8s-agent"
 )
 
-type konnectorAgentLegacyDeploymentCheck struct {
-	kclient ctrlclient.Client
-	cluster *clusterv1.Cluster
-	log     logr.Logger
+type konnectorAgentLegacyValidator struct {
+	client  ctrlclient.Client
+	decoder admission.Decoder
 }
 
-func (k *konnectorAgentLegacyDeploymentCheck) Name() string {
-	return "NutanixKonnectorAgentLegacyDeployment"
+func NewKonnectorAgentLegacyValidator(
+	client ctrlclient.Client, decoder admission.Decoder,
+) *konnectorAgentLegacyValidator {
+	return &konnectorAgentLegacyValidator{
+		client:  client,
+		decoder: decoder,
+	}
 }
 
-func (k *konnectorAgentLegacyDeploymentCheck) Run(ctx context.Context) preflight.CheckResult {
-	result := preflight.CheckResult{
-		Allowed: true,
+func (k *konnectorAgentLegacyValidator) Validator() admission.HandlerFunc {
+	return k.validate
+}
+
+func (k *konnectorAgentLegacyValidator) validate(
+	ctx context.Context,
+	req admission.Request,
+) admission.Response {
+	if req.Operation == v1.Delete {
+		return admission.Allowed("")
 	}
 
-	// This check only runs during cluster upgrades, not during cluster creation
-	// During upgrades, InfrastructureReady should already be true (cluster is already running)
-	if !k.cluster.Status.InfrastructureReady {
-		k.log.Info("Cluster infrastructure not ready (likely a CREATE operation), skipping legacy deployment check")
-		return result
+	cluster := &clusterv1.Cluster{}
+	err := k.decoder.Decode(req, cluster)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if cluster.Spec.Topology == nil {
+		return admission.Allowed("")
+	}
+
+	// Skip validation if the skip annotation is present
+	if hasKonnectorAgentSkipAnnotation(cluster) {
+		return admission.Allowed("")
+	}
+
+	// This check only runs when cluster infrastructure is ready (cluster is running)
+	// During CREATE operations, InfrastructureReady will be false, so we skip
+	if !cluster.Status.InfrastructureReady {
+		return admission.Allowed("")
 	}
 
 	// Only check if konnector agent is enabled in the cluster configuration
 	// Skip the check if the addon is not configured
-	varMap := variables.ClusterVariablesToVariablesMap(k.cluster.Spec.Topology.Variables)
-	_, err := variables.Get[apivariables.NutanixKonnectorAgent](
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	_, err = variables.Get[apivariables.NutanixKonnectorAgent](
 		varMap,
-		carenv1.ClusterConfigVariableName,
-		[]string{"addons", carenv1.KonnectorAgentVariableName}...,
+		v1alpha1.ClusterConfigVariableName,
+		[]string{"addons", v1alpha1.KonnectorAgentVariableName}...,
 	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			k.log.Info("Konnector Agent addon not enabled, skipping legacy deployment check")
-			return result
+			return admission.Allowed("")
 		}
-		// If there's an error reading the variable, log it but don't block
-		k.log.Info("Error reading Konnector Agent variable, skipping legacy deployment check", "error", err)
-		return result
+		// If there's an error reading the variable, allow the operation to proceed
+		return admission.Allowed("")
 	}
 
-	// Get REST config for the cluster being upgraded
-	// remote.RESTConfig works for both workload clusters (via kubeconfig secret) and management clusters
-	clusterKey := ctrlclient.ObjectKeyFromObject(k.cluster)
-	restConfig, err := remote.RESTConfig(ctx, "", k.kclient, clusterKey)
+	// Get REST config for the cluster
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+	restConfig, err := remote.RESTConfig(ctx, "", k.client, clusterKey)
 	if err != nil {
-		k.log.Info("Could not get REST config for cluster for legacy deployment check",
-			"error", err,
-			"cluster", clusterKey,
-		)
 		// Allow the operation to proceed - this is a best-effort check
-		return result
+		return admission.Allowed("")
 	}
 
-	// List and filter legacy Helm releases in the cluster being upgraded
-	k.log.Info("Listing Helm releases to check for legacy deployments")
+	// List and filter legacy Helm releases in the cluster
 	legacyReleases, err := k.listLegacyHelmReleases(restConfig)
 	if err != nil {
-		k.log.Info("Error searching for legacy Helm releases",
-			"error", err,
-			"cluster", clusterKey,
-		)
-		return result
+		// Allow the operation to proceed - this is a best-effort check
+		return admission.Allowed("")
 	}
 
 	if len(legacyReleases) == 0 {
 		// No legacy releases found - check passed
-		k.log.Info("No legacy Helm releases found, check passed")
-		return result
+		return admission.Allowed("")
 	}
 
 	// Found legacy Helm releases - return error with instructions
@@ -126,35 +140,25 @@ func (k *konnectorAgentLegacyDeploymentCheck) Run(ctx context.Context) preflight
 		legacyHelmChartName,
 		releaseDetails,
 	)
-	uninstallInfo := fmt.Sprintf(
-		"To uninstall, run the following command(s) for each release:\n  %s\n",
-		strings.Join(uninstallCommands, "\n  "),
-	)
 
 	message := fmt.Sprintf(
-		"Enabling onboarding functionality as an addon with the cluster. "+
-			"Found legacy installation(s) of onboarding agent in the cluster: %s. "+
-			"Please uninstall this/these legacy Helm release(s) to proceed with the upgrade and avoid conflicts. %s"+
-			"If the release is stuck or the uninstall fails, use the force removal command:\n "+
-			"  %s\n\n"+
-			"After removing the legacy release(s), re-run the upgrade.",
-		releaseInfo, uninstallInfo, forceUninstallCommands,
+		"\nCannot enable onboarding functionality as an addon: legacy installation(s) detected.\n\n"+
+			"Found %s in the cluster.\n\n"+
+			"ACTION REQUIRED: Uninstall the legacy Helm release(s) before proceeding to avoid conflicts.\n\n"+
+			"To uninstall, run the following command(s):\n  %s\n\n"+
+			"If the release is stuck or uninstall fails, use the force removal command:\n  %s\n\n"+
+			"After removing the legacy release(s), re-run the operation.",
+		releaseInfo,
+		strings.Join(uninstallCommands, "\n  "),
+		strings.Join(forceUninstallCommands, "\n  "),
 	)
 
-	result.Allowed = false
-	result.Causes = []preflight.Cause{
-		{
-			Message: message,
-			Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.addons.konnectorAgent",
-		},
-	}
-
-	return result
+	return admission.Denied(message)
 }
 
 // listLegacyHelmReleases lists and filters Helm releases to find legacy releases
 // with the specified chart name across all namespaces.
-func (k *konnectorAgentLegacyDeploymentCheck) listLegacyHelmReleases(
+func (k *konnectorAgentLegacyValidator) listLegacyHelmReleases(
 	restConfig *rest.Config,
 ) ([]*release.Release, error) {
 	// Initialize Helm action configuration
@@ -181,11 +185,6 @@ func (k *konnectorAgentLegacyDeploymentCheck) listLegacyHelmReleases(
 	var legacyReleases []*release.Release
 	for _, rel := range releases {
 		if rel.Chart != nil && rel.Chart.Name() == legacyHelmChartName {
-			k.log.Info("Found legacy Helm release",
-				"release", rel.Name,
-				"namespace", rel.Namespace,
-				"chart", rel.Chart.Name(),
-			)
 			legacyReleases = append(legacyReleases, rel)
 		}
 	}
@@ -193,7 +192,7 @@ func (k *konnectorAgentLegacyDeploymentCheck) listLegacyHelmReleases(
 }
 
 // initHelmActionConfig initializes a Helm action configuration for the given namespace.
-func (k *konnectorAgentLegacyDeploymentCheck) initHelmActionConfig(
+func (k *konnectorAgentLegacyValidator) initHelmActionConfig(
 	restConfig *rest.Config,
 	namespace string,
 ) (*action.Configuration, error) {
@@ -211,7 +210,7 @@ func (k *konnectorAgentLegacyDeploymentCheck) initHelmActionConfig(
 		namespace,
 		"secret", // Helm storage driver (secrets)
 		func(format string, v ...interface{}) {
-			k.log.V(5).Info(fmt.Sprintf(format, v...))
+			// Use a no-op logger for Helm debug messages
 		},
 	); err != nil {
 		return nil, fmt.Errorf("failed to initialize Helm action config: %w", err)
@@ -300,12 +299,10 @@ func (g *restConfigGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	return mapper, nil
 }
 
-func newKonnectorAgentLegacyDeploymentCheck(
-	cd *checkDependencies,
-) preflight.Check {
-	return &konnectorAgentLegacyDeploymentCheck{
-		kclient: cd.kclient,
-		cluster: cd.cluster,
-		log:     cd.log,
+func hasKonnectorAgentSkipAnnotation(cluster *clusterv1.Cluster) bool {
+	if cluster.Annotations == nil {
+		return false
 	}
+	val, ok := cluster.Annotations[v1alpha1.SkipKonnectorAgentLegacyDeploymentValidation]
+	return ok && val == "true"
 }
