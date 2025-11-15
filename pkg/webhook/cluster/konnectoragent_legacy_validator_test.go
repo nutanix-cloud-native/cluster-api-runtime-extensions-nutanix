@@ -6,7 +6,6 @@ package cluster
 import (
 	"context"
 	"encoding/json"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -22,11 +21,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
-
-func TestKonnectorAgentLegacyValidator(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Konnector Agent Legacy Validator Suite")
-}
 
 var _ = Describe("KonnectorAgentLegacyValidator", func() {
 	var (

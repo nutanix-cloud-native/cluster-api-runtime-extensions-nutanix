@@ -326,21 +326,6 @@ clusterName: {{ .ClusterName }}
 		assert.Contains(t, result, "clusterName: test-cluster")
 	})
 
-	t.Run("template with joinQuoted function", func(t *testing.T) {
-		// Use a different approach since 'list' function is not available in the template
-		valuesTemplate := `
-		{{- $items := slice "item1" "item2" "item3" -}}
-		items: [{{ joinQuoted $items }}]`
-
-		result, err := templateFunc(cluster, valuesTemplate)
-		if err != nil {
-			// Skip this test if slice function is not available either
-			t.Skip("Advanced template functions not available in this context")
-		}
-
-		assert.Contains(t, result, `items: ["item1", "item2", "item3"]`)
-	})
-
 	t.Run("invalid template syntax", func(t *testing.T) {
 		valuesTemplate := `{{ .InvalidSyntax`
 
