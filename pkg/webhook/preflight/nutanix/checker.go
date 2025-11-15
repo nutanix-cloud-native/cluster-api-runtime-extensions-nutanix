@@ -77,7 +77,6 @@ func (n *nutanixChecker) Init(
 		log:     ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
 	}
 
-	// Create scenario: return all checks
 	checks := []preflight.Check{
 		// The configuration check must run first, because it initializes data used by all other checks,
 		// and the credentials check second, because it initializes the Nutanix clients used by other checks.

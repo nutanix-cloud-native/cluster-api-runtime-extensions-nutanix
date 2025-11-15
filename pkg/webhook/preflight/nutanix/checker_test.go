@@ -48,7 +48,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			name:                               "basic initialization with no configs",
 			nutanixConfig:                      nil,
 			workerNodeConfigs:                  nil,
-			expectedCheckCount:                 2, // config check and credentials check (konnector agent check excluded during CREATE)
+			expectedCheckCount:                 2, // config check and credentials check
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			vmImageCheckCount:                  0,
@@ -64,7 +64,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 				},
 			},
 			workerNodeConfigs:                  nil,
-			expectedCheckCount:                 6, //nolint:lll // config check, credentials check, 1 VM image check, 1 storage container check, 1 VM image Kubernetes version check, 1 failure domain check (konnector agent check excluded during CREATE)
+			expectedCheckCount:                 6, //nolint:lll // config check, credentials check, 1 VM image check, 1 storage container check, 1 VM image Kubernetes version check, 1 failure domain check
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			vmImageCheckCount:                  1,
@@ -83,7 +83,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
-			expectedCheckCount:                 10, //nolint:lll // config check, credentials check, 2 VM image checks, 2 storage container checks, 2 VM image Kubernetes version checks, 2 failure domain checks (konnector agent check excluded during CREATE)
+			expectedCheckCount:                 10, //nolint:lll // config check, credentials check, 2 VM image checks, 2 storage container checks, 2 VM image Kubernetes version checks, 2 failure domain checks
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			vmImageCheckCount:                  2,
@@ -103,7 +103,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
-			expectedCheckCount:                 10, //nolint:lll // config check, credentials check, 2 VM image checks (1 CP + 1 worker), 2 storage container checks (1 CP + 1 worker), 2 VM image Kubernetes version checks, 2 failure domain checks (konnector agent check excluded during CREATE)
+			expectedCheckCount:                 10, //nolint:lll // config check, credentials check, 2 VM image checks (1 CP + 1 worker), 2 storage container checks (1 CP + 1 worker), 2 VM image Kubernetes version checks, 2 failure domain checks
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			vmImageCheckCount:                  2,

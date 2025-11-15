@@ -118,6 +118,11 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
+	if req.Operation == admissionv1.Update {
+		log.V(5).Info("Skipping preflight checks for update operation")
+		return admission.Allowed("")
+	}
+
 	cluster := &clusterv1.Cluster{}
 	err := h.decoder.Decode(req, cluster)
 	if err != nil {
@@ -149,10 +154,9 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	// that we have time to summarize the results, and return a response.
 	checkTimeout := Timeout - 2*time.Second
 	checkCtx, checkCtxCancel := context.WithTimeout(ctx, checkTimeout)
-	defer checkCtxCancel()
-
 	log.V(5).Info("Running preflight checks")
 	resultsOrderedByCheckerAndCheck := run(checkCtx, h.client, cluster, skipEvaluator, h.checkers)
+	checkCtxCancel()
 
 	// Summarize the results.
 	resp := admission.Response{
