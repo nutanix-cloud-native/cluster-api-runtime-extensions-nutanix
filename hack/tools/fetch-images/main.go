@@ -382,12 +382,14 @@ prismEndPoint: endpoint
 			PrismCentralPort     uint16
 			PrismCentralInsecure bool
 			ClusterName          string
+			CategoryMappings     string
 		}{
 			AgentName:            "konnector-agent",
 			PrismCentralHost:     "prism-central.example.com",
 			PrismCentralPort:     9440,
 			PrismCentralInsecure: true,
 			ClusterName:          "test-cluster",
+			CategoryMappings:     "",
 		}
 
 		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)

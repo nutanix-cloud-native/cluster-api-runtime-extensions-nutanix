@@ -14,6 +14,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -21,6 +22,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -287,6 +289,7 @@ func templateValuesFunc(
 			PrismCentralPort     uint16
 			PrismCentralInsecure bool
 			ClusterName          string
+			CategoryMappings     string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -301,6 +304,9 @@ func templateValuesFunc(
 			clusterName = clusterName[:maxClusterNameLength]
 		}
 
+		// Extract categoryMappings from worker config additionalCategories
+		categoryMappings := extractCategoryMappings(cluster)
+
 		templateInput := input{
 			AgentName:        defaultK8sAgentName,
 			PrismCentralHost: address,
@@ -309,6 +315,7 @@ func templateValuesFunc(
 			// need to add support to accept PC's trust bundle in agent(it's not implemented currently)
 			PrismCentralInsecure: true,
 			ClusterName:          clusterName,
+			CategoryMappings:     categoryMappings,
 		}
 
 		var b bytes.Buffer
@@ -319,6 +326,103 @@ func templateValuesFunc(
 
 		return b.String(), nil
 	}
+}
+
+// extractCategoryMappings extracts additionalCategories from both control plane and worker config variables
+// and converts them to comma-separated format.
+func extractCategoryMappings(cluster *clusterv1.Cluster) string {
+	var categories []string
+
+	// Extract control plane nodes categories from cluster topology variables
+	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Variables != nil {
+		varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+		categories = append(categories, extractCategoriesFromVarMap(varMap)...)
+	}
+
+	// Append machine deployment overrides from all machine deployments
+	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Workers != nil {
+		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
+			md := &cluster.Spec.Topology.Workers.MachineDeployments[i]
+			if md.Variables != nil && len(md.Variables.Overrides) > 0 {
+				mdVarMap := variables.ClusterVariablesToVariablesMap(md.Variables.Overrides)
+				mdCategories := extractCategoriesFromVarMap(mdVarMap)
+				if len(mdCategories) > 0 {
+					categories = append(categories, mdCategories...)
+				}
+			}
+		}
+	}
+
+	if len(categories) == 0 {
+		return ""
+	}
+
+	// Remove duplicate category pairs (same key=value pairs)
+	categories = removeDuplicateCategories(categories)
+
+	return strings.Join(categories, ",")
+}
+
+// extractCategoriesFromVarMap extracts additionalCategories from a variable map
+// and returns them as a slice of "key=value" strings. It extracts from both control plane and worker config.
+func extractCategoriesFromVarMap(varMap map[string]apiextensionsv1.JSON) []string {
+	var categories []string
+
+	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+	)
+	if err == nil && clusterConfigVar.ControlPlane != nil &&
+		clusterConfigVar.ControlPlane.Nutanix != nil &&
+		clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories != nil &&
+		len(clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories) > 0 {
+		categories = append(
+			categories,
+			formatCategoriesFromSlice(clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories)...)
+	}
+
+	// Then, extract worker categories
+	workerConfigVar, err := variables.Get[apivariables.WorkerNodeConfigSpec](
+		varMap,
+		v1alpha1.WorkerConfigVariableName,
+	)
+	if err == nil && workerConfigVar.Nutanix != nil &&
+		workerConfigVar.Nutanix.MachineDetails.AdditionalCategories != nil &&
+		len(workerConfigVar.Nutanix.MachineDetails.AdditionalCategories) > 0 {
+		categories = append(
+			categories,
+			formatCategoriesFromSlice(workerConfigVar.Nutanix.MachineDetails.AdditionalCategories)...)
+	}
+	return categories
+}
+
+// formatCategoriesFromSlice formats a slice of NutanixCategoryIdentifier into "key=value" strings.
+// It filters out categories with empty keys or values.
+func formatCategoriesFromSlice(categories []capxv1.NutanixCategoryIdentifier) []string {
+	var result []string
+	for _, cat := range categories {
+		if cat.Key != "" && cat.Value != "" {
+			categoryValue := fmt.Sprintf("%s=%s", cat.Key, cat.Value)
+			result = append(result, categoryValue)
+		}
+	}
+	return result
+}
+
+// removeDuplicateCategories removes duplicate category pairs (same key=value pairs)
+// while preserving the order of first occurrence.
+func removeDuplicateCategories(categories []string) []string {
+	seen := make(map[string]bool)
+	result := make([]string, 0, len(categories))
+
+	for _, cat := range categories {
+		if !seen[cat] {
+			seen[cat] = true
+			result = append(result, cat)
+		}
+	}
+
+	return result
 }
 
 func (n *DefaultKonnectorAgent) BeforeClusterDelete(

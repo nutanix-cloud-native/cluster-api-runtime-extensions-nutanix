@@ -18,6 +18,7 @@ import (
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -425,6 +426,81 @@ func TestTemplateValuesFunc_TruncatesLongClusterName(t *testing.T) {
 	assert.Equal(t, maxClusterNameLength, len(expectedTruncated), "Truncated name should be exactly 40 characters")
 }
 
+func TestTemplateValuesFunc_CategoryMappings(t *testing.T) {
+	cluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+	}
+
+	nutanixConfig := &v1alpha1.NutanixSpec{
+		PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+			URL:      "https://prism-central.example.com:9440",
+			Insecure: true,
+		},
+	}
+
+	t.Run("with empty categoryMappings", func(t *testing.T) {
+		templateFunc := templateValuesFunc(nutanixConfig, cluster)
+
+		// Use the actual template format from values-template.yaml
+		valuesTemplate := `{{- if .CategoryMappings }}
+categoryMappings: {{ .CategoryMappings }}
+{{- end }}`
+		result, err := templateFunc(cluster, valuesTemplate)
+
+		require.NoError(t, err)
+		// Should not render categoryMappings field when CategoryMappings is empty
+		assert.NotContains(t, result, `categoryMappings`)
+	})
+
+	t.Run("with non-empty categoryMappings", func(t *testing.T) {
+		clusterWithCategories := &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+			Spec: clusterv1.ClusterSpec{
+				Topology: &clusterv1.Topology{
+					Variables: []clusterv1.ClusterVariable{
+						{
+							Name: v1alpha1.WorkerConfigVariableName,
+							Value: apiextensionsv1.JSON{
+								Raw: []byte(`{
+									"nutanix": {
+										"machineDetails": {
+											"additionalCategories": [
+												{
+													"key": "Environment",
+													"value": "Production"
+												},
+												{
+													"key": "Department",
+													"value": "Engineering"
+												}
+											]
+										}
+									}
+								}`),
+							},
+						},
+					},
+				},
+			},
+		}
+		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories)
+
+		// Use the actual template format from values-template.yaml
+		valuesTemplate := `{{- if .CategoryMappings }}
+categoryMappings: {{ .CategoryMappings }}
+{{- else }}
+categoryMappings: ""
+{{- end }}`
+		result, err := templateFunc(clusterWithCategories, valuesTemplate)
+
+		require.NoError(t, err)
+		// Check for exact categoryMappings value (order is preserved as in input)
+		expectedCategoryMappings := "Environment=Production,Department=Engineering"
+		expectedResult := "\ncategoryMappings: " + expectedCategoryMappings
+		assert.Equal(t, expectedResult, result, "categoryMappings should match exactly")
+	})
+}
+
 func TestApply_ClusterConfigVariableFailure(t *testing.T) {
 	handler := newTestHandler(t)
 	cluster := &clusterv1.Cluster{
@@ -524,4 +600,568 @@ func TestApply_SuccessfulWithFullNutanixConfig(t *testing.T) {
 	// This might fail due to ConfigMap not being available, but the structure is correct
 	// The test verifies that the parsing and setup work correctly
 	assert.NotEqual(t, "", resp.Message) // Some response should be set
+}
+
+func TestExtractCategoryMappings(t *testing.T) {
+	tests := []struct {
+		name           string
+		cluster        *clusterv1.Cluster
+		expectedResult string
+	}{
+		{
+			name:           "no worker config variable",
+			cluster:        &clusterv1.Cluster{},
+			expectedResult: "",
+		},
+		{
+			name: "worker config with no nutanix section",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name:  v1alpha1.WorkerConfigVariableName,
+								Value: apiextensionsv1.JSON{Raw: []byte(`{}`)},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: "",
+		},
+		{
+			name: "worker config with no additionalCategories",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name: v1alpha1.WorkerConfigVariableName,
+								Value: apiextensionsv1.JSON{
+									Raw: []byte(`{
+										"nutanix": {
+											"machineDetails": {}
+										}
+									}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: "",
+		},
+		{
+			name: "worker config with empty additionalCategories",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name: v1alpha1.WorkerConfigVariableName,
+								Value: apiextensionsv1.JSON{
+									Raw: []byte(`{
+										"nutanix": {
+											"machineDetails": {
+												"additionalCategories": []
+											}
+										}
+									}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: "",
+		},
+		{
+			name: "worker config with single category",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name: v1alpha1.WorkerConfigVariableName,
+								Value: apiextensionsv1.JSON{
+									Raw: []byte(`{
+										"nutanix": {
+											"machineDetails": {
+												"additionalCategories": [
+													{
+														"key": "Environment",
+														"value": "Production"
+													}
+												]
+											}
+										}
+									}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: "Environment=Production",
+		},
+		{
+			name: "worker config with multiple categories",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name: v1alpha1.WorkerConfigVariableName,
+								Value: apiextensionsv1.JSON{
+									Raw: []byte(`{
+										"nutanix": {
+											"machineDetails": {
+												"additionalCategories": [
+													{
+														"key": "Environment",
+														"value": "Production"
+													},
+													{
+														"key": "Environment",
+														"value": "Critical"
+													},
+													{
+														"key": "Department",
+														"value": "Engineering"
+													},
+													{
+														"key": "Department",
+														"value": "Infrastructure"
+													},
+													{
+														"key": "Region",
+														"value": "US-East"
+													}
+												]
+											}
+										}
+									}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			// Array order is deterministic, all categories are preserved in order
+			expectedResult: "Environment=Production,Environment=Critical,Department=Engineering,Department=Infrastructure,Region=US-East",
+		},
+		{
+			name: "worker config with categories having empty keys or values (should be filtered)",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name: v1alpha1.WorkerConfigVariableName,
+								Value: apiextensionsv1.JSON{
+									Raw: []byte(`{
+										"nutanix": {
+											"machineDetails": {
+												"additionalCategories": [
+													{
+														"key": "Environment",
+														"value": "Production"
+													},
+													{
+														"key": "",
+														"value": "SomeValue"
+													},
+													{
+														"key": "Department",
+														"value": ""
+													},
+													{
+														"key": "Region",
+														"value": "US-East"
+													}
+												]
+											}
+										}
+									}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			// Array order is deterministic, empty keys/values are filtered out
+			expectedResult: "Environment=Production,Region=US-East",
+		},
+		{
+			name: "worker config with categories having special characters",
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name: v1alpha1.WorkerConfigVariableName,
+								Value: apiextensionsv1.JSON{
+									Raw: []byte(`{
+										"nutanix": {
+											"machineDetails": {
+												"additionalCategories": [
+													{
+														"key": "Environment",
+														"value": "Production-Env"
+													},
+													{
+														"key": "Cost-Center",
+														"value": "12345"
+													}
+												]
+											}
+										}
+									}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			// Array order is deterministic
+			expectedResult: "Environment=Production-Env,Cost-Center=12345",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extractCategoryMappings(tt.cluster)
+			// Array order is deterministic, so we can use exact match for all cases
+			assert.Equal(
+				t,
+				tt.expectedResult,
+				result,
+				"extractCategoryMappings() = %v, want %v",
+				result,
+				tt.expectedResult,
+			)
+		})
+	}
+}
+
+func TestExtractCategoryMappings_WithMachineDeploymentOverrides(t *testing.T) {
+	// Test that categories are combined from both cluster-level and machine deployment overrides
+	cluster := &clusterv1.Cluster{
+		Spec: clusterv1.ClusterSpec{
+			Topology: &clusterv1.Topology{
+				Variables: []clusterv1.ClusterVariable{
+					{
+						Name: v1alpha1.WorkerConfigVariableName,
+						Value: apiextensionsv1.JSON{
+							Raw: []byte(`{
+								"nutanix": {
+									"machineDetails": {
+										"additionalCategories": [
+											{
+												"key": "Environment",
+												"value": "Production"
+											}
+										]
+									}
+								}
+							}`),
+						},
+					},
+				},
+				Workers: &clusterv1.WorkersTopology{
+					MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						{
+							Name: "md-0",
+							Variables: &clusterv1.MachineDeploymentVariables{
+								Overrides: []clusterv1.ClusterVariable{
+									{
+										Name: v1alpha1.WorkerConfigVariableName,
+										Value: apiextensionsv1.JSON{
+											Raw: []byte(`{
+												"nutanix": {
+													"machineDetails": {
+														"additionalCategories": [
+															{
+																"key": "Department",
+																"value": "Engineering"
+															}
+														]
+													}
+												}
+											}`),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Categories should be combined: cluster-level + machine deployment
+	// Order: cluster-level first, then machine deployment overrides
+	result := extractCategoryMappings(cluster)
+	expectedResult := "Environment=Production,Department=Engineering"
+	assert.Equal(t, expectedResult, result, "categoryMappings should match exactly")
+}
+
+func TestExtractCategoryMappings_WithDuplicateKeys(t *testing.T) {
+	// Test that all categories are preserved, including duplicate keys with different values
+	cluster := &clusterv1.Cluster{
+		Spec: clusterv1.ClusterSpec{
+			Topology: &clusterv1.Topology{
+				Variables: []clusterv1.ClusterVariable{
+					{
+						Name: v1alpha1.WorkerConfigVariableName,
+						Value: apiextensionsv1.JSON{
+							Raw: []byte(`{
+								"nutanix": {
+									"machineDetails": {
+										"additionalCategories": [
+											{
+												"key": "Environment",
+												"value": "Production"
+											},
+											{
+												"key": "Region",
+												"value": "US-East"
+											}
+										]
+									}
+								}
+							}`),
+						},
+					},
+				},
+				Workers: &clusterv1.WorkersTopology{
+					MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						{
+							Name: "md-0",
+							Variables: &clusterv1.MachineDeploymentVariables{
+								Overrides: []clusterv1.ClusterVariable{
+									{
+										Name: v1alpha1.WorkerConfigVariableName,
+										Value: apiextensionsv1.JSON{
+											Raw: []byte(`{
+												"nutanix": {
+													"machineDetails": {
+														"additionalCategories": [
+															{
+																"key": "Environment",
+																"value": "Staging"
+															},
+															{
+																"key": "Department",
+																"value": "Engineering"
+															}
+														]
+													}
+												}
+											}`),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// All categories are preserved, including duplicates: cluster-level first, then machine deployment overrides
+	result := extractCategoryMappings(cluster)
+	// Expected order: cluster-level categories first, then machine deployment override categories
+	expectedResult := "Environment=Production,Region=US-East,Environment=Staging,Department=Engineering"
+	assert.Equal(
+		t,
+		expectedResult,
+		result,
+		"categoryMappings should match exactly (all categories preserved including duplicates)",
+	)
+}
+
+func TestRemoveDuplicateCategories(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          []string
+		expectedResult []string
+	}{
+		{
+			name:           "empty slice",
+			input:          []string{},
+			expectedResult: []string{},
+		},
+		{
+			name:           "no duplicates",
+			input:          []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+			expectedResult: []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+		},
+		{
+			name:           "single duplicate",
+			input:          []string{"Environment=Production", "Department=Engineering", "Environment=Production"},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name: "multiple duplicates",
+			input: []string{
+				"Environment=Production",
+				"Department=Engineering",
+				"Environment=Production",
+				"Region=US-East",
+				"Department=Engineering",
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+		},
+		{
+			name:           "all duplicates",
+			input:          []string{"Environment=Production", "Environment=Production", "Environment=Production"},
+			expectedResult: []string{"Environment=Production"},
+		},
+		{
+			name:           "duplicates at beginning",
+			input:          []string{"Environment=Production", "Environment=Production", "Department=Engineering"},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name:           "duplicates at end",
+			input:          []string{"Environment=Production", "Department=Engineering", "Department=Engineering"},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name: "duplicates in middle",
+			input: []string{
+				"Environment=Production",
+				"Department=Engineering",
+				"Department=Engineering",
+				"Region=US-East",
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+		},
+		{
+			name:           "different values for same key are not duplicates",
+			input:          []string{"Environment=Production", "Environment=Staging", "Department=Engineering"},
+			expectedResult: []string{"Environment=Production", "Environment=Staging", "Department=Engineering"},
+		},
+		{
+			name:           "preserves order of first occurrence",
+			input:          []string{"A=1", "B=2", "A=1", "C=3", "B=2", "D=4"},
+			expectedResult: []string{"A=1", "B=2", "C=3", "D=4"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := removeDuplicateCategories(tt.input)
+			assert.Equal(
+				t,
+				tt.expectedResult,
+				result,
+				"removeDuplicateCategories() = %v, want %v",
+				result,
+				tt.expectedResult,
+			)
+		})
+	}
+}
+
+func TestFormatCategoriesFromSlice(t *testing.T) {
+	tests := []struct {
+		name           string
+		categories     []capxv1.NutanixCategoryIdentifier
+		expectedResult []string
+	}{
+		{
+			name:           "empty slice",
+			categories:     []capxv1.NutanixCategoryIdentifier{},
+			expectedResult: nil, // Go returns nil for empty slices
+		},
+		{
+			name: "single valid category",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+			},
+			expectedResult: []string{"Environment=Production"},
+		},
+		{
+			name: "multiple valid categories",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+				{Key: "Department", Value: "Engineering"},
+				{Key: "Region", Value: "US-East"},
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering", "Region=US-East"},
+		},
+		{
+			name: "category with empty key should be filtered",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+				{Key: "", Value: "SomeValue"},
+				{Key: "Department", Value: "Engineering"},
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name: "category with empty value should be filtered",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+				{Key: "Department", Value: ""},
+				{Key: "Region", Value: "US-East"},
+			},
+			expectedResult: []string{"Environment=Production", "Region=US-East"},
+		},
+		{
+			name: "category with both empty key and value should be filtered",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production"},
+				{Key: "", Value: ""},
+				{Key: "Department", Value: "Engineering"},
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+		{
+			name: "categories with special characters",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "Environment", Value: "Production-Env"},
+				{Key: "Cost-Center", Value: "12345"},
+			},
+			expectedResult: []string{"Environment=Production-Env", "Cost-Center=12345"},
+		},
+		{
+			name: "all categories filtered due to empty keys/values",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "", Value: "SomeValue"},
+				{Key: "Department", Value: ""},
+				{Key: "", Value: ""},
+			},
+			expectedResult: nil, // Go returns nil for empty slices
+		},
+		{
+			name: "mixed valid and invalid categories",
+			categories: []capxv1.NutanixCategoryIdentifier{
+				{Key: "", Value: "Invalid1"},
+				{Key: "Environment", Value: "Production"},
+				{Key: "Invalid2", Value: ""},
+				{Key: "Department", Value: "Engineering"},
+				{Key: "", Value: ""},
+			},
+			expectedResult: []string{"Environment=Production", "Department=Engineering"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatCategoriesFromSlice(tt.categories)
+			assert.Equal(
+				t,
+				tt.expectedResult,
+				result,
+				"formatCategoriesFromSlice() = %v, want %v",
+				result,
+				tt.expectedResult,
+			)
+		})
+	}
 }
