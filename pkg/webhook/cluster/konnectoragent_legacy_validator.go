@@ -12,15 +12,11 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
 	v1 "k8s.io/api/admission/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/discovery/cached/memory"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/restmapper"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
+	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -57,28 +53,38 @@ func (k *konnectorAgentLegacyValidator) validate(
 	ctx context.Context,
 	req admission.Request,
 ) admission.Response {
-	if req.Operation == v1.Delete {
+	log := ctrl.LoggerFrom(ctx)
+
+	// Only validate on UPDATE operations
+	// Skip CREATE and DELETE operations
+	if req.Operation != v1.Update {
+		log.Info("Skipping validation for non-UPDATE operations", "operation", req.Operation)
 		return admission.Allowed("")
 	}
 
 	cluster := &clusterv1.Cluster{}
 	err := k.decoder.Decode(req, cluster)
 	if err != nil {
+		log.Error(err, "Failed to decode cluster")
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
 	if cluster.Spec.Topology == nil {
+		log.Info("Skipping validation for cluster without topology")
 		return admission.Allowed("")
 	}
 
 	// Skip validation if the skip annotation is present
 	if hasKonnectorAgentSkipAnnotation(cluster) {
+		log.Info("Skipping validation for cluster with skip annotation")
 		return admission.Allowed("")
 	}
 
-	// This check only runs when cluster infrastructure is ready (cluster is running)
-	// During CREATE operations, InfrastructureReady will be false, so we skip
+	// This check requires connecting to the workload cluster to list Helm releases.
+	// Skip validation if infrastructure is not ready, as we cannot connect to the cluster yet.
+	// This can happen during UPDATE operations early in cluster provisioning.
 	if !cluster.Status.InfrastructureReady {
+		log.Info("Skipping validation for cluster without infrastructure ready")
 		return admission.Allowed("")
 	}
 
@@ -92,6 +98,7 @@ func (k *konnectorAgentLegacyValidator) validate(
 	)
 	if err != nil {
 		// If there's an error reading the variable, allow the operation to proceed
+		log.Info("Failed to get konnector agent addon, allowing operation", "error", err)
 		return admission.Allowed("")
 	}
 
@@ -101,6 +108,7 @@ func (k *konnectorAgentLegacyValidator) validate(
 	if err != nil {
 		// If we can't reach the workload cluster API,
 		// skip the check to avoid blocking valid operations unnecessarily.
+		log.Info("Failed to get REST config, allowing operation", "error", err)
 		return admission.Allowed("")
 	}
 
@@ -109,11 +117,13 @@ func (k *konnectorAgentLegacyValidator) validate(
 	if err != nil {
 		// If legacy releases cannot be listed,
 		// skip the check to avoid blocking valid upgrade operations unnecessarily.
+		log.Info("Failed to list legacy Helm releases, allowing operation", "error", err)
 		return admission.Allowed("")
 	}
 
 	if len(legacyReleases) == 0 {
 		// No legacy releases found - check passed
+		log.Info("No legacy Helm releases found")
 		return admission.Allowed("")
 	}
 
@@ -195,17 +205,19 @@ func (k *konnectorAgentLegacyValidator) initHelmActionConfig(
 	restConfig *rest.Config,
 	namespace string,
 ) (*action.Configuration, error) {
-	// Create a RESTClientGetter for Helm
-	restClientGetter := &restConfigGetter{
-		restConfig: restConfig,
+	configFlags := genericclioptions.NewConfigFlags(true)
+	configFlags.WrapConfigFn = func(*rest.Config) *rest.Config {
+		return restConfig
 	}
+	// Override namespace to allow access to all namespaces when AllNamespaces=true
+	configFlags.Namespace = nil
 
 	// Create a Helm action configuration
 	actionConfig := new(action.Configuration)
 
 	// Initialize the action configuration with the RESTClientGetter
 	if err := actionConfig.Init(
-		restClientGetter,
+		configFlags,
 		namespace,
 		"secret", // Helm storage driver (secrets)
 		func(format string, v ...interface{}) {
@@ -216,86 +228,6 @@ func (k *konnectorAgentLegacyValidator) initHelmActionConfig(
 	}
 
 	return actionConfig, nil
-}
-
-// restConfigGetter implements Helm's RESTClientGetter interface
-// to use a REST config directly instead of kubeconfig files.
-type restConfigGetter struct {
-	restConfig      *rest.Config
-	discoveryClient discovery.CachedDiscoveryInterface
-	restMapper      meta.RESTMapper
-}
-
-func (g *restConfigGetter) ToRESTConfig() (*rest.Config, error) {
-	return g.restConfig, nil
-}
-
-func (g *restConfigGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
-	// Create a client config that uses the REST config directly
-	// This ensures we can access all namespaces when AllNamespaces=true
-	return &restConfigClientConfig{
-		restConfig: g.restConfig,
-	}
-}
-
-// restConfigClientConfig implements clientcmd.ClientConfig using a rest.Config directly.
-type restConfigClientConfig struct {
-	restConfig *rest.Config
-}
-
-func (c *restConfigClientConfig) RawConfig() (clientcmdapi.Config, error) {
-	return clientcmdapi.Config{}, nil
-}
-
-func (c *restConfigClientConfig) ClientConfig() (*rest.Config, error) {
-	return c.restConfig, nil
-}
-
-func (c *restConfigClientConfig) Namespace() (namespace string, overridden bool, err error) {
-	// Return empty namespace to allow access to all namespaces
-	// This is important when AllNamespaces=true in Helm list action
-	return "", false, nil
-}
-
-func (c *restConfigClientConfig) ConfigAccess() clientcmd.ConfigAccess {
-	return &clientcmd.PathOptions{}
-}
-
-func (g *restConfigGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
-	if g.discoveryClient != nil {
-		return g.discoveryClient, nil
-	}
-
-	// Create a discovery client from the REST config
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(g.restConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create discovery client: %w", err)
-	}
-
-	// Cache the discovery client
-	cachedDiscoveryClient := memory.NewMemCacheClient(discoveryClient)
-	g.discoveryClient = cachedDiscoveryClient
-	return cachedDiscoveryClient, nil
-}
-
-// ToRESTMapper returns a REST mapper that maps GroupVersionKinds to REST resources.
-// This is required by Helm's RESTClientGetter interface and is used by Helm's kube client
-// to resolve resource types.
-func (g *restConfigGetter) ToRESTMapper() (meta.RESTMapper, error) {
-	if g.restMapper != nil {
-		return g.restMapper, nil
-	}
-
-	// Get the discovery client
-	discoveryClient, err := g.ToDiscoveryClient()
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a REST mapper from the discovery client
-	mapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
-	g.restMapper = mapper
-	return mapper, nil
 }
 
 func hasKonnectorAgentSkipAnnotation(cluster *clusterv1.Cluster) bool {

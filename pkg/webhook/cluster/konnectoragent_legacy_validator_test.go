@@ -38,8 +38,20 @@ var _ = Describe("KonnectorAgentLegacyValidator", func() {
 		decoder = admission.NewDecoder(scheme)
 	})
 
-	Context("when operation is DELETE", func() {
-		It("should allow deletion", func() {
+	Context("when operation is not UPDATE", func() {
+		It("should allow CREATE operation", func() {
+			cluster := createTestClusterWithKonnectorAgent("test-cluster", "test-namespace", true)
+			req := createAdmissionRequest(cluster)
+			req.Operation = admissionv1.Create
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKonnectorAgentLegacyValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+		})
+
+		It("should allow DELETE operation", func() {
 			cluster := createTestClusterWithKonnectorAgent("test-cluster", "test-namespace", true)
 			req := createAdmissionRequest(cluster)
 			req.Operation = admissionv1.Delete
@@ -61,6 +73,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", func() {
 				},
 			}
 			req := createAdmissionRequest(cluster)
+			req.Operation = admissionv1.Update
 
 			client := fake.NewClientBuilder().WithScheme(scheme).Build()
 			validator = NewKonnectorAgentLegacyValidator(client, decoder)
@@ -80,6 +93,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", func() {
 			}
 
 			req := createAdmissionRequest(cluster)
+			req.Operation = admissionv1.Update
 
 			client := fake.NewClientBuilder().WithScheme(scheme).Build()
 			validator = NewKonnectorAgentLegacyValidator(client, decoder)
@@ -97,6 +111,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", func() {
 			}
 
 			req := createAdmissionRequest(cluster)
+			req.Operation = admissionv1.Update
 
 			client := fake.NewClientBuilder().WithScheme(scheme).Build()
 			validator = NewKonnectorAgentLegacyValidator(client, decoder)
@@ -109,6 +124,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", func() {
 		It("should not skip validation when annotation is missing", func() {
 			cluster := createTestClusterWithKonnectorAgent("test-cluster", "test-namespace", true)
 			req := createAdmissionRequest(cluster)
+			req.Operation = admissionv1.Update
 
 			client := fake.NewClientBuilder().WithScheme(scheme).Build()
 			validator = NewKonnectorAgentLegacyValidator(client, decoder)
@@ -120,9 +136,10 @@ var _ = Describe("KonnectorAgentLegacyValidator", func() {
 	})
 
 	Context("when infrastructure is not ready", func() {
-		It("should allow the cluster (CREATE scenario)", func() {
+		It("should allow the cluster during UPDATE", func() {
 			cluster := createTestClusterWithKonnectorAgent("test-cluster", "test-namespace", false)
 			req := createAdmissionRequest(cluster)
+			req.Operation = admissionv1.Update
 
 			client := fake.NewClientBuilder().WithScheme(scheme).Build()
 			validator = NewKonnectorAgentLegacyValidator(client, decoder)
@@ -139,6 +156,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", func() {
 			// Remove konnector agent from cluster config
 			cluster.Spec.Topology.Variables = []clusterv1.ClusterVariable{}
 			req := createAdmissionRequest(cluster)
+			req.Operation = admissionv1.Update
 
 			client := fake.NewClientBuilder().WithScheme(scheme).Build()
 			validator = NewKonnectorAgentLegacyValidator(client, decoder)
