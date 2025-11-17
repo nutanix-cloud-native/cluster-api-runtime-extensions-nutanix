@@ -444,14 +444,12 @@ func TestTemplateValuesFunc_CategoryMappings(t *testing.T) {
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}
 categoryMappings: {{ .CategoryMappings }}
-{{- else }}
-categoryMappings: ""
 {{- end }}`
 		result, err := templateFunc(cluster, valuesTemplate)
 
 		require.NoError(t, err)
-		// Should render empty string when CategoryMappings is empty
-		assert.Contains(t, result, `categoryMappings: ""`)
+		// Should not render categoryMappings field when CategoryMappings is empty
+		assert.NotContains(t, result, `categoryMappings`)
 	})
 
 	t.Run("with non-empty categoryMappings", func(t *testing.T) {
