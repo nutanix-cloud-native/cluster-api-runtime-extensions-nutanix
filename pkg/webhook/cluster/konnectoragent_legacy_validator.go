@@ -91,9 +91,6 @@ func (k *konnectorAgentLegacyValidator) validate(
 		[]string{"addons", v1alpha1.KonnectorAgentVariableName}...,
 	)
 	if err != nil {
-		if variables.IsNotFoundError(err) {
-			return admission.Allowed("")
-		}
 		// If there's an error reading the variable, allow the operation to proceed
 		return admission.Allowed("")
 	}
