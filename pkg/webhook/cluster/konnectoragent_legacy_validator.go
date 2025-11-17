@@ -102,14 +102,16 @@ func (k *konnectorAgentLegacyValidator) validate(
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 	restConfig, err := remote.RESTConfig(ctx, "", k.client, clusterKey)
 	if err != nil {
-		// Allow the operation to proceed - this is a best-effort check
+		// If we can't reach the workload cluster API,
+		// skip the check to avoid blocking valid operations unnecessarily.
 		return admission.Allowed("")
 	}
 
 	// List and filter legacy Helm releases in the cluster
 	legacyReleases, err := k.listLegacyHelmReleases(restConfig)
 	if err != nil {
-		// Allow the operation to proceed - this is a best-effort check
+		// If legacy releases cannot be listed,
+		// skip the check to avoid blocking valid upgrade operations unnecessarily.
 		return admission.Allowed("")
 	}
 
