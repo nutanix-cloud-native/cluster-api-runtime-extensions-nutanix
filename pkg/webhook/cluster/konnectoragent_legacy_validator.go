@@ -112,7 +112,6 @@ func (k *konnectorAgentLegacyValidator) validate(
 	if err != nil {
 		// If legacy releases cannot be listed,
 		// skip the check to avoid blocking valid upgrade operations unnecessarily.
-		log.Info("Failed to list legacy Helm releases, allowing operation", "error", err)
 		return admission.Allowed("")
 	}
 
