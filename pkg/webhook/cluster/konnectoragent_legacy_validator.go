@@ -58,7 +58,6 @@ func (k *konnectorAgentLegacyValidator) validate(
 	// Only validate on UPDATE operations
 	// Skip CREATE and DELETE operations
 	if req.Operation != v1.Update {
-		log.Info("Skipping validation for non-UPDATE operations", "operation", req.Operation)
 		return admission.Allowed("")
 	}
 
@@ -70,13 +69,11 @@ func (k *konnectorAgentLegacyValidator) validate(
 	}
 
 	if cluster.Spec.Topology == nil {
-		log.Info("Skipping validation for cluster without topology")
 		return admission.Allowed("")
 	}
 
 	// Skip validation if the skip annotation is present
 	if hasKonnectorAgentSkipAnnotation(cluster) {
-		log.Info("Skipping validation for cluster with skip annotation")
 		return admission.Allowed("")
 	}
 
@@ -84,7 +81,6 @@ func (k *konnectorAgentLegacyValidator) validate(
 	// Skip validation if infrastructure is not ready, as we cannot connect to the cluster yet.
 	// This can happen during UPDATE operations early in cluster provisioning.
 	if !cluster.Status.InfrastructureReady {
-		log.Info("Skipping validation for cluster without infrastructure ready")
 		return admission.Allowed("")
 	}
 
@@ -98,7 +94,6 @@ func (k *konnectorAgentLegacyValidator) validate(
 	)
 	if err != nil {
 		// If there's an error reading the variable, allow the operation to proceed
-		log.Info("Failed to get konnector agent addon, allowing operation", "error", err)
 		return admission.Allowed("")
 	}
 
@@ -108,7 +103,7 @@ func (k *konnectorAgentLegacyValidator) validate(
 	if err != nil {
 		// If we can't reach the workload cluster API,
 		// skip the check to avoid blocking valid operations unnecessarily.
-		log.Info("Failed to get REST config, allowing operation", "error", err)
+		log.Info("Failed to get REST config, allowing operation for cluster", "error", err)
 		return admission.Allowed("")
 	}
 
@@ -123,7 +118,6 @@ func (k *konnectorAgentLegacyValidator) validate(
 
 	if len(legacyReleases) == 0 {
 		// No legacy releases found - check passed
-		log.Info("No legacy Helm releases found")
 		return admission.Allowed("")
 	}
 
