@@ -143,6 +143,7 @@ func (n *DefaultKonnectorAgent) apply(
 	)
 
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
 		varMap,
 		n.variableName,
