@@ -56,7 +56,7 @@ api.sync.%:
 	  api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/; \
 	  find api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/ -type d -exec chmod 0755 {} \; ; \
 	  find api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/ -type f -exec chmod 0644 {} \; ; \
-	  sed -i 's|"$(PROVIDER_MODULE_$*)/|"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/$(PROVIDER_MODULE_$*)/|' api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/*.go; \
+	  sed -i '' 's|"$(PROVIDER_MODULE_$*)/|"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/$(PROVIDER_MODULE_$*)/|g' api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/*.go; \
 	)
 
 .PHONY: coredns.sync

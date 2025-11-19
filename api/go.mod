@@ -3,7 +3,7 @@
 
 module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api
 
-go 1.23.0
+go 1.24
 
 toolchain go1.25.3
 
@@ -15,7 +15,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/eks v1.74.2
 	github.com/blang/semver/v4 v4.0.0
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
-	github.com/nutanix-cloud-native/prism-go-client v0.5.4
+	github.com/nutanix-cloud-native/prism-go-client v0.6.0
 	github.com/onsi/gomega v1.38.2
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1

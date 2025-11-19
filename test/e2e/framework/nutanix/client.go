@@ -58,7 +58,7 @@ func WaitForTaskCompletion(
 		1*time.Second,
 		false,
 		func(ctx context.Context) (done bool, err error) {
-			task, err := v4Client.TasksApiInstance.GetTaskById(ptr.To(taskID))
+			task, err := v4Client.TasksApiInstance.GetTaskById(ptr.To(taskID), nil)
 			if err != nil {
 				return false, fmt.Errorf("failed to get task %s: %w", taskID, err)
 			}

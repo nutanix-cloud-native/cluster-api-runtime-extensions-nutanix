@@ -200,11 +200,21 @@ func newClient(
 		GetCurrentLoggedInUserFunc: v3c.V3.GetCurrentLoggedInUser,
 		GetImageByIdFunc:           v4c.ImagesApiInstance.GetImageById,
 		ListImagesFunc:             v4c.ImagesApiInstance.ListImages,
-		GetClusterByIdFunc:         v4c.ClustersApiInstance.GetClusterById,
-		ListClustersFunc:           v4c.ClustersApiInstance.ListClusters,
-		ListStorageContainersFunc:  v4c.StorageContainerAPI.ListStorageContainers,
-		GetSubnetByIdFunc:          v4c.SubnetsApiInstance.GetSubnetById,
-		ListSubnetsFunc:            v4c.SubnetsApiInstance.ListSubnets,
+		GetClusterByIdFunc: func(uuid *string, args ...map[string]interface{}) (*clustermgmtv4.GetClusterApiResponse, error) {
+			return v4c.ClustersApiInstance.GetClusterById(uuid, nil, args...)
+		},
+		ListClustersFunc: func(
+			page_, limit_ *int,
+			filter_, orderby_, apply_, select_ *string,
+			args ...map[string]interface{},
+		) (*clustermgmtv4.ListClustersApiResponse, error) {
+			return v4c.ClustersApiInstance.ListClusters(
+				page_, limit_, filter_, orderby_, apply_, nil, select_, args...,
+			)
+		},
+		ListStorageContainersFunc: v4c.StorageContainerAPI.ListStorageContainers,
+		GetSubnetByIdFunc:         v4c.SubnetsApiInstance.GetSubnetById,
+		ListSubnetsFunc:           v4c.SubnetsApiInstance.ListSubnets,
 	}, nil
 }
 
