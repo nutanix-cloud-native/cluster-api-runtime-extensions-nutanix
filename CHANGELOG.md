@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.38.0 (2025-11-19)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Add category mappings support to Konnector Agent Helm chart by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1385
+* feat: Webhook to check legacy konnector agent is uninstalled by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1384
+* feat: updating konnector-agent chart version by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1388
+### Fixes 🔧
+* fix: set topology webhook matchConditions by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1375
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.37.0...v0.38.0
+
 ## 0.37.0 (2025-11-03)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
