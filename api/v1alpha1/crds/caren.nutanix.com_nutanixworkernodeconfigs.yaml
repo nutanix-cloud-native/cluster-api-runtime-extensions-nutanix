@@ -90,6 +90,7 @@ spec:
                           properties:
                             name:
                               description: name is the resource name in the PC
+                              minLength: 1
                               type: string
                             type:
                               description: Type is the identifier type to use for this resource.
@@ -99,10 +100,18 @@ spec:
                               type: string
                             uuid:
                               description: uuid is the UUID of the resource in the PC.
+                              format: uuid
+                              maxLength: 36
+                              minLength: 36
                               type: string
                           required:
                             - type
                           type: object
+                          x-kubernetes-validations:
+                            - message: '''name'' must be set when type is ''name'', and forbidden otherwise'
+                              rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                            - message: '''uuid'' must be set when type is ''uuid'', and forbidden otherwise'
+                              rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'') : !has(self.uuid)'
                         gpus:
                           description: List of GPU devices that need to be added to the machines.
                           items:
@@ -132,6 +141,7 @@ spec:
                           properties:
                             name:
                               description: name is the resource name in the PC
+                              minLength: 1
                               type: string
                             type:
                               description: Type is the identifier type to use for this resource.
@@ -141,10 +151,18 @@ spec:
                               type: string
                             uuid:
                               description: uuid is the UUID of the resource in the PC.
+                              format: uuid
+                              maxLength: 36
+                              minLength: 36
                               type: string
                           required:
                             - type
                           type: object
+                          x-kubernetes-validations:
+                            - message: '''name'' must be set when type is ''name'', and forbidden otherwise'
+                              rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                            - message: '''uuid'' must be set when type is ''uuid'', and forbidden otherwise'
+                              rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'') : !has(self.uuid)'
                         imageLookup:
                           description: imageLookup is a container that holds how to look up vm images for the cluster.
                           properties:
@@ -184,6 +202,7 @@ spec:
                           properties:
                             name:
                               description: name is the resource name in the PC
+                              minLength: 1
                               type: string
                             type:
                               description: Type is the identifier type to use for this resource.
@@ -193,10 +212,18 @@ spec:
                               type: string
                             uuid:
                               description: uuid is the UUID of the resource in the PC.
+                              format: uuid
+                              maxLength: 36
+                              minLength: 36
                               type: string
                           required:
                             - type
                           type: object
+                          x-kubernetes-validations:
+                            - message: '''name'' must be set when type is ''name'', and forbidden otherwise'
+                              rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                            - message: '''uuid'' must be set when type is ''uuid'', and forbidden otherwise'
+                              rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'') : !has(self.uuid)'
                         subnets:
                           description: |-
                             subnet identifies the network subnet to use for the machine.
@@ -206,6 +233,7 @@ spec:
                             properties:
                               name:
                                 description: name is the resource name in the PC
+                                minLength: 1
                                 type: string
                               type:
                                 description: Type is the identifier type to use for this resource.
@@ -215,10 +243,18 @@ spec:
                                 type: string
                               uuid:
                                 description: uuid is the UUID of the resource in the PC.
+                                format: uuid
+                                maxLength: 36
+                                minLength: 36
                                 type: string
                             required:
                               - type
                             type: object
+                            x-kubernetes-validations:
+                              - message: '''name'' must be set when type is ''name'', and forbidden otherwise'
+                                rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                              - message: '''uuid'' must be set when type is ''uuid'', and forbidden otherwise'
+                                rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'') : !has(self.uuid)'
                           maxItems: 16
                           type: array
                         systemDiskSize:
