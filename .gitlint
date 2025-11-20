@@ -10,6 +10,10 @@ contrib=contrib-title-conventional-commits
 ignore=body-is-missing
 regex-style-search=True
 
+# Allow to set shorter body message, e.g. release-please "Release-As: 2.0.0".
+[body-min-length]
+min-length=15
+
 [body-max-line-length]
 line-length=120
 
