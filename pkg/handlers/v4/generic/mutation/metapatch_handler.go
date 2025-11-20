@@ -15,7 +15,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := MetaMutators(mgr)
 	patchHandlers = append(patchHandlers, ControlPlaneMetaMutators()...)
 	return mutation.NewMetaGeneratePatchesHandler(
-		"genericClusterV4ConfigPatch",
+		"genericClusterv4configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -26,7 +26,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := WorkerMetaMutators()
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"genericWorkerV4ConfigPatch",
+		"genericWorkerv4configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
