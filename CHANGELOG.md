@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.38.1 (2025-11-20)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Revert "release(main): v0.39.0 (#1395)" by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1396
+* fix: auditpolicy handler causing unwanted rollout by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1391
+### Other Changes
+* release(main): v0.39.0 by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1395
+
+## New Contributors
+* @abhay-nutanix made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1393
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.38.0...v0.38.1
+
 ## 0.38.0 (2025-11-19)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
