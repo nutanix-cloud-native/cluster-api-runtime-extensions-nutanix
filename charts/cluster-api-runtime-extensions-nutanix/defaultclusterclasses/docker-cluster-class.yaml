@@ -31,11 +31,11 @@ spec:
   patches:
   - external:
       discoverVariablesExtension: dockerclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: dockerclusterv4configpatch-gp.cluster-api-runtime-extensions-nutanix
+      generateExtension: dockerclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
       discoverVariablesExtension: dockerworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: dockerworkerv4configpatch-gp.cluster-api-runtime-extensions-nutanix
+      generateExtension: dockerworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: worker-config
   workers:
     machineDeployments:
