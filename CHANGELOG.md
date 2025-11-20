@@ -1,18 +1,5 @@
 # Changelog
 
-## 0.39.0 (2025-11-20)
-
-<!-- Release notes generated using configuration in .github/release.yaml at main -->
-
-## What's Changed
-### Other Changes
-* build(deps): Update CAPX to v1.8.0 by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1393
-* build(deps): Update Prism-Go-Client to v0.6.0 by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1393
-* build(deps): Update Nutanix CCM version by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1393
-
-
-**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.38.0...v0.39.0
-
 ## 0.38.0 (2025-11-19)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->

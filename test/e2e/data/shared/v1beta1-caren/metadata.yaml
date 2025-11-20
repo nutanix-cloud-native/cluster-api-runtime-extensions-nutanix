@@ -106,6 +106,3 @@ releaseSeries:
   - contract: v1beta1
     major: 0
     minor: 39
-  - contract: v1beta1
-    major: 0
-    minor: 40
