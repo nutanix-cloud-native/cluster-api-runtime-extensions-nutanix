@@ -28,6 +28,7 @@ func GetClusterUUIDFromName(cluster string, v4Client *prismclientv4.Client) (uui
 		nil,
 		nil,
 		nil,
+		nil,
 	)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf(
