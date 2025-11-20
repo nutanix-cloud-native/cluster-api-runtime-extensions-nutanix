@@ -248,11 +248,6 @@ go-generate: ; $(info $(M) running go generate)
 	  -exec yq --inplace \
 	    '(.. | select(has("memorySize") or has("systemDiskSize")) | (.memorySize?, .systemDiskSize?) | del(.anyOf)) += {"type": "string"}' \
 	    {} \;
-	# Update the EKSClusterConfig CRD to only allow the disabled kube-proxy mode.
-	# The underlying struct is shared across all providers and its not possible set it using the annotation.
-	yq --inplace \
-	'.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.kubeProxy.properties.mode |= (.description = "Mode specifies the mode for kube-proxy in EKS: - disabled means that kube-proxy is disabled (only supported mode for EKS)." | .enum = ["disabled"])' \
-	api/v1alpha1/crds/caren.nutanix.com_eksclusterconfigs.yaml
 
 .PHONY: govulncheck
 govulncheck: ## Runs govulncheck for all modules in repository
