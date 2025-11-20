@@ -37,7 +37,7 @@ var _ = Describe("Generate Audit Policy patches", func() {
 				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
 				ValueMatcher: gomega.ContainElements(
 					gomega.HaveKeyWithValue(
-						"path", "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml",
+						"path", "/etc/kubernetes/audit-policy.yaml",
 					),
 				),
 			}, {
@@ -52,7 +52,7 @@ var _ = Describe("Generate Audit Policy patches", func() {
 								"audit-log-maxbackup": "10",
 								"audit-log-maxsize":   "100",
 								"audit-log-path":      "/var/log/audit/kube-apiserver-audit.log",
-								"audit-policy-file":   "/etc/kubernetes/audit-policy/apiserver-audit-policy.yaml",
+								"audit-policy-file":   "/etc/kubernetes/audit-policy.yaml",
 								"audit-log-maxage":    "30",
 							},
 						),
@@ -60,15 +60,17 @@ var _ = Describe("Generate Audit Policy patches", func() {
 							"extraVolumes",
 							[]interface{}{
 								map[string]interface{}{
-									"hostPath":  "/etc/kubernetes/audit-policy/",
-									"mountPath": "/etc/kubernetes/audit-policy/",
+									"hostPath":  "/etc/kubernetes/audit-policy.yaml",
+									"mountPath": "/etc/kubernetes/audit-policy.yaml",
 									"name":      "audit-policy",
 									"readOnly":  true,
+									"pathType":  "File",
 								},
 								map[string]interface{}{
 									"name":      "audit-logs",
 									"hostPath":  "/var/log/kubernetes/audit",
 									"mountPath": "/var/log/audit/",
+									"pathType":  "DirectoryOrCreate",
 								},
 							},
 						),
@@ -79,8 +81,7 @@ var _ = Describe("Generate Audit Policy patches", func() {
 	}
 
 	// create test node for each case
-	for testIdx := range testDefs {
-		tt := testDefs[testIdx]
+	for _, tt := range testDefs {
 		It(tt.Name, func() {
 			capitest.AssertGeneratePatches(GinkgoT(), patchGenerator, &tt)
 		})
