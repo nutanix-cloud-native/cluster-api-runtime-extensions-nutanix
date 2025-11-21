@@ -29,17 +29,10 @@ func copyClusterClassAndTemplates(
 			return fmt.Errorf("failed to get reference: %w", err)
 		}
 
-		// Copy Template to target namespace
+		// Copy Template to target namespace, if it does not exist there.
 		targetTemplate := copyObjectForCreate(sourceTemplate, sourceTemplate.GetName(), namespace)
-
-		//nolint:gocritic // Inline error is checked.
-		if err := w.Create(ctx, targetTemplate); client.IgnoreAlreadyExists(err) != nil {
-			return fmt.Errorf(
-				"failed to create %s %s: %w",
-				targetTemplate.GetKind(),
-				client.ObjectKeyFromObject(targetTemplate),
-				err,
-			)
+		if err = createIfNotExists(ctx, templateReader, w, targetTemplate); err != nil {
+			return fmt.Errorf("failed to create template: %w", err)
 		}
 
 		// Update reference to point to newly created Template
@@ -51,15 +44,28 @@ func copyClusterClassAndTemplates(
 		return fmt.Errorf("error processing references: %w", err)
 	}
 
-	//nolint:gocritic // Inline error is checked.
-	if err := w.Create(ctx, target); client.IgnoreAlreadyExists(err) != nil {
-		return fmt.Errorf(
-			"failed to create %s %s: %w",
-			target.Kind,
-			client.ObjectKeyFromObject(target),
-			err,
-		)
+	// Copy ClusterClass to target namespace, if it does not exist there.
+	if err := createIfNotExists(ctx, templateReader, w, target); err != nil {
+		return fmt.Errorf("failed to create cluster class: %w", err)
 	}
+	return nil
+}
+
+func createIfNotExists(ctx context.Context, r client.Reader, w client.Writer, obj client.Object) error {
+	kind := obj.GetObjectKind().GroupVersionKind().Kind
+	key := client.ObjectKeyFromObject(obj)
+
+	// Check if the resource exists.
+	//nolint:gocritic // Inline error is checked.
+	if err := r.Get(ctx, key, obj.DeepCopyObject().(client.Object)); client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("failed to check if %s %s exists: %w", kind, key, err)
+	}
+
+	// The resource does not exist, so create it.
+	if err := w.Create(ctx, obj); err != nil {
+		return fmt.Errorf("failed to create %s %s: %w", kind, key, err)
+	}
+
 	return nil
 }
 
