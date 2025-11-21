@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.39.1 (2025-11-20)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: updating nutanix-cloud-provider to v0.6.0 by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1401
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.39.0...v0.39.1
+
 ## 0.39.0 (2025-11-20)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
