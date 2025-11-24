@@ -27,7 +27,7 @@ jobs:
         with:
           target-branch: ${{ github.ref_name }}
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         if: ${{ steps.release-please.outputs.release_created }}
 
       - name: Tag common and api modules
