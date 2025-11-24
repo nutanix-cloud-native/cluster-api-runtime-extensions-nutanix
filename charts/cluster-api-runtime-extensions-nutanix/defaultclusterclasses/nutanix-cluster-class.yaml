@@ -343,10 +343,16 @@ spec:
   template:
     spec:
       bootType: legacy
+      cluster:
+        name: ""
+        type: name
       image:
-        name: placeholder-image
+        name: ""
         type: name
       memorySize: 4Gi
+      subnet:
+      - name: ""
+        type: name
       systemDiskSize: 40Gi
       vcpuSockets: 2
       vcpusPerSocket: 1
@@ -361,10 +367,16 @@ spec:
   template:
     spec:
       bootType: legacy
+      cluster:
+        name: ""
+        type: name
       image:
-        name: placeholder-image
+        name: ""
         type: name
       memorySize: 4Gi
+      subnet:
+      - name: ""
+        type: name
       systemDiskSize: 40Gi
       vcpuSockets: 2
       vcpusPerSocket: 1
