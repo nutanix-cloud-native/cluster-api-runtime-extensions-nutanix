@@ -135,7 +135,6 @@ func (r *Reconciler) Reconcile(
 
 	// TODO Consider running in parallel.
 	for i := range sccs {
-<<<<<<< HEAD
 		scc := sccs[i].DeepCopy()
 		err := copyClusterClassAndTemplates(
 			ctx,
@@ -150,31 +149,9 @@ func (r *Reconciler) Reconcile(
 			return ctrl.Result{}, fmt.Errorf(
 				"failed to copy source ClusterClass %s or its referenced Templates to namespace %s: %w",
 				client.ObjectKeyFromObject(scc),
-=======
-		// Check for context cancellation to prevent goroutine leaks
-		select {
-		case <-ctx.Done():
-			return ctrl.Result{}, ctx.Err()
-		default:
-			scc := sccs[i].DeepCopy()
-
-			err := copyClusterClassAndTemplates(
-				ctx,
-				r.Client,
-				r.UnstructuredCachingClient,
-				scc,
->>>>>>> 58bc5bf00 (refactor: update namespace sync configuration to use label selector)
 				namespace,
+				err,
 			)
-			if err != nil {
-				// TODO Record an Event.
-				return ctrl.Result{}, fmt.Errorf(
-					"failed to copy source ClusterClass %s or its referenced Templates to namespace %s: %w",
-					client.ObjectKeyFromObject(scc),
-					namespace,
-					err,
-				)
-			}
 		}
 	}
 

@@ -90,21 +90,15 @@ func walkReferences(
 	}
 
 	for mdIdx := range cc.Spec.Workers.MachineDeployments {
-		// Check for context cancellation to prevent goroutine leaks
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			md := &cc.Spec.Workers.MachineDeployments[mdIdx]
-			if ref := md.Infrastructure.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
-				if err := fn(ctx, ref); err != nil {
-					return err
-				}
+		md := &cc.Spec.Workers.MachineDeployments[mdIdx]
+		if ref := md.Infrastructure.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+			if err := fn(ctx, ref); err != nil {
+				return err
 			}
-			if ref := md.Bootstrap.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
-				if err := fn(ctx, ref); err != nil {
-					return err
-				}
+		}
+		if ref := md.Bootstrap.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+			if err := fn(ctx, ref); err != nil {
+				return err
 			}
 		}
 	}
