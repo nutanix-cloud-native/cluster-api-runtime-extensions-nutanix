@@ -9,11 +9,10 @@ import (
 	"net/http"
 	"strings"
 
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/release"
 	v1 "k8s.io/api/admission/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/rest"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,6 +28,17 @@ const (
 	// legacyHelmChartName is the chart name of the old helm release
 	// that needs to be detected during upgrades.
 	legacyHelmChartName = "nutanix-k8s-agent"
+
+	// agentConfigMapName is the name of the ConfigMap that is deployed by both the legacy and new konnector agent.
+	agentConfigMapName = "ntnx-cluster-configmap"
+
+	// konnectorAgentReleaseName is the name of the release for the new konnector agent.
+	konnectorAgentReleaseName = "konnector-agent"
+	// konnectorAgentReleaseNamespace is the namespace of the release for the new konnector agent.
+	konnectorAgentReleaseNamespace = "ntnx-system"
+
+	releaseNameAnnotation      = "meta.helm.sh/release-name"
+	releaseNamespaceAnnotation = "meta.helm.sh/release-namespace"
 )
 
 type konnectorAgentLegacyValidator struct {
@@ -97,21 +107,21 @@ func (k *konnectorAgentLegacyValidator) validate(
 		return admission.Allowed("")
 	}
 
-	// Get REST config for the cluster
+	// Get remote client for the cluster.
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
-	restConfig, err := remote.RESTConfig(ctx, "", k.client, clusterKey)
+	remoteClient, err := remote.NewClusterClient(ctx, "", k.client, clusterKey)
 	if err != nil {
 		// If we can't reach the workload cluster API,
 		// skip the check to avoid blocking valid operations unnecessarily.
-		log.Info("Failed to get REST config, allowing operation for cluster", "error", err)
+		log.Info("Failed to get remote client, allowing operation for cluster", "error", err)
 		return admission.Allowed("")
 	}
 
-	// List and filter legacy Helm releases in the cluster
-	legacyReleases, err := k.listLegacyHelmReleases(restConfig)
+	legacyReleases, err := findLegacyReleases(ctx, remoteClient)
 	if err != nil {
 		// If legacy releases cannot be listed,
 		// skip the check to avoid blocking valid upgrade operations unnecessarily.
+		log.Info("Failed to list legacy releases, allowing operation for cluster", "error", err)
 		return admission.Allowed("")
 	}
 
@@ -158,69 +168,52 @@ func (k *konnectorAgentLegacyValidator) validate(
 	return admission.Denied(message)
 }
 
-// listLegacyHelmReleases lists and filters Helm releases to find legacy releases
-// with the specified chart name across all namespaces.
-func (k *konnectorAgentLegacyValidator) listLegacyHelmReleases(
-	restConfig *rest.Config,
-) ([]*release.Release, error) {
-	// Initialize Helm action configuration
-	// Use empty namespace when AllNamespaces=true to allow listing from all namespaces
-	actionConfig, err := k.initHelmActionConfig(restConfig, "")
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize Helm action config: %w", err)
-	}
-
-	// List Helm releases across all namespaces using Helm's List action.
-	listAction := action.NewList(actionConfig)
-	listAction.AllNamespaces = true
-	// Include all release states to catch legacy releases in any state
-	listAction.StateMask = action.ListDeployed | action.ListFailed | action.ListUninstalling |
-		action.ListSuperseded | action.ListPendingInstall | action.ListPendingUpgrade |
-		action.ListPendingRollback
-
-	releases, err := listAction.Run()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list Helm releases: %w", err)
-	}
-
-	// Filter releases by chart name to find legacy releases.
-	var legacyReleases []*release.Release
-	for _, rel := range releases {
-		if rel.Chart != nil && rel.Chart.Name() == legacyHelmChartName {
-			legacyReleases = append(legacyReleases, rel)
-		}
-	}
-	return legacyReleases, nil
+type LegacyRelease struct {
+	Name      string
+	Namespace string
 }
 
-// initHelmActionConfig initializes a Helm action configuration for the given namespace.
-func (k *konnectorAgentLegacyValidator) initHelmActionConfig(
-	restConfig *rest.Config,
-	namespace string,
-) (*action.Configuration, error) {
-	configFlags := genericclioptions.NewConfigFlags(true)
-	configFlags.WrapConfigFn = func(*rest.Config) *rest.Config {
-		return restConfig
+// findLegacyReleases finds the legacy Kubernetes Agent releases.
+// Both the legacy and new konnector agent deploy a ConfigMap with the name ntnx-cluster-configmap.
+// It finds the statically named ConfigMap and compares the annotations to the expected values.
+// If the annotations are not empty and do not equal the release name and namespace of the new konnector agent,
+// it assumes it was installed manually.
+//
+//	annotations:
+//	  meta.helm.sh/release-name: konnector-agent
+//	  meta.helm.sh/release-namespace: ntnx-system
+func findLegacyReleases(ctx context.Context, client ctrlclient.Client) ([]LegacyRelease, error) {
+	configMaps := &corev1.ConfigMapList{}
+	// List in all Namespaces, but use field-selector to filter by name server-side.
+	listOptions := &ctrlclient.ListOptions{
+		FieldSelector: fields.SelectorFromSet(fields.Set{
+			"metadata.name": agentConfigMapName,
+		}),
+		Namespace: metav1.NamespaceAll,
 	}
-	// Override namespace to allow access to all namespaces when AllNamespaces=true
-	configFlags.Namespace = nil
-
-	// Create a Helm action configuration
-	actionConfig := new(action.Configuration)
-
-	// Initialize the action configuration with the RESTClientGetter
-	if err := actionConfig.Init(
-		configFlags,
-		namespace,
-		"secret", // Helm storage driver (secrets)
-		func(format string, v ...interface{}) {
-			// Use a no-op logger for Helm debug messages
-		},
-	); err != nil {
-		return nil, fmt.Errorf("failed to initialize Helm action config: %w", err)
+	err := client.List(ctx, configMaps, listOptions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config map: %w", err)
 	}
 
-	return actionConfig, nil
+	legacyReleases := make([]LegacyRelease, 0)
+	for i := range configMaps.Items {
+		configMap := &configMaps.Items[i]
+		if configMap.Annotations == nil {
+			continue
+		}
+		if configMap.Annotations[releaseNameAnnotation] == konnectorAgentReleaseName &&
+			configMap.Annotations[releaseNamespaceAnnotation] == konnectorAgentReleaseNamespace {
+			continue
+		}
+		// The annotations are not empty and do not equal the expected values, assume it was manually installed.
+		legacyReleases = append(legacyReleases, LegacyRelease{
+			Name:      configMap.Annotations[releaseNameAnnotation],
+			Namespace: configMap.Annotations[releaseNamespaceAnnotation],
+		})
+	}
+
+	return legacyReleases, nil
 }
 
 func hasKonnectorAgentSkipAnnotation(cluster *clusterv1.Cluster) bool {
