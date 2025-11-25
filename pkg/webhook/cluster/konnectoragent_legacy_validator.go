@@ -207,7 +207,14 @@ func findLegacyReleases(ctx context.Context, client ctrlclient.Client) ([]Legacy
 		configMap := &configMaps.Items[i]
 		if configMap.Annotations == nil {
 			continue
-		}
+	}
+	
+	releaseNameAnnotationPresent, _ := configMap.Annotations[releaseNameAnnotation]
+releaseNamespaceAnnotationPresent, _ := configMap.Annotations[releaseNamespaceAnnotation]
+
+if !releaseNameAnnotationPresent || !releaseNamespaceAnnotationPresent {
+   continue
+}
 		if configMap.Annotations[releaseNameAnnotation] == konnectorAgentReleaseName &&
 			configMap.Annotations[releaseNamespaceAnnotation] == konnectorAgentReleaseNamespace {
 			continue
