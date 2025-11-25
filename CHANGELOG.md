@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.39.2 (2025-11-25)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: increase CAREN reqs and limits by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1409
+* fix: avoid using Helm in legacy agent webhook by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1410
+### Other Changes
+* build(deps): Bump cluster-api-provider-nutanix by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1407
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.39.1...v0.39.2
+
 ## 0.39.1 (2025-11-20)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
