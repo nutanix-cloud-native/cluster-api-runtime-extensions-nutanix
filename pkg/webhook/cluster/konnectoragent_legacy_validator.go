@@ -207,23 +207,25 @@ func findLegacyReleases(ctx context.Context, client ctrlclient.Client) ([]Legacy
 		configMap := &configMaps.Items[i]
 		if configMap.Annotations == nil {
 			continue
-	}
-	
-	releaseNameAnnotationPresent, _ := configMap.Annotations[releaseNameAnnotation]
-releaseNamespaceAnnotationPresent, _ := configMap.Annotations[releaseNamespaceAnnotation]
+		}
 
-if !releaseNameAnnotationPresent || !releaseNamespaceAnnotationPresent {
-   continue
-}
-		if configMap.Annotations[releaseNameAnnotation] == konnectorAgentReleaseName &&
-			configMap.Annotations[releaseNamespaceAnnotation] == konnectorAgentReleaseNamespace {
+		releaseName, releaseNameAnnotationPresent := configMap.Annotations[releaseNameAnnotation]
+		releaseNamespace, releaseNamespaceAnnotationPresent := configMap.Annotations[releaseNamespaceAnnotation]
+
+		if !releaseNameAnnotationPresent || !releaseNamespaceAnnotationPresent {
+			continue
+		}
+		if releaseName == konnectorAgentReleaseName &&
+			releaseNamespace == konnectorAgentReleaseNamespace {
 			continue
 		}
 		// The annotations are not empty and do not equal the expected values, assume it was manually installed.
-		legacyReleases = append(legacyReleases, LegacyRelease{
-			Name:      configMap.Annotations[releaseNameAnnotation],
-			Namespace: configMap.Annotations[releaseNamespaceAnnotation],
-		})
+		if releaseName != "" && releaseNamespace != "" {
+			legacyReleases = append(legacyReleases, LegacyRelease{
+				Name:      releaseName,
+				Namespace: releaseNamespace,
+			})
+		}
 	}
 
 	return legacyReleases, nil
