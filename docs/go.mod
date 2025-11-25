@@ -5,4 +5,4 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/do
 
 go 1.20
 
-require github.com/google/docsy v0.12.0 // indirect
+require github.com/google/docsy v0.13.0 // indirect
