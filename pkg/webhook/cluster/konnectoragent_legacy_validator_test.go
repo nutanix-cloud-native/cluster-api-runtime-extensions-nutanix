@@ -303,7 +303,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 			errMsg := fmt.Sprintf(`
 Cannot enable onboarding functionality as an addon: legacy installation(s) detected.
 
-Found 1 release(s) for chart "nutanix-k8s-agent": [legacy-agent (namespace: %s)] in the cluster.
+Found 1 release(s) for chart "nutanix-k8s-agent": [%s/legacy-agent] in the cluster.
 
 ACTION REQUIRED: Uninstall the legacy Helm release(s) before proceeding to avoid conflicts.
 

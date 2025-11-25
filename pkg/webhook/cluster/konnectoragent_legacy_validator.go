@@ -135,7 +135,7 @@ func (k *konnectorAgentLegacyValidator) validate(
 	uninstallCommands := make([]string, 0, len(legacyReleases))
 	forceUninstallCommands := make([]string, 0, len(legacyReleases))
 	for _, rel := range legacyReleases {
-		releaseDetails = append(releaseDetails, fmt.Sprintf("%s (namespace: %s)", rel.Name, rel.Namespace))
+		releaseDetails = append(releaseDetails, fmt.Sprintf("%s/%s", rel.Namespace, rel.Name))
 		uninstallCommands = append(
 			uninstallCommands,
 			fmt.Sprintf("helm uninstall %s --namespace %s --kubeconfig <kubeconfig-path>", rel.Name, rel.Namespace),
