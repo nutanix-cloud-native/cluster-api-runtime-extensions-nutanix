@@ -205,9 +205,6 @@ func findLegacyReleases(ctx context.Context, client ctrlclient.Client) ([]Legacy
 	legacyReleases := make([]LegacyRelease, 0)
 	for i := range configMaps.Items {
 		configMap := &configMaps.Items[i]
-		if configMap.Annotations == nil {
-			continue
-		}
 
 		releaseName, releaseNameAnnotationPresent := configMap.Annotations[releaseNameAnnotation]
 		releaseNamespace, releaseNamespaceAnnotationPresent := configMap.Annotations[releaseNamespaceAnnotation]
