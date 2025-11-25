@@ -189,6 +189,8 @@ type LegacyRelease struct {
 func findLegacyReleases(ctx context.Context, client ctrlclient.Client) ([]LegacyRelease, error) {
 	configMaps := &corev1.ConfigMapList{}
 	// List in all Namespaces, but use field-selector to filter by name server-side.
+	// In the worst case, this query returns N ConfigMaps, where N is the number of namespaces.
+	// In practice, we expect it to return 0 or 1 ConfigMaps.
 	listOptions := &ctrlclient.ListOptions{
 		FieldSelector: fields.SelectorFromSet(fields.Set{
 			"metadata.name": agentConfigMapName,
