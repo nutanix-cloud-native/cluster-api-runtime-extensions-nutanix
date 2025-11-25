@@ -206,11 +206,11 @@ env: {}
 
 resources:
   limits:
-    cpu: 100m
-    memory: 256Mi
+    cpu: 200m
+    memory: 384Mi
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 150m
+    memory: 192Mi
 
 securityContext:
   runAsUser: 65532

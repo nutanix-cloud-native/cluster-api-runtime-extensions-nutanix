@@ -112,10 +112,10 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | namespaceSync.targetNamespaceLabelKey | string | `"caren.nutanix.com/namespace-sync"` |  |
 | nodeSelector | object | `{}` |  |
 | priorityClassName | string | `"system-cluster-critical"` | Priority class to be used for the pod. |
-| resources.limits.cpu | string | `"100m"` |  |
-| resources.limits.memory | string | `"256Mi"` |  |
-| resources.requests.cpu | string | `"100m"` |  |
-| resources.requests.memory | string | `"128Mi"` |  |
+| resources.limits.cpu | string | `"200m"` |  |
+| resources.limits.memory | string | `"384Mi"` |  |
+| resources.requests.cpu | string | `"150m"` |  |
+| resources.requests.memory | string | `"192Mi"` |  |
 | securityContext.runAsUser | int | `65532` |  |
 | service.annotations | object | `{}` |  |
 | service.port | int | `443` |  |
