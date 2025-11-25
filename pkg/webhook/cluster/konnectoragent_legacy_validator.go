@@ -138,11 +138,15 @@ func (k *konnectorAgentLegacyValidator) validate(
 		releaseDetails = append(releaseDetails, fmt.Sprintf("%s (namespace: %s)", rel.Name, rel.Namespace))
 		uninstallCommands = append(
 			uninstallCommands,
-			fmt.Sprintf("helm uninstall %s -n %s --kubeconfig <kubeconfig-path>", rel.Name, rel.Namespace),
+			fmt.Sprintf("helm uninstall %s --namespace %s --kubeconfig <kubeconfig-path>", rel.Name, rel.Namespace),
 		)
 		forceUninstallCommands = append(
 			forceUninstallCommands,
-			fmt.Sprintf("helm uninstall %s -n %s --no-hooks --kubeconfig <kubeconfig-path>", rel.Name, rel.Namespace),
+			fmt.Sprintf(
+				"helm uninstall %s --namespace %s --no-hooks --kubeconfig <kubeconfig-path>",
+				rel.Name,
+				rel.Namespace,
+			),
 		)
 	}
 

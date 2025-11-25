@@ -308,10 +308,10 @@ Found 1 release(s) for chart "nutanix-k8s-agent": [legacy-agent (namespace: %s)]
 ACTION REQUIRED: Uninstall the legacy Helm release(s) before proceeding to avoid conflicts.
 
 To uninstall, run the following command(s):
-  helm uninstall legacy-agent -n %s --kubeconfig <kubeconfig-path>
+  helm uninstall legacy-agent --namespace %s --kubeconfig <kubeconfig-path>
 
 If the release is stuck or uninstall fails, use the force removal command:
-  helm uninstall legacy-agent -n %s --no-hooks --kubeconfig <kubeconfig-path>
+  helm uninstall legacy-agent --namespace %s --no-hooks --kubeconfig <kubeconfig-path>
 
 After removing the legacy release(s), re-run the operation.`, ns.Name, ns.Name, ns.Name)
 			Expect(resp.Result.Message).To(Equal(errMsg))
