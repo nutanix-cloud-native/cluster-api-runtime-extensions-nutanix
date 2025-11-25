@@ -135,29 +135,23 @@ func (r *Reconciler) Reconcile(
 
 	// TODO Consider running in parallel.
 	for i := range sccs {
-		// Check for context cancellation to prevent goroutine leaks
-		select {
-		case <-ctx.Done():
-			return ctrl.Result{}, ctx.Err()
-		default:
-			scc := &sccs[i]
+		scc := &sccs[i]
 
-			err := copyClusterClassAndTemplates(
-				ctx,
-				r.Client,
-				r.UnstructuredCachingClient,
-				scc,
+		err := copyClusterClassAndTemplates(
+			ctx,
+			r.Client,
+			r.UnstructuredCachingClient,
+			scc,
+			namespace,
+		)
+		if err != nil {
+			// TODO Record an Event.
+			return ctrl.Result{}, fmt.Errorf(
+				"failed to copy source ClusterClass %s or its referenced Templates to namespace %s: %w",
+				client.ObjectKeyFromObject(scc),
 				namespace,
+				err,
 			)
-			if err != nil {
-				// TODO Record an Event.
-				return ctrl.Result{}, fmt.Errorf(
-					"failed to copy source ClusterClass %s or its referenced Templates to namespace %s: %w",
-					client.ObjectKeyFromObject(scc),
-					namespace,
-					err,
-				)
-			}
 		}
 	}
 
