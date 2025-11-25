@@ -210,6 +210,22 @@ func (s EKSClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:g
 	return eksClusterConfigVariableSchema
 }
 
+// +kubebuilder:validation:Enum=disabled
+type EKSKubeProxyMode string
+
+const (
+	EKSKubeProxyModeDisabled EKSKubeProxyMode = EKSKubeProxyMode(KubeProxyModeDisabled)
+)
+
+// EKSKubeProxy defines the configuration for kube-proxy.
+type EKSKubeProxy struct {
+	// Mode specifies the mode for kube-proxy:
+	// - disabled means that kube-proxy is disabled.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
+	Mode EKSKubeProxyMode `json:"mode,omitempty"`
+}
+
 // EKSClusterConfigSpec defines the desired state of ClusterConfig.
 type EKSClusterConfigSpec struct {
 	// EKS cluster configuration.
@@ -220,7 +236,7 @@ type EKSClusterConfigSpec struct {
 
 	// KubeProxy defines the configuration for kube-proxy.
 	// +kubebuilder:validation:Optional
-	KubeProxy *KubeProxy `json:"kubeProxy,omitempty"`
+	KubeProxy *EKSKubeProxy `json:"kubeProxy,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Addons *AWSAddons `json:"addons,omitempty"`
@@ -430,6 +446,7 @@ type CoreDNS struct {
 	Image *Image `json:"image,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=iptables;nftables;disabled
 type KubeProxyMode string
 
 const (
@@ -444,15 +461,12 @@ const (
 )
 
 // KubeProxy defines the configuration for kube-proxy.
-// This struct is shared across all providers, but EKS only supports the disabled mode.
-// The CRD is updated manually to reflect this.
 type KubeProxy struct {
 	// Mode specifies the mode for kube-proxy:
 	// - iptables means that kube-proxy is installed in iptables mode.
 	// - nftables means that kube-proxy is installed in nftables mode.
 	// - disabled means that kube-proxy is disabled.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Enum=iptables;nftables;disabled
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
 	Mode KubeProxyMode `json:"mode,omitempty"`
 }
