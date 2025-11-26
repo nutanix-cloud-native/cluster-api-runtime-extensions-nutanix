@@ -1,9 +1,9 @@
 +++
-title = "Konnector Agent Addon"
+title = "Konnector Agent"
 icon = "fa-solid fa-plug"
 +++
 
-The Konnector Agent addon enables automatic registration of Kubernetes clusters with Nutanix Prism Central. This addon leverages Cluster API lifecycle hooks to deploy the [Konnector Agent](https://portal.nutanix.com/page/documents/details?targetId=Prism-Central-Guide-vpc_7_3:mul-cluster-kubernetes-clusters-manage-pc-c.html) on the new clusters.
+The Konnector Agent enables automatic registration of Kubernetes clusters with Nutanix Prism Central. This addon leverages Cluster API lifecycle hooks to deploy the [Konnector Agent](https://portal.nutanix.com/page/documents/details?targetId=Prism-Central-Guide-vpc_7_3:mul-cluster-kubernetes-clusters-manage-pc-c.html) on the new clusters.
 
 ## Overview
 
