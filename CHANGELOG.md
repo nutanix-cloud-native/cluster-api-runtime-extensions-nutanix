@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.40.0 (2025-11-26)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Use mindthegap 1.25.1 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1414
+### Fixes 🔧
+* fix: adding kustomization to remove cluster and subnet field by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1416
+### Other Changes
+* docs: Upgrade to docsy v0.13.0 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1411
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.39.2...v0.40.0
+
 ## 0.39.2 (2025-11-25)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
