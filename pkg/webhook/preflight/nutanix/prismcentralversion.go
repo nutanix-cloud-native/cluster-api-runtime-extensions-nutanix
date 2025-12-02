@@ -26,7 +26,9 @@ type prismCentralVersionCheck struct {
 }
 
 func newPrismCentralVersionCheck(ctx context.Context, cd *checkDependencies) preflight.Check {
-	cd.log.V(5).Info("Initializing Prism Central version check")
+	if cd != nil {
+		cd.log.V(5).Info("Initializing Prism Central version check")
+	}
 
 	check := &prismCentralVersionCheck{
 		result: preflight.CheckResult{
