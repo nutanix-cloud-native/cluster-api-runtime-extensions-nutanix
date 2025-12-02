@@ -20,6 +20,7 @@ import (
 var Checker = &nutanixChecker{
 	configurationCheckFactory:             newConfigurationCheck,
 	credentialsCheckFactory:               newCredentialsCheck,
+	prismCentralVersionCheckFactory:       newPrismCentralVersionCheck,
 	failureDomainCheckFactory:             newFailureDomainChecks,
 	vmImageChecksFactory:                  newVMImageChecks,
 	vmImageKubernetesVersionChecksFactory: newVMImageKubernetesVersionChecks,
@@ -34,6 +35,10 @@ type nutanixChecker struct {
 	credentialsCheckFactory func(
 		ctx context.Context,
 		nclientFactory func(prismgoclient.Credentials) (client, error),
+		cd *checkDependencies,
+	) preflight.Check
+
+	prismCentralVersionCheckFactory func(
 		cd *checkDependencies,
 	) preflight.Check
 
@@ -80,8 +85,11 @@ func (n *nutanixChecker) Init(
 	checks := []preflight.Check{
 		// The configuration check must run first, because it initializes data used by all other checks,
 		// and the credentials check second, because it initializes the Nutanix clients used by other checks.
+		// The prism central version check third, because it depends on the Nutanix clients and we need to know
+		// the Prism Central version before running other checks.
 		n.configurationCheckFactory(cd),
 		n.credentialsCheckFactory(ctx, newClient, cd),
+		n.prismCentralVersionCheckFactory(cd),
 	}
 
 	// The failure domains check need to run before the image, storage container checks that depends on whether
