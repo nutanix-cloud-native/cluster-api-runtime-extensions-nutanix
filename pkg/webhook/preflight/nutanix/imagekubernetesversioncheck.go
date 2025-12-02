@@ -129,7 +129,7 @@ func newVMImageKubernetesVersionChecks(
 ) []preflight.Check {
 	checks := make([]preflight.Check, 0)
 
-	if cd.nclient == nil {
+	if cd == nil || cd.nclient == nil || cd.pcVersion == "" {
 		return checks
 	}
 

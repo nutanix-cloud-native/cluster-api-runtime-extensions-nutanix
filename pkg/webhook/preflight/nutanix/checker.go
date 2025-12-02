@@ -15,6 +15,7 @@ import (
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/skip"
 )
 
 var Checker = &nutanixChecker{
@@ -39,6 +40,7 @@ type nutanixChecker struct {
 	) preflight.Check
 
 	prismCentralVersionCheckFactory func(
+		ctx context.Context,
 		cd *checkDependencies,
 	) preflight.Check
 
@@ -67,8 +69,9 @@ type checkDependencies struct {
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
 	failureDomainByMachineDeploymentName               map[string]string
 
-	nclient client
-	log     logr.Logger
+	nclient   client
+	pcVersion string
+	log       logr.Logger
 }
 
 func (n *nutanixChecker) Init(
@@ -76,26 +79,30 @@ func (n *nutanixChecker) Init(
 	kclient ctrlclient.Client,
 	cluster *clusterv1.Cluster,
 ) []preflight.Check {
+	pcVersionSkipped := isPCVersionCheckSkipped(cluster)
 	cd := &checkDependencies{
-		kclient: kclient,
-		cluster: cluster,
-		log:     ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
+		kclient:   kclient,
+		cluster:   cluster,
+		log:       ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
+		pcVersion: "",
+	}
+	if pcVersionSkipped {
+		cd.pcVersion = "skipped"
 	}
 
 	checks := []preflight.Check{
 		// The configuration check must run first, because it initializes data used by all other checks,
 		// and the credentials check second, because it initializes the Nutanix clients used by other checks.
-		// The prism central version check third, because it depends on the Nutanix clients and we need to know
-		// the Prism Central version before running other checks.
 		n.configurationCheckFactory(cd),
 		n.credentialsCheckFactory(ctx, newClient, cd),
-		n.prismCentralVersionCheckFactory(cd),
 	}
 
-	// The failure domains check need to run before the image, storage container checks that depends on whether
-	// failure domains are configured correctly.
-	checks = append(checks, n.failureDomainCheckFactory(cd)...)
+	pcVersionCheck := n.prismCentralVersionCheckFactory(ctx, cd)
+	if pcVersionCheck != nil {
+		checks = append(checks, pcVersionCheck)
+	}
 
+	checks = append(checks, n.failureDomainCheckFactory(cd)...)
 	checks = append(checks, n.vmImageChecksFactory(cd)...)
 	checks = append(checks, n.vmImageKubernetesVersionChecksFactory(cd)...)
 	checks = append(checks, n.storageContainerChecksFactory(cd)...)
@@ -103,4 +110,13 @@ func (n *nutanixChecker) Init(
 	// Add more checks here as needed.
 
 	return checks
+}
+
+func isPCVersionCheckSkipped(cluster *clusterv1.Cluster) bool {
+	if cluster == nil {
+		return false
+	}
+
+	skipEvaluator := skip.New(cluster)
+	return skipEvaluator.For("nutanixprismcentralversion")
 }

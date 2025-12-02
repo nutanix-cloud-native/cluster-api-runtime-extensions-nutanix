@@ -30,7 +30,7 @@ func (fdc *failureDomainCheck) Name() string {
 func newFailureDomainChecks(cd *checkDependencies) []preflight.Check {
 	checks := []preflight.Check{}
 
-	if cd.nclient == nil || cd.kclient == nil {
+	if cd == nil || cd.kclient == nil || cd.nclient == nil || cd.pcVersion == "" {
 		return checks
 	}
 

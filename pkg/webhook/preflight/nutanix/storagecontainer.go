@@ -197,7 +197,7 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 	checks := []preflight.Check{}
 
-	if cd.nclient == nil {
+	if cd == nil || cd.nclient == nil || cd.pcVersion == "" {
 		return checks
 	}
 

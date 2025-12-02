@@ -146,13 +146,14 @@ func TestNutanixChecker_Init(t *testing.T) {
 				cd *checkDependencies,
 			) preflight.Check {
 				credsCheckCalled = true
+				cd.nclient = &clientWrapper{}
 				return &mockCheck{
 					name:   tt.expectedSecondCheckName,
 					result: preflight.CheckResult{Allowed: true},
 				}
 			}
 
-			checker.prismCentralVersionCheckFactory = func(cd *checkDependencies) preflight.Check {
+			checker.prismCentralVersionCheckFactory = func(ctx context.Context, cd *checkDependencies) preflight.Check {
 				prismCentralVersionCheckCalled = true
 				return &mockCheck{
 					name:   tt.expectedThirdCheckName,
@@ -260,6 +261,140 @@ func TestNutanixChecker_Init(t *testing.T) {
 				assert.Equal(t, tt.expectedSecondCheckName, checks[1].Name())
 				assert.Equal(t, tt.expectedThirdCheckName, checks[2].Name())
 			}
+		})
+	}
+}
+
+func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
+	t.Parallel()
+
+	type scenario struct {
+		name                    string
+		annotations             map[string]string
+		versionCheckResult      preflight.CheckResult
+		expectedVersionRuns     int
+		expectedDependentChecks int
+	}
+
+	scenarios := []scenario{
+		{
+			name: "skip version check lets dependent run",
+			annotations: map[string]string{
+				carenv1.PreflightChecksSkipAnnotationKey: "NutanixPrismCentralVersion",
+			},
+			versionCheckResult:      preflight.CheckResult{Allowed: true},
+			expectedVersionRuns:     0,
+			expectedDependentChecks: 1,
+		},
+		{
+			name: "version failure skips dependent",
+			versionCheckResult: preflight.CheckResult{
+				Allowed: false,
+			},
+			expectedVersionRuns:     1,
+			expectedDependentChecks: 0,
+		},
+		{
+			name: "version success runs dependent",
+			versionCheckResult: preflight.CheckResult{
+				Allowed: true,
+			},
+			expectedVersionRuns:     1,
+			expectedDependentChecks: 1,
+		},
+	}
+
+	for _, tt := range scenarios {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := context.Background()
+			versionRunCount := 0
+
+			checker := &nutanixChecker{
+				configurationCheckFactory: func(cd *checkDependencies) preflight.Check {
+					return &mockCheck{
+						name:   "config",
+						result: preflight.CheckResult{Allowed: true},
+					}
+				},
+				credentialsCheckFactory: func(
+					ctx context.Context,
+					nclientFactory func(prismgoclient.Credentials) (client, error),
+					cd *checkDependencies,
+				) preflight.Check {
+					cd.nclient = &clientWrapper{}
+					return &mockCheck{
+						name:   "creds",
+						result: preflight.CheckResult{Allowed: true},
+					}
+				},
+				prismCentralVersionCheckFactory: func(ctx context.Context, cd *checkDependencies) preflight.Check {
+					// If already validated or skipped (set from annotation), skip API call
+					if cd != nil && cd.pcVersion != "" {
+						return &mockCheck{
+							name:   "NutanixPrismCentralVersion",
+							result: preflight.CheckResult{Allowed: true},
+						}
+					}
+					versionRunCount++
+					if cd != nil {
+						if tt.versionCheckResult.Allowed {
+							cd.pcVersion = "7.3.0"
+						} else {
+							cd.pcVersion = ""
+						}
+					}
+					return &mockCheck{
+						name:   "NutanixPrismCentralVersion",
+						result: tt.versionCheckResult,
+					}
+				},
+				failureDomainCheckFactory: func(cd *checkDependencies) []preflight.Check {
+					if cd == nil || cd.pcVersion == "" {
+						return nil
+					}
+					return []preflight.Check{
+						&mockCheck{
+							name:   "DependentCheck",
+							result: preflight.CheckResult{Allowed: true},
+						},
+					}
+				},
+				vmImageChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				vmImageKubernetesVersionChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+			}
+
+			cluster := &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: tt.annotations,
+				},
+			}
+
+			checks := checker.Init(ctx, nil, cluster)
+
+			dependentCount := 0
+			hasVersionCheck := false
+			for _, check := range checks {
+				if check.Name() == "NutanixPrismCentralVersion" {
+					hasVersionCheck = true
+				}
+				if check.Name() == "DependentCheck" {
+					dependentCount++
+				}
+			}
+
+			assert.True(t, hasVersionCheck)
+			assert.Equal(t, tt.expectedDependentChecks, dependentCount)
+			assert.Equal(t, tt.expectedVersionRuns, versionRunCount)
 		})
 	}
 }

@@ -46,7 +46,7 @@ func TestPrismCentralVersionCheck_AllowsSupportedVersionsAndInternalBuilds(t *te
 				},
 			}
 
-			check := newPrismCentralVersionCheck(cd)
+			check := newPrismCentralVersionCheck(context.Background(), cd)
 			result := check.Run(context.Background())
 			assert.True(t, result.Allowed)
 			assert.False(t, result.InternalError)
@@ -90,7 +90,7 @@ func TestPrismCentralVersionCheck_FailsUnsupportedVersions(t *testing.T) {
 				},
 			}
 
-			check := newPrismCentralVersionCheck(cd)
+			check := newPrismCentralVersionCheck(context.Background(), cd)
 			result := check.Run(context.Background())
 			assert.False(t, result.Allowed)
 			assert.False(t, result.InternalError)
@@ -114,7 +114,7 @@ func TestPrismCentralVersionCheck_ErrorScenarios(t *testing.T) {
 		getFunc          func(ctx context.Context) (string, error)
 		expectedAllowed  bool
 		expectedInternal bool
-		expectedMessage  string
+		expectedMessage  func() string
 	}{
 		{
 			name: "API error when fetching version",
@@ -123,10 +123,12 @@ func TestPrismCentralVersionCheck_ErrorScenarios(t *testing.T) {
 			},
 			expectedAllowed:  false,
 			expectedInternal: true,
-			expectedMessage: fmt.Sprintf(
-				"Failed to get Prism Central version: %s. This is usually a temporary error. Please retry.",
-				assert.AnError,
-			),
+			expectedMessage: func() string {
+				return fmt.Sprintf(
+					"Failed to get Prism Central version: %s. This is usually a temporary error. Please retry.",
+					assert.AnError,
+				)
+			},
 		},
 		{
 			name: "Empty version returned",
@@ -135,11 +137,13 @@ func TestPrismCentralVersionCheck_ErrorScenarios(t *testing.T) {
 			},
 			expectedAllowed:  false,
 			expectedInternal: false,
-			expectedMessage: fmt.Sprintf(
-				"Prism Central reported version %q, which is not a valid version. Upgrade Prism Central to %s or later, wait for the upgrade to finish, then retry.",
-				"",
-				minSupportedPrismCentralVersion,
-			),
+			expectedMessage: func() string {
+				return fmt.Sprintf(
+					"Prism Central reported version %q, which is not a valid version. Upgrade Prism Central to %s or later, wait for the upgrade to finish, then retry.",
+					"",
+					minSupportedPrismCentralVersion,
+				)
+			},
 		},
 	}
 
@@ -155,12 +159,12 @@ func TestPrismCentralVersionCheck_ErrorScenarios(t *testing.T) {
 				},
 			}
 
-			check := newPrismCentralVersionCheck(cd)
+			check := newPrismCentralVersionCheck(context.Background(), cd)
 			result := check.Run(context.Background())
 			assert.Equal(t, tt.expectedAllowed, result.Allowed)
 			assert.Equal(t, tt.expectedInternal, result.InternalError)
 			assert.Len(t, result.Causes, 1)
-			assert.Equal(t, tt.expectedMessage, result.Causes[0].Message)
+			assert.Equal(t, tt.expectedMessage(), result.Causes[0].Message)
 		})
 	}
 }
@@ -172,8 +176,9 @@ func TestPrismCentralVersionCheck_SkipsWithoutClient(t *testing.T) {
 		log: logr.Discard(),
 	}
 
-	check := newPrismCentralVersionCheck(cd)
+	check := newPrismCentralVersionCheck(context.Background(), cd)
 	result := check.Run(context.Background())
 	assert.True(t, result.Allowed)
 	assert.False(t, result.InternalError)
+	_ = cd
 }

@@ -368,6 +368,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 				nclient:                                            tc.nclient,
 				kclient:                                            tc.kclient,
 				cluster:                                            tc.cluster,
+				pcVersion:                                          "7.3.0",
 			}
 			if cd.failureDomainByMachineDeploymentName == nil {
 				cd.failureDomainByMachineDeploymentName = map[string]string{}

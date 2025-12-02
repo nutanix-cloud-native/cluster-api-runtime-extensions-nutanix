@@ -218,7 +218,7 @@ func newClient(
 			}
 
 			if pcInfo == nil || pcInfo.Resources == nil || pcInfo.Resources.Version == nil {
-				return "", fmt.Errorf("failed to get Prism Central version")
+				return "", fmt.Errorf("failed to get Prism Central version: API did not return the PC version")
 			}
 
 			return *pcInfo.Resources.Version, nil

@@ -19,53 +19,59 @@ const (
 )
 
 type prismCentralVersionCheck struct {
-	cd *checkDependencies
+	result preflight.CheckResult
 }
 
-func newPrismCentralVersionCheck(cd *checkDependencies) preflight.Check {
-	cd.log.V(5).Info("Initializing Prism Central version check")
-	return &prismCentralVersionCheck{
-		cd: cd,
-	}
-}
-
-func (c *prismCentralVersionCheck) Name() string {
-	return "NutanixPrismCentralVersion"
-}
-
-func (c *prismCentralVersionCheck) Run(ctx context.Context) preflight.CheckResult {
-	result := preflight.CheckResult{
-		Allowed: true,
+func newPrismCentralVersionCheck(ctx context.Context, cd *checkDependencies) preflight.Check {
+	if cd != nil {
+		cd.log.V(5).Info("Initializing Prism Central version check")
 	}
 
-	if c.cd == nil || c.cd.nclient == nil {
-		return result
+	check := &prismCentralVersionCheck{
+		result: preflight.CheckResult{
+			Allowed: true,
+		},
 	}
 
-	version, err := c.cd.nclient.GetPrismCentralVersion(ctx)
+	if cd == nil {
+		return check
+	}
+
+	// If already validated or skipped (set from annotation), skip API call
+	if cd.pcVersion != "" {
+		return check
+	}
+
+	if cd.nclient == nil {
+		return check
+	}
+
+	version, err := cd.nclient.GetPrismCentralVersion(ctx)
 	if err != nil {
-		result.Allowed = false
-		result.InternalError = true
-		result.Causes = append(result.Causes, preflight.Cause{
+		check.result.Allowed = false
+		check.result.InternalError = true
+		check.result.Causes = append(check.result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
 				"Failed to get Prism Central version: %s. This is usually a temporary error. Please retry.",
 				err,
 			),
 			Field: prismCentralEndpointFieldPath,
 		})
-		return result
+		// pcVersion remains empty on failure
+		return check
 	}
 
 	lowerVersion := strings.ToLower(strings.TrimSpace(version))
 	if strings.Contains(lowerVersion, internalPrismCentralVersionLabel) {
-		return result
+		cd.pcVersion = version
+		return check
 	}
 
 	cleanVersion := nutanixutils.CleanPCVersion(lowerVersion)
 	if cleanVersion == "" {
-		result.Allowed = false
-		result.InternalError = false
-		result.Causes = append(result.Causes, preflight.Cause{
+		check.result.Allowed = false
+		check.result.InternalError = false
+		check.result.Causes = append(check.result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
 				"Prism Central reported version %q, which is not a valid version. Upgrade Prism Central to %s or later, wait for the upgrade to finish, then retry.", ///nolint:lll // Message includes full upgrade instruction.
 				version,
@@ -73,12 +79,13 @@ func (c *prismCentralVersionCheck) Run(ctx context.Context) preflight.CheckResul
 			),
 			Field: prismCentralEndpointFieldPath,
 		})
-		return result
+		// pcVersion remains empty on failure
+		return check
 	}
 
 	if nutanixutils.ComparePCVersions(cleanVersion, minSupportedPrismCentralVersion) == -1 {
-		result.Allowed = false
-		result.Causes = append(result.Causes, preflight.Cause{
+		check.result.Allowed = false
+		check.result.Causes = append(check.result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
 				"Prism Central version %q is older than the minimum supported version %s. Upgrade Prism Central to %s or later, wait for the upgrade to finish, then retry.", ///nolint:lll // Message includes version and upgrade guidance.
 				version,
@@ -87,8 +94,18 @@ func (c *prismCentralVersionCheck) Run(ctx context.Context) preflight.CheckResul
 			),
 			Field: prismCentralEndpointFieldPath,
 		})
-		return result
+		// pcVersion remains empty on failure
+		return check
 	}
 
-	return result
+	cd.pcVersion = version
+	return check
+}
+
+func (c *prismCentralVersionCheck) Name() string {
+	return "NutanixPrismCentralVersion"
+}
+
+func (c *prismCentralVersionCheck) Run(_ context.Context) preflight.CheckResult {
+	return c.result
 }
