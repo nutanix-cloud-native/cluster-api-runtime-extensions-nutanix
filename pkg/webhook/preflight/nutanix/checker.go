@@ -15,7 +15,6 @@ import (
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/skip"
 )
 
 var Checker = &nutanixChecker{
@@ -79,15 +78,11 @@ func (n *nutanixChecker) Init(
 	kclient ctrlclient.Client,
 	cluster *clusterv1.Cluster,
 ) []preflight.Check {
-	pcVersionSkipped := isPCVersionCheckSkipped(cluster)
 	cd := &checkDependencies{
 		kclient:   kclient,
 		cluster:   cluster,
 		log:       ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
 		pcVersion: "",
-	}
-	if pcVersionSkipped {
-		cd.pcVersion = "skipped"
 	}
 
 	checks := []preflight.Check{
@@ -95,11 +90,7 @@ func (n *nutanixChecker) Init(
 		// and the credentials check second, because it initializes the Nutanix clients used by other checks.
 		n.configurationCheckFactory(cd),
 		n.credentialsCheckFactory(ctx, newClient, cd),
-	}
-
-	pcVersionCheck := n.prismCentralVersionCheckFactory(ctx, cd)
-	if pcVersionCheck != nil {
-		checks = append(checks, pcVersionCheck)
+		n.prismCentralVersionCheckFactory(ctx, cd),
 	}
 
 	checks = append(checks, n.failureDomainCheckFactory(cd)...)
@@ -110,13 +101,4 @@ func (n *nutanixChecker) Init(
 	// Add more checks here as needed.
 
 	return checks
-}
-
-func isPCVersionCheckSkipped(cluster *clusterv1.Cluster) bool {
-	if cluster == nil {
-		return false
-	}
-
-	skipEvaluator := skip.New(cluster)
-	return skipEvaluator.For("nutanixprismcentralversion")
 }

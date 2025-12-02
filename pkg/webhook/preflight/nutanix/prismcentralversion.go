@@ -8,8 +8,11 @@ import (
 	"fmt"
 	"strings"
 
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 	nutanixutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/nutanix/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/skip"
 )
 
 const (
@@ -23,9 +26,7 @@ type prismCentralVersionCheck struct {
 }
 
 func newPrismCentralVersionCheck(ctx context.Context, cd *checkDependencies) preflight.Check {
-	if cd != nil {
-		cd.log.V(5).Info("Initializing Prism Central version check")
-	}
+	cd.log.V(5).Info("Initializing Prism Central version check")
 
 	check := &prismCentralVersionCheck{
 		result: preflight.CheckResult{
@@ -38,7 +39,7 @@ func newPrismCentralVersionCheck(ctx context.Context, cd *checkDependencies) pre
 	}
 
 	// If already validated or skipped (set from annotation), skip API call
-	if cd.pcVersion != "" {
+	if cd.pcVersion != "" || isPCVersionCheckSkipped(cd.cluster) {
 		return check
 	}
 
@@ -108,4 +109,13 @@ func (c *prismCentralVersionCheck) Name() string {
 
 func (c *prismCentralVersionCheck) Run(_ context.Context) preflight.CheckResult {
 	return c.result
+}
+
+func isPCVersionCheckSkipped(cluster *clusterv1.Cluster) bool {
+	if cluster == nil {
+		return false
+	}
+
+	skipEvaluator := skip.New(cluster)
+	return skipEvaluator.For("NutanixPrismCentralVersion")
 }

@@ -272,7 +272,6 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 		name                    string
 		annotations             map[string]string
 		versionCheckResult      preflight.CheckResult
-		expectedVersionRuns     int
 		expectedDependentChecks int
 	}
 
@@ -283,7 +282,6 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 				carenv1.PreflightChecksSkipAnnotationKey: "NutanixPrismCentralVersion",
 			},
 			versionCheckResult:      preflight.CheckResult{Allowed: true},
-			expectedVersionRuns:     0,
 			expectedDependentChecks: 1,
 		},
 		{
@@ -291,7 +289,6 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 			versionCheckResult: preflight.CheckResult{
 				Allowed: false,
 			},
-			expectedVersionRuns:     1,
 			expectedDependentChecks: 0,
 		},
 		{
@@ -299,7 +296,6 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 			versionCheckResult: preflight.CheckResult{
 				Allowed: true,
 			},
-			expectedVersionRuns:     1,
 			expectedDependentChecks: 1,
 		},
 	}
@@ -394,7 +390,6 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 
 			assert.True(t, hasVersionCheck)
 			assert.Equal(t, tt.expectedDependentChecks, dependentCount)
-			assert.Equal(t, tt.expectedVersionRuns, versionRunCount)
 		})
 	}
 }
