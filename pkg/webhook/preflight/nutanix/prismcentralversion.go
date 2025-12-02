@@ -38,8 +38,14 @@ func newPrismCentralVersionCheck(ctx context.Context, cd *checkDependencies) pre
 		return check
 	}
 
-	// If already validated or skipped (set from annotation), skip API call
-	if cd.pcVersion != "" || isPCVersionCheckSkipped(cd.cluster) {
+	// If check is skipped, set a fake version to allow other checks to run.
+	if isPCVersionCheckSkipped(cd.cluster) {
+		cd.pcVersion = "skipped"
+		return check
+	}
+
+	// If already validated, skip the API call.
+	if cd.pcVersion != "" {
 		return check
 	}
 
