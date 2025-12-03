@@ -120,8 +120,9 @@ func TestInitFailureDomainChecks(t *testing.T) {
 						},
 					},
 				},
-				nclient: tc.nclient,
-				kclient: tc.kclient,
+				nclient:   tc.nclient,
+				kclient:   tc.kclient,
+				pcVersion: "7.3.0",
 			}
 
 			// Call the function under test

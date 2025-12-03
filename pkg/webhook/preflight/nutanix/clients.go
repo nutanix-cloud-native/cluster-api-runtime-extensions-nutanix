@@ -25,6 +25,13 @@ type client interface {
 		error,
 	)
 
+	GetPrismCentralVersion(
+		ctx context.Context,
+	) (
+		string,
+		error,
+	)
+
 	GetImageById(
 		ctx context.Context,
 		uuid *string,
@@ -109,6 +116,12 @@ type clientWrapper struct {
 		ctx context.Context,
 	) (
 		*prismv3.UserIntentResponse, error,
+	)
+
+	GetPrismCentralVersionFunc func(
+		ctx context.Context,
+	) (
+		string, error,
 	)
 
 	GetImageByIdFunc func(
@@ -198,8 +211,20 @@ func newClient(
 
 	return &clientWrapper{
 		GetCurrentLoggedInUserFunc: v3c.V3.GetCurrentLoggedInUser,
-		GetImageByIdFunc:           v4c.ImagesApiInstance.GetImageById,
-		ListImagesFunc:             v4c.ImagesApiInstance.ListImages,
+		GetPrismCentralVersionFunc: func(ctx context.Context) (string, error) {
+			pcInfo, err := v3c.V3.GetPrismCentral(ctx)
+			if err != nil {
+				return "", err
+			}
+
+			if pcInfo == nil || pcInfo.Resources == nil || pcInfo.Resources.Version == nil {
+				return "", fmt.Errorf("failed to get Prism Central version: API did not return the PC version")
+			}
+
+			return *pcInfo.Resources.Version, nil
+		},
+		GetImageByIdFunc: v4c.ImagesApiInstance.GetImageById,
+		ListImagesFunc:   v4c.ImagesApiInstance.ListImages,
 		GetClusterByIdFunc: func(uuid *string, args ...map[string]interface{}) (*clustermgmtv4.GetClusterApiResponse, error) {
 			return v4c.ClustersApiInstance.GetClusterById(uuid, nil, args...)
 		},
@@ -225,6 +250,15 @@ func (c *clientWrapper) GetCurrentLoggedInUser(
 	error,
 ) {
 	return c.GetCurrentLoggedInUserFunc(ctx)
+}
+
+func (c *clientWrapper) GetPrismCentralVersion(
+	ctx context.Context,
+) (
+	string,
+	error,
+) {
+	return c.GetPrismCentralVersionFunc(ctx)
 }
 
 func (c *clientWrapper) GetImageById(

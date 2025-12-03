@@ -371,8 +371,9 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 						},
 					},
 				},
-				nclient: tc.nclient,
-				log:     testr.New(t),
+				nclient:   tc.nclient,
+				pcVersion: "7.3.0",
+				log:       testr.New(t),
 			}
 
 			checks := newVMImageKubernetesVersionChecks(cd)

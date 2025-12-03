@@ -722,8 +722,9 @@ func TestNewVMImageChecks(t *testing.T) {
 			cd := &checkDependencies{
 				nutanixClusterConfigSpec:                           tc.nutanixClusterConfigSpec,
 				nutanixWorkerNodeConfigSpecByMachineDeploymentName: tc.nutanixWorkerNodeConfigSpecByMDName,
-				nclient: tc.nclient,
-				log:     testr.New(t),
+				nclient:   tc.nclient,
+				pcVersion: "7.3.0",
+				log:       testr.New(t),
 			}
 
 			// Call the method under test

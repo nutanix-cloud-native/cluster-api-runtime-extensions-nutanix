@@ -20,6 +20,7 @@ import (
 var Checker = &nutanixChecker{
 	configurationCheckFactory:             newConfigurationCheck,
 	credentialsCheckFactory:               newCredentialsCheck,
+	prismCentralVersionCheckFactory:       newPrismCentralVersionCheck,
 	failureDomainCheckFactory:             newFailureDomainChecks,
 	vmImageChecksFactory:                  newVMImageChecks,
 	vmImageKubernetesVersionChecksFactory: newVMImageKubernetesVersionChecks,
@@ -34,6 +35,11 @@ type nutanixChecker struct {
 	credentialsCheckFactory func(
 		ctx context.Context,
 		nclientFactory func(prismgoclient.Credentials) (client, error),
+		cd *checkDependencies,
+	) preflight.Check
+
+	prismCentralVersionCheckFactory func(
+		ctx context.Context,
 		cd *checkDependencies,
 	) preflight.Check
 
@@ -62,8 +68,9 @@ type checkDependencies struct {
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
 	failureDomainByMachineDeploymentName               map[string]string
 
-	nclient client
-	log     logr.Logger
+	nclient   client
+	pcVersion string
+	log       logr.Logger
 }
 
 func (n *nutanixChecker) Init(
@@ -72,9 +79,10 @@ func (n *nutanixChecker) Init(
 	cluster *clusterv1.Cluster,
 ) []preflight.Check {
 	cd := &checkDependencies{
-		kclient: kclient,
-		cluster: cluster,
-		log:     ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
+		kclient:   kclient,
+		cluster:   cluster,
+		log:       ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
+		pcVersion: "",
 	}
 
 	checks := []preflight.Check{
@@ -82,12 +90,10 @@ func (n *nutanixChecker) Init(
 		// and the credentials check second, because it initializes the Nutanix clients used by other checks.
 		n.configurationCheckFactory(cd),
 		n.credentialsCheckFactory(ctx, newClient, cd),
+		n.prismCentralVersionCheckFactory(ctx, cd),
 	}
 
-	// The failure domains check need to run before the image, storage container checks that depends on whether
-	// failure domains are configured correctly.
 	checks = append(checks, n.failureDomainCheckFactory(cd)...)
-
 	checks = append(checks, n.vmImageChecksFactory(cd)...)
 	checks = append(checks, n.vmImageKubernetesVersionChecksFactory(cd)...)
 	checks = append(checks, n.storageContainerChecksFactory(cd)...)

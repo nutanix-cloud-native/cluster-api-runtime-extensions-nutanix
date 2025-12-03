@@ -91,7 +91,7 @@ func newVMImageChecks(
 ) []preflight.Check {
 	checks := []preflight.Check{}
 
-	if cd.nclient == nil {
+	if cd == nil || cd.nclient == nil || cd.pcVersion == "" {
 		return checks
 	}
 
