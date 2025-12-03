@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.41.0 (2025-12-03)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat(preflight): enforce supported Prism Central versions by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1421
+* feat: Build with go 1.25.5 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1422
+### Fixes 🔧
+* fix: bumping konnector-agent chart version by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1424
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.40.0...v0.41.0
+
 ## 0.40.0 (2025-11-26)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
