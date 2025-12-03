@@ -5,7 +5,7 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/co
 
 go 1.23.0
 
-toolchain go1.25.3
+toolchain go1.25.5
 
 require (
 	github.com/evanphx/json-patch/v5 v5.9.11
