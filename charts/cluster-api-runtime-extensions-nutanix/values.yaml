@@ -143,7 +143,7 @@ deployDefaultClusterClasses: true
 # target namespace, i.e., every namespace that has a label with a matching key.
 namespaceSync:
   enabled: true
-  targetNamespaceLabelKey: caren.nutanix.com/namespace-sync
+  targetNamespaceLabelSelector: caren.nutanix.com/namespace-sync
   # By default, sourceNamespace is the helm release namespace.
   sourceNamespace: ""
 
