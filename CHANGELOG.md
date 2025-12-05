@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.41.1 (2025-12-05)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: bumping konnector-agent chart version by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1426
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.41.0...v0.41.1
+
 ## 0.41.0 (2025-12-03)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
