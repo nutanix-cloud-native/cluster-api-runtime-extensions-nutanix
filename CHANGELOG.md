@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.28.3 (2025-12-10)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.28.x -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Add more context to MetalLB config apply conflict errors by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1231
+### Fixes 🔧
+* fix: Namespacesync copies resources after partial copy failure by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1229
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.28.2...v0.28.3
+
 ## 0.28.2 (2025-04-24)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
