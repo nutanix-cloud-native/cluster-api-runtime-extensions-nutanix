@@ -1,5 +1,7 @@
 agent:
   name: {{ .AgentName }}
+  image:
+    privateRegistry: false
 pc:
   port: {{ .PrismCentralPort }}
   insecure: {{ .PrismCentralInsecure }}
