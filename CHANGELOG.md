@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.41.2 (2025-12-11)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: moving konnector agent(docker, helm) to nutanix repo by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1433
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.41.1...v0.41.2
+
 ## 0.41.1 (2025-12-05)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
