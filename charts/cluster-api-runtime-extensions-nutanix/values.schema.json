@@ -683,7 +683,7 @@
                 "sourceNamespace": {
                     "type": "string"
                 },
-                "targetNamespaceLabelKey": {
+                "targetNamespaceLabelSelector": {
                     "type": "string"
                 }
             }
