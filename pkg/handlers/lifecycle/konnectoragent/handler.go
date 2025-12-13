@@ -742,7 +742,7 @@ func isClusterRegisteredInPC(
 		Port:     fmt.Sprintf("%d", port),
 	}
 
-	// Get kube-system namespace UUID from the workload cluster
+	// Get kube-system namespace UUID from the cluster
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 	remoteClient, err := remote.NewClusterClient(ctx, "", client, clusterKey)
 	if err != nil {

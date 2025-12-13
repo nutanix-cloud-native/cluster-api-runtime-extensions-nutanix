@@ -18,7 +18,6 @@ func NewPrismCentralKonnectorClient(credentials *prismgoclient.Credentials, addi
 	clientOpts ...konnectorprismgoclient.ClientOption,
 ) (*PrismCentralKonnectorClient, error) {
 	if credentials == nil {
-		//nolint:err113 // No need to wrap this error, it has all context needed.
 		return nil, fmt.Errorf(
 			"prism central credentials cannot be nil, needed to create prism central konnector client",
 		)
