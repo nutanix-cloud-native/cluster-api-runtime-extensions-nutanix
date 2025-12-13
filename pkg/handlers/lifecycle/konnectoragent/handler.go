@@ -17,10 +17,16 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
+	prismcredentials "github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
+	karbonprismgoclient "github.com/nutanix-cloud-native/prism-go-client/karbon"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
@@ -465,6 +471,21 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
+	// Check cluster is registerd in PC
+	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, cluster, log)
+	if err != nil {
+		log.Error(err, "Failed to check if cluster is registered in PC")
+		//setting response status to success to allow cluster deletion to proceed
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetMessage(fmt.Sprintf("Failed to check if cluster is registered in PC: %v. Allowing cluster deletion to proceed.", err))
+		return
+	}
+	if !clusterRegistered {
+		log.Info("Cluster is not registered in PC, skipping cleanup")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
 	// Check if cleanup is already in progress or completed
 	cleanupStatus, statusMsg, err := n.checkCleanupStatus(ctx, cluster, log)
 	if err != nil {
@@ -650,4 +671,135 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	// HCP exists and is not being deleted
 	log.Info("HelmChartProxy exists, cleanup not started", "name", hcp.Name)
 	return cleanupStatusNotStarted, "HelmChartProxy exists and needs to be deleted", nil
+}
+
+// isClusterRegisteredInPC checks if the cluster is registered in Prism Central by calling
+// the Karbon GetClusterRegistration API using the cluster's kube-system namespace UUID.
+func isClusterRegisteredInPC(
+	ctx context.Context,
+	client ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) (bool, error) {
+	// Get cluster config to extract PC endpoint and credentials
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to read clusterConfig variable: %w", err)
+	}
+
+	if clusterConfigVar.Nutanix == nil || clusterConfigVar.Nutanix.PrismCentralEndpoint.URL == "" {
+		return false, fmt.Errorf("prism central endpoint not configured")
+	}
+
+	prismCentralEndpointSpec := clusterConfigVar.Nutanix.PrismCentralEndpoint
+	host, port, err := prismCentralEndpointSpec.ParseURL()
+	if err != nil {
+		return false, fmt.Errorf("failed to parse prism central endpoint URL: %w", err)
+	}
+
+	// Get credentials from Secret
+	credentialsSecret := &corev1.Secret{}
+	err = client.Get(ctx, types.NamespacedName{
+		Namespace: cluster.Namespace,
+		Name:      prismCentralEndpointSpec.Credentials.SecretRef.Name,
+	}, credentialsSecret)
+	if err != nil {
+		return false, fmt.Errorf("failed to get credentials secret: %w", err)
+	}
+
+	data, ok := credentialsSecret.Data["credentials"]
+	if !ok {
+		return false, fmt.Errorf("credentials secret does not contain 'credentials' key")
+	}
+
+	usernamePassword, err := prismcredentials.ParseCredentials(data)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse credentials: %w", err)
+	}
+
+	// Create credentials struct
+	credentials := prismgoclient.Credentials{
+		Endpoint: fmt.Sprintf("%s:%d", host, port),
+		URL:      fmt.Sprintf("https://%s:%d", host, port),
+		Username: usernamePassword.Username,
+		Password: usernamePassword.Password,
+		Insecure: prismCentralEndpointSpec.Insecure,
+		Port:     fmt.Sprintf("%d", port),
+	}
+
+	// Get kube-system namespace UUID from the workload cluster
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+	remoteClient, err := remote.NewClusterClient(ctx, "", client, clusterKey)
+	if err != nil {
+		return false, fmt.Errorf("failed to create remote cluster client: %w", err)
+	}
+
+	kubeSystemNS := &corev1.Namespace{}
+	err = remoteClient.Get(ctx, types.NamespacedName{Name: "kube-system"}, kubeSystemNS)
+	if err != nil {
+		return false, fmt.Errorf("failed to get kube-system namespace from workload cluster: %w", err)
+	}
+
+	clusterUUID := string(kubeSystemNS.UID)
+	if clusterUUID == "" {
+		return false, fmt.Errorf("kube-system namespace UID is empty")
+	}
+
+	// Create Karbon client
+	karbonClient, err := NewKarbonClient(&credentials)
+	if err != nil {
+		return false, fmt.Errorf("failed to create karbon client: %w", err)
+	}
+
+	// Call GetClusterRegistration API
+	_, err = karbonClient.GetClusterRegistration(clusterUUID)
+	if err != nil {
+		// If cluster is not found (404), it's not registered
+		if apierrors.IsNotFound(err) || strings.Contains(strings.ToLower(err.Error()), "not found") ||
+			strings.Contains(strings.ToLower(err.Error()), "404") {
+			log.Info("Cluster is not registered in PC", "clusterUUID", clusterUUID)
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get cluster registration: %w", err)
+	}
+
+	// If we got here, the cluster is registered
+	log.Info("Cluster is registered in PC", "clusterUUID", clusterUUID)
+	return true, nil
+}
+
+// NewKarbonClient creates a new Karbon client.
+func NewKarbonClient(creds *prismgoclient.Credentials) (*KarbonClient, error) {
+	client, err := karbonprismgoclient.NewKarbonAPIClient(*creds)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create karbon API client: %w", err)
+	}
+
+	return &KarbonClient{karbonClient: client}, nil
+}
+
+// KarbonClient wraps the karbon client.
+type KarbonClient struct {
+	karbonClient *karbonprismgoclient.Client
+}
+
+// GetClusterRegistration retrieves the cluster registration from Prism Central.
+func (kc *KarbonClient) GetClusterRegistration(
+	k8sClusterUUID string,
+) (*karbonprismgoclient.K8sClusterRegistration, error) {
+	if kc == nil || kc.karbonClient == nil {
+		return nil, fmt.Errorf("could not connect to API server on PC: client is nil")
+	}
+	k8sClusterReg, err := kc.karbonClient.ClusterRegistrationOperations.GetK8sRegistration(
+		context.Background(),
+		k8sClusterUUID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get k8s cluster registration: %w", err)
+	}
+	return k8sClusterReg, nil
 }
