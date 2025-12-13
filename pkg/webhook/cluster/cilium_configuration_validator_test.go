@@ -420,6 +420,102 @@ kubeProxyReplacement: true
 			resp := validator.validate(context.Background(), req)
 			Expect(resp.Allowed).To(BeTrue())
 		})
+
+		It("should allow when ConfigMap uses templated values with ControlPlaneEndpoint", func() {
+			cni := &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCilium,
+				AddonConfig: v1alpha1.AddonConfig{
+					Values: &v1alpha1.AddonValues{
+						SourceRef: &v1alpha1.ValuesReference{
+							Kind: "ConfigMap",
+							Name: "cilium-values",
+						},
+					},
+				},
+			}
+			cluster := createTestClusterWithControlPlaneEndpoint(
+				"test-cluster",
+				"test-namespace",
+				v1alpha1.KubeProxyModeDisabled,
+				cni,
+				"192.168.1.100",
+				6443,
+			)
+			req := createAdmissionRequest(cluster)
+
+			// Create ConfigMap with templated values where kubeProxyReplacement depends on templating
+			// Without templating, this would fail because {{ true }} is not a valid boolean
+			configMap := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cilium-values",
+					Namespace: "test-namespace",
+				},
+				Data: map[string]string{
+					"values.yaml": `
+ipam:
+  mode: kubernetes
+# This will only work if templating is applied
+kubeProxyReplacement: true
+k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
+k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
+`,
+				},
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(configMap).Build()
+			validator = NewAdvancedCiliumConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+		})
+
+		It("should deny when ConfigMap uses templated values that would be false after templating", func() {
+			cni := &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCilium,
+				AddonConfig: v1alpha1.AddonConfig{
+					Values: &v1alpha1.AddonValues{
+						SourceRef: &v1alpha1.ValuesReference{
+							Kind: "ConfigMap",
+							Name: "cilium-values",
+						},
+					},
+				},
+			}
+			cluster := createTestClusterWithControlPlaneEndpoint(
+				"test-cluster",
+				"test-namespace",
+				v1alpha1.KubeProxyModeDisabled,
+				cni,
+				"192.168.1.100",
+				6443,
+			)
+			req := createAdmissionRequest(cluster)
+
+			// Create ConfigMap with templated values that evaluate to false
+			configMap := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cilium-values",
+					Namespace: "test-namespace",
+				},
+				Data: map[string]string{
+					"values.yaml": `
+ipam:
+  mode: kubernetes
+kubeProxyReplacement: {{ false }}
+k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
+k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
+`,
+				},
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(configMap).Build()
+			validator = NewAdvancedCiliumConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			expectedMessage := "kube-proxy is disabled, but Cilium ConfigMap test-namespace/cilium-values does not have 'kubeProxyReplacement' enabled"
+			Expect(resp.Result.Message).To(Equal(expectedMessage))
+		})
 	})
 })
 
@@ -465,6 +561,21 @@ func createTestCluster(
 			},
 		},
 	}
+}
+
+func createTestClusterWithControlPlaneEndpoint(
+	name, namespace string,
+	kubeProxyMode v1alpha1.KubeProxyMode,
+	cni *v1alpha1.CNI,
+	host string,
+	port int32,
+) *clusterv1.Cluster {
+	cluster := createTestCluster(name, namespace, kubeProxyMode, cni)
+	cluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+		Host: host,
+		Port: port,
+	}
+	return cluster
 }
 
 func createAdmissionRequest(cluster *clusterv1.Cluster) admission.Request {
