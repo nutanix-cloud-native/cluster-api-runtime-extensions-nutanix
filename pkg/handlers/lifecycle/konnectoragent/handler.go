@@ -25,8 +25,6 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
-	prismcredentials "github.com/nutanix-cloud-native/prism-go-client/environment/credentials"
-	karbonprismgoclient "github.com/nutanix-cloud-native/prism-go-client/karbon"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
@@ -37,6 +35,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
+	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -471,17 +470,16 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
-	// Check cluster is registerd in PC
+	// Check cluster is registered in PC
 	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, cluster, log)
 	if err != nil {
-		log.Error(err, "Failed to check if cluster is registered in PC")
-		//setting response status to success to allow cluster deletion to proceed
+		log.Error(err, "Failed to check if cluster is registered in Prism Central")
+		// setting response status to success to allow cluster deletion to proceed
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-		resp.SetMessage(fmt.Sprintf("Failed to check if cluster is registered in PC: %v. Allowing cluster deletion to proceed.", err))
 		return
 	}
 	if !clusterRegistered {
-		log.Info("Cluster is not registered in PC, skipping cleanup")
+		log.Info("Cluster is not registered in Prism Central, skipping cleanup")
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	}
@@ -674,14 +672,14 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 }
 
 // isClusterRegisteredInPC checks if the cluster is registered in Prism Central by calling
-// the Karbon GetClusterRegistration API using the cluster's kube-system namespace UUID.
+// the Konnector GetClusterRegistration API using the cluster's kube-system namespace UUID.
 func isClusterRegisteredInPC(
 	ctx context.Context,
 	client ctrlclient.Client,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) (bool, error) {
-	// Get cluster config to extract PC endpoint and credentials
+	// Get cluster config to extract PC endpoint
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
 		varMap,
@@ -701,32 +699,45 @@ func isClusterRegisteredInPC(
 		return false, fmt.Errorf("failed to parse prism central endpoint URL: %w", err)
 	}
 
-	// Get credentials from Secret
+	// Get konnector agent variable to access its credentials secret
+	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+		"addons", v1alpha1.KonnectorAgentVariableName,
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to read konnector agent variable: %w", err)
+	}
+
+	if k8sAgentVar.Credentials == nil || k8sAgentVar.Credentials.SecretRef.Name == "" {
+		return false, fmt.Errorf("konnector agent credentials secret not configured")
+	}
+
+	// Get credentials from konnector agent addon Secret
 	credentialsSecret := &corev1.Secret{}
 	err = client.Get(ctx, types.NamespacedName{
 		Namespace: cluster.Namespace,
-		Name:      prismCentralEndpointSpec.Credentials.SecretRef.Name,
+		Name:      k8sAgentVar.Credentials.SecretRef.Name,
 	}, credentialsSecret)
 	if err != nil {
 		return false, fmt.Errorf("failed to get credentials secret: %w", err)
 	}
 
-	data, ok := credentialsSecret.Data["credentials"]
+	usernameData, ok := credentialsSecret.Data["username"]
 	if !ok {
-		return false, fmt.Errorf("credentials secret does not contain 'credentials' key")
+		return false, fmt.Errorf("credentials secret does not contain 'username' key")
 	}
-
-	usernamePassword, err := prismcredentials.ParseCredentials(data)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse credentials: %w", err)
+	passwordData, ok := credentialsSecret.Data["password"]
+	if !ok {
+		return false, fmt.Errorf("credentials secret does not contain 'password' key")
 	}
 
 	// Create credentials struct
 	credentials := prismgoclient.Credentials{
 		Endpoint: fmt.Sprintf("%s:%d", host, port),
 		URL:      fmt.Sprintf("https://%s:%d", host, port),
-		Username: usernamePassword.Username,
-		Password: usernamePassword.Password,
+		Username: string(usernameData),
+		Password: string(passwordData),
 		Insecure: prismCentralEndpointSpec.Insecure,
 		Port:     fmt.Sprintf("%d", port),
 	}
@@ -741,65 +752,30 @@ func isClusterRegisteredInPC(
 	kubeSystemNS := &corev1.Namespace{}
 	err = remoteClient.Get(ctx, types.NamespacedName{Name: "kube-system"}, kubeSystemNS)
 	if err != nil {
-		return false, fmt.Errorf("failed to get kube-system namespace from workload cluster: %w", err)
+		return false, fmt.Errorf("failed to get kube-system namespace from cluster(%s): %w", cluster.Name, err)
 	}
 
 	clusterUUID := string(kubeSystemNS.UID)
-	if clusterUUID == "" {
-		return false, fmt.Errorf("kube-system namespace UID is empty")
+
+	// Get trust bundle if insecure is false
+	var trustBundle string
+	if !prismCentralEndpointSpec.Insecure {
+		trustBundle = prismCentralEndpointSpec.AdditionalTrustBundle
 	}
 
-	// Create Karbon client
-	karbonClient, err := NewKarbonClient(&credentials)
+	// Create Prism Central Konnector client
+	prismCentralKonnectorClient, err := lifecycleutils.NewPrismCentralKonnectorClient(&credentials, trustBundle)
 	if err != nil {
-		return false, fmt.Errorf("failed to create karbon client: %w", err)
+		return false, fmt.Errorf("failed to create prism central konnector client: %w", err)
 	}
 
 	// Call GetClusterRegistration API
-	_, err = karbonClient.GetClusterRegistration(clusterUUID)
+	_, err = prismCentralKonnectorClient.GetClusterRegistration(ctx, clusterUUID)
 	if err != nil {
-		// If cluster is not found (404), it's not registered
-		if apierrors.IsNotFound(err) || strings.Contains(strings.ToLower(err.Error()), "not found") ||
-			strings.Contains(strings.ToLower(err.Error()), "404") {
-			log.Info("Cluster is not registered in PC", "clusterUUID", clusterUUID)
-			return false, nil
-		}
-		return false, fmt.Errorf("failed to get cluster registration: %w", err)
+		return false, fmt.Errorf("failed to get cluster(%s) registration: %w", clusterUUID, err)
 	}
 
 	// If we got here, the cluster is registered
-	log.Info("Cluster is registered in PC", "clusterUUID", clusterUUID)
+	log.Info("Cluster is registered in Prism Central", "clusterUUID", clusterUUID)
 	return true, nil
-}
-
-// NewKarbonClient creates a new Karbon client.
-func NewKarbonClient(creds *prismgoclient.Credentials) (*KarbonClient, error) {
-	client, err := karbonprismgoclient.NewKarbonAPIClient(*creds)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create karbon API client: %w", err)
-	}
-
-	return &KarbonClient{karbonClient: client}, nil
-}
-
-// KarbonClient wraps the karbon client.
-type KarbonClient struct {
-	karbonClient *karbonprismgoclient.Client
-}
-
-// GetClusterRegistration retrieves the cluster registration from Prism Central.
-func (kc *KarbonClient) GetClusterRegistration(
-	k8sClusterUUID string,
-) (*karbonprismgoclient.K8sClusterRegistration, error) {
-	if kc == nil || kc.karbonClient == nil {
-		return nil, fmt.Errorf("could not connect to API server on PC: client is nil")
-	}
-	k8sClusterReg, err := kc.karbonClient.ClusterRegistrationOperations.GetK8sRegistration(
-		context.Background(),
-		k8sClusterUUID,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get k8s cluster registration: %w", err)
-	}
-	return k8sClusterReg, nil
 }
