@@ -54,12 +54,12 @@ func (pc *PrismCentralKonnectorClient) GetClusterRegistration(
 	if pc == nil || pc.prismCentralKonnectorClient == nil {
 		return nil, fmt.Errorf("could not connect to API server on PC: client is nil")
 	}
-	k8sClusterReg, err := pc.prismCentralKonnectorClient.ClusterRegistrationOperations.GetK8sRegistration(
+	clusterRegistration, err := pc.prismCentralKonnectorClient.ClusterRegistrationOperations.GetK8sRegistration(
 		ctx,
 		k8sClusterUUID,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get k8s cluster(%s) registration: %w", k8sClusterUUID, err)
+		return nil, fmt.Errorf("failed to get Kubernetes cluster(%s) registration: %w", k8sClusterUUID, err)
 	}
 	return k8sClusterReg, nil
 }

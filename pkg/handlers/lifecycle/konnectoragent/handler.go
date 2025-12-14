@@ -473,7 +473,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	// Check cluster is registered in PC
 	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, cluster, log)
 	if err != nil {
-		log.Error(err, "Failed to check if cluster is registered in Prism Central")
+		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
 		// setting response status to success to allow cluster deletion to proceed
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
