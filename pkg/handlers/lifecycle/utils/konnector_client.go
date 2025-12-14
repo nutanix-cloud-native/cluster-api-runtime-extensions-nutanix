@@ -19,7 +19,7 @@ func NewPrismCentralKonnectorClient(credentials *prismgoclient.Credentials, addi
 ) (*PrismCentralKonnectorClient, error) {
 	if credentials == nil {
 		return nil, fmt.Errorf(
-			"prism central credentials cannot be nil, needed to create prism central konnector client",
+			" Prism Central credentials cannot be nil, needed to create Prism Central Konnector client",
 		)
 	}
 
@@ -49,17 +49,17 @@ type PrismCentralKonnectorClient struct {
 // GetClusterRegistration retrieves the cluster registration from Prism Central.
 func (pc *PrismCentralKonnectorClient) GetClusterRegistration(
 	ctx context.Context,
-	k8sClusterUUID string,
+	clusterUUID string,
 ) (*konnectorprismgoclient.K8sClusterRegistration, error) {
 	if pc == nil || pc.prismCentralKonnectorClient == nil {
 		return nil, fmt.Errorf("could not connect to API server on PC: client is nil")
 	}
 	clusterRegistration, err := pc.prismCentralKonnectorClient.ClusterRegistrationOperations.GetK8sRegistration(
 		ctx,
-		k8sClusterUUID,
+		clusterUUID,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Kubernetes cluster(%s) registration: %w", k8sClusterUUID, err)
+		return nil, fmt.Errorf("failed to get Kubernetes cluster(%s) registration: %w", clusterUUID, err)
 	}
-	return k8sClusterReg, nil
+	return clusterRegistration, nil
 }
