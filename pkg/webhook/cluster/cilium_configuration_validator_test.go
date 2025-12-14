@@ -516,6 +516,54 @@ k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 			expectedMessage := "kube-proxy is disabled, but Cilium ConfigMap test-namespace/cilium-values does not have 'kubeProxyReplacement' enabled"
 			Expect(resp.Result.Message).To(Equal(expectedMessage))
 		})
+
+		It("should error out when ConfigMap uses unknown templated values", func() {
+			cni := &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCilium,
+				AddonConfig: v1alpha1.AddonConfig{
+					Values: &v1alpha1.AddonValues{
+						SourceRef: &v1alpha1.ValuesReference{
+							Kind: "ConfigMap",
+							Name: "cilium-values",
+						},
+					},
+				},
+			}
+			cluster := createTestClusterWithControlPlaneEndpoint(
+				"test-cluster",
+				"test-namespace",
+				v1alpha1.KubeProxyModeDisabled,
+				cni,
+				"192.168.1.100",
+				6443,
+			)
+			req := createAdmissionRequest(cluster)
+
+			// Create ConfigMap with unknown template field
+			configMap := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cilium-values",
+					Namespace: "test-namespace",
+				},
+				Data: map[string]string{
+					"values.yaml": `
+ipam:
+  mode: kubernetes
+kubeProxyReplacement: true
+k8sServiceHost: "{{ .UnknownField.Host }}"
+k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
+`,
+				},
+			}
+
+			client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(configMap).Build()
+			validator = NewAdvancedCiliumConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring("failed templating values"))
+			Expect(resp.Result.Message).To(ContainSubstring("can't evaluate field UnknownField"))
+		})
 	})
 })
 
