@@ -19,7 +19,7 @@ func TestNewPrismCentralKonnectorClient_NilCredentials(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, client)
-	assert.Contains(t, err.Error(), "prism central credentials cannot be nil")
+	assert.Contains(t, err.Error(), "Prism Central credentials cannot be nil")
 }
 
 func TestNewPrismCentralKonnectorClient_WithTrustBundle(t *testing.T) {
