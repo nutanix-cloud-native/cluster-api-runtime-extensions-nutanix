@@ -4,9 +4,12 @@
 package cluster
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
+	"text/template"
 
 	v1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -117,6 +120,33 @@ func hasSkipAnnotation(cluster *clusterv1.Cluster) bool {
 	return ok && val == "true"
 }
 
+// templateValues applies Go template expansion to the values string using only ControlPlaneEndpoint.
+func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
+	funcMap := template.FuncMap{
+		"trimPrefix": strings.TrimPrefix,
+	}
+	valuesTemplate, err := template.New("").Funcs(funcMap).Parse(text)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template: %w", err)
+	}
+
+	type input struct {
+		ControlPlaneEndpoint clusterv1.APIEndpoint
+	}
+
+	templateInput := input{
+		ControlPlaneEndpoint: cluster.Spec.ControlPlaneEndpoint,
+	}
+
+	var b bytes.Buffer
+	err = valuesTemplate.Execute(&b, templateInput)
+	if err != nil {
+		return "", fmt.Errorf("failed templating values: %w", err)
+	}
+
+	return b.String(), nil
+}
+
 type ciliumValues struct {
 	KubeProxyReplacement bool `json:"kubeProxyReplacement"`
 }
@@ -156,9 +186,20 @@ func getCiliumValues(
 		return nil, nil
 	}
 
-	// Unmarshal the YAML
+	// Apply templating to the values
+	templatedValues, err := templateValues(cluster, valuesYAML)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to template Cilium values from ConfigMap %s/%s: %w",
+			configMapNamespace,
+			configMapName,
+			err,
+		)
+	}
+
+	// Unmarshal the templated YAML
 	values := &ciliumValues{}
-	if err := yaml.Unmarshal([]byte(valuesYAML), values); err != nil {
+	if err := yaml.Unmarshal([]byte(templatedValues), values); err != nil {
 		return nil, fmt.Errorf(
 			"failed to unmarshal Cilium values from ConfigMap %s/%s: %w",
 			configMapNamespace,
