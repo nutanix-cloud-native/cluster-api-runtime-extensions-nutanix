@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1164,4 +1165,144 @@ func TestFormatCategoriesFromSlice(t *testing.T) {
 			)
 		})
 	}
+}
+
+// Test isClusterRegisteredInPC function
+func TestIsClusterRegisteredInPC_MissingClusterConfig(t *testing.T) {
+	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
+	cluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+		Spec: clusterv1.ClusterSpec{
+			Topology: &clusterv1.Topology{
+				Variables: []clusterv1.ClusterVariable{},
+			},
+		},
+	}
+
+	registered, err := isClusterRegisteredInPC(context.Background(), client, cluster, logr.Discard())
+
+	assert.Error(t, err)
+	assert.False(t, registered)
+	assert.Contains(t, err.Error(), "failed to read clusterConfig variable")
+}
+
+func TestIsClusterRegisteredInPC_MissingCredentialsSecret(t *testing.T) {
+	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
+	cluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+		Spec: clusterv1.ClusterSpec{
+			Topology: &clusterv1.Topology{
+				Variables: []clusterv1.ClusterVariable{{
+					Name: v1alpha1.ClusterConfigVariableName,
+					Value: apiextensionsv1.JSON{Raw: []byte(`{
+						"nutanix": {
+							"prismCentralEndpoint": {
+								"url": "https://prism-central.example.com:9440",
+								"insecure": true
+							}
+						},
+						"addons": {
+							"konnectorAgent": {
+								"credentials": { "secretRef": {"name":"missing-secret"} }
+							}
+						}
+					}`)},
+				}},
+			},
+		},
+	}
+
+	registered, err := isClusterRegisteredInPC(context.Background(), client, cluster, logr.Discard())
+
+	assert.Error(t, err)
+	assert.False(t, registered)
+	assert.Contains(t, err.Error(), "failed to get credentials secret")
+}
+
+func TestIsClusterRegisteredInPC_MissingUsernameInSecret(t *testing.T) {
+	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"password": []byte("testpass"),
+		},
+	}
+	require.NoError(t, client.Create(context.Background(), secret))
+
+	cluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+		Spec: clusterv1.ClusterSpec{
+			Topology: &clusterv1.Topology{
+				Variables: []clusterv1.ClusterVariable{{
+					Name: v1alpha1.ClusterConfigVariableName,
+					Value: apiextensionsv1.JSON{Raw: []byte(`{
+						"nutanix": {
+							"prismCentralEndpoint": {
+								"url": "https://prism-central.example.com:9440",
+								"insecure": true
+							}
+						},
+						"addons": {
+							"konnectorAgent": {
+								"credentials": { "secretRef": {"name":"test-secret"} }
+							}
+						}
+					}`)},
+				}},
+			},
+		},
+	}
+
+	registered, err := isClusterRegisteredInPC(context.Background(), client, cluster, logr.Discard())
+
+	assert.Error(t, err)
+	assert.False(t, registered)
+	assert.Contains(t, err.Error(), "credentials secret does not contain 'username' key")
+}
+
+func TestIsClusterRegisteredInPC_MissingPasswordInSecret(t *testing.T) {
+	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"username": []byte("testuser"),
+		},
+	}
+	require.NoError(t, client.Create(context.Background(), secret))
+
+	cluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+		Spec: clusterv1.ClusterSpec{
+			Topology: &clusterv1.Topology{
+				Variables: []clusterv1.ClusterVariable{{
+					Name: v1alpha1.ClusterConfigVariableName,
+					Value: apiextensionsv1.JSON{Raw: []byte(`{
+						"nutanix": {
+							"prismCentralEndpoint": {
+								"url": "https://prism-central.example.com:9440",
+								"insecure": true
+							}
+						},
+						"addons": {
+							"konnectorAgent": {
+								"credentials": { "secretRef": {"name":"test-secret"} }
+							}
+						}
+					}`)},
+				}},
+			},
+		},
+	}
+
+	registered, err := isClusterRegisteredInPC(context.Background(), client, cluster, logr.Discard())
+
+	assert.Error(t, err)
+	assert.False(t, registered)
+	assert.Contains(t, err.Error(), "credentials secret does not contain 'password' key")
 }
