@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.41.3 (2025-12-15)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: adding predelete check in konnector agent delete webhook by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1438
+* fix: cilium webhook with templated values by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1437
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.41.2...v0.41.3
+
 ## 0.41.2 (2025-12-11)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
