@@ -420,8 +420,8 @@ mode: nftables
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.EKSClusterConfigSpec{
-						KubeProxy: &v1alpha1.KubeProxy{
-							Mode: v1alpha1.KubeProxyModeDisabled,
+						KubeProxy: &v1alpha1.EKSKubeProxy{
+							Mode: v1alpha1.EKSKubeProxyModeDisabled,
 						},
 					},
 				),
