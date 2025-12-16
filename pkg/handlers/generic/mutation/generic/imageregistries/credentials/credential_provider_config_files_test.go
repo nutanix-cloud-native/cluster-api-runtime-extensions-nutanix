@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 )
 
 func Test_templateKubeletCredentialProviderConfig(t *testing.T) {
