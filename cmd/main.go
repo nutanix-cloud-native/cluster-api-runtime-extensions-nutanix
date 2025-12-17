@@ -18,8 +18,11 @@ import (
 	"k8s.io/component-base/version/verflag"
 	"k8s.io/klog/v2"
 	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
+	crsv1beta2 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
+	controlplanev1beta2 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -64,6 +67,11 @@ func main() {
 	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
 	utilruntime.Must(capxv1.AddToScheme(clientScheme))
 	utilruntime.Must(metallbv1.AddToScheme(clientScheme))
+
+	// Register v1beta2 to decode requests from CAPI v1.12
+	utilruntime.Must(crsv1beta2.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
+	utilruntime.Must(controlplanev1beta2.AddToScheme(clientScheme))
 
 	webhookOptions := webhook.Options{
 		Port:    9444,
