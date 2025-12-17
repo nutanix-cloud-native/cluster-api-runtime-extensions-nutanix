@@ -20,6 +20,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/helpers"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook"
 )
 
 type nutanixValidator struct {
@@ -48,8 +49,7 @@ func (a *nutanixValidator) validate(
 		return admission.Allowed("")
 	}
 
-	cluster := &clusterv1.Cluster{}
-	err := a.decoder.Decode(req, cluster)
+	cluster, err := webhook.DecodeCluster(a.decoder, req)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
