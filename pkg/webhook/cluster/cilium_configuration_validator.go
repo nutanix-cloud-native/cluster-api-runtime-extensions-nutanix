@@ -21,6 +21,7 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook"
 )
 
 type advancedCiliumConfigurationValidator struct {
@@ -49,8 +50,7 @@ func (a *advancedCiliumConfigurationValidator) validate(
 		return admission.Allowed("")
 	}
 
-	cluster := &clusterv1.Cluster{}
-	err := a.decoder.Decode(req, cluster)
+	cluster, err := webhook.DecodeCluster(a.decoder, req)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}

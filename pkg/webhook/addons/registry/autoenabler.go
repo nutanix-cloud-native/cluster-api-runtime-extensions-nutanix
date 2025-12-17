@@ -5,7 +5,6 @@ package registry
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -16,6 +15,7 @@ import (
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook"
 )
 
 type workloadClusterAutoEnabler struct {
@@ -40,8 +40,7 @@ func (a *workloadClusterAutoEnabler) defaulter(
 	ctx context.Context,
 	req admission.Request,
 ) admission.Response {
-	cluster := &clusterv1.Cluster{}
-	err := a.decoder.Decode(req, cluster)
+	cluster, err := webhook.DecodeCluster(a.decoder, req)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
@@ -114,7 +113,7 @@ func (a *workloadClusterAutoEnabler) defaulter(
 	}
 
 	// If the registry addon is not enabled in the cluster and is enabled in the management cluster, enable it here.
-	err = enabledSameRegistryAddonInCluster(cluster, managementClusterRegistry)
+	updatedVariables, err := getUpdatedVariablesWithRegistry(cluster, managementClusterRegistry)
 	if err != nil {
 		return admission.Errored(
 			http.StatusInternalServerError,
@@ -124,11 +123,8 @@ func (a *workloadClusterAutoEnabler) defaulter(
 			))
 	}
 
-	marshaledCluster, err := json.Marshal(cluster)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
-	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledCluster)
+	// Use raw JSON patching to preserve all v1beta2 fields
+	return webhook.PatchRawTopologyVariables(req.Object.Raw, updatedVariables)
 }
 
 func hasSkipAnnotation(cluster *clusterv1.Cluster) bool {
@@ -151,10 +147,13 @@ func globalImageRegistryMirrorFromCluster(cluster *clusterv1.Cluster) (*carenv1.
 	return spec.GlobalImageRegistryMirror, nil
 }
 
-func enabledSameRegistryAddonInCluster(cluster *clusterv1.Cluster, sourceAddon *carenv1.RegistryAddon) error {
+func getUpdatedVariablesWithRegistry(
+	cluster *clusterv1.Cluster,
+	sourceAddon *carenv1.RegistryAddon,
+) ([]clusterv1.ClusterVariable, error) {
 	spec, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal cluster variable: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal cluster variable: %w", err)
 	}
 
 	if spec.Addons == nil {
@@ -166,9 +165,8 @@ func enabledSameRegistryAddonInCluster(cluster *clusterv1.Cluster, sourceAddon *
 
 	variable, err := variables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, spec)
 	if err != nil {
-		return fmt.Errorf("failed to marshal cluster variable: %w", err)
+		return nil, fmt.Errorf("failed to marshal cluster variable: %w", err)
 	}
-	cluster.Spec.Topology.Variables = variables.UpdateClusterVariable(variable, cluster.Spec.Topology.Variables)
 
-	return nil
+	return variables.UpdateClusterVariable(variable, cluster.Spec.Topology.Variables), nil
 }

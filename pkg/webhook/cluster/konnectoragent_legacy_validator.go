@@ -22,6 +22,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook"
 )
 
 const (
@@ -71,8 +72,7 @@ func (k *konnectorAgentLegacyValidator) validate(
 		return admission.Allowed("")
 	}
 
-	cluster := &clusterv1.Cluster{}
-	err := k.decoder.Decode(req, cluster)
+	cluster, err := webhook.DecodeCluster(k.decoder, req)
 	if err != nil {
 		log.Error(err, "Failed to decode cluster")
 		return admission.Errored(http.StatusBadRequest, err)

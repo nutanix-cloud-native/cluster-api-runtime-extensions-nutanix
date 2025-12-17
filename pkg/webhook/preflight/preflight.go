@@ -18,6 +18,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/skip"
 )
 
@@ -119,8 +120,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	cluster := &clusterv1.Cluster{}
-	err := h.decoder.Decode(req, cluster)
+	cluster, err := webhook.DecodeCluster(h.decoder, req)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
