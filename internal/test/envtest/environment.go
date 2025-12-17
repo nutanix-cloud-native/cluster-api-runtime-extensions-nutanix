@@ -47,7 +47,6 @@ import (
 	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta1"
 	runtimev1 "sigs.k8s.io/cluster-api/api/runtime/v1alpha1"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/log"
-	"sigs.k8s.io/cluster-api/util/kubeconfig"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -56,6 +55,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/kubeconfig"
 )
 
 func init() {
