@@ -114,7 +114,7 @@ func (m *MultusHandler) apply(
 
 	// Check if Multus is supported for this cloud provider
 	provider := capiutils.GetProvider(cluster)
-	if provider != "eks" {
+	if provider != "eks" && provider != "nutanix" {
 		log.V(5).Info(
 			"Multus is not supported for this cloud provider. Skipping Multus deployment.",
 		)

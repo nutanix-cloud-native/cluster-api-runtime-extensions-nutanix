@@ -3,7 +3,7 @@
 
 // Package multus provides a standalone lifecycle handler for Multus CNI that automatically
 // deploys Multus when:
-// - The cluster is on EKS cloud provider
+// - The cluster is on either Nutanix or EKS cloud provider
 // - A supported CNI provider is configured (Cilium or Calico)
 //
 // MultusHandler implements the cluster lifecycle hooks and:
