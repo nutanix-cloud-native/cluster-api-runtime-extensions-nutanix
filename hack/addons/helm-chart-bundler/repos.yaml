@@ -72,10 +72,10 @@ repositories:
       nutanix-cloud-provider:
       - 0.6.0
   nutanix-csi-storage:
-    repoURL: https://nutanix.github.io/helm-releases/
+    repoURL: http://abhishek-kumar7.r8.ubvm.nutanix.com:8080
     charts:
       nutanix-csi-storage:
-      - 3.3.8
+      - 99.0.0-abhishek-k8s-ha-csi
   registry-syncer:
     repoURL: https://mesosphere.github.io/charts/staging/
     charts:

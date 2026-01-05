@@ -6,7 +6,7 @@ export CILIUM_VERSION := 1.18.2
 export NODE_FEATURE_DISCOVERY_VERSION := 0.18.1
 export CLUSTER_AUTOSCALER_CHART_VERSION := 9.52.0
 export AWS_EBS_CSI_CHART_VERSION := 2.51.0
-export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.3.8
+export NUTANIX_STORAGE_CSI_CHART_VERSION := 99.0.0-abhishek-k8s-ha-csi
 export LOCAL_PATH_CSI_CHART_VERSION := 0.0.32
 export SNAPSHOT_CONTROLLER_CHART_VERSION := 4.1.0
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
