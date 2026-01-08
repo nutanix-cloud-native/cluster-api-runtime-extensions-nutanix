@@ -193,9 +193,9 @@ func newCredentialsCheck(
 	}
 
 	// Validate the credentials using an API call.
-	_, err = nclient.GetCurrentLoggedInUser(ctx)
+	err = nclient.ValidateCredentials(ctx)
 	if err == nil {
-		// We initialized both clients, and verified the credentials using the v3 client.
+		// We initialized the converged client and verified the credentials using the Users API.
 		cd.nclient = nclient
 		return credentialsCheck
 	}

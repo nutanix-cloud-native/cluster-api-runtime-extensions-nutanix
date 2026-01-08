@@ -17,17 +17,15 @@ import (
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 	"github.com/nutanix-cloud-native/prism-go-client/converged"
 	"github.com/nutanix-cloud-native/prism-go-client/environment/types"
-	prismv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 )
 
-// client contains methods to interact with Nutanix Prism v3 API and converged v4 client.
+// client contains methods to interact with Nutanix Prism converged v4 client.
 type client interface {
-	GetCurrentLoggedInUser(
+	// ValidateCredentials validates credentials by making a lightweight API call.
+	// This replaces the V3 GetCurrentLoggedInUser() for credential validation.
+	ValidateCredentials(
 		ctx context.Context,
-	) (
-		*prismv3.UserIntentResponse,
-		error,
-	)
+	) error
 
 	GetPrismCentralVersion(
 		ctx context.Context,
@@ -114,13 +112,11 @@ type client interface {
 	)
 }
 
-// clientWrapper implements the client interface and wraps v3 and converged v4 clients.
+// clientWrapper implements the client interface and wraps converged v4 client.
 type clientWrapper struct {
-	GetCurrentLoggedInUserFunc func(
+	ValidateCredentialsFunc func(
 		ctx context.Context,
-	) (
-		*prismv3.UserIntentResponse, error,
-	)
+	) error
 
 	GetPrismCentralVersionFunc func(
 		ctx context.Context,
@@ -258,11 +254,6 @@ func buildManagementEndpoint(credentials *prismgoclient.Credentials) (*types.Man
 func newClient(
 	credentials prismgoclient.Credentials, //nolint:gocritic // hugeParam is fine
 ) (client, error) {
-	v3c, err := prismv3.NewV3Client(credentials)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create v3 client: %w", err)
-	}
-
 	endpoint, err := buildManagementEndpoint(&credentials)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build management endpoint: %w", err)
@@ -277,18 +268,15 @@ func newClient(
 	}
 
 	return &clientWrapper{
-		GetCurrentLoggedInUserFunc: v3c.V3.GetCurrentLoggedInUser,
+		ValidateCredentialsFunc: func(ctx context.Context) error {
+			// Use Users.List() as a lightweight API call to validate credentials.
+			// This is available to all users and serves the same purpose as V3's GetCurrentLoggedInUser.
+			_, err := convergedc.Users.List(ctx, converged.WithLimit(1))
+			return err
+		},
 		GetPrismCentralVersionFunc: func(ctx context.Context) (string, error) {
-			pcInfo, err := v3c.V3.GetPrismCentral(ctx)
-			if err != nil {
-				return "", err
-			}
-
-			if pcInfo == nil || pcInfo.Resources == nil || pcInfo.Resources.Version == nil {
-				return "", fmt.Errorf("failed to get Prism Central version: API did not return the PC version")
-			}
-
-			return *pcInfo.Resources.Version, nil
+			// Use DomainManager.GetPrismCentralVersion() as V4 equivalent to V3's GetPrismCentral().
+			return convergedc.DomainManager.GetPrismCentralVersion(ctx)
 		},
 		GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 			if uuid == nil {
@@ -422,13 +410,10 @@ func newClient(
 	}, nil
 }
 
-func (c *clientWrapper) GetCurrentLoggedInUser(
+func (c *clientWrapper) ValidateCredentials(
 	ctx context.Context,
-) (
-	*prismv3.UserIntentResponse,
-	error,
-) {
-	return c.GetCurrentLoggedInUserFunc(ctx)
+) error {
+	return c.ValidateCredentialsFunc(ctx)
 }
 
 func (c *clientWrapper) GetPrismCentralVersion(
