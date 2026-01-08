@@ -42,7 +42,7 @@ jobs:
           echo mod-cache-path="$(devbox run -- go env GOMODCACHE)" >>"${GITHUB_OUTPUT}"
 
       - name: Go cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ steps.export-go-version-and-mod-cache-path.outputs.mod-cache-path }}
@@ -182,7 +182,7 @@ jobs:
           echo mod-cache-path="$(devbox run -- go env GOMODCACHE)" >>"${GITHUB_OUTPUT}"
 
       - name: Go cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ steps.export-go-version-and-mod-cache-path.outputs.mod-cache-path }}
@@ -191,7 +191,7 @@ jobs:
             ${{ runner.os }}-${{ steps.export-go-version-and-mod-cache-path.outputs.go-version }}-
 
       - name: Set up pre-commit cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-3|${{ hashFiles('.pre-commit-config.yaml') }}
