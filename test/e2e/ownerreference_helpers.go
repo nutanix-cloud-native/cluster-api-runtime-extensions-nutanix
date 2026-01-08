@@ -40,6 +40,13 @@ const (
 	awsClusterTemplateKind           = "AWSClusterTemplate"
 	awsClusterControllerIdentityKind = "AWSClusterControllerIdentity"
 
+	awsManagedClusterKind              = "AWSManagedCluster"
+	awsManagedClusterTemplateKind      = "AWSManagedClusterTemplate"
+	awsManagedControlPlaneKind         = "AWSManagedControlPlane"
+	awsManagedControlPlaneTemplateKind = "AWSManagedControlPlaneTemplate"
+	eksConfigKind                      = "EKSConfig"
+	eksConfigTemplateKind              = "EKSConfigTemplate"
+
 	nutanixMachineKind         = "NutanixMachine"
 	nutanixMachineTemplateKind = "NutanixMachineTemplate"
 	nutanixClusterKind         = "NutanixCluster"
@@ -158,6 +165,35 @@ var (
 		awsClusterControllerIdentityKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
 			// AWSClusterControllerIdentity should have no owners.
 			return framework.HasExactOwners(owners)
+		},
+	}
+
+	// EKSInfraOwnerReferenceAssertions maps EKS Infrastructure types to functions which return an error if the passed
+	// OwnerReferences aren't as expected.
+	EKSInfraOwnerReferenceAssertions = map[string]func(types.NamespacedName, []metav1.OwnerReference) error{
+		awsManagedClusterKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
+			// AWSManagedCluster must be owned and controlled by a Cluster.
+			return framework.HasExactOwners(owners, clusterController)
+		},
+		awsManagedClusterTemplateKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
+			// AWSManagedClusterTemplate must be owned by a ClusterClass.
+			return framework.HasExactOwners(owners, clusterClassOwner)
+		},
+		awsManagedControlPlaneKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
+			// AWSManagedControlPlane must be owned and controlled by a Cluster.
+			return framework.HasExactOwners(owners, clusterController)
+		},
+		awsManagedControlPlaneTemplateKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
+			// AWSManagedControlPlaneTemplate must be owned by a ClusterClass.
+			return framework.HasExactOwners(owners, clusterClassOwner)
+		},
+		eksConfigKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
+			// EKSConfig must be owned and controlled by a Machine.
+			return framework.HasExactOwners(owners, machineController)
+		},
+		eksConfigTemplateKind: func(_ types.NamespacedName, owners []metav1.OwnerReference) error {
+			// EKSConfigTemplate must be owned by a ClusterClass.
+			return framework.HasExactOwners(owners, clusterClassOwner)
 		},
 	}
 
