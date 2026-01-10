@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.42.0 (2026-01-08)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Enable multus installation for Nutanix infra by @kshitij-kumar-ngt in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1445
+* feat: bump cosi to `v0.2.2` by @takirala in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1449
+### Fixes 🔧
+* fix: update CoreDNS mapping file by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1447
+* fix: Copy ClusterClass and Templates only if they do not already exist by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1386
+
+## New Contributors
+* @kshitij-kumar-ngt made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1445
+* @takirala made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1449
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.41.3...v0.42.0
+
 ## 0.41.3 (2025-12-15)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
