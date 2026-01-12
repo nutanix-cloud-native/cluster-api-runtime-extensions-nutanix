@@ -15,7 +15,11 @@ import (
 	v4Converged "github.com/nutanix-cloud-native/prism-go-client/converged/v4"
 )
 
-func GetClusterUUIDFromName(ctx context.Context, cluster string, convergedClient *v4Converged.Client) (uuid.UUID, error) {
+func GetClusterUUIDFromName(
+	ctx context.Context,
+	cluster string,
+	convergedClient *v4Converged.Client,
+) (uuid.UUID, error) {
 	clusterUUID, err := uuid.Parse(cluster)
 	if err == nil {
 		return clusterUUID, nil
