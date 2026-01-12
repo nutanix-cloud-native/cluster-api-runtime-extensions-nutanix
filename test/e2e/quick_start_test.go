@@ -6,6 +6,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"slices"
@@ -114,6 +115,7 @@ var _ = Describe("Quick start", func() {
 													"Reserving an IP address for the workload cluster control plane endpoint",
 												)
 												controlPlaneEndpointIP, unreserveControlPlaneEndpointIP, err := nutanix.ReserveIP(
+													context.Background(),
 													subnetName,
 													prismElementClusterName,
 													nutanixClient,
@@ -127,6 +129,7 @@ var _ = Describe("Quick start", func() {
 													"Reserving an IP address for the workload cluster kubernetes Service load balancer",
 												)
 												kubernetesServiceLoadBalancerIP, unreservekubernetesServiceLoadBalancerIP, err := nutanix.ReserveIP(
+													context.Background(),
 													subnetName,
 													prismElementClusterName,
 													nutanixClient,
