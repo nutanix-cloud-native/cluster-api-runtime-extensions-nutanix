@@ -6,29 +6,24 @@
 package nutanix
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
-	clustersapi "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
-	"k8s.io/utils/ptr"
 
-	prismclientv4 "github.com/nutanix-cloud-native/prism-go-client/v4"
+	"github.com/nutanix-cloud-native/prism-go-client/converged"
+	v4Converged "github.com/nutanix-cloud-native/prism-go-client/converged/v4"
 )
 
-func GetClusterUUIDFromName(cluster string, v4Client *prismclientv4.Client) (uuid.UUID, error) {
+func GetClusterUUIDFromName(ctx context.Context, cluster string, convergedClient *v4Converged.Client) (uuid.UUID, error) {
 	clusterUUID, err := uuid.Parse(cluster)
 	if err == nil {
 		return clusterUUID, nil
 	}
 
-	response, err := v4Client.ClustersApiInstance.ListClusters(
-		nil,
-		nil,
-		ptr.To(`name eq '`+cluster+`'`),
-		nil,
-		nil,
-		nil,
-		nil,
+	clusterList, err := convergedClient.Clusters.List(
+		ctx,
+		converged.WithFilter(`name eq '`+cluster+`'`),
 	)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf(
@@ -37,24 +32,15 @@ func GetClusterUUIDFromName(cluster string, v4Client *prismclientv4.Client) (uui
 			err,
 		)
 	}
-	clusters := response.GetData()
-	if clusters == nil {
+
+	if len(clusterList) == 0 {
 		return uuid.UUID{}, fmt.Errorf("no cluster found with name %s", cluster)
 	}
 
-	switch apiClusters := clusters.(type) {
-	case []clustersapi.Cluster:
-		if len(apiClusters) == 0 {
-			return uuid.UUID{}, fmt.Errorf("no subnet found with name %s", cluster)
-		}
-
-		clusterUUID, err := uuid.Parse(*apiClusters[0].ExtId)
-		if err != nil {
-			return uuid.UUID{}, fmt.Errorf("failed to parse cluster uuid for cluster %s: %w", cluster, err)
-		}
-
-		return clusterUUID, nil
-	default:
-		return uuid.UUID{}, fmt.Errorf("unknown response: %+v", clusters)
+	clusterUUID, err = uuid.Parse(*clusterList[0].ExtId)
+	if err != nil {
+		return uuid.UUID{}, fmt.Errorf("failed to parse cluster uuid for cluster %s: %w", cluster, err)
 	}
+
+	return clusterUUID, nil
 }
