@@ -4,6 +4,8 @@
 package nutanix
 
 import (
+	"fmt"
+
 	v4Converged "github.com/nutanix-cloud-native/prism-go-client/converged/v4"
 	"github.com/nutanix-cloud-native/prism-go-client/environment/types"
 	v3 "github.com/nutanix-cloud-native/prism-go-client/v3"
@@ -31,5 +33,12 @@ func (c *CacheParams) ManagementEndpoint() types.ManagementEndpoint {
 
 // Key returns a unique key for the client cache based on the management endpoint.
 func (c *CacheParams) Key() string {
-	return c.PrismManagementEndpoint.Address.String()
+	endpoint := c.PrismManagementEndpoint
+	// Include address, username, password, and insecure flag to ensure unique keys per credential set
+	return fmt.Sprintf("%s:%s:%s:%t",
+		endpoint.Address.String(),
+		endpoint.Username,
+		endpoint.Password,
+		endpoint.Insecure,
+	)
 }
