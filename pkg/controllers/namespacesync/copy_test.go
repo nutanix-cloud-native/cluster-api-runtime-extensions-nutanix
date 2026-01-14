@@ -15,6 +15,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
 )
@@ -24,53 +25,50 @@ const (
 	targetNamespace = "target-ns"
 )
 
-var errFakeCreate = errors.New("fake create error")
-
-type mockWriter struct {
-	client.Writer
-	createErrOnKind string
-	createdObjects  []client.Object
-}
-
-func (m *mockWriter) Create(
-	ctx context.Context,
-	obj client.Object,
-	opts ...client.CreateOption,
-) error {
-	if m.createErrOnKind != "" && obj.GetObjectKind().GroupVersionKind().Kind == m.createErrOnKind {
-		return errFakeCreate
-	}
-	m.createdObjects = append(m.createdObjects, obj)
-	// Fake setting of UID to simulate a real API server create.
-	obj.SetUID("fake-uid")
-	return nil
-}
+var (
+	errFakeCreate = errors.New("fake create error")
+	errFakeGet    = errors.New("fake get error")
+)
 
 func TestCopyClusterClassAndTemplates(t *testing.T) {
 	g := NewWithT(t)
 	ctx := context.Background()
 
 	testCases := []struct {
-		name            string
-		createErrOnKind string
-		expectErr       error
-		expectNumCopies int
+		name                string
+		interceptorFuncs    interceptor.Funcs
+		kindThatFailsCreate string
+		kindThatFailsGet    string
+		expectErr           error
+		expectNumCopies     int
 	}{
 		{
 			name:            "should succeed if all objects are created",
 			expectNumCopies: 6, // 1 ClusterClass + 5 templates
 		},
 		{
-			name:            "should fail if creating a template fails",
-			createErrOnKind: "GenericInfrastructureClusterTemplate",
-			expectErr:       errFakeCreate,
-			expectNumCopies: 0, // The first template create will fail.
+			name:                "should fail if creating a template fails",
+			kindThatFailsCreate: "GenericInfrastructureClusterTemplate",
+			expectErr:           errFakeCreate,
+			expectNumCopies:     0, // The first template create will fail.
 		},
 		{
-			name:            "should fail if creating the clusterclass fails",
-			createErrOnKind: "ClusterClass",
-			expectErr:       errFakeCreate,
-			expectNumCopies: 5, // All 5 templates are created before ClusterClass.
+			name:                "should fail if creating the clusterclass fails",
+			kindThatFailsCreate: "ClusterClass",
+			expectErr:           errFakeCreate,
+			expectNumCopies:     5, // All 5 templates are created before ClusterClass.
+		},
+		{
+			name:             "should fail if getting a template fails",
+			kindThatFailsGet: "GenericInfrastructureClusterTemplate",
+			expectErr:        errFakeGet,
+			expectNumCopies:  0, // The first template get will fail.
+		},
+		{
+			name:             "should fail if getting the clusterclass fails",
+			kindThatFailsGet: "ClusterClass",
+			expectErr:        errFakeGet,
+			expectNumCopies:  5, // All 5 templates are created before ClusterClass.
 		},
 	}
 
@@ -85,15 +83,23 @@ func TestCopyClusterClassAndTemplates(t *testing.T) {
 				initObjs = append(initObjs, template)
 			}
 
-			fakeReader := fake.NewClientBuilder().WithRuntimeObjects(initObjs...).Build()
-			mockWriter := &mockWriter{
-				createErrOnKind: tc.createErrOnKind,
-			}
+			createdObjs := []client.Object{}
+			fakeClient := fake.
+				NewClientBuilder().
+				WithInterceptorFuncs(
+					interceptors(
+						&createdObjs,
+						tc.kindThatFailsGet,
+						tc.kindThatFailsCreate,
+					),
+				).
+				WithRuntimeObjects(initObjs...).
+				Build()
 
 			err := copyClusterClassAndTemplates(
 				ctx,
-				mockWriter,
-				fakeReader,
+				fakeClient,
+				fakeClient,
 				sourceClusterClass,
 				targetNamespace,
 			)
@@ -105,15 +111,36 @@ func TestCopyClusterClassAndTemplates(t *testing.T) {
 				g.Expect(err).ToNot(HaveOccurred())
 			}
 
-			g.Expect(len(mockWriter.createdObjects)).To(Equal(tc.expectNumCopies))
+			g.Expect(len(createdObjs)).To(Equal(tc.expectNumCopies))
 
-			for _, obj := range mockWriter.createdObjects {
+			for _, obj := range createdObjs {
 				g.Expect(obj.GetNamespace()).To(Equal(targetNamespace))
 				g.Expect(obj.GetOwnerReferences()).To(BeEmpty())
 				g.Expect(obj.GetUID()).ToNot(BeEmpty())
-				g.Expect(obj.GetResourceVersion()).To(BeEmpty())
 			}
 		})
+	}
+}
+
+func interceptors(createdObjs *[]client.Object, kindThatFailsGet, kindThatFailsCreate string) interceptor.Funcs {
+	return interceptor.Funcs{
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			if kindThatFailsGet != "" && obj.GetObjectKind().GroupVersionKind().Kind == kindThatFailsGet {
+				return errFakeGet
+			}
+			return c.Get(ctx, key, obj, opts...)
+		},
+		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+			if kindThatFailsCreate != "" && obj.GetObjectKind().GroupVersionKind().Kind == kindThatFailsCreate {
+				return errFakeCreate
+			}
+
+			// Fake setting of UID to simulate a real API server create.
+			obj.SetUID("fake-uid")
+
+			*createdObjs = append(*createdObjs, obj)
+			return c.Create(ctx, obj, opts...)
+		},
 	}
 }
 
