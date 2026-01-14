@@ -172,7 +172,10 @@ func TestNewCredentialsCheck_SecretMissingKey(t *testing.T) {
 	}
 	cd := validCheckDependencies()
 	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
-	check := newCredentialsCheck(context.Background(), nil, cd)
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &clientWrapper{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.False(t, result.InternalError)

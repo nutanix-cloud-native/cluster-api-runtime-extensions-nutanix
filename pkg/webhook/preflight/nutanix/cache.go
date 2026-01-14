@@ -1,10 +1,10 @@
-// Copyright 2024 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package nutanix
 
 import (
-	"fmt"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 
 	v4Converged "github.com/nutanix-cloud-native/prism-go-client/converged/v4"
 	"github.com/nutanix-cloud-native/prism-go-client/environment/types"
@@ -23,6 +23,7 @@ var NutanixConvergedClientV4Cache = v4Converged.NewClientCache()
 
 // CacheParams is the struct that implements ClientCacheParams interface from prism-go-client.
 type CacheParams struct {
+	ClusterNamespacedName   k8stypes.NamespacedName // Optional: cluster namespaced name for user-queryable cache key
 	PrismManagementEndpoint *types.ManagementEndpoint
 }
 
@@ -31,14 +32,7 @@ func (c *CacheParams) ManagementEndpoint() types.ManagementEndpoint {
 	return *c.PrismManagementEndpoint
 }
 
-// Key returns a unique key for the client cache based on the management endpoint.
+// Key returns a unique key for the client cache using the cluster namespaced name.
 func (c *CacheParams) Key() string {
-	endpoint := c.PrismManagementEndpoint
-	// Include address, username, password, and insecure flag to ensure unique keys per credential set
-	return fmt.Sprintf("%s:%s:%s:%t",
-		endpoint.Address.String(),
-		endpoint.Username,
-		endpoint.Password,
-		endpoint.Insecure,
-	)
+	return c.ClusterNamespacedName.String()
 }
