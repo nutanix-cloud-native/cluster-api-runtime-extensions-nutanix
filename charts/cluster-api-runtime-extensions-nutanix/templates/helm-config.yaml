@@ -61,8 +61,8 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}'
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
-    ChartVersion: 3.3.8
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}'
+    ChartVersion: 99.0.0-abhishek-k8s-ha-csi
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}http://abhishek-kumar7.r8.ubvm.nutanix.com:8080{{ end }}'
   registry-syncer: |
     ChartName: registry-syncer
     ChartVersion: 0.1.0
