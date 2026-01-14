@@ -13,6 +13,7 @@ import (
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 	"github.com/nutanix-cloud-native/prism-go-client/converged"
@@ -251,14 +252,17 @@ func buildManagementEndpoint(credentials *prismgoclient.Credentials) (*types.Man
 	}, nil
 }
 
+// newClient creates a client with optional cluster information for cache key.
 func newClient(
 	credentials prismgoclient.Credentials, //nolint:gocritic // hugeParam is fine
+	clusterNamespacedName k8stypes.NamespacedName,
 ) (client, error) {
 	endpoint, err := buildManagementEndpoint(&credentials)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build management endpoint: %w", err)
 	}
 	cacheParams := &CacheParams{
+		ClusterNamespacedName:   clusterNamespacedName,
 		PrismManagementEndpoint: endpoint,
 	}
 
