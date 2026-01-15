@@ -48,6 +48,9 @@ tunnelProtocol: geneve
 loadBalancer:
   mode: dsr
   dsrDispatch: geneve
+{{- if .HasMultipleSubnets }}
+devices: []
+{{- end }}
 {{- end }}
 {{- if eq .Provider "eks" }}
 enableIPv4Masquerade: false
