@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -86,7 +85,7 @@ func updateStatefulSetVolumeClaimTemplate(
 	}
 
 	// Delete the StatefulSet with the orphan propagation policy to ensure that the PVCs are not deleted.
-	deleteOpts := &client.DeleteOptions{
+	deleteOpts := &ctrlclient.DeleteOptions{
 		PropagationPolicy: ptr.To(metav1.DeletePropagationOrphan),
 	}
 	err = remoteClient.Delete(ctx, sts, deleteOpts)
@@ -100,7 +99,8 @@ func updateStatefulSetVolumeClaimTemplate(
 
 // expandPersistentVolumeClaims expands the PVC disk size of the registry StatefulSet.
 // The volumeClaimTemplates field of a StatefulSet is immutable, so changing the Helm values is not enough.
-// Instead, this function will compare the expected disk size in the Helm values with the StatefulSet volumeClaimTemplates size.
+// Instead, this function will compare the expected disk size in the Helm values
+// with the StatefulSet volumeClaimTemplates size.
 // If the storage request is different, the PVC will be resized to the expected persistence size.
 //
 // This function is defensive and only resizes the PVCs when needed.
@@ -129,7 +129,7 @@ func expandPersistentVolumeClaims(
 
 	// Get the PVCs from the remote cluster that are associated with the StatefulSet.
 	pvcs := &corev1.PersistentVolumeClaimList{}
-	err = remoteClient.List(ctx, pvcs, &client.ListOptions{
+	err = remoteClient.List(ctx, pvcs, &ctrlclient.ListOptions{
 		Namespace: registryMetadata.Namespace,
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			"release": registryMetadata.HelmReleaseName,
