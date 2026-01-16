@@ -18,6 +18,7 @@ type RegistryMetadata struct {
 	Replicas int32
 
 	Namespace           string
+	StatefulSetName     string
 	AnyPodName          string
 	ServiceName         string
 	HeadlessServiceName string
@@ -84,6 +85,7 @@ func getRegistryMetadataForCNCFDistribution(cluster *clusterv1.Cluster) (*Regist
 		Replicas: replicas,
 
 		Namespace:           defaultHelmReleaseNamespace,
+		StatefulSetName:     workloadName,
 		AnyPodName:          firstPodName,
 		ServiceName:         serviceName,
 		HeadlessServiceName: headlessServiceName,
