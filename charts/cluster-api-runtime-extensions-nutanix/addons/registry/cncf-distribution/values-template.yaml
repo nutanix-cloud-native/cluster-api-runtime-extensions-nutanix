@@ -1,7 +1,7 @@
 replicaCount: {{ .Replicas }}
 persistence:
   enabled: true
-  size: 50Gi
+  size: 100Gi
 service:
   type: ClusterIP
   clusterIP: {{ .ServiceIP }}
