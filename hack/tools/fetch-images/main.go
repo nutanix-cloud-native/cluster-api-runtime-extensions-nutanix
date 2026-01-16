@@ -287,6 +287,7 @@ prismEndPoint: endpoint
 			Provider                   string
 			ControlPlaneEndpoint       clusterv1.APIEndpoint
 			EnableKubeProxyReplacement bool
+			HasMultipleSubnets         bool
 		}
 		templateInput := input{
 			Provider: "test",
@@ -295,6 +296,7 @@ prismEndPoint: endpoint
 				Port: 443,
 			},
 			EnableKubeProxyReplacement: true,
+			HasMultipleSubnets:         false,
 		}
 
 		funcMap := template.FuncMap{

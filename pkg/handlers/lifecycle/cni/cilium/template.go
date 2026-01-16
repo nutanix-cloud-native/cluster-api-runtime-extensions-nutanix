@@ -22,6 +22,27 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		return "", fmt.Errorf("failed to check if kube-proxy is disabled: %w", err)
 	}
 
+	clusterConfig, err := apivariables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
+	if err != nil {
+		return "", fmt.Errorf("failed to unmarshal cluster config: %w", err)
+	}
+
+	hasMultipleSubnets := false
+	if clusterConfig != nil {
+		if clusterConfig.ControlPlane != nil &&
+			clusterConfig.ControlPlane.Nutanix != nil {
+			hasMultipleSubnets = len(clusterConfig.ControlPlane.Nutanix.MachineDetails.Subnets) > 1
+		}
+
+		workerConfig, err := apivariables.UnmarshalWorkerConfigVariable(cluster.Spec.Topology.Variables)
+		if err == nil && workerConfig != nil &&
+			workerConfig.Nutanix != nil {
+			if len(workerConfig.Nutanix.MachineDetails.Subnets) > 1 {
+				hasMultipleSubnets = true
+			}
+		}
+	}
+
 	funcMap := template.FuncMap{
 		"trimPrefix": strings.TrimPrefix,
 	}
@@ -34,6 +55,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		Provider                   string
 		ControlPlaneEndpoint       clusterv1.APIEndpoint
 		EnableKubeProxyReplacement bool
+		HasMultipleSubnets         bool
 	}
 
 	// Assume when kube-proxy is disabled, we should enable Cilium's kube-proxy replacement feature.
@@ -41,6 +63,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		EnableKubeProxyReplacement: kubeProxyIsDisabled,
 		Provider:                   capiutils.GetProvider(cluster),
 		ControlPlaneEndpoint:       cluster.Spec.ControlPlaneEndpoint,
+		HasMultipleSubnets:         hasMultipleSubnets,
 	}
 
 	var b bytes.Buffer
