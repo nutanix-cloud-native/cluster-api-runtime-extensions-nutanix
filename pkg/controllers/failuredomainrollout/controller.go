@@ -13,9 +13,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	"sigs.k8s.io/cluster-api/util/annotations"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -64,14 +63,22 @@ func (r *Reconciler) areResourcesUpdating(cluster *clusterv1.Cluster, kcp *contr
 }
 
 // areResourcesPaused checks if either the cluster or KCP is paused.
-// Uses the standard CAPI annotations.IsPaused utility which handles both cluster.Spec.Paused and paused annotations.
+// Checks the Spec.Paused field and paused annotations directly for v1beta1 compatibility.
 func (r *Reconciler) areResourcesPaused(cluster *clusterv1.Cluster, kcp *controlplanev1.KubeadmControlPlane) bool {
-	if cluster != nil && annotations.IsPaused(cluster, cluster) {
+	if cluster != nil && cluster.Spec.Paused {
 		return true
 	}
 
-	if cluster != nil && kcp != nil && annotations.IsPaused(cluster, kcp) {
-		return true
+	if cluster != nil {
+		if _, ok := cluster.GetAnnotations()[clusterv1.PausedAnnotation]; ok {
+			return true
+		}
+	}
+
+	if kcp != nil {
+		if _, ok := kcp.GetAnnotations()[clusterv1.PausedAnnotation]; ok {
+			return true
+		}
 	}
 
 	return false

@@ -15,8 +15,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	expv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
@@ -33,7 +32,7 @@ func TestMain(m *testing.M) {
 	_ = clientgoscheme.AddToScheme(fakeScheme)
 	_ = clusterv1.AddToScheme(fakeScheme)
 	_ = apiextensionsv1.AddToScheme(fakeScheme)
-	_ = expv1.AddToScheme(fakeScheme)
+	_ = clusterv1.AddToScheme(fakeScheme)
 	_ = corev1.AddToScheme(fakeScheme)
 
 	setupReconcilers := func(ctx context.Context, mgr ctrl.Manager) {

@@ -24,7 +24,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util/kubeconfig"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -162,7 +163,14 @@ func (t *TestEnvironment) WithFakeRemoteClusterClient(cluster *clusterv1.Cluster
 		return err
 	}
 
-	kubeconfigBytes := kubeconfig.FromEnvTestConfig(cfg, cluster)
+	// Convert v1beta1 cluster to v1beta2 for kubeconfig utilities
+	clusterV2 := &clusterv2.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cluster.Name,
+			Namespace: cluster.Namespace,
+		},
+	}
+	kubeconfigBytes := kubeconfig.FromEnvTestConfig(cfg, clusterV2)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-kubeconfig", cluster.Name),

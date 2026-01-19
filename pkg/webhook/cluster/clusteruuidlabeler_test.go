@@ -8,7 +8,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -24,7 +24,7 @@ func TestWebhookBehaviour(t *testing.T) {
 		},
 		Spec: clusterv1.ClusterSpec{Topology: &clusterv1.Topology{
 			Class:   "dummy-class",
-			Version: "dummy-version",
+			Version: "v1.28.0",
 		}},
 	}
 
@@ -86,7 +86,7 @@ func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsAdded(t *testing.T) {
 	// Validate that the webhook does assign a UUID to the cluster if the Cluster has topology added.
 	cluster.Spec.Topology = &clusterv1.Topology{
 		Class:   "dummy-class",
-		Version: "dummy-version",
+		Version: "v1.28.0",
 	}
 	g.Expect(env.Client.Update(ctx, cluster)).To(Succeed())
 	g.Expect(cluster.Annotations).
@@ -110,7 +110,7 @@ func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsUpdated(t *testing.T) {
 	// Validate that the webhook does assign a UUID to the cluster if the topology is updated. This could be when
 	// a cluster changes to use CAREN for example, but we just change topology version here as an example of
 	// a change that would trigger the webhook.
-	cluster.Spec.Topology.Version = "dummy-version"
+	cluster.Spec.Topology.Version = "v1.29.0"
 	g.Expect(env.Client.Update(ctx, cluster)).To(Succeed())
 	g.Expect(cluster.Annotations).
 		To(HaveKeyWithValue(v1alpha1.ClusterUUIDAnnotationKey, Not(BeEmpty())))

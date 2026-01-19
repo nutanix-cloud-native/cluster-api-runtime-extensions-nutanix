@@ -6,7 +6,7 @@ package cni
 import (
 	"errors"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 )
 
 var ErrMultiplePodsCIDRBlocks = errors.New("cluster has more than 1 Pods network CIDR blocks")

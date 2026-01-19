@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlenvtest "sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -92,6 +92,14 @@ func TestMain(m *testing.M) {
 		M: m,
 		EnvironmentOpts: []envtest.EnvironmentOpt{
 			envtest.WithPreexistingObjects(
+				// Create a ClusterClass for topology-enabled clusters to reference.
+				&clusterv1.ClusterClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "dummy-class",
+						Namespace: metav1.NamespaceDefault,
+					},
+					Spec: clusterv1.ClusterClassSpec{},
+				},
 				// Create a pre-existing object without topology or the UUID annotation.
 				&clusterv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
@@ -108,7 +116,7 @@ func TestMain(m *testing.M) {
 					Spec: clusterv1.ClusterSpec{
 						Topology: &clusterv1.Topology{
 							Class:   "dummy-class",
-							Version: "dummy-version",
+							Version: "v1.28.0",
 						},
 					},
 				},

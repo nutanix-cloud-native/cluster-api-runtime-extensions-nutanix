@@ -40,13 +40,13 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta1"
+	runtimev1 "sigs.k8s.io/cluster-api/api/runtime/v1alpha1"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/log"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	expv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
-	ipamv1 "sigs.k8s.io/cluster-api/exp/ipam/api/v1beta1"
-	runtimev1 "sigs.k8s.io/cluster-api/exp/runtime/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/util/kubeconfig"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,7 +72,7 @@ func init() {
 	utilruntime.Must(admissionv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(clusterv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(bootstrapv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(expv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(clusterv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(addonsv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(controlplanev1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(admissionv1.AddToScheme(scheme.Scheme))
@@ -111,7 +111,7 @@ func Run(ctx context.Context, input RunInput) int {
 
 	if kubeconfigPath := os.Getenv("TEST_ENV_KUBECONFIG"); kubeconfigPath != "" {
 		klog.Infof("Writing test env kubeconfig to %q", kubeconfigPath)
-		config := kubeconfig.FromEnvTestConfig(env.Config, &clusterv1.Cluster{
+		config := kubeconfig.FromEnvTestConfig(env.Config, &clusterv2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 		})
 		if err := os.WriteFile(kubeconfigPath, config, 0o600); err != nil {
@@ -291,9 +291,16 @@ func (e *Environment) CreateKubeconfigSecret(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 ) error {
+	// Convert v1beta1 cluster to v1beta2 for kubeconfig utilities
+	clusterV2 := &clusterv2.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cluster.Name,
+			Namespace: cluster.Namespace,
+		},
+	}
 	return e.Create(
 		ctx,
-		kubeconfig.GenerateSecret(cluster, kubeconfig.FromEnvTestConfig(e.Config, cluster)),
+		kubeconfig.GenerateSecret(clusterV2, kubeconfig.FromEnvTestConfig(e.Config, clusterV2)),
 	)
 }
 
