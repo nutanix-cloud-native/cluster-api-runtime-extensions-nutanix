@@ -121,6 +121,7 @@ var _ = Describe("Quick start", func() {
 												Expect(err).ToNot(HaveOccurred())
 												DeferCleanup(unreserveControlPlaneEndpointIP)
 												testE2EConfig.Variables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
+												Logf("Reserved control-plane endpoint IP: %s", controlPlaneEndpointIP)
 
 												By(
 													"Reserving an IP address for the workload cluster kubernetes Service load balancer",
@@ -133,6 +134,10 @@ var _ = Describe("Quick start", func() {
 												Expect(err).ToNot(HaveOccurred())
 												DeferCleanup(unreservekubernetesServiceLoadBalancerIP)
 												testE2EConfig.Variables["KUBERNETES_SERVICE_LOAD_BALANCER_IP"] = kubernetesServiceLoadBalancerIP
+												Logf(
+													"Reserved service load balancer IP: %s",
+													kubernetesServiceLoadBalancerIP,
+												)
 											}
 
 											clusterLocalTempDir, err := os.MkdirTemp("", "clusterctl-")
