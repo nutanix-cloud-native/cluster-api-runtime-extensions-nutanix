@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,17 +30,10 @@ func copyClusterClassAndTemplates(
 			return fmt.Errorf("failed to get reference: %w", err)
 		}
 
-		// Copy Template to target namespace
+		// Copy Template to target namespace, if it does not exist there.
 		targetTemplate := copyObjectForCreate(sourceTemplate, sourceTemplate.GetName(), namespace)
-
-		//nolint:gocritic // Inline error is checked.
-		if err := w.Create(ctx, targetTemplate); client.IgnoreAlreadyExists(err) != nil {
-			return fmt.Errorf(
-				"failed to create %s %s: %w",
-				targetTemplate.GetKind(),
-				client.ObjectKeyFromObject(targetTemplate),
-				err,
-			)
+		if err = createIfNotExists(ctx, templateReader, w, targetTemplate); err != nil {
+			return fmt.Errorf("failed to create template: %w", err)
 		}
 
 		// Update reference to point to newly created Template
@@ -51,14 +45,32 @@ func copyClusterClassAndTemplates(
 		return fmt.Errorf("error processing references: %w", err)
 	}
 
-	//nolint:gocritic // Inline error is checked.
-	if err := w.Create(ctx, target); client.IgnoreAlreadyExists(err) != nil {
-		return fmt.Errorf(
-			"failed to create %s %s: %w",
-			target.Kind,
-			client.ObjectKeyFromObject(target),
-			err,
-		)
+	// Copy ClusterClass to target namespace, if it does not exist there.
+	if err := createIfNotExists(ctx, templateReader, w, target); err != nil {
+		return fmt.Errorf("failed to create cluster class: %w", err)
+	}
+	return nil
+}
+
+func createIfNotExists(ctx context.Context, r client.Reader, w client.Writer, obj client.Object) error {
+	key := client.ObjectKeyFromObject(obj)
+	gvk := obj.GetObjectKind().GroupVersionKind().String()
+
+	// Check if the resource exists.
+	// We do not need the object itself, just the metadata, so we use PartialObjectMetadata.
+	partial := &metav1.PartialObjectMetadata{}
+	partial.SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
+	err := r.Get(ctx, key, partial)
+
+	if apierrors.IsNotFound(err) {
+		// The resource does not exist, so create it.
+		if err := w.Create(ctx, obj); err != nil {
+			return fmt.Errorf("failed to create %s %s: %w", gvk, key, err)
+		}
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to check if %s %s exists: %w", gvk, key, err)
 	}
 	return nil
 }
