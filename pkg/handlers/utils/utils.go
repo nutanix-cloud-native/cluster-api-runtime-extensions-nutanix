@@ -190,13 +190,14 @@ func RetrieveValuesTemplate(
 	ctx context.Context,
 	c ctrlclient.Client,
 	configMapName,
+	configMapKey,
 	namespace string,
 ) (string, error) {
 	configMap, err := RetrieveValuesTemplateConfigMap(ctx, c, configMapName, namespace)
 	if err != nil {
 		return "", err
 	}
-	return configMap.Data["values.yaml"], nil
+	return configMap.Data[configMapKey], nil
 }
 
 func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {

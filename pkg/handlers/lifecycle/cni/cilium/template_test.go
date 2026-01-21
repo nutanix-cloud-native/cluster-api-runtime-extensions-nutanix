@@ -94,6 +94,36 @@ func Test_templateValues_TrimPrefixFunction(t *testing.T) {
 	}
 }
 
+func Test_preflightTemplateValues(t *testing.T) {
+	tests := []struct {
+		name                           string
+		cluster                        func(t *testing.T) *clusterv1.Cluster
+		expectedRenderedValuesTemplate string
+	}{
+		{
+			name: "preflight with kube-proxy replacement enabled",
+			cluster: func(t *testing.T) *clusterv1.Cluster {
+				return createTestClusterForPreflight(t, "test-cluster", "test-namespace", "192.168.1.100", 6443, true)
+			},
+			expectedRenderedValuesTemplate: expectedPreflightWithKubeProxyReplacement,
+		},
+		{
+			name: "preflight with kube-proxy replacement disabled",
+			cluster: func(t *testing.T) *clusterv1.Cluster {
+				return createTestClusterForPreflight(t, "test-cluster", "test-namespace", "192.168.1.100", 6443, false)
+			},
+			expectedRenderedValuesTemplate: expectedPreflightWithoutKubeProxyReplacement,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := preflightTemplateValues(tt.cluster(t), preflightTemplate)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedRenderedValuesTemplate, got)
+		})
+	}
+}
+
 // createTestCluster creates a test EKS cluster using ClusterBuilder
 func createTestCluster(t *testing.T, name, namespace, provider, host string, port int32) *clusterv1.Cluster {
 	// Create cluster config with kube-proxy disabled
@@ -129,6 +159,99 @@ func createTestCluster(t *testing.T, name, namespace, provider, host string, por
 	}
 
 	return cluster
+}
+
+// createTestClusterForPreflight creates a cluster for preflight template tests.
+// When kubeProxyDisabled is true, kube-proxy replacement is enabled and preflight output includes k8sServiceHost/k8sServicePort.
+func createTestClusterForPreflight(
+	t *testing.T,
+	name, namespace, host string,
+	port int32,
+	kubeProxyDisabled bool,
+) *clusterv1.Cluster {
+	clusterConfigSpec := &apivariables.ClusterConfigSpec{}
+	if kubeProxyDisabled {
+		clusterConfigSpec.KubeProxy = &carenv1.KubeProxy{
+			Mode: carenv1.KubeProxyModeDisabled,
+		}
+	}
+
+	variable, err := apivariables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfigSpec)
+	if err != nil {
+		t.Fatalf("failed to marshal cluster config to cluster variable: %v", err)
+	}
+
+	topology := &clusterv1.Topology{
+		Class:     "test-cluster-class",
+		Version:   "v1.29.0",
+		Variables: []clusterv1.ClusterVariable{*variable},
+	}
+
+	cluster := builder.Cluster(namespace, name).
+		WithTopology(topology).
+		Build()
+
+	cluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+		Host: host,
+		Port: port,
+	}
+
+	return cluster
+}
+
+func Test_skipCiliumPreflight(t *testing.T) {
+	tests := []struct {
+		name    string
+		cluster *clusterv1.Cluster
+		want    bool
+	}{
+		{
+			name:    "no annotations",
+			cluster: builder.Cluster("ns", "cluster1").Build(),
+			want:    false,
+		},
+		{
+			name: "annotation set to true",
+			cluster: builder.Cluster("ns", "cluster1").
+				WithAnnotations(map[string]string{carenv1.SkipCiliumPreflightAnnotationKey: "true"}).
+				Build(),
+			want: true,
+		},
+		{
+			name: "annotation set to 1",
+			cluster: builder.Cluster("ns", "cluster1").
+				WithAnnotations(map[string]string{carenv1.SkipCiliumPreflightAnnotationKey: "1"}).
+				Build(),
+			want: true,
+		},
+		{
+			name: "annotation set to false",
+			cluster: builder.Cluster("ns", "cluster1").
+				WithAnnotations(map[string]string{carenv1.SkipCiliumPreflightAnnotationKey: "false"}).
+				Build(),
+			want: false,
+		},
+		{
+			name: "annotation present but empty",
+			cluster: builder.Cluster("ns", "cluster1").
+				WithAnnotations(map[string]string{carenv1.SkipCiliumPreflightAnnotationKey: ""}).
+				Build(),
+			want: false,
+		},
+		{
+			name: "annotation set to invalid value",
+			cluster: builder.Cluster("ns", "cluster1").
+				WithAnnotations(map[string]string{carenv1.SkipCiliumPreflightAnnotationKey: "invalid"}).
+				Build(),
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := skipCiliumPreflight(tt.cluster)
+			assert.Equal(t, tt.want, got, "skipCiliumPreflight() = %v, want %v", got, tt.want)
+		})
+	}
 }
 
 const (
@@ -178,5 +301,36 @@ ipam:
 kubeProxyReplacement: true
 k8sServiceHost: "192.168.1.100"
 k8sServicePort: "6443"
+`
+
+	// preflightTemplate from addons/cni/cilium/preflight-values-template.yaml
+	preflightTemplate = `
+agent: false
+operator:
+  enabled: false
+preflight:
+  enabled: true
+{{- if .EnableKubeProxyReplacement }}
+k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
+k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
+{{- end }}
+`
+
+	expectedPreflightWithKubeProxyReplacement = `
+agent: false
+operator:
+  enabled: false
+preflight:
+  enabled: true
+k8sServiceHost: "192.168.1.100"
+k8sServicePort: "6443"
+`
+
+	expectedPreflightWithoutKubeProxyReplacement = `
+agent: false
+operator:
+  enabled: false
+preflight:
+  enabled: true
 `
 )

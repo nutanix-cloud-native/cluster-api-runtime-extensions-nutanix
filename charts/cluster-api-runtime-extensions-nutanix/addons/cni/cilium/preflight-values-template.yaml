@@ -1,0 +1,9 @@
+agent: false
+operator:
+  enabled: false
+preflight:
+  enabled: true
+{{- if .EnableKubeProxyReplacement }}
+k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
+k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
+{{- end }}
