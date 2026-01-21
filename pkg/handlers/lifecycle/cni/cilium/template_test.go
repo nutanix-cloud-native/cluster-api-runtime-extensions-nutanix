@@ -94,6 +94,49 @@ func Test_templateValues_TrimPrefixFunction(t *testing.T) {
 	}
 }
 
+func Test_preflightTemplateValues(t *testing.T) {
+	tests := []struct {
+		name                           string
+		cluster                        func(t *testing.T) *clusterv1.Cluster
+		expectedRenderedValuesTemplate string
+	}{
+		{
+			name: "EKS cluster cilium preflight template test",
+			cluster: func(t *testing.T) *clusterv1.Cluster {
+				return createTestCluster(
+					t,
+					"test-eks-cluster",
+					"test-namespace",
+					"eks",
+					"https://test.eks.amazonaws.com",
+					443,
+				)
+			},
+			expectedRenderedValuesTemplate: expectedPreflightCiliumTemplateForEKS,
+		},
+		{
+			name: "Non-EKS (Nutanix) cluster cilium preflight template test",
+			cluster: func(t *testing.T) *clusterv1.Cluster {
+				return createTestCluster(
+					t,
+					"test-cluster",
+					"test-namespace",
+					"nutanix",
+					"192.168.1.100",
+					6443)
+			},
+			expectedRenderedValuesTemplate: expectedPreflightCiliumTemplateForNutanix,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := preflightTemplateValues(tt.cluster(t), ciliumTemplate)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedRenderedValuesTemplate, got)
+		})
+	}
+}
+
 // createTestCluster creates a test EKS cluster using ClusterBuilder
 func createTestCluster(t *testing.T, name, namespace, provider, host string, port int32) *clusterv1.Cluster {
 	// Create cluster config with kube-proxy disabled
@@ -178,5 +221,36 @@ ipam:
 kubeProxyReplacement: true
 k8sServiceHost: "192.168.1.100"
 k8sServicePort: "6443"
+`
+
+	expectedPreflightCiliumTemplateForEKS = `agent: false
+enableIPv4Masquerade: false
+endpointRoutes:
+  enabled: true
+eni:
+  awsReleaseExcessIPs: true
+  enabled: true
+ipam:
+  mode: eni
+k8sServiceHost: test.eks.amazonaws.com
+k8sServicePort: "443"
+kubeProxyReplacement: true
+operator:
+  enabled: false
+preflight:
+  enabled: true
+routingMode: native
+`
+
+	expectedPreflightCiliumTemplateForNutanix = `agent: false
+ipam:
+  mode: kubernetes
+k8sServiceHost: 192.168.1.100
+k8sServicePort: "6443"
+kubeProxyReplacement: true
+operator:
+  enabled: false
+preflight:
+  enabled: true
 `
 )

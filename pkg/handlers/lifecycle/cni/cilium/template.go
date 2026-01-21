@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/yaml"
 
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
@@ -53,4 +54,46 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	return b.String(), nil
+}
+
+// preflightTemplateValues updates the existing cilium values template to add
+// values to deploy the pre-flight helm chart.
+// The updated values for the preflight checks are:
+//
+//	agent: false
+//	preflight:
+//	  enabled: true
+//	operator:
+//	    enabled: false
+//
+// Ref:
+//
+//	https://docs.cilium.io/en/stable/operations/upgrade/#running-pre-flight-check-required
+func preflightTemplateValues(cluster *clusterv1.Cluster, text string) (string, error) {
+	templateString, err := templateValues(cluster, text)
+	if err != nil {
+		return "", fmt.Errorf("failed to template Cilium Helm values: %w", err)
+	}
+
+	// Parse templated values into a generic map.
+	var values map[string]interface{}
+	if err := yaml.Unmarshal([]byte(templateString), &values); err != nil {
+		return "", fmt.Errorf("failed to parse cilium values template: %w", err)
+	}
+
+	// update template with preflight values
+	values["agent"] = false
+	values["preflight"] = map[string]interface{}{
+		"enabled": true,
+	}
+	values["operator"] = map[string]interface{}{
+		"enabled": false,
+	}
+
+	updatedPreflightValues, err := yaml.Marshal(values)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal updated cilium preflight YAML values: %w", err)
+	}
+
+	return string(updatedPreflightValues), nil
 }
