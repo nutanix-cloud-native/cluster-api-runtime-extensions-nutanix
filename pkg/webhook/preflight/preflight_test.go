@@ -103,6 +103,19 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
+			name: "skip paused clusters",
+			cluster: func() *clusterv1.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Paused = true
+				return cluster
+			}(),
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: true,
+				},
+			},
+		},
+		{
 			name: "allow non topology clusters",
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
@@ -998,40 +1011,4 @@ func TestRun_ZeroChecksFromChecker(t *testing.T) {
 	}
 
 	assert.Equal(t, "check1", normalResults[0].Name, "expected result name to be 'check1'")
-}
-
-func TestHandle_ClusterPaused(t *testing.T) {
-	scheme := runtime.NewScheme()
-	err := clusterv1.AddToScheme(scheme)
-	require.NoError(t, err)
-
-	decoder := admission.NewDecoder(scheme)
-
-	// Create a paused cluster
-	cluster := topologyCluster()
-	cluster.Spec.Paused = true
-
-	handler := New(fake.NewClientBuilder().Build(), decoder)
-
-	ctx := context.Background()
-
-	// Create admission request
-	jsonCluster, err := json.Marshal(cluster)
-	require.NoError(t, err)
-
-	admissionReq := admission.Request{
-		AdmissionRequest: admissionv1.AdmissionRequest{
-			Operation: admissionv1.Create,
-			Object: runtime.RawExtension{
-				Raw: jsonCluster,
-			},
-		},
-	}
-
-	// Handle the request
-	got := handler.Handle(ctx, admissionReq)
-
-	// Check response - should be allowed without warnings for paused cluster
-	assert.True(t, got.Allowed, "expected response to be allowed for paused cluster")
-	assert.Empty(t, got.Warnings, "expected no warnings for paused cluster")
 }
