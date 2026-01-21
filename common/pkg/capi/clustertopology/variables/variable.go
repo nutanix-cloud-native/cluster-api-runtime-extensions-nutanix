@@ -8,10 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/cluster-api/api/core/v1beta1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 )
 
@@ -80,7 +79,7 @@ func Get[T any](
 //
 //nolint:lll // Long URLs in comments above. Adding nolint:lll here because it doesn't work in comment lines. See: https://github.com/golangci/golangci-lint/issues/3983
 func ClusterVariablesToVariablesMap(
-	variables []v1beta1.ClusterVariable,
+	variables []clusterv1.ClusterVariable,
 ) map[string]apiextensionsv1.JSON {
 	if variables == nil {
 		return nil

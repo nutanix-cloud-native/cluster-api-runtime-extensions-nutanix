@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	metallbv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta1"
+	metallbv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta2"
 	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/bootstrap"

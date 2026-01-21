@@ -896,7 +896,13 @@ func TestInfrastructureMachineTemplate(
 	obj.SetAPIVersion(InfrastructureGroupVersion.String())
 	obj.SetKind(TestInfrastructureMachineTemplateKind)
 	// Set the mandatory spec fields for the object.
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(
+		obj.Object,
+		map[string]interface{}{},
+		"spec",
+		"template",
+		"spec",
+	); err != nil {
 		panic(err)
 	}
 	return &TestInfrastructureMachineTemplateBuilder{
@@ -980,7 +986,13 @@ func TestInfrastructureMachinePoolTemplate(
 	obj.SetAPIVersion(InfrastructureGroupVersion.String())
 	obj.SetKind(TestInfrastructureMachinePoolTemplateKind)
 	// Set the mandatory spec fields for the object.
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(
+		obj.Object,
+		map[string]interface{}{},
+		"spec",
+		"template",
+		"spec",
+	); err != nil {
 		panic(err)
 	}
 	return &TestInfrastructureMachinePoolTemplateBuilder{
@@ -1226,7 +1238,13 @@ func InfrastructureClusterTemplate(namespace, name string) *InfrastructureCluste
 	obj.SetKind(GenericInfrastructureClusterTemplateKind)
 	obj.SetNamespace(namespace)
 	obj.SetName(name)
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(
+		obj.Object,
+		map[string]interface{}{},
+		"spec",
+		"template",
+		"spec",
+	); err != nil {
 		panic(err)
 	}
 	return &InfrastructureClusterTemplateBuilder{
@@ -1268,7 +1286,13 @@ func TestInfrastructureClusterTemplate(
 	obj.SetKind(TestInfrastructureClusterTemplateKind)
 	obj.SetNamespace(namespace)
 	obj.SetName(name)
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(
+		obj.Object,
+		map[string]interface{}{},
+		"spec",
+		"template",
+		"spec",
+	); err != nil {
 		panic(err)
 	}
 	return &TestInfrastructureClusterTemplateBuilder{
@@ -1357,7 +1381,13 @@ func TestControlPlaneTemplate(namespace, name string) *TestControlPlaneTemplateB
 	obj.SetAPIVersion(ControlPlaneGroupVersion.String())
 	obj.SetKind(TestControlPlaneTemplateKind)
 	// Set the mandatory spec field for the object.
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(
+		obj.Object,
+		map[string]interface{}{},
+		"spec",
+		"template",
+		"spec",
+	); err != nil {
 		panic(err)
 	}
 	return &TestControlPlaneTemplateBuilder{

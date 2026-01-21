@@ -3,7 +3,7 @@
 package v1beta1
 
 import (
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta2"
+	"go.universe.tf/metallb/api/v1beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )

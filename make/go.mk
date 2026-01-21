@@ -7,9 +7,12 @@ export GOPRIVATE ?=
 
 # Always ensure that GOOS and GOARCH are unset in the evironment, otherwise this can cause issues
 # with goreleaser and ko building images for the wrong platform.
-override undefine GOOS
-override undefine GOARCH
+ifdef __GNU_MAKE__
+undefine GOOS
+undefine GOARCH
+endif
 
+GOLANGCI_LINT := hack/tools/golangci-lint-kube-api-linter
 ALL_GO_SUBMODULES := $(shell find -mindepth 2 -maxdepth 2 -name go.mod -printf '%P\n' | sort)
 GO_SUBMODULES_NO_DOCS := $(filter-out $(addsuffix /go.mod,docs),$(ALL_GO_SUBMODULES))
 THIRD_PARTY_GO_SUBMODULES := $(shell find hack/third-party -mindepth 2 -name go.mod -printf 'hack/third-party/%P\n' | sort)
@@ -141,7 +144,7 @@ endif
 .PHONY: fmt.%
 fmt.%: ## Runs golangci-lint fmt for a specific module
 fmt.%: ; $(info $(M) formatting $* module)
-	$(if $(filter-out root,$*),cd $* && )golangci-lint fmt --config=$(GOLANGCI_CONFIG_FILE)
+	$(if $(filter-out root,$*),cd $* && ) $(GOLANGCI_LINT) run --fix --config=$(GOLANGCI_CONFIG_FILE)
 	$(MAKE) go-fix.$*
 
 .PHONY: lint
@@ -160,7 +163,7 @@ lint.%: hack/tools/golangci-lint-kube-api-linter fmt.% ; $(info $(M) linting $* 
 
 # Ensure that the golangci-lint-kube-api-linter tool is using the same version of Go as the golangci-lint tool, which
 # should in turn be the same language version as the project.
-GOLANGCI_LINT_VERSION := $(shell golangci-lint version --json 2>/dev/null | gojq --raw-output '.goVersion')
+GOLANGCI_LINT_VERSION := $(shell $(GOLANGCI_LINT) version --json 2>/dev/null | gojq --raw-output '.goVersion')
 GOLANGCI_LINT_KUBE_API_LINTER_VERSION := $(shell hack/tools/golangci-lint-kube-api-linter version --json 2>/dev/null | gojq --raw-output '.goVersion')
 ifneq ($(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_KUBE_API_LINTER_VERSION))
 .PHONY: hack/tools/golangci-lint-kube-api-linter
@@ -170,7 +173,7 @@ endif
 hack/tools/golangci-lint-kube-api-linter: export GOTOOLCHAIN := $(GOLANGCI_LINT_VERSION)
 hack/tools/golangci-lint-kube-api-linter: hack/tools/.custom-gcl.yml
 hack/tools/golangci-lint-kube-api-linter: ; $(info $(M) installing golangci-lint-kube-api-linter tool)
-	cd hack/tools && golangci-lint custom --verbose
+	cd hack/tools && $(GOLANGCI_LINT) custom --verbose
 
 .PHONY: mod-tidy
 mod-tidy: ## Run go mod tidy for all modules

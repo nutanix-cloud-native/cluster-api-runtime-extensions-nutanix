@@ -13,7 +13,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
-	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
+	eksbootstrapv1 "sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
@@ -107,13 +107,11 @@ var _ = Describe("Generate taints patches for Worker", func() {
 					},
 				),
 			},
-			RequestItem: testutils.NewNodeadmConfigTemplateRequestItem("", eksbootstrapv1.NodeadmConfigTemplateSpec{
-				Template: eksbootstrapv1.NodeadmConfigTemplateResource{
-					Spec: eksbootstrapv1.NodeadmConfigSpec{
-						Kubelet: &eksbootstrapv1.KubeletOptions{
-							Flags: []string{
-								"--max-pods=110",
-							},
+			RequestItem: testutils.NewNodeadmConfigTemplateRequestItem("", eksbootstrapv1.EKSConfigTemplateSpec{
+				Template: eksbootstrapv1.EKSConfigTemplateResource{
+					Spec: eksbootstrapv1.EKSConfigSpec{
+						KubeletExtraArgs: map[string]string{
+						    "max-pods": "110",
 						},
 					},
 				},
@@ -143,13 +141,11 @@ var _ = Describe("Generate taints patches for Worker", func() {
 					},
 				),
 			},
-			RequestItem: testutils.NewNodeadmConfigTemplateRequestItem("", eksbootstrapv1.NodeadmConfigTemplateSpec{
-				Template: eksbootstrapv1.NodeadmConfigTemplateResource{
-					Spec: eksbootstrapv1.NodeadmConfigSpec{
-						Kubelet: &eksbootstrapv1.KubeletOptions{
-							Flags: []string{
-								"--register-with-taints=key1=value1:NoSchedule",
-							},
+			RequestItem: testutils.NewNodeadmConfigTemplateRequestItem("", eksbootstrapv1.EKSConfigTemplateSpec{
+				Template: eksbootstrapv1.EKSConfigTemplateResource{
+					Spec: eksbootstrapv1.EKSConfigSpec{
+						KubeletExtraArgs: map[string]string{
+								"--register-with-taints": "key=value:NoSchedule",
 						},
 					},
 				},

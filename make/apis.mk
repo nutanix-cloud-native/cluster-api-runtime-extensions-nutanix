@@ -45,19 +45,23 @@ api.sync.%: PROVIDER_MODULE_DIR=$(REPO_ROOT)/hack/third-party/$*
 api.sync.%:
 	cd $(PROVIDER_MODULE_DIR) && go mod tidy
 	$(foreach PROVIDER_API_PATH,$(PROVIDER_API_PATHS_$*), \
-	echo 'syncing external API: $(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)'; \
-	mkdir -p api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/; \
-	rsync \
-	  --recursive --delete --times --links --verbose --prune-empty-dirs \
-	  --exclude='*webhook*.go' \
-	  --exclude='*test.go'     \
-	  --exclude='s3bucket.go'  \
-	  $$(cd $(PROVIDER_MODULE_DIR) && GOWORK=off go list -m -f '{{ .Dir }}' $(PROVIDER_MODULE_$*))/$(PROVIDER_API_PATH)/*.go \
-	  api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/; \
-	  find api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/ -type d -exec chmod 0755 {} \; ; \
-	  find api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/ -type f -exec chmod 0644 {} \; ; \
-	  sed -i 's|"$(PROVIDER_MODULE_$*)/|"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/$(PROVIDER_MODULE_$*)/|' api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/*.go; \
+	    echo 'syncing external API: $(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)'; \
+	    mkdir -p api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/; \
+	    rsync \
+		--recursive --delete --times --links --verbose --prune-empty-dirs \
+		--exclude='*webhook*.go' \
+		--exclude='*test.go'     \
+		--exclude='s3bucket.go'  \
+		$$(cd $(PROVIDER_MODULE_DIR) && GOWORK=off go list -m -f '{{ .Dir }}' $(PROVIDER_MODULE_$*))/$(PROVIDER_API_PATH)/*.go \
+		api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/; \
+	    echo ">> Patching legacy CAPI v1beta1 import paths"; \
+	    find ./api/external -type f -name '*.go' -exec sed -i '' \
+	        's@\([a-zA-Z0-9_]*\)[[:space:]]*"\(sigs.k8s.io/cluster-api/api\)/v1beta1@\1 "\2/core/v1beta1@g' {} +; \
+	    find ./api/external -type f -name '*.go' -exec sed -i '' 's@sigs.k8s.io/cluster-api/api/v1beta1@sigs.k8s.io/cluster-api/api/core/v1beta1@g' {} + || true; \
+	    find api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/ -type d -exec chmod 0755 {} \; ; \
+	    find api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/ -type f -exec chmod 0644 {} \; ; \
 	)
+
 
 .PHONY: coredns.sync
 coredns.sync: ## Syncs the Kubernetes version to CoreDNS version mapping used in the cluster upgrade

@@ -13,7 +13,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,7 +79,9 @@ func (k *konnectorAgentLegacyValidator) validate(
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if cluster.Spec.Topology == nil {
+	fmt.Printf("Topology type: %T\n", cluster.Spec.Topology)
+
+	if cluster.Spec.Topology.ClassRef.Name == "" {
 		return admission.Allowed("")
 	}
 
@@ -90,7 +93,8 @@ func (k *konnectorAgentLegacyValidator) validate(
 	// This check requires connecting to the workload cluster to list Helm releases.
 	// Skip validation if infrastructure is not ready, as we cannot connect to the cluster yet.
 	// This can happen during UPDATE operations early in cluster provisioning.
-	if !cluster.Status.InfrastructureReady {
+	infraReady := apimeta.IsStatusConditionTrue(cluster.Status.Conditions, string(clusterv1.InfrastructureReadyCondition))
+	if infraReady {
 		return admission.Allowed("")
 	}
 

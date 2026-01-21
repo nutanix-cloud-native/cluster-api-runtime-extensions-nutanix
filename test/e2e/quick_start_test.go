@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"

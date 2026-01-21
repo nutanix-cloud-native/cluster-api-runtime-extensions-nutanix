@@ -5,20 +5,18 @@ package taints
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/samber/lo"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
+	eksbootstrapv1 "sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
@@ -109,16 +107,19 @@ func (h *taintsWorkerPatchHandler) Mutate(
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef,
-		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "NodeadmConfigTemplate"), log,
-		func(obj *eksbootstrapv1.NodeadmConfigTemplate) error {
+		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "EKSConfigTemplate"), log,
+		func(obj *eksbootstrapv1.EKSConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding taints to worker NodeadmConfig template")
 			newTaints := toEKSConfigTaints(taintsVar)
-			kubeletOptions := ptr.Deref(obj.Spec.Template.Spec.Kubelet, eksbootstrapv1.KubeletOptions{})
-			kubeletOptions.Flags = append(kubeletOptions.Flags, fmt.Sprintf("--register-with-taints=%s", newTaints))
-			obj.Spec.Template.Spec.Kubelet = &kubeletOptions
+			kubeletArgs := obj.Spec.Template.Spec.KubeletExtraArgs
+			if kubeletArgs == nil {
+			    kubeletArgs = map[string]string{}
+			}
+			kubeletArgs["register-with-taints"] = newTaints
+			obj.Spec.Template.Spec.KubeletExtraArgs = kubeletArgs
 			return nil
 		}); err != nil {
 		return err

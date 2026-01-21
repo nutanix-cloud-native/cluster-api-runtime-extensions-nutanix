@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: dockerclusterconfigs.caren.nutanix.com
 spec:
   group: caren.nutanix.com
@@ -16,454 +16,524 @@ spec:
     singular: dockerclusterconfig
   scope: Namespaced
   versions:
-    - name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: DockerClusterConfig is the Schema for the dockerclusterconfigs API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: DockerClusterConfigSpec defines the desired state of DockerClusterConfig.
-              properties:
-                addons:
-                  properties:
-                    ccm:
-                      description: CCM tells us to enable or disable the cloud provider interface.
-                      properties:
-                        credentials:
-                          description: A reference to the Secret for credential information for the target Prism Central instance
-                          properties:
-                            secretRef:
-                              description: A reference to the Secret containing the credentials used by the CCM provider.
-                              properties:
-                                name:
-                                  description: |-
-                                    Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  maxLength: 253
-                                  minLength: 1
-                                  type: string
-                              required:
-                                - name
-                              type: object
-                          required:
-                            - secretRef
-                          type: object
-                        strategy:
-                          default: HelmAddon
-                          description: Addon strategy used to deploy the CCM to the workload cluster.
-                          enum:
-                            - ClusterResourceSet
-                            - HelmAddon
-                          type: string
-                      type: object
-                    clusterAutoscaler:
-                      description: ClusterAutoscaler tells us to enable or disable the cluster-autoscaler addon.
-                      properties:
-                        strategy:
-                          default: HelmAddon
-                          description: |-
-                            Addon strategy used to deploy cluster-autoscaler to the management cluster
-                            targeting the workload cluster.
-                          enum:
-                            - ClusterResourceSet
-                            - HelmAddon
-                          type: string
-                      type: object
-                    cni:
-                      description: CNI required for providing CNI configuration.
-                      properties:
-                        provider:
-                          description: CNI provider to deploy.
-                          enum:
-                            - Calico
-                            - Cilium
-                          type: string
-                        strategy:
-                          default: HelmAddon
-                          description: Addon strategy used to deploy the CNI provider to the workload cluster.
-                          enum:
-                            - ClusterResourceSet
-                            - HelmAddon
-                          type: string
-                        values:
-                          description: Values contains the helm values for the CNI when HelmAddon is the strategy.
-                          properties:
-                            sourceRef:
-                              description: |-
-                                SourceRef is an object reference to Configmap/Secret inside the same namespace
-                                which contains inline YAML representing the values for the Helm chart.
-                              properties:
-                                kind:
-                                  description: Kind is the type of resource being referenced, valid values are ('ConfigMap').
-                                  enum:
-                                    - ConfigMap
-                                  type: string
-                                name:
-                                  description: Name is the name of resource being referenced.
-                                  maxLength: 253
-                                  minLength: 1
-                                  type: string
-                              required:
-                                - kind
-                                - name
-                              type: object
-                          type: object
-                      required:
-                        - provider
-                      type: object
-                    cosi:
-                      properties:
-                        strategy:
-                          default: HelmAddon
-                          description: Addon strategy used to deploy the COSI controller to the workload cluster.
-                          enum:
-                            - HelmAddon
-                          type: string
-                      type: object
-                    csi:
-                      properties:
-                        defaultStorage:
-                          properties:
-                            provider:
-                              description: Name of the CSI Provider for the default storage class.
-                              enum:
-                                - local-path
-                              type: string
-                            storageClassConfig:
-                              description: Name of the default storage class config the specified default provider.
-                              maxLength: 242
-                              minLength: 1
-                              type: string
-                          required:
-                            - provider
-                            - storageClassConfig
-                          type: object
-                        providers:
-                          properties:
-                            local-path:
-                              properties:
-                                credentials:
-                                  description: The reference to any secret used by the CSI Provider.
-                                  properties:
-                                    secretRef:
-                                      description: A reference to the Secret containing the credentials used by the CSI provider.
-                                      properties:
-                                        name:
-                                          description: |-
-                                            Name of the referent.
-                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          maxLength: 253
-                                          minLength: 1
-                                          type: string
-                                      required:
-                                        - name
-                                      type: object
-                                  required:
-                                    - secretRef
-                                  type: object
-                                storageClassConfigs:
-                                  additionalProperties:
-                                    properties:
-                                      allowExpansion:
-                                        description: If the storage class should allow volume expanding
-                                        type: boolean
-                                      parameters:
-                                        additionalProperties:
-                                          type: string
-                                        description: Parameters passed into the storage class object.
-                                        type: object
-                                      reclaimPolicy:
-                                        default: Delete
-                                        description: PersistentVolumeReclaimPolicy describes a policy for end-of-life maintenance of persistent volumes.
-                                        enum:
-                                          - Delete
-                                          - Retain
-                                          - Recycle
-                                        type: string
-                                      volumeBindingMode:
-                                        default: WaitForFirstConsumer
-                                        description: VolumeBindingMode indicates how PersistentVolumeClaims should be bound.
-                                        enum:
-                                          - Immediate
-                                          - WaitForFirstConsumer
-                                        type: string
-                                    type: object
-                                  description: StorageClassConfigs is a map of storage class configurations for this CSI provider.
-                                  type: object
-                                strategy:
-                                  default: HelmAddon
-                                  description: Addon strategy used to deploy the CSI provider to the workload cluster.
-                                  enum:
-                                    - ClusterResourceSet
-                                    - HelmAddon
-                                  type: string
-                              required:
-                                - storageClassConfigs
-                              type: object
-                          required:
-                            - local-path
-                          type: object
-                        snapshotController:
-                          description: Deploy the CSI snapshot controller and associated CRDs.
-                          properties:
-                            strategy:
-                              default: HelmAddon
-                              description: Addon strategy used to deploy the snapshot controller to the workload cluster.
-                              enum:
-                                - ClusterResourceSet
-                                - HelmAddon
-                              type: string
-                          type: object
-                      required:
-                        - defaultStorage
-                        - providers
-                      type: object
-                    nfd:
-                      description: NFD tells us to enable or disable the node feature discovery addon.
-                      properties:
-                        strategy:
-                          default: HelmAddon
-                          description: Addon strategy used to deploy Node Feature Discovery (NFD) to the workload cluster.
-                          enum:
-                            - ClusterResourceSet
-                            - HelmAddon
-                          type: string
-                      type: object
-                    registry:
-                      properties:
-                        provider:
-                          default: CNCF Distribution
-                          description: The OCI registry provider to deploy.
-                          enum:
-                            - CNCF Distribution
-                          type: string
-                      required:
-                        - provider
-                      type: object
-                    serviceLoadBalancer:
-                      properties:
-                        configuration:
-                          description: Configuration for the chosen ServiceLoadBalancer provider.
-                          properties:
-                            addressRanges:
-                              description: |-
-                                AddressRanges is a list of IPv4 address ranges the
-                                provider uses to choose an address for a load balancer.
-                              items:
-                                description: AddressRange defines an IPv4 range.
-                                properties:
-                                  end:
-                                    format: ipv4
-                                    type: string
-                                  start:
-                                    format: ipv4
-                                    type: string
-                                required:
-                                  - end
-                                  - start
-                                type: object
-                              maxItems: 10
-                              minItems: 1
-                              type: array
-                          required:
-                            - addressRanges
-                          type: object
-                        provider:
-                          description: |-
-                            The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
-                            the CCM acts as the provider.
-                          enum:
-                            - MetalLB
-                          type: string
-                      required:
-                        - provider
-                      type: object
-                  type: object
-                controlPlane:
-                  description: DockerControlPlaneSpec defines the desired state of the control plane for a Docker cluster.
-                  properties:
-                    autoRenewCertificates:
-                      description: |-
-                        AutoRenewCertificates specifies the configuration for auto-renewing the
-                        certificates of the control plane.
-                      properties:
-                        daysBeforeExpiry:
-                          description: |-
-                            DaysBeforeExpiry indicates a rollout needs to be performed if the
-                            certificates of the control plane will expire within the specified days.
-                            Set to 0 to disable automated certificate renewal.
-                          format: int32
-                          type: integer
-                          x-kubernetes-validations:
-                            - message: Value must be 0 or at least 7
-                              rule: self == 0 || self >= 7
-                      required:
-                        - daysBeforeExpiry
-                      type: object
-                    docker:
-                      properties:
-                        customImage:
-                          description: Custom OCI image for control plane and worker Nodes.
-                          maxLength: 2048
-                          minLength: 1
-                          pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*(:[\w][\w.-]{0,127})?(@[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,})?$
-                          type: string
-                      type: object
-                    nodeRegistration:
-                      default: {}
-                      description: NodeRegistration holds fields that relate to registering the new node to the cluster.
-                      properties:
-                        ignorePreflightErrors:
-                          default:
-                            - SystemVerification
-                          description: |-
-                            IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
-                            when the current node is registered.
-                          items:
-                            maxLength: 512
-                            minLength: 1
-                            type: string
-                          maxItems: 50
-                          type: array
-                      type: object
-                    taints:
-                      description: Taints specifies the taints the Node API object should be registered with.
-                      items:
-                        description: |-
-                          The node this Taint is attached to has the "effect" on
-                          any pod that does not tolerate the Taint.
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DockerClusterConfig is the Schema for the dockerclusterconfigs
+          API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DockerClusterConfigSpec defines the desired state of DockerClusterConfig.
+            properties:
+              addons:
+                properties:
+                  ccm:
+                    description: CCM tells us to enable or disable the cloud provider
+                      interface.
+                    properties:
+                      credentials:
+                        description: A reference to the Secret for credential information
+                          for the target Prism Central instance
                         properties:
-                          effect:
-                            default: NoSchedule
+                          secretRef:
+                            description: A reference to the Secret containing the
+                              credentials used by the CCM provider.
+                            properties:
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        required:
+                        - secretRef
+                        type: object
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy the CCM to the
+                          workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  clusterAutoscaler:
+                    description: ClusterAutoscaler tells us to enable or disable the
+                      cluster-autoscaler addon.
+                    properties:
+                      strategy:
+                        default: HelmAddon
+                        description: |-
+                          Addon strategy used to deploy cluster-autoscaler to the management cluster
+                          targeting the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  cni:
+                    description: CNI required for providing CNI configuration.
+                    properties:
+                      provider:
+                        description: CNI provider to deploy.
+                        enum:
+                        - Calico
+                        - Cilium
+                        type: string
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy the CNI provider
+                          to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                      values:
+                        description: Values contains the helm values for the CNI when
+                          HelmAddon is the strategy.
+                        properties:
+                          sourceRef:
                             description: |-
-                              The effect of the taint on pods that do not tolerate the taint.
-                              Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                              SourceRef is an object reference to Configmap/Secret inside the same namespace
+                              which contains inline YAML representing the values for the Helm chart.
+                            properties:
+                              kind:
+                                description: Kind is the type of resource being referenced,
+                                  valid values are ('ConfigMap').
+                                enum:
+                                - ConfigMap
+                                type: string
+                              name:
+                                description: Name is the name of resource being referenced.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                        type: object
+                    required:
+                    - provider
+                    type: object
+                  cosi:
+                    properties:
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy the COSI controller
+                          to the workload cluster.
+                        enum:
+                        - HelmAddon
+                        type: string
+                    type: object
+                  csi:
+                    properties:
+                      defaultStorage:
+                        properties:
+                          provider:
+                            description: Name of the CSI Provider for the default
+                              storage class.
                             enum:
-                              - NoSchedule
-                              - PreferNoSchedule
-                              - NoExecute
+                            - aws-ebs
+                            - nutanix
+                            - local-path
                             type: string
-                          key:
-                            description: The taint key to be applied to a node.
-                            maxLength: 253
-                            type: string
-                          value:
-                            description: The taint value corresponding to the taint key.
-                            maxLength: 63
+                          storageClassConfig:
+                            description: Name of the default storage class config
+                              the specified default provider.
+                            maxLength: 242
                             minLength: 1
                             type: string
                         required:
-                          - effect
-                          - key
+                        - provider
+                        - storageClassConfig
                         type: object
-                      maxItems: 32
-                      type: array
-                  type: object
-                dns:
-                  description: DNS defines the DNS configuration for the cluster.
-                  properties:
-                    coreDNS:
-                      description: CoreDNS defines the CoreDNS configuration for the cluster.
+                      providers:
+                        properties:
+                          local-path:
+                            properties:
+                              credentials:
+                                description: The reference to any secret used by the
+                                  CSI Provider.
+                                properties:
+                                  secretRef:
+                                    description: A reference to the Secret containing
+                                      the credentials used by the CSI provider.
+                                    properties:
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                required:
+                                - secretRef
+                                type: object
+                              storageClassConfigs:
+                                additionalProperties:
+                                  properties:
+                                    allowExpansion:
+                                      description: If the storage class should allow
+                                        volume expanding
+                                      type: boolean
+                                    parameters:
+                                      additionalProperties:
+                                        type: string
+                                      description: Parameters passed into the storage
+                                        class object.
+                                      type: object
+                                    reclaimPolicy:
+                                      default: Delete
+                                      description: PersistentVolumeReclaimPolicy describes
+                                        a policy for end-of-life maintenance of persistent
+                                        volumes.
+                                      enum:
+                                      - Delete
+                                      - Retain
+                                      - Recycle
+                                      type: string
+                                    volumeBindingMode:
+                                      default: WaitForFirstConsumer
+                                      description: VolumeBindingMode indicates how
+                                        PersistentVolumeClaims should be bound.
+                                      enum:
+                                      - Immediate
+                                      - WaitForFirstConsumer
+                                      type: string
+                                  type: object
+                                description: StorageClassConfigs is a map of storage
+                                  class configurations for this CSI provider.
+                                type: object
+                              strategy:
+                                default: HelmAddon
+                                description: Addon strategy used to deploy the CSI
+                                  provider to the workload cluster.
+                                enum:
+                                - ClusterResourceSet
+                                - HelmAddon
+                                type: string
+                            required:
+                            - storageClassConfigs
+                            type: object
+                        required:
+                        - local-path
+                        type: object
+                      snapshotController:
+                        description: Deploy the CSI snapshot controller and associated
+                          CRDs.
+                        properties:
+                          strategy:
+                            default: HelmAddon
+                            description: Addon strategy used to deploy the snapshot
+                              controller to the workload cluster.
+                            enum:
+                            - ClusterResourceSet
+                            - HelmAddon
+                            type: string
+                        type: object
+                    required:
+                    - defaultStorage
+                    - providers
+                    type: object
+                  nfd:
+                    description: NFD tells us to enable or disable the node feature
+                      discovery addon.
+                    properties:
+                      strategy:
+                        default: HelmAddon
+                        description: Addon strategy used to deploy Node Feature Discovery
+                          (NFD) to the workload cluster.
+                        enum:
+                        - ClusterResourceSet
+                        - HelmAddon
+                        type: string
+                    type: object
+                  registry:
+                    properties:
+                      provider:
+                        default: CNCF Distribution
+                        description: The OCI registry provider to deploy.
+                        enum:
+                        - CNCF Distribution
+                        type: string
+                    required:
+                    - provider
+                    type: object
+                  serviceLoadBalancer:
+                    properties:
+                      configuration:
+                        description: Configuration for the chosen ServiceLoadBalancer
+                          provider.
+                        properties:
+                          addressRanges:
+                            description: |-
+                              AddressRanges is a list of IPv4 address ranges the
+                              provider uses to choose an address for a load balancer.
+                            items:
+                              description: AddressRange defines an IPv4 range.
+                              properties:
+                                end:
+                                  format: ipv4
+                                  type: string
+                                start:
+                                  format: ipv4
+                                  type: string
+                              required:
+                              - end
+                              - start
+                              type: object
+                            maxItems: 10
+                            minItems: 1
+                            type: array
+                        required:
+                        - addressRanges
+                        type: object
+                      provider:
+                        description: |-
+                          The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
+                          the CCM acts as the provider.
+                        enum:
+                        - MetalLB
+                        type: string
+                    required:
+                    - provider
+                    type: object
+                type: object
+              controlPlane:
+                description: DockerControlPlaneSpec defines the desired state of the
+                  control plane for a Docker cluster.
+                properties:
+                  autoRenewCertificates:
+                    description: |-
+                      AutoRenewCertificates specifies the configuration for auto-renewing the
+                      certificates of the control plane.
+                    properties:
+                      daysBeforeExpiry:
+                        description: |-
+                          DaysBeforeExpiry indicates a rollout needs to be performed if the
+                          certificates of the control plane will expire within the specified days.
+                          Set to 0 to disable automated certificate renewal.
+                        format: int32
+                        type: integer
+                        x-kubernetes-validations:
+                        - message: Value must be 0 or at least 7
+                          rule: self == 0 || self >= 7
+                    required:
+                    - daysBeforeExpiry
+                    type: object
+                  docker:
+                    properties:
+                      customImage:
+                        description: Custom OCI image for control plane and worker
+                          Nodes.
+                        maxLength: 2048
+                        minLength: 1
+                        pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*(:[\w][\w.-]{0,127})?(@[A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,})?$
+                        type: string
+                    type: object
+                  nodeRegistration:
+                    default: {}
+                    description: NodeRegistration holds fields that relate to registering
+                      the new node to the cluster.
+                    properties:
+                      ignorePreflightErrors:
+                        default:
+                        - SystemVerification
+                        description: |-
+                          IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
+                          when the current node is registered.
+                        items:
+                          maxLength: 512
+                          minLength: 1
+                          type: string
+                        maxItems: 50
+                        type: array
+                    type: object
+                  taints:
+                    description: Taints specifies the taints the Node API object should
+                      be registered with.
+                    items:
+                      description: |-
+                        The node this Taint is attached to has the "effect" on
+                        any pod that does not tolerate the Taint.
                       properties:
-                        image:
+                        effect:
+                          default: NoSchedule
                           description: |-
-                            Image required for overriding Kubernetes DNS image details.
-                            If the image version is not specified,
-                            the default version based on the cluster's Kubernetes version will be used.
-                          properties:
-                            repository:
-                              description: Repository is used to override the image repository to pull from.
-                              maxLength: 2048
-                              minLength: 1
-                              pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
-                              type: string
-                            tag:
-                              description: Tag is used to override the default image tag.
-                              maxLength: 128
-                              minLength: 1
-                              pattern: ^[\w][\w.-]{0,127}$
-                              type: string
+                            The effect of the taint on pods that do not tolerate the taint.
+                            Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                          enum:
+                          - NoSchedule
+                          - PreferNoSchedule
+                          - NoExecute
+                          type: string
+                        key:
+                          description: The taint key to be applied to a node.
+                          maxLength: 253
+                          type: string
+                        value:
+                          description: The taint value corresponding to the taint
+                            key.
+                          maxLength: 63
+                          minLength: 1
+                          type: string
+                      required:
+                      - effect
+                      - key
+                      type: object
+                    maxItems: 32
+                    type: array
+                type: object
+              dns:
+                description: DNS defines the DNS configuration for the cluster.
+                properties:
+                  coreDNS:
+                    description: CoreDNS defines the CoreDNS configuration for the
+                      cluster.
+                    properties:
+                      image:
+                        description: |-
+                          Image required for overriding Kubernetes DNS image details.
+                          If the image version is not specified,
+                          the default version based on the cluster's Kubernetes version will be used.
+                        properties:
+                          repository:
+                            description: Repository is used to override the image
+                              repository to pull from.
+                            maxLength: 2048
+                            minLength: 1
+                            pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                            type: string
+                          tag:
+                            description: Tag is used to override the default image
+                              tag.
+                            maxLength: 128
+                            minLength: 1
+                            pattern: ^[\w][\w.-]{0,127}$
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              docker:
+                type: object
+              encryptionAtRest:
+                description: |-
+                  EncryptionAtRest defines the configuration to enable encryption at REST
+                  This configuration is used by API server to encrypt data before storing it in ETCD.
+                  Currently the encryption only enabled for secrets and configmaps.
+                properties:
+                  providers:
+                    default:
+                    - aescbc: {}
+                    description: Encryption providers
+                    items:
+                      properties:
+                        aescbc:
+                          type: object
+                        secretbox:
                           type: object
                       type: object
-                  type: object
-                docker:
-                  type: object
-                encryptionAtRest:
-                  description: |-
-                    EncryptionAtRest defines the configuration to enable encryption at REST
-                    This configuration is used by API server to encrypt data before storing it in ETCD.
-                    Currently the encryption only enabled for secrets and configmaps.
-                  properties:
-                    providers:
-                      default:
-                        - aescbc: {}
-                      description: Encryption providers
-                      items:
+                    maxItems: 1
+                    type: array
+                type: object
+              etcd:
+                properties:
+                  image:
+                    description: Image required for overriding etcd image details.
+                    properties:
+                      repository:
+                        description: Repository is used to override the image repository
+                          to pull from.
+                        maxLength: 2048
+                        minLength: 1
+                        pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                        type: string
+                      tag:
+                        description: Tag is used to override the default image tag.
+                        maxLength: 128
+                        minLength: 1
+                        pattern: ^[\w][\w.-]{0,127}$
+                        type: string
+                    type: object
+                type: object
+              extraAPIServerCertSANs:
+                description: |-
+                  Extra Subject Alternative Names for the API Server signing cert.
+                  For the Docker provider, the following default SANs will always be added:
+                  - localhost
+                  - 127.0.0.1
+                  - 0.0.0.0
+                  - host.docker.internal
+                items:
+                  maxLength: 253
+                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  type: string
+                maxItems: 100
+                type: array
+                uniqueItems: true
+              globalImageRegistryMirror:
+                description: GlobalImageRegistryMirror sets default mirror configuration
+                  for all the image registries.
+                properties:
+                  credentials:
+                    description: Credentials and CA certificate for the image registry
+                      mirror
+                    properties:
+                      secretRef:
+                        description: |-
+                          A reference to the Secret containing the registry credentials and optional CA certificate
+                          using the keys `username`, `password` and `ca.crt`.
+                          This credentials Secret is not required for some registries, e.g. ECR.
                         properties:
-                          aescbc:
-                            type: object
-                          secretbox:
-                            type: object
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            maxLength: 253
+                            minLength: 1
+                            type: string
+                        required:
+                        - name
                         type: object
-                      maxItems: 1
-                      type: array
-                  type: object
-                etcd:
-                  properties:
-                    image:
-                      description: Image required for overriding etcd image details.
-                      properties:
-                        repository:
-                          description: Repository is used to override the image repository to pull from.
-                          maxLength: 2048
-                          minLength: 1
-                          pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
-                          type: string
-                        tag:
-                          description: Tag is used to override the default image tag.
-                          maxLength: 128
-                          minLength: 1
-                          pattern: ^[\w][\w.-]{0,127}$
-                          type: string
-                      type: object
-                  type: object
-                extraAPIServerCertSANs:
-                  description: |-
-                    Extra Subject Alternative Names for the API Server signing cert.
-                    For the Docker provider, the following default SANs will always be added:
-                    - localhost
-                    - 127.0.0.1
-                    - 0.0.0.0
-                    - host.docker.internal
-                  items:
-                    maxLength: 253
-                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                    type: object
+                  url:
+                    description: Registry mirror URL.
+                    format: uri
+                    pattern: ^https?://
                     type: string
-                  maxItems: 100
-                  type: array
-                  uniqueItems: true
-                globalImageRegistryMirror:
-                  description: GlobalImageRegistryMirror sets default mirror configuration for all the image registries.
+                required:
+                - url
+                type: object
+              imageRegistries:
+                items:
                   properties:
                     credentials:
-                      description: Credentials and CA certificate for the image registry mirror
+                      description: Credentials and CA certificate for the image registry
                       properties:
                         secretRef:
                           description: |-
@@ -479,165 +549,135 @@ spec:
                               minLength: 1
                               type: string
                           required:
-                            - name
+                          - name
                           type: object
                       type: object
                     url:
-                      description: Registry mirror URL.
+                      description: Registry URL.
                       format: uri
                       pattern: ^https?://
                       type: string
                   required:
-                    - url
+                  - url
                   type: object
-                imageRegistries:
-                  items:
-                    properties:
-                      credentials:
-                        description: Credentials and CA certificate for the image registry
-                        properties:
-                          secretRef:
-                            description: |-
-                              A reference to the Secret containing the registry credentials and optional CA certificate
-                              using the keys `username`, `password` and `ca.crt`.
-                              This credentials Secret is not required for some registries, e.g. ECR.
-                            properties:
-                              name:
-                                description: |-
-                                  Name of the referent.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                maxLength: 253
-                                minLength: 1
-                                type: string
-                            required:
-                              - name
-                            type: object
-                        type: object
-                      url:
-                        description: Registry URL.
-                        format: uri
-                        pattern: ^https?://
-                        type: string
-                    required:
-                      - url
-                    type: object
-                  maxItems: 32
-                  type: array
-                kubeProxy:
-                  description: KubeProxy defines the configuration for kube-proxy.
-                  properties:
-                    mode:
-                      description: |-
-                        Mode specifies the mode for kube-proxy:
-                        - iptables means that kube-proxy is installed in iptables mode.
-                        - nftables means that kube-proxy is installed in nftables mode.
-                        - disabled means that kube-proxy is disabled.
-                      enum:
-                        - iptables
-                        - nftables
-                        - disabled
+                maxItems: 32
+                type: array
+              kubeProxy:
+                description: KubeProxy defines the configuration for kube-proxy.
+                properties:
+                  mode:
+                    description: |-
+                      Mode specifies the mode for kube-proxy:
+                      - iptables means that kube-proxy is installed in iptables mode.
+                      - nftables means that kube-proxy is installed in nftables mode.
+                      - disabled means that kube-proxy is disabled.
+                    enum:
+                    - iptables
+                    - nftables
+                    - disabled
+                    type: string
+                    x-kubernetes-validations:
+                    - message: Value cannot be changed after cluster creation
+                      rule: self == oldSelf
+                type: object
+              kubernetesImageRepository:
+                description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
+                maxLength: 2048
+                minLength: 1
+                pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                type: string
+              maxParallelImagePullsPerNode:
+                description: |-
+                  MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
+                  If not set, the default value of 1 will be used.
+                  If set to 0, the maximum number of parallel image pulls will be unlimited.
+                format: int32
+                minimum: 0
+                type: integer
+              ntp:
+                description: NTP defines the NTP configuration for the cluster.
+                properties:
+                  servers:
+                    description: Servers is a list of NTP servers to use for time
+                      synchronization.
+                    items:
+                      maxLength: 253
                       type: string
-                      x-kubernetes-validations:
-                        - message: Value cannot be changed after cluster creation
-                          rule: self == oldSelf
-                  type: object
-                kubernetesImageRepository:
-                  description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
-                  maxLength: 2048
-                  minLength: 1
-                  pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
-                  type: string
-                maxParallelImagePullsPerNode:
-                  description: |-
-                    MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
-                    If not set, the default value of 1 will be used.
-                    If set to 0, the maximum number of parallel image pulls will be unlimited.
-                  format: int32
-                  minimum: 0
-                  type: integer
-                ntp:
-                  description: NTP defines the NTP configuration for the cluster.
+                    maxItems: 16
+                    minItems: 1
+                    type: array
+                required:
+                - servers
+                type: object
+              proxy:
+                description: HTTPProxy required for providing proxy configuration.
+                properties:
+                  additionalNo:
+                    description: |-
+                      AdditionalNo Proxy list that will be added to the automatically calculated
+                      values that will apply no_proxy configuration for cluster internal network.
+                      Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
+                        ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
+                    items:
+                      maxLength: 253
+                      minLength: 1
+                      type: string
+                    maxItems: 128
+                    type: array
+                  http:
+                    description: HTTP proxy value.
+                    maxLength: 2048
+                    minLength: 1
+                    type: string
+                  https:
+                    description: HTTPS proxy value.
+                    maxLength: 2048
+                    minLength: 1
+                    type: string
+                type: object
+              users:
+                items:
+                  description: User defines the input for a generated user in cloud-init.
                   properties:
-                    servers:
-                      description: Servers is a list of NTP servers to use for time synchronization.
+                    hashedPassword:
+                      description: |-
+                        HashedPassword is a hashed password for the user, formatted as described
+                        by the crypt(5) man page. See your distribution's documentation for
+                        instructions to create a hashed password.
+                        An empty string is not marshalled, because it is not a valid value.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    name:
+                      description: Name specifies the user name.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    sshAuthorizedKeys:
+                      description: |-
+                        SSHAuthorizedKeys is a list of public SSH keys to write to the
+                        machine. Use the corresponding private SSH keys to authenticate. See SSH
+                        documentation for instructions to create a key pair.
                       items:
-                        maxLength: 253
+                        maxLength: 2048
+                        minLength: 1
                         type: string
-                      maxItems: 16
-                      minItems: 1
+                      maxItems: 100
                       type: array
+                    sudo:
+                      description: |-
+                        Sudo is a sudo user specification, formatted as described in the sudo
+                        documentation.
+                        An empty string is not marshalled, because it is not a valid value.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
                   required:
-                    - servers
+                  - name
                   type: object
-                proxy:
-                  description: HTTPProxy required for providing proxy configuration.
-                  properties:
-                    additionalNo:
-                      description: |-
-                        AdditionalNo Proxy list that will be added to the automatically calculated
-                        values that will apply no_proxy configuration for cluster internal network.
-                        Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
-                          ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
-                      items:
-                        maxLength: 253
-                        minLength: 1
-                        type: string
-                      maxItems: 128
-                      type: array
-                    http:
-                      description: HTTP proxy value.
-                      maxLength: 2048
-                      minLength: 1
-                      type: string
-                    https:
-                      description: HTTPS proxy value.
-                      maxLength: 2048
-                      minLength: 1
-                      type: string
-                  type: object
-                users:
-                  items:
-                    description: User defines the input for a generated user in cloud-init.
-                    properties:
-                      hashedPassword:
-                        description: |-
-                          HashedPassword is a hashed password for the user, formatted as described
-                          by the crypt(5) man page. See your distribution's documentation for
-                          instructions to create a hashed password.
-                          An empty string is not marshalled, because it is not a valid value.
-                        maxLength: 256
-                        minLength: 1
-                        type: string
-                      name:
-                        description: Name specifies the user name.
-                        maxLength: 256
-                        minLength: 1
-                        type: string
-                      sshAuthorizedKeys:
-                        description: |-
-                          SSHAuthorizedKeys is a list of public SSH keys to write to the
-                          machine. Use the corresponding private SSH keys to authenticate. See SSH
-                          documentation for instructions to create a key pair.
-                        items:
-                          maxLength: 2048
-                          minLength: 1
-                          type: string
-                        maxItems: 100
-                        type: array
-                      sudo:
-                        description: |-
-                          Sudo is a sudo user specification, formatted as described in the sudo
-                          documentation.
-                          An empty string is not marshalled, because it is not a valid value.
-                        maxLength: 256
-                        minLength: 1
-                        type: string
-                    required:
-                      - name
-                    type: object
-                  maxItems: 32
-                  type: array
-              type: object
-          type: object
-      served: true
-      storage: true
+                maxItems: 32
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true

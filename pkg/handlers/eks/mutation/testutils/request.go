@@ -9,8 +9,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
-	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
-	eksv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/controlplane/eks/api/v1beta2"
+	eksbootstrapv1 "sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
+	eksv1 "sigs.k8s.io/cluster-api-provider-aws/v2/controlplane/eks/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/request"
 )
 
@@ -49,9 +49,9 @@ func NewEKSControlPlaneRequestItem(
 
 func NewNodeadmConfigTemplateRequestItem(
 	uid types.UID,
-	existingSpec ...eksbootstrapv1.NodeadmConfigTemplateSpec,
+	existingSpec ...eksbootstrapv1.EKSConfigTemplateSpec,
 ) runtimehooksv1.GeneratePatchesRequestItem {
-	nodeadmConfigTemplate := &eksbootstrapv1.NodeadmConfigTemplate{
+	nodeadmConfigTemplate := &eksbootstrapv1.EKSConfigTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: eksbootstrapv1.GroupVersion.String(),
 			Kind:       "NodeadmConfigTemplate",

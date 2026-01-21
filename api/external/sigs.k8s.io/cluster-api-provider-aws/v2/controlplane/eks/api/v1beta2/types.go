@@ -22,8 +22,8 @@ import (
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	infrav1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
-	iamv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/iam/api/v1beta1"
+	infrav1 "sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
+	iamv1 "sigs.k8s.io/cluster-api-provider-aws/v2/iam/api/v1beta1"
 )
 
 // ControlPlaneLoggingSpec defines what EKS control plane logs that should be enabled.

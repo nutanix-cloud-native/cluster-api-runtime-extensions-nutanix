@@ -1485,7 +1485,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 				if tt.expectRolloutTriggered {
 					require.NotNil(t, updatedKCP.Spec.RolloutAfter, "RolloutAfter should be set")
-					require.NotEqual(t, initialRolloutAfter, updatedKCP.Spec.RolloutAfter, "RolloutAfter should be updated")
+					require.NotEqual(
+						t,
+						initialRolloutAfter,
+						updatedKCP.Spec.RolloutAfter,
+						"RolloutAfter should be updated",
+					)
 					require.WithinDuration(
 						t,
 						time.Now(),
@@ -1494,7 +1499,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 						"RolloutAfter should be recent",
 					)
 				} else {
-					require.Equal(t, initialRolloutAfter, updatedKCP.Spec.RolloutAfter, "RolloutAfter should not be changed")
+					require.Equal(
+						t,
+						initialRolloutAfter,
+						updatedKCP.Spec.RolloutAfter,
+						"RolloutAfter should not be changed",
+					)
 				}
 			}
 		})

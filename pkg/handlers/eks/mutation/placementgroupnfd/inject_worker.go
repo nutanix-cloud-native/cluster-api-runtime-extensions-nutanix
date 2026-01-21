@@ -12,7 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
+	eksbootstrapv1 "sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
@@ -76,18 +76,18 @@ func (h *workerPatchHandler) Mutate(
 		vars,
 		&holderRef,
 		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "NodeadmConfigTemplate"), log,
-		func(obj *eksbootstrapv1.NodeadmConfigTemplate) error {
+		func(obj *eksbootstrapv1.EKSConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting placement group for local node feature discovery in EKS workers NodeadmConfigTemplate")
+			).Info("setting placement group for local node feature discovery in EKS workers EKSConfigTemplate")
 			obj.Spec.Template.Spec.Files = append(obj.Spec.Template.Spec.Files, eksbootstrapv1.File{
 				Path:        awsplacementgroupnfd.PlacementGroupDiscoveryScriptFileOnRemote,
 				Content:     string(awsplacementgroupnfd.PlacementgroupDiscoveryScript),
 				Permissions: "0700",
 			})
-			obj.Spec.Template.Spec.PreNodeadmCommands = append(
-				obj.Spec.Template.Spec.PreNodeadmCommands,
+			obj.Spec.Template.Spec.PreBootstrapCommands= append(
+				obj.Spec.Template.Spec.PreBootstrapCommands,
 				awsplacementgroupnfd.PlacementGroupDiscoveryScriptFileOnRemote,
 			)
 			return nil
