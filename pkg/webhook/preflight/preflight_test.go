@@ -369,6 +369,50 @@ func TestHandle(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:      "update operation with passing checks, allowed",
+			operation: admissionv1.Update,
+			cluster:   topologyCluster(),
+			checkers: []Checker{
+				&mockChecker{
+					checks: []Check{
+						&mockCheck{
+							name: "Test1",
+							result: CheckResult{
+								Allowed: true,
+							},
+						},
+					},
+				},
+			},
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: true,
+				},
+			},
+		},
+		{
+			name:      "update operation with failing checks, not allowed",
+			operation: admissionv1.Update,
+			cluster:   topologyCluster(),
+			checkers: []Checker{
+				&mockChecker{
+					checks: []Check{
+						&mockCheck{
+							name: "Test1",
+							result: CheckResult{
+								Allowed: false,
+								Causes: []Cause{
+									{
+										Message: "check failed",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	// Test execution remains the same

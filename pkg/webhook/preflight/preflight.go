@@ -118,11 +118,6 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	if req.Operation == admissionv1.Update {
-		log.V(5).Info("Skipping preflight checks for update operation")
-		return admission.Allowed("")
-	}
-
 	cluster := &clusterv1.Cluster{}
 	err := h.decoder.Decode(req, cluster)
 	if err != nil {
