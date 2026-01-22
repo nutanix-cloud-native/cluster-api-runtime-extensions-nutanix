@@ -238,6 +238,10 @@ func run(ctx context.Context,
 					"checkName", check.Name(),
 				)
 				if skipEvaluator.For(check.Name()) {
+					ctrl.LoggerFrom(ctx).V(5).Info(
+						"Skipping preflight check",
+						"checkName", check.Name(),
+					)
 					resultsOrderedByCheck[j] = namedResult{
 						Name: check.Name(),
 						CheckResult: CheckResult{
