@@ -477,6 +477,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -486,6 +487,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return nil, nil
 				},
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -510,6 +512,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 				ListStorageContainersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -551,6 +554,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -562,6 +566,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				},
 
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -586,6 +591,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 				ListStorageContainersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -634,6 +640,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -643,6 +650,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return nil, nil
 				},
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -667,6 +675,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 				ListStorageContainersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -711,6 +720,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -762,6 +772,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -771,6 +782,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return nil, fmt.Errorf("API error")
 				},
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -808,6 +820,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -817,6 +830,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return nil, nil
 				},
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -841,6 +855,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 				ListStorageContainersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -877,6 +892,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -886,6 +902,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return nil, nil
 				},
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -910,6 +927,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 				ListStorageContainersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -949,6 +967,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -958,6 +977,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return nil, nil
 				},
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -982,6 +1002,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 				ListStorageContainersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -1028,6 +1049,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -1037,6 +1059,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return nil, nil
 				},
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -1061,6 +1084,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 				ListStorageContainersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -1111,6 +1135,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			},
 			nclient: &clientWrapper{
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -1143,6 +1168,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					return resp, nil
 				},
 				ListStorageContainersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -1294,6 +1320,7 @@ func TestGetClusters(t *testing.T) {
 			},
 			client: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -1326,6 +1353,7 @@ func TestGetClusters(t *testing.T) {
 			},
 			client: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -1346,6 +1374,7 @@ func TestGetClusters(t *testing.T) {
 			},
 			client: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -1368,7 +1397,7 @@ func TestGetClusters(t *testing.T) {
 				Name: ptr.To("test-cluster"),
 			},
 			client: &clientWrapper{
-				ListClustersFunc: func(page,
+				ListClustersFunc: func(ctx context.Context, page,
 					limit *int,
 					filter,
 					orderby,
@@ -1404,7 +1433,7 @@ func TestGetClusters(t *testing.T) {
 				Name: ptr.To("test-cluster-error"),
 			},
 			client: &clientWrapper{
-				ListClustersFunc: func(page,
+				ListClustersFunc: func(ctx context.Context, page,
 					limit *int,
 					filter,
 					orderby,
@@ -1428,7 +1457,7 @@ func TestGetClusters(t *testing.T) {
 				Name: ptr.To("test-cluster-nil"),
 			},
 			client: &clientWrapper{
-				ListClustersFunc: func(page,
+				ListClustersFunc: func(ctx context.Context, page,
 					limit *int,
 					filter,
 					orderby,
@@ -1452,7 +1481,7 @@ func TestGetClusters(t *testing.T) {
 				Name: ptr.To("test-cluster-nil"),
 			},
 			client: &clientWrapper{
-				ListClustersFunc: func(page,
+				ListClustersFunc: func(ctx context.Context, page,
 					limit *int,
 					filter,
 					orderby,
@@ -1479,7 +1508,7 @@ func TestGetClusters(t *testing.T) {
 				Name: ptr.To("test-cluster-nil-data"),
 			},
 			client: &clientWrapper{
-				ListClustersFunc: func(page,
+				ListClustersFunc: func(ctx context.Context, page,
 					limit *int,
 					filter,
 					orderby,
@@ -1505,7 +1534,7 @@ func TestGetClusters(t *testing.T) {
 				Name: ptr.To("test-cluster-not-found"),
 			},
 			client: &clientWrapper{
-				ListClustersFunc: func(page,
+				ListClustersFunc: func(ctx context.Context, page,
 					limit *int,
 					filter,
 					orderby,
@@ -1534,7 +1563,7 @@ func TestGetClusters(t *testing.T) {
 				Name: ptr.To("test-cluster-duplicate"),
 			},
 			client: &clientWrapper{
-				ListClustersFunc: func(page,
+				ListClustersFunc: func(ctx context.Context, page,
 					limit *int,
 					filter,
 					orderby,
@@ -1582,6 +1611,7 @@ func TestGetClusters(t *testing.T) {
 			},
 			client: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -1601,7 +1631,7 @@ func TestGetClusters(t *testing.T) {
 				Name: nil,
 			},
 			client: &clientWrapper{
-				ListClustersFunc: func(page,
+				ListClustersFunc: func(ctx context.Context, page,
 					limit *int,
 					filter,
 					orderby,

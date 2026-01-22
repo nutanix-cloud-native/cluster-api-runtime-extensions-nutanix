@@ -31,7 +31,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "kubernetes version matches",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -56,7 +56,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "kubernetes version mismatch",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -88,7 +88,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "kubernetes version with build metadata matches",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -113,7 +113,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "custom image name has no Kubernetes version",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -145,7 +145,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "invalid kubernetes version",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -177,7 +177,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "empty image name",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -225,7 +225,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "no images found",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					return nil, nil
 				},
 			},
@@ -242,7 +242,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "error getting images",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
 					return nil, fmt.Errorf("some error")
 				},
 			},

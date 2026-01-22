@@ -102,7 +102,7 @@ var _ = Describe("Quick start", func() {
 											// 2. service load balancer
 											// Remember to unreserve it after the test!
 											if provider == "Nutanix" {
-												nutanixClient, err := nutanix.NewV4Client(
+												nutanixClient, err := nutanix.NewConvergedV4Client(
 													nutanix.CredentialsFromCAPIE2EConfig(testE2EConfig),
 												)
 												Expect(err).ToNot(HaveOccurred())

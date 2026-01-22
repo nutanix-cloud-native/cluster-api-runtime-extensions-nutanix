@@ -47,12 +47,6 @@ func NewConvergedV4Client(credentials *prismgoclient.Credentials) (*v4Converged.
 	return client, nil
 }
 
-// NewV4Client is kept for backward compatibility but now returns a converged client.
-// Deprecated: Use NewConvergedV4Client instead.
-func NewV4Client(credentials *prismgoclient.Credentials) (*v4Converged.Client, error) {
-	return NewConvergedV4Client(credentials)
-}
-
 func WaitForTaskCompletion(
 	ctx context.Context,
 	taskID string,

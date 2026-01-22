@@ -171,6 +171,7 @@ func TestFailureDomainCheck(t *testing.T) {
 			kclient: getK8sClient(),
 			nclient: &clientWrapper{
 				GetClusterByIdFunc: func(
+					ctx context.Context,
 					uuid *string,
 					args ...map[string]interface{},
 				) (
@@ -180,6 +181,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					return nil, nil
 				},
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -205,6 +207,7 @@ func TestFailureDomainCheck(t *testing.T) {
 			kclient: getK8sClient(),
 			nclient: &clientWrapper{
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -228,10 +231,11 @@ func TestFailureDomainCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				GetSubnetByIdFunc: func(uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
+				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
 					return nil, nil
 				},
 				ListSubnetsFunc: func(
+					ctx context.Context,
 					page_ *int,
 					limit_ *int,
 					filter_ *string,
@@ -254,6 +258,7 @@ func TestFailureDomainCheck(t *testing.T) {
 			kclient: getK8sClient(),
 			nclient: &clientWrapper{
 				ListClustersFunc: func(
+					ctx context.Context,
 					page,
 					limit *int,
 					filter,
@@ -277,10 +282,11 @@ func TestFailureDomainCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				GetSubnetByIdFunc: func(uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
+				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
 					return nil, nil
 				},
 				ListSubnetsFunc: func(
+					ctx context.Context,
 					page_ *int,
 					limit_ *int,
 					filter_ *string,

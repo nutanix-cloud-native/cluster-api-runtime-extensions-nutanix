@@ -92,7 +92,7 @@ func (n *nutanixChecker) Init(
 		n.configurationCheckFactory(cd),
 		n.credentialsCheckFactory(
 			ctx,
-			func(creds prismgoclient.Credentials) (client, error) { //nolint:contextcheck // ctx is captured from closure
+			func(creds prismgoclient.Credentials) (client, error) {
 				return newClient(creds, k8stypes.NamespacedName{
 					Name:      cluster.Name,
 					Namespace: cluster.Namespace,

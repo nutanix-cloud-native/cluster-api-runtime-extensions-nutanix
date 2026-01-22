@@ -126,6 +126,7 @@ type clientWrapper struct {
 	)
 
 	GetImageByIdFunc func(
+		ctx context.Context,
 		uuid *string,
 		args ...map[string]interface{},
 	) (
@@ -133,6 +134,7 @@ type clientWrapper struct {
 	)
 
 	ListImagesFunc func(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -145,6 +147,7 @@ type clientWrapper struct {
 	)
 
 	GetClusterByIdFunc func(
+		ctx context.Context,
 		uuid *string,
 		args ...map[string]interface{},
 	) (
@@ -152,6 +155,7 @@ type clientWrapper struct {
 	)
 
 	ListClustersFunc func(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -164,6 +168,7 @@ type clientWrapper struct {
 		error,
 	)
 	ListStorageContainersFunc func(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -176,6 +181,7 @@ type clientWrapper struct {
 	)
 
 	GetSubnetByIdFunc func(
+		ctx context.Context,
 		uuid *string,
 		args ...map[string]interface{},
 	) (
@@ -183,6 +189,7 @@ type clientWrapper struct {
 	)
 
 	ListSubnetsFunc func(
+		ctx context.Context,
 		page_ *int,
 		limit_ *int,
 		filter_ *string,
@@ -282,11 +289,15 @@ func newClient(
 			// Use DomainManager.GetPrismCentralVersion() as V4 equivalent to V3's GetPrismCentral().
 			return convergedc.DomainManager.GetPrismCentralVersion(ctx)
 		},
-		GetImageByIdFunc: func(uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+		GetImageByIdFunc: func(
+			ctx context.Context,
+			uuid *string,
+			args ...map[string]interface{},
+		) (*vmmv4.GetImageApiResponse, error) {
 			if uuid == nil {
 				return nil, fmt.Errorf("uuid cannot be nil")
 			}
-			image, err := convergedc.Images.Get(context.Background(), *uuid)
+			image, err := convergedc.Images.Get(ctx, *uuid)
 			if err != nil {
 				return nil, err
 			}
@@ -298,6 +309,7 @@ func newClient(
 			return resp, nil
 		},
 		ListImagesFunc: func(
+			ctx context.Context,
 			page_ *int,
 			limit_ *int,
 			filter_ *string,
@@ -306,7 +318,7 @@ func newClient(
 			args ...map[string]interface{},
 		) (*vmmv4.ListImagesApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
-			images, err := convergedc.Images.List(context.Background(), opts...)
+			images, err := convergedc.Images.List(ctx, opts...)
 			if err != nil {
 				return nil, err
 			}
@@ -317,11 +329,15 @@ func newClient(
 			}
 			return resp, nil
 		},
-		GetClusterByIdFunc: func(uuid *string, args ...map[string]interface{}) (*clustermgmtv4.GetClusterApiResponse, error) {
+		GetClusterByIdFunc: func(
+			ctx context.Context,
+			uuid *string,
+			args ...map[string]interface{},
+		) (*clustermgmtv4.GetClusterApiResponse, error) {
 			if uuid == nil {
 				return nil, fmt.Errorf("uuid cannot be nil")
 			}
-			cluster, err := convergedc.Clusters.Get(context.Background(), *uuid)
+			cluster, err := convergedc.Clusters.Get(ctx, *uuid)
 			if err != nil {
 				return nil, err
 			}
@@ -333,6 +349,7 @@ func newClient(
 			return resp, nil
 		},
 		ListClustersFunc: func(
+			ctx context.Context,
 			page_, limit_ *int,
 			filter_, orderby_, apply_, select_ *string,
 			args ...map[string]interface{},
@@ -341,7 +358,7 @@ func newClient(
 			if apply_ != nil && *apply_ != "" {
 				opts = append(opts, converged.WithApply(*apply_))
 			}
-			clusters, err := convergedc.Clusters.List(context.Background(), opts...)
+			clusters, err := convergedc.Clusters.List(ctx, opts...)
 			if err != nil {
 				return nil, err
 			}
@@ -353,6 +370,7 @@ func newClient(
 			return resp, nil
 		},
 		ListStorageContainersFunc: func(
+			ctx context.Context,
 			page_ *int,
 			limit_ *int,
 			filter_ *string,
@@ -361,7 +379,7 @@ func newClient(
 			args ...map[string]interface{},
 		) (*clustermgmtv4.ListStorageContainersApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
-			containers, err := convergedc.StorageContainers.List(context.Background(), opts...)
+			containers, err := convergedc.StorageContainers.List(ctx, opts...)
 			if err != nil {
 				return nil, err
 			}
@@ -372,11 +390,15 @@ func newClient(
 			}
 			return resp, nil
 		},
-		GetSubnetByIdFunc: func(uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
+		GetSubnetByIdFunc: func(
+			ctx context.Context,
+			uuid *string,
+			args ...map[string]interface{},
+		) (*netv4.GetSubnetApiResponse, error) {
 			if uuid == nil {
 				return nil, fmt.Errorf("uuid cannot be nil")
 			}
-			subnet, err := convergedc.Subnets.Get(context.Background(), *uuid)
+			subnet, err := convergedc.Subnets.Get(ctx, *uuid)
 			if err != nil {
 				return nil, err
 			}
@@ -388,6 +410,7 @@ func newClient(
 			return resp, nil
 		},
 		ListSubnetsFunc: func(
+			ctx context.Context,
 			page_ *int,
 			limit_ *int,
 			filter_ *string,
@@ -400,7 +423,7 @@ func newClient(
 			if expand_ != nil && *expand_ != "" {
 				opts = append(opts, converged.WithExpand(*expand_))
 			}
-			subnets, err := convergedc.Subnets.List(context.Background(), opts...)
+			subnets, err := convergedc.Subnets.List(ctx, opts...)
 			if err != nil {
 				return nil, err
 			}
@@ -439,6 +462,7 @@ func (c *clientWrapper) GetImageById(
 ) {
 	return callWithContext(ctx, func() (*vmmv4.GetImageApiResponse, error) {
 		return c.GetImageByIdFunc(
+			ctx,
 			uuid,
 			args...,
 		)
@@ -459,6 +483,7 @@ func (c *clientWrapper) ListImages(
 ) {
 	return callWithContext(ctx, func() (*vmmv4.ListImagesApiResponse, error) {
 		return c.ListImagesFunc(
+			ctx,
 			page_,
 			limit_,
 			filter_,
@@ -479,6 +504,7 @@ func (c *clientWrapper) GetClusterById(
 ) {
 	return callWithContext(ctx, func() (*clustermgmtv4.GetClusterApiResponse, error) {
 		return c.GetClusterByIdFunc(
+			ctx,
 			uuid,
 			args...,
 		)
@@ -500,6 +526,7 @@ func (c *clientWrapper) ListClusters(
 ) {
 	return callWithContext(ctx, func() (*clustermgmtv4.ListClustersApiResponse, error) {
 		return c.ListClustersFunc(
+			ctx,
 			page_,
 			limit_,
 			filter_,
@@ -525,6 +552,7 @@ func (c *clientWrapper) ListStorageContainers(
 ) {
 	return callWithContext(ctx, func() (*clustermgmtv4.ListStorageContainersApiResponse, error) {
 		return c.ListStorageContainersFunc(
+			ctx,
 			page_,
 			limit_,
 			filter_,
@@ -545,6 +573,7 @@ func (c *clientWrapper) GetSubnetById(
 ) {
 	return callWithContext(ctx, func() (*netv4.GetSubnetApiResponse, error) {
 		return c.GetSubnetByIdFunc(
+			ctx,
 			uuid,
 			args...,
 		)
@@ -566,6 +595,7 @@ func (c *clientWrapper) ListSubnets(
 ) {
 	return callWithContext(ctx, func() (*netv4.ListSubnetsApiResponse, error) {
 		return c.ListSubnetsFunc(
+			ctx,
 			page_,
 			limit_,
 			filter_,
