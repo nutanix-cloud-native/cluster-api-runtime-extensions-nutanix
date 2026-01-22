@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -89,7 +90,16 @@ func (n *nutanixChecker) Init(
 		// The configuration check must run first, because it initializes data used by all other checks,
 		// and the credentials check second, because it initializes the Nutanix clients used by other checks.
 		n.configurationCheckFactory(cd),
-		n.credentialsCheckFactory(ctx, newClient, cd),
+		n.credentialsCheckFactory(
+			ctx,
+			func(creds prismgoclient.Credentials) (client, error) {
+				return newClient(creds, k8stypes.NamespacedName{
+					Name:      cluster.Name,
+					Namespace: cluster.Namespace,
+				})
+			},
+			cd,
+		),
 		n.prismCentralVersionCheckFactory(ctx, cd),
 	}
 

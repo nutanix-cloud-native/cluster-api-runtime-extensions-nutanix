@@ -17,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
-	prismv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -26,8 +25,8 @@ func TestNewCredentialsCheck_Success(t *testing.T) {
 	cd := validCheckDependencies()
 	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
 		return &clientWrapper{
-			GetCurrentLoggedInUserFunc: func(ctx context.Context) (*prismv3.UserIntentResponse, error) {
-				return &prismv3.UserIntentResponse{}, nil
+			ValidateCredentialsFunc: func(ctx context.Context) error {
+				return nil
 			},
 		}, nil
 	}
@@ -173,7 +172,10 @@ func TestNewCredentialsCheck_SecretMissingKey(t *testing.T) {
 	}
 	cd := validCheckDependencies()
 	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
-	check := newCredentialsCheck(context.Background(), nil, cd)
+	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+		return &clientWrapper{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.False(t, result.InternalError)
@@ -219,12 +221,12 @@ func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
 	)
 }
 
-func TestNewCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
-	// Simulate a failure in getting the current logged-in user
+func TestNewCredentialsCheck_FailedToValidateCredentials(t *testing.T) {
+	// Simulate a failure in validating credentials
 	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
 		return &clientWrapper{
-			GetCurrentLoggedInUserFunc: func(ctx context.Context) (*prismv3.UserIntentResponse, error) {
-				return nil, assert.AnError
+			ValidateCredentialsFunc: func(ctx context.Context) error {
+				return assert.AnError
 			},
 		}, nil
 	}
@@ -237,11 +239,11 @@ func TestNewCredentialsCheck_FailedToGetCurrentLoggedInUser(t *testing.T) {
 		assert.AnError.Error())
 }
 
-func TestNewCredentialsCheck_GetCurrentLoggedInUserInvalidCredentials(t *testing.T) {
+func TestNewCredentialsCheck_ValidateCredentialsInvalidCredentials(t *testing.T) {
 	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
 		return &clientWrapper{
-			GetCurrentLoggedInUserFunc: func(ctx context.Context) (*prismv3.UserIntentResponse, error) {
-				return nil, fmt.Errorf("invalid Nutanix credentials")
+			ValidateCredentialsFunc: func(ctx context.Context) error {
+				return fmt.Errorf("invalid Nutanix credentials")
 			},
 		}, nil
 	}
