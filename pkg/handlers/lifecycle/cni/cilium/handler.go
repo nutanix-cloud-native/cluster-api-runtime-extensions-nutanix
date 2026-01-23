@@ -220,6 +220,24 @@ func (c *CiliumCNI) apply(
 			}
 		}
 
+		preflightStrategy := addons.NewHelmAddonApplier(
+			addons.NewHelmAddonConfig(
+				helmValuesSourceRefName,
+				defaultCiliumNamespace,
+				defaultCiliumReleaseName+"-preflight",
+			),
+			c.client,
+			helmChart,
+		).
+			WithValueTemplater(preflightTemplateValues).
+			WithDefaultWaiter()
+
+		if err := runPreflightApply(ctx, c.client, cluster, preflightStrategy, targetNamespace, log); err != nil {
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(err.Error())
+			return
+		}
+
 		strategy = addons.NewHelmAddonApplier(
 			addons.NewHelmAddonConfig(
 				helmValuesSourceRefName,
@@ -319,6 +337,46 @@ func runApply(
 	)
 	if err := cleanupKubeProxy(ctx, remoteClient); err != nil {
 		return fmt.Errorf("failed to cleanup kube-proxy: %w", err)
+	}
+
+	return nil
+}
+
+func runPreflightApply(
+	ctx context.Context,
+	client ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+	strategy addons.Applier,
+	targetNamespace string,
+	log logr.Logger,
+) error {
+	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
+		return err
+	}
+
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		client,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating remote cluster client: %w", err)
+	}
+
+	log.Info(
+		fmt.Sprintf(
+			"Waiting for Cilium preflight resources to be ready for cluster %s",
+			ctrlclient.ObjectKeyFromObject(cluster),
+		),
+	)
+
+	if err := waitForCiliumPreflightDaemonset(ctx, remoteClient); err != nil {
+		return fmt.Errorf("failed to wait for Cilium preflight DaemonSet to be ready: %w", err)
+	}
+
+	if err := waitForCiliumPreflightDeployment(ctx, remoteClient); err != nil {
+		return fmt.Errorf("failed to wait for Cilium preflight Deployment to be ready: %w", err)
 	}
 
 	return nil
@@ -457,4 +515,80 @@ func isKubeProxyInstalled(ctx context.Context, c ctrlclient.Client) (bool, error
 		return false, err
 	}
 	return true, nil
+}
+
+// waitForCiliumPreflightDaemonset waits until the cilium preflight daemonset is ready.
+func waitForCiliumPreflightDaemonset(ctx context.Context, c ctrlclient.Client) error {
+	ds := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaultCiliumReleaseName + "-pre-flight-check",
+			Namespace: defaultCiliumNamespace,
+		},
+	}
+	if err := c.Get(ctx, ctrlclient.ObjectKeyFromObject(ds), ds); err != nil {
+		return fmt.Errorf("failed to get preflight cilium daemon set: %w", err)
+	}
+
+	if err := wait.ForObject(
+		ctx,
+		wait.ForObjectInput[*appsv1.DaemonSet]{
+			Reader: c,
+			Target: ds.DeepCopy(),
+			Check: func(_ context.Context, obj *appsv1.DaemonSet) (bool, error) {
+				if obj.Generation != obj.Status.ObservedGeneration {
+					return false, nil
+				}
+				isReady := obj.Status.NumberReady == obj.Status.DesiredNumberScheduled
+				return isReady, nil
+			},
+			Interval: waitInterval,
+			Timeout:  waitTimeout,
+		},
+	); err != nil {
+		return fmt.Errorf(
+			"failed to wait for cilium preflight DaemonSet %s to be Ready: %w",
+			ctrlclient.ObjectKeyFromObject(ds),
+			err,
+		)
+	}
+
+	return nil
+}
+
+// waitForCiliumPreflightDeployment waits until the cilium preflight deployment is ready.
+func waitForCiliumPreflightDeployment(ctx context.Context, c ctrlclient.Client) error {
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaultCiliumReleaseName + "-pre-flight-check",
+			Namespace: defaultCiliumNamespace,
+		},
+	}
+	if err := c.Get(ctx, ctrlclient.ObjectKeyFromObject(deployment), deployment); err != nil {
+		return fmt.Errorf("failed to get preflight cilium deployment: %w", err)
+	}
+
+	if err := wait.ForObject(
+		ctx,
+		wait.ForObjectInput[*appsv1.Deployment]{
+			Reader: c,
+			Target: deployment.DeepCopy(),
+			Check: func(_ context.Context, obj *appsv1.Deployment) (bool, error) {
+				if obj.Generation != obj.Status.ObservedGeneration {
+					return false, nil
+				}
+				isReady := obj.Status.AvailableReplicas == *obj.Spec.Replicas
+				return isReady, nil
+			},
+			Interval: waitInterval,
+			Timeout:  waitTimeout,
+		},
+	); err != nil {
+		return fmt.Errorf(
+			"failed to wait for cilium preflight Deployment  %s to be Ready: %w",
+			ctrlclient.ObjectKeyFromObject(deployment),
+			err,
+		)
+	}
+
+	return nil
 }
