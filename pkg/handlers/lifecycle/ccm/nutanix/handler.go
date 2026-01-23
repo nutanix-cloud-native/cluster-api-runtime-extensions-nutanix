@@ -164,18 +164,38 @@ func templateValuesFunc(
 			PrismCentralInsecure              bool
 			PrismCentralAdditionalTrustBundle string
 			IPsToIgnore                       []string
+			KubernetesServiceHost             string
+			KubernetesServicePort             int32
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
 		if err != nil {
 			return "", err
 		}
+
+		kubernetesServiceHost := nutanixConfig.ControlPlaneEndpoint.Host
+		kubernetesServicePort := nutanixConfig.ControlPlaneEndpoint.Port
+
+		// Fall back to virtual IP if control plane endpoint is not configured.
+		if kubernetesServiceHost == "" &&
+			nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec != nil &&
+			nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration != nil {
+			if nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address != "" {
+				kubernetesServiceHost = nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address
+			}
+			if nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Port != 0 {
+				kubernetesServicePort = nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Port
+			}
+		}
+
 		templateInput := input{
 			PrismCentralHost:                  address,
 			PrismCentralPort:                  port,
 			PrismCentralInsecure:              nutanixConfig.PrismCentralEndpoint.Insecure,
 			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
 			IPsToIgnore:                       ipsToIgnore(nutanixConfig),
+			KubernetesServiceHost:             kubernetesServiceHost,
+			KubernetesServicePort:             kubernetesServicePort,
 		}
 
 		var b bytes.Buffer

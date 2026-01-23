@@ -11,3 +11,8 @@ ignoredNodeIPs: [ {{ joinQuoted . }} ]
 # The Secret containing the credentials will be created by the handler.
 createSecret: false
 secretName: nutanix-ccm-credentials
+extraEnv:
+  - name: KUBERNETES_SERVICE_HOST
+    value: "{{ .KubernetesServiceHost }}"
+  - name: KUBERNETES_SERVICE_PORT
+    value: "{{ .KubernetesServicePort }}"
