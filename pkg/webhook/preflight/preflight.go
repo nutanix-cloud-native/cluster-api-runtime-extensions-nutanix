@@ -118,11 +118,6 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	if req.Operation == admissionv1.Update {
-		log.V(5).Info("Skipping preflight checks for update operation")
-		return admission.Allowed("")
-	}
-
 	cluster := &clusterv1.Cluster{}
 	err := h.decoder.Decode(req, cluster)
 	if err != nil {
@@ -238,6 +233,10 @@ func run(ctx context.Context,
 					"checkName", check.Name(),
 				)
 				if skipEvaluator.For(check.Name()) {
+					ctrl.LoggerFrom(ctx).V(5).Info(
+						"Skipping preflight check",
+						"checkName", check.Name(),
+					)
 					resultsOrderedByCheck[j] = namedResult{
 						Name: check.Name(),
 						CheckResult: CheckResult{
