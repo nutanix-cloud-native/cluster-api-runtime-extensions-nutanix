@@ -81,6 +81,9 @@ generate-helm-configmap:
 # Set only the supported CSI providers for each provider.
 .PHONY: configure-csi-providers
 configure-csi-providers: ; $(info $(M) configuring supported csi providers)
+	@if [ -d "/opt/homebrew/bin" ]; then \
+		PATH="/opt/homebrew/bin:$$PATH"; \
+	fi; \
 	./hack/addons/configure-supported-csi-providers.sh
 
 .PHONY: generate-mindthegap-repofile

@@ -151,6 +151,10 @@ linters:
           - gocritic
         path: internal/test/envtest
         text: 'hugeParam: input is heavy'
+      # Suppress SA1019 warnings about deprecated packages (these are informational about future deprecations)
+      - linters:
+          - staticcheck
+        text: 'SA1019:.*is deprecated'
 
       # START kube-api-linter rules
       - path: ".*"
