@@ -11,11 +11,11 @@ replace github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/c
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.279.1
-	github.com/aws/aws-sdk-go-v2/service/eks v1.76.4
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.281.0
+	github.com/aws/aws-sdk-go-v2/service/eks v1.77.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
-	github.com/nutanix-cloud-native/prism-go-client v0.6.1
+	github.com/nutanix-cloud-native/prism-go-client v0.6.2
 	github.com/onsi/gomega v1.39.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
