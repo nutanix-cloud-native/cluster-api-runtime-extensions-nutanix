@@ -9,7 +9,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
 )
@@ -154,24 +154,44 @@ func TestWalkReferences(t *testing.T) {
 func collectExpectedRefs(cc *clusterv1.ClusterClass) []*corev1.ObjectReference {
 	var refs []*corev1.ObjectReference
 
-	if cc.Spec.Infrastructure.Ref != nil {
-		refs = append(refs, cc.Spec.Infrastructure.Ref)
+	if cc.Spec.Infrastructure.TemplateRef.Name != "" {
+		refs = append(refs, &corev1.ObjectReference{
+			APIVersion: cc.Spec.Infrastructure.TemplateRef.APIVersion,
+			Kind:       cc.Spec.Infrastructure.TemplateRef.Kind,
+			Name:       cc.Spec.Infrastructure.TemplateRef.Name,
+		})
 	}
 
-	if cc.Spec.ControlPlane.Ref != nil {
-		refs = append(refs, cc.Spec.ControlPlane.Ref)
+	if cc.Spec.ControlPlane.TemplateRef.Name != "" {
+		refs = append(refs, &corev1.ObjectReference{
+			APIVersion: cc.Spec.ControlPlane.TemplateRef.APIVersion,
+			Kind:       cc.Spec.ControlPlane.TemplateRef.Kind,
+			Name:       cc.Spec.ControlPlane.TemplateRef.Name,
+		})
 	}
 
-	if cpInfra := cc.Spec.ControlPlane.MachineInfrastructure; cpInfra != nil && cpInfra.Ref != nil {
-		refs = append(refs, cpInfra.Ref)
+	if cpInfra := cc.Spec.ControlPlane.MachineInfrastructure; cpInfra.TemplateRef.Name != "" {
+		refs = append(refs, &corev1.ObjectReference{
+			APIVersion: cpInfra.TemplateRef.APIVersion,
+			Kind:       cpInfra.TemplateRef.Kind,
+			Name:       cpInfra.TemplateRef.Name,
+		})
 	}
 
 	for _, md := range cc.Spec.Workers.MachineDeployments {
-		if md.Template.Infrastructure.Ref != nil {
-			refs = append(refs, md.Template.Infrastructure.Ref)
+		if md.Infrastructure.TemplateRef.Name != "" {
+			refs = append(refs, &corev1.ObjectReference{
+				APIVersion: md.Infrastructure.TemplateRef.APIVersion,
+				Kind:       md.Infrastructure.TemplateRef.Kind,
+				Name:       md.Infrastructure.TemplateRef.Name,
+			})
 		}
-		if md.Template.Bootstrap.Ref != nil {
-			refs = append(refs, md.Template.Bootstrap.Ref)
+		if md.Bootstrap.TemplateRef.Name != "" {
+			refs = append(refs, &corev1.ObjectReference{
+				APIVersion: md.Bootstrap.TemplateRef.APIVersion,
+				Kind:       md.Bootstrap.TemplateRef.Kind,
+				Name:       md.Bootstrap.TemplateRef.Name,
+			})
 		}
 	}
 

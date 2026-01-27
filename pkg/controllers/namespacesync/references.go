@@ -25,7 +25,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -60,33 +60,44 @@ func walkReferences(
 	if cc == nil {
 		return nil
 	}
-	if cc.Spec.Infrastructure.Ref != nil {
-		if err := fn(ctx, cc.Spec.Infrastructure.Ref); err != nil {
+
+	// Convert TemplateRef to ObjectReference for Infrastructure
+	if cc.Spec.Infrastructure.TemplateRef.Name != "" {
+		ref := cc.Spec.Infrastructure.TemplateRef.ToObjectReference(cc.Namespace)
+		if err := fn(ctx, ref); err != nil {
 			return err
 		}
 	}
 
-	if cc.Spec.ControlPlane.Ref != nil {
-		if err := fn(ctx, cc.Spec.ControlPlane.Ref); err != nil {
+	// Convert TemplateRef to ObjectReference for ControlPlane
+	if cc.Spec.ControlPlane.TemplateRef.Name != "" {
+		ref := cc.Spec.ControlPlane.TemplateRef.ToObjectReference(cc.Namespace)
+		if err := fn(ctx, ref); err != nil {
 			return err
 		}
 	}
 
-	if cpInfra := cc.Spec.ControlPlane.MachineInfrastructure; cpInfra != nil && cpInfra.Ref != nil {
-		if err := fn(ctx, cpInfra.Ref); err != nil {
+	// MachineInfrastructure TemplateRef
+	if cc.Spec.ControlPlane.MachineInfrastructure.TemplateRef.Name != "" {
+		ref := cc.Spec.ControlPlane.MachineInfrastructure.TemplateRef.ToObjectReference(cc.Namespace)
+		if err := fn(ctx, ref); err != nil {
 			return err
 		}
 	}
 
 	for mdIdx := range cc.Spec.Workers.MachineDeployments {
 		md := &cc.Spec.Workers.MachineDeployments[mdIdx]
-		if md.Template.Infrastructure.Ref != nil {
-			if err := fn(ctx, md.Template.Infrastructure.Ref); err != nil {
+		// Infrastructure template
+		if md.Infrastructure.TemplateRef.Name != "" {
+			ref := md.Infrastructure.TemplateRef.ToObjectReference(cc.Namespace)
+			if err := fn(ctx, ref); err != nil {
 				return err
 			}
 		}
-		if md.Template.Bootstrap.Ref != nil {
-			if err := fn(ctx, md.Template.Bootstrap.Ref); err != nil {
+		// Bootstrap template
+		if md.Bootstrap.TemplateRef.Name != "" {
+			ref := md.Bootstrap.TemplateRef.ToObjectReference(cc.Namespace)
+			if err := fn(ctx, ref); err != nil {
 				return err
 			}
 		}

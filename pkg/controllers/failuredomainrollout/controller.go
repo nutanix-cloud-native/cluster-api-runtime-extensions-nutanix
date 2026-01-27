@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -65,7 +65,7 @@ func (r *Reconciler) areResourcesUpdating(cluster *clusterv1.Cluster, kcp *contr
 // areResourcesPaused checks if either the cluster or KCP is paused.
 // Checks the Spec.Paused field and paused annotations directly for v1beta1 compatibility.
 func (r *Reconciler) areResourcesPaused(cluster *clusterv1.Cluster, kcp *controlplanev1.KubeadmControlPlane) bool {
-	if cluster != nil && cluster.Spec.Paused {
+	if cluster != nil && cluster.Spec.Paused != nil && *cluster.Spec.Paused {
 		return true
 	}
 
@@ -87,12 +87,12 @@ func (r *Reconciler) areResourcesPaused(cluster *clusterv1.Cluster, kcp *control
 // shouldSkipClusterReconciliation checks if the cluster should be skipped for reconciliation
 // based on early validation checks. Returns true if reconciliation should be skipped.
 func (r *Reconciler) shouldSkipClusterReconciliation(cluster *clusterv1.Cluster, logger logr.Logger) bool {
-	if cluster.Spec.Topology == nil {
+	if cluster.Spec.Topology.ClassRef.Name == "" {
 		logger.V(5).Info("Cluster is not using topology, skipping reconciliation")
 		return true
 	}
 
-	if cluster.Spec.ControlPlaneRef == nil {
+	if cluster.Spec.ControlPlaneRef.Name == "" {
 		logger.V(5).Info("Cluster has no control plane reference, skipping reconciliation")
 		return true
 	}
@@ -213,8 +213,8 @@ func (r *Reconciler) getMachineDistribution(ctx context.Context, cluster *cluste
 		if !machines.Items[i].DeletionTimestamp.IsZero() {
 			continue
 		}
-		if machines.Items[i].Spec.FailureDomain != nil {
-			distribution[*machines.Items[i].Spec.FailureDomain]++
+		if machines.Items[i].Spec.FailureDomain != "" {
+			distribution[machines.Items[i].Spec.FailureDomain]++
 		}
 	}
 
@@ -237,10 +237,19 @@ func (r *Reconciler) shouldTriggerRollout(
 
 	// Check if any currently used failure domain is disabled or removed
 	for usedFD := range currentDistribution {
-		if fd, exists := cluster.Status.FailureDomains[usedFD]; !exists {
+		var fd *clusterv1.FailureDomain
+		for i := range cluster.Status.FailureDomains {
+			if cluster.Status.FailureDomains[i].Name == usedFD {
+				fd = &cluster.Status.FailureDomains[i]
+				break
+			}
+		}
+		if fd == nil {
 			logger.V(5).Info("Found removed failure domain in use", "failureDomain", usedFD)
 			return true, fmt.Sprintf("failure domain %s is removed", usedFD), nil
-		} else if !fd.ControlPlane {
+		}
+
+		if fd.ControlPlane == nil || !*fd.ControlPlane {
 			logger.V(5).Info("Found disabled failure domain in use", "failureDomain", usedFD)
 			return true, fmt.Sprintf("failure domain %s is disabled for control plane", usedFD), nil
 		}
@@ -363,11 +372,11 @@ func (r *Reconciler) calculateMaxIdealPerFD(replicas, availableCount int) int {
 }
 
 // getAvailableFailureDomains returns the names of available failure domains for control plane.
-func getAvailableFailureDomains(failureDomains clusterv1.FailureDomains) []string {
+func getAvailableFailureDomains(failureDomains []clusterv1.FailureDomain) []string {
 	var available []string
-	for fd, info := range failureDomains {
-		if info.ControlPlane {
-			available = append(available, fd)
+	for i := range failureDomains {
+		if failureDomains[i].ControlPlane != nil && *failureDomains[i].ControlPlane {
+			available = append(available, failureDomains[i].Name)
 		}
 	}
 	return available
