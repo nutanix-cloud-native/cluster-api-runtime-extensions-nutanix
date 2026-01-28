@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.42.1 (2026-01-28)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: update cilium version to 1.18.6 by @kevinantonythomas in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1458
+### Other Changes
+* test: log reserved IPs by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1382
+* refactor: Move preflight test to test case by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1457
+* refactor: migration nutanix API to v4 by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1444
+* fix: Nutanix CCM to use variables instead of dynamic identification from config by @legacyrj in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1460
+
+## New Contributors
+* @kevinantonythomas made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1458
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.42.0...v0.42.1
+
 ## 0.42.0 (2026-01-08)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
