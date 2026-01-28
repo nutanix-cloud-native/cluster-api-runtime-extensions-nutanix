@@ -32,6 +32,11 @@ ignoredNodeIPs: [ "1.2.3.4" ]
 # The Secret containing the credentials will be created by the handler.
 createSecret: false
 secretName: nutanix-ccm-credentials
+extraEnv:
+  - name: KUBERNETES_SERVICE_HOST
+    value: "1.2.3.4"
+  - name: KUBERNETES_SERVICE_PORT
+    value: "6443"
 `
 
 	expectedWithoutAdditionalTrustBundle = `prismCentralEndPoint: prism-central.nutanix.com
@@ -42,6 +47,11 @@ ignoredNodeIPs: [ "1.2.3.4" ]
 # The Secret containing the credentials will be created by the handler.
 createSecret: false
 secretName: nutanix-ccm-credentials
+extraEnv:
+  - name: KUBERNETES_SERVICE_HOST
+    value: "1.2.3.4"
+  - name: KUBERNETES_SERVICE_PORT
+    value: "6443"
 `
 
 	expectedWithVirtualIPSet = `prismCentralEndPoint: prism-central.nutanix.com
@@ -52,6 +62,11 @@ ignoredNodeIPs: [ "1.2.3.4", "5.6.7.8" ]
 # The Secret containing the credentials will be created by the handler.
 createSecret: false
 secretName: nutanix-ccm-credentials
+extraEnv:
+  - name: KUBERNETES_SERVICE_HOST
+    value: "1.2.3.4"
+  - name: KUBERNETES_SERVICE_PORT
+    value: "6443"
 `
 )
 
@@ -107,6 +122,7 @@ func Test_templateValues(t *testing.T) {
 					},
 					ControlPlaneEndpoint: v1alpha1.ControlPlaneEndpointSpec{
 						Host: "1.2.3.4",
+						Port: 6443,
 					},
 				},
 			},
@@ -137,6 +153,7 @@ func Test_templateValues(t *testing.T) {
 					},
 					ControlPlaneEndpoint: v1alpha1.ControlPlaneEndpointSpec{
 						Host: "1.2.3.4",
+						Port: 6443,
 					},
 				},
 			},
@@ -167,9 +184,11 @@ func Test_templateValues(t *testing.T) {
 					},
 					ControlPlaneEndpoint: v1alpha1.ControlPlaneEndpointSpec{
 						Host: "1.2.3.4",
+						Port: 6443,
 						VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
 							Configuration: &v1alpha1.ControlPlaneVirtualIPConfiguration{
 								Address: "5.6.7.8",
+								Port:    6443,
 							},
 						},
 					},

@@ -152,6 +152,7 @@ func templateValuesFunc(
 				}
 				return strings.Join(items, ", ")
 			},
+			"trimPrefix": strings.TrimPrefix,
 		}
 		helmValuesTemplate, err := template.New("").Funcs(joinQuoted).Parse(valuesTemplate)
 		if err != nil {
@@ -164,18 +165,21 @@ func templateValuesFunc(
 			PrismCentralInsecure              bool
 			PrismCentralAdditionalTrustBundle string
 			IPsToIgnore                       []string
+			ControlPlaneEndpoint              v1alpha1.ControlPlaneEndpointSpec
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
 		if err != nil {
 			return "", err
 		}
+
 		templateInput := input{
 			PrismCentralHost:                  address,
 			PrismCentralPort:                  port,
 			PrismCentralInsecure:              nutanixConfig.PrismCentralEndpoint.Insecure,
 			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
 			IPsToIgnore:                       ipsToIgnore(nutanixConfig),
+			ControlPlaneEndpoint:              nutanixConfig.ControlPlaneEndpoint,
 		}
 
 		var b bytes.Buffer
