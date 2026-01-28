@@ -32,7 +32,7 @@ spec:
         - --defaults-namespace=$(POD_NAMESPACE)
         - --namespacesync-enabled={{ .Values.namespaceSync.enabled }}
         - --namespacesync-source-namespace={{ default .Release.Namespace .Values.namespaceSync.sourceNamespace }}
-        - --namespacesync-target-namespace-label-key={{ .Values.namespaceSync.targetNamespaceLabelKey }}
+        - --namespacesync-target-namespace-label-selector={{ .Values.namespaceSync.targetNamespaceLabelSelector }}
         - --enforce-clusterautoscaler-limits-enabled={{ .Values.enforceClusterAutoscalerLimits.enabled }}
         - --failure-domain-rollout-enabled={{ .Values.failureDomainRollout.enabled }}
         - --failure-domain-rollout-concurrency={{ .Values.failureDomainRollout.concurrency }}
