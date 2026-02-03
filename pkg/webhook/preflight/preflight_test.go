@@ -87,6 +87,7 @@ func TestHandle(t *testing.T) {
 		name             string
 		operation        admissionv1.Operation
 		decoder          admission.Decoder
+		oldCluster       *clusterv1.Cluster
 		cluster          *clusterv1.Cluster
 		checkers         []Checker
 		expectedResponse admission.Response
@@ -103,7 +104,8 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "skip paused clusters",
+			name:      "skip paused clusters",
+			operation: admissionv1.Create,
 			cluster: func() *clusterv1.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Paused = true
@@ -116,7 +118,8 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "allow non topology clusters",
+			name:      "allow non topology clusters",
+			operation: admissionv1.Create,
 			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
@@ -130,7 +133,8 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "handle decoder error",
+			name:      "handle decoder error",
+			operation: admissionv1.Create,
 			decoder: &mockDecoder{
 				err: fmt.Errorf("decode error"),
 			},
@@ -146,8 +150,9 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:    "if no checks, then allowed",
-			cluster: topologyCluster(),
+			name:      "if no checks, then allowed",
+			operation: admissionv1.Create,
+			cluster:   topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{},
@@ -160,8 +165,9 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:    "if cluster skips all checks, then allowed, with a warning",
-			cluster: topologyCluster(carenv1.PreflightChecksSkipAllAnnotationValue),
+			name:      "if cluster skips all checks, then allowed, with a warning",
+			operation: admissionv1.Create,
+			cluster:   topologyCluster(carenv1.PreflightChecksSkipAllAnnotationValue),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{},
@@ -177,8 +183,9 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:    "if cluster skips a check, then that check is not run",
-			cluster: topologyCluster("SkippedCheck"),
+			name:      "if cluster skips a check, then that check is not run",
+			operation: admissionv1.Create,
+			cluster:   topologyCluster("SkippedCheck"),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -205,8 +212,9 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:    "if all checks pass, then allowed",
-			cluster: topologyCluster(),
+			name:      "if all checks pass, then allowed",
+			operation: admissionv1.Create,
+			cluster:   topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -232,8 +240,9 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:    "if any check fails, then not allowed",
-			cluster: topologyCluster(),
+			name:      "if any check fails, then not allowed",
+			operation: admissionv1.Create,
+			cluster:   topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -273,8 +282,9 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:    "return warnings from checks",
-			cluster: topologyCluster(),
+			name:      "return warnings from checks",
+			operation: admissionv1.Create,
+			cluster:   topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -301,8 +311,9 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:    "internal error takes precedence in response",
-			cluster: topologyCluster(),
+			name:      "internal error takes precedence in response",
+			operation: admissionv1.Create,
+			cluster:   topologyCluster(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -372,7 +383,16 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "update operation with passing checks, allowed",
 			operation: admissionv1.Update,
-			cluster:   topologyCluster(),
+			oldCluster: func() *clusterv1.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Topology.Version = "old"
+				return cluster
+			}(),
+			cluster: func() *clusterv1.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Topology.Version = "new"
+				return cluster
+			}(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -394,7 +414,16 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "update operation with failing checks, not allowed",
 			operation: admissionv1.Update,
-			cluster:   topologyCluster(),
+			oldCluster: func() *clusterv1.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Topology.Version = "old"
+				return cluster
+			}(),
+			cluster: func() *clusterv1.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Topology.Version = "new"
+				return cluster
+			}(),
 			checkers: []Checker{
 				&mockChecker{
 					checks: []Check{
@@ -410,6 +439,26 @@ func TestHandle(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+		},
+		{
+			name:      "update operation while cluster is being deleted, allowed",
+			operation: admissionv1.Update,
+			oldCluster: func() *clusterv1.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Topology.Version = "old"
+				return cluster
+			}(),
+			cluster: func() *clusterv1.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Topology.Version = "new"
+				cluster.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+				return cluster
+			}(),
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: true,
 				},
 			},
 		},
@@ -432,17 +481,17 @@ func TestHandle(t *testing.T) {
 			jsonCluster, err := json.Marshal(tt.cluster)
 			require.NoError(t, err)
 
-			// Default the operation.
-			operation := admissionv1.Create
-			if tt.operation != "" {
-				operation = tt.operation
-			}
+			jsonOldCluster, err := json.Marshal(tt.oldCluster)
+			require.NoError(t, err)
 
 			admissionReq := admission.Request{
 				AdmissionRequest: admissionv1.AdmissionRequest{
-					Operation: operation,
+					Operation: tt.operation,
 					Object: runtime.RawExtension{
 						Raw: jsonCluster,
+					},
+					OldObject: runtime.RawExtension{
+						Raw: jsonOldCluster,
 					},
 				},
 			}

@@ -124,6 +124,12 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if cluster.GetDeletionTimestamp() != nil {
+		// The cluster metadata, and spec may be updated during deletion, e.g., to remove finalizers.
+		log.V(5).Info("Skipping preflight checks while cluster is being deleted")
+		return admission.Allowed("")
+	}
+
 	// Checks run only for ClusterClass-based clusters.
 	if cluster.Spec.Topology == nil {
 		log.V(5).Info("Skipping preflight checks for non-topology cluster")
