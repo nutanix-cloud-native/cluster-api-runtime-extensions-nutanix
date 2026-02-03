@@ -52,16 +52,24 @@ func (m *mockCheck) Run(_ context.Context) CheckResult {
 }
 
 type mockDecoder struct {
-	err error
+	decode      func(req admission.Request, obj runtime.Object) error
+	decodeRaw   func(raw runtime.RawExtension, obj runtime.Object) error
+	realDecoder admission.Decoder
 }
 
 //nolint:gocritic // These parameters are required, because this mock implements a third-party interface.
-func (m *mockDecoder) Decode(_ admission.Request, _ runtime.Object) error {
-	return m.err
+func (m *mockDecoder) Decode(req admission.Request, obj runtime.Object) error {
+	if m.decode == nil {
+		return m.realDecoder.Decode(req, obj)
+	}
+	return m.decode(req, obj)
 }
 
-func (m *mockDecoder) DecodeRaw(_ runtime.RawExtension, _ runtime.Object) error {
-	return m.err
+func (m *mockDecoder) DecodeRaw(raw runtime.RawExtension, obj runtime.Object) error {
+	if m.decodeRaw == nil {
+		return m.realDecoder.DecodeRaw(raw, obj)
+	}
+	return m.decodeRaw(raw, obj)
 }
 
 func topologyCluster(skippedCheckNames ...string) *clusterv1.Cluster {
@@ -133,12 +141,41 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:      "handle decoder error",
+			name:      "on create, handle decoder error",
 			operation: admissionv1.Create,
 			decoder: &mockDecoder{
-				err: fmt.Errorf("decode error"),
+				realDecoder: admission.NewDecoder(scheme),
+				decode: func(_ admission.Request, _ runtime.Object) error {
+					return fmt.Errorf("decode error")
+				},
 			},
 			cluster: topologyCluster(),
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: false,
+					Result: &metav1.Status{
+						Code:    http.StatusBadRequest,
+						Message: "decode error",
+					},
+				},
+			},
+		},
+		{
+			name:      "on update, handle decoder error",
+			operation: admissionv1.Update,
+			oldCluster: &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-cluster",
+				},
+				Spec: clusterv1.ClusterSpec{},
+			},
+			cluster: topologyCluster(),
+			decoder: &mockDecoder{
+				decodeRaw: func(raw runtime.RawExtension, obj runtime.Object) error {
+					return fmt.Errorf("decode error")
+				},
+				realDecoder: admission.NewDecoder(scheme),
+			},
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: false,
@@ -456,6 +493,17 @@ func TestHandle(t *testing.T) {
 				cluster.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 				return cluster
 			}(),
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: true,
+				},
+			},
+		},
+		{
+			name:       "update operation and cluster spec has not changed, allowed",
+			operation:  admissionv1.Update,
+			cluster:    topologyCluster(),
+			oldCluster: topologyCluster(),
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
 					Allowed: true,

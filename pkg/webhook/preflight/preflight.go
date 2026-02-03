@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -141,6 +142,18 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		// This allows the cluster to be moved to another API server without running checks.
 		log.V(5).Info("Skipping preflight checks for paused cluster")
 		return admission.Allowed("")
+	}
+
+	if req.Operation == admissionv1.Update {
+		oldCluster := &clusterv1.Cluster{}
+		err := h.decoder.DecodeRaw(req.OldObject, oldCluster)
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		if reflect.DeepEqual(cluster.Spec, oldCluster.Spec) {
+			log.V(5).Info("Skipping preflight checks because spec has not changed")
+			return admission.Allowed("")
+		}
 	}
 
 	skipEvaluator := skip.New(cluster)
