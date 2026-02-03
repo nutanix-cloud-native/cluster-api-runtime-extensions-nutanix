@@ -131,12 +131,14 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 
 	// Checks run only for ClusterClass-based clusters.
 	if cluster.Spec.Topology == nil {
+		log.V(5).Info("Skipping preflight checks for non-topology cluster")
 		return admission.Allowed("")
 	}
 
 	if cluster.Spec.Paused {
 		// If the cluster is paused, skip all checks.
 		// This allows the cluster to be moved to another API server without running checks.
+		log.V(5).Info("Skipping preflight checks for paused cluster")
 		return admission.Allowed("")
 	}
 
