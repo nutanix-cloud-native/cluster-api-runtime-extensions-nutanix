@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -118,26 +119,41 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	if req.Operation == admissionv1.Update {
-		log.V(5).Info("Skipping preflight checks for update operation")
-		return admission.Allowed("")
-	}
-
 	cluster := &clusterv1.Cluster{}
 	err := h.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if cluster.GetDeletionTimestamp() != nil {
+		// The cluster metadata, and spec may be updated during deletion, e.g., to remove finalizers.
+		log.V(5).Info("Skipping preflight checks while cluster is being deleted")
+		return admission.Allowed("")
+	}
+
 	// Checks run only for ClusterClass-based clusters.
 	if cluster.Spec.Topology == nil {
+		log.V(5).Info("Skipping preflight checks for non-topology cluster")
 		return admission.Allowed("")
 	}
 
 	if cluster.Spec.Paused {
 		// If the cluster is paused, skip all checks.
 		// This allows the cluster to be moved to another API server without running checks.
+		log.V(5).Info("Skipping preflight checks for paused cluster")
 		return admission.Allowed("")
+	}
+
+	if req.Operation == admissionv1.Update {
+		oldCluster := &clusterv1.Cluster{}
+		err := h.decoder.DecodeRaw(req.OldObject, oldCluster)
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		if reflect.DeepEqual(cluster.Spec, oldCluster.Spec) {
+			log.V(5).Info("Skipping preflight checks because spec has not changed")
+			return admission.Allowed("")
+		}
 	}
 
 	skipEvaluator := skip.New(cluster)
@@ -195,11 +211,15 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		resp.Result.Message = "preflight checks failed due to an internal error"
 		resp.Result.Code = http.StatusInternalServerError
 		resp.Result.Reason = metav1.StatusReasonInternalError
+		log.V(5).Error(nil, "Preflight checks failed due to an internal error", "response", resp)
 	case !resp.Allowed:
 		// Because the response is not allowed, preflights must have failed.
 		resp.Result.Message = "preflight checks failed"
 		resp.Result.Code = http.StatusUnprocessableEntity
 		resp.Result.Reason = metav1.StatusReasonInvalid
+		log.V(5).Info("Preflight checks failed", "response", resp)
+	default:
+		log.V(5).Info("Preflight checks passed", "response", resp)
 	}
 
 	return resp
@@ -238,6 +258,10 @@ func run(ctx context.Context,
 					"checkName", check.Name(),
 				)
 				if skipEvaluator.For(check.Name()) {
+					ctrl.LoggerFrom(ctx).V(5).Info(
+						"Skipping preflight check",
+						"checkName", check.Name(),
+					)
 					resultsOrderedByCheck[j] = namedResult{
 						Name: check.Name(),
 						CheckResult: CheckResult{
