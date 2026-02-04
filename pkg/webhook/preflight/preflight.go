@@ -197,11 +197,15 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		resp.Result.Message = "preflight checks failed due to an internal error"
 		resp.Result.Code = http.StatusInternalServerError
 		resp.Result.Reason = metav1.StatusReasonInternalError
+		log.V(5).Error(nil, "Preflight checks failed due to an internal error", "response", resp)
 	case !resp.Allowed:
 		// Because the response is not allowed, preflights must have failed.
 		resp.Result.Message = "preflight checks failed"
 		resp.Result.Code = http.StatusUnprocessableEntity
 		resp.Result.Reason = metav1.StatusReasonInvalid
+		log.V(5).Info("Preflight checks failed", "response", resp)
+	default:
+		log.V(5).Info("Preflight checks passed", "response", resp)
 	}
 
 	return resp
