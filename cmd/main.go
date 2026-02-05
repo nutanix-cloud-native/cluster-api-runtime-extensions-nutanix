@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -191,10 +192,32 @@ func main() {
 
 	if namespacesyncOptions.Enabled {
 		if namespacesyncOptions.SourceNamespace == "" ||
-			namespacesyncOptions.TargetNamespaceLabelKey == "" {
+			namespacesyncOptions.TargetNamespaceLabelSelector == "" {
 			setupLog.Error(
 				nil,
-				"Namespace Sync is enabled, but source namespace and/or target namespace label key are not configured.",
+				"Namespace Sync is enabled, but source namespace and/or target namespace label selector are not configured.",
+			)
+			os.Exit(1)
+		}
+
+		targetSelector, err := metav1.ParseToLabelSelector(namespacesyncOptions.TargetNamespaceLabelSelector)
+		if err != nil {
+			setupLog.Error(
+				err,
+				"unable to parse target namespace label selector",
+				"selector",
+				namespacesyncOptions.TargetNamespaceLabelSelector,
+			)
+			os.Exit(1)
+		}
+
+		targetLabelSelector, err := metav1.LabelSelectorAsSelector(targetSelector)
+		if err != nil {
+			setupLog.Error(
+				err,
+				"unable to convert label selector",
+				"selector",
+				namespacesyncOptions.TargetNamespaceLabelSelector,
 			)
 			os.Exit(1)
 		}
@@ -215,7 +238,7 @@ func main() {
 			Client:                      mgr.GetClient(),
 			UnstructuredCachingClient:   unstructuredCachingClient,
 			SourceClusterClassNamespace: namespacesyncOptions.SourceNamespace,
-			IsTargetNamespace:           namespacesync.NamespaceHasLabelKey(namespacesyncOptions.TargetNamespaceLabelKey),
+			TargetNamespaceSelector:     targetLabelSelector,
 		}).SetupWithManager(
 			mgr,
 			&controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},

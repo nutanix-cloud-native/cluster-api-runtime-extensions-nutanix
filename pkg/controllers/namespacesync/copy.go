@@ -83,12 +83,6 @@ func copyObjectForCreate[T client.Object](src T, name, namespace string) T {
 	dst.SetName(name)
 	dst.SetNamespace(namespace)
 
-	// Zero out ManagedFields (clients will set them)
-	dst.SetManagedFields(nil)
-	// Zero out OwnerReferences (object is garbage-collected if
-	// owners are not in the target namespace)
-	dst.SetOwnerReferences(nil)
-
 	// Zero out fields that are ignored by the API server on create
 	dst.SetCreationTimestamp(metav1.Time{})
 	dst.SetDeletionGracePeriodSeconds(nil)
