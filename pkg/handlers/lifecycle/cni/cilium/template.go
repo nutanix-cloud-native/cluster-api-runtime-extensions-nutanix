@@ -54,3 +54,56 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 
 	return b.String(), nil
 }
+
+// preflightTemplateValues updates the existing cilium values template to add
+// values to deploy the pre-flight helm chart.
+// The updated values for the preflight checks are:
+//
+// agent: false
+// preflight:
+//
+//	enabled: true
+//
+// operator:
+//
+//	enabled: false
+//
+// Ref:
+//
+//	https://docs.cilium.io/en/stable/operations/upgrade/#running-pre-flight-check-required
+func preflightTemplateValues(cluster *clusterv1.Cluster, text string) (string, error) {
+	kubeProxyIsDisabled, err := apivariables.KubeProxyIsDisabled(cluster)
+	if err != nil {
+		return "", fmt.Errorf("failed to check if kube-proxy is disabled: %w", err)
+	}
+
+	funcMap := template.FuncMap{
+		"trimPrefix": strings.TrimPrefix,
+	}
+	ciliumPreflightTemplate, err := template.New("").Funcs(funcMap).Parse(text)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse cilium preflight template: %w", err)
+	}
+
+	type input struct {
+		ControlPlaneEndpoint       clusterv1.APIEndpoint
+		EnableKubeProxyReplacement bool
+	}
+
+	// Assume when kube-proxy is disabled, we should enable Cilium's kube-proxy replacement feature.
+	templateInput := input{
+		ControlPlaneEndpoint:       cluster.Spec.ControlPlaneEndpoint,
+		EnableKubeProxyReplacement: kubeProxyIsDisabled,
+	}
+
+	var b bytes.Buffer
+	err = ciliumPreflightTemplate.Execute(&b, templateInput)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed templating Cilium preflight values: %w",
+			err,
+		)
+	}
+
+	return b.String(), nil
+}

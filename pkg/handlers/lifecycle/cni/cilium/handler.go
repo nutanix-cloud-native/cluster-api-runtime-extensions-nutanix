@@ -6,6 +6,7 @@ package cilium
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -40,9 +41,17 @@ type CNIConfig struct {
 }
 
 const (
-	defaultCiliumReleaseName = "cilium"
-	defaultCiliumNamespace   = metav1.NamespaceSystem
+	defaultCiliumReleaseName           = "cilium"
+	defaultCiliumNamespace             = metav1.NamespaceSystem
+	defaultCiliumPreflightReleaseName  = defaultCiliumReleaseName + "-preflight"
+	defaultCiliumPreflightResourceName = defaultCiliumReleaseName + "-pre-flight-check"
 )
+
+// applyOpts configures apply() behavior.
+type applyOpts struct {
+	// shouldRunPreflight runs the Cilium pre-flight Helm release to pre-pull new Cilium images before upgrade.
+	shouldRunPreflight bool
+}
 
 type helmAddonConfig struct {
 	defaultValuesTemplateConfigMapName string
@@ -101,7 +110,7 @@ func (c *CiliumCNI) AfterControlPlaneInitialized(
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
 	commonResponse := &runtimehooksv1.CommonResponse{}
-	c.apply(ctx, &req.Cluster, commonResponse)
+	c.apply(ctx, &req.Cluster, commonResponse, applyOpts{})
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
 }
@@ -112,15 +121,32 @@ func (c *CiliumCNI) BeforeClusterUpgrade(
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
 	commonResponse := &runtimehooksv1.CommonResponse{}
-	c.apply(ctx, &req.Cluster, commonResponse)
+	shouldRunPreflight := !skipCiliumPreflight(&req.Cluster)
+	c.apply(ctx, &req.Cluster, commonResponse, applyOpts{shouldRunPreflight: shouldRunPreflight})
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
+}
+
+// skipCiliumPreflight returns true if the cluster has the skip-cilium-preflight annotation
+// set (e.g. "true", "1"), in which case the Cilium preflight Helm addon
+// should not be run (e.g. during BeforeClusterUpgrade).
+func skipCiliumPreflight(cluster *clusterv1.Cluster) bool {
+	val, ok := cluster.Annotations[v1alpha1.SkipCiliumPreflightAnnotationKey]
+	if !ok || val == "" {
+		return false
+	}
+	skip, err := strconv.ParseBool(val)
+	if err != nil {
+		return false
+	}
+	return skip
 }
 
 func (c *CiliumCNI) apply(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	resp *runtimehooksv1.CommonResponse,
+	opts applyOpts,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 	log := ctrl.LoggerFrom(ctx).WithValues(
@@ -164,6 +190,7 @@ func (c *CiliumCNI) apply(
 	targetNamespace := c.config.DefaultsNamespace()
 
 	var strategy addons.Applier
+	var preflightDeleter addons.Deleter
 	switch cniVar.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
 		strategy = crsStrategy{
@@ -220,6 +247,35 @@ func (c *CiliumCNI) apply(
 			}
 		}
 
+		if opts.shouldRunPreflight {
+			preflightStrategy := addons.NewHelmAddonApplier(
+				addons.NewHelmAddonConfig(
+					helmValuesSourceRefName,
+					defaultCiliumNamespace,
+					defaultCiliumPreflightReleaseName,
+				),
+				c.client,
+				helmChart,
+			).
+				WithValueTemplater(preflightTemplateValues).
+				WithPreflightEnabled().
+				WithDefaultWaiter()
+			preflightDeleter = preflightStrategy
+
+			if err := runPreflightApply(ctx, cluster, preflightStrategy, targetNamespace, log); err != nil {
+				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+				resp.SetMessage(err.Error())
+				return
+			}
+
+			// When the resources are Ready, the preflight check has passed.
+			if err := waitForCiliumPreflightResources(ctx, c.client, cluster, log); err != nil {
+				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+				resp.SetMessage(err.Error())
+				return
+			}
+		}
+
 		strategy = addons.NewHelmAddonApplier(
 			addons.NewHelmAddonConfig(
 				helmValuesSourceRefName,
@@ -244,6 +300,16 @@ func (c *CiliumCNI) apply(
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
+	}
+
+	// Delete the Cilium preflight HelmChartProxy only after Cilium has been deployed.
+	if opts.shouldRunPreflight && preflightDeleter != nil {
+		if err := preflightDeleter.Delete(ctx, cluster, log); err != nil {
+			log.Error(err, "failed to delete Cilium preflight HelmChartProxy")
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(fmt.Sprintf("failed to delete Cilium preflight release: %v", err))
+			return
+		}
 	}
 
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
@@ -319,6 +385,60 @@ func runApply(
 	)
 	if err := cleanupKubeProxy(ctx, remoteClient); err != nil {
 		return fmt.Errorf("failed to cleanup kube-proxy: %w", err)
+	}
+
+	return nil
+}
+
+func runPreflightApply(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	strategy addons.Applier,
+	targetNamespace string,
+	log logr.Logger,
+) error {
+	log.Info(
+		fmt.Sprintf(
+			"Applying Cilium preflight helm release for cluster %s",
+			ctrlclient.ObjectKeyFromObject(cluster),
+		),
+	)
+	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func waitForCiliumPreflightResources(
+	ctx context.Context,
+	client ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		client,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating remote cluster client: %w", err)
+	}
+
+	log.Info(
+		fmt.Sprintf(
+			"Waiting for Cilium preflight resources to be ready for cluster %s",
+			ctrlclient.ObjectKeyFromObject(cluster),
+		),
+	)
+
+	if err := waitForCiliumPreflightDaemonset(ctx, remoteClient); err != nil {
+		return fmt.Errorf("failed to wait for Cilium preflight DaemonSet to be ready: %w", err)
+	}
+
+	if err := waitForCiliumPreflightDeployment(ctx, remoteClient); err != nil {
+		return fmt.Errorf("failed to wait for Cilium preflight Deployment to be ready: %w", err)
 	}
 
 	return nil
@@ -457,4 +577,73 @@ func isKubeProxyInstalled(ctx context.Context, c ctrlclient.Client) (bool, error
 		return false, err
 	}
 	return true, nil
+}
+
+// waitForCiliumPreflightDaemonset waits until the cilium preflight daemonset is ready.
+func waitForCiliumPreflightDaemonset(ctx context.Context, c ctrlclient.Client) error {
+	ds := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaultCiliumPreflightResourceName,
+			Namespace: defaultCiliumNamespace,
+		},
+	}
+	if err := wait.ForObject(
+		ctx,
+		wait.ForObjectInput[*appsv1.DaemonSet]{
+			Reader: c,
+			Target: ds,
+			Check: func(_ context.Context, obj *appsv1.DaemonSet) (bool, error) {
+				if obj.Generation != obj.Status.ObservedGeneration {
+					return false, nil
+				}
+				isReady := obj.Status.NumberReady == obj.Status.DesiredNumberScheduled
+				return isReady, nil
+			},
+			Interval: waitInterval,
+			Timeout:  waitTimeout,
+		},
+	); err != nil {
+		return fmt.Errorf(
+			"failed to wait for cilium preflight DaemonSet %s to be Ready: %w",
+			ctrlclient.ObjectKeyFromObject(ds),
+			err,
+		)
+	}
+
+	return nil
+}
+
+// waitForCiliumPreflightDeployment waits until the cilium preflight deployment is ready.
+func waitForCiliumPreflightDeployment(ctx context.Context, c ctrlclient.Client) error {
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaultCiliumPreflightResourceName,
+			Namespace: defaultCiliumNamespace,
+		},
+	}
+
+	if err := wait.ForObject(
+		ctx,
+		wait.ForObjectInput[*appsv1.Deployment]{
+			Reader: c,
+			Target: deployment,
+			Check: func(_ context.Context, obj *appsv1.Deployment) (bool, error) {
+				if obj.Generation != obj.Status.ObservedGeneration {
+					return false, nil
+				}
+				isReady := obj.Status.AvailableReplicas == *obj.Spec.Replicas
+				return isReady, nil
+			},
+			Interval: waitInterval,
+			Timeout:  waitTimeout,
+		},
+	); err != nil {
+		return fmt.Errorf(
+			"failed to wait for cilium preflight Deployment  %s to be Ready: %w",
+			ctrlclient.ObjectKeyFromObject(deployment),
+			err,
+		)
+	}
+
+	return nil
 }

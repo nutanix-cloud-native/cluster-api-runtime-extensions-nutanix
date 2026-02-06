@@ -9,4 +9,6 @@ metadata:
 data:
   values.yaml: |-
     {{- .Files.Get "addons/cni/cilium/values-template.yaml" | nindent 4 }}
+  preflight-values.yaml: |-
+    {{- .Files.Get "addons/cni/cilium/preflight-values-template.yaml" | nindent 4 }}
 {{- end -}}

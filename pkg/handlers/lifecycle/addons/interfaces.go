@@ -18,3 +18,12 @@ type Applier interface {
 		log logr.Logger,
 	) error
 }
+
+// Deleter can delete a HelmChartProxy (HCP) release for a cluster.
+type Deleter interface {
+	Delete(
+		ctx context.Context,
+		cluster *clusterv1.Cluster,
+		log logr.Logger,
+	) error
+}
