@@ -24,6 +24,11 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/wait"
 )
 
+const (
+	defaultCiliumValuesTemplateKey          = "values.yaml"
+	defaultCiliumPreflightValuesTemplateKey = "preflight-values.yaml"
+)
+
 var (
 	HelmReleaseNameHashLabel = "addons.cluster.x-k8s.io/helm-release-name-hash"
 	ClusterNamespaceLabel    = clusterv1.ClusterNamespaceAnnotation
@@ -64,7 +69,10 @@ type helmAddonApplier struct {
 	opts      []applyOption
 }
 
-var _ Applier = &helmAddonApplier{}
+var (
+	_ Applier = &helmAddonApplier{}
+	_ Deleter = &helmAddonApplier{}
+)
 
 func NewHelmAddonApplier(
 	config *HelmAddonConfig,
@@ -83,10 +91,11 @@ type valueTemplaterFunc func(cluster *clusterv1.Cluster, valuesTemplate string) 
 type waiterFunc func(ctx context.Context, client ctrlclient.Client, hcp *caaphv1.HelmChartProxy) error
 
 type applyOptions struct {
-	valueTemplater  valueTemplaterFunc
-	targetCluster   *clusterv1.Cluster
-	helmReleaseName string
-	waiter          waiterFunc
+	valueTemplater     valueTemplaterFunc
+	targetCluster      *clusterv1.Cluster
+	helmReleaseName    string
+	shouldRunPreflight bool
+	waiter             waiterFunc
 }
 
 type applyOption func(*applyOptions)
@@ -112,6 +121,14 @@ func (a *helmAddonApplier) WithTargetCluster(cluster *clusterv1.Cluster) *helmAd
 func (a *helmAddonApplier) WithHelmReleaseName(name string) *helmAddonApplier {
 	a.opts = append(a.opts, func(o *applyOptions) {
 		o.helmReleaseName = name
+	})
+
+	return a
+}
+
+func (a *helmAddonApplier) WithPreflightEnabled() *helmAddonApplier {
+	a.opts = append(a.opts, func(o *applyOptions) {
+		o.shouldRunPreflight = true
 	})
 
 	return a
@@ -144,11 +161,18 @@ func (a *helmAddonApplier) Apply(
 		opt(applyOpts)
 	}
 
+	configMapTemplateKey := defaultCiliumValuesTemplateKey
+	// override the config map key to retrieve preflight key
+	if applyOpts.shouldRunPreflight {
+		configMapTemplateKey = defaultCiliumPreflightValuesTemplateKey
+	}
+
 	log.Info("Retrieving installation values template for cluster")
 	values, err := handlersutils.RetrieveValuesTemplate(
 		ctx,
 		a.client,
 		a.config.defaultValuesTemplateConfigMapName,
+		configMapTemplateKey,
 		defaultsNamespace,
 	)
 	if err != nil {
@@ -212,6 +236,49 @@ func (a *helmAddonApplier) Apply(
 
 	if applyOpts.waiter != nil {
 		return applyOpts.waiter(ctx, a.client, chartProxy)
+	}
+
+	return nil
+}
+
+// Delete removes the HelmChartProxy (HCP) for the given cluster, which triggers
+// the Helm release uninstall on the target cluster.
+func (a *helmAddonApplier) Delete(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
+	if !ok {
+		return fmt.Errorf(
+			"cluster UUID not found in cluster annotations - missing key %s",
+			v1alpha1.ClusterUUIDAnnotationKey,
+		)
+	}
+
+	applyOpts := &applyOptions{}
+	for _, opt := range a.opts {
+		opt(applyOpts)
+	}
+
+	targetCluster := cluster
+	if applyOpts.targetCluster != nil {
+		targetCluster = applyOpts.targetCluster
+	}
+
+	hcp := &caaphv1.HelmChartProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-%s", a.config.defaultHelmReleaseName, clusterUUID),
+			Namespace: targetCluster.Namespace,
+		},
+	}
+
+	if err := ctrlclient.IgnoreNotFound(a.client.Delete(ctx, hcp)); err != nil {
+		return fmt.Errorf(
+			"failed to delete HelmChartProxy %q: %w",
+			ctrlclient.ObjectKeyFromObject(hcp),
+			err,
+		)
 	}
 
 	return nil
