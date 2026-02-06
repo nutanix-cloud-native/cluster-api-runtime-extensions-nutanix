@@ -37,6 +37,10 @@ extraEnv:
     value: "1.2.3.4"
   - name: KUBERNETES_SERVICE_PORT
     value: "6443"
+
+# For the Metro milestone-1 QA drop
+image:
+  tag: "0.7.0-alpha.1"
 `
 
 	expectedWithoutAdditionalTrustBundle = `prismCentralEndPoint: prism-central.nutanix.com
@@ -52,6 +56,10 @@ extraEnv:
     value: "1.2.3.4"
   - name: KUBERNETES_SERVICE_PORT
     value: "6443"
+
+# For the Metro milestone-1 QA drop
+image:
+  tag: "0.7.0-alpha.1"
 `
 
 	expectedWithVirtualIPSet = `prismCentralEndPoint: prism-central.nutanix.com
@@ -67,6 +75,10 @@ extraEnv:
     value: "1.2.3.4"
   - name: KUBERNETES_SERVICE_PORT
     value: "6443"
+
+# For the Metro milestone-1 QA drop
+image:
+  tag: "0.7.0-alpha.1"
 `
 )
 
