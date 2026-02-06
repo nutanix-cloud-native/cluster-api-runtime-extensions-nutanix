@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.41.4 (2026-02-06)
+
+<!-- Release notes generated using configuration in .github/release.yaml at v0.42.0 -->
+
+## What's Changed
+### Fixes 🔧
+* fix: update CoreDNS mapping file by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1447
+* fix: Copy ClusterClass and Templates only if they do not already exist by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1386
+* fix: Nutanix CCM to use variables instead of dynamic identification by @legacyrj
+ in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1464
+* fix: Bump CCM version to v0.6.2 by @legacyrj in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1469
+* feat: pre-pull cilium images before upgrade by @kevinantonythomas in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1470
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.41.3...v0.41.4
+
 ## 0.41.3 (2025-12-15)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
