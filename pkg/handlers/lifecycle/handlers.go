@@ -26,6 +26,7 @@ import (
 	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/snapshotcontroller"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ingress/awsloadbalancercontroller"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/inplaceupdate"
 	konnectoragent "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/konnectoragent"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/nfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry"
@@ -147,6 +148,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		// Because this webhook relies on CNI and CCM to already be installed on the remote cluster,
 		// we are placing this handler after the CNI and CCM handlers.
 		serviceloadbalancer.New(mgr.GetClient(), serviceLoadBalancerHandlers),
+		inplaceupdate.New(mgr.GetClient()),
 	}
 
 	var orderedHandlers []handlers.Named
@@ -224,6 +226,17 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 			orderedHandlers,
 			lifecycle.ParallelBeforeClusterDeleteHook("caren", bcdHandlers...),
 		)
+	}
+
+	// Add handlers that implement CanUpdateMachine, CanUpdateMachineSet, and UpdateMachine
+	for _, h := range allHandlers {
+		if _, ok := h.(lifecycle.CanUpdateMachine); ok {
+			orderedHandlers = append(orderedHandlers, h)
+		} else if _, ok := h.(lifecycle.CanUpdateMachineSet); ok {
+			orderedHandlers = append(orderedHandlers, h)
+		} else if _, ok := h.(lifecycle.UpdateMachine); ok {
+			orderedHandlers = append(orderedHandlers, h)
+		}
 	}
 
 	return orderedHandlers

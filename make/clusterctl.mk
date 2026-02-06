@@ -13,6 +13,7 @@ clusterctl.init:
 	env CLUSTER_TOPOLOGY=true \
 	    EXP_RUNTIME_SDK=true \
 	    EXP_MACHINE_POOL=true \
+	    EXP_IN_PLACE_UPDATES=true \
 	    CAPA_EKS=true \
 	    AWS_B64ENCODED_CREDENTIALS=$$(clusterctl-aws bootstrap credentials encode-as-profile) \
 	    NUTANIX_ENDPOINT="" NUTANIX_PASSWORD="" NUTANIX_USER="" \

@@ -1,0 +1,98 @@
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: Cluster
+metadata:
+  annotations:
+    caren.nutanix.com/cluster-uuid: 019c107b-f9eb-7d20-bc5e-295a37774e8d
+    inplaceupdate.cluster.caren.nutanix.com/supported: "false"
+  creationTimestamp: "2026-01-30T20:02:42Z"
+  labels:
+    cluster.x-k8s.io/cluster-name: dk-in-place-update-demo
+    cluster.x-k8s.io/provider: docker
+    topology.cluster.x-k8s.io/owned: ""
+  name: dk-in-place-update-demo
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - 192.168.0.0/16
+    serviceDomain: cluster.local
+    services:
+      cidrBlocks:
+      - 10.128.0.0/12
+  controlPlaneEndpoint:
+    host: 172.18.0.4
+    port: 6443
+  controlPlaneRef:
+    apiGroup: controlplane.cluster.x-k8s.io
+    kind: KubeadmControlPlane
+    name: dk-in-place-update-demo-tdjd2
+  infrastructureRef:
+    apiGroup: infrastructure.cluster.x-k8s.io
+    kind: DockerCluster
+    name: dk-in-place-update-demo-rbs9k
+  topology:
+    classRef:
+      name: docker-quick-start
+    controlPlane:
+      replicas: 1
+    variables:
+    - name: clusterConfig
+      value:
+        addons:
+          clusterAutoscaler:
+            strategy: HelmAddon
+          cni:
+            provider: Cilium
+            strategy: HelmAddon
+          csi:
+            defaultStorage:
+              provider: local-path
+              storageClassConfig: default
+            providers:
+              local-path:
+                storageClassConfigs:
+                  default:
+                    reclaimPolicy: Delete
+                    volumeBindingMode: WaitForFirstConsumer
+                strategy: HelmAddon
+            snapshotController:
+              strategy: HelmAddon
+          nfd:
+            strategy: HelmAddon
+          serviceLoadBalancer:
+            configuration:
+              addressRanges:
+              - end: 198.18.1.10
+                start: 198.18.1.1
+              - end: 198.18.1.30
+                start: 198.18.1.21
+            provider: MetalLB
+        controlPlane:
+          nodeRegistration:
+            ignorePreflightErrors:
+            - SystemVerification
+        dns:
+          coreDNS: {}
+        encryptionAtRest:
+          providers:
+          - aescbc: {}
+        imageRegistries:
+        - credentials:
+            secretRef:
+              name: dk-in-place-update-demo-dockerhub-credentials
+          url: https://docker.io
+    - name: workerConfig
+      value:
+        nodeRegistration:
+          ignorePreflightErrors:
+          - SystemVerification
+    version: v1.35.0
+    workers:
+      machineDeployments:
+      - class: default-worker
+        metadata:
+          annotations:
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "1"
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "1"
+        name: md-0

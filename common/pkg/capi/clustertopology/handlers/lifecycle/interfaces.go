@@ -70,3 +70,39 @@ type NamedBeforeClusterDelete interface {
 	handlers.Named
 	BeforeClusterDelete
 }
+
+type CanUpdateMachine interface {
+	CanUpdateMachine(
+		context.Context,
+		*runtimehooksv1.CanUpdateMachineRequest,
+		*runtimehooksv1.CanUpdateMachineResponse,
+	)
+}
+type NamedCanUpdateMachine interface {
+	handlers.Named
+	CanUpdateMachine
+}
+
+type CanUpdateMachineSet interface {
+	CanUpdateMachineSet(
+		context.Context,
+		*runtimehooksv1.CanUpdateMachineSetRequest,
+		*runtimehooksv1.CanUpdateMachineSetResponse,
+	)
+}
+type NamedCanUpdateMachineSet interface {
+	handlers.Named
+	CanUpdateMachineSet
+}
+
+type UpdateMachine interface {
+	UpdateMachine(
+		context.Context,
+		*runtimehooksv1.UpdateMachineRequest,
+		*runtimehooksv1.UpdateMachineResponse,
+	)
+}
+type NamedUpdateMachine interface {
+	handlers.Named
+	UpdateMachine
+}

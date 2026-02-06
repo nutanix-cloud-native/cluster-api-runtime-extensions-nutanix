@@ -73,4 +73,8 @@ const (
 	// SkipKonnectorAgentLegacyDeploymentValidation is the key of the annotation on the Cluster
 	// used to skip Konnector Agent legacy deployment validation.
 	SkipKonnectorAgentLegacyDeploymentValidation = APIGroup + "/skip-konnector-agent-legacy-deployment-validation"
+
+	// InPlaceUpdateSupportAnnotationKey is the key of the annotation on the Cluster.
+	// When set to "true", in-place update is supported for machines in that cluster; otherwise CAPI falls back to rolling out new machines.
+	InPlaceUpdateSupportAnnotationKey = "inplaceupdate.cluster.caren.nutanix.com/supported"
 )

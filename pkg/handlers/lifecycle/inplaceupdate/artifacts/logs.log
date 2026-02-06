@@ -1,0 +1,15 @@
+I0130 20:39:05.784469       1 reconcile_state.go:1352] "Creating KubeadmConfigTemplate" controller="topology/cluster" controllerGroup="cluster.x-k8s.io" controllerKind="Cluster" Cluster="default/dk-in-place-update-demo" reconcileID="e6c79f29-4517-4b23-9ff8-28c4f43f9e74" MachineDeployment="default/dk-in-place-update-demo-md-0-l7zxk" machineDeploymentTopology="md-0" KubeadmConfigTemplate="default/dk-in-place-update-demo-md-0-6nn2s" KubeadmConfigTemplate="default/dk-in-place-update-demo-md-0-6nn2s"
+I0130 20:39:05.814653       1 recorder.go:104] "Created KubeadmConfigTemplate \"default/dk-in-place-update-demo-md-0-zzgvx\" as a replacement for \"dk-in-place-update-demo-md-0-6nn2s\" (template rotation)" logger="events" type="Normal" object={"kind":"Cluster","namespace":"default","name":"dk-in-place-update-demo","uid":"988e4d8f-053d-479a-9f47-698e1a50e7b4","apiVersion":"cluster.x-k8s.io/v1beta2","resourceVersion":"25090"} reason="TopologyCreate"
+I0130 20:39:05.858406       1 reconcile_state.go:817] "Patching MachineDeployment" controller="topology/cluster" controllerGroup="cluster.x-k8s.io" controllerKind="Cluster" Cluster="default/dk-in-place-update-demo" reconcileID="e6c79f29-4517-4b23-9ff8-28c4f43f9e74" MachineDeployment="default/dk-in-place-update-demo-md-0-l7zxk" machineDeploymentTopology="md-0" diff=<
+	  strings.Join({
+	    ... // 2793 identical bytes
+	    "        apiGroup: bootstrap.cluster.x-k8s.io\n          kind: Kub",
+	    "eadmConfigTemplate\n          name: dk-in-place-update-demo-md-0-",
+	-   "6nn2s",
+	+   "zzgvx",
+	    "\n      clusterName: dk-in-place-update-demo\n      infrastructure",
+	    "Ref:\n        apiGroup: infrastructure.cluster.x-k8s.io\n        k",
+	    ... // 99 identical bytes
+	  }, "")
+ > patch="{\"spec\":{\"template\":{\"spec\":{\"bootstrap\":{\"configRef\":{\"name\":\"dk-in-place-update-demo-md-0-zzgvx\"}}}}}}"
+I0130 20:39:05.903141       1 recorder.go:104] "Updated MachineDeployment \"default/dk-in-place-update-demo-md-0-l7zxk\"" logger="events" type="Normal" object={"kind":"Cluster","namespace":"default","name":"dk-in-place-update-demo","uid":"988e4d8f-053d-479a-9f47-698e1a50e7b4","apiVersion":"cluster.x-k8s.io/v1beta2","resourceVersion":"25090"} reason="TopologyUpdate"

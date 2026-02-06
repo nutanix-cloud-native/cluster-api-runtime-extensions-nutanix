@@ -167,6 +167,45 @@ func (s *Server) Start(ctx context.Context) error {
 				return err
 			}
 		}
+
+		if t, ok := h.(lifecycle.CanUpdateMachine); ok {
+			handlerName := strings.ToLower(h.Name()) + "-cum"
+			setupLog.Info("Registering CanUpdateMachine handler", "handler", handlerName)
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+				Hook:        runtimehooksv1.CanUpdateMachine,
+				Name:        handlerName,
+				HandlerFunc: t.CanUpdateMachine,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
+
+		if t, ok := h.(lifecycle.CanUpdateMachineSet); ok {
+			handlerName := strings.ToLower(h.Name()) + "-cums"
+			setupLog.Info("Registering CanUpdateMachineSet handler", "handler", handlerName)
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+				Hook:        runtimehooksv1.CanUpdateMachineSet,
+				Name:        handlerName,
+				HandlerFunc: t.CanUpdateMachineSet,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
+
+		if t, ok := h.(lifecycle.UpdateMachine); ok {
+			handlerName := strings.ToLower(h.Name()) + "-um"
+			setupLog.Info("Registering UpdateMachine handler", "handler", handlerName)
+			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+				Hook:        runtimehooksv1.UpdateMachine,
+				Name:        handlerName,
+				HandlerFunc: t.UpdateMachine,
+			}); err != nil {
+				setupLog.Error(err, "error adding handler")
+				return err
+			}
+		}
 	}
 
 	// Start the https server.
