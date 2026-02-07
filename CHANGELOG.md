@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.41.5 (2026-02-07)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.41.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: update cilium version to 1.18.6 [release/v0.41.x] by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1475
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.41.4...v0.41.5
+
 ## 0.41.4 (2026-02-06)
 
 <!-- Release notes generated using configuration in .github/release.yaml at v0.42.0 -->
