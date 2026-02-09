@@ -305,6 +305,8 @@ k8sServicePort: "6443"
 
 	// preflightTemplate from addons/cni/cilium/preflight-values-template.yaml
 	preflightTemplate = `
+image:
+  useDigest: false
 agent: false
 operator:
   enabled: false
@@ -317,6 +319,8 @@ k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 `
 
 	expectedPreflightWithKubeProxyReplacement = `
+image:
+  useDigest: false
 agent: false
 operator:
   enabled: false
@@ -327,6 +331,8 @@ k8sServicePort: "6443"
 `
 
 	expectedPreflightWithoutKubeProxyReplacement = `
+image:
+  useDigest: false
 agent: false
 operator:
   enabled: false

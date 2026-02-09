@@ -1,3 +1,5 @@
+image:
+  useDigest: false
 agent: false
 operator:
   enabled: false
