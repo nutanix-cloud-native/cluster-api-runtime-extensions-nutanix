@@ -15,7 +15,6 @@ import (
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
-// templateValues enables kube-proxy replacement when kube-proxy is disabled.
 func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	kubeProxyIsDisabled, err := apivariables.KubeProxyIsDisabled(cluster)
 	if err != nil {
@@ -55,22 +54,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	return b.String(), nil
 }
 
-// preflightTemplateValues updates the existing cilium values template to add
-// values to deploy the pre-flight helm chart.
-// The updated values for the preflight checks are:
-//
-// agent: false
-// preflight:
-//
-//	enabled: true
-//
-// operator:
-//
-//	enabled: false
-//
-// Ref:
-//
-//	https://docs.cilium.io/en/stable/operations/upgrade/#running-pre-flight-check-required
+// https://docs.cilium.io/en/stable/operations/upgrade/#running-pre-flight-check-required
 func preflightTemplateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	kubeProxyIsDisabled, err := apivariables.KubeProxyIsDisabled(cluster)
 	if err != nil {
