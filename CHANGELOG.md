@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.41.7 (2026-02-09)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.41.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix(release/v0.41.x): use image tag instead of digest for cilium preflight (#1480) by @kevinantonythomas in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1481
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.41.6...v0.41.7
+
 ## 0.41.6 (2026-02-09)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.41.x -->
