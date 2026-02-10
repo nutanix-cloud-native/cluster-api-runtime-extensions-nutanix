@@ -1,10 +1,13 @@
-image:
-  useDigest: false
 agent: false
 operator:
   enabled: false
 preflight:
   enabled: true
+  envoy:
+    image:
+      useDigest: false
+  image:
+    useDigest: false
 {{- if .EnableKubeProxyReplacement }}
 k8sServiceHost: "{{ trimPrefix .ControlPlaneEndpoint.Host "https://" }}"
 k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
