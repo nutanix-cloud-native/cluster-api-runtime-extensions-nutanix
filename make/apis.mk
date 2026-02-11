@@ -46,13 +46,15 @@ api.sync.%:
 	cd $(PROVIDER_MODULE_DIR) && go mod tidy
 	$(foreach PROVIDER_API_PATH,$(PROVIDER_API_PATHS_$*), \
 	echo 'syncing external API: $(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)'; \
+	SRC_DIR=$$(cd $(PROVIDER_MODULE_DIR) && GOWORK=off go list -m -f '{{ .Dir }}' $(PROVIDER_MODULE_$*)); \
+	echo 'copying from: '$$SRC_DIR/$(PROVIDER_API_PATH)/; \
 	mkdir -p api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/; \
 	rsync \
 	  --recursive --delete --times --links --verbose --prune-empty-dirs \
 	  --exclude='*webhook*.go' \
 	  --exclude='*test.go'     \
 	  --exclude='s3bucket.go'  \
-	  $$(cd $(PROVIDER_MODULE_DIR) && GOWORK=off go list -m -f '{{ .Dir }}' $(PROVIDER_MODULE_$*))/$(PROVIDER_API_PATH)/*.go \
+	  $$SRC_DIR/$(PROVIDER_API_PATH)/*.go \
 	  api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/; \
 	  find api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/ -type d -exec chmod 0755 {} \; ; \
 	  find api/external/$(PROVIDER_MODULE_$*)/$(PROVIDER_API_PATH)/ -type f -exec chmod 0644 {} \; ; \

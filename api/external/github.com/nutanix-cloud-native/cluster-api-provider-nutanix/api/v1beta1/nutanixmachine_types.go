@@ -20,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	capiv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	capiv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1" //nolint:staticcheck // suppress complaining on Deprecated package
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -98,6 +98,7 @@ type NutanixImageLookup struct {
 
 // NutanixMachineSpec defines the desired state of NutanixMachine
 // +kubebuilder:validation:XValidation:rule="has(self.image) != has(self.imageLookup)",message="Either 'image' or 'imageLookup' must be set, but not both"
+// +kubebuilder:validation:XValidation:rule="has(self.subnet) && size(self.subnet) > 1 ? self.subnet.all(x, self.subnet.exists_one(y, x == y)) : true",message="each subnet must be unique"
 type NutanixMachineSpec struct {
 	// SPEC FIELDS - desired state of NutanixMachine
 	// Important: Run "make" to regenerate code after modifying this file
@@ -136,6 +137,7 @@ type NutanixMachineSpec struct {
 	// subnet is to identify the cluster's network subnet to use for the Machine's VM
 	// The cluster identifier (uuid or name) can be obtained from the Prism Central console
 	// or using the prism_central API.
+	// +kubebuilder:validation:MaxItems=32
 	// +kubebuilder:validation:Optional
 	Subnets []NutanixResourceIdentifier `json:"subnet,omitempty"`
 	// List of categories that need to be added to the machines. Categories must already exist in Prism Central
@@ -253,7 +255,7 @@ type NutanixMachineStatus struct {
 
 	// Addresses contains the Nutanix VM associated addresses.
 	// Address type is one of Hostname, ExternalIP, InternalIP, ExternalDNS, InternalDNS
-	Addresses []capiv1.MachineAddress `json:"addresses,omitempty"`
+	Addresses []capiv1beta1.MachineAddress `json:"addresses,omitempty"`
 
 	// The Nutanix VM's UUID
 	// +optional
@@ -266,7 +268,7 @@ type NutanixMachineStatus struct {
 
 	// Conditions defines current service state of the NutanixMachine.
 	// +optional
-	Conditions capiv1.Conditions `json:"conditions,omitempty"`
+	Conditions capiv1beta1.Conditions `json:"conditions,omitempty"`
 
 	// Will be set in case of failure of Machine instance
 	// +optional
@@ -279,6 +281,21 @@ type NutanixMachineStatus struct {
 	// failureDomain is the name of the failure domain where this Machine has been placed in.
 	// +optional
 	FailureDomain *string `json:"failureDomain,omitempty"`
+
+	// v1beta2 groups all the fields that will be added or modified in NutanixMachine's status with the v1beta2 version.
+	// +optional
+	V1Beta2 *NutanixMachineV1Beta2Status `json:"v1beta2,omitempty"`
+}
+
+// NutanixMachineV1Beta2Status groups all the fields that will be added or modified in NutanixMachineStatus with the v1beta2 version.
+// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
+type NutanixMachineV1Beta2Status struct {
+	// conditions represents the observations of a NutanixMachine's current state.
+	// +optional
+	// +listType=map
+	// +listMapKey=type
+	// +kubebuilder:validation:MaxItems=32
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -299,13 +316,29 @@ type NutanixMachine struct {
 }
 
 // GetConditions returns the set of conditions for this object.
-func (nm *NutanixMachine) GetConditions() capiv1.Conditions {
+func (nm *NutanixMachine) GetConditions() capiv1beta1.Conditions {
 	return nm.Status.Conditions
 }
 
 // SetConditions sets the conditions on this object.
-func (nm *NutanixMachine) SetConditions(conditions capiv1.Conditions) {
+func (nm *NutanixMachine) SetConditions(conditions capiv1beta1.Conditions) {
 	nm.Status.Conditions = conditions
+}
+
+// GetV1Beta2Conditions returns the set of conditions for this object.
+func (ncl *NutanixMachine) GetV1Beta2Conditions() []metav1.Condition {
+	if ncl.Status.V1Beta2 == nil {
+		return nil
+	}
+	return ncl.Status.V1Beta2.Conditions
+}
+
+// SetV1Beta2Conditions sets the v1beta2 conditions on this object.
+func (ncl *NutanixMachine) SetV1Beta2Conditions(conditions []metav1.Condition) {
+	if ncl.Status.V1Beta2 == nil {
+		ncl.Status.V1Beta2 = &NutanixMachineV1Beta2Status{}
+	}
+	ncl.Status.V1Beta2.Conditions = conditions
 }
 
 //+kubebuilder:object:root=true

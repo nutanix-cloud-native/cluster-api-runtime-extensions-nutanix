@@ -1,4 +1,4 @@
-apiVersion: cluster.x-k8s.io/v1beta1
+apiVersion: cluster.x-k8s.io/v1beta2
 kind: ClusterClass
 metadata:
   labels:
@@ -6,28 +6,36 @@ metadata:
   name: docker-quick-start
 spec:
   controlPlane:
-    machineHealthCheck:
-      unhealthyConditions:
-      - status: Unknown
-        timeout: 300s
-        type: Ready
-      - status: "False"
-        timeout: 300s
-        type: Ready
+    healthCheck:
+      checks:
+        unhealthyMachineConditions:
+        - status: Unknown
+          timeoutSeconds: 300
+          type: NodeReady
+        - status: "False"
+          timeoutSeconds: 300
+          type: NodeReady
+        unhealthyNodeConditions:
+        - status: Unknown
+          timeoutSeconds: 300
+          type: Ready
+        - status: "False"
+          timeoutSeconds: 300
+          type: Ready
     machineInfrastructure:
-      ref:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      templateRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
         kind: DockerMachineTemplate
-        name: docker-quick-start-control-plane
-    ref:
-      apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+        name: quick-start-control-plane
+    templateRef:
+      apiVersion: controlplane.cluster.x-k8s.io/v1beta2
       kind: KubeadmControlPlaneTemplate
-      name: docker-quick-start-control-plane
+      name: quick-start-control-plane
   infrastructure:
-    ref:
-      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    templateRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
       kind: DockerClusterTemplate
-      name: docker-quick-start-cluster
+      name: quick-start-cluster
   patches:
   - external:
       discoverVariablesExtension: dockerclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
@@ -39,28 +47,35 @@ spec:
     name: worker-config
   workers:
     machineDeployments:
-    - class: default-worker
-      machineHealthCheck:
-        unhealthyConditions:
-        - status: Unknown
-          timeout: 300s
-          type: Ready
-        - status: "False"
-          timeout: 300s
-          type: Ready
-      template:
-        bootstrap:
-          ref:
-            apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-            kind: KubeadmConfigTemplate
-            name: docker-quick-start-default-worker-bootstraptemplate
-        infrastructure:
-          ref:
-            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-            kind: DockerMachineTemplate
-            name: docker-quick-start-default-worker-machinetemplate
+    - bootstrap:
+        templateRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+          kind: KubeadmConfigTemplate
+          name: quick-start-default-worker-bootstraptemplate
+      class: default-worker
+      healthCheck:
+        checks:
+          unhealthyMachineConditions:
+          - status: Unknown
+            timeoutSeconds: 300
+            type: NodeReady
+          - status: "False"
+            timeoutSeconds: 300
+            type: NodeReady
+          unhealthyNodeConditions:
+          - status: Unknown
+            timeoutSeconds: 300
+            type: Ready
+          - status: "False"
+            timeoutSeconds: 300
+            type: Ready
+      infrastructure:
+        templateRef:
+          apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+          kind: DockerMachineTemplate
+          name: quick-start-default-worker-machinetemplate
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: DockerClusterTemplate
 metadata:
   labels:
@@ -70,7 +85,7 @@ spec:
   template:
     spec: {}
 ---
-apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+apiVersion: controlplane.cluster.x-k8s.io/v1beta2
 kind: KubeadmControlPlaneTemplate
 metadata:
   labels:
@@ -140,11 +155,17 @@ spec:
           path: /etc/kubernetes/eventratelimit-config.yaml
           permissions: "0600"
         initConfiguration:
-          nodeRegistration: {}
+          nodeRegistration:
+            kubeletExtraArgs:
+            - name: eviction-hard
+              value: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
           patches:
             directory: /etc/kubernetes/patches
         joinConfiguration:
-          nodeRegistration: {}
+          nodeRegistration:
+            kubeletExtraArgs:
+            - name: eviction-hard
+              value: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
           patches:
             directory: /etc/kubernetes/patches
         postKubeadmCommands:
@@ -152,7 +173,7 @@ spec:
         - chmod 600 $(systemctl show -P DropInPaths kubelet.service)
         - chmod 600 /var/lib/kubelet/config.yaml
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: DockerMachineTemplate
 metadata:
   labels:
@@ -165,7 +186,7 @@ spec:
       - containerPath: /var/run/docker.sock
         hostPath: /var/run/docker.sock
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: DockerMachineTemplate
 metadata:
   labels:
@@ -178,7 +199,7 @@ spec:
       - containerPath: /var/run/docker.sock
         hostPath: /var/run/docker.sock
 ---
-apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
 kind: KubeadmConfigTemplate
 metadata:
   labels:
@@ -205,7 +226,10 @@ spec:
         path: /etc/kubernetes/patches/kubeletconfiguration1+strategic.json
         permissions: "0600"
       joinConfiguration:
-        nodeRegistration: {}
+        nodeRegistration:
+          kubeletExtraArgs:
+          - name: eviction-hard
+            value: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
         patches:
           directory: /etc/kubernetes/patches
       postKubeadmCommands:

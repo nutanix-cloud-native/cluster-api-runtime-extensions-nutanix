@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubernetes Authors.
+Copyright 2026 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,6 +27,11 @@ type NodeadmConfigTemplateSpec struct {
 
 // NodeadmConfigTemplateResource defines the Template structure.
 type NodeadmConfigTemplateResource struct {
+	// Spec represents the NodeadmConfig each object created from the template will become.
+	// We are setting nullable to avoid this issue:
+	// https://github.com/kubernetes/kubernetes/issues/117447#issuecomment-2127733969
+	// where we cannot remove all fields with an SSA patch if they were previously set.
+	// +nullable
 	Spec NodeadmConfigSpec `json:"spec,omitempty"`
 }
 

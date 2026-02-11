@@ -4,115 +4,115 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: '{{ include "chart.name" . }}-manager-role'
+  name: cluster-api-runtime-extensions-nutanix-manager-role
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces
-      - nodes
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - addons.cluster.x-k8s.io
-    resources:
-      - clusterresourcesets
-      - helmchartproxies
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - bootstrap.cluster.x-k8s.io
-      - controlplane.cluster.x-k8s.io
-      - infrastructure.cluster.x-k8s.io
-    resources:
-      - '*'
-    verbs:
-      - create
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - cluster.x-k8s.io
-    resources:
-      - clusterclasses
-    verbs:
-      - create
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - cluster.x-k8s.io
-    resources:
-      - clusters
-      - machines
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - cluster.x-k8s.io
-    resources:
-      - clusters/status
-    verbs:
-      - get
-  - apiGroups:
-      - cluster.x-k8s.io
-    resources:
-      - machinedeployments
-    verbs:
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - controlplane.cluster.x-k8s.io
-    resources:
-      - kubeadmcontrolplanes
-    verbs:
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - storage.k8s.io
-    resources:
-      - storageclasses
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - addons.cluster.x-k8s.io
+  resources:
+  - clusterresourcesets
+  - helmchartproxies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - bootstrap.cluster.x-k8s.io
+  - controlplane.cluster.x-k8s.io
+  - infrastructure.cluster.x-k8s.io
+  resources:
+  - '*'
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusterclasses
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusters
+  - machines
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusters/status
+  verbs:
+  - get
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - machinedeployments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - controlplane.cluster.x-k8s.io
+  resources:
+  - kubeadmcontrolplanes
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update

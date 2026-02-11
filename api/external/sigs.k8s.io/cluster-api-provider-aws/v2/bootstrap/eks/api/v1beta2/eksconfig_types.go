@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubernetes Authors.
+Copyright 2026 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package v1beta2
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 )
 
 // EKSConfigSpec defines the desired state of Amazon EKS Bootstrap Configuration.
@@ -107,7 +107,7 @@ type EKSConfigStatus struct {
 
 	// Conditions defines current service state of the EKSConfig.
 	// +optional
-	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
+	Conditions clusterv1beta1.Conditions `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -118,6 +118,10 @@ type EKSConfigStatus struct {
 // +kubebuilder:printcolumn:name="DataSecretName",type="string",JSONPath=".status.dataSecretName",description="Name of Secret containing bootstrap data"
 
 // EKSConfig is the schema for the Amazon EKS Machine Bootstrap Configuration API.
+//
+// Deprecated: EKSConfig is deprecated and will be removed in a future release.
+// Amazon Linux 2 (AL2) reaches end-of-life in June 2026 see: https://aws.amazon.com/amazon-linux-2/faqs/
+// Please use NodeadmConfig with Amazon Linux 2023 (AL2023) instead.
 type EKSConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -127,12 +131,12 @@ type EKSConfig struct {
 }
 
 // GetConditions returns the observations of the operational state of the EKSConfig resource.
-func (r *EKSConfig) GetConditions() clusterv1.Conditions {
+func (r *EKSConfig) GetConditions() clusterv1beta1.Conditions {
 	return r.Status.Conditions
 }
 
-// SetConditions sets the underlying service state of the EKSConfig to the predescribed clusterv1.Conditions.
-func (r *EKSConfig) SetConditions(conditions clusterv1.Conditions) {
+// SetConditions sets the underlying service state of the EKSConfig to the predescribed clusterv1beta1.Conditions.
+func (r *EKSConfig) SetConditions(conditions clusterv1beta1.Conditions) {
 	r.Status.Conditions = conditions
 }
 

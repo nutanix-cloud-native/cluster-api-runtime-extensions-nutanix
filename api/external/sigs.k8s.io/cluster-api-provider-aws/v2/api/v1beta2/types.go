@@ -21,7 +21,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 )
 
 const (
@@ -192,7 +192,7 @@ type Instance struct {
 	IAMProfile string `json:"iamProfile,omitempty"`
 
 	// Addresses contains the AWS instance associated addresses.
-	Addresses []clusterv1.MachineAddress `json:"addresses,omitempty"`
+	Addresses []clusterv1beta1.MachineAddress `json:"addresses,omitempty"`
 
 	// The private IPv4 address assigned to the instance.
 	PrivateIP *string `json:"privateIp,omitempty"`
@@ -275,9 +275,12 @@ type Instance struct {
 	MarketType MarketType `json:"marketType,omitempty"`
 
 	// HostAffinity specifies the dedicated host affinity setting for the instance.
-	// When hostAffinity is set to host, an instance started onto a specific host always restarts on the same host if stopped.
-	// When hostAffinity is set to default, and you stop and restart the instance, it can be restarted on any available host.
-	// When HostAffinity is defined, HostID is required.
+	// When HostAffinity is set to "host", an instance started onto a specific host always restarts on the same host if stopped:
+	// - If HostID is set, the instance launches on the specific host and must return to that same host after any stop/start (Targeted & Pinned).
+	// - If HostID is not set, the instance gets launched on any available and must returns to the same host after any stop/start (Auto-placed & Pinned).
+	// When HostAffinity is set to "default" (the default value), the instance (when restarted) can return on any available host:
+	// - If HostID is set, the instance launches on the specified host now, but (when restarted) can return to any available hosts (Targeted & Flexible).
+	// - If HostID is not set, the instance launches on any available host now, and (when restarted) can return to any available hosts (Auto-placed & Flexible).
 	// +optional
 	// +kubebuilder:validation:Enum:=default;host
 	HostAffinity *string `json:"hostAffinity,omitempty"`
@@ -285,6 +288,11 @@ type Instance struct {
 	// HostID specifies the dedicated host on which the instance should be started.
 	// +optional
 	HostID *string `json:"hostID,omitempty"`
+
+	// DynamicHostAllocation enables automatic allocation of dedicated hosts.
+	// This field is mutually exclusive with HostID.
+	// +optional
+	DynamicHostAllocation *DynamicHostAllocationSpec `json:"dynamicHostAllocation,omitempty"`
 
 	// CapacityReservationPreference specifies the preference for use of Capacity Reservations by the instance. Valid values include:
 	// "Open": The instance may make use of open Capacity Reservations that match its AZ and InstanceType
@@ -315,6 +323,33 @@ const (
 	// CapacityReservationPreferenceOpen the instance may make use of open Capacity Reservations that match its AZ and InstanceType.
 	CapacityReservationPreferenceOpen CapacityReservationPreference = "Open"
 )
+
+// DedicatedHostInfo contains information about a dedicated host.
+type DedicatedHostInfo struct {
+	// HostID is the ID of the dedicated host.
+	HostID string `json:"hostID"`
+
+	// InstanceFamily is the instance family supported by the host.
+	InstanceFamily string `json:"instanceFamily"`
+
+	// InstanceType is the instance type supported by the host.
+	InstanceType string `json:"instanceType"`
+
+	// AvailabilityZone is the AZ where the host is located.
+	AvailabilityZone string `json:"availabilityZone"`
+
+	// State is the current state of the dedicated host.
+	State string `json:"state"`
+
+	// TotalCapacity is the total number of instances that can be launched on the host.
+	TotalCapacity int32 `json:"totalCapacity"`
+
+	// AvailableCapacity is the number of instances that can still be launched on the host.
+	AvailableCapacity int32 `json:"availableCapacity"`
+
+	// Tags associated with the dedicated host.
+	Tags map[string]string `json:"tags,omitempty"`
+}
 
 // MarketType describes the market type of an Instance
 // +kubebuilder:validation:Enum:=OnDemand;Spot;CapacityBlock
