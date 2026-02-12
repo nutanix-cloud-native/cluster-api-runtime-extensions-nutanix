@@ -109,7 +109,7 @@ type applyOptions struct {
 	helmReleaseName    string
 	shouldRunPreflight bool
 	waiter             waiterFunc
-	hooks           hooksFuncs
+	hooks              hooksFuncs
 }
 
 type applyOption func(*applyOptions)
