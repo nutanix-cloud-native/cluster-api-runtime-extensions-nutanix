@@ -72,10 +72,10 @@ repositories:
       nutanix-cloud-provider:
       - 0.6.1
   nutanix-csi-storage:
-    repoURL: https://nutanix.github.io/helm-releases/
+    repoURL: oci://harbor.eng.nutanix.com/k8s-ha
     charts:
       nutanix-csi-storage:
-      - 3.3.8
+      - 3.8.0-8087
   registry-syncer:
     repoURL: https://mesosphere.github.io/charts/staging/
     charts:

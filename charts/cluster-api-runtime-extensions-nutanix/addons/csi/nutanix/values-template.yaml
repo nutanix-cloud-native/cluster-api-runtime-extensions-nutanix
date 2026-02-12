@@ -4,6 +4,9 @@ createPrismCentralSecret: false
 createSecret: false
 pcSecretName: nutanix-csi-credentials
 
+# Enable MPIO configuration.
+applyMpioConfigs: true
+
 tolerations:
   - key: CriticalAddonsOnly
     operator: Exists
