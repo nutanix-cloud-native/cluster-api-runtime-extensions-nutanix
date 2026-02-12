@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -90,12 +91,25 @@ type valueTemplaterFunc func(cluster *clusterv1.Cluster, valuesTemplate string) 
 
 type waiterFunc func(ctx context.Context, client ctrlclient.Client, hcp *caaphv1.HelmChartProxy) error
 
+type hooksFuncs struct {
+	postApplyHookFuncs []postApplyHookFunc
+}
+
+type postApplyHookFunc func(
+	ctx context.Context,
+	client ctrlclient.Client,
+	remoteClient ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+	hcp *caaphv1.HelmChartProxy,
+) error
+
 type applyOptions struct {
 	valueTemplater     valueTemplaterFunc
 	targetCluster      *clusterv1.Cluster
 	helmReleaseName    string
 	shouldRunPreflight bool
 	waiter             waiterFunc
+	hooks              hooksFuncs
 }
 
 type applyOption func(*applyOptions)
@@ -137,6 +151,14 @@ func (a *helmAddonApplier) WithPreflightEnabled() *helmAddonApplier {
 func (a *helmAddonApplier) WithDefaultWaiter() *helmAddonApplier {
 	a.opts = append(a.opts, func(o *applyOptions) {
 		o.waiter = waitToBeReady
+	})
+
+	return a
+}
+
+func (a *helmAddonApplier) WithPostApplyHook(postApplyHookFuncs ...postApplyHookFunc) *helmAddonApplier {
+	a.opts = append(a.opts, func(o *applyOptions) {
+		o.hooks.postApplyHookFuncs = postApplyHookFuncs
 	})
 
 	return a
@@ -232,6 +254,21 @@ func (a *helmAddonApplier) Apply(
 
 	if err = k8sclient.ServerSideApply(ctx, a.client, chartProxy, k8sclient.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply HelmChartProxy %q: %w", chartProxy.Name, err)
+	}
+
+	// Run post apply hooks that need to run after the HelmChartProxy is applied.
+	// These hooks may be useful during upgrades to perform additional actions
+	// either on the management or remote cluster to unblock a Helm upgrade.
+	if len(applyOpts.hooks.postApplyHookFuncs) > 0 {
+		remoteClient, err := remote.NewClusterClient(ctx, "", a.client, ctrlclient.ObjectKeyFromObject(cluster))
+		if err != nil {
+			return fmt.Errorf("error creating remote cluster client: %w", err)
+		}
+		for _, hook := range applyOpts.hooks.postApplyHookFuncs {
+			if err = hook(ctx, a.client, remoteClient, cluster, chartProxy); err != nil {
+				return fmt.Errorf("failed to run post apply hook: %w", err)
+			}
+		}
 	}
 
 	if applyOpts.waiter != nil {

@@ -135,7 +135,9 @@ func (n *CNCFDistribution) Apply(
 		),
 		n.client,
 		helmChartInfo,
-	).WithDefaultWaiter().WithValueTemplater(templateValues)
+	).WithDefaultWaiter().
+		WithValueTemplater(templateValues).
+		WithPostApplyHook(updateStatefulSetVolumeClaimTemplate, expandPersistentVolumeClaims)
 
 	if err := addonApplier.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply CNCF Distribution registry addon: %w", err)
