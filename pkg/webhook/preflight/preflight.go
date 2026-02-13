@@ -150,11 +150,19 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
+
+		// When we compare the spec, we want to ignore the paused state,
+		// because it is metadata, although it is part of the spec.
+		// To do this, we make the paused state of both clusters the same.
+		oldCluster.Spec.Paused = cluster.Spec.Paused
+
 		if reflect.DeepEqual(cluster.Spec, oldCluster.Spec) {
 			log.V(5).Info("Skipping preflight checks because spec has not changed")
 			return admission.Allowed("")
 		}
 	}
+
+	// If only the paused state has changed, skip the preflight checks.
 
 	skipEvaluator := skip.New(cluster)
 
