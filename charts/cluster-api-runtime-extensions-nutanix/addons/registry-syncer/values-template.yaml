@@ -3,7 +3,7 @@ initContainers:
   # In the case when it runs as a Job, it will prematurely exit.
   # This init container will wait for the destination registry to be ready.
   - name: wait-for-registry
-    image: ghcr.io/d2iq-labs/kubectl-betterwait:v1.33.3
+    image: ghcr.io/nutanix-cloud-native/kubectl-betterwait:v1.34.3
     args:
       - --for=condition=Ready
       - --timeout=-1s # a negative number here means wait forever
@@ -17,7 +17,7 @@ initContainers:
         name: kubeconfig
         readOnly: true
   - name: port-forward-registry
-    image: ghcr.io/d2iq-labs/kubectl-betterwait:v1.33.3
+    image: ghcr.io/nutanix-cloud-native/kubectl-betterwait:v1.34.3
     command:
       - /bin/kubectl
     args:
