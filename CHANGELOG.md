@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.44.0 (2026-02-16)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: support registry addon PersistentVolume expansion by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1454
+### Fixes 🔧
+* fix: Skip preflight when only spec change is paused field by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1485
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.43.0...v0.44.0
+
 ## 0.43.0 (2026-02-10)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
