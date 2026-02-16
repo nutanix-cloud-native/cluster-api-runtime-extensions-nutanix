@@ -6,11 +6,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
 	"runtime/debug"
 	"sync"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -150,8 +151,23 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		if reflect.DeepEqual(cluster.Spec, oldCluster.Spec) {
-			log.V(5).Info("Skipping preflight checks because spec has not changed")
+
+		// The paused state may be a field in the spec, but it is metadata,
+		// so we ignore it when comparing the spec.
+		if cmp.Equal(
+			oldCluster.Spec,
+			cluster.Spec,
+			cmpopts.IgnoreFields(clusterv1.ClusterSpec{}, "Paused"),
+		) {
+			msg := "Skipping preflight checks because spec has not changed"
+			if cluster.Spec.Paused != oldCluster.Spec.Paused {
+				msg += fmt.Sprintf(
+					" (ignoring paused state, which changed from %t to %t)",
+					oldCluster.Spec.Paused,
+					cluster.Spec.Paused,
+				)
+			}
+			log.V(5).Info(msg)
 			return admission.Allowed("")
 		}
 	}

@@ -510,6 +510,25 @@ func TestHandle(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:      "update operation changes only the paused state, allowed",
+			operation: admissionv1.Update,
+			oldCluster: func() *clusterv1.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Paused = false
+				return cluster
+			}(),
+			cluster: func() *clusterv1.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Paused = true
+				return cluster
+			}(),
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: true,
+				},
+			},
+		},
 	}
 
 	// Test execution remains the same
