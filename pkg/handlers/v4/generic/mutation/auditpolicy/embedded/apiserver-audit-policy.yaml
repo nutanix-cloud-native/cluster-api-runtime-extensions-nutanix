@@ -113,7 +113,8 @@ rules:
       resources: ["tokenreviews"]
   omitStages:
     - "RequestReceived"
-# Get responses can be large; skip them.
+
+# Get responses for common resources can be large; skip them.
 - level: Request
   verbs: ["get", "list", "watch"]
   resources:
@@ -137,7 +138,7 @@ rules:
     - group: "storage.k8s.io"
   omitStages:
     - "RequestReceived"
-# Default level for known APIs
+# Default level for common resources
 - level: RequestResponse
   resources:
     - group: "" # core
@@ -160,6 +161,35 @@ rules:
     - group: "storage.k8s.io"
   omitStages:
     - "RequestReceived"
+
+# Get responses for Cluster API resources can be large; skip them.
+- level: Request
+  verbs: ["get", "list", "watch"]
+  resources:
+    - group: "cluster.x-k8s.io"
+    - group: "addons.cluster.x-k8s.io"
+    - group: "bootstrap.cluster.x-k8s.io"
+    - group: "clusterctl.cluster.x-k8s.io"
+    - group: "controlplane.cluster.x-k8s.io"
+    - group: "infrastructure.cluster.x-k8s.io"
+    - group: "ipam.cluster.x-k8s.io"
+    - group: "runtime.cluster.x-k8s.io"
+  omitStages:
+    - "RequestReceived"
+# Default level for Cluster API resources
+- level: Request
+  resources:
+    - group: "cluster.x-k8s.io"
+    - group: "addons.cluster.x-k8s.io"
+    - group: "bootstrap.cluster.x-k8s.io"
+    - group: "clusterctl.cluster.x-k8s.io"
+    - group: "controlplane.cluster.x-k8s.io"
+    - group: "infrastructure.cluster.x-k8s.io"
+    - group: "ipam.cluster.x-k8s.io"
+    - group: "runtime.cluster.x-k8s.io"
+  omitStages:
+    - "RequestReceived"
+
 # Default level for all other requests.
 - level: Metadata
   omitStages:
