@@ -5,7 +5,9 @@ package auditpolicy
 
 import (
 	"context"
+	"crypto/tls"
 	_ "embed"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -79,6 +81,15 @@ func (h *auditPolicyPatchHandler) Mutate(
 			apiServer.ExtraArgs["audit-log-maxsize"] = "100"   // Maximum size of log file in MB before it is rotated.
 			apiServer.ExtraArgs["audit-log-compress"] = "true" // Compress (gzip) audit log file when it is rotated.
 			apiServer.ExtraArgs["audit-policy-file"] = auditPolicyPath
+			apiServer.ExtraArgs["tls-cipher-suites"] = strings.Join(
+				[]string{
+					tls.CipherSuiteName(tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256),
+					tls.CipherSuiteName(tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256),
+					tls.CipherSuiteName(tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384),
+					tls.CipherSuiteName(tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384),
+				},
+				",",
+			)
 
 			if apiServer.ExtraVolumes == nil {
 				apiServer.ExtraVolumes = make([]bootstrapv1.HostPathMount, 0, 2)
