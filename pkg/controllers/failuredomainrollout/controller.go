@@ -64,13 +64,20 @@ func (r *Reconciler) areResourcesUpdating(cluster *clusterv1.Cluster, kcp *contr
 }
 
 // areResourcesPaused checks if either the cluster or KCP is paused.
-// Uses the standard CAPI annotations.IsPaused utility which handles both cluster.Spec.Paused and paused annotations.
+// Checks cluster.Spec.Paused and paused annotations directly to work with v1beta1 types.
 func (r *Reconciler) areResourcesPaused(cluster *clusterv1.Cluster, kcp *controlplanev1.KubeadmControlPlane) bool {
-	if cluster != nil && annotations.IsPaused(cluster, cluster) {
-		return true
+	if cluster != nil {
+		// Check cluster.Spec.Paused
+		if cluster.Spec.Paused {
+			return true
+		}
+		// Check paused annotation on cluster
+		if annotations.HasPaused(cluster) {
+			return true
+		}
 	}
 
-	if cluster != nil && kcp != nil && annotations.IsPaused(cluster, kcp) {
+	if kcp != nil && annotations.HasPaused(kcp) {
 		return true
 	}
 

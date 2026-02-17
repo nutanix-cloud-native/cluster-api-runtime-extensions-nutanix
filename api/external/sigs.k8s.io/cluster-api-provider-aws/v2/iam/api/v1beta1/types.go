@@ -81,7 +81,7 @@ const (
 )
 
 // PolicyDocument represents an AWS IAM policy document, and can be
-// converted into JSON using "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/cmd/clusterawsadm/converters".
+// converted into JSON using "sigs.k8s.io/cluster-api-provider-aws/v2/cmd/clusterawsadm/converters".
 type PolicyDocument struct {
 	Version   string     `json:"Version,omitempty"`
 	Statement Statements `json:"Statement,omitempty"`

@@ -16,7 +16,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/cluster-api/api/core/v1beta1"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers"
@@ -146,7 +145,16 @@ func shouldDeleteServicesWithLoadBalancer(cluster *v1beta1.Cluster) (bool, error
 		phase == v1beta1.ClusterPhaseDeleting
 
 	// use the Cluster conditions to determine if the API server is even reachable
-	controlPlaneReachable := conditions.IsTrue(cluster, v1beta1.ControlPlaneInitializedCondition)
+	// Check v1beta1 conditions directly since we're using v1beta1 API
+	controlPlaneReachable := false
+	if cluster != nil {
+		for _, c := range cluster.Status.Conditions {
+			if c.Type == v1beta1.ControlPlaneInitializedCondition && c.Status == corev1.ConditionTrue {
+				controlPlaneReachable = true
+				break
+			}
+		}
+	}
 
 	return shouldDeleteBasedOnAnnotation && controlPlaneReachable && !skipDeleteBasedOnPhase, nil
 }

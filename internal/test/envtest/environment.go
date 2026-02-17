@@ -41,6 +41,7 @@ import (
 	"k8s.io/klog/v2"
 	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/log"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
@@ -111,7 +112,8 @@ func Run(ctx context.Context, input RunInput) int {
 
 	if kubeconfigPath := os.Getenv("TEST_ENV_KUBECONFIG"); kubeconfigPath != "" {
 		klog.Infof("Writing test env kubeconfig to %q", kubeconfigPath)
-		config := kubeconfig.FromEnvTestConfig(env.Config, &clusterv1.Cluster{
+		// Convert v1beta1.Cluster to v1beta2.Cluster for kubeconfig utility
+		config := kubeconfig.FromEnvTestConfig(env.Config, &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 		})
 		if err := os.WriteFile(kubeconfigPath, config, 0o600); err != nil {
@@ -291,9 +293,15 @@ func (e *Environment) CreateKubeconfigSecret(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 ) error {
+	// Convert v1beta1.Cluster to v1beta2.Cluster for kubeconfig utility
+	clusterV2 := &clusterv1beta2.Cluster{
+		ObjectMeta: cluster.ObjectMeta,
+		Spec:       clusterv1beta2.ClusterSpec{},
+		Status:     clusterv1beta2.ClusterStatus{},
+	}
 	return e.Create(
 		ctx,
-		kubeconfig.GenerateSecret(cluster, kubeconfig.FromEnvTestConfig(e.Config, cluster)),
+		kubeconfig.GenerateSecret(clusterV2, kubeconfig.FromEnvTestConfig(e.Config, clusterV2)),
 	)
 }
 

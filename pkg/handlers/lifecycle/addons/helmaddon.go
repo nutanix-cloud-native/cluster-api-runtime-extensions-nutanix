@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -231,7 +230,13 @@ func waitToBeReady(
 				if obj.Generation != obj.Status.ObservedGeneration {
 					return false, nil
 				}
-				return conditions.IsTrue(obj, clusterv1.ReadyCondition), nil
+				// Check v1beta2 conditions directly (HelmChartProxy uses v1beta2)
+				for _, c := range obj.Status.Conditions {
+					if c.Type == string(clusterv1.ReadyCondition) && c.Status == metav1.ConditionTrue {
+						return true, nil
+					}
+				}
+				return false, nil
 			},
 			Interval: 5 * time.Second,
 			Timeout:  30 * time.Second,
