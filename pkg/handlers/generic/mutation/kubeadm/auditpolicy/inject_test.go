@@ -4,6 +4,8 @@
 package auditpolicy
 
 import (
+	"crypto/tls"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -55,6 +57,15 @@ var _ = Describe("Generate Audit Policy patches", func() {
 								"audit-policy-file":   "/etc/kubernetes/audit-policy.yaml",
 								"audit-log-maxage":    "30",
 								"audit-log-compress":  "true",
+								"tls-cipher-suites": strings.Join(
+									[]string{
+										tls.CipherSuiteName(tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256),
+										tls.CipherSuiteName(tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256),
+										tls.CipherSuiteName(tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384),
+										tls.CipherSuiteName(tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384),
+									},
+									",",
+								),
 							},
 						),
 						gomega.HaveKeyWithValue(
