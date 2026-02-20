@@ -6,12 +6,16 @@ package nutanix
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
+	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
@@ -63,16 +67,21 @@ func TestNewCIDRValidationChecks(t *testing.T) {
 	}
 }
 
-func TestCIDRValidationCheckRun_SizeValidation(t *testing.T) {
+func TestCIDRValidationCheckRun(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name               string
-		podCIDRs           []string
-		serviceCIDRs       []string
-		expectAllowed      bool
-		expectedCauseParts []string
-		expectedWarnings   int
+		name                 string
+		podCIDRs             []string
+		serviceCIDRs         []string
+		resolveSubnetCIDRs   []netip.Prefix
+		resolveSubnetErr     error
+		withConfiguredSubnet bool
+		withNClient          bool
+		expectAllowed        bool
+		expectInternalError  bool
+		expectedCauseParts   []string
+		expectedWarnings     int
 	}{
 		{
 			name:             "valid non-overlapping CIDRs with large ranges",
@@ -133,6 +142,51 @@ func TestCIDRValidationCheckRun_SizeValidation(t *testing.T) {
 			expectedWarnings: 0,
 		},
 		{
+			name:               "pod service overlap",
+			podCIDRs:           []string{"10.96.0.0/16"},
+			serviceCIDRs:       []string{"10.96.0.0/12"},
+			expectAllowed:      false,
+			expectedWarnings:   0,
+			expectedCauseParts: []string{"overlaps with Service CIDR"},
+		},
+		{
+			name:                 "pod and service overlap with node subnet",
+			podCIDRs:             []string{"10.244.0.0/16"},
+			serviceCIDRs:         []string{"10.96.0.0/12"},
+			resolveSubnetCIDRs:   []netip.Prefix{netip.MustParsePrefix("10.244.128.0/24"), netip.MustParsePrefix("10.100.0.0/16")},
+			withConfiguredSubnet: true,
+			withNClient:          true,
+			expectAllowed:        false,
+			expectedWarnings:     0,
+			expectedCauseParts: []string{
+				"Pod CIDR \"10.244.0.0/16\" overlaps with node subnet CIDR \"10.244.128.0/24\"",
+				"Service CIDR \"10.96.0.0/12\" overlaps with node subnet CIDR \"10.100.0.0/16\"",
+			},
+		},
+		{
+			name:                 "subnet resolution error",
+			podCIDRs:             []string{"10.244.0.0/16"},
+			serviceCIDRs:         []string{"10.96.0.0/12"},
+			resolveSubnetErr:     fmt.Errorf("temporary prism error"),
+			withConfiguredSubnet: true,
+			withNClient:          true,
+			expectAllowed:        false,
+			expectInternalError:  true,
+			expectedWarnings:     0,
+			expectedCauseParts:   []string{"Failed to resolve node subnet CIDRs"},
+		},
+		{
+			name:                 "missing nclient with configured subnets fails gracefully",
+			podCIDRs:             []string{"10.244.0.0/16"},
+			serviceCIDRs:         []string{"10.96.0.0/12"},
+			withConfiguredSubnet: true,
+			withNClient:          false,
+			expectAllowed:        false,
+			expectInternalError:  true,
+			expectedWarnings:     0,
+			expectedCauseParts:   []string{"Cannot validate subnet overlaps: Prism Central connection is not available"},
+		},
+		{
 			name:               "invalid pod cidr",
 			podCIDRs:           []string{"not-a-cidr"},
 			serviceCIDRs:       []string{"10.96.0.0/12"},
@@ -146,15 +200,6 @@ func TestCIDRValidationCheckRun_SizeValidation(t *testing.T) {
 			expectAllowed:      false,
 			expectedCauseParts: []string{"Invalid Service CIDR configuration"},
 		},
-		{
-			name:          "overlapping Pod and Service CIDRs",
-			podCIDRs:      []string{"10.0.0.0/16"},
-			serviceCIDRs:  []string{"10.0.0.0/24"},
-			expectAllowed: false,
-			expectedCauseParts: []string{
-				"Pod CIDR \"10.0.0.0/16\" overlaps with Service CIDR \"10.0.0.0/24\"",
-			},
-		},
 	}
 
 	for _, tt := range tests {
@@ -163,15 +208,44 @@ func TestCIDRValidationCheckRun_SizeValidation(t *testing.T) {
 
 			cd := &checkDependencies{
 				cluster: testCluster(tt.podCIDRs, tt.serviceCIDRs),
+				nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
+					ControlPlane: &carenv1.NutanixControlPlaneSpec{
+						Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
+							MachineDetails: carenv1.NutanixMachineDetails{
+								Subnets: configuredSubnets(tt.withConfiguredSubnet),
+							},
+						},
+					},
+				},
+			}
+
+			if tt.withNClient {
+				cd.nclient = &clientWrapper{}
 			}
 
 			check := &cidrValidationCheck{
 				cd: cd,
+				resolveSubnetPrefixesFunc: func(
+					ctx context.Context,
+					nclient client,
+					ids []capxv1.NutanixResourceIdentifier,
+				) ([]netip.Prefix, error) {
+					if !tt.withConfiguredSubnet {
+						require.Empty(t, ids)
+					} else {
+						require.NotEmpty(t, ids)
+					}
+					if tt.resolveSubnetErr != nil {
+						return nil, tt.resolveSubnetErr
+					}
+					return tt.resolveSubnetCIDRs, nil
+				},
 			}
 
 			result := check.Run(context.Background())
 
 			assert.Equal(t, tt.expectAllowed, result.Allowed, "Allowed mismatch")
+			assert.Equal(t, tt.expectInternalError, result.InternalError, "InternalError mismatch")
 			assert.Len(t, result.Warnings, tt.expectedWarnings, "Warnings count mismatch")
 
 			for _, part := range tt.expectedCauseParts {
@@ -187,6 +261,48 @@ func TestCIDRValidationCheckRun_SizeValidation(t *testing.T) {
 	}
 }
 
+func TestCollectSubnetIdentifiers(t *testing.T) {
+	t.Parallel()
+
+	subnetByName := capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierName,
+		Name: ptr.To("subnet-a"),
+	}
+	subnetByUUID := capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierUUID,
+		UUID: ptr.To("11111111-1111-1111-1111-111111111111"),
+	}
+
+	cd := &checkDependencies{
+		nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
+			ControlPlane: &carenv1.NutanixControlPlaneSpec{
+				Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
+					MachineDetails: carenv1.NutanixMachineDetails{
+						Subnets: []capxv1.NutanixResourceIdentifier{
+							subnetByName,
+							subnetByUUID,
+						},
+					},
+				},
+			},
+		},
+		nutanixWorkerNodeConfigSpecByMachineDeploymentName: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
+			"md-1": {
+				Nutanix: &carenv1.NutanixWorkerNodeSpec{
+					MachineDetails: carenv1.NutanixMachineDetails{
+						Subnets: []capxv1.NutanixResourceIdentifier{
+							subnetByName, // duplicate, should be deduped
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ids := collectSubnetIdentifiers(cd)
+	assert.Len(t, ids, 2)
+}
+
 func testCluster(podCIDRs, serviceCIDRs []string) *clusterv1.Cluster {
 	return &clusterv1.Cluster{
 		Spec: clusterv1.ClusterSpec{
@@ -198,6 +314,18 @@ func testCluster(podCIDRs, serviceCIDRs []string) *clusterv1.Cluster {
 					CIDRBlocks: serviceCIDRs,
 				},
 			},
+		},
+	}
+}
+
+func configuredSubnets(enabled bool) []capxv1.NutanixResourceIdentifier {
+	if !enabled {
+		return nil
+	}
+	return []capxv1.NutanixResourceIdentifier{
+		{
+			Type: capxv1.NutanixIdentifierName,
+			Name: ptr.To("subnet-a"),
 		},
 	}
 }
