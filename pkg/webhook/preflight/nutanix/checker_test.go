@@ -42,6 +42,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 		expectedThirdCheckName             string
 		vmImageCheckCount                  int
 		vmImageKubernetesVersionCheckCount int
+		cidrValidationCheckCount           int
 		storageContainerCheckCount         int
 		failureDomainCheckCount            int
 	}{
@@ -55,6 +56,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			expectedThirdCheckName:             "NutanixPrismCentralVersion",
 			vmImageCheckCount:                  0,
 			vmImageKubernetesVersionCheckCount: 0,
+			cidrValidationCheckCount:           0,
 			storageContainerCheckCount:         0,
 			failureDomainCheckCount:            0,
 		},
@@ -66,12 +68,13 @@ func TestNutanixChecker_Init(t *testing.T) {
 				},
 			},
 			workerNodeConfigs:                  nil,
-			expectedCheckCount:                 7, //nolint:lll // config check, credentials check, Prism Central version check, 1 VM image check, 1 storage container check, 1 VM image Kubernetes version check, 1 failure domain check
+			expectedCheckCount:                 8, //nolint:lll // config check, credentials check, Prism Central version check, 1 VM image check, 1 VM image Kubernetes version check, 1 CIDR validation check, 1 storage container check, 1 failure domain check
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			expectedThirdCheckName:             "NutanixPrismCentralVersion",
 			vmImageCheckCount:                  1,
 			vmImageKubernetesVersionCheckCount: 1,
+			cidrValidationCheckCount:           1,
 			storageContainerCheckCount:         1,
 			failureDomainCheckCount:            1,
 		},
@@ -86,12 +89,13 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
-			expectedCheckCount:                 11, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks, 2 storage container checks, 2 VM image Kubernetes version checks, 2 failure domain checks
+			expectedCheckCount:                 13, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks, 2 VM image Kubernetes version checks, 2 CIDR validation checks, 2 storage container checks, 2 failure domain checks
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			expectedThirdCheckName:             "NutanixPrismCentralVersion",
 			vmImageCheckCount:                  2,
 			vmImageKubernetesVersionCheckCount: 2,
+			cidrValidationCheckCount:           2,
 			storageContainerCheckCount:         2,
 			failureDomainCheckCount:            2,
 		},
@@ -107,12 +111,13 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
-			expectedCheckCount:                 11, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks (1 CP + 1 worker), 2 storage container checks (1 CP + 1 worker), 2 VM image Kubernetes version checks, 2 failure domain checks
+			expectedCheckCount:                 13, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks (1 CP + 1 worker), 2 VM image Kubernetes version checks, 2 CIDR validation checks, 2 storage container checks (1 CP + 1 worker), 2 failure domain checks
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			expectedThirdCheckName:             "NutanixPrismCentralVersion",
 			vmImageCheckCount:                  2,
 			vmImageKubernetesVersionCheckCount: 2,
+			cidrValidationCheckCount:           2,
 			storageContainerCheckCount:         2,
 			failureDomainCheckCount:            2,
 		},
@@ -130,6 +135,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			vmImageCheckCount := 0
 			storageContainerCheckCount := 0
 			vmImageKubernetesVersionCheckCount := 0
+			cidrValidationCheckCount := 0
 			failureDomainCheckCount := 0
 
 			checker.configurationCheckFactory = func(cd *checkDependencies) preflight.Check {
@@ -209,6 +215,22 @@ func TestNutanixChecker_Init(t *testing.T) {
 				return checks
 			}
 
+			checker.cidrValidationChecksFactory = func(cd *checkDependencies) []preflight.Check {
+				checks := []preflight.Check{}
+				for i := 0; i < tt.cidrValidationCheckCount; i++ {
+					cidrValidationCheckCount++
+					checks = append(checks,
+						&mockCheck{
+							name: fmt.Sprintf("NutanixCIDRValidation-%d", i),
+							result: preflight.CheckResult{
+								Allowed: true,
+							},
+						},
+					)
+				}
+				return checks
+			}
+
 			checker.failureDomainCheckFactory = func(cd *checkDependencies) []preflight.Check {
 				checks := []preflight.Check{}
 				for i := 0; i < tt.failureDomainCheckCount; i++ {
@@ -242,6 +264,12 @@ func TestNutanixChecker_Init(t *testing.T) {
 			assert.True(t, credsCheckCalled, "initCredentialsCheck should have been called")
 			assert.True(t, prismCentralVersionCheckCalled, "initPrismCentralVersionCheck should have been called")
 			assert.Equal(t, tt.vmImageCheckCount, vmImageCheckCount, "Wrong number of VM image checks")
+			assert.Equal(
+				t,
+				tt.cidrValidationCheckCount,
+				cidrValidationCheckCount,
+				"Wrong number of CIDR validation checks",
+			)
 			assert.Equal(
 				t,
 				tt.storageContainerCheckCount,
@@ -362,6 +390,9 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 					return nil
 				},
 				vmImageKubernetesVersionChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				cidrValidationChecksFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
 				storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
