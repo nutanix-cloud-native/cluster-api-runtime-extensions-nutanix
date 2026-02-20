@@ -146,6 +146,15 @@ func TestCIDRValidationCheckRun_SizeValidation(t *testing.T) {
 			expectAllowed:      false,
 			expectedCauseParts: []string{"Invalid Service CIDR configuration"},
 		},
+		{
+			name:          "overlapping Pod and Service CIDRs",
+			podCIDRs:      []string{"10.0.0.0/16"},
+			serviceCIDRs:  []string{"10.0.0.0/24"},
+			expectAllowed: false,
+			expectedCauseParts: []string{
+				"Pod CIDR \"10.0.0.0/16\" overlaps with Service CIDR \"10.0.0.0/24\"",
+			},
+		},
 	}
 
 	for _, tt := range tests {

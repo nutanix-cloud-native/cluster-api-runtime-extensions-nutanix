@@ -67,6 +67,22 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 	applyPodCIDRValidation(&result, podCIDRs)
 	applyServiceCIDRValidation(&result, serviceCIDRs)
 
+	for _, podCIDR := range podCIDRs {
+		for _, serviceCIDR := range serviceCIDRs {
+			if prefixesOverlap(podCIDR, serviceCIDR) {
+				result.Allowed = false
+				result.Causes = append(result.Causes, preflight.Cause{
+					Message: fmt.Sprintf(
+						"Pod CIDR %q overlaps with Service CIDR %q. Use non-overlapping Pod and Service CIDR ranges and retry.",
+						podCIDR.String(),
+						serviceCIDR.String(),
+					),
+					Field: clusterNetworkPodsFieldPath,
+				})
+			}
+		}
+	}
+
 	return result
 }
 
@@ -192,4 +208,8 @@ func maxNodesForPodCIDR(podMaskSize, nodeMaskSize int) int {
 		return 1
 	}
 	return 1 << (nodeMaskSize - podMaskSize)
+}
+
+func prefixesOverlap(a, b netip.Prefix) bool {
+	return a.Overlaps(b)
 }
