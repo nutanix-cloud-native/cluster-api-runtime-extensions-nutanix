@@ -266,6 +266,20 @@ jobs:
           CAPA_EKS: "true"
 
       - if: steps.list-changed.outputs.changed == 'true'
+        name: Ensure CAPI RuntimeSDK feature gate
+        run: |
+          devbox run -- bash -c '
+            ARGS=$(kubectl get deployment capi-controller-manager -n capi-system -o jsonpath="{.spec.template.spec.containers[0].args}" 2>/dev/null || echo "[]")
+            if [[ "$ARGS" != *"RuntimeSDK"* ]]; then
+              kubectl patch deployment capi-controller-manager -n capi-system --type=json \
+                -p='"'"'[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--feature-gates=RuntimeSDK=true"}]'"'"'
+              kubectl rollout status deployment/capi-controller-manager -n capi-system --timeout=120s
+            fi
+          '
+        env:
+          KUBECONFIG: ${{ env.KIND_KUBECONFIG }}
+
+      - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (install)
         run: |
           devbox run -- \
