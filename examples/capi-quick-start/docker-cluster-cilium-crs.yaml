@@ -1,4 +1,4 @@
-apiVersion: cluster.x-k8s.io/v1beta1
+apiVersion: cluster.x-k8s.io/v1beta2
 kind: Cluster
 metadata:
   labels:
@@ -15,8 +15,9 @@ spec:
       - ${SERVICE_CIDR:-10.128.0.0/12}
   topology:
     class: docker-quick-start
+    classRef:
+      name: quick-start
     controlPlane:
-      metadata: {}
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}
     variables:
     - name: clusterConfig

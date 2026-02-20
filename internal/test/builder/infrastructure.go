@@ -26,7 +26,7 @@ var (
 	// InfrastructureGroupVersion is group version used for infrastructure objects.
 	InfrastructureGroupVersion = schema.GroupVersion{
 		Group:   "infrastructure.cluster.x-k8s.io",
-		Version: "v1beta1",
+		Version: "v1beta2",
 	}
 
 	// GenericInfrastructureMachineKind is the Kind for the GenericInfrastructureMachine.

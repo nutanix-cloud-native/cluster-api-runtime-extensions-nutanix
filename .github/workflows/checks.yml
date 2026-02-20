@@ -259,6 +259,11 @@ jobs:
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
         run: devbox run -- make clusterctl.init
+        env:
+          CLUSTER_TOPOLOGY: "true"
+          EXP_RUNTIME_SDK: "true"
+          EXP_MACHINE_POOL: "true"
+          CAPA_EKS: "true"
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (install)

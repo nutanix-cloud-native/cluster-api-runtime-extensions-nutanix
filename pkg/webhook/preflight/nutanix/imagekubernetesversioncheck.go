@@ -135,7 +135,7 @@ func newVMImageKubernetesVersionChecks(
 
 	// Get cluster Kubernetes version for version matching
 	clusterK8sVersion := ""
-	if cd.cluster != nil && cd.cluster.Spec.Topology != nil && cd.cluster.Spec.Topology.Version != "" {
+	if cd.cluster != nil && cd.cluster.Spec.Topology.IsDefined() && cd.cluster.Spec.Topology.Version != "" {
 		clusterK8sVersion = strings.TrimPrefix(cd.cluster.Spec.Topology.Version, "v")
 	}
 

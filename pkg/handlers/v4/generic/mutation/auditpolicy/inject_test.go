@@ -48,31 +48,46 @@ var _ = Describe("Generate Audit Policy patches", func() {
 					gomega.SatisfyAll(
 						gomega.HaveKeyWithValue(
 							"extraArgs",
-							map[string]interface{}{
-								"audit-log-maxbackup": "10",
-								"audit-log-maxsize":   "100",
-								"audit-log-path":      "/var/log/audit/kube-apiserver-audit.log",
-								"audit-policy-file":   "/etc/kubernetes/audit-policy.yaml",
-								"audit-log-maxage":    "30",
-							},
+							gomega.ContainElements(
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", "audit-log-path"),
+									gomega.HaveKeyWithValue("value", "/var/log/audit/kube-apiserver-audit.log"),
+								),
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", "audit-policy-file"),
+									gomega.HaveKeyWithValue("value", "/etc/kubernetes/audit-policy.yaml"),
+								),
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", "audit-log-maxage"),
+									gomega.HaveKeyWithValue("value", "30"),
+								),
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", "audit-log-maxbackup"),
+									gomega.HaveKeyWithValue("value", "10"),
+								),
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", "audit-log-maxsize"),
+									gomega.HaveKeyWithValue("value", "100"),
+								),
+							),
 						),
 						gomega.HaveKeyWithValue(
 							"extraVolumes",
-							[]interface{}{
-								map[string]interface{}{
-									"hostPath":  "/etc/kubernetes/audit-policy.yaml",
-									"mountPath": "/etc/kubernetes/audit-policy.yaml",
-									"name":      "audit-policy",
-									"readOnly":  true,
-									"pathType":  "File",
-								},
-								map[string]interface{}{
-									"name":      "audit-logs",
-									"hostPath":  "/var/log/kubernetes/audit",
-									"mountPath": "/var/log/audit/",
-									"pathType":  "DirectoryOrCreate",
-								},
-							},
+							gomega.ContainElements(
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("hostPath", "/etc/kubernetes/audit-policy.yaml"),
+									gomega.HaveKeyWithValue("mountPath", "/etc/kubernetes/audit-policy.yaml"),
+									gomega.HaveKeyWithValue("name", "audit-policy"),
+									gomega.HaveKeyWithValue("readOnly", true),
+									gomega.HaveKeyWithValue("pathType", "File"),
+								),
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", "audit-logs"),
+									gomega.HaveKeyWithValue("hostPath", "/var/log/kubernetes/audit"),
+									gomega.HaveKeyWithValue("mountPath", "/var/log/audit/"),
+									gomega.HaveKeyWithValue("pathType", "DirectoryOrCreate"),
+								),
+							),
 						),
 					),
 				),

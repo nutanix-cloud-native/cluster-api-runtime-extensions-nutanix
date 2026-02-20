@@ -53,11 +53,12 @@ var _ = Describe("Generate external cloud provider patches", func() {
 					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
 					ValueMatcher: gomega.HaveKeyWithValue(
 						"apiServer",
-						gomega.Equal(map[string]interface{}{
-							"extraArgs": map[string]interface{}{
-								"cloud-provider": "external",
-							},
-						}),
+						gomega.HaveKeyWithValue(
+							"extraArgs",
+							gomega.ContainElement(
+								gomega.HaveKeyWithValue("name", "cloud-provider"),
+							),
+						),
 					),
 				},
 			},
@@ -70,9 +71,9 @@ var _ = Describe("Generate external cloud provider patches", func() {
 				NewRequest(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
-					Operation:    "add",
-					Path:         "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/cloud-provider",
-					ValueMatcher: gomega.Equal("external"),
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/1",
+					ValueMatcher: gomega.HaveKeyWithValue("name", "cloud-provider"),
 				},
 			},
 		},

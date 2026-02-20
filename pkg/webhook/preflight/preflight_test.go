@@ -18,7 +18,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -81,7 +82,10 @@ func topologyCluster(skippedCheckNames ...string) *clusterv1.Cluster {
 			},
 		},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{},
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+				Version:  "dummy-version",
+			},
 		},
 	}
 }
@@ -116,7 +120,7 @@ func TestHandle(t *testing.T) {
 			operation: admissionv1.Create,
 			cluster: func() *clusterv1.Cluster {
 				cluster := topologyCluster()
-				cluster.Spec.Paused = true
+				cluster.Spec.Paused = ptr.To(true)
 				return cluster
 			}(),
 			expectedResponse: admission.Response{
@@ -515,12 +519,12 @@ func TestHandle(t *testing.T) {
 			operation: admissionv1.Update,
 			oldCluster: func() *clusterv1.Cluster {
 				cluster := topologyCluster()
-				cluster.Spec.Paused = false
+				cluster.Spec.Paused = ptr.To(false)
 				return cluster
 			}(),
 			cluster: func() *clusterv1.Cluster {
 				cluster := topologyCluster()
-				cluster.Spec.Paused = true
+				cluster.Spec.Paused = ptr.To(true)
 				return cluster
 			}(),
 			expectedResponse: admission.Response{

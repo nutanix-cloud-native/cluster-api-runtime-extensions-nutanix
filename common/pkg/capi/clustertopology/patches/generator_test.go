@@ -11,8 +11,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 )
@@ -31,7 +31,7 @@ func TestMutateIfApplicable(t *testing.T) {
 	tests := []testSpec[*v1.ConfigMap]{{
 		name: "empty input matches holder and selector",
 		input: &unstructured.Unstructured{Object: map[string]interface{}{
-			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 			"kind":       "KubeadmControlPlaneTemplate",
 		}},
 		holderRef: &runtimehooksv1.HolderReference{
@@ -48,7 +48,7 @@ func TestMutateIfApplicable(t *testing.T) {
 		},
 		expected: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 				"kind":       "KubeadmControlPlaneTemplate",
 				"data": map[string]interface{}{
 					"foo": "bar",
@@ -94,7 +94,7 @@ func TestMutateIfApplicable(t *testing.T) {
 	}, {
 		name: "check deletion of elements in slice",
 		input: &unstructured.Unstructured{Object: map[string]interface{}{
-			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 			"kind":       "KubeadmControlPlaneTemplate",
 			"data": map[string]interface{}{
 				"existingFoo": "bar",
@@ -115,7 +115,7 @@ func TestMutateIfApplicable(t *testing.T) {
 		},
 		expected: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 				"kind":       "KubeadmControlPlaneTemplate",
 				"data": map[string]interface{}{
 					"foo": "bar",

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -140,7 +140,7 @@ func createTestCluster(t *testing.T, name, namespace, provider, host string, por
 	}
 
 	topology := &clusterv1.Topology{
-		Class:     "test-cluster-class",
+		ClassRef:  clusterv1.ClusterClassRef{Name: "test-cluster-class"},
 		Version:   "v1.29.0",
 		Variables: []clusterv1.ClusterVariable{*variable},
 	}
@@ -182,7 +182,7 @@ func createTestClusterForPreflight(
 	}
 
 	topology := &clusterv1.Topology{
-		Class:     "test-cluster-class",
+		ClassRef:  clusterv1.ClusterClassRef{Name: "test-cluster-class"},
 		Version:   "v1.29.0",
 		Variables: []clusterv1.ClusterVariable{*variable},
 	}

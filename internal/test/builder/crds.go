@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util/contract"
 )
 
@@ -53,7 +53,7 @@ func generateCRD(
 		ObjectMeta: metav1.ObjectMeta{
 			Name: contract.CalculateCRDName(gvk.Group, gvk.Kind),
 			Labels: map[string]string{
-				clusterv1.GroupVersion.String(): "v1beta1",
+				clusterv1.GroupVersion.String(): "v1beta2",
 			},
 		},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{

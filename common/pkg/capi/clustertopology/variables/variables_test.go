@@ -8,7 +8,7 @@ import (
 
 	"github.com/onsi/gomega"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/api/core/v1beta1"
 )
 
 func TestGet(t *testing.T) {
@@ -149,7 +149,7 @@ func TestClusterVariablesToVariablesMap(t *testing.T) {
 			t.Parallel()
 
 			// Call the function under test
-			result := ClusterVariablesToVariablesMap(tt.variables)
+			result := V1Beta1ClusterVariablesToVariablesMap(tt.variables)
 
 			// Assert the result
 			g.Expect(result).To(gomega.Equal(tt.expectedMap))

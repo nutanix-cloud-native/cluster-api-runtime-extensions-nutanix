@@ -10,8 +10,9 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/matchers"
 )
@@ -30,7 +31,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match: apiVersion mismatch",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta2",
 				"kind":       "AzureMachineTemplate",
 			},
 		},
@@ -43,12 +44,12 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match: kind mismatch",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta2",
 				"kind":       "AzureMachineTemplate",
 			},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
+			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureClusterTemplate",
 		},
 		match: false,
@@ -56,7 +57,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Match InfrastructureClusterTemplate",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta2",
 				"kind":       "AzureClusterTemplate",
 			},
 		},
@@ -68,10 +69,10 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.infrastructureRef",
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
+			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureClusterTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
-				InfrastructureCluster: true,
+				InfrastructureCluster: ptr.To(true),
 			},
 		},
 		match: true,
@@ -79,7 +80,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match InfrastructureClusterTemplate, .matchResources.infrastructureCluster not set",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta2",
 				"kind":       "AzureClusterTemplate",
 			},
 		},
@@ -91,7 +92,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.infrastructureRef",
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion:     "infrastructure.cluster.x-k8s.io/v1beta1",
+			APIVersion:     "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:           "AzureClusterTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{},
 		},
@@ -100,7 +101,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match InfrastructureClusterTemplate, .matchResources.infrastructureCluster false",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta2",
 				"kind":       "AzureClusterTemplate",
 			},
 		},
@@ -112,10 +113,10 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.infrastructureRef",
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
+			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureClusterTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
-				InfrastructureCluster: false,
+				InfrastructureCluster: ptr.To(false),
 			},
 		},
 		match: false,
@@ -123,7 +124,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Match ControlPlaneTemplate",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 				"kind":       "ControlPlaneTemplate",
 			},
 		},
@@ -135,10 +136,10 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.controlPlaneRef",
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "controlplane.cluster.x-k8s.io/v1beta1",
+			APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 			Kind:       "ControlPlaneTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
-				ControlPlane: true,
+				ControlPlane: ptr.To(true),
 			},
 		},
 		match: true,
@@ -146,7 +147,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match ControlPlaneTemplate, .matchResources.controlPlane not set",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 				"kind":       "ControlPlaneTemplate",
 			},
 		},
@@ -158,7 +159,7 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.controlPlaneRef",
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion:     "controlplane.cluster.x-k8s.io/v1beta1",
+			APIVersion:     "controlplane.cluster.x-k8s.io/v1beta2",
 			Kind:           "ControlPlaneTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{},
 		},
@@ -167,7 +168,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match ControlPlaneTemplate, .matchResources.controlPlane false",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 				"kind":       "ControlPlaneTemplate",
 			},
 		},
@@ -179,10 +180,10 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.controlPlaneRef",
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "controlplane.cluster.x-k8s.io/v1beta1",
+			APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 			Kind:       "ControlPlaneTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
-				ControlPlane: false,
+				ControlPlane: ptr.To(false),
 			},
 		},
 		match: false,
@@ -190,22 +191,22 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Match ControlPlane InfrastructureMachineTemplate",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta2",
 				"kind":       "AzureMachineTemplate",
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: "controlplane.cluster.x-k8s.io/v1beta1",
+			APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 			Kind:       "KubeadmControlPlane",
 			Name:       "my-controlplane",
 			Namespace:  "default",
 			FieldPath:  "spec.machineTemplate.infrastructureRef",
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
+			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureMachineTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
-				ControlPlane: true,
+				ControlPlane: ptr.To(true),
 			},
 		},
 		match: true,
@@ -213,7 +214,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Match MD BootstrapTemplate",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta2",
 				"kind":       "BootstrapTemplate",
 			},
 		},
@@ -228,7 +229,7 @@ func TestMatchesSelector(t *testing.T) {
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
+			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
 				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
@@ -241,7 +242,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Match all MD BootstrapTemplate",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta2",
 				"kind":       "BootstrapTemplate",
 			},
 		},
@@ -256,7 +257,7 @@ func TestMatchesSelector(t *testing.T) {
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
+			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
 				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
@@ -269,7 +270,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Glob match MD BootstrapTemplate with <string>-*",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta2",
 				"kind":       "BootstrapTemplate",
 			},
 		},
@@ -284,7 +285,7 @@ func TestMatchesSelector(t *testing.T) {
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"class-A"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
+			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
 				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
@@ -297,7 +298,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Glob match MD BootstrapTemplate with *-<string>",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta2",
 				"kind":       "BootstrapTemplate",
 			},
 		},
@@ -312,7 +313,7 @@ func TestMatchesSelector(t *testing.T) {
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"class-A"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
+			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
 				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
@@ -325,7 +326,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match BootstrapTemplate, .matchResources.machineDeploymentClass.names is empty",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta2",
 				"kind":       "BootstrapTemplate",
 			},
 		},
@@ -340,7 +341,7 @@ func TestMatchesSelector(t *testing.T) {
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
+			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
 				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
@@ -353,7 +354,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Do not match BootstrapTemplate, .matchResources.machineDeploymentClass is set to nil",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta2",
 				"kind":       "BootstrapTemplate",
 			},
 		},
@@ -368,7 +369,7 @@ func TestMatchesSelector(t *testing.T) {
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
+			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
 				MachineDeploymentClass: nil,
@@ -379,7 +380,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match BootstrapTemplate, .matchResources.machineDeploymentClass not set",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta2",
 				"kind":       "BootstrapTemplate",
 			},
 		},
@@ -394,7 +395,7 @@ func TestMatchesSelector(t *testing.T) {
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion:     "bootstrap.cluster.x-k8s.io/v1beta1",
+			APIVersion:     "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:           "BootstrapTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{},
 		},
@@ -403,7 +404,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match BootstrapTemplate, .matchResources.machineDeploymentClass does not match",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "bootstrap.cluster.x-k8s.io/v1beta2",
 				"kind":       "BootstrapTemplate",
 			},
 		},
@@ -418,7 +419,7 @@ func TestMatchesSelector(t *testing.T) {
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
+			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
 				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
@@ -431,7 +432,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Match MD InfrastructureMachineTemplate",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "infrastructure.cluster.x-k8s.io/v1beta2",
 				"kind":       "AzureMachineTemplate",
 			},
 		},
@@ -446,7 +447,7 @@ func TestMatchesSelector(t *testing.T) {
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
+			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureMachineTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
 				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
@@ -459,7 +460,7 @@ func TestMatchesSelector(t *testing.T) {
 		name: "Don't match: unknown field path",
 		obj: &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 				"kind":       "ControlPlaneTemplate",
 			},
 		},
@@ -471,10 +472,10 @@ func TestMatchesSelector(t *testing.T) {
 			FieldPath:  "spec.machineTemplate.unknown.infrastructureRef",
 		},
 		selector: clusterv1.PatchSelector{
-			APIVersion: "controlplane.cluster.x-k8s.io/v1beta1",
+			APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 			Kind:       "ControlPlaneTemplate",
 			MatchResources: clusterv1.PatchSelectorMatch{
-				ControlPlane: true,
+				ControlPlane: ptr.To(true),
 			},
 		},
 		match: false,
