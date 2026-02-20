@@ -25,6 +25,7 @@ var Checker = &nutanixChecker{
 	failureDomainCheckFactory:             newFailureDomainChecks,
 	vmImageChecksFactory:                  newVMImageChecks,
 	vmImageKubernetesVersionChecksFactory: newVMImageKubernetesVersionChecks,
+	cidrValidationChecksFactory:           newCIDRValidationChecks,
 	storageContainerChecksFactory:         newStorageContainerChecks,
 }
 
@@ -53,6 +54,10 @@ type nutanixChecker struct {
 	) []preflight.Check
 
 	vmImageKubernetesVersionChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	cidrValidationChecksFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
 
@@ -106,6 +111,7 @@ func (n *nutanixChecker) Init(
 	checks = append(checks, n.failureDomainCheckFactory(cd)...)
 	checks = append(checks, n.vmImageChecksFactory(cd)...)
 	checks = append(checks, n.vmImageKubernetesVersionChecksFactory(cd)...)
+	checks = append(checks, n.cidrValidationChecksFactory(cd)...)
 	checks = append(checks, n.storageContainerChecksFactory(cd)...)
 
 	// Add more checks here as needed.
