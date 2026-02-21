@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 func Test_ServiceIPForCluster(t *testing.T) {
@@ -24,7 +24,7 @@ func Test_ServiceIPForCluster(t *testing.T) {
 			name: "Cluster with nil service CIDR",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{},
+					ClusterNetwork: clusterv1.ClusterNetwork{},
 				},
 			},
 			wantErr: errors.New("error getting a service IP for a cluster: unexpected empty service Subnets"),
@@ -33,8 +33,8 @@ func Test_ServiceIPForCluster(t *testing.T) {
 			name: "Cluster with empty service CIDR slice",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{
-						Services: &clusterv1.NetworkRanges{
+					ClusterNetwork: clusterv1.ClusterNetwork{
+						Services: clusterv1.NetworkRanges{
 							CIDRBlocks: []string{},
 						},
 					},
@@ -46,8 +46,8 @@ func Test_ServiceIPForCluster(t *testing.T) {
 			name: "Cluster with a single service CIDR",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{
-						Services: &clusterv1.NetworkRanges{
+					ClusterNetwork: clusterv1.ClusterNetwork{
+						Services: clusterv1.NetworkRanges{
 							CIDRBlocks: []string{
 								"192.168.0.0/16",
 							},
@@ -61,8 +61,8 @@ func Test_ServiceIPForCluster(t *testing.T) {
 			name: "Cluster with a multiple service CIDRs",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{
-						Services: &clusterv1.NetworkRanges{
+					ClusterNetwork: clusterv1.ClusterNetwork{
+						Services: clusterv1.NetworkRanges{
 							CIDRBlocks: []string{
 								"192.168.0.0/16",
 								"10.96.0.0/12",

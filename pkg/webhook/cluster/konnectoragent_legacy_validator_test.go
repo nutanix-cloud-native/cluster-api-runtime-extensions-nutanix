@@ -19,7 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -79,6 +80,13 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 					GenerateName: "test-cluster-",
 					Namespace:    corev1.NamespaceDefault,
 				},
+				Spec: clusterv1.ClusterSpec{
+					InfrastructureRef: clusterv1.ContractVersionedObjectReference{
+						APIGroup: "infrastructure.cluster.x-k8s.io",
+						Kind:     "DockerCluster",
+						Name:     "dummy",
+					},
+				},
 			}
 			Expect(c.Create(ctx, cluster)).To(Succeed())
 
@@ -123,7 +131,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 				v1alpha1.SkipKonnectorAgentLegacyDeploymentValidation: "false",
 			}
 			Expect(c.Create(ctx, cluster)).To(Succeed())
-			cluster.Status.InfrastructureReady = true
+			cluster.Status.Initialization.InfrastructureProvisioned = ptr.To(true)
 			Expect(c.Status().Update(ctx, cluster)).To(Succeed())
 			Expect(helpers.TestEnv.WithFakeRemoteClusterClient(cluster)).To(Succeed())
 
@@ -143,7 +151,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 
 			cluster := createTestClusterWithKonnectorAgent()
 			Expect(c.Create(ctx, cluster)).To(Succeed())
-			cluster.Status.InfrastructureReady = true
+			cluster.Status.Initialization.InfrastructureProvisioned = ptr.To(true)
 			Expect(c.Status().Update(ctx, cluster)).To(Succeed())
 			Expect(helpers.TestEnv.WithFakeRemoteClusterClient(cluster)).To(Succeed())
 
@@ -165,7 +173,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 
 			cluster := createTestClusterWithKonnectorAgent()
 			Expect(c.Create(ctx, cluster)).To(Succeed())
-			cluster.Status.InfrastructureReady = false
+			cluster.Status.Initialization.InfrastructureProvisioned = ptr.To(false)
 			Expect(c.Status().Update(ctx, cluster)).To(Succeed())
 			Expect(helpers.TestEnv.WithFakeRemoteClusterClient(cluster)).To(Succeed())
 
@@ -197,7 +205,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 			// Remove konnector agent from cluster config
 			cluster.Spec.Topology.Variables = []clusterv1.ClusterVariable{}
 			Expect(c.Create(ctx, cluster)).To(Succeed())
-			cluster.Status.InfrastructureReady = false
+			cluster.Status.Initialization.InfrastructureProvisioned = ptr.To(false)
 			Expect(c.Status().Update(ctx, cluster)).To(Succeed())
 			Expect(helpers.TestEnv.WithFakeRemoteClusterClient(cluster)).To(Succeed())
 
@@ -227,7 +235,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 
 			cluster := createTestClusterWithKonnectorAgent()
 			Expect(c.Create(ctx, cluster)).To(Succeed())
-			cluster.Status.InfrastructureReady = true
+			cluster.Status.Initialization.InfrastructureProvisioned = ptr.To(true)
 			Expect(c.Status().Update(ctx, cluster)).To(Succeed())
 			Expect(helpers.TestEnv.WithFakeRemoteClusterClient(cluster)).To(Succeed())
 
@@ -255,7 +263,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 
 			cluster := createTestClusterWithKonnectorAgent()
 			Expect(c.Create(ctx, cluster)).To(Succeed())
-			cluster.Status.InfrastructureReady = true
+			cluster.Status.Initialization.InfrastructureProvisioned = ptr.To(true)
 			Expect(c.Status().Update(ctx, cluster)).To(Succeed())
 			Expect(helpers.TestEnv.WithFakeRemoteClusterClient(cluster)).To(Succeed())
 
@@ -283,7 +291,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 
 			cluster := createTestClusterWithKonnectorAgent()
 			Expect(c.Create(ctx, cluster)).To(Succeed())
-			cluster.Status.InfrastructureReady = true
+			cluster.Status.Initialization.InfrastructureProvisioned = ptr.To(true)
 			Expect(c.Status().Update(ctx, cluster)).To(Succeed())
 			Expect(helpers.TestEnv.WithFakeRemoteClusterClient(cluster)).To(Succeed())
 
@@ -339,9 +347,9 @@ func createTestClusterWithKonnectorAgent() *clusterv1.Cluster {
 			Namespace:    corev1.NamespaceDefault,
 		},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Class:   "test-class",
-				Version: "v1.30.0",
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+				Version:  "v1.30.0",
 				Variables: []clusterv1.ClusterVariable{
 					{
 						Name: v1alpha1.ClusterConfigVariableName,

@@ -10,9 +10,10 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"k8s.io/utils/ptr"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -104,22 +105,17 @@ func (h *etcdPatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting etcd configuration in kubeadm config spec")
 
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
-			}
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local = &bootstrapv1.LocalEtcd{}
-			}
+			localEtcd := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local
 
-			localEtcd := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local
-
-			if localEtcd.ExtraArgs == nil {
-				localEtcd.ExtraArgs = make(map[string]string, len(defaultEtcdExtraArgs))
+			extraArgsMap := make(map[string]bool)
+			for _, arg := range localEtcd.ExtraArgs {
+				extraArgsMap[arg.Name] = true
 			}
 
 			for k, v := range defaultEtcdExtraArgs {
-				if _, ok := localEtcd.ExtraArgs[k]; !ok {
-					localEtcd.ExtraArgs[k] = v
+				if !extraArgsMap[k] {
+					localEtcd.ExtraArgs = append(localEtcd.ExtraArgs, bootstrapv1.Arg{Name: k, Value: ptr.To(v)})
+					extraArgsMap[k] = true
 				}
 			}
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 const (
@@ -50,19 +50,16 @@ func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1.Cluster) []string {
 		"127.0.0.1",
 	}
 
-	if cluster.Spec.ClusterNetwork != nil &&
-		cluster.Spec.ClusterNetwork.Pods != nil {
+	if len(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks) > 0 {
 		noProxy = append(noProxy, cluster.Spec.ClusterNetwork.Pods.CIDRBlocks...)
 	}
 
-	if cluster.Spec.ClusterNetwork != nil &&
-		cluster.Spec.ClusterNetwork.Services != nil {
+	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) > 0 {
 		noProxy = append(noProxy, cluster.Spec.ClusterNetwork.Services.CIDRBlocks...)
 	}
 
 	serviceDomain := "cluster.local"
-	if cluster.Spec.ClusterNetwork != nil &&
-		cluster.Spec.ClusterNetwork.ServiceDomain != "" {
+	if cluster.Spec.ClusterNetwork.ServiceDomain != "" {
 		serviceDomain = cluster.Spec.ClusterNetwork.ServiceDomain
 	}
 
@@ -77,7 +74,7 @@ func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1.Cluster) []string {
 		fmt.Sprintf(".svc.%s.", strings.TrimLeft(serviceDomain, ".")),
 	)
 
-	if cluster.Spec.InfrastructureRef == nil {
+	if cluster.Spec.InfrastructureRef.Kind == "" {
 		return append(noProxy, p.AdditionalNo...)
 	}
 

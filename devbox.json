@@ -2,7 +2,6 @@
   "packages": {
     "actionlint":                           "latest",
     "chart-testing":                        "latest",
-    "clusterctl":                           "1.10.4",
     "coreutils":                            "latest",
     "crane":                                "latest",
     "envsubst":                             "latest",
@@ -42,7 +41,8 @@
     "apple-sdk_12": {
       "version":   "latest",
       "platforms": ["aarch64-darwin"]
-    }
+    },
+    "path:./hack/flakes#clusterctl": ""
   },
   "shell": {
     "scripts": {

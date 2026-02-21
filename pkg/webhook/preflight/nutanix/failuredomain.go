@@ -53,13 +53,13 @@ func newFailureDomainChecks(cd *checkDependencies) []preflight.Check {
 
 	// For the failure domains configured for worker nodes
 	if cd.cluster != nil &&
-		cd.cluster.Spec.Topology != nil &&
-		cd.cluster.Spec.Topology.Workers != nil {
+		cd.cluster.Spec.Topology.IsDefined() &&
+		len(cd.cluster.Spec.Topology.Workers.MachineDeployments) > 0 {
 		for i := range cd.cluster.Spec.Topology.Workers.MachineDeployments {
 			md := &cd.cluster.Spec.Topology.Workers.MachineDeployments[i]
-			if md.FailureDomain != nil && *md.FailureDomain != "" {
+			if md.FailureDomain != "" {
 				checks = append(checks, &failureDomainCheck{
-					failureDomainName: *md.FailureDomain,
+					failureDomainName: md.FailureDomain,
 					namespace:         cd.cluster.Namespace,
 					field: fmt.Sprintf(
 						"$.spec.topology.workers.machineDeployments[?@.name==%q].failureDomain",

@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -81,7 +81,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 			machineDeployments: []clusterv1.MachineDeploymentTopology{{
 				Class:         "default-worker",
 				Name:          "md-1",
-				FailureDomain: ptr.To("fd-w1"),
+				FailureDomain: "fd-w1",
 			}},
 			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
@@ -99,7 +99,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 			machineDeployments: []clusterv1.MachineDeploymentTopology{{
 				Class:         "default-worker",
 				Name:          "md-1",
-				FailureDomain: ptr.To("fd-w1"),
+				FailureDomain: "fd-w1",
 			}},
 			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
@@ -113,8 +113,8 @@ func TestInitFailureDomainChecks(t *testing.T) {
 				nutanixClusterConfigSpec: tc.nutanixClusterConfigSpec,
 				cluster: &clusterv1.Cluster{
 					Spec: clusterv1.ClusterSpec{
-						Topology: &clusterv1.Topology{
-							Workers: &clusterv1.WorkersTopology{
+						Topology: clusterv1.Topology{
+							Workers: clusterv1.WorkersTopology{
 								MachineDeployments: tc.machineDeployments,
 							},
 						},

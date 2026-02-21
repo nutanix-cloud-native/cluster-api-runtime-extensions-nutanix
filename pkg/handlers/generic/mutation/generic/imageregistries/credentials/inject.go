@@ -12,10 +12,10 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -191,25 +191,12 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				return err
 			}
 
-			initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
-			if initConfiguration == nil {
-				initConfiguration = &bootstrapv1.InitConfiguration{}
-			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = initConfiguration
-			if initConfiguration.NodeRegistration.KubeletExtraArgs == nil {
-				initConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
-			}
-			addImageCredentialProviderArgs(initConfiguration.NodeRegistration.KubeletExtraArgs)
-
-			joinConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration
-			if joinConfiguration == nil {
-				joinConfiguration = &bootstrapv1.JoinConfiguration{}
-			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = joinConfiguration
-			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
-				joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
-			}
-			addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
+			addImageCredentialProviderArgs(
+				&obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.KubeletExtraArgs,
+			)
+			addImageCredentialProviderArgs(
+				&obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.KubeletExtraArgs,
+			)
 			return nil
 		}); err != nil {
 		return err
@@ -249,15 +236,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				return err
 			}
 
-			joinConfiguration := obj.Spec.Template.Spec.JoinConfiguration
-			if joinConfiguration == nil {
-				joinConfiguration = &bootstrapv1.JoinConfiguration{}
-			}
-			obj.Spec.Template.Spec.JoinConfiguration = joinConfiguration
-			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
-				joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
-			}
-			addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
+			addImageCredentialProviderArgs(&obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.KubeletExtraArgs)
 
 			return nil
 		}); err != nil {

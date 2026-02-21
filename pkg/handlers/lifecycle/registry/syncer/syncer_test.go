@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/storage/names"
 	featuregatetesting "k8s.io/component-base/featuregate/testing"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -133,18 +133,17 @@ func namedClusterWithRegistry(t *testing.T, name string) *clusterv1.Cluster {
 			Name: name,
 		},
 		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: &clusterv1.ClusterNetwork{
-				Services: &clusterv1.NetworkRanges{
+			ClusterNetwork: clusterv1.ClusterNetwork{
+				Services: clusterv1.NetworkRanges{
 					CIDRBlocks: []string{
 						"192.168.0.0/16",
 					},
 				},
 			},
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{
-					*variable,
-				},
-				Version: "v1.30.100",
+			Topology: clusterv1.Topology{
+				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
+				Variables: []clusterv1.ClusterVariable{*variable},
+				Version:   "v1.30.100",
 			},
 		},
 	}
@@ -167,17 +166,16 @@ func clusterWithoutRegistry(t *testing.T) *clusterv1.Cluster {
 			Name: names.SimpleNameGenerator.GenerateName("without-registry-"),
 		},
 		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: &clusterv1.ClusterNetwork{
-				Services: &clusterv1.NetworkRanges{
+			ClusterNetwork: clusterv1.ClusterNetwork{
+				Services: clusterv1.NetworkRanges{
 					CIDRBlocks: []string{
 						"192.168.0.0/16",
 					},
 				},
 			},
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{
-					*variable,
-				},
+			Topology: clusterv1.Topology{
+				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
+				Variables: []clusterv1.ClusterVariable{*variable},
 			},
 		},
 	}

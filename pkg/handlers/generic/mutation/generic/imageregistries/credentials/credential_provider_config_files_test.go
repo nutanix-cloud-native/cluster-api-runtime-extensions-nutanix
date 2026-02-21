@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 )
 
 func Test_templateKubeletCredentialProviderConfig(t *testing.T) {
@@ -27,10 +27,7 @@ func Test_templateKubeletCredentialProviderConfig(t *testing.T) {
 			},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: kubelet.config.k8s.io/v1
 kind: CredentialProviderConfig
 providers:
@@ -61,10 +58,7 @@ providers:
 			}},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: kubelet.config.k8s.io/v1
 kind: CredentialProviderConfig
 providers:
@@ -95,10 +89,7 @@ providers:
 			}},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: kubelet.config.k8s.io/v1
 kind: CredentialProviderConfig
 providers:
@@ -134,10 +125,7 @@ providers:
 			}},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/image-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: kubelet.config.k8s.io/v1
 kind: CredentialProviderConfig
 providers:
@@ -187,10 +175,7 @@ func Test_templateDynamicCredentialProviderConfig(t *testing.T) {
 			},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: credentialprovider.d2iq.com/v1alpha1
 kind: DynamicCredentialProviderConfig
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
@@ -217,10 +202,7 @@ credentialProviders:
 			}},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: credentialprovider.d2iq.com/v1alpha1
 kind: DynamicCredentialProviderConfig
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
@@ -247,10 +229,7 @@ credentialProviders:
 			}},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: credentialprovider.d2iq.com/v1alpha1
 kind: DynamicCredentialProviderConfig
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
@@ -288,10 +267,7 @@ credentialProviders:
 			}},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: credentialprovider.d2iq.com/v1alpha1
 kind: DynamicCredentialProviderConfig
 credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
@@ -332,10 +308,7 @@ credentialProviders:
 			},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: credentialprovider.d2iq.com/v1alpha1
 kind: DynamicCredentialProviderConfig
 mirror:
@@ -374,10 +347,7 @@ credentialProviders:
 			},
 			want: &cabpkv1.File{
 				Path:        "/etc/kubernetes/dynamic-credential-provider-config.yaml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `apiVersion: credentialprovider.d2iq.com/v1alpha1
 kind: DynamicCredentialProviderConfig
 mirror:

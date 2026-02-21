@@ -14,7 +14,7 @@ import (
 	"text/template"
 
 	"github.com/samber/lo"
-	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
@@ -149,7 +149,7 @@ func generateRegistryCACertFiles(
 		files = append(files, cabpkv1.File{
 			Path:        file.path,
 			Permissions: "0600",
-			ContentFrom: &cabpkv1.FileSource{
+			ContentFrom: cabpkv1.FileSource{
 				Secret: cabpkv1.SecretFileSource{
 					Name: file.caSecretName,
 					Key:  secretKeyForCACert,

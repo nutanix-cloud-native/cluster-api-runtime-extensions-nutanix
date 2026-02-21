@@ -13,8 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -72,6 +72,12 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 					clusterv1.ProviderNameLabel: "aws",
 				},
 			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
+				},
+			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -101,6 +107,12 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 					clusterv1.ProviderNameLabel: "docker",
 				},
 			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
+				},
+			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -128,6 +140,12 @@ var _ = Describe("Generate kube proxy mode patches", func() {
 				Namespace: request.Namespace,
 				Labels: map[string]string{
 					clusterv1.ProviderNameLabel: "nutanix",
+				},
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
 				},
 			},
 		},
@@ -177,6 +195,12 @@ mode: iptables
 					clusterv1.ProviderNameLabel: "nutanix",
 				},
 			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
+				},
+			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -222,6 +246,12 @@ mode: iptables
 				Namespace: request.Namespace,
 				Labels: map[string]string{
 					clusterv1.ProviderNameLabel: "aws",
+				},
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
 				},
 			},
 		},
@@ -271,6 +301,12 @@ mode: iptables
 					clusterv1.ProviderNameLabel: "docker",
 				},
 			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
+				},
+			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -316,6 +352,12 @@ mode: nftables
 				Namespace: request.Namespace,
 				Labels: map[string]string{
 					clusterv1.ProviderNameLabel: "nutanix",
+				},
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
 				},
 			},
 		},
@@ -365,6 +407,12 @@ mode: nftables
 					clusterv1.ProviderNameLabel: "aws",
 				},
 			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
+				},
+			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -412,6 +460,12 @@ mode: nftables
 					clusterv1.ProviderNameLabel: "docker",
 				},
 			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
+				},
+			},
 		},
 	}, {
 		patchTest: capitest.PatchTestDef{
@@ -439,6 +493,12 @@ mode: nftables
 				Namespace: request.Namespace,
 				Labels: map[string]string{
 					clusterv1.ProviderNameLabel: "eks",
+				},
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+					Version:  "v1.30.0",
 				},
 			},
 		},

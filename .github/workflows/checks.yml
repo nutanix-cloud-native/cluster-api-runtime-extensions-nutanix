@@ -259,6 +259,27 @@ jobs:
       - if: steps.list-changed.outputs.changed == 'true'
         name: Setup Cluster API and cert-manager
         run: devbox run -- make clusterctl.init
+        env:
+          CLUSTER_TOPOLOGY: "true"
+          EXP_RUNTIME_SDK: "true"
+          EXP_MACHINE_POOL: "true"
+          CAPA_EKS: "true"
+
+      - if: steps.list-changed.outputs.changed == 'true'
+        name: Ensure CAPI RuntimeSDK feature gate
+        run: |
+          cat << 'ENSURE_RUNTIME_SDK_EOF' > ensure-runtime-sdk.sh
+          set -euo pipefail
+          ARGS=$(kubectl get deployment capi-controller-manager -n capi-system -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null || echo "[]")
+          if [[ "$ARGS" != *"RuntimeSDK"* ]]; then
+            kubectl patch deployment capi-controller-manager -n capi-system --type=json \
+              -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--feature-gates=RuntimeSDK=true"}]'
+            kubectl rollout status deployment/capi-controller-manager -n capi-system --timeout=120s
+          fi
+          ENSURE_RUNTIME_SDK_EOF
+          devbox run -- bash ensure-runtime-sdk.sh
+        env:
+          KUBECONFIG: ${{ env.KIND_KUBECONFIG }}
 
       - if: steps.list-changed.outputs.changed == 'true'
         name: Run chart-testing (install)

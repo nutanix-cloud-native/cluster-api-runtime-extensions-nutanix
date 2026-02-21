@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 )
 
 func Test_generateContainerdDefaultHostsFile(t *testing.T) {
@@ -29,10 +29,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 			},
 			want: &cabpkv1.File{
 				Path:        "/etc/containerd/certs.d/_default/hosts.toml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `[host."https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com/v2"]
   capabilities = ["pull", "resolve"]
   # don't rely on Containerd to add the v2/ suffix
@@ -51,10 +48,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 			},
 			want: &cabpkv1.File{
 				Path:        "/etc/containerd/certs.d/_default/hosts.toml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `[host."https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com/v2/myproject"]
   capabilities = ["pull", "resolve"]
   # don't rely on Containerd to add the v2/ suffix
@@ -77,10 +71,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 			},
 			want: &cabpkv1.File{
 				Path:        "/etc/containerd/certs.d/_default/hosts.toml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `[host."https://mymirror.com/v2"]
   capabilities = ["pull", "resolve"]
   ca = "/etc/containerd/certs.d/mymirror.com/ca.crt"
@@ -109,10 +100,7 @@ func Test_generateContainerdDefaultHostsFile(t *testing.T) {
 			},
 			want: &cabpkv1.File{
 				Path:        "/etc/containerd/certs.d/_default/hosts.toml",
-				Owner:       "",
 				Permissions: "0600",
-				Encoding:    "",
-				Append:      false,
 				Content: `[host."https://mymirror.com/v2"]
   capabilities = ["pull", "resolve"]
   ca = "/etc/containerd/certs.d/mymirror.com/ca.crt"
@@ -174,11 +162,8 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 			want: []cabpkv1.File{
 				{
 					Path:        "/etc/containerd/certs.d/registry.example.com/ca.crt",
-					Owner:       "",
 					Permissions: "0600",
-					Encoding:    "",
-					Append:      false,
-					ContentFrom: &cabpkv1.FileSource{
+					ContentFrom: cabpkv1.FileSource{
 						Secret: cabpkv1.SecretFileSource{
 							Name: "my-registry-credentials-secret",
 							Key:  "ca.crt",
@@ -206,11 +191,8 @@ func Test_generateRegistryCACertFiles(t *testing.T) {
 			want: []cabpkv1.File{
 				{
 					Path:        "/etc/containerd/certs.d/registry.example.com/ca.crt",
-					Owner:       "",
 					Permissions: "0600",
-					Encoding:    "",
-					Append:      false,
-					ContentFrom: &cabpkv1.FileSource{
+					ContentFrom: cabpkv1.FileSource{
 						Secret: cabpkv1.SecretFileSource{
 							Name: "my-registry-credentials-secret",
 							Key:  "ca.crt",
@@ -270,10 +252,7 @@ func Test_generateContainerdRegistryConfigDropInFile(t *testing.T) {
 	want := []cabpkv1.File{
 		{
 			Path:        "/etc/caren/containerd/patches/registry-config.toml",
-			Owner:       "",
 			Permissions: "0600",
-			Encoding:    "",
-			Append:      false,
 			Content: `[plugins."io.containerd.grpc.v1.cri".registry]
   config_path = "/etc/containerd/certs.d"
 `,

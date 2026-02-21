@@ -18,8 +18,8 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -436,8 +436,8 @@ var _ = Describe("Generate Global mirror patches", func() {
 					Namespace: request.Namespace,
 				},
 				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{
-						Services: &clusterv1.NetworkRanges{
+					ClusterNetwork: clusterv1.ClusterNetwork{
+						Services: clusterv1.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},
@@ -502,8 +502,8 @@ func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 					Namespace: corev1.NamespaceDefault,
 				},
 				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{
-						Services: &clusterv1.NetworkRanges{
+					ClusterNetwork: clusterv1.ClusterNetwork{
+						Services: clusterv1.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},
@@ -525,7 +525,7 @@ func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 					Namespace: corev1.NamespaceDefault,
 				},
 				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{},
+					ClusterNetwork: clusterv1.ClusterNetwork{},
 				},
 			},
 			wantErr: fmt.Errorf(
@@ -546,8 +546,8 @@ func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 					Namespace: corev1.NamespaceDefault,
 				},
 				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{
-						Services: &clusterv1.NetworkRanges{
+					ClusterNetwork: clusterv1.ClusterNetwork{
+						Services: clusterv1.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},

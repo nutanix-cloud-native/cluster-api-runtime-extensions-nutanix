@@ -15,10 +15,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"k8s.io/utils/ptr"
+	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -131,14 +132,20 @@ func (h *encryptionPatchHandler) Mutate(
 				generateEncryptionCredentialsFile(cluster))
 
 			// set APIServer args for encryption config
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &cabpkv1.ClusterConfiguration{}
-			}
 			apiServer := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer
-			if apiServer.ExtraArgs == nil {
-				apiServer.ExtraArgs = make(map[string]string, 1)
+			hasEncryptionConfig := false
+			for _, arg := range apiServer.ExtraArgs {
+				if arg.Name == apiServerEncryptionConfigArg {
+					hasEncryptionConfig = true
+					break
+				}
 			}
-			apiServer.ExtraArgs[apiServerEncryptionConfigArg] = encryptionConfigurationOnRemote
+			if !hasEncryptionConfig {
+				apiServer.ExtraArgs = append(apiServer.ExtraArgs, cabpkv1.Arg{
+					Name:  apiServerEncryptionConfigArg,
+					Value: ptr.To(encryptionConfigurationOnRemote),
+				})
+			}
 
 			return nil
 		})
@@ -148,7 +155,7 @@ func generateEncryptionCredentialsFile(cluster *clusterv1.Cluster) cabpkv1.File 
 	secretName := defaultEncryptionSecretName(cluster.Name)
 	return cabpkv1.File{
 		Path: encryptionConfigurationOnRemote,
-		ContentFrom: &cabpkv1.FileSource{
+		ContentFrom: cabpkv1.FileSource{
 			Secret: cabpkv1.SecretFileSource{
 				Name: secretName,
 				Key:  SecretKeyForEtcdEncryption,

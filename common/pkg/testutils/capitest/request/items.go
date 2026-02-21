@@ -5,7 +5,6 @@ package request
 
 import (
 	"encoding/json"
-	"maps"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -14,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	capdv1 "sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest/serializer"
@@ -73,10 +72,10 @@ func NewKubeadmConfigTemplateRequest(
 				Template: bootstrapv1.KubeadmConfigTemplateResource{
 					Spec: bootstrapv1.KubeadmConfigSpec{
 						PostKubeadmCommands: []string{"initial-post-kubeadm"},
-						JoinConfiguration: &bootstrapv1.JoinConfiguration{
+						JoinConfiguration: bootstrapv1.JoinConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
-								KubeletExtraArgs: map[string]string{
-									"cloud-provider": "external",
+								KubeletExtraArgs: []bootstrapv1.Arg{
+									{Name: "cloud-provider", Value: ptr.To("external")},
 								},
 							},
 						},
@@ -135,17 +134,17 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 			Template: controlplanev1.KubeadmControlPlaneTemplateResource{
 				Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
 					KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
-						InitConfiguration: &bootstrapv1.InitConfiguration{
+						InitConfiguration: bootstrapv1.InitConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
-								KubeletExtraArgs: map[string]string{
-									"cloud-provider": "external",
+								KubeletExtraArgs: []bootstrapv1.Arg{
+									{Name: "cloud-provider", Value: ptr.To("external")},
 								},
 							},
 						},
-						JoinConfiguration: &bootstrapv1.JoinConfiguration{
+						JoinConfiguration: bootstrapv1.JoinConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
-								KubeletExtraArgs: map[string]string{
-									"cloud-provider": "external",
+								KubeletExtraArgs: []bootstrapv1.Arg{
+									{Name: "cloud-provider", Value: ptr.To("external")},
 								},
 							},
 						},
@@ -157,11 +156,11 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 	}
 
 	if b.apiServerExtraArgs != nil {
-		if cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
-			cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
+		args := make([]bootstrapv1.Arg, 0, len(b.apiServerExtraArgs))
+		for k, v := range b.apiServerExtraArgs {
+			args = append(args, bootstrapv1.Arg{Name: k, Value: ptr.To(v)})
 		}
-		clusterConfiguration := cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration
-		clusterConfiguration.APIServer.ExtraArgs = maps.Clone(b.apiServerExtraArgs)
+		cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs = args
 	}
 
 	requestItem := NewRequestItem(

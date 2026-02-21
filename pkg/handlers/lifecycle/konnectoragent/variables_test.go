@@ -15,12 +15,13 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
@@ -53,7 +54,8 @@ func TestApply_SkipsIfVariableMissing(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{},
 			},
 		},
@@ -71,7 +73,8 @@ func TestApply_FailsWhenCredentialsMissing(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{
@@ -94,7 +97,8 @@ func TestApply_FailsWhenCopySecretFails(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
@@ -121,7 +125,8 @@ func TestApply_SuccessfulHelmStrategy(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
@@ -169,7 +174,8 @@ func TestApply_HelmApplyFails(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
@@ -255,14 +261,17 @@ func TestAfterControlPlaneInitialized(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{},
 			},
 		},
 	}
 
+	clusterV1beta1, err := capiutils.ConvertV1Beta2ClusterToV1Beta1(cluster)
+	require.NoError(t, err)
 	req := &runtimehooksv1.AfterControlPlaneInitializedRequest{
-		Cluster: *cluster,
+		Cluster: *clusterV1beta1,
 	}
 	resp := &runtimehooksv1.AfterControlPlaneInitializedResponse{}
 
@@ -277,14 +286,17 @@ func TestBeforeClusterUpgrade(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{},
 			},
 		},
 	}
 
+	clusterV1beta1, err := capiutils.ConvertV1Beta2ClusterToV1Beta1(cluster)
+	require.NoError(t, err)
 	req := &runtimehooksv1.BeforeClusterUpgradeRequest{
-		Cluster: *cluster,
+		Cluster: *clusterV1beta1,
 	}
 	resp := &runtimehooksv1.BeforeClusterUpgradeResponse{}
 
@@ -299,7 +311,8 @@ func TestApply_InvalidVariableJSON(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name:  v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{invalid json}`)},
@@ -457,7 +470,8 @@ categoryMappings: {{ .CategoryMappings }}
 		clusterWithCategories := &clusterv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
 			Spec: clusterv1.ClusterSpec{
-				Topology: &clusterv1.Topology{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 					Variables: []clusterv1.ClusterVariable{
 						{
 							Name: v1alpha1.WorkerConfigVariableName,
@@ -507,7 +521,8 @@ func TestApply_ClusterConfigVariableFailure(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					// Missing nutanix config, which will cause cluster config variable parsing to fail
@@ -561,7 +576,8 @@ func TestApply_SuccessfulWithFullNutanixConfig(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
@@ -618,7 +634,8 @@ func TestExtractCategoryMappings(t *testing.T) {
 			name: "worker config with no nutanix section",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Variables: []clusterv1.ClusterVariable{
 							{
 								Name:  v1alpha1.WorkerConfigVariableName,
@@ -634,7 +651,8 @@ func TestExtractCategoryMappings(t *testing.T) {
 			name: "worker config with no additionalCategories",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Variables: []clusterv1.ClusterVariable{
 							{
 								Name: v1alpha1.WorkerConfigVariableName,
@@ -656,7 +674,8 @@ func TestExtractCategoryMappings(t *testing.T) {
 			name: "worker config with empty additionalCategories",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Variables: []clusterv1.ClusterVariable{
 							{
 								Name: v1alpha1.WorkerConfigVariableName,
@@ -680,7 +699,8 @@ func TestExtractCategoryMappings(t *testing.T) {
 			name: "worker config with single category",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Variables: []clusterv1.ClusterVariable{
 							{
 								Name: v1alpha1.WorkerConfigVariableName,
@@ -709,7 +729,8 @@ func TestExtractCategoryMappings(t *testing.T) {
 			name: "worker config with multiple categories",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Variables: []clusterv1.ClusterVariable{
 							{
 								Name: v1alpha1.WorkerConfigVariableName,
@@ -755,7 +776,8 @@ func TestExtractCategoryMappings(t *testing.T) {
 			name: "worker config with categories having empty keys or values (should be filtered)",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Variables: []clusterv1.ClusterVariable{
 							{
 								Name: v1alpha1.WorkerConfigVariableName,
@@ -797,7 +819,8 @@ func TestExtractCategoryMappings(t *testing.T) {
 			name: "worker config with categories having special characters",
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Variables: []clusterv1.ClusterVariable{
 							{
 								Name: v1alpha1.WorkerConfigVariableName,
@@ -849,7 +872,8 @@ func TestExtractCategoryMappings_WithMachineDeploymentOverrides(t *testing.T) {
 	// Test that categories are combined from both cluster-level and machine deployment overrides
 	cluster := &clusterv1.Cluster{
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{
 					{
 						Name: v1alpha1.WorkerConfigVariableName,
@@ -869,11 +893,11 @@ func TestExtractCategoryMappings_WithMachineDeploymentOverrides(t *testing.T) {
 						},
 					},
 				},
-				Workers: &clusterv1.WorkersTopology{
+				Workers: clusterv1.WorkersTopology{
 					MachineDeployments: []clusterv1.MachineDeploymentTopology{
 						{
 							Name: "md-0",
-							Variables: &clusterv1.MachineDeploymentVariables{
+							Variables: clusterv1.MachineDeploymentVariables{
 								Overrides: []clusterv1.ClusterVariable{
 									{
 										Name: v1alpha1.WorkerConfigVariableName,
@@ -912,7 +936,8 @@ func TestExtractCategoryMappings_WithDuplicateKeys(t *testing.T) {
 	// Test that all categories are preserved, including duplicate keys with different values
 	cluster := &clusterv1.Cluster{
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{
 					{
 						Name: v1alpha1.WorkerConfigVariableName,
@@ -936,11 +961,11 @@ func TestExtractCategoryMappings_WithDuplicateKeys(t *testing.T) {
 						},
 					},
 				},
-				Workers: &clusterv1.WorkersTopology{
+				Workers: clusterv1.WorkersTopology{
 					MachineDeployments: []clusterv1.MachineDeploymentTopology{
 						{
 							Name: "md-0",
-							Variables: &clusterv1.MachineDeploymentVariables{
+							Variables: clusterv1.MachineDeploymentVariables{
 								Overrides: []clusterv1.ClusterVariable{
 									{
 										Name: v1alpha1.WorkerConfigVariableName,
@@ -1173,7 +1198,8 @@ func TestIsClusterRegisteredInPC_MissingClusterConfig(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{},
 			},
 		},
@@ -1191,7 +1217,8 @@ func TestIsClusterRegisteredInPC_MissingCredentialsSecret(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
@@ -1235,7 +1262,8 @@ func TestIsClusterRegisteredInPC_MissingUsernameInSecret(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
@@ -1279,7 +1307,8 @@ func TestIsClusterRegisteredInPC_MissingPasswordInSecret(t *testing.T) {
 	cluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 				Variables: []clusterv1.ClusterVariable{{
 					Name: v1alpha1.ClusterConfigVariableName,
 					Value: apiextensionsv1.JSON{Raw: []byte(`{

@@ -8,13 +8,14 @@ import (
 	"errors"
 	"fmt"
 
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
+	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 type ServiceLoadBalancerGC struct {
@@ -39,14 +40,20 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 	req *runtimehooksv1.BeforeClusterDeleteRequest,
 	resp *runtimehooksv1.BeforeClusterDeleteResponse,
 ) {
-	clusterKey := ctrlclient.ObjectKeyFromObject(&req.Cluster)
+	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
+		return
+	}
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		clusterKey,
 	)
 
-	shouldDelete, err := shouldDeleteServicesWithLoadBalancer(&req.Cluster)
+	shouldDelete, err := shouldDeleteServicesWithLoadBalancer(cluster)
 	if err != nil {
 		resp.Status = runtimehooksv1.ResponseStatusFailure
 		resp.Message = fmt.Sprintf(

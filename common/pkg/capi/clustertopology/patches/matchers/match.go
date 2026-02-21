@@ -14,8 +14,9 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 )
 
@@ -29,11 +30,11 @@ func MatchesSelector(
 		return false
 	}
 
-	if selector.MatchResources.InfrastructureCluster && MatchesInfrastructure(holderRef) {
+	if ptr.Deref(selector.MatchResources.InfrastructureCluster, false) && MatchesInfrastructure(holderRef) {
 		return true
 	}
 
-	if selector.MatchResources.ControlPlane && MatchesControlPlane(holderRef) {
+	if ptr.Deref(selector.MatchResources.ControlPlane, false) && MatchesControlPlane(holderRef) {
 		return true
 	}
 

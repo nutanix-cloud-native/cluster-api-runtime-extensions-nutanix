@@ -77,5 +77,4 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}'
 kind: ConfigMap
 metadata:
-  creationTimestamp: null
   name: '{{ .Values.helmAddonsConfigMap }}'
