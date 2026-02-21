@@ -19,11 +19,11 @@ patches:
         value:
           - name: "cluster-config"
             external:
-              generateExtension: "nutanixclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "nutanixclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "nutanixclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix"
           - name: "worker-config"
             external:
-              generateExtension: "nutanixworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "nutanixworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "nutanixworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
 
   # BEGIN Initialize lists and maps

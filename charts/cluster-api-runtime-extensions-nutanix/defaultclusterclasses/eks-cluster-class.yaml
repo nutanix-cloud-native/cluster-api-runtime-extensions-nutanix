@@ -18,11 +18,11 @@ spec:
   patches:
   - external:
       discoverVariablesExtension: eksclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: eksclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: eksclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
       discoverVariablesExtension: eksworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: eksworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: eksworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: worker-config
   workers:
     machineDeployments:

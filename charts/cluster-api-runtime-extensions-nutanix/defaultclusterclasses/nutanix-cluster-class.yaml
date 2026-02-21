@@ -98,11 +98,11 @@ spec:
   patches:
   - external:
       discoverVariablesExtension: nutanixclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: nutanixclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: nutanixclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
       discoverVariablesExtension: nutanixworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: nutanixworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: nutanixworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: worker-config
   workers:
     machineDeployments:
