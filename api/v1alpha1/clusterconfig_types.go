@@ -464,6 +464,8 @@ type NTP struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
 	// +kubebuilder:validation:items:MaxLength=253
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:XValidation:rule="self.all(server, isIP(server) || !format.dns1123Subdomain().validate(server).hasValue())",message="Each server must be a valid IP address or DNS1123 subdomain"
 	Servers []string `json:"servers"`
 }
 

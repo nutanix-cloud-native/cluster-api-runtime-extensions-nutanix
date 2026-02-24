@@ -120,6 +120,10 @@ spec:
                     maxItems: 16
                     minItems: 1
                     type: array
+                    uniqueItems: true
+                    x-kubernetes-validations:
+                    - message: Each server must be a valid IP address or DNS1123 subdomain
+                      rule: self.all(server, isIP(server) || !format.dns1123Subdomain().validate(server).hasValue())
                 required:
                 - servers
                 type: object

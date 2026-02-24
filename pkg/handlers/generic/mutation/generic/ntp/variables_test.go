@@ -16,32 +16,79 @@ import (
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
-var testDefs = []capitest.VariableTestDef{{
-	Name: "unset NTP configuration",
-	Vals: v1alpha1.GenericClusterConfigSpec{},
-}, {
-	Name: "valid single NTP server",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		NTP: &v1alpha1.NTP{
-			Servers: []string{"pool.ntp.org"},
+var testDefs = []capitest.VariableTestDef{
+	{
+		Name: "unset NTP configuration",
+		Vals: v1alpha1.GenericClusterConfigSpec{},
+	},
+	{
+		Name: "valid single NTP server",
+		Vals: v1alpha1.GenericClusterConfigSpec{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{"pool.ntp.org"},
+			},
 		},
 	},
-}, {
-	Name: "valid multiple NTP servers",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		NTP: &v1alpha1.NTP{
-			Servers: []string{"time.aws.com", "time.google.com", "pool.ntp.org"},
+	{
+		Name: "valid multiple NTP servers",
+		Vals: v1alpha1.GenericClusterConfigSpec{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{"time.aws.com", "time.google.com", "pool.ntp.org"},
+			},
 		},
 	},
-}, {
-	Name: "empty servers array",
-	Vals: v1alpha1.GenericClusterConfigSpec{
-		NTP: &v1alpha1.NTP{
-			Servers: []string{},
+	{
+		Name: "empty servers array",
+		Vals: v1alpha1.GenericClusterConfigSpec{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{},
+			},
+		},
+		ExpectError: true,
+	},
+	{
+		Name: "duplicate NTP servers",
+		Vals: v1alpha1.GenericClusterConfigSpec{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{"time.aws.com", "time.aws.com"},
+			},
+		},
+		ExpectError: true,
+	},
+	{
+		Name: "server is not a valid IP address or a valid DNS label",
+		Vals: v1alpha1.GenericClusterConfigSpec{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{"time.aws.com", "invalid:server"},
+			},
+		},
+		ExpectError: true,
+	},
+	{
+		Name: "server is a valid IPv4 address",
+		Vals: v1alpha1.GenericClusterConfigSpec{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{"1.1.1.1"},
+			},
 		},
 	},
-	ExpectError: true,
-}}
+	{
+		Name: "server is a valid IPv6 address",
+		Vals: v1alpha1.GenericClusterConfigSpec{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{"2001:db8::1"},
+			},
+		},
+	},
+	{
+		Name: "all servers are valid DNS1123 subdomains",
+		Vals: v1alpha1.GenericClusterConfigSpec{
+			NTP: &v1alpha1.NTP{
+				Servers: []string{"example.com", "time.example.com"},
+			},
+		},
+	},
+}
 
 func TestVariableValidation_AWS(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
