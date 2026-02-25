@@ -18,11 +18,11 @@ import (
 
 var testDefs = []capitest.VariableTestDef{
 	{
-		Name: "unset NTP configuration",
+		Name: "valid: unset NTP configuration",
 		Vals: v1alpha1.GenericClusterConfigSpec{},
 	},
 	{
-		Name: "valid single NTP server",
+		Name: "valid: single NTP server",
 		Vals: v1alpha1.GenericClusterConfigSpec{
 			NTP: &v1alpha1.NTP{
 				Servers: []string{"pool.ntp.org"},
@@ -30,15 +30,15 @@ var testDefs = []capitest.VariableTestDef{
 		},
 	},
 	{
-		Name: "valid multiple NTP servers",
+		Name: "valid: multiple, unique NTP servers",
 		Vals: v1alpha1.GenericClusterConfigSpec{
 			NTP: &v1alpha1.NTP{
-				Servers: []string{"time.aws.com", "time.google.com", "pool.ntp.org"},
+				Servers: []string{"time.aws.com", "time.google.com", "pool.ntp.org", "1.2.3.4", "2001:db8::1"},
 			},
 		},
 	},
 	{
-		Name: "empty servers array",
+		Name: "invalid: empty servers array",
 		Vals: v1alpha1.GenericClusterConfigSpec{
 			NTP: &v1alpha1.NTP{
 				Servers: []string{},
@@ -47,25 +47,25 @@ var testDefs = []capitest.VariableTestDef{
 		ExpectError: true,
 	},
 	{
-		Name: "duplicate NTP servers",
+		Name: "invalid: duplicate NTP servers, case-insensitive",
 		Vals: v1alpha1.GenericClusterConfigSpec{
 			NTP: &v1alpha1.NTP{
-				Servers: []string{"time.aws.com", "time.aws.com"},
+				Servers: []string{"time.aws.com", "TIME.AWS.COM"},
 			},
 		},
 		ExpectError: true,
 	},
 	{
-		Name: "server is not a valid IP address or a valid DNS label",
+		Name: "invalid: server is not a valid IP address or a valid domain name",
 		Vals: v1alpha1.GenericClusterConfigSpec{
 			NTP: &v1alpha1.NTP{
-				Servers: []string{"time.aws.com", "invalid:server"},
+				Servers: []string{"invalid:server"},
 			},
 		},
 		ExpectError: true,
 	},
 	{
-		Name: "server is a valid IPv4 address",
+		Name: "valid: server is an IPv4 address",
 		Vals: v1alpha1.GenericClusterConfigSpec{
 			NTP: &v1alpha1.NTP{
 				Servers: []string{"1.1.1.1"},
@@ -73,7 +73,7 @@ var testDefs = []capitest.VariableTestDef{
 		},
 	},
 	{
-		Name: "server is a valid IPv6 address",
+		Name: "valid: server is an IPv6 address",
 		Vals: v1alpha1.GenericClusterConfigSpec{
 			NTP: &v1alpha1.NTP{
 				Servers: []string{"2001:db8::1"},
@@ -81,10 +81,15 @@ var testDefs = []capitest.VariableTestDef{
 		},
 	},
 	{
-		Name: "all servers are valid DNS1123 subdomains",
+		Name: "valid: server is a domain name",
 		Vals: v1alpha1.GenericClusterConfigSpec{
 			NTP: &v1alpha1.NTP{
-				Servers: []string{"example.com", "time.example.com"},
+				Servers: []string{
+					"hostname",              // Hostname is allowed.
+					"example.com",           // Domain is allowed.
+					"subdomain.example.com", // Subdomain is allowed.
+					"trailing.com.",         // Trailing dot is allowed.
+				},
 			},
 		},
 	},

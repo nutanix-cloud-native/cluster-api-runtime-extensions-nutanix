@@ -452,8 +452,8 @@ spec:
                       type: array
                       uniqueItems: true
                       x-kubernetes-validations:
-                        - message: Each server must be a valid IP address or DNS1123 subdomain
-                          rule: self.all(server, isIP(server) || !format.dns1123Subdomain().validate(server).hasValue())
+                        - message: Each server must be a valid IP address, hostname, or domain name
+                          rule: self.all(server, isIP(server) || server.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\\.?$'))
                   required:
                     - servers
                   type: object
