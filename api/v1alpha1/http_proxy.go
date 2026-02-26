@@ -74,8 +74,8 @@ func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1beta2.Cluster) []string {
 		fmt.Sprintf(".svc.%s.", strings.TrimLeft(serviceDomain, ".")),
 	)
 
-	if cluster.Spec.InfrastructureRef.Kind == "" {
-		return append(noProxy, p.AdditionalNo...)
+	if cluster.Spec.InfrastructureRef.Name == "" {
+		return NormalizeNoProxyEntries(append(noProxy, p.AdditionalNo...))
 	}
 
 	// Add infra-specific entries
@@ -107,5 +107,5 @@ func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1beta2.Cluster) []string {
 	default:
 		// Unknown infrastructure. Do nothing.
 	}
-	return append(noProxy, p.AdditionalNo...)
+	return NormalizeNoProxyEntries(append(noProxy, p.AdditionalNo...))
 }

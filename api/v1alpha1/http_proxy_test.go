@@ -47,8 +47,11 @@ func TestGenerateNoProxy(t *testing.T) {
 			},
 		},
 		expectedNoProxy: []string{
-			"localhost", "127.0.0.1", "10.0.0.0/24", "10.0.1.0/24", "kubernetes",
-			"kubernetes.default", ".svc", ".svc.cluster.local", ".svc.cluster.local.",
+			"localhost", "127.0.0.1",
+			"10.0.0.0/24", "10.0.0.0-10.0.0.255",
+			"10.0.1.0/24", "10.0.1.0-10.0.1.255",
+			"kubernetes", "kubernetes.default",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
 	}, {
 		name: "Unknown infrastructure cluster",
@@ -141,8 +144,11 @@ func TestGenerateNoProxy(t *testing.T) {
 			},
 		},
 		expectedNoProxy: []string{
-			"localhost", "127.0.0.1", "172.16.0.0/24", "172.16.1.0/24", "kubernetes",
-			"kubernetes.default", ".svc", ".svc.cluster.local", ".svc.cluster.local.",
+			"localhost", "127.0.0.1",
+			"172.16.0.0/24", "172.16.0.0-172.16.0.255",
+			"172.16.1.0/24", "172.16.1.0-172.16.1.255",
+			"kubernetes", "kubernetes.default",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
 	}, {
 		name: "custom servicedomain",
@@ -174,8 +180,12 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		additonalNo: []string{"example.com"},
 		expectedNoProxy: []string{
-			"localhost", "127.0.0.1", "10.10.0.0/16", "172.16.0.0/16", "kubernetes",
-			"kubernetes.default", ".svc", ".svc.foo.bar", ".svc.foo.bar.", "example.com",
+			"localhost", "127.0.0.1",
+			"10.10.0.0/16", "10.10.0.0-10.10.255.255",
+			"172.16.0.0/16", "172.16.0.0-172.16.255.255",
+			"kubernetes", "kubernetes.default",
+			".svc", ".svc.foo.bar", ".svc.foo.bar.",
+			"example.com",
 		},
 	}}
 
