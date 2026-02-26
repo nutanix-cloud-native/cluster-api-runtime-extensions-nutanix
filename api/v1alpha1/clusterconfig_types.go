@@ -464,6 +464,8 @@ type NTP struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
 	// +kubebuilder:validation:items:MaxLength=253
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:XValidation:rule="self.all(server, isIP(server) || server.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\\\\.?$'))",message="Each server must be a valid IP address, hostname, or domain name"
 	Servers []string `json:"servers"`
 }
 
