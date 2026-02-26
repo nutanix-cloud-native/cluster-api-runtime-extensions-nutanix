@@ -4,4 +4,4 @@
 self-hosted-runner:
   # Labels of self-hosted runner in array of string
   labels:
-    - self-hosted-ncn-dind
+    - self-hosted-nutanix-docker-medium
