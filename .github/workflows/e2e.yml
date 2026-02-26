@@ -41,7 +41,7 @@ jobs:
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.14.0
         with:
-          enable-cache: ${{ inputs.runs-on != 'self-hosted-ncn-dind' }}
+          enable-cache: ${{ inputs.runs-on == 'ubuntu-24.04' }}
 
       - name: Export go version and mod cache path
         id: export-go-version-and-mod-cache-path
@@ -61,7 +61,7 @@ jobs:
       # The default disk size of Github hosted runners is ~14GB, this is not enough to run the e2e tests.
       # Cleanup the disk, see upstream discussion https://github.com/actions/runner-images/issues/2840.
       - name: Cleanup Disk Space
-        if: inputs.runs-on != 'self-hosted-ncn-dind'
+        if: inputs.runs-on == 'ubuntu-24.04'
         run: |
           echo "Before removing files:"
           df -h

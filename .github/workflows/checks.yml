@@ -84,7 +84,7 @@ jobs:
       focus: Quick start
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
-      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-24.04' }}
+      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-nutanix-docker-medium' || 'ubuntu-24.04' }}
       base-os:  ${{ matrix.config.provider == 'Nutanix' && matrix.config.baseOS || '' }}
     secrets: inherit
     permissions:
@@ -114,7 +114,7 @@ jobs:
       focus: Self-hosted
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
-      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-24.04' }}
+      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-nutanix-docker-medium' || 'ubuntu-24.04' }}
     secrets: inherit
     permissions:
       contents: read
