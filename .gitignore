@@ -56,5 +56,8 @@ golangci-lint-kube-api-linter
 .specify/spec.md
 .specify/plan.md
 
+# Git worktrees
+.worktrees/
+
 # Cursor IDE - ignore local/user state, commit shared rules
 .cursor/mcp.json
