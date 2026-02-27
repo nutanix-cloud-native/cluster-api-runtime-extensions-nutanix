@@ -13,6 +13,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
@@ -279,6 +280,32 @@ func renderKubeletConfigPatch(cfg *v1alpha1.KubeletConfiguration) (*bootstrapv1.
 		Permissions: "0644",
 		Content:     b.String(),
 	}, nil
+}
+
+// applyDeprecatedMaxParallelImagePulls copies the deprecated maxParallelImagePullsPerNode
+// into merged.MaxParallelImagePulls if the new field is not set. The new field takes
+// precedence; if both are set, the deprecated value is ignored.
+func applyDeprecatedMaxParallelImagePulls(
+	merged *v1alpha1.KubeletConfiguration,
+	vars map[string]apiextensionsv1.JSON,
+	clusterVariableName string,
+) (*v1alpha1.KubeletConfiguration, error) {
+	deprecatedVal, err := variables.Get[int32](vars, clusterVariableName, "maxParallelImagePullsPerNode")
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			return merged, nil
+		}
+		return merged, err
+	}
+	// New field takes precedence; skip if already set
+	if merged != nil && merged.MaxParallelImagePulls != nil {
+		return merged, nil
+	}
+	if merged == nil {
+		merged = &v1alpha1.KubeletConfiguration{}
+	}
+	merged.MaxParallelImagePulls = ptr.To(deprecatedVal)
+	return merged, nil
 }
 
 // mergeKubeletConfig merges base and override. Override fields take precedence over base.
