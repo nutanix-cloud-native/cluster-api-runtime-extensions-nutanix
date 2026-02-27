@@ -16,464 +16,500 @@ spec:
     singular: nutanixworkernodeconfig
   scope: Namespaced
   versions:
-    - name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: NutanixWorkerNodeConfig is the Schema for the nutanixworkernodeconfigs API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: NutanixWorkerNodeConfigSpec defines the desired state of NutanixWorkerNodeSpec.
-              properties:
-                kubeletConfiguration:
-                  description: |-
-                    KubeletConfiguration defines kubelet settings for this node group.
-                    When set, these values override the cluster-level kubeletConfiguration defaults.
-                    Override semantics are per-field (not deep merge of map values within a field).
-                  properties:
-                    containerLogMaxFiles:
-                      description: |-
-                        ContainerLogMaxFiles specifies the maximum number of container log files
-                        that can be present for a container.
-                        Default kubelet value is 5.
-                      format: int32
-                      minimum: 2
-                      type: integer
-                    containerLogMaxSize:
-                      description: |-
-                        ContainerLogMaxSize defines the maximum size of the container log file
-                        before it is rotated. Value is a quantity (e.g. "10Mi", "256Ki").
-                        Default kubelet value is "10Mi".
-                      pattern: ^\d+(Ki|Mi|Gi)$
-                      type: string
-                    cpuManagerPolicy:
-                      description: |-
-                        CPUManagerPolicy controls how cpusets are assigned to containers.
-                        "static" enables exclusive CPU pinning for Guaranteed QoS pods.
-                        Default kubelet value is "none".
-                      enum:
-                        - none
-                        - static
-                      type: string
-                    evictionHard:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        EvictionHard is a map of signal names to quantities that define hard eviction
-                        thresholds. When the node reaches these thresholds, pods are evicted immediately
-                        with no grace period. Values may be absolute quantities (e.g. "100Mi") or
-                        percentages (e.g. "10%").
-                      maxProperties: 6
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only valid eviction signal names are allowed
-                          rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
-                    evictionSoft:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        EvictionSoft is a map of signal names to quantities that define soft eviction
-                        thresholds. Pods are evicted after the grace period specified in
-                        evictionSoftGracePeriod has elapsed. Values may be absolute quantities or
-                        percentages.
-                      maxProperties: 6
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only valid eviction signal names are allowed
-                          rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
-                    evictionSoftGracePeriod:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        EvictionSoftGracePeriod is a map of signal names to durations that define
-                        grace periods for soft eviction signals. Each key must correspond to an entry
-                        in evictionSoft.
-                      maxProperties: 6
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only valid eviction signal names are allowed
-                          rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
-                    imageGCHighThresholdPercent:
-                      description: |-
-                        ImageGCHighThresholdPercent is the percent of disk usage after which image
-                        garbage collection is always run. Must be greater than
-                        imageGCLowThresholdPercent when both are set.
-                        Default kubelet value is 85.
-                      format: int32
-                      maximum: 100
-                      minimum: 0
-                      type: integer
-                    imageGCLowThresholdPercent:
-                      description: |-
-                        ImageGCLowThresholdPercent is the percent of disk usage before which image
-                        garbage collection is never run. Must be less than
-                        imageGCHighThresholdPercent when both are set.
-                        Default kubelet value is 80.
-                      format: int32
-                      maximum: 100
-                      minimum: 0
-                      type: integer
-                    kubeReserved:
-                      additionalProperties:
-                        anyOf:
-                          - type: integer
-                          - type: string
-                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                        x-kubernetes-int-or-string: true
-                      description: |-
-                        KubeReserved is a set of ResourceName=ResourceQuantity pairs that describe
-                        resources reserved for Kubernetes system components (the kubelet, container
-                        runtime, etc.).
-                        Valid keys: cpu, memory, ephemeral-storage, pid.
-                      maxProperties: 4
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only cpu, memory, ephemeral-storage, and pid are valid keys
-                          rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
-                    maxParallelImagePulls:
-                      description: |-
-                        MaxParallelImagePulls defines the maximum number of image pulls performed
-                        in parallel by the kubelet. A value of zero means unlimited. When set to a
-                        value > 0, serializeImagePulls is automatically set to false.
-                        Default kubelet value is nil (serial pulls).
-                      format: int32
-                      minimum: 0
-                      type: integer
-                    maxPods:
-                      description: |-
-                        MaxPods defines the maximum number of pods that can run on a node.
-                        Default kubelet value is 110.
-                      format: int32
-                      maximum: 4096
-                      minimum: 1
-                      type: integer
-                    memoryManagerPolicy:
-                      description: |-
-                        MemoryManagerPolicy controls the memory management policy on the node.
-                        "Static" enables NUMA-aware memory allocation for Guaranteed QoS pods.
-                        Default kubelet value is "None".
-                      enum:
-                        - None
-                        - Static
-                      type: string
-                    podPidsLimit:
-                      description: |-
-                        PodPidsLimit is the maximum number of PIDs in any pod.
-                        Prevents fork bombs and enforces per-pod PID limits.
-                        Default kubelet value is -1 (unlimited).
-                      format: int64
-                      minimum: -1
-                      type: integer
-                    protectKernelDefaults:
-                      description: |-
-                        ProtectKernelDefaults when enabled causes the kubelet to error if kernel flags
-                        are not as it expects. Typically required by CIS benchmarks and DISA STIG.
-                      type: boolean
-                    shutdownGracePeriod:
-                      description: |-
-                        ShutdownGracePeriod specifies the total duration that the node should delay
-                        the shutdown by for pod termination during a node shutdown.
-                        Default kubelet value is "0s" (disabled).
-                      type: string
-                    shutdownGracePeriodCriticalPods:
-                      description: |-
-                        ShutdownGracePeriodCriticalPods specifies the duration used to terminate
-                        critical pods during a node shutdown. This should be less than
-                        shutdownGracePeriod.
-                        Default kubelet value is "0s".
-                      type: string
-                    systemReserved:
-                      additionalProperties:
-                        anyOf:
-                          - type: integer
-                          - type: string
-                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                        x-kubernetes-int-or-string: true
-                      description: |-
-                        SystemReserved is a set of ResourceName=ResourceQuantity pairs that describe
-                        resources reserved for OS system daemons. Kubernetes components such as the
-                        kubelet are excluded from this reservation.
-                        Valid keys: cpu, memory, ephemeral-storage, pid.
-                      maxProperties: 4
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only cpu, memory, ephemeral-storage, and pid are valid keys
-                          rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
-                    topologyManagerPolicy:
-                      description: |-
-                        TopologyManagerPolicy controls the NUMA-aware resource alignment policy.
-                        Relevant for workloads sensitive to hardware topology (GPU, HPC, telco).
-                        Default kubelet value is "none".
-                      enum:
-                        - none
-                        - best-effort
-                        - restricted
-                        - single-numa-node
-                      type: string
-                  type: object
-                  x-kubernetes-validations:
-                    - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
-                      rule: '!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent) || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent'
-                    - message: evictionSoft must be set when evictionSoftGracePeriod is set
-                      rule: '!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)'
-                    - message: evictionSoftGracePeriod keys must match evictionSoft keys
-                      rule: '!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft) || self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)'
-                nodeRegistration:
-                  default: {}
-                  description: NodeRegistration holds fields that relate to registering the new node to the cluster.
-                  properties:
-                    ignorePreflightErrors:
-                      default:
-                        - SystemVerification
-                      description: |-
-                        IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
-                        when the current node is registered.
-                      items:
-                        maxLength: 512
-                        minLength: 1
-                        type: string
-                      maxItems: 50
-                      type: array
-                  type: object
-                nutanix:
-                  properties:
-                    machineDetails:
-                      properties:
-                        additionalCategories:
-                          description: |-
-                            List of categories that need to be added to the machines. Categories must already
-                            exist in Prism Central. One category key can have more than one value.
-                          items:
-                            properties:
-                              key:
-                                description: key is the Key of category in PC.
-                                type: string
-                              value:
-                                description: value is the category value linked to the category key in PC
-                                type: string
-                            type: object
-                          maxItems: 32
-                          type: array
-                        bootType:
-                          description: Defines the boot type of the virtual machine. Only supports UEFI and Legacy
-                          enum:
-                            - legacy
-                            - uefi
-                          type: string
-                        cluster:
-                          description: |-
-                            cluster identifies the Prism Element in which the machine will be created.
-                            The identifier (uuid or name) can be obtained from the console or API.
-                          properties:
-                            name:
-                              description: name is the resource name in the PC
-                              type: string
-                            type:
-                              description: Type is the identifier type to use for this resource.
-                              enum:
-                                - uuid
-                                - name
-                              type: string
-                            uuid:
-                              description: uuid is the UUID of the resource in the PC.
-                              type: string
-                          required:
-                            - type
-                          type: object
-                        gpus:
-                          description: List of GPU devices that need to be added to the machines.
-                          items:
-                            properties:
-                              deviceID:
-                                description: deviceID is the id of the GPU entity.
-                                format: int64
-                                type: integer
-                              name:
-                                description: name is the GPU name
-                                type: string
-                              type:
-                                description: Type is the identifier type to use for this resource.
-                                enum:
-                                  - deviceID
-                                  - name
-                                type: string
-                            required:
-                              - type
-                            type: object
-                          maxItems: 32
-                          type: array
-                        image:
-                          description: |-
-                            image identifies the image uploaded to Prism Central (PC). The identifier
-                            (uuid or name) can be obtained from the console or API.
-                          properties:
-                            name:
-                              description: name is the resource name in the PC
-                              type: string
-                            type:
-                              description: Type is the identifier type to use for this resource.
-                              enum:
-                                - uuid
-                                - name
-                              type: string
-                            uuid:
-                              description: uuid is the UUID of the resource in the PC.
-                              type: string
-                          required:
-                            - type
-                          type: object
-                        imageLookup:
-                          description: imageLookup is a container that holds how to look up vm images for the cluster.
-                          properties:
-                            baseOS:
-                              description: |-
-                                BaseOS is the name of the base operating system to use for
-                                image lookup.
-                              minLength: 1
-                              type: string
-                            format:
-                              default: capx-{{.BaseOS}}-{{.K8sVersion}}-*
-                              description: |-
-                                Format is the naming format to look up the image for this
-                                machine It will be ignored if an explicit image is set. Supports
-                                substitutions for {{.BaseOS}} and {{.K8sVersion}} with the base OS and
-                                kubernetes version, respectively. The BaseOS will be the value in
-                                BaseOS and the K8sVersion is the value in the Machine .spec.version, with the v prefix removed.
-                                This is effectively the defined by the packages produced by kubernetes/release without v as a
-                                prefix: 1.13.0, 1.12.5-mybuild.1, or 1.17.3. For example, the default
-                                image format of {{.BaseOS}}-?{{.K8sVersion}}-* and BaseOS as "rhel-8.10" will end up
-                                searching for images that match the pattern rhel-8.10-1.30.5-* for a
-                                Machine that is targeting kubernetes v1.30.5. See
-                                also: https://golang.org/pkg/text/template/
-                              type: string
-                          required:
-                            - baseOS
-                          type: object
-                        memorySize:
-                          description: memorySize is the memory size (in Quantity format) of the VM
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                          type: string
-                        project:
-                          description: |-
-                            add the virtual machines to the project defined in Prism Central.
-                            The project must already be present in the Prism Central.
-                          properties:
-                            name:
-                              description: name is the resource name in the PC
-                              type: string
-                            type:
-                              description: Type is the identifier type to use for this resource.
-                              enum:
-                                - uuid
-                                - name
-                              type: string
-                            uuid:
-                              description: uuid is the UUID of the resource in the PC.
-                              type: string
-                          required:
-                            - type
-                          type: object
-                        subnets:
-                          description: |-
-                            subnet identifies the network subnet to use for the machine.
-                            The identifier (uuid or name) can be obtained from the console or API.
-                          items:
-                            description: NutanixResourceIdentifier holds the identity of a Nutanix PC resource (cluster, image, subnet, etc.)
-                            properties:
-                              name:
-                                description: name is the resource name in the PC
-                                type: string
-                              type:
-                                description: Type is the identifier type to use for this resource.
-                                enum:
-                                  - uuid
-                                  - name
-                                type: string
-                              uuid:
-                                description: uuid is the UUID of the resource in the PC.
-                                type: string
-                            required:
-                              - type
-                            type: object
-                          maxItems: 16
-                          type: array
-                        systemDiskSize:
-                          description: |-
-                            systemDiskSize is size (in Quantity format) of the system disk of the VM
-                            The minimum systemDiskSize is 20Gi bytes
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                          type: string
-                        vcpuSockets:
-                          description: vcpuSockets is the number of vCPU sockets of the VM
-                          format: int32
-                          type: integer
-                        vcpusPerSocket:
-                          description: vcpusPerSocket is the number of vCPUs per socket of the VM
-                          format: int32
-                          type: integer
-                      required:
-                        - memorySize
-                        - systemDiskSize
-                        - vcpuSockets
-                        - vcpusPerSocket
-                      type: object
-                      x-kubernetes-validations:
-                        - message: Either 'image' or 'imageLookup' must be set, but not both
-                          rule: has(self.image) != has(self.imageLookup)
-                  required:
-                    - machineDetails
-                  type: object
-                taints:
-                  description: Taints specifies the taints the Node API object should be registered with.
-                  items:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: NutanixWorkerNodeConfig is the Schema for the nutanixworkernodeconfigs
+          API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NutanixWorkerNodeConfigSpec defines the desired state of
+              NutanixWorkerNodeSpec.
+            properties:
+              kubeletConfiguration:
+                description: |-
+                  KubeletConfiguration defines kubelet settings for this node group.
+                  When set, these values override the cluster-level kubeletConfiguration defaults.
+                  Override semantics are per-field (not deep merge of map values within a field).
+                properties:
+                  containerLogMaxFiles:
                     description: |-
-                      The node this Taint is attached to has the "effect" on
-                      any pod that does not tolerate the Taint.
-                    properties:
-                      effect:
-                        default: NoSchedule
-                        description: |-
-                          The effect of the taint on pods that do not tolerate the taint.
-                          Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
-                        enum:
-                          - NoSchedule
-                          - PreferNoSchedule
-                          - NoExecute
-                        type: string
-                      key:
-                        description: The taint key to be applied to a node.
-                        maxLength: 253
-                        type: string
-                      value:
-                        description: The taint value corresponding to the taint key.
-                        maxLength: 63
-                        minLength: 1
-                        type: string
-                    required:
-                      - effect
-                      - key
+                      ContainerLogMaxFiles specifies the maximum number of container log files
+                      that can be present for a container.
+                      Default kubelet value is 5.
+                    format: int32
+                    minimum: 2
+                    type: integer
+                  containerLogMaxSize:
+                    description: |-
+                      ContainerLogMaxSize defines the maximum size of the container log file
+                      before it is rotated. Value is a quantity (e.g. "10Mi", "256Ki").
+                      Default kubelet value is "10Mi".
+                    pattern: ^\d+(Ki|Mi|Gi)$
+                    type: string
+                  cpuManagerPolicy:
+                    description: |-
+                      CPUManagerPolicy controls how cpusets are assigned to containers.
+                      "static" enables exclusive CPU pinning for Guaranteed QoS pods.
+                      Default kubelet value is "none".
+                    enum:
+                    - none
+                    - static
+                    type: string
+                  evictionHard:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      EvictionHard is a map of signal names to quantities that define hard eviction
+                      thresholds. When the node reaches these thresholds, pods are evicted immediately
+                      with no grace period. Values may be absolute quantities (e.g. "100Mi") or
+                      percentages (e.g. "10%").
+                    maxProperties: 6
                     type: object
-                  maxItems: 32
-                  type: array
-              type: object
-          type: object
-      served: true
-      storage: true
+                    x-kubernetes-validations:
+                    - message: only valid eviction signal names are allowed
+                      rule: self.all(k, k in ['memory.available', 'nodefs.available',
+                        'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree',
+                        'pid.available'])
+                  evictionSoft:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      EvictionSoft is a map of signal names to quantities that define soft eviction
+                      thresholds. Pods are evicted after the grace period specified in
+                      evictionSoftGracePeriod has elapsed. Values may be absolute quantities or
+                      percentages.
+                    maxProperties: 6
+                    type: object
+                    x-kubernetes-validations:
+                    - message: only valid eviction signal names are allowed
+                      rule: self.all(k, k in ['memory.available', 'nodefs.available',
+                        'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree',
+                        'pid.available'])
+                  evictionSoftGracePeriod:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      EvictionSoftGracePeriod is a map of signal names to durations that define
+                      grace periods for soft eviction signals. Each key must correspond to an entry
+                      in evictionSoft.
+                    maxProperties: 6
+                    type: object
+                    x-kubernetes-validations:
+                    - message: only valid eviction signal names are allowed
+                      rule: self.all(k, k in ['memory.available', 'nodefs.available',
+                        'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree',
+                        'pid.available'])
+                  imageGCHighThresholdPercent:
+                    description: |-
+                      ImageGCHighThresholdPercent is the percent of disk usage after which image
+                      garbage collection is always run. Must be greater than
+                      imageGCLowThresholdPercent when both are set.
+                      Default kubelet value is 85.
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  imageGCLowThresholdPercent:
+                    description: |-
+                      ImageGCLowThresholdPercent is the percent of disk usage before which image
+                      garbage collection is never run. Must be less than
+                      imageGCHighThresholdPercent when both are set.
+                      Default kubelet value is 80.
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  kubeReserved:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      KubeReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                      resources reserved for Kubernetes system components (the kubelet, container
+                      runtime, etc.).
+                      Valid keys: cpu, memory, ephemeral-storage, pid.
+                    maxProperties: 4
+                    type: object
+                    x-kubernetes-validations:
+                    - message: only cpu, memory, ephemeral-storage, and pid are valid
+                        keys
+                      rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage',
+                        'pid'])
+                  maxParallelImagePulls:
+                    description: |-
+                      MaxParallelImagePulls defines the maximum number of image pulls performed
+                      in parallel by the kubelet. A value of zero means unlimited. When set to a
+                      value > 0, serializeImagePulls is automatically set to false.
+                      Default kubelet value is nil (serial pulls).
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  maxPods:
+                    description: |-
+                      MaxPods defines the maximum number of pods that can run on a node.
+                      Default kubelet value is 110.
+                    format: int32
+                    maximum: 4096
+                    minimum: 1
+                    type: integer
+                  memoryManagerPolicy:
+                    description: |-
+                      MemoryManagerPolicy controls the memory management policy on the node.
+                      "Static" enables NUMA-aware memory allocation for Guaranteed QoS pods.
+                      Default kubelet value is "None".
+                    enum:
+                    - None
+                    - Static
+                    type: string
+                  podPidsLimit:
+                    description: |-
+                      PodPidsLimit is the maximum number of PIDs in any pod.
+                      Prevents fork bombs and enforces per-pod PID limits.
+                      Default kubelet value is -1 (unlimited).
+                    format: int64
+                    minimum: -1
+                    type: integer
+                  protectKernelDefaults:
+                    description: |-
+                      ProtectKernelDefaults when enabled causes the kubelet to error if kernel flags
+                      are not as it expects. Typically required by CIS benchmarks and DISA STIG.
+                    type: boolean
+                  shutdownGracePeriod:
+                    description: |-
+                      ShutdownGracePeriod specifies the total duration that the node should delay
+                      the shutdown by for pod termination during a node shutdown.
+                      Default kubelet value is "0s" (disabled).
+                    type: string
+                  shutdownGracePeriodCriticalPods:
+                    description: |-
+                      ShutdownGracePeriodCriticalPods specifies the duration used to terminate
+                      critical pods during a node shutdown. This should be less than
+                      shutdownGracePeriod.
+                      Default kubelet value is "0s".
+                    type: string
+                  systemReserved:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      SystemReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                      resources reserved for OS system daemons. Kubernetes components such as the
+                      kubelet are excluded from this reservation.
+                      Valid keys: cpu, memory, ephemeral-storage, pid.
+                    maxProperties: 4
+                    type: object
+                    x-kubernetes-validations:
+                    - message: only cpu, memory, ephemeral-storage, and pid are valid
+                        keys
+                      rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage',
+                        'pid'])
+                  topologyManagerPolicy:
+                    description: |-
+                      TopologyManagerPolicy controls the NUMA-aware resource alignment policy.
+                      Relevant for workloads sensitive to hardware topology (GPU, HPC, telco).
+                      Default kubelet value is "none".
+                    enum:
+                    - none
+                    - best-effort
+                    - restricted
+                    - single-numa-node
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
+                  rule: '!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent)
+                    || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent'
+                - message: evictionSoft must be set when evictionSoftGracePeriod is
+                    set
+                  rule: '!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)'
+                - message: evictionSoftGracePeriod keys must match evictionSoft keys
+                  rule: '!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft)
+                    || self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)'
+              nodeRegistration:
+                default: {}
+                description: NodeRegistration holds fields that relate to registering
+                  the new node to the cluster.
+                properties:
+                  ignorePreflightErrors:
+                    default:
+                    - SystemVerification
+                    description: |-
+                      IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
+                      when the current node is registered.
+                    items:
+                      maxLength: 512
+                      minLength: 1
+                      type: string
+                    maxItems: 50
+                    type: array
+                type: object
+              nutanix:
+                properties:
+                  machineDetails:
+                    properties:
+                      additionalCategories:
+                        description: |-
+                          List of categories that need to be added to the machines. Categories must already
+                          exist in Prism Central. One category key can have more than one value.
+                        items:
+                          properties:
+                            key:
+                              description: key is the Key of category in PC.
+                              type: string
+                            value:
+                              description: value is the category value linked to the
+                                category key in PC
+                              type: string
+                          type: object
+                        maxItems: 32
+                        type: array
+                      bootType:
+                        description: Defines the boot type of the virtual machine.
+                          Only supports UEFI and Legacy
+                        enum:
+                        - legacy
+                        - uefi
+                        type: string
+                      cluster:
+                        description: |-
+                          cluster identifies the Prism Element in which the machine will be created.
+                          The identifier (uuid or name) can be obtained from the console or API.
+                        properties:
+                          name:
+                            description: name is the resource name in the PC
+                            type: string
+                          type:
+                            description: Type is the identifier type to use for this
+                              resource.
+                            enum:
+                            - uuid
+                            - name
+                            type: string
+                          uuid:
+                            description: uuid is the UUID of the resource in the PC.
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      gpus:
+                        description: List of GPU devices that need to be added to
+                          the machines.
+                        items:
+                          properties:
+                            deviceID:
+                              description: deviceID is the id of the GPU entity.
+                              format: int64
+                              type: integer
+                            name:
+                              description: name is the GPU name
+                              type: string
+                            type:
+                              description: Type is the identifier type to use for
+                                this resource.
+                              enum:
+                              - deviceID
+                              - name
+                              type: string
+                          required:
+                          - type
+                          type: object
+                        maxItems: 32
+                        type: array
+                      image:
+                        description: |-
+                          image identifies the image uploaded to Prism Central (PC). The identifier
+                          (uuid or name) can be obtained from the console or API.
+                        properties:
+                          name:
+                            description: name is the resource name in the PC
+                            type: string
+                          type:
+                            description: Type is the identifier type to use for this
+                              resource.
+                            enum:
+                            - uuid
+                            - name
+                            type: string
+                          uuid:
+                            description: uuid is the UUID of the resource in the PC.
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      imageLookup:
+                        description: imageLookup is a container that holds how to
+                          look up vm images for the cluster.
+                        properties:
+                          baseOS:
+                            description: |-
+                              BaseOS is the name of the base operating system to use for
+                              image lookup.
+                            minLength: 1
+                            type: string
+                          format:
+                            default: capx-{{.BaseOS}}-{{.K8sVersion}}-*
+                            description: |-
+                              Format is the naming format to look up the image for this
+                              machine It will be ignored if an explicit image is set. Supports
+                              substitutions for {{.BaseOS}} and {{.K8sVersion}} with the base OS and
+                              kubernetes version, respectively. The BaseOS will be the value in
+                              BaseOS and the K8sVersion is the value in the Machine .spec.version, with the v prefix removed.
+                              This is effectively the defined by the packages produced by kubernetes/release without v as a
+                              prefix: 1.13.0, 1.12.5-mybuild.1, or 1.17.3. For example, the default
+                              image format of {{.BaseOS}}-?{{.K8sVersion}}-* and BaseOS as "rhel-8.10" will end up
+                              searching for images that match the pattern rhel-8.10-1.30.5-* for a
+                              Machine that is targeting kubernetes v1.30.5. See
+                              also: https://golang.org/pkg/text/template/
+                            type: string
+                        required:
+                        - baseOS
+                        type: object
+                      memorySize:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: memorySize is the memory size (in Quantity format)
+                          of the VM
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      project:
+                        description: |-
+                          add the virtual machines to the project defined in Prism Central.
+                          The project must already be present in the Prism Central.
+                        properties:
+                          name:
+                            description: name is the resource name in the PC
+                            type: string
+                          type:
+                            description: Type is the identifier type to use for this
+                              resource.
+                            enum:
+                            - uuid
+                            - name
+                            type: string
+                          uuid:
+                            description: uuid is the UUID of the resource in the PC.
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      subnets:
+                        description: |-
+                          subnet identifies the network subnet to use for the machine.
+                          The identifier (uuid or name) can be obtained from the console or API.
+                        items:
+                          description: NutanixResourceIdentifier holds the identity
+                            of a Nutanix PC resource (cluster, image, subnet, etc.)
+                          properties:
+                            name:
+                              description: name is the resource name in the PC
+                              type: string
+                            type:
+                              description: Type is the identifier type to use for
+                                this resource.
+                              enum:
+                              - uuid
+                              - name
+                              type: string
+                            uuid:
+                              description: uuid is the UUID of the resource in the
+                                PC.
+                              type: string
+                          required:
+                          - type
+                          type: object
+                        maxItems: 16
+                        type: array
+                      systemDiskSize:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: |-
+                          systemDiskSize is size (in Quantity format) of the system disk of the VM
+                          The minimum systemDiskSize is 20Gi bytes
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      vcpuSockets:
+                        description: vcpuSockets is the number of vCPU sockets of
+                          the VM
+                        format: int32
+                        type: integer
+                      vcpusPerSocket:
+                        description: vcpusPerSocket is the number of vCPUs per socket
+                          of the VM
+                        format: int32
+                        type: integer
+                    required:
+                    - memorySize
+                    - systemDiskSize
+                    - vcpuSockets
+                    - vcpusPerSocket
+                    type: object
+                    x-kubernetes-validations:
+                    - message: Either 'image' or 'imageLookup' must be set, but not
+                        both
+                      rule: has(self.image) != has(self.imageLookup)
+                required:
+                - machineDetails
+                type: object
+              taints:
+                description: Taints specifies the taints the Node API object should
+                  be registered with.
+                items:
+                  description: |-
+                    The node this Taint is attached to has the "effect" on
+                    any pod that does not tolerate the Taint.
+                  properties:
+                    effect:
+                      default: NoSchedule
+                      description: |-
+                        The effect of the taint on pods that do not tolerate the taint.
+                        Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                      enum:
+                      - NoSchedule
+                      - PreferNoSchedule
+                      - NoExecute
+                      type: string
+                    key:
+                      description: The taint key to be applied to a node.
+                      maxLength: 253
+                      type: string
+                    value:
+                      description: The taint value corresponding to the taint key.
+                      maxLength: 63
+                      minLength: 1
+                      type: string
+                  required:
+                  - effect
+                  - key
+                  type: object
+                maxItems: 32
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
