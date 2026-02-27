@@ -51,3 +51,10 @@ hack/tools/fetch-images/fetch-images
 caren-images.txt
 hack/examples/release/*-cluster-class.yaml
 golangci-lint-kube-api-linter
+
+# Prevent root-level specify files from being committed
+.specify/spec.md
+.specify/plan.md
+
+# Cursor IDE - ignore local/user state, commit shared rules
+.cursor/mcp.json

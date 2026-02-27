@@ -1,0 +1,18 @@
+---
+description: Enforces markdown quality standards when creating or editing .md files.
+globs: "**/*.md"
+---
+
+# Markdown Quality
+
+When creating or editing Markdown files, always ensure they pass markdownlint with the project's `.markdownlint.json` config:
+
+- Use ATX-style headings (`#`, `##`, etc.), never setext (underline) style.
+- Use dashes (`-`) for unordered lists.
+- No trailing punctuation in headings.
+- Surround headings and lists with blank lines.
+- No inline HTML unless absolutely necessary.
+- End every file with a single newline.
+- No trailing whitespace on any line.
+
+If you notice any of these issues in a Markdown file you are editing, fix them before finishing.

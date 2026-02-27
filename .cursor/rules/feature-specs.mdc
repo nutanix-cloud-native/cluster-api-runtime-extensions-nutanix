@@ -1,0 +1,41 @@
+---
+description: Enforces per-feature spec files linked to Jira tickets. Prevents writing to shared root-level spec files.
+alwaysApply: true
+---
+
+# Feature Specification Rules
+
+## One Spec Per Feature
+
+Every feature MUST have its own isolated spec directory:
+
+```
+.specify/features/<JIRA-ID>/
+  spec.md    # What to build
+  plan.md    # How to build it
+```
+
+Example: `.specify/features/CAREN-1234/spec.md`
+
+## Jira Ticket Required
+
+- Before writing any spec, ask the user for the Jira ticket ID if not already provided.
+- The ticket ID becomes the directory name under `.specify/features/`.
+- The spec MUST include the Jira ticket reference in its header.
+
+## Forbidden Paths
+
+NEVER write to these files — they must not exist in the repo:
+
+- `.specify/spec.md`
+- `.specify/plan.md`
+
+If you find yourself about to write to either path, STOP and use `.specify/features/<JIRA-ID>/` instead.
+
+## Workflow
+
+1. User requests a feature.
+2. Ask for Jira ticket ID (e.g., `CAREN-1234`).
+3. Create `.specify/features/<JIRA-ID>/spec.md` using the spec template.
+4. Create `.specify/features/<JIRA-ID>/plan.md` after spec is approved.
+5. Implement against that feature's spec and plan.
