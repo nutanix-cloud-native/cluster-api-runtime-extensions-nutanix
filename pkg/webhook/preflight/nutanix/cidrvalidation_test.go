@@ -9,6 +9,8 @@ import (
 	"net/netip"
 	"testing"
 
+	networkingcommonapi "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/common/v1/config"
+	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
@@ -79,6 +81,7 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 		podCIDRs             []string
 		serviceCIDRs         []string
 		resolvedNodeSubnets  []resolvedNodeSubnet
+		resolveWarnings      []string
 		resolveSubnetErr     error
 		withConfiguredSubnet bool
 		withNClient          bool
@@ -264,6 +267,19 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:                "external IPAM subnet produces warning and skips overlap",
+			podCIDRs:            []string{"10.244.0.0/16"},
+			serviceCIDRs:        []string{"10.96.0.0/12"},
+			resolvedNodeSubnets: nil,
+			resolveWarnings: []string{
+				"Subnet \"ext-ipam\" appears to use external IPAM (no IP configuration found). CIDR overlap validation will be skipped for this subnet.",
+			},
+			withConfiguredSubnet: true,
+			withNClient:          true,
+			expectAllowed:        true,
+			expectedWarnings:     1,
+		},
 	}
 
 	for _, tt := range tests {
@@ -293,16 +309,16 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 					_ context.Context,
 					_ client,
 					sources []nodeSubnetSource,
-				) ([]resolvedNodeSubnet, error) {
+				) ([]resolvedNodeSubnet, []string, error) {
 					if !tt.withConfiguredSubnet {
 						require.Empty(t, sources)
 					} else {
 						require.NotEmpty(t, sources)
 					}
 					if tt.resolveSubnetErr != nil {
-						return nil, tt.resolveSubnetErr
+						return nil, nil, tt.resolveSubnetErr
 					}
-					return tt.resolvedNodeSubnets, nil
+					return tt.resolvedNodeSubnets, tt.resolveWarnings, nil
 				},
 			}
 
@@ -378,6 +394,79 @@ func TestCollectNodeSubnetSources(t *testing.T) {
 		`$.spec.topology.workers.machineDeployments[?@.name=="md-1"].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[0]`,
 		sources[2].field,
 	)
+}
+
+func TestExtractIPv4PrefixesFromSubnet(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name            string
+		subnet          *netv4.Subnet
+		expectedCount   int
+		expectNilResult bool
+		expectError     bool
+	}{
+		{
+			name:            "empty IpConfig returns nil (external IPAM)",
+			subnet:          &netv4.Subnet{},
+			expectedCount:   0,
+			expectNilResult: true,
+			expectError:     false,
+		},
+		{
+			name: "IpConfig with only IPv6 returns empty slice",
+			subnet: &netv4.Subnet{
+				IpConfig: []netv4.IPConfig{
+					{
+						Ipv6: &netv4.IPv6Config{},
+					},
+				},
+			},
+			expectedCount:   0,
+			expectNilResult: false,
+			expectError:     false,
+		},
+		{
+			name: "IpConfig with valid IPv4 returns prefix",
+			subnet: &netv4.Subnet{
+				IpConfig: []netv4.IPConfig{
+					{
+						Ipv4: &netv4.IPv4Config{
+							IpSubnet: &netv4.IPv4Subnet{
+								Ip: &networkingcommonapi.IPv4Address{
+									Value: ptr.To("10.0.0.0"),
+								},
+								PrefixLength: ptr.To(24),
+							},
+						},
+					},
+				},
+			},
+			expectedCount:   1,
+			expectNilResult: false,
+			expectError:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			prefixes, err := extractIPv4PrefixesFromSubnet(tt.subnet)
+
+			if tt.expectError {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			if tt.expectNilResult {
+				assert.Nil(t, prefixes)
+			} else {
+				assert.Len(t, prefixes, tt.expectedCount)
+			}
+		})
+	}
 }
 
 func testCluster(podCIDRs, serviceCIDRs []string) *clusterv1.Cluster {

@@ -37,7 +37,7 @@ type cidrValidationCheck struct {
 		ctx context.Context,
 		nclient client,
 		sources []nodeSubnetSource,
-	) ([]resolvedNodeSubnet, error)
+	) ([]resolvedNodeSubnet, []string, error)
 }
 
 func (c *cidrValidationCheck) Name() string {
@@ -100,7 +100,8 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 		resolveNodeSubnetsFn = resolveNodeSubnets
 	}
 
-	resolvedSubnets, err := resolveNodeSubnetsFn(ctx, c.cd.nclient, nodeSubnetSources)
+	resolvedSubnets, resolveWarnings, err := resolveNodeSubnetsFn(ctx, c.cd.nclient, nodeSubnetSources)
+	result.Warnings = append(result.Warnings, resolveWarnings...)
 	if err != nil {
 		result.Allowed = false
 		result.InternalError = true
@@ -382,8 +383,9 @@ func resolveNodeSubnets(
 	ctx context.Context,
 	nclient client,
 	sources []nodeSubnetSource,
-) ([]resolvedNodeSubnet, error) {
+) ([]resolvedNodeSubnet, []string, error) {
 	resolved := make([]resolvedNodeSubnet, 0)
+	var warnings []string
 	// Cache resolved prefixes by subnet key to avoid duplicate API calls
 	// when the same subnet is referenced by multiple node pools.
 	prefixCache := map[string][]netip.Prefix{}
@@ -395,17 +397,21 @@ func resolveNodeSubnets(
 		if !ok {
 			subnets, err := getSubnets(ctx, nclient, &src.id)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get subnet %q: %w", subnetIdentifierForMessage(src.id), err)
+				return nil, warnings, fmt.Errorf(
+					"failed to get subnet %q: %w", subnetIdentifierForMessage(src.id), err,
+				)
 			}
 			if len(subnets) == 0 {
-				return nil, fmt.Errorf("found no subnets for identifier %q", subnetIdentifierForMessage(src.id))
+				return nil, warnings, fmt.Errorf(
+					"found no subnets for identifier %q", subnetIdentifierForMessage(src.id),
+				)
 			}
 
 			prefixes := make([]netip.Prefix, 0)
 			for i := range subnets {
 				subnetPrefixes, err := extractIPv4PrefixesFromSubnet(&subnets[i])
 				if err != nil {
-					return nil, fmt.Errorf(
+					return nil, warnings, fmt.Errorf(
 						"failed to extract IPv4 CIDR for subnet %q: %w",
 						subnetIdentifierForMessage(src.id),
 						err,
@@ -413,6 +419,15 @@ func resolveNodeSubnets(
 				}
 				prefixes = append(prefixes, subnetPrefixes...)
 			}
+
+			if len(prefixes) == 0 {
+				warnings = append(warnings, fmt.Sprintf(
+					"Subnet %q appears to use external IPAM (no IP configuration found). "+
+						"CIDR overlap validation will be skipped for this subnet.",
+					subnetIdentifierForMessage(src.id),
+				))
+			}
+
 			prefixCache[cacheKey] = prefixes
 			cached = prefixes
 		}
@@ -426,7 +441,7 @@ func resolveNodeSubnets(
 		}
 	}
 
-	return resolved, nil
+	return resolved, warnings, nil
 }
 
 func subnetIdentifierForMessage(id capxv1.NutanixResourceIdentifier) string {
@@ -442,7 +457,7 @@ func subnetIdentifierForMessage(id capxv1.NutanixResourceIdentifier) string {
 
 func extractIPv4PrefixesFromSubnet(subnet *netv4.Subnet) ([]netip.Prefix, error) {
 	if len(subnet.IpConfig) == 0 {
-		return nil, fmt.Errorf("subnet has no ipConfig")
+		return nil, nil
 	}
 
 	prefixes := make([]netip.Prefix, 0, len(subnet.IpConfig))
@@ -469,10 +484,6 @@ func extractIPv4PrefixesFromSubnet(subnet *netv4.Subnet) ([]netip.Prefix, error)
 			return nil, fmt.Errorf("failed to parse subnet prefix %q/%d: %w", ipValue, prefixLength, err)
 		}
 		prefixes = append(prefixes, prefix.Masked())
-	}
-
-	if len(prefixes) == 0 {
-		return nil, fmt.Errorf("subnet has no IPv4 CIDR in ipConfig")
 	}
 
 	return prefixes, nil
