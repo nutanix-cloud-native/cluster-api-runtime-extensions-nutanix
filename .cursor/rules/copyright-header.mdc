@@ -1,0 +1,8 @@
+---
+description: Copyright header for new files
+alwaysApply: true
+---
+
+# Copyright Header
+
+When creating new files, use the template in `hack/license-header.go.txt` but replace the year with the **current calendar year**. Do not copy the year from existing files or from the template itself.

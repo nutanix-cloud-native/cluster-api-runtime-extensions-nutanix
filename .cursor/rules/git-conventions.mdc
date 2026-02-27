@@ -1,0 +1,34 @@
+---
+description: Enforces conventional commits, branch naming, and commit/PR title formatting.
+alwaysApply: true
+---
+
+# Git Conventions
+
+## Conventional Commits
+
+All commits MUST follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. Allowed types: `fix`, `feat`, `docs`, `style`, `refactor`, `perf`, `test`, `revert`, `ci`, `build`, `release`.
+
+## Branch Naming
+
+- Feature branches: `<JIRA-ID>-short-description` (e.g., `CAREN-1234-add-vpc-support`)
+- Non-feature branches: use a short descriptive prefix (e.g., `fix/typo-in-readme`, `build/update-deps`)
+
+## Commit and PR Titles
+
+Format: `<type>: [<JIRA-ID>] Title`
+
+Examples:
+- `feat: [CAREN-1234] Add VPC configuration support`
+- `fix: [CAREN-5678] Resolve nil pointer in handler`
+- `build: Update Go dependencies` (no Jira ID needed for non-feature work)
+
+Constraints:
+- Title MUST be <= 72 characters total.
+- Do NOT end the title with a period.
+
+## Commit Body
+
+- Wrap lines at 120 characters.
+- Explain *why* the change was made, not *what* changed (the diff shows that).
+- Separate title from body with a blank line.

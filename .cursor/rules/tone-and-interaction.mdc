@@ -1,0 +1,9 @@
+---
+description: Sets interaction tone — concise, autonomous, with approval gates for major changes.
+alwaysApply: true
+---
+
+# Tone and Interaction
+
+- Be concise.
+- Act autonomously but pause for explicit approval before overwriting major architectural files or changing the core `.specify/constitution.md`.
