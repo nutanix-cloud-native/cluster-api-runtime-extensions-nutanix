@@ -11,7 +11,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 )
 
@@ -75,12 +76,27 @@ func Get[T any](
 	return value, err
 }
 
-// ClusterVariablesToVariablesMap converts a list of ClusterVariables to a map of JSON (name is the map key).
+// ClusterVariablesToVariablesMap converts a list of v1beta2 ClusterVariables to a map of JSON (name is the map key).
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/v1.5.1/internal/controllers/topology/cluster/patches/variables/variables.go#L445
 //
 //nolint:lll // Long URLs in comments above. Adding nolint:lll here because it doesn't work in comment lines. See: https://github.com/golangci/golangci-lint/issues/3983
 func ClusterVariablesToVariablesMap(
-	variables []v1beta1.ClusterVariable,
+	variables []clusterv1.ClusterVariable,
+) map[string]apiextensionsv1.JSON {
+	if variables == nil {
+		return nil
+	}
+
+	variablesMap := make(map[string]apiextensionsv1.JSON, len(variables))
+	for i := range variables {
+		variablesMap[variables[i].Name] = variables[i].Value
+	}
+	return variablesMap
+}
+
+// V1Beta1ClusterVariablesToVariablesMap converts a list of v1beta1 ClusterVariables to a map of JSON.
+func V1Beta1ClusterVariablesToVariablesMap(
+	variables []clusterv1beta1.ClusterVariable,
 ) map[string]apiextensionsv1.JSON {
 	if variables == nil {
 		return nil

@@ -15,9 +15,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -26,6 +26,7 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -109,8 +110,14 @@ func (c *CiliumCNI) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
+	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
+		return
+	}
 	commonResponse := &runtimehooksv1.CommonResponse{}
-	c.apply(ctx, &req.Cluster, commonResponse, applyOpts{})
+	c.apply(ctx, cluster, commonResponse, applyOpts{})
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
 }
@@ -120,9 +127,15 @@ func (c *CiliumCNI) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
+	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
+		return
+	}
 	commonResponse := &runtimehooksv1.CommonResponse{}
-	shouldRunPreflight := !skipCiliumPreflight(&req.Cluster)
-	c.apply(ctx, &req.Cluster, commonResponse, applyOpts{shouldRunPreflight: shouldRunPreflight})
+	shouldRunPreflight := !skipCiliumPreflight(cluster)
+	c.apply(ctx, cluster, commonResponse, applyOpts{shouldRunPreflight: shouldRunPreflight})
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
 }

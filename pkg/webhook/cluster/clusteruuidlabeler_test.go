@@ -8,7 +8,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -22,10 +22,12 @@ func TestWebhookBehaviour(t *testing.T) {
 			GenerateName: "test-cluster-",
 			Namespace:    metav1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{Topology: &clusterv1.Topology{
-			Class:   "dummy-class",
-			Version: "dummy-version",
-		}},
+		Spec: clusterv1.ClusterSpec{
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+				Version:  "dummy-version",
+			},
+		},
 	}
 
 	g.Expect(env.Client.Create(ctx, cluster)).To(Succeed())
@@ -58,6 +60,13 @@ func TestWebhookSkipsClusterWithNilTopology(t *testing.T) {
 			GenerateName: "test-cluster-",
 			Namespace:    metav1.NamespaceDefault,
 		},
+		Spec: clusterv1.ClusterSpec{
+			InfrastructureRef: clusterv1.ContractVersionedObjectReference{
+				APIGroup: "infrastructure.cluster.x-k8s.io",
+				Kind:     "GenericInfrastructureCluster",
+				Name:     "test",
+			},
+		},
 	}
 
 	g.Expect(env.Client.Create(ctx, cluster)).To(Succeed())
@@ -84,9 +93,9 @@ func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsAdded(t *testing.T) {
 	g.Expect(cluster.Annotations).ToNot(HaveKey(v1alpha1.ClusterUUIDAnnotationKey))
 
 	// Validate that the webhook does assign a UUID to the cluster if the Cluster has topology added.
-	cluster.Spec.Topology = &clusterv1.Topology{
-		Class:   "dummy-class",
-		Version: "dummy-version",
+	cluster.Spec.Topology = clusterv1.Topology{
+		ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+		Version:  "dummy-version",
 	}
 	g.Expect(env.Client.Update(ctx, cluster)).To(Succeed())
 	g.Expect(cluster.Annotations).
@@ -105,7 +114,7 @@ func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsUpdated(t *testing.T) {
 
 	g.Expect(env.Client.Get(ctx, client.ObjectKeyFromObject(cluster), cluster)).To(Succeed())
 	g.Expect(cluster.Annotations).ToNot(HaveKey(v1alpha1.ClusterUUIDAnnotationKey))
-	g.Expect(cluster.Spec.Topology).ToNot(BeNil())
+	g.Expect(cluster.Spec.Topology.IsDefined()).To(BeTrue())
 
 	// Validate that the webhook does assign a UUID to the cluster if the topology is updated. This could be when
 	// a cluster changes to use CAREN for example, but we just change topology version here as an example of

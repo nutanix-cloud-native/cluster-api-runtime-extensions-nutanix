@@ -26,8 +26,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	expv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
+	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 // ClusterBuilder holds the variables and objects required to build a clusterv1.Cluster.
@@ -90,6 +90,13 @@ func (c *ClusterBuilder) WithTopology(topology *clusterv1.Topology) *ClusterBuil
 
 // Build returns a Cluster with the attributes added to the ClusterBuilder.
 func (c *ClusterBuilder) Build() *clusterv1.Cluster {
+	spec := clusterv1.ClusterSpec{}
+	if c.topology != nil {
+		spec.Topology = *c.topology
+	}
+	if c.network != nil {
+		spec.ClusterNetwork = *c.network
+	}
 	obj := &clusterv1.Cluster{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Cluster",
@@ -101,16 +108,13 @@ func (c *ClusterBuilder) Build() *clusterv1.Cluster {
 			Labels:      c.labels,
 			Annotations: c.annotations,
 		},
-		Spec: clusterv1.ClusterSpec{
-			Topology:       c.topology,
-			ClusterNetwork: c.network,
-		},
+		Spec: spec,
 	}
 	if c.infrastructureCluster != nil {
-		obj.Spec.InfrastructureRef = objToRef(c.infrastructureCluster)
+		obj.Spec.InfrastructureRef = objToContractRef(objToRef(c.infrastructureCluster))
 	}
 	if c.controlPlane != nil {
-		obj.Spec.ControlPlaneRef = objToRef(c.controlPlane)
+		obj.Spec.ControlPlaneRef = objToContractRef(objToRef(c.controlPlane))
 	}
 	return obj
 }
@@ -121,7 +125,7 @@ type ClusterTopologyBuilder struct {
 	workers              *clusterv1.WorkersTopology
 	version              string
 	controlPlaneReplicas int32
-	controlPlaneMHC      *clusterv1.MachineHealthCheckTopology
+	controlPlaneMHC      *clusterv1.ControlPlaneTopologyHealthCheck
 	variables            []clusterv1.ClusterVariable
 }
 
@@ -150,9 +154,9 @@ func (c *ClusterTopologyBuilder) WithControlPlaneReplicas(replicas int32) *Clust
 	return c
 }
 
-// WithControlPlaneMachineHealthCheck adds MachineHealthCheckTopology used as the MachineHealthCheck value.
+// WithControlPlaneMachineHealthCheck adds ControlPlaneTopologyHealthCheck used as the HealthCheck value.
 func (c *ClusterTopologyBuilder) WithControlPlaneMachineHealthCheck(
-	mhc *clusterv1.MachineHealthCheckTopology,
+	mhc *clusterv1.ControlPlaneTopologyHealthCheck,
 ) *ClusterTopologyBuilder {
 	c.controlPlaneMHC = mhc
 	return c
@@ -184,15 +188,22 @@ func (c *ClusterTopologyBuilder) WithVariables(
 
 // Build returns a testable cluster Topology object with any values passed to the builder.
 func (c *ClusterTopologyBuilder) Build() *clusterv1.Topology {
+	cp := clusterv1.ControlPlaneTopology{
+		Replicas: &c.controlPlaneReplicas,
+	}
+	if c.controlPlaneMHC != nil {
+		cp.HealthCheck = *c.controlPlaneMHC
+	}
+	var workers clusterv1.WorkersTopology
+	if c.workers != nil {
+		workers = *c.workers
+	}
 	return &clusterv1.Topology{
-		Class:   c.class,
-		Workers: c.workers,
-		Version: c.version,
-		ControlPlane: clusterv1.ControlPlaneTopology{
-			Replicas:           &c.controlPlaneReplicas,
-			MachineHealthCheck: c.controlPlaneMHC,
-		},
-		Variables: c.variables,
+		ClassRef:     clusterv1.ClusterClassRef{Name: c.class},
+		Workers:      workers,
+		Version:      c.version,
+		ControlPlane: cp,
+		Variables:    c.variables,
 	}
 }
 
@@ -202,7 +213,7 @@ type MachineDeploymentTopologyBuilder struct {
 	class       string
 	name        string
 	replicas    *int32
-	mhc         *clusterv1.MachineHealthCheckTopology
+	mhc         *clusterv1.MachineDeploymentTopologyHealthCheck
 	variables   []clusterv1.ClusterVariable
 }
 
@@ -245,9 +256,9 @@ func (m *MachineDeploymentTopologyBuilder) WithVariables(
 	return m
 }
 
-// WithMachineHealthCheck adds MachineHealthCheckTopology used as the MachineHealthCheck value.
+// WithMachineHealthCheck adds MachineDeploymentTopologyHealthCheck used as the HealthCheck value.
 func (m *MachineDeploymentTopologyBuilder) WithMachineHealthCheck(
-	mhc *clusterv1.MachineHealthCheckTopology,
+	mhc *clusterv1.MachineDeploymentTopologyHealthCheck,
 ) *MachineDeploymentTopologyBuilder {
 	m.mhc = mhc
 	return m
@@ -259,18 +270,18 @@ func (m *MachineDeploymentTopologyBuilder) Build() clusterv1.MachineDeploymentTo
 		Metadata: clusterv1.ObjectMeta{
 			Annotations: m.annotations,
 		},
-		Class:              m.class,
-		Name:               m.name,
-		Replicas:           m.replicas,
-		MachineHealthCheck: m.mhc,
+		Class:    m.class,
+		Name:     m.name,
+		Replicas: m.replicas,
 	}
-
+	if m.mhc != nil {
+		md.HealthCheck = *m.mhc
+	}
 	if len(m.variables) > 0 {
-		md.Variables = &clusterv1.MachineDeploymentVariables{
+		md.Variables = clusterv1.MachineDeploymentVariables{
 			Overrides: m.variables,
 		}
 	}
-
 	return md
 }
 
@@ -328,7 +339,7 @@ func (m *MachinePoolTopologyBuilder) Build() clusterv1.MachinePoolTopology {
 	}
 
 	if len(m.variables) > 0 {
-		mp.Variables = &clusterv1.MachinePoolVariables{
+		mp.Variables = clusterv1.MachinePoolVariables{
 			Overrides: m.variables,
 		}
 	}
@@ -344,11 +355,11 @@ type ClusterClassBuilder struct {
 	controlPlaneMetadata                      *clusterv1.ObjectMeta
 	controlPlaneTemplate                      *unstructured.Unstructured
 	controlPlaneInfrastructureMachineTemplate *unstructured.Unstructured
-	controlPlaneMHC                           *clusterv1.MachineHealthCheckClass
+	controlPlaneMHC                           *clusterv1.ControlPlaneClassHealthCheck
 	controlPlaneNodeDrainTimeout              *metav1.Duration
 	controlPlaneNodeVolumeDetachTimeout       *metav1.Duration
 	controlPlaneNodeDeletionTimeout           *metav1.Duration
-	controlPlaneNamingStrategy                *clusterv1.ControlPlaneClassNamingStrategy
+	controlPlaneNamingStrategy                *clusterv1.ControlPlaneClassNamingSpec
 	machineDeploymentClasses                  []clusterv1.MachineDeploymentClass
 	machinePoolClasses                        []clusterv1.MachinePoolClass
 	variables                                 []clusterv1.ClusterClassVariable
@@ -401,7 +412,7 @@ func (c *ClusterClassBuilder) WithControlPlaneInfrastructureMachineTemplate(
 
 // WithControlPlaneMachineHealthCheck adds a MachineHealthCheck for the ControlPlane to the ClusterClassBuilder.
 func (c *ClusterClassBuilder) WithControlPlaneMachineHealthCheck(
-	mhc *clusterv1.MachineHealthCheckClass,
+	mhc *clusterv1.ControlPlaneClassHealthCheck,
 ) *ClusterClassBuilder {
 	c.controlPlaneMHC = mhc
 	return c
@@ -433,7 +444,7 @@ func (c *ClusterClassBuilder) WithControlPlaneNodeDeletionTimeout(
 
 // WithControlPlaneNamingStrategy sets the NamingStrategy for the ControlPlane to the ClusterClassBuilder.
 func (c *ClusterClassBuilder) WithControlPlaneNamingStrategy(
-	n *clusterv1.ControlPlaneClassNamingStrategy,
+	n *clusterv1.ControlPlaneClassNamingSpec,
 ) *ClusterClassBuilder {
 	c.controlPlaneNamingStrategy = n
 	return c
@@ -505,37 +516,54 @@ func (c *ClusterClassBuilder) Build() *clusterv1.ClusterClass {
 		},
 	}
 	if c.infrastructureClusterTemplate != nil {
-		obj.Spec.Infrastructure = clusterv1.LocalObjectTemplate{
-			Ref: objToRef(c.infrastructureClusterTemplate),
+		ref := objToRef(c.infrastructureClusterTemplate)
+		obj.Spec.Infrastructure = clusterv1.InfrastructureClass{
+			TemplateRef: clusterv1.ClusterClassTemplateReference{
+				Kind:       ref.Kind,
+				Name:       ref.Name,
+				APIVersion: ref.APIVersion,
+			},
 		}
 	}
 	if c.controlPlaneMetadata != nil {
 		obj.Spec.ControlPlane.Metadata = *c.controlPlaneMetadata
 	}
 	if c.controlPlaneTemplate != nil {
-		obj.Spec.ControlPlane.LocalObjectTemplate = clusterv1.LocalObjectTemplate{
-			Ref: objToRef(c.controlPlaneTemplate),
+		ref := objToRef(c.controlPlaneTemplate)
+		obj.Spec.ControlPlane.TemplateRef = clusterv1.ClusterClassTemplateReference{
+			Kind:       ref.Kind,
+			Name:       ref.Name,
+			APIVersion: ref.APIVersion,
 		}
 	}
 	if c.controlPlaneMHC != nil {
-		obj.Spec.ControlPlane.MachineHealthCheck = c.controlPlaneMHC
+		obj.Spec.ControlPlane.HealthCheck = *c.controlPlaneMHC
 	}
 	if c.controlPlaneNodeDrainTimeout != nil {
-		obj.Spec.ControlPlane.NodeDrainTimeout = c.controlPlaneNodeDrainTimeout
+		obj.Spec.ControlPlane.Deletion.NodeDrainTimeoutSeconds = ptr.To(int32(c.controlPlaneNodeDrainTimeout.Seconds()))
 	}
 	if c.controlPlaneNodeVolumeDetachTimeout != nil {
-		obj.Spec.ControlPlane.NodeVolumeDetachTimeout = c.controlPlaneNodeVolumeDetachTimeout
+		obj.Spec.ControlPlane.Deletion.NodeVolumeDetachTimeoutSeconds = ptr.To(
+			int32(c.controlPlaneNodeVolumeDetachTimeout.Seconds()),
+		)
 	}
 	if c.controlPlaneNodeDeletionTimeout != nil {
-		obj.Spec.ControlPlane.NodeDeletionTimeout = c.controlPlaneNodeDeletionTimeout
+		obj.Spec.ControlPlane.Deletion.NodeDeletionTimeoutSeconds = ptr.To(
+			int32(c.controlPlaneNodeDeletionTimeout.Seconds()),
+		)
 	}
 	if c.controlPlaneInfrastructureMachineTemplate != nil {
-		obj.Spec.ControlPlane.MachineInfrastructure = &clusterv1.LocalObjectTemplate{
-			Ref: objToRef(c.controlPlaneInfrastructureMachineTemplate),
+		ref := objToRef(c.controlPlaneInfrastructureMachineTemplate)
+		obj.Spec.ControlPlane.MachineInfrastructure = clusterv1.ControlPlaneClassMachineInfrastructureTemplate{
+			TemplateRef: clusterv1.ClusterClassTemplateReference{
+				Kind:       ref.Kind,
+				Name:       ref.Name,
+				APIVersion: ref.APIVersion,
+			},
 		}
 	}
 	if c.controlPlaneNamingStrategy != nil {
-		obj.Spec.ControlPlane.NamingStrategy = c.controlPlaneNamingStrategy
+		obj.Spec.ControlPlane.Naming = *c.controlPlaneNamingStrategy
 	}
 
 	obj.Spec.Workers.MachineDeployments = c.machineDeploymentClasses
@@ -550,14 +578,14 @@ type MachineDeploymentClassBuilder struct {
 	bootstrapTemplate             *unstructured.Unstructured
 	labels                        map[string]string
 	annotations                   map[string]string
-	machineHealthCheckClass       *clusterv1.MachineHealthCheckClass
+	machineHealthCheckClass       *clusterv1.MachineDeploymentClassHealthCheck
 	failureDomain                 *string
 	nodeDrainTimeout              *metav1.Duration
 	nodeVolumeDetachTimeout       *metav1.Duration
 	nodeDeletionTimeout           *metav1.Duration
 	minReadySeconds               *int32
-	strategy                      *clusterv1.MachineDeploymentStrategy
-	namingStrategy                *clusterv1.MachineDeploymentClassNamingStrategy
+	strategy                      *clusterv1.MachineDeploymentClassRolloutStrategy
+	namingStrategy                *clusterv1.MachineDeploymentClassNamingSpec
 }
 
 // MachineDeploymentClass returns a MachineDeploymentClassBuilder with the given name and namespace.
@@ -599,9 +627,9 @@ func (m *MachineDeploymentClassBuilder) WithAnnotations(
 	return m
 }
 
-// WithMachineHealthCheckClass sets the MachineHealthCheckClass for the MachineDeploymentClassBuilder.
+// WithMachineHealthCheckClass sets the MachineDeploymentClassHealthCheck for the MachineDeploymentClassBuilder.
 func (m *MachineDeploymentClassBuilder) WithMachineHealthCheckClass(
-	mhc *clusterv1.MachineHealthCheckClass,
+	mhc *clusterv1.MachineDeploymentClassHealthCheck,
 ) *MachineDeploymentClassBuilder {
 	m.machineHealthCheckClass = mhc
 	return m
@@ -647,9 +675,9 @@ func (m *MachineDeploymentClassBuilder) WithMinReadySeconds(
 	return m
 }
 
-// WithStrategy sets the Strategy for the MachineDeploymentClassBuilder.
+// WithStrategy sets the Rollout Strategy for the MachineDeploymentClassBuilder.
 func (m *MachineDeploymentClassBuilder) WithStrategy(
-	s *clusterv1.MachineDeploymentStrategy,
+	s *clusterv1.MachineDeploymentClassRolloutStrategy,
 ) *MachineDeploymentClassBuilder {
 	m.strategy = s
 	return m
@@ -657,52 +685,64 @@ func (m *MachineDeploymentClassBuilder) WithStrategy(
 
 // WithNamingStrategy sets the NamingStrategy for the MachineDeploymentClassBuilder.
 func (m *MachineDeploymentClassBuilder) WithNamingStrategy(
-	n *clusterv1.MachineDeploymentClassNamingStrategy,
+	n *clusterv1.MachineDeploymentClassNamingSpec,
 ) *MachineDeploymentClassBuilder {
 	m.namingStrategy = n
 	return m
 }
 
 // Build creates a full MachineDeploymentClass object with the variables passed to the MachineDeploymentClassBuilder.
-func (m *MachineDeploymentClassBuilder) Build() *clusterv1.MachineDeploymentClass {
-	obj := &clusterv1.MachineDeploymentClass{
+func (m *MachineDeploymentClassBuilder) Build() clusterv1.MachineDeploymentClass {
+	obj := clusterv1.MachineDeploymentClass{
 		Class: m.class,
-		Template: clusterv1.MachineDeploymentClassTemplate{
-			Metadata: clusterv1.ObjectMeta{
-				Labels:      m.labels,
-				Annotations: m.annotations,
-			},
+		Metadata: clusterv1.ObjectMeta{
+			Labels:      m.labels,
+			Annotations: m.annotations,
 		},
 	}
 	if m.bootstrapTemplate != nil {
-		obj.Template.Bootstrap.Ref = objToRef(m.bootstrapTemplate)
+		ref := objToRef(m.bootstrapTemplate)
+		obj.Bootstrap = clusterv1.MachineDeploymentClassBootstrapTemplate{
+			TemplateRef: clusterv1.ClusterClassTemplateReference{
+				Kind:       ref.Kind,
+				Name:       ref.Name,
+				APIVersion: ref.APIVersion,
+			},
+		}
 	}
 	if m.infrastructureMachineTemplate != nil {
-		obj.Template.Infrastructure.Ref = objToRef(m.infrastructureMachineTemplate)
+		ref := objToRef(m.infrastructureMachineTemplate)
+		obj.Infrastructure = clusterv1.MachineDeploymentClassInfrastructureTemplate{
+			TemplateRef: clusterv1.ClusterClassTemplateReference{
+				Kind:       ref.Kind,
+				Name:       ref.Name,
+				APIVersion: ref.APIVersion,
+			},
+		}
 	}
 	if m.machineHealthCheckClass != nil {
-		obj.MachineHealthCheck = m.machineHealthCheckClass
+		obj.HealthCheck = *m.machineHealthCheckClass
 	}
 	if m.failureDomain != nil {
-		obj.FailureDomain = m.failureDomain
+		obj.FailureDomain = *m.failureDomain
 	}
 	if m.nodeDrainTimeout != nil {
-		obj.NodeDrainTimeout = m.nodeDrainTimeout
+		obj.Deletion.NodeDrainTimeoutSeconds = ptr.To(int32(m.nodeDrainTimeout.Seconds()))
 	}
 	if m.nodeVolumeDetachTimeout != nil {
-		obj.NodeVolumeDetachTimeout = m.nodeVolumeDetachTimeout
+		obj.Deletion.NodeVolumeDetachTimeoutSeconds = ptr.To(int32(m.nodeVolumeDetachTimeout.Seconds()))
 	}
 	if m.nodeDeletionTimeout != nil {
-		obj.NodeDeletionTimeout = m.nodeDeletionTimeout
+		obj.Deletion.NodeDeletionTimeoutSeconds = ptr.To(int32(m.nodeDeletionTimeout.Seconds()))
 	}
 	if m.minReadySeconds != nil {
 		obj.MinReadySeconds = m.minReadySeconds
 	}
 	if m.strategy != nil {
-		obj.Strategy = m.strategy
+		obj.Rollout = clusterv1.MachineDeploymentClassRolloutSpec{Strategy: *m.strategy}
 	}
 	if m.namingStrategy != nil {
-		obj.NamingStrategy = m.namingStrategy
+		obj.Naming = *m.namingStrategy
 	}
 	return obj
 }
@@ -719,7 +759,7 @@ type MachinePoolClassBuilder struct {
 	nodeVolumeDetachTimeout           *metav1.Duration
 	nodeDeletionTimeout               *metav1.Duration
 	minReadySeconds                   *int32
-	namingStrategy                    *clusterv1.MachinePoolClassNamingStrategy
+	namingStrategy                    *clusterv1.MachinePoolClassNamingSpec
 }
 
 // MachinePoolClass returns a MachinePoolClassBuilder with the given name and namespace.
@@ -799,46 +839,58 @@ func (m *MachinePoolClassBuilder) WithMinReadySeconds(t *int32) *MachinePoolClas
 
 // WithNamingStrategy sets the NamingStrategy for the MachinePoolClassBuilder.
 func (m *MachinePoolClassBuilder) WithNamingStrategy(
-	n *clusterv1.MachinePoolClassNamingStrategy,
+	n *clusterv1.MachinePoolClassNamingSpec,
 ) *MachinePoolClassBuilder {
 	m.namingStrategy = n
 	return m
 }
 
 // Build creates a full MachinePoolClass object with the variables passed to the MachinePoolClassBuilder.
-func (m *MachinePoolClassBuilder) Build() *clusterv1.MachinePoolClass {
-	obj := &clusterv1.MachinePoolClass{
+func (m *MachinePoolClassBuilder) Build() clusterv1.MachinePoolClass {
+	obj := clusterv1.MachinePoolClass{
 		Class: m.class,
-		Template: clusterv1.MachinePoolClassTemplate{
-			Metadata: clusterv1.ObjectMeta{
-				Labels:      m.labels,
-				Annotations: m.annotations,
-			},
+		Metadata: clusterv1.ObjectMeta{
+			Labels:      m.labels,
+			Annotations: m.annotations,
 		},
 	}
 	if m.bootstrapTemplate != nil {
-		obj.Template.Bootstrap.Ref = objToRef(m.bootstrapTemplate)
+		ref := objToRef(m.bootstrapTemplate)
+		obj.Bootstrap = clusterv1.MachinePoolClassBootstrapTemplate{
+			TemplateRef: clusterv1.ClusterClassTemplateReference{
+				Kind:       ref.Kind,
+				Name:       ref.Name,
+				APIVersion: ref.APIVersion,
+			},
+		}
 	}
 	if m.infrastructureMachinePoolTemplate != nil {
-		obj.Template.Infrastructure.Ref = objToRef(m.infrastructureMachinePoolTemplate)
+		ref := objToRef(m.infrastructureMachinePoolTemplate)
+		obj.Infrastructure = clusterv1.MachinePoolClassInfrastructureTemplate{
+			TemplateRef: clusterv1.ClusterClassTemplateReference{
+				Kind:       ref.Kind,
+				Name:       ref.Name,
+				APIVersion: ref.APIVersion,
+			},
+		}
 	}
 	if m.failureDomains != nil {
 		obj.FailureDomains = m.failureDomains
 	}
 	if m.nodeDrainTimeout != nil {
-		obj.NodeDrainTimeout = m.nodeDrainTimeout
+		obj.Deletion.NodeDrainTimeoutSeconds = ptr.To(int32(m.nodeDrainTimeout.Seconds()))
 	}
 	if m.nodeVolumeDetachTimeout != nil {
-		obj.NodeVolumeDetachTimeout = m.nodeVolumeDetachTimeout
+		obj.Deletion.NodeVolumeDetachTimeoutSeconds = ptr.To(int32(m.nodeVolumeDetachTimeout.Seconds()))
 	}
 	if m.nodeDeletionTimeout != nil {
-		obj.NodeDeletionTimeout = m.nodeDeletionTimeout
+		obj.Deletion.NodeDeletionTimeoutSeconds = ptr.To(int32(m.nodeDeletionTimeout.Seconds()))
 	}
 	if m.minReadySeconds != nil {
 		obj.MinReadySeconds = m.minReadySeconds
 	}
 	if m.namingStrategy != nil {
-		obj.NamingStrategy = m.namingStrategy
+		obj.Naming = *m.namingStrategy
 	}
 	return obj
 }
@@ -1662,7 +1714,7 @@ type MachinePoolBuilder struct {
 	clusterName     string
 	replicas        *int32
 	labels          map[string]string
-	status          *expv1.MachinePoolStatus
+	status          *clusterv1.MachinePoolStatus
 	minReadySeconds *int32
 }
 
@@ -1713,7 +1765,7 @@ func (m *MachinePoolBuilder) WithReplicas(replicas int32) *MachinePoolBuilder {
 }
 
 // WithStatus sets the passed status object as the status of the MachinePool object.
-func (m *MachinePoolBuilder) WithStatus(status expv1.MachinePoolStatus) *MachinePoolBuilder {
+func (m *MachinePoolBuilder) WithStatus(status clusterv1.MachinePoolStatus) *MachinePoolBuilder {
 	m.status = &status
 	return m
 }
@@ -1725,34 +1777,38 @@ func (m *MachinePoolBuilder) WithMinReadySeconds(minReadySeconds int32) *Machine
 }
 
 // Build creates a new MachinePool with the variables and objects passed to the MachinePoolBuilder.
-func (m *MachinePoolBuilder) Build() *expv1.MachinePool {
-	obj := &expv1.MachinePool{
+func (m *MachinePoolBuilder) Build() *clusterv1.MachinePool {
+	version := ""
+	if m.version != nil {
+		version = *m.version
+	}
+	obj := &clusterv1.MachinePool{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MachinePool",
-			APIVersion: expv1.GroupVersion.String(),
+			APIVersion: clusterv1.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.name,
 			Namespace: m.namespace,
 			Labels:    m.labels,
 		},
-		Spec: expv1.MachinePoolSpec{
-			ClusterName:     m.clusterName,
-			Replicas:        m.replicas,
-			MinReadySeconds: m.minReadySeconds,
+		Spec: clusterv1.MachinePoolSpec{
+			ClusterName: m.clusterName,
+			Replicas:    m.replicas,
 			Template: clusterv1.MachineTemplateSpec{
 				Spec: clusterv1.MachineSpec{
-					Version:     m.version,
-					ClusterName: m.clusterName,
+					Version:         version,
+					ClusterName:     m.clusterName,
+					MinReadySeconds: m.minReadySeconds,
 				},
 			},
 		},
 	}
 	if m.bootstrap != nil {
-		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToRef(m.bootstrap)
+		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToContractRef(objToRef(m.bootstrap))
 	}
 	if m.infrastructure != nil {
-		obj.Spec.Template.Spec.InfrastructureRef = *objToRef(m.infrastructure)
+		obj.Spec.Template.Spec.InfrastructureRef = objToContractRef(objToRef(m.infrastructure))
 	}
 	if m.status != nil {
 		obj.Status = *m.status
@@ -1885,14 +1941,14 @@ func (m *MachineDeploymentBuilder) Build() *clusterv1.MachineDeployment {
 		obj.Generation = *m.generation
 	}
 	if m.version != nil {
-		obj.Spec.Template.Spec.Version = m.version
+		obj.Spec.Template.Spec.Version = *m.version
 	}
 	obj.Spec.Replicas = m.replicas
 	if m.bootstrapTemplate != nil {
-		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToRef(m.bootstrapTemplate)
+		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToContractRef(objToRef(m.bootstrapTemplate))
 	}
 	if m.infrastructureTemplate != nil {
-		obj.Spec.Template.Spec.InfrastructureRef = *objToRef(m.infrastructureTemplate)
+		obj.Spec.Template.Spec.InfrastructureRef = objToContractRef(objToRef(m.infrastructureTemplate))
 	}
 	if m.selector != nil {
 		obj.Spec.Selector = *m.selector
@@ -1911,7 +1967,7 @@ func (m *MachineDeploymentBuilder) Build() *clusterv1.MachineDeployment {
 			clusterv1.ClusterNameLabel: m.clusterName,
 		}
 	}
-	obj.Spec.MinReadySeconds = m.minReadySeconds
+	obj.Spec.Template.Spec.MinReadySeconds = m.minReadySeconds
 
 	if m.minSize != nil {
 		if obj.Annotations == nil {
@@ -2010,10 +2066,10 @@ func (m *MachineSetBuilder) Build() *clusterv1.MachineSet {
 	obj.Spec.Template.Spec.ClusterName = m.clusterName
 	obj.Spec.Replicas = m.replicas
 	if m.bootstrapTemplate != nil {
-		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToRef(m.bootstrapTemplate)
+		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToContractRef(objToRef(m.bootstrapTemplate))
 	}
 	if m.infrastructureTemplate != nil {
-		obj.Spec.Template.Spec.InfrastructureRef = *objToRef(m.infrastructureTemplate)
+		obj.Spec.Template.Spec.InfrastructureRef = objToContractRef(objToRef(m.infrastructureTemplate))
 	}
 	return obj
 }
@@ -2064,6 +2120,10 @@ func (m *MachineBuilder) WithLabels(labels map[string]string) *MachineBuilder {
 
 // Build produces a Machine object from the information passed to the MachineBuilder.
 func (m *MachineBuilder) Build() *clusterv1.Machine {
+	version := ""
+	if m.version != nil {
+		version = *m.version
+	}
 	machine := &clusterv1.Machine{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Machine",
@@ -2075,12 +2135,12 @@ func (m *MachineBuilder) Build() *clusterv1.Machine {
 			Labels:    m.labels,
 		},
 		Spec: clusterv1.MachineSpec{
-			Version:     m.version,
+			Version:     version,
 			ClusterName: m.clusterName,
 		},
 	}
 	if m.bootstrap != nil {
-		machine.Spec.Bootstrap.ConfigRef = objToRef(m.bootstrap)
+		machine.Spec.Bootstrap.ConfigRef = objToContractRef(objToRef(m.bootstrap))
 	}
 	if m.clusterName != "" {
 		if len(m.labels) == 0 {
@@ -2101,6 +2161,19 @@ func objToRef(obj *unstructured.Unstructured) *corev1.ObjectReference {
 		APIVersion: gvk.GroupVersion().String(),
 		Namespace:  obj.GetNamespace(),
 		Name:       obj.GetName(),
+	}
+}
+
+// objToContractRef converts an ObjectReference to ContractVersionedObjectReference.
+func objToContractRef(ref *corev1.ObjectReference) clusterv1.ContractVersionedObjectReference {
+	apiGroup := ref.APIVersion
+	if idx := strings.LastIndex(ref.APIVersion, "/"); idx >= 0 {
+		apiGroup = ref.APIVersion[:idx]
+	}
+	return clusterv1.ContractVersionedObjectReference{
+		Kind:     ref.Kind,
+		Name:     ref.Name,
+		APIGroup: apiGroup,
 	}
 }
 
@@ -2149,13 +2222,14 @@ func setStatusFields(obj *unstructured.Unstructured, fields map[string]interface
 
 // MachineHealthCheckBuilder holds fields for creating a MachineHealthCheck.
 type MachineHealthCheckBuilder struct {
-	name         string
-	namespace    string
-	ownerRefs    []metav1.OwnerReference
-	selector     metav1.LabelSelector
-	clusterName  string
-	conditions   []clusterv1.UnhealthyCondition
-	maxUnhealthy *intstr.IntOrString
+	name                       string
+	namespace                  string
+	ownerRefs                  []metav1.OwnerReference
+	selector                   metav1.LabelSelector
+	clusterName                string
+	unhealthyMachineConditions []clusterv1.UnhealthyMachineCondition
+	unhealthyNodeConditions    []clusterv1.UnhealthyNodeCondition
+	maxUnhealthy               *intstr.IntOrString
 }
 
 // MachineHealthCheck returns a MachineHealthCheckBuilder with the given name and namespace.
@@ -2180,11 +2254,19 @@ func (m *MachineHealthCheckBuilder) WithClusterName(clusterName string) *Machine
 	return m
 }
 
-// WithUnhealthyConditions adds the spec used to build the parameters of the MachineHealthCheck.
+// WithUnhealthyConditions adds the unhealthy machine conditions used to build the parameters of the MachineHealthCheck.
 func (m *MachineHealthCheckBuilder) WithUnhealthyConditions(
-	conditions []clusterv1.UnhealthyCondition,
+	conditions []clusterv1.UnhealthyMachineCondition,
 ) *MachineHealthCheckBuilder {
-	m.conditions = conditions
+	m.unhealthyMachineConditions = conditions
+	return m
+}
+
+// WithUnhealthyNodeConditions adds the unhealthy node conditions used to build the parameters of the MachineHealthCheck.
+func (m *MachineHealthCheckBuilder) WithUnhealthyNodeConditions(
+	conditions []clusterv1.UnhealthyNodeCondition,
+) *MachineHealthCheckBuilder {
+	m.unhealthyNodeConditions = conditions
 	return m
 }
 
@@ -2206,6 +2288,19 @@ func (m *MachineHealthCheckBuilder) WithMaxUnhealthy(
 
 // Build returns a MachineHealthCheck with the supplied details.
 func (m *MachineHealthCheckBuilder) Build() *clusterv1.MachineHealthCheck {
+	checks := clusterv1.MachineHealthCheckChecks{}
+	if len(m.unhealthyMachineConditions) > 0 {
+		checks.UnhealthyMachineConditions = m.unhealthyMachineConditions
+	}
+	if len(m.unhealthyNodeConditions) > 0 {
+		checks.UnhealthyNodeConditions = m.unhealthyNodeConditions
+	}
+	remediation := clusterv1.MachineHealthCheckRemediation{}
+	if m.maxUnhealthy != nil {
+		remediation.TriggerIf = clusterv1.MachineHealthCheckRemediationTriggerIf{
+			UnhealthyLessThanOrEqualTo: m.maxUnhealthy,
+		}
+	}
 	// create a MachineHealthCheck with the spec given in the ClusterClass
 	mhc := &clusterv1.MachineHealthCheck{
 		TypeMeta: metav1.TypeMeta{
@@ -2218,10 +2313,10 @@ func (m *MachineHealthCheckBuilder) Build() *clusterv1.MachineHealthCheck {
 			OwnerReferences: m.ownerRefs,
 		},
 		Spec: clusterv1.MachineHealthCheckSpec{
-			ClusterName:         m.clusterName,
-			Selector:            m.selector,
-			UnhealthyConditions: m.conditions,
-			MaxUnhealthy:        m.maxUnhealthy,
+			ClusterName: m.clusterName,
+			Selector:    m.selector,
+			Checks:      checks,
+			Remediation: remediation,
 		},
 	}
 	if m.clusterName != "" {

@@ -7,8 +7,7 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -40,8 +39,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "custom pod network",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				ClusterNetwork: &clusterv1.ClusterNetwork{
-					Pods: &clusterv1.NetworkRanges{
+				ClusterNetwork: clusterv1.ClusterNetwork{
+					Pods: clusterv1.NetworkRanges{
 						CIDRBlocks: []string{"10.0.0.0/24", "10.0.1.0/24"},
 					},
 				},
@@ -55,7 +54,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "Unknown infrastructure cluster",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+				InfrastructureRef: clusterv1.ContractVersionedObjectReference{
 					Kind: "SomeFakeInfrastructureCluster",
 				},
 			},
@@ -68,7 +67,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "AWS cluster",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+				InfrastructureRef: clusterv1.ContractVersionedObjectReference{
 					Kind: "AWSCluster",
 				},
 			},
@@ -81,7 +80,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "AWS managed (EKS) cluster",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+				InfrastructureRef: clusterv1.ContractVersionedObjectReference{
 					Kind: "AWSManagedCluster",
 				},
 			},
@@ -94,7 +93,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "Azure cluster",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+				InfrastructureRef: clusterv1.ContractVersionedObjectReference{
 					Kind: "AzureCluster",
 				},
 			},
@@ -107,7 +106,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "Azure managed (AKS) cluster",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+				InfrastructureRef: clusterv1.ContractVersionedObjectReference{
 					Kind: "AzureCluster",
 				},
 			},
@@ -120,7 +119,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "GCP cluster",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+				InfrastructureRef: clusterv1.ContractVersionedObjectReference{
 					Kind: "GCPCluster",
 				},
 			},
@@ -134,8 +133,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "custom service network",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				ClusterNetwork: &clusterv1.ClusterNetwork{
-					Services: &clusterv1.NetworkRanges{
+				ClusterNetwork: clusterv1.ClusterNetwork{
+					Services: clusterv1.NetworkRanges{
 						CIDRBlocks: []string{"172.16.0.0/24", "172.16.1.0/24"},
 					},
 				},
@@ -149,7 +148,7 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "custom servicedomain",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				ClusterNetwork: &clusterv1.ClusterNetwork{
+				ClusterNetwork: clusterv1.ClusterNetwork{
 					ServiceDomain: "foo.bar",
 				},
 			},
@@ -162,11 +161,11 @@ func TestGenerateNoProxy(t *testing.T) {
 		name: "all options",
 		cluster: &clusterv1.Cluster{
 			Spec: clusterv1.ClusterSpec{
-				ClusterNetwork: &clusterv1.ClusterNetwork{
-					Pods: &clusterv1.NetworkRanges{
+				ClusterNetwork: clusterv1.ClusterNetwork{
+					Pods: clusterv1.NetworkRanges{
 						CIDRBlocks: []string{"10.10.0.0/16"},
 					},
-					Services: &clusterv1.NetworkRanges{
+					Services: clusterv1.NetworkRanges{
 						CIDRBlocks: []string{"172.16.0.0/16"},
 					},
 					ServiceDomain: "foo.bar",

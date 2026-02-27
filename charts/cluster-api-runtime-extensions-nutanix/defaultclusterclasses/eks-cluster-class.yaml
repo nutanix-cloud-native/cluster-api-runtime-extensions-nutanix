@@ -1,4 +1,4 @@
-apiVersion: cluster.x-k8s.io/v1beta1
+apiVersion: cluster.x-k8s.io/v1beta2
 kind: ClusterClass
 metadata:
   labels:
@@ -6,35 +6,34 @@ metadata:
   name: eks-quick-start
 spec:
   controlPlane:
-    ref:
+    templateRef:
       apiVersion: controlplane.cluster.x-k8s.io/v1beta2
       kind: AWSManagedControlPlaneTemplate
       name: eks-quick-start-control-plane
   infrastructure:
-    ref:
+    templateRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
       kind: AWSManagedClusterTemplate
       name: eks-quick-start
   patches:
-  - external:
-      discoverVariablesExtension: eksclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: eksclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix
-    name: cluster-config
-  - external:
-      discoverVariablesExtension: eksworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
-      generateExtension: eksworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix
-    name: worker-config
+    - external:
+        discoverVariablesExtension: eksclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        generatePatchesExtension: eksclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix
+      name: cluster-config
+    - external:
+        discoverVariablesExtension: eksworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        generatePatchesExtension: eksworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix
+      name: worker-config
   workers:
     machineDeployments:
-    - class: default-worker
-      template:
-        bootstrap:
-          ref:
+      - bootstrap:
+          templateRef:
             apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
             kind: NodeadmConfigTemplate
             name: eks-quick-start-worker-configtemplate
+        class: default-worker
         infrastructure:
-          ref:
+          templateRef:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: AWSMachineTemplate
             name: eks-quick-start-worker-machinetemplate

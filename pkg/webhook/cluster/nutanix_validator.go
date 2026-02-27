@@ -12,7 +12,7 @@ import (
 
 	v1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -54,7 +54,7 @@ func (a *nutanixValidator) validate(
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if cluster.Spec.Topology == nil {
+	if !cluster.Spec.Topology.IsDefined() {
 		return admission.Allowed("")
 	}
 
@@ -227,15 +227,15 @@ func validateWorkerFailureDomainConfig(
 			fmt.Errorf("failed to unmarshal cluster topology variable %q: %w", v1alpha1.WorkerConfigVariableName, err)))
 	}
 
-	if cluster.Spec.Topology.Workers != nil {
+	if len(cluster.Spec.Topology.Workers.MachineDeployments) > 0 {
 		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
 			md := cluster.Spec.Topology.Workers.MachineDeployments[i]
-			hasFailureDomain := md.FailureDomain != nil && *md.FailureDomain != ""
+			hasFailureDomain := md.FailureDomain != ""
 
 			// Get the machineDetails from the overrides variable "workerConfig" if it is configured,
 			// otherwise use the defaultWorkerConfig if it is configured.
 			var workerConfig *variables.WorkerNodeConfigSpec
-			if md.Variables != nil && len(md.Variables.Overrides) > 0 {
+			if len(md.Variables.Overrides) > 0 {
 				workerConfig, err = variables.UnmarshalWorkerConfigVariable(md.Variables.Overrides)
 				if err != nil {
 					fldErrs = append(fldErrs, field.InternalError(

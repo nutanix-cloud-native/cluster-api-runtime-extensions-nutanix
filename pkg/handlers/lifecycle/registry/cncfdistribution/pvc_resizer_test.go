@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -454,8 +454,8 @@ func testCluster() *clusterv1.Cluster {
 			Namespace: corev1.NamespaceDefault,
 		},
 		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: &clusterv1.ClusterNetwork{
-				Services: &clusterv1.NetworkRanges{
+			ClusterNetwork: clusterv1.ClusterNetwork{
+				Services: clusterv1.NetworkRanges{
 					CIDRBlocks: []string{"10.96.0.0/12"},
 				},
 			},

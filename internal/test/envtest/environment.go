@@ -39,14 +39,13 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta1"
+	runtimev1 "sigs.k8s.io/cluster-api/api/runtime/v1alpha1"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/log"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	expv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
-	ipamv1 "sigs.k8s.io/cluster-api/exp/ipam/api/v1beta1"
-	runtimev1 "sigs.k8s.io/cluster-api/exp/runtime/api/v1alpha1"
 	"sigs.k8s.io/cluster-api/util/kubeconfig"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,7 +71,7 @@ func init() {
 	utilruntime.Must(admissionv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(clusterv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(bootstrapv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(expv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(clusterv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(addonsv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(controlplanev1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(admissionv1.AddToScheme(scheme.Scheme))
@@ -191,11 +190,16 @@ func newEnvironment(
 		opt(envOpts)
 	}
 
+	// Load CAPI CRDs and ensure v1beta2 is the storage version.
+	// envtest does not run conversion webhooks, so only the storage version
+	// round-trips correctly. Since this project uses v1beta2 typed clients,
+	// we must keep v1beta2 as storage.
+	patchedCRDs := loadCRDsWithV1Beta2Storage(ExternalCRDDirectoryPaths())
+
 	// Create the test environment.
 	env := &envtest.Environment{
 		ErrorIfCRDPathMissing: true,
-		CRDDirectoryPaths:     ExternalCRDDirectoryPaths(),
-		CRDs: []*apiextensionsv1.CustomResourceDefinition{
+		CRDs: append(patchedCRDs,
 			builder.GenericBootstrapConfigCRD.DeepCopy(),
 			builder.GenericBootstrapConfigTemplateCRD.DeepCopy(),
 			builder.GenericControlPlaneCRD.DeepCopy(),
@@ -218,7 +222,7 @@ func newEnvironment(
 			builder.TestBootstrapConfigCRD.DeepCopy(),
 			builder.TestControlPlaneTemplateCRD.DeepCopy(),
 			builder.TestControlPlaneCRD.DeepCopy(),
-		},
+		),
 		WebhookInstallOptions: webhookInstallOptions,
 	}
 
@@ -291,9 +295,12 @@ func (e *Environment) CreateKubeconfigSecret(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 ) error {
+	v1beta2Cluster := &clusterv1.Cluster{
+		ObjectMeta: *cluster.ObjectMeta.DeepCopy(),
+	}
 	return e.Create(
 		ctx,
-		kubeconfig.GenerateSecret(cluster, kubeconfig.FromEnvTestConfig(e.Config, cluster)),
+		kubeconfig.GenerateSecret(v1beta2Cluster, kubeconfig.FromEnvTestConfig(e.Config, v1beta2Cluster)),
 	)
 }
 

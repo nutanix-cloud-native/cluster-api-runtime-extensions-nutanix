@@ -18,12 +18,6 @@ labels:
 patches:
 - target:
     kind: Cluster
-  patch: |-
-    - op: "add"
-      path: "/spec/topology/class"
-      value: "eks-quick-start"
-- target:
-    kind: Cluster
   path: ../../../patches/eks/initialize-variables.yaml
 - target:
     kind: Cluster

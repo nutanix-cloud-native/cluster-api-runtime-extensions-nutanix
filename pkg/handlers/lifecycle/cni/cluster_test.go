@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 func Test_PodCIDR(t *testing.T) {
@@ -16,22 +16,22 @@ func Test_PodCIDR(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		cluster  *v1beta1.Cluster
+		cluster  *clusterv1.Cluster
 		wantCIDR string
 		wantErr  error
 	}{
 		{
 			name: "no Pods CIDR set",
-			cluster: &v1beta1.Cluster{
-				Spec: v1beta1.ClusterSpec{},
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{},
 			},
 		},
 		{
 			name: "no Pods CIDR set, but Services CIDR is set",
-			cluster: &v1beta1.Cluster{
-				Spec: v1beta1.ClusterSpec{
-					ClusterNetwork: &v1beta1.ClusterNetwork{
-						Services: &v1beta1.NetworkRanges{
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					ClusterNetwork: clusterv1.ClusterNetwork{
+						Services: clusterv1.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},
@@ -40,10 +40,10 @@ func Test_PodCIDR(t *testing.T) {
 		},
 		{
 			name: "Pods CIDR set",
-			cluster: &v1beta1.Cluster{
-				Spec: v1beta1.ClusterSpec{
-					ClusterNetwork: &v1beta1.ClusterNetwork{
-						Pods: &v1beta1.NetworkRanges{
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					ClusterNetwork: clusterv1.ClusterNetwork{
+						Pods: clusterv1.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},
@@ -53,10 +53,10 @@ func Test_PodCIDR(t *testing.T) {
 		},
 		{
 			name: "error: multiple Pods CIDRs set",
-			cluster: &v1beta1.Cluster{
-				Spec: v1beta1.ClusterSpec{
-					ClusterNetwork: &v1beta1.ClusterNetwork{
-						Pods: &v1beta1.NetworkRanges{
+			cluster: &clusterv1.Cluster{
+				Spec: clusterv1.ClusterSpec{
+					ClusterNetwork: clusterv1.ClusterNetwork{
+						Pods: clusterv1.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16", "10.0.0.1/16"},
 						},
 					},

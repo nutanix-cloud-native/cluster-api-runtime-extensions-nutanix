@@ -16,7 +16,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	featuregatetesting "k8s.io/component-base/featuregate/testing"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
@@ -160,19 +160,17 @@ func createTestCluster(
 			Namespace:    metav1.NamespaceDefault,
 		},
 		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: &clusterv1.ClusterNetwork{
-				Services: &clusterv1.NetworkRanges{
+			ClusterNetwork: clusterv1.ClusterNetwork{
+				Services: clusterv1.NetworkRanges{
 					CIDRBlocks: []string{
 						"192.168.0.0/16",
 					},
 				},
 			},
-			Topology: &clusterv1.Topology{
-				Class:   "dummy-class",
-				Version: "dummy-version",
-				Variables: []clusterv1.ClusterVariable{
-					*variable,
-				},
+			Topology: clusterv1.Topology{
+				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
+				Version:   "dummy-version",
+				Variables: []clusterv1.ClusterVariable{*variable},
 			},
 		},
 	}
