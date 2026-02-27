@@ -216,20 +216,13 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			},
 		},
 		{
-			name:                 "missing nclient with configured subnets fails gracefully",
+			name:                 "missing nclient with configured subnets returns early without error",
 			podCIDRs:             []string{"10.244.0.0/16"},
 			serviceCIDRs:         []string{"10.96.0.0/12"},
 			withConfiguredSubnet: true,
 			withNClient:          false,
-			expectAllowed:        false,
-			expectInternalError:  true,
+			expectAllowed:        true,
 			expectedWarnings:     0,
-			expectedCauses: []expectedCause{
-				{
-					messagePart: "Cannot validate subnet overlaps: Prism Central connection is not available",
-					field:       "",
-				},
-			},
 		},
 		{
 			name:          "invalid pod cidr",

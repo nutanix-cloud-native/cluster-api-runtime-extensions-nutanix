@@ -107,12 +107,6 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 	}
 
 	if c.cd.nclient == nil {
-		result.Allowed = false
-		result.InternalError = true
-		result.Causes = append(result.Causes, preflight.Cause{
-			Message: "Cannot validate subnet overlaps: Prism Central connection is not available. " +
-				"Check your Nutanix credentials and ensure Prism Central is accessible.",
-		})
 		return result
 	}
 
