@@ -85,12 +85,15 @@ spec:
                     minimum: 2
                     type: integer
                   containerLogMaxSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
                     description: |-
                       ContainerLogMaxSize defines the maximum size of the container log file
                       before it is rotated. Value is a quantity (e.g. "10Mi", "256Ki").
                       Default kubelet value is "10Mi".
-                    pattern: ^\d+(Ki|Mi|Gi)$
-                    type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                   cpuManagerPolicy:
                     description: |-
                       CPUManagerPolicy controls how cpusets are assigned to containers.

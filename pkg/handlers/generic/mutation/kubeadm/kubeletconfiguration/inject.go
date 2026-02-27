@@ -243,7 +243,7 @@ func toTemplateInput(cfg *v1alpha1.KubeletConfiguration) *kubeletConfigTemplateI
 		in.PodPidsLimit = *cfg.PodPidsLimit
 	}
 	if cfg.ContainerLogMaxSize != nil {
-		in.ContainerLogMaxSize = *cfg.ContainerLogMaxSize
+		in.ContainerLogMaxSize = cfg.ContainerLogMaxSize.String()
 	}
 	if cfg.ContainerLogMaxFiles != nil {
 		in.ContainerLogMaxFiles = *cfg.ContainerLogMaxFiles

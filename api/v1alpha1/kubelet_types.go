@@ -1,4 +1,4 @@
-// Copyright 2025 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
@@ -128,8 +128,7 @@ type KubeletConfiguration struct {
 	// before it is rotated. Value is a quantity (e.g. "10Mi", "256Ki").
 	// Default kubelet value is "10Mi".
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Pattern=`^\d+(Ki|Mi|Gi)$`
-	ContainerLogMaxSize *string `json:"containerLogMaxSize,omitempty"`
+	ContainerLogMaxSize *resource.Quantity `json:"containerLogMaxSize,omitempty"`
 
 	// ContainerLogMaxFiles specifies the maximum number of container log files
 	// that can be present for a container.
