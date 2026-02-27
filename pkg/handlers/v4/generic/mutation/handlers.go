@@ -21,6 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/encryptionatrest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/etcd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/extraapiservercertsans"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/kubeletconfiguration"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/kubernetesimagerepository"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/noderegistration"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v4/generic/mutation/auditpolicy"
@@ -61,6 +62,7 @@ func ControlPlaneMetaMutators() []mutation.MetaMutator {
 	return []mutation.MetaMutator{
 		taints.NewControlPlanePatch(),
 		noderegistration.NewControlPlanePatch(),
+		kubeletconfiguration.NewControlPlanePatch(),
 	}
 }
 
@@ -68,5 +70,6 @@ func WorkerMetaMutators() []mutation.MetaMutator {
 	return []mutation.MetaMutator{
 		taints.NewWorkerPatch(),
 		noderegistration.NewWorkerPatch(),
+		kubeletconfiguration.NewWorkerPatch(),
 	}
 }
