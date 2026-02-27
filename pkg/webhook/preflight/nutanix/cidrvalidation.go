@@ -20,8 +20,9 @@ const (
 )
 
 type nodeSubnetSource struct {
-	id    capxv1.NutanixResourceIdentifier
-	field string
+	id      capxv1.NutanixResourceIdentifier
+	field   string
+	cluster *capxv1.NutanixResourceIdentifier
 }
 
 type resolvedNodeSubnet struct {
@@ -338,13 +339,15 @@ func collectNodeSubnetSources(cd *checkDependencies) []nodeSubnetSource {
 	if cd.nutanixClusterConfigSpec != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
-		for i, subnetID := range cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails.Subnets {
+		cpDetails := &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails
+		for i, subnetID := range cpDetails.Subnets {
 			sources = append(sources, nodeSubnetSource{
 				id: subnetID,
 				field: fmt.Sprintf(
 					"$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails.subnets[%d]", //nolint:lll // Field path is long.
 					i,
 				),
+				cluster: cpDetails.Cluster,
 			})
 		}
 	}
@@ -353,7 +356,8 @@ func collectNodeSubnetSources(cd *checkDependencies) []nodeSubnetSource {
 		if worker == nil || worker.Nutanix == nil {
 			continue
 		}
-		for i, subnetID := range worker.Nutanix.MachineDetails.Subnets {
+		workerDetails := &worker.Nutanix.MachineDetails
+		for i, subnetID := range workerDetails.Subnets {
 			sources = append(sources, nodeSubnetSource{
 				id: subnetID,
 				field: fmt.Sprintf(
@@ -361,6 +365,7 @@ func collectNodeSubnetSources(cd *checkDependencies) []nodeSubnetSource {
 					mdName,
 					i,
 				),
+				cluster: workerDetails.Cluster,
 			})
 		}
 	}
@@ -407,6 +412,17 @@ func resolveNodeSubnets(
 				)
 			}
 
+			if src.id.IsName() && len(subnets) > 1 {
+				subnets = filterSubnetsByPECluster(ctx, nclient, subnets, src.cluster)
+				if len(subnets) != 1 {
+					return nil, warnings, fmt.Errorf(
+						"found %d subnets matching name %q on the target Prism Element cluster; "+
+							"there must be exactly 1; use subnet UUID instead",
+						len(subnets), *src.id.Name,
+					)
+				}
+			}
+
 			prefixes := make([]netip.Prefix, 0)
 			for i := range subnets {
 				subnetPrefixes, err := extractIPv4PrefixesFromSubnet(&subnets[i])
@@ -442,6 +458,54 @@ func resolveNodeSubnets(
 	}
 
 	return resolved, warnings, nil
+}
+
+func filterSubnetsByPECluster(
+	ctx context.Context,
+	nclient client,
+	subnets []netv4.Subnet,
+	clusterID *capxv1.NutanixResourceIdentifier,
+) []netv4.Subnet {
+	if clusterID == nil {
+		return subnets
+	}
+
+	peUUID, err := resolvePEClusterUUID(ctx, nclient, clusterID)
+	if err != nil || peUUID == "" {
+		return subnets
+	}
+
+	filtered := make([]netv4.Subnet, 0)
+	for i := range subnets {
+		if subnets[i].ClusterReference == nil || *subnets[i].ClusterReference == peUUID {
+			filtered = append(filtered, subnets[i])
+		}
+	}
+	return filtered
+}
+
+func resolvePEClusterUUID(
+	ctx context.Context,
+	nclient client,
+	clusterID *capxv1.NutanixResourceIdentifier,
+) (string, error) {
+	if clusterID.IsUUID() {
+		return *clusterID.UUID, nil
+	}
+	clusters, err := getClusters(ctx, nclient, clusterID)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to resolve PE cluster %q: %w",
+			subnetIdentifierForMessage(*clusterID), err,
+		)
+	}
+	if len(clusters) != 1 {
+		return "", fmt.Errorf(
+			"found %d PE clusters matching %q; expected exactly 1",
+			len(clusters), subnetIdentifierForMessage(*clusterID),
+		)
+	}
+	return *clusters[0].ExtId, nil
 }
 
 func subnetIdentifierForMessage(id capxv1.NutanixResourceIdentifier) string {

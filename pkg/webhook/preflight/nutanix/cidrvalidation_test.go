@@ -280,6 +280,24 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			expectAllowed:        true,
 			expectedWarnings:     1,
 		},
+		{
+			name:         "ambiguous subnet name error",
+			podCIDRs:     []string{"10.244.0.0/16"},
+			serviceCIDRs: []string{"10.96.0.0/12"},
+			resolveSubnetErr: fmt.Errorf(
+				"found 2 subnets matching name \"vlan170\" on the target Prism Element cluster; there must be exactly 1; use subnet UUID instead",
+			),
+			withConfiguredSubnet: true,
+			withNClient:          true,
+			expectAllowed:        false,
+			expectInternalError:  true,
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "use subnet UUID instead",
+					field:       "",
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -350,12 +368,21 @@ func TestCollectNodeSubnetSources(t *testing.T) {
 		Type: capxv1.NutanixIdentifierUUID,
 		UUID: ptr.To("11111111-1111-1111-1111-111111111111"),
 	}
+	cpCluster := &capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierUUID,
+		UUID: ptr.To("cp-pe-uuid"),
+	}
+	workerCluster := &capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierName,
+		Name: ptr.To("worker-pe"),
+	}
 
 	cd := &checkDependencies{
 		nutanixClusterConfigSpec: &carenv1.NutanixClusterConfigSpec{
 			ControlPlane: &carenv1.NutanixControlPlaneSpec{
 				Nutanix: &carenv1.NutanixControlPlaneNodeSpec{
 					MachineDetails: carenv1.NutanixMachineDetails{
+						Cluster: cpCluster,
 						Subnets: []capxv1.NutanixResourceIdentifier{
 							subnetByName,
 							subnetByUUID,
@@ -368,8 +395,9 @@ func TestCollectNodeSubnetSources(t *testing.T) {
 			"md-1": {
 				Nutanix: &carenv1.NutanixWorkerNodeSpec{
 					MachineDetails: carenv1.NutanixMachineDetails{
+						Cluster: workerCluster,
 						Subnets: []capxv1.NutanixResourceIdentifier{
-							subnetByName, // same subnet, but different source - both kept
+							subnetByName,
 						},
 					},
 				},
@@ -385,15 +413,20 @@ func TestCollectNodeSubnetSources(t *testing.T) {
 		`$.spec.topology.variables[?@.name=="clusterConfig"].value.controlPlane.nutanix.machineDetails.subnets[0]`,
 		sources[0].field,
 	)
+	assert.Equal(t, cpCluster, sources[0].cluster)
+
 	assert.Equal(t,
 		`$.spec.topology.variables[?@.name=="clusterConfig"].value.controlPlane.nutanix.machineDetails.subnets[1]`,
 		sources[1].field,
 	)
+	assert.Equal(t, cpCluster, sources[1].cluster)
+
 	assert.Equal(
 		t,
 		`$.spec.topology.workers.machineDeployments[?@.name=="md-1"].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[0]`,
 		sources[2].field,
 	)
+	assert.Equal(t, workerCluster, sources[2].cluster)
 }
 
 func TestExtractIPv4PrefixesFromSubnet(t *testing.T) {
