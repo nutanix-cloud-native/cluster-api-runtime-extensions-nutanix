@@ -82,24 +82,9 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 		})
 	}
 
-	applyPodCIDRValidation(&result, podCIDRs)
-	applyServiceCIDRValidation(&result, serviceCIDRs)
-
-	for _, podCIDR := range podCIDRs {
-		for _, serviceCIDR := range serviceCIDRs {
-			if prefixesOverlap(podCIDR, serviceCIDR) {
-				result.Allowed = false
-				result.Causes = append(result.Causes, preflight.Cause{
-					Message: fmt.Sprintf(
-						"Pod CIDR %q overlaps with Service CIDR %q. Use non-overlapping Pod and Service CIDR ranges and retry.",
-						podCIDR.String(),
-						serviceCIDR.String(),
-					),
-					Field: clusterNetworkPodsFieldPath,
-				})
-			}
-		}
-	}
+	validatePodCIDR(&result, podCIDRs)
+	validateServiceCIDR(&result, serviceCIDRs)
+	validatePodAndServiceCIDRsNotOverlapping(&result, podCIDRs, serviceCIDRs)
 
 	nodeSubnetSources := collectNodeSubnetSources(c.cd)
 	if len(nodeSubnetSources) == 0 {
@@ -128,39 +113,8 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 		return result
 	}
 
-	for _, podCIDR := range podCIDRs {
-		for _, nodeSubnet := range resolvedSubnets {
-			if prefixesOverlap(podCIDR, nodeSubnet.prefix) {
-				result.Allowed = false
-				result.Causes = append(result.Causes, preflight.Cause{
-					Message: fmt.Sprintf(
-						"Pod CIDR %q overlaps with node subnet %q (CIDR %q). Use non-overlapping ranges and retry.",
-						podCIDR.String(),
-						nodeSubnet.name,
-						nodeSubnet.prefix.String(),
-					),
-					Field: nodeSubnet.field,
-				})
-			}
-		}
-	}
-
-	for _, serviceCIDR := range serviceCIDRs {
-		for _, nodeSubnet := range resolvedSubnets {
-			if prefixesOverlap(serviceCIDR, nodeSubnet.prefix) {
-				result.Allowed = false
-				result.Causes = append(result.Causes, preflight.Cause{
-					Message: fmt.Sprintf(
-						"Service CIDR %q overlaps with node subnet %q (CIDR %q). Use non-overlapping ranges and retry.",
-						serviceCIDR.String(),
-						nodeSubnet.name,
-						nodeSubnet.prefix.String(),
-					),
-					Field: nodeSubnet.field,
-				})
-			}
-		}
-	}
+	validateSubnetAndPodCIDRsNotOverlapping(&result, podCIDRs, resolvedSubnets)
+	validateSubnetAndServiceCIDRsNotOverlapping(&result, serviceCIDRs, resolvedSubnets)
 
 	return result
 }
@@ -189,7 +143,7 @@ func parseCIDRBlocks(cidrs []string) ([]netip.Prefix, error) {
 	return prefixes, nil
 }
 
-func applyPodCIDRValidation(result *preflight.CheckResult, prefixes []netip.Prefix) {
+func validatePodCIDR(result *preflight.CheckResult, prefixes []netip.Prefix) {
 	if result == nil {
 		return
 	}
@@ -223,7 +177,7 @@ func applyPodCIDRValidation(result *preflight.CheckResult, prefixes []netip.Pref
 	}
 }
 
-func applyServiceCIDRValidation(result *preflight.CheckResult, prefixes []netip.Prefix) {
+func validateServiceCIDR(result *preflight.CheckResult, prefixes []netip.Prefix) {
 	if result == nil {
 		return
 	}
@@ -267,6 +221,85 @@ func applyServiceCIDRValidation(result *preflight.CheckResult, prefixes []netip.
 				prefix.String(),
 				maskSize,
 			))
+		}
+	}
+}
+
+func validatePodAndServiceCIDRsNotOverlapping(
+	result *preflight.CheckResult,
+	podCIDRs, serviceCIDRs []netip.Prefix,
+) {
+	if result == nil {
+		return
+	}
+
+	for _, podCIDR := range podCIDRs {
+		for _, serviceCIDR := range serviceCIDRs {
+			if prefixesOverlap(podCIDR, serviceCIDR) {
+				result.Allowed = false
+				result.Causes = append(result.Causes, preflight.Cause{
+					Message: fmt.Sprintf(
+						"Pod CIDR %q overlaps with Service CIDR %q. Use non-overlapping Pod and Service CIDR ranges and retry.",
+						podCIDR.String(),
+						serviceCIDR.String(),
+					),
+					Field: clusterNetworkPodsFieldPath,
+				})
+			}
+		}
+	}
+}
+
+func validateSubnetAndPodCIDRsNotOverlapping(
+	result *preflight.CheckResult,
+	podCIDRs []netip.Prefix,
+	subnets []resolvedNodeSubnet,
+) {
+	if result == nil {
+		return
+	}
+
+	for _, podCIDR := range podCIDRs {
+		for _, nodeSubnet := range subnets {
+			if prefixesOverlap(podCIDR, nodeSubnet.prefix) {
+				result.Allowed = false
+				result.Causes = append(result.Causes, preflight.Cause{
+					Message: fmt.Sprintf(
+						"Pod CIDR %q overlaps with node subnet %q (CIDR %q). Use non-overlapping ranges and retry.",
+						podCIDR.String(),
+						nodeSubnet.name,
+						nodeSubnet.prefix.String(),
+					),
+					Field: nodeSubnet.field,
+				})
+			}
+		}
+	}
+}
+
+func validateSubnetAndServiceCIDRsNotOverlapping(
+	result *preflight.CheckResult,
+	serviceCIDRs []netip.Prefix,
+	subnets []resolvedNodeSubnet,
+) {
+	if result == nil {
+		return
+	}
+
+	for _, serviceCIDR := range serviceCIDRs {
+		for _, nodeSubnet := range subnets {
+			if prefixesOverlap(serviceCIDR, nodeSubnet.prefix) {
+				result.Allowed = false
+				result.Causes = append(result.Causes, preflight.Cause{
+					Message: fmt.Sprintf(
+						"Service CIDR %q overlaps with node subnet %q (CIDR %q). Use non-overlapping ranges and retry.",
+						serviceCIDR.String(),
+						nodeSubnet.name,
+						nodeSubnet.prefix.String(),
+					),
+					Field: nodeSubnet.field,
+				})
+			}
 		}
 	}
 }
