@@ -259,12 +259,19 @@ type KubeadmClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	DNS *DNS `json:"dns,omitempty"`
 
+	// Deprecated: Use kubeletConfiguration.maxParallelImagePulls instead.
 	// MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
 	// If not set, the default value of 1 will be used.
 	// If set to 0, the maximum number of parallel image pulls will be unlimited.
+	// When both this field and kubeletConfiguration.maxParallelImagePulls are set, the latter takes precedence.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Minimum=0
 	MaxParallelImagePullsPerNode *int32 `json:"maxParallelImagePullsPerNode,omitempty"`
+
+	// KubeletConfiguration defines kubelet settings applied to all nodes by default.
+	// Per-node-group overrides can be set via controlPlane or workerConfig.
+	// +kubebuilder:validation:Optional
+	KubeletConfiguration *KubeletConfiguration `json:"kubeletConfiguration,omitempty"`
 }
 
 // +kubebuilder:object:root=true
