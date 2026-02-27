@@ -71,32 +71,72 @@ func (k *kubeletConfigurationValidator) validate(
 		return admission.Allowed("")
 	}
 
-	cfg := clusterConfig.KubeletConfiguration
-	if cfg == nil {
-		return admission.Allowed("")
+	var warnings []string
+
+	cfgsToValidate := []struct {
+		cfg  *v1alpha1.KubeletConfiguration
+		path string
+	}{
+		{clusterConfig.KubeletConfiguration, "clusterConfig.kubeletConfiguration"},
 	}
 
-	// 1. cpuManagerPolicy=static requires CPU reservation
-	if cfg.CPUManagerPolicy != nil && *cfg.CPUManagerPolicy == v1alpha1.CPUManagerPolicyStatic {
-		hasCPUReserved := hasCPUReservation(cfg.SystemReserved) || hasCPUReservation(cfg.KubeReserved)
-		if !hasCPUReserved {
-			return admission.Denied(
-				"cpuManagerPolicy 'static' requires CPU reservation in systemReserved or kubeReserved",
-			)
+	if clusterConfig.ControlPlane != nil {
+		cfgsToValidate = append(cfgsToValidate, struct {
+			cfg  *v1alpha1.KubeletConfiguration
+			path string
+		}{
+			clusterConfig.ControlPlane.KubeletConfiguration,
+			"clusterConfig.controlPlane.kubeletConfiguration",
+		})
+	}
+
+	workerConfig, err := variables.UnmarshalWorkerConfigVariable(
+		cluster.Spec.Topology.Variables,
+	)
+	if err == nil && workerConfig != nil {
+		cfgsToValidate = append(cfgsToValidate, struct {
+			cfg  *v1alpha1.KubeletConfiguration
+			path string
+		}{
+			workerConfig.KubeletConfiguration,
+			"workerConfig.kubeletConfiguration",
+		})
+	}
+
+	for _, entry := range cfgsToValidate {
+		if entry.cfg == nil {
+			continue
+		}
+
+		if entry.cfg.CPUManagerPolicy != nil &&
+			*entry.cfg.CPUManagerPolicy == v1alpha1.CPUManagerPolicyStatic {
+			hasCPU := hasCPUReservation(entry.cfg.SystemReserved) ||
+				hasCPUReservation(entry.cfg.KubeReserved)
+			if !hasCPU {
+				return admission.Denied(fmt.Sprintf(
+					"%s: cpuManagerPolicy 'static' requires CPU "+
+						"reservation in systemReserved or kubeReserved",
+					entry.path,
+				))
+			}
+		}
+
+		if err := validateEvictionThresholds(
+			entry.cfg.EvictionHard, entry.path+".evictionHard",
+		); err != nil {
+			return admission.Denied(err.Error())
+		}
+		if err := validateEvictionThresholds(
+			entry.cfg.EvictionSoft, entry.path+".evictionSoft",
+		); err != nil {
+			return admission.Denied(err.Error())
 		}
 	}
 
-	// 2. evictionHard/evictionSoft value format validation
-	if err := validateEvictionThresholds(cfg.EvictionHard); err != nil {
-		return admission.Denied(err.Error())
-	}
-	if err := validateEvictionThresholds(cfg.EvictionSoft); err != nil {
-		return admission.Denied(err.Error())
-	}
-
-	var warnings []string
 	//nolint:staticcheck // Intentional access to deprecated field for backwards compatibility.
-	if clusterConfig.MaxParallelImagePullsPerNode != nil && cfg.MaxParallelImagePulls != nil {
+	if clusterConfig.MaxParallelImagePullsPerNode != nil &&
+		clusterConfig.KubeletConfiguration != nil &&
+		clusterConfig.KubeletConfiguration.MaxParallelImagePulls != nil {
 		warnings = append(
 			warnings,
 			"both maxParallelImagePullsPerNode and "+
@@ -119,15 +159,16 @@ func hasCPUReservation(reserved map[string]resource.Quantity) bool {
 	return ok
 }
 
-func validateEvictionThresholds(thresholds map[string]string) error {
+func validateEvictionThresholds(thresholds map[string]string, fieldPath string) error {
 	if thresholds == nil {
 		return nil
 	}
 	for signal, val := range thresholds {
 		if !evictionThresholdPattern.MatchString(val) {
 			return fmt.Errorf(
-				"invalid eviction threshold value %q for signal %q: must be a percentage or resource quantity",
-				val, signal,
+				"%s: invalid eviction threshold value %q for signal %q: "+
+					"must be a percentage or resource quantity",
+				fieldPath, val, signal,
 			)
 		}
 	}
