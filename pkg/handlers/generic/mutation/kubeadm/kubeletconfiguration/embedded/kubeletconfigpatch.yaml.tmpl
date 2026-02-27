@@ -1,73 +1,73 @@
 ---
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
-{{- if .MaxPods }}
-maxPods: {{ .MaxPods }}
+{{- with .MaxPods }}
+maxPods: {{ . }}
 {{- end }}
-{{- if .SystemReserved }}
+{{- with .SystemReserved }}
 systemReserved:
-  {{- range $k, $v := .SystemReserved }}
+  {{- range $k, $v := . }}
   {{ $k }}: "{{ $v }}"
   {{- end }}
 {{- end }}
-{{- if .KubeReserved }}
+{{- with .KubeReserved }}
 kubeReserved:
-  {{- range $k, $v := .KubeReserved }}
+  {{- range $k, $v := . }}
   {{ $k }}: "{{ $v }}"
   {{- end }}
 {{- end }}
-{{- if .EvictionHard }}
+{{- with .EvictionHard }}
 evictionHard:
-  {{- range $k, $v := .EvictionHard }}
+  {{- range $k, $v := . }}
   {{ $k }}: "{{ $v }}"
   {{- end }}
 {{- end }}
-{{- if .EvictionSoft }}
+{{- with .EvictionSoft }}
 evictionSoft:
-  {{- range $k, $v := .EvictionSoft }}
+  {{- range $k, $v := . }}
   {{ $k }}: "{{ $v }}"
   {{- end }}
 {{- end }}
-{{- if .EvictionSoftGracePeriod }}
+{{- with .EvictionSoftGracePeriod }}
 evictionSoftGracePeriod:
-  {{- range $k, $v := .EvictionSoftGracePeriod }}
+  {{- range $k, $v := . }}
   {{ $k }}: "{{ $v }}"
   {{- end }}
 {{- end }}
-{{- if .ProtectKernelDefaults }}
-protectKernelDefaults: {{ .ProtectKernelDefaults }}
+{{- with .ProtectKernelDefaults }}
+protectKernelDefaults: {{ . }}
 {{- end }}
-{{- if .TopologyManagerPolicy }}
-topologyManagerPolicy: {{ .TopologyManagerPolicy }}
+{{- with .TopologyManagerPolicy }}
+topologyManagerPolicy: {{ . }}
 {{- end }}
-{{- if .CPUManagerPolicy }}
-cpuManagerPolicy: {{ .CPUManagerPolicy }}
+{{- with .CPUManagerPolicy }}
+cpuManagerPolicy: {{ . }}
 {{- end }}
-{{- if .MemoryManagerPolicy }}
-memoryManagerPolicy: {{ .MemoryManagerPolicy }}
+{{- with .MemoryManagerPolicy }}
+memoryManagerPolicy: {{ . }}
 {{- end }}
-{{- if .PodPidsLimit }}
-podPidsLimit: {{ .PodPidsLimit }}
+{{- with .PodPidsLimit }}
+podPidsLimit: {{ . }}
 {{- end }}
-{{- if .ContainerLogMaxSize }}
-containerLogMaxSize: {{ .ContainerLogMaxSize }}
+{{- with .ContainerLogMaxSize }}
+containerLogMaxSize: {{ . }}
 {{- end }}
-{{- if .ContainerLogMaxFiles }}
-containerLogMaxFiles: {{ .ContainerLogMaxFiles }}
+{{- with .ContainerLogMaxFiles }}
+containerLogMaxFiles: {{ . }}
 {{- end }}
-{{- if .ImageGCHighThresholdPercent }}
-imageGCHighThresholdPercent: {{ .ImageGCHighThresholdPercent }}
+{{- with .ImageGCHighThresholdPercent }}
+imageGCHighThresholdPercent: {{ . }}
 {{- end }}
-{{- if .ImageGCLowThresholdPercent }}
-imageGCLowThresholdPercent: {{ .ImageGCLowThresholdPercent }}
+{{- with .ImageGCLowThresholdPercent }}
+imageGCLowThresholdPercent: {{ . }}
 {{- end }}
-{{- if .MaxParallelImagePulls }}
+{{- with .MaxParallelImagePulls }}
 serializeImagePulls: false
-maxParallelImagePulls: {{ .MaxParallelImagePulls }}
+maxParallelImagePulls: {{ . }}
 {{- end }}
-{{- if .ShutdownGracePeriod }}
-shutdownGracePeriod: {{ .ShutdownGracePeriod }}
+{{- with .ShutdownGracePeriod }}
+shutdownGracePeriod: {{ . }}
 {{- end }}
-{{- if .ShutdownGracePeriodCriticalPods }}
-shutdownGracePeriodCriticalPods: {{ .ShutdownGracePeriodCriticalPods }}
+{{- with .ShutdownGracePeriodCriticalPods }}
+shutdownGracePeriodCriticalPods: {{ . }}
 {{- end }}
