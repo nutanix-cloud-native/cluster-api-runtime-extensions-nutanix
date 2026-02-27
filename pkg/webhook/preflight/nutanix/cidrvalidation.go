@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
-	"slices"
 
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 
@@ -18,17 +17,27 @@ import (
 const (
 	clusterNetworkPodsFieldPath     = "$.spec.clusterNetwork.pods.cidrBlocks"
 	clusterNetworkServicesFieldPath = "$.spec.clusterNetwork.services.cidrBlocks"
-	clusterNetworkNodeSubnetsField  = "$.spec.topology.(controlPlane/workers).nutanix.machineDetails.subnets"
 )
+
+type nodeSubnetSource struct {
+	id    capxv1.NutanixResourceIdentifier
+	field string
+}
+
+type resolvedNodeSubnet struct {
+	prefix netip.Prefix
+	field  string
+	name   string
+}
 
 type cidrValidationCheck struct {
 	cd *checkDependencies
 
-	resolveSubnetPrefixesFunc func(
+	resolveNodeSubnetsFunc func(
 		ctx context.Context,
 		nclient client,
-		ids []capxv1.NutanixResourceIdentifier,
-	) ([]netip.Prefix, error)
+		sources []nodeSubnetSource,
+	) ([]resolvedNodeSubnet, error)
 }
 
 func (c *cidrValidationCheck) Name() string {
@@ -94,8 +103,8 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 		}
 	}
 
-	subnetIDs := collectSubnetIdentifiers(c.cd)
-	if len(subnetIDs) == 0 {
+	nodeSubnetSources := collectNodeSubnetSources(c.cd)
+	if len(nodeSubnetSources) == 0 {
 		return result
 	}
 
@@ -105,17 +114,16 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 		result.Causes = append(result.Causes, preflight.Cause{
 			Message: "Cannot validate subnet overlaps: Prism Central connection is not available. " +
 				"Check your Nutanix credentials and ensure Prism Central is accessible.",
-			Field: clusterNetworkNodeSubnetsField,
 		})
 		return result
 	}
 
-	resolveSubnetPrefixesFn := c.resolveSubnetPrefixesFunc
-	if resolveSubnetPrefixesFn == nil {
-		resolveSubnetPrefixesFn = resolveSubnetPrefixes
+	resolveNodeSubnetsFn := c.resolveNodeSubnetsFunc
+	if resolveNodeSubnetsFn == nil {
+		resolveNodeSubnetsFn = resolveNodeSubnets
 	}
 
-	nodeNetworkCIDRs, err := resolveSubnetPrefixesFn(ctx, c.cd.nclient, subnetIDs)
+	resolvedSubnets, err := resolveNodeSubnetsFn(ctx, c.cd.nclient, nodeSubnetSources)
 	if err != nil {
 		result.Allowed = false
 		result.InternalError = true
@@ -124,38 +132,39 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 				"Failed to resolve node subnet CIDRs from Prism Central: %s. This is usually a temporary error. Please retry.",
 				err,
 			),
-			Field: clusterNetworkNodeSubnetsField,
 		})
 		return result
 	}
 
 	for _, podCIDR := range podCIDRs {
-		for _, nodeCIDR := range nodeNetworkCIDRs {
-			if prefixesOverlap(podCIDR, nodeCIDR) {
+		for _, nodeSubnet := range resolvedSubnets {
+			if prefixesOverlap(podCIDR, nodeSubnet.prefix) {
 				result.Allowed = false
 				result.Causes = append(result.Causes, preflight.Cause{
 					Message: fmt.Sprintf(
-						"Pod CIDR %q overlaps with node subnet CIDR %q. Use non-overlapping ranges and retry.",
+						"Pod CIDR %q overlaps with node subnet %q (CIDR %q). Use non-overlapping ranges and retry.",
 						podCIDR.String(),
-						nodeCIDR.String(),
+						nodeSubnet.name,
+						nodeSubnet.prefix.String(),
 					),
-					Field: clusterNetworkPodsFieldPath,
+					Field: nodeSubnet.field,
 				})
 			}
 		}
 	}
 
 	for _, serviceCIDR := range serviceCIDRs {
-		for _, nodeCIDR := range nodeNetworkCIDRs {
-			if prefixesOverlap(serviceCIDR, nodeCIDR) {
+		for _, nodeSubnet := range resolvedSubnets {
+			if prefixesOverlap(serviceCIDR, nodeSubnet.prefix) {
 				result.Allowed = false
 				result.Causes = append(result.Causes, preflight.Cause{
 					Message: fmt.Sprintf(
-						"Service CIDR %q overlaps with node subnet CIDR %q. Use non-overlapping ranges and retry.",
+						"Service CIDR %q overlaps with node subnet %q (CIDR %q). Use non-overlapping ranges and retry.",
 						serviceCIDR.String(),
-						nodeCIDR.String(),
+						nodeSubnet.name,
+						nodeSubnet.prefix.String(),
 					),
-					Field: clusterNetworkServicesFieldPath,
+					Field: nodeSubnet.field,
 				})
 			}
 		}
@@ -293,44 +302,44 @@ func prefixesOverlap(a, b netip.Prefix) bool {
 	return a.Overlaps(b)
 }
 
-func collectSubnetIdentifiers(cd *checkDependencies) []capxv1.NutanixResourceIdentifier {
+func collectNodeSubnetSources(cd *checkDependencies) []nodeSubnetSource {
 	if cd == nil {
 		return nil
 	}
 
-	ids := make([]capxv1.NutanixResourceIdentifier, 0)
-	seen := map[string]struct{}{}
-
-	appendUnique := func(id capxv1.NutanixResourceIdentifier) {
-		key := subnetIdentifierKey(id)
-		if key == "" {
-			return
-		}
-		if _, ok := seen[key]; ok {
-			return
-		}
-		seen[key] = struct{}{}
-		ids = append(ids, id)
-	}
+	sources := make([]nodeSubnetSource, 0)
 
 	if cd.nutanixClusterConfigSpec != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
-		for _, subnetID := range cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails.Subnets {
-			appendUnique(subnetID)
+		for i, subnetID := range cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails.Subnets {
+			sources = append(sources, nodeSubnetSource{
+				id: subnetID,
+				field: fmt.Sprintf(
+					"$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails.subnets[%d]", //nolint:lll // Field path is long.
+					i,
+				),
+			})
 		}
 	}
 
-	for _, worker := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
+	for mdName, worker := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
 		if worker == nil || worker.Nutanix == nil {
 			continue
 		}
-		for _, subnetID := range worker.Nutanix.MachineDetails.Subnets {
-			appendUnique(subnetID)
+		for i, subnetID := range worker.Nutanix.MachineDetails.Subnets {
+			sources = append(sources, nodeSubnetSource{
+				id: subnetID,
+				field: fmt.Sprintf(
+					"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[%d]", //nolint:lll // Field path is long.
+					mdName,
+					i,
+				),
+			})
 		}
 	}
 
-	return ids
+	return sources
 }
 
 func subnetIdentifierKey(id capxv1.NutanixResourceIdentifier) string {
@@ -344,41 +353,55 @@ func subnetIdentifierKey(id capxv1.NutanixResourceIdentifier) string {
 	}
 }
 
-func resolveSubnetPrefixes(
+func resolveNodeSubnets(
 	ctx context.Context,
 	nclient client,
-	ids []capxv1.NutanixResourceIdentifier,
-) ([]netip.Prefix, error) {
-	prefixes := make([]netip.Prefix, 0)
+	sources []nodeSubnetSource,
+) ([]resolvedNodeSubnet, error) {
+	resolved := make([]resolvedNodeSubnet, 0)
+	// Cache resolved prefixes by subnet key to avoid duplicate API calls
+	// when the same subnet is referenced by multiple node pools.
+	prefixCache := map[string][]netip.Prefix{}
 
-	for _, id := range ids {
-		subnets, err := getSubnets(ctx, nclient, &id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get subnet %q: %w", subnetIdentifierForMessage(id), err)
-		}
-		if len(subnets) == 0 {
-			return nil, fmt.Errorf("found no subnets for identifier %q", subnetIdentifierForMessage(id))
-		}
+	for _, src := range sources {
+		cacheKey := subnetIdentifierKey(src.id)
 
-		for i := range subnets {
-			subnetPrefixes, err := extractIPv4PrefixesFromSubnet(&subnets[i])
+		cached, ok := prefixCache[cacheKey]
+		if !ok {
+			subnets, err := getSubnets(ctx, nclient, &src.id)
 			if err != nil {
-				return nil, fmt.Errorf(
-					"failed to extract IPv4 CIDR for subnet %q: %w",
-					subnetIdentifierForMessage(id),
-					err,
-				)
+				return nil, fmt.Errorf("failed to get subnet %q: %w", subnetIdentifierForMessage(src.id), err)
 			}
-			prefixes = append(prefixes, subnetPrefixes...)
+			if len(subnets) == 0 {
+				return nil, fmt.Errorf("found no subnets for identifier %q", subnetIdentifierForMessage(src.id))
+			}
+
+			prefixes := make([]netip.Prefix, 0)
+			for i := range subnets {
+				subnetPrefixes, err := extractIPv4PrefixesFromSubnet(&subnets[i])
+				if err != nil {
+					return nil, fmt.Errorf(
+						"failed to extract IPv4 CIDR for subnet %q: %w",
+						subnetIdentifierForMessage(src.id),
+						err,
+					)
+				}
+				prefixes = append(prefixes, subnetPrefixes...)
+			}
+			prefixCache[cacheKey] = prefixes
+			cached = prefixes
+		}
+
+		for _, prefix := range cached {
+			resolved = append(resolved, resolvedNodeSubnet{
+				prefix: prefix,
+				field:  src.field,
+				name:   subnetIdentifierForMessage(src.id),
+			})
 		}
 	}
 
-	slices.SortFunc(prefixes, func(a, b netip.Prefix) int {
-		return a.Addr().Compare(b.Addr())
-	})
-	prefixes = slices.Compact(prefixes)
-
-	return prefixes, nil
+	return resolved, nil
 }
 
 func subnetIdentifierForMessage(id capxv1.NutanixResourceIdentifier) string {

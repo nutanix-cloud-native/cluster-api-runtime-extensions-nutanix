@@ -74,13 +74,14 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 		name                 string
 		podCIDRs             []string
 		serviceCIDRs         []string
-		resolveSubnetCIDRs   []netip.Prefix
+		resolvedNodeSubnets  []resolvedNodeSubnet
 		resolveSubnetErr     error
 		withConfiguredSubnet bool
 		withNClient          bool
 		expectAllowed        bool
 		expectInternalError  bool
 		expectedCauseParts   []string
+		expectedFieldParts   []string
 		expectedWarnings     int
 	}{
 		{
@@ -153,17 +154,29 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			name:         "pod and service overlap with node subnet",
 			podCIDRs:     []string{"10.244.0.0/16"},
 			serviceCIDRs: []string{"10.96.0.0/12"},
-			resolveSubnetCIDRs: []netip.Prefix{
-				netip.MustParsePrefix("10.244.128.0/24"),
-				netip.MustParsePrefix("10.100.0.0/16"),
+			resolvedNodeSubnets: []resolvedNodeSubnet{
+				{
+					prefix: netip.MustParsePrefix("10.244.128.0/24"),
+					field:  "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails.subnets[0]", //nolint:lll // Field path is long.
+					name:   "vlan173",
+				},
+				{
+					prefix: netip.MustParsePrefix("10.100.0.0/16"),
+					field:  "$.spec.topology.workers.machineDeployments[?@.name==\"md-0\"].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[0]", //nolint:lll // Field path is long.
+					name:   "worker-subnet",
+				},
 			},
 			withConfiguredSubnet: true,
 			withNClient:          true,
 			expectAllowed:        false,
 			expectedWarnings:     0,
 			expectedCauseParts: []string{
-				"Pod CIDR \"10.244.0.0/16\" overlaps with node subnet CIDR \"10.244.128.0/24\"",
-				"Service CIDR \"10.96.0.0/12\" overlaps with node subnet CIDR \"10.100.0.0/16\"",
+				"Pod CIDR \"10.244.0.0/16\" overlaps with node subnet \"vlan173\" (CIDR \"10.244.128.0/24\")",
+				"Service CIDR \"10.96.0.0/12\" overlaps with node subnet \"worker-subnet\" (CIDR \"10.100.0.0/16\")",
+			},
+			expectedFieldParts: []string{
+				"controlPlane.nutanix.machineDetails.subnets[0]",
+				"md-0",
 			},
 		},
 		{
@@ -230,20 +243,20 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 
 			check := &cidrValidationCheck{
 				cd: cd,
-				resolveSubnetPrefixesFunc: func(
-					ctx context.Context,
-					nclient client,
-					ids []capxv1.NutanixResourceIdentifier,
-				) ([]netip.Prefix, error) {
+				resolveNodeSubnetsFunc: func(
+					_ context.Context,
+					_ client,
+					sources []nodeSubnetSource,
+				) ([]resolvedNodeSubnet, error) {
 					if !tt.withConfiguredSubnet {
-						require.Empty(t, ids)
+						require.Empty(t, sources)
 					} else {
-						require.NotEmpty(t, ids)
+						require.NotEmpty(t, sources)
 					}
 					if tt.resolveSubnetErr != nil {
 						return nil, tt.resolveSubnetErr
 					}
-					return tt.resolveSubnetCIDRs, nil
+					return tt.resolvedNodeSubnets, nil
 				},
 			}
 
@@ -262,11 +275,21 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 					part,
 				)
 			}
+
+			for _, part := range tt.expectedFieldParts {
+				assert.Contains(
+					t,
+					flattenCauseFields(result.Causes),
+					part,
+					"expected cause field to contain %q",
+					part,
+				)
+			}
 		})
 	}
 }
 
-func TestCollectSubnetIdentifiers(t *testing.T) {
+func TestCollectNodeSubnetSources(t *testing.T) {
 	t.Parallel()
 
 	subnetByName := capxv1.NutanixResourceIdentifier{
@@ -296,7 +319,7 @@ func TestCollectSubnetIdentifiers(t *testing.T) {
 				Nutanix: &carenv1.NutanixWorkerNodeSpec{
 					MachineDetails: carenv1.NutanixMachineDetails{
 						Subnets: []capxv1.NutanixResourceIdentifier{
-							subnetByName, // duplicate, should be deduped
+							subnetByName, // same subnet, but different source - both kept
 						},
 					},
 				},
@@ -304,8 +327,18 @@ func TestCollectSubnetIdentifiers(t *testing.T) {
 		},
 	}
 
-	ids := collectSubnetIdentifiers(cd)
-	assert.Len(t, ids, 2)
+	sources := collectNodeSubnetSources(cd)
+	// 2 from control plane + 1 from worker = 3 (no dedup, sources are distinct)
+	require.Len(t, sources, 3)
+
+	assert.Contains(t, sources[0].field, "controlPlane")
+	assert.Contains(t, sources[0].field, "subnets[0]")
+
+	assert.Contains(t, sources[1].field, "controlPlane")
+	assert.Contains(t, sources[1].field, "subnets[1]")
+
+	assert.Contains(t, sources[2].field, "md-1")
+	assert.Contains(t, sources[2].field, "subnets[0]")
 }
 
 func testCluster(podCIDRs, serviceCIDRs []string) *clusterv1.Cluster {
@@ -341,4 +374,12 @@ func flattenCauseMessages(causes []preflight.Cause) string {
 		messages = append(messages, cause.Message)
 	}
 	return fmt.Sprintf("%v", messages)
+}
+
+func flattenCauseFields(causes []preflight.Cause) string {
+	fields := make([]string, 0, len(causes))
+	for _, cause := range causes {
+		fields = append(fields, cause.Field)
+	}
+	return fmt.Sprintf("%v", fields)
 }
