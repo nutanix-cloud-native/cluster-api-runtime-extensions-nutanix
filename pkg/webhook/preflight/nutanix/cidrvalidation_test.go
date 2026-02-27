@@ -16,8 +16,12 @@ import (
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
+
+type expectedCause struct {
+	messagePart string
+	field       string
+}
 
 func TestNewCIDRValidationChecks(t *testing.T) {
 	t.Parallel()
@@ -80,8 +84,7 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 		withNClient          bool
 		expectAllowed        bool
 		expectInternalError  bool
-		expectedCauseParts   []string
-		expectedFieldParts   []string
+		expectedCauses       []expectedCause
 		expectedWarnings     int
 	}{
 		{
@@ -96,8 +99,11 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			podCIDRs:      []string{"10.244.0.0/24"},
 			serviceCIDRs:  []string{"10.96.0.0/12"},
 			expectAllowed: false,
-			expectedCauseParts: []string{
-				"Pod CIDR \"10.244.0.0/24\" has prefix /24, which is too small for multi-node clusters",
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Pod CIDR \"10.244.0.0/24\" has prefix /24, which is too small for multi-node clusters",
+					field:       "$.spec.clusterNetwork.pods.cidrBlocks",
+				},
 			},
 			expectedWarnings: 0,
 		},
@@ -113,8 +119,11 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			podCIDRs:      []string{"10.244.0.0/16"},
 			serviceCIDRs:  []string{"10.96.0.0/24"},
 			expectAllowed: false,
-			expectedCauseParts: []string{
-				"Service CIDR \"10.96.0.0/24\" is too small",
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Service CIDR \"10.96.0.0/24\" is too small",
+					field:       "$.spec.clusterNetwork.services.cidrBlocks",
+				},
 			},
 			expectedWarnings: 0,
 		},
@@ -123,8 +132,11 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			podCIDRs:      []string{"10.244.0.0/16"},
 			serviceCIDRs:  []string{"10.96.0.0/25"},
 			expectAllowed: false,
-			expectedCauseParts: []string{
-				"Service CIDR \"10.96.0.0/25\" is too small",
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Service CIDR \"10.96.0.0/25\" is too small",
+					field:       "$.spec.clusterNetwork.services.cidrBlocks",
+				},
 			},
 			expectedWarnings: 0,
 		},
@@ -143,12 +155,17 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			expectedWarnings: 0,
 		},
 		{
-			name:               "pod service overlap",
-			podCIDRs:           []string{"10.96.0.0/16"},
-			serviceCIDRs:       []string{"10.96.0.0/12"},
-			expectAllowed:      false,
-			expectedWarnings:   0,
-			expectedCauseParts: []string{"overlaps with Service CIDR"},
+			name:             "pod service overlap",
+			podCIDRs:         []string{"10.96.0.0/16"},
+			serviceCIDRs:     []string{"10.96.0.0/12"},
+			expectAllowed:    false,
+			expectedWarnings: 0,
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "overlaps with Service CIDR",
+					field:       "$.spec.clusterNetwork.pods.cidrBlocks",
+				},
+			},
 		},
 		{
 			name:         "pod and service overlap with node subnet",
@@ -170,13 +187,15 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			withNClient:          true,
 			expectAllowed:        false,
 			expectedWarnings:     0,
-			expectedCauseParts: []string{
-				"Pod CIDR \"10.244.0.0/16\" overlaps with node subnet \"vlan173\" (CIDR \"10.244.128.0/24\")",
-				"Service CIDR \"10.96.0.0/12\" overlaps with node subnet \"worker-subnet\" (CIDR \"10.100.0.0/16\")",
-			},
-			expectedFieldParts: []string{
-				"controlPlane.nutanix.machineDetails.subnets[0]",
-				"md-0",
+			expectedCauses: []expectedCause{
+				{
+					messagePart: `Pod CIDR "10.244.0.0/16" overlaps with node subnet "vlan173"`,
+					field:       `$.spec.topology.variables[?@.name=="clusterConfig"].value.controlPlane.nutanix.machineDetails.subnets[0]`,
+				},
+				{
+					messagePart: `Service CIDR "10.96.0.0/12" overlaps with node subnet "worker-subnet"`,
+					field:       `$.spec.topology.workers.machineDeployments[?@.name=="md-0"].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[0]`,
+				},
 			},
 		},
 		{
@@ -189,7 +208,12 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			expectAllowed:        false,
 			expectInternalError:  true,
 			expectedWarnings:     0,
-			expectedCauseParts:   []string{"Failed to resolve node subnet CIDRs"},
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Failed to resolve node subnet CIDRs",
+					field:       "",
+				},
+			},
 		},
 		{
 			name:                 "missing nclient with configured subnets fails gracefully",
@@ -200,23 +224,52 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			expectAllowed:        false,
 			expectInternalError:  true,
 			expectedWarnings:     0,
-			expectedCauseParts: []string{
-				"Cannot validate subnet overlaps: Prism Central connection is not available",
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Cannot validate subnet overlaps: Prism Central connection is not available",
+					field:       "",
+				},
 			},
 		},
 		{
-			name:               "invalid pod cidr",
-			podCIDRs:           []string{"not-a-cidr"},
-			serviceCIDRs:       []string{"10.96.0.0/12"},
-			expectAllowed:      false,
-			expectedCauseParts: []string{"Invalid Pod CIDR configuration"},
+			name:          "invalid pod cidr",
+			podCIDRs:      []string{"not-a-cidr"},
+			serviceCIDRs:  []string{"10.96.0.0/12"},
+			expectAllowed: false,
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Invalid Pod CIDR configuration",
+					field:       "$.spec.clusterNetwork.pods.cidrBlocks",
+				},
+			},
 		},
 		{
-			name:               "invalid service cidr",
-			podCIDRs:           []string{"10.244.0.0/16"},
-			serviceCIDRs:       []string{"not-a-cidr"},
-			expectAllowed:      false,
-			expectedCauseParts: []string{"Invalid Service CIDR configuration"},
+			name:          "invalid service cidr",
+			podCIDRs:      []string{"10.244.0.0/16"},
+			serviceCIDRs:  []string{"not-a-cidr"},
+			expectAllowed: false,
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Invalid Service CIDR configuration",
+					field:       "$.spec.clusterNetwork.services.cidrBlocks",
+				},
+			},
+		},
+		{
+			name:          "both invalid pod and service cidrs reported together",
+			podCIDRs:      []string{"not-a-cidr"},
+			serviceCIDRs:  []string{"also-not-a-cidr"},
+			expectAllowed: false,
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Invalid Pod CIDR configuration",
+					field:       "$.spec.clusterNetwork.pods.cidrBlocks",
+				},
+				{
+					messagePart: "Invalid Service CIDR configuration",
+					field:       "$.spec.clusterNetwork.services.cidrBlocks",
+				},
+			},
 		},
 	}
 
@@ -266,24 +319,12 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			assert.Equal(t, tt.expectInternalError, result.InternalError, "InternalError mismatch")
 			assert.Len(t, result.Warnings, tt.expectedWarnings, "Warnings count mismatch")
 
-			for _, part := range tt.expectedCauseParts {
-				assert.Contains(
-					t,
-					flattenCauseMessages(result.Causes),
-					part,
-					"expected cause to contain %q",
-					part,
-				)
-			}
-
-			for _, part := range tt.expectedFieldParts {
-				assert.Contains(
-					t,
-					flattenCauseFields(result.Causes),
-					part,
-					"expected cause field to contain %q",
-					part,
-				)
+			require.Len(t, result.Causes, len(tt.expectedCauses), "Causes count mismatch")
+			for i, expected := range tt.expectedCauses {
+				assert.Contains(t, result.Causes[i].Message, expected.messagePart,
+					"cause[%d] message mismatch", i)
+				assert.Equal(t, expected.field, result.Causes[i].Field,
+					"cause[%d] field mismatch", i)
 			}
 		})
 	}
@@ -331,14 +372,19 @@ func TestCollectNodeSubnetSources(t *testing.T) {
 	// 2 from control plane + 1 from worker = 3 (no dedup, sources are distinct)
 	require.Len(t, sources, 3)
 
-	assert.Contains(t, sources[0].field, "controlPlane")
-	assert.Contains(t, sources[0].field, "subnets[0]")
-
-	assert.Contains(t, sources[1].field, "controlPlane")
-	assert.Contains(t, sources[1].field, "subnets[1]")
-
-	assert.Contains(t, sources[2].field, "md-1")
-	assert.Contains(t, sources[2].field, "subnets[0]")
+	assert.Equal(t,
+		`$.spec.topology.variables[?@.name=="clusterConfig"].value.controlPlane.nutanix.machineDetails.subnets[0]`,
+		sources[0].field,
+	)
+	assert.Equal(t,
+		`$.spec.topology.variables[?@.name=="clusterConfig"].value.controlPlane.nutanix.machineDetails.subnets[1]`,
+		sources[1].field,
+	)
+	assert.Equal(
+		t,
+		`$.spec.topology.workers.machineDeployments[?@.name=="md-1"].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[0]`,
+		sources[2].field,
+	)
 }
 
 func testCluster(podCIDRs, serviceCIDRs []string) *clusterv1.Cluster {
@@ -366,20 +412,4 @@ func configuredSubnets(enabled bool) []capxv1.NutanixResourceIdentifier {
 			Name: ptr.To("subnet-a"),
 		},
 	}
-}
-
-func flattenCauseMessages(causes []preflight.Cause) string {
-	messages := make([]string, 0, len(causes))
-	for _, cause := range causes {
-		messages = append(messages, cause.Message)
-	}
-	return fmt.Sprintf("%v", messages)
-}
-
-func flattenCauseFields(causes []preflight.Cause) string {
-	fields := make([]string, 0, len(causes))
-	for _, cause := range causes {
-		fields = append(fields, cause.Field)
-	}
-	return fmt.Sprintf("%v", fields)
 }

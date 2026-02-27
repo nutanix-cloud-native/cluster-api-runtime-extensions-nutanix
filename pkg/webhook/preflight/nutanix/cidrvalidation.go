@@ -71,7 +71,6 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 			Message: fmt.Sprintf("Invalid Pod CIDR configuration: %s", err),
 			Field:   clusterNetworkPodsFieldPath,
 		})
-		return result
 	}
 
 	serviceCIDRs, err := parseCIDRBlocks(serviceCIDRBlocks)
@@ -81,7 +80,6 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 			Message: fmt.Sprintf("Invalid Service CIDR configuration: %s", err),
 			Field:   clusterNetworkServicesFieldPath,
 		})
-		return result
 	}
 
 	applyPodCIDRValidation(&result, podCIDRs)
