@@ -73,6 +73,10 @@ func (h *kubeletConfigurationControlPlanePatchHandler) Mutate(
 	}
 
 	merged := mergeKubeletConfig(clusterCfg, cpCfg)
+	merged, err := applyDeprecatedMaxParallelImagePulls(merged, vars, h.clusterVariableName)
+	if err != nil {
+		return err
+	}
 	if isKubeletConfigEmpty(merged) {
 		log.V(5).Info("kubeletConfiguration is empty after merge, skipping control plane mutation")
 		return nil

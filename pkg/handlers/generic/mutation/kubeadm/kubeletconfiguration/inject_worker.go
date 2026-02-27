@@ -73,6 +73,10 @@ func (h *kubeletConfigurationWorkerPatchHandler) Mutate(
 	}
 
 	merged := mergeKubeletConfig(clusterCfg, workerCfg)
+	merged, err := applyDeprecatedMaxParallelImagePulls(merged, vars, h.clusterVariableName)
+	if err != nil {
+		return err
+	}
 	if isKubeletConfigEmpty(merged) {
 		log.V(5).Info("kubeletConfiguration is empty after merge, skipping worker mutation")
 		return nil
