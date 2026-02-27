@@ -6,7 +6,6 @@ package cluster
 import (
 	"context"
 	"encoding/json"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -22,11 +22,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
-
-func TestKubeletConfigurationValidator(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "KubeletConfiguration Validator Suite")
-}
 
 var _ = Describe("KubeletConfigurationValidator", func() {
 	var (
@@ -152,6 +147,95 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 
 			resp := validator.validate(context.Background(), req)
 			Expect(resp.Allowed).To(BeTrue())
+		})
+	})
+
+	Context("both maxParallelImagePullsPerNode and kubeletConfiguration.maxParallelImagePulls set", func() {
+		It("should allow with warning", func() {
+			clusterConfig := &variables.ClusterConfigSpec{
+				KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+					MaxParallelImagePullsPerNode: ptr.To(int32(4)), //nolint:staticcheck // testing deprecated field
+					KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+						MaxParallelImagePulls: ptr.To(int32(8)),
+					},
+				},
+			}
+			clusterConfigRaw, err := json.Marshal(clusterConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			cluster := &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "test-namespace",
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Class:   "test-class",
+						Version: "v1.30.0",
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name:  v1alpha1.ClusterConfigVariableName,
+								Value: apiextensionsv1.JSON{Raw: clusterConfigRaw},
+							},
+						},
+					},
+				},
+			}
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+			Expect(resp.Warnings).To(ContainElement(
+				ContainSubstring("maxParallelImagePullsPerNode will be ignored"),
+			))
+		})
+	})
+
+	Context("cpuManagerPolicy=static in control plane override without CPU reservation", func() {
+		It("should reject", func() {
+			clusterConfig := &variables.ClusterConfigSpec{
+				ControlPlane: &variables.ControlPlaneSpec{
+					KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+						KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+							CPUManagerPolicy: ptrOf(v1alpha1.CPUManagerPolicyStatic),
+						},
+					},
+				},
+			}
+			clusterConfigRaw, err := json.Marshal(clusterConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			cluster := &clusterv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "test-namespace",
+				},
+				Spec: clusterv1.ClusterSpec{
+					Topology: &clusterv1.Topology{
+						Class:   "test-class",
+						Version: "v1.30.0",
+						Variables: []clusterv1.ClusterVariable{
+							{
+								Name:  v1alpha1.ClusterConfigVariableName,
+								Value: apiextensionsv1.JSON{Raw: clusterConfigRaw},
+							},
+						},
+					},
+				},
+			}
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				"clusterConfig.controlPlane.kubeletConfiguration",
+			))
 		})
 	})
 })
