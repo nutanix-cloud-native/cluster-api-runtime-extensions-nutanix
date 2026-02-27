@@ -1,5 +1,5 @@
 <!--
- Copyright 2024 Nutanix. All rights reserved.
+ Copyright 2026 Nutanix. All rights reserved.
  SPDX-License-Identifier: Apache-2.0
  -->
 
@@ -32,7 +32,7 @@ testify, Ginkgo/Gomega.
 Create `api/v1alpha1/kubelet_types.go` with:
 
 ```go
-// Copyright 2024 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1

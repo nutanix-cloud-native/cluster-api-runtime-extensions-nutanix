@@ -12,176 +12,179 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/yaml"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-// Template rendering tests: each of the 17 fields individually.
-func TestRenderKubeletConfigPatch_MaxPods(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(110))}
+func renderAndDeserialize(
+	t *testing.T,
+	cfg *v1alpha1.KubeletConfiguration,
+) kubeletconfigv1beta1.KubeletConfiguration {
+	t.Helper()
 	f, err := renderKubeletConfigPatch(cfg)
 	require.NoError(t, err)
-	assert.Contains(t, f.Content, "maxPods: 110")
+
+	var kubeletCfg kubeletconfigv1beta1.KubeletConfiguration
+	require.NoError(t, yaml.Unmarshal([]byte(f.Content), &kubeletCfg))
+	return kubeletCfg
+}
+
+func TestRenderKubeletConfigPatch_MaxPods(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		MaxPods: ptr.To(int32(110)),
+	})
+	assert.Equal(t, int32(110), kubeletCfg.MaxPods)
 }
 
 func TestRenderKubeletConfigPatch_SystemReserved(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
 		SystemReserved: map[string]resource.Quantity{
 			"cpu":    resource.MustParse("100m"),
 			"memory": resource.MustParse("200Mi"),
 		},
-	}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "systemReserved:")
-	assert.Contains(t, f.Content, "cpu:")
-	assert.Contains(t, f.Content, "memory:")
+	})
+	assert.Equal(t, "100m", kubeletCfg.SystemReserved["cpu"])
+	assert.Equal(t, "200Mi", kubeletCfg.SystemReserved["memory"])
 }
 
 func TestRenderKubeletConfigPatch_KubeReserved(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
 		KubeReserved: map[string]resource.Quantity{
 			"cpu": resource.MustParse("500m"),
 		},
-	}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "kubeReserved:")
-	assert.Contains(t, f.Content, "cpu:")
+	})
+	assert.Equal(t, "500m", kubeletCfg.KubeReserved["cpu"])
 }
 
 func TestRenderKubeletConfigPatch_EvictionHard(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
 		EvictionHard: map[string]string{
 			"memory.available": "100Mi",
 		},
-	}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "evictionHard:")
-	assert.Contains(t, f.Content, "memory.available:")
+	})
+	assert.Equal(t, "100Mi", kubeletCfg.EvictionHard["memory.available"])
 }
 
 func TestRenderKubeletConfigPatch_EvictionSoft(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
 		EvictionSoft: map[string]string{
 			"memory.available": "200Mi",
 		},
-	}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "evictionSoft:")
-	assert.Contains(t, f.Content, "memory.available:")
+	})
+	assert.Equal(t, "200Mi", kubeletCfg.EvictionSoft["memory.available"])
 }
 
 func TestRenderKubeletConfigPatch_EvictionSoftGracePeriod(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
 		EvictionSoft: map[string]string{"memory.available": "200Mi"},
 		EvictionSoftGracePeriod: map[string]metav1.Duration{
 			"memory.available": {Duration: 30 * time.Second},
 		},
-	}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "evictionSoftGracePeriod:")
-	assert.Contains(t, f.Content, "30s")
+	})
+	assert.Equal(t, "30s", kubeletCfg.EvictionSoftGracePeriod["memory.available"])
 }
 
 func TestRenderKubeletConfigPatch_ProtectKernelDefaults(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{ProtectKernelDefaults: ptr.To(true)}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "protectKernelDefaults: true")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		ProtectKernelDefaults: ptr.To(true),
+	})
+	assert.True(t, kubeletCfg.ProtectKernelDefaults)
 }
 
 func TestRenderKubeletConfigPatch_TopologyManagerPolicy(t *testing.T) {
 	policy := v1alpha1.TopologyManagerPolicySingleNUMANode
-	cfg := &v1alpha1.KubeletConfiguration{TopologyManagerPolicy: &policy}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "topologyManagerPolicy: single-numa-node")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		TopologyManagerPolicy: &policy,
+	})
+	assert.Equal(t, "single-numa-node", kubeletCfg.TopologyManagerPolicy)
 }
 
 func TestRenderKubeletConfigPatch_CPUManagerPolicy(t *testing.T) {
 	policy := v1alpha1.CPUManagerPolicyStatic
-	cfg := &v1alpha1.KubeletConfiguration{CPUManagerPolicy: &policy}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "cpuManagerPolicy: static")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		CPUManagerPolicy: &policy,
+	})
+	assert.Equal(t, "static", kubeletCfg.CPUManagerPolicy)
 }
 
 func TestRenderKubeletConfigPatch_MemoryManagerPolicy(t *testing.T) {
 	policy := v1alpha1.MemoryManagerPolicyStatic
-	cfg := &v1alpha1.KubeletConfiguration{MemoryManagerPolicy: &policy}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "memoryManagerPolicy: Static")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		MemoryManagerPolicy: &policy,
+	})
+	assert.Equal(t, "Static", kubeletCfg.MemoryManagerPolicy)
 }
 
 func TestRenderKubeletConfigPatch_PodPidsLimit(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{PodPidsLimit: ptr.To(int64(4096))}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "podPidsLimit: 4096")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		PodPidsLimit: ptr.To(int64(4096)),
+	})
+	require.NotNil(t, kubeletCfg.PodPidsLimit)
+	assert.Equal(t, int64(4096), *kubeletCfg.PodPidsLimit)
 }
 
 func TestRenderKubeletConfigPatch_ContainerLogMaxSize(t *testing.T) {
 	qty := resource.MustParse("50Mi")
-	cfg := &v1alpha1.KubeletConfiguration{ContainerLogMaxSize: &qty}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "containerLogMaxSize: 50Mi")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		ContainerLogMaxSize: &qty,
+	})
+	assert.Equal(t, "50Mi", kubeletCfg.ContainerLogMaxSize)
 }
 
 func TestRenderKubeletConfigPatch_ContainerLogMaxFiles(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{ContainerLogMaxFiles: ptr.To(int32(10))}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "containerLogMaxFiles: 10")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		ContainerLogMaxFiles: ptr.To(int32(10)),
+	})
+	require.NotNil(t, kubeletCfg.ContainerLogMaxFiles)
+	assert.Equal(t, int32(10), *kubeletCfg.ContainerLogMaxFiles)
 }
 
 func TestRenderKubeletConfigPatch_ImageGCHighThresholdPercent(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{ImageGCHighThresholdPercent: ptr.To(int32(90))}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "imageGCHighThresholdPercent: 90")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		ImageGCHighThresholdPercent: ptr.To(int32(90)),
+	})
+	require.NotNil(t, kubeletCfg.ImageGCHighThresholdPercent)
+	assert.Equal(t, int32(90), *kubeletCfg.ImageGCHighThresholdPercent)
 }
 
 func TestRenderKubeletConfigPatch_ImageGCLowThresholdPercent(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{ImageGCLowThresholdPercent: ptr.To(int32(70))}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "imageGCLowThresholdPercent: 70")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		ImageGCLowThresholdPercent: ptr.To(int32(70)),
+	})
+	require.NotNil(t, kubeletCfg.ImageGCLowThresholdPercent)
+	assert.Equal(t, int32(70), *kubeletCfg.ImageGCLowThresholdPercent)
 }
 
 func TestRenderKubeletConfigPatch_MaxParallelImagePulls(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{MaxParallelImagePulls: ptr.To(int32(10))}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "serializeImagePulls: false")
-	assert.Contains(t, f.Content, "maxParallelImagePulls: 10")
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		MaxParallelImagePulls: ptr.To(int32(10)),
+	})
+	require.NotNil(t, kubeletCfg.SerializeImagePulls)
+	assert.False(t, *kubeletCfg.SerializeImagePulls)
+	require.NotNil(t, kubeletCfg.MaxParallelImagePulls)
+	assert.Equal(t, int32(10), *kubeletCfg.MaxParallelImagePulls)
 }
 
 func TestRenderKubeletConfigPatch_ShutdownGracePeriod(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
 		ShutdownGracePeriod: &metav1.Duration{Duration: 60 * time.Second},
-	}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "shutdownGracePeriod:")
+	})
+	assert.Equal(t, metav1.Duration{Duration: 60 * time.Second}, kubeletCfg.ShutdownGracePeriod)
 }
 
 func TestRenderKubeletConfigPatch_ShutdownGracePeriodCriticalPods(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
 		ShutdownGracePeriodCriticalPods: &metav1.Duration{Duration: 10 * time.Second},
-	}
-	f, err := renderKubeletConfigPatch(cfg)
-	require.NoError(t, err)
-	assert.Contains(t, f.Content, "shutdownGracePeriodCriticalPods:")
+	})
+	assert.Equal(t,
+		metav1.Duration{Duration: 10 * time.Second},
+		kubeletCfg.ShutdownGracePeriodCriticalPods,
+	)
 }
 
-// Empty config test.
 func TestIsKubeletConfigEmpty(t *testing.T) {
 	assert.True(t, isKubeletConfigEmpty(nil))
 
@@ -192,7 +195,6 @@ func TestIsKubeletConfigEmpty(t *testing.T) {
 	assert.False(t, isKubeletConfigEmpty(withField))
 }
 
-// Merge tests.
 func TestMergeKubeletConfig_ClusterOnly(t *testing.T) {
 	cluster := &v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(110))}
 	node := (*v1alpha1.KubeletConfiguration)(nil)
@@ -230,14 +232,17 @@ func TestMergeKubeletConfig_NodeWins(t *testing.T) {
 	assert.Equal(t, int32(50), *merged.MaxPods)
 }
 
-// Deprecated field tests.
 func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
 	merged := &v1alpha1.KubeletConfiguration{}
 	vars := map[string]apiextensionsv1.JSON{
-		v1alpha1.ClusterConfigVariableName: {Raw: []byte(`{"maxParallelImagePullsPerNode": 4}`)},
+		v1alpha1.ClusterConfigVariableName: {
+			Raw: []byte(`{"maxParallelImagePullsPerNode": 4}`),
+		},
 	}
 
-	result, err := applyDeprecatedMaxParallelImagePulls(merged, vars, v1alpha1.ClusterConfigVariableName)
+	result, err := applyDeprecatedMaxParallelImagePulls(
+		merged, vars, v1alpha1.ClusterConfigVariableName,
+	)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	assert.Equal(t, int32(4), *result.MaxParallelImagePulls)
@@ -246,10 +251,14 @@ func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
 func TestApplyDeprecatedMaxParallelImagePulls_NewFieldWins(t *testing.T) {
 	merged := &v1alpha1.KubeletConfiguration{MaxParallelImagePulls: ptr.To(int32(8))}
 	vars := map[string]apiextensionsv1.JSON{
-		v1alpha1.ClusterConfigVariableName: {Raw: []byte(`{"maxParallelImagePullsPerNode": 4}`)},
+		v1alpha1.ClusterConfigVariableName: {
+			Raw: []byte(`{"maxParallelImagePullsPerNode": 4}`),
+		},
 	}
 
-	result, err := applyDeprecatedMaxParallelImagePulls(merged, vars, v1alpha1.ClusterConfigVariableName)
+	result, err := applyDeprecatedMaxParallelImagePulls(
+		merged, vars, v1alpha1.ClusterConfigVariableName,
+	)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	assert.Equal(t, int32(8), *result.MaxParallelImagePulls)
