@@ -298,6 +298,53 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "empty pod CIDRs allowed",
+			podCIDRs:         nil,
+			serviceCIDRs:     []string{"10.96.0.0/12"},
+			expectAllowed:    true,
+			expectedWarnings: 0,
+		},
+		{
+			name:             "empty service CIDRs allowed",
+			podCIDRs:         []string{"10.244.0.0/16"},
+			serviceCIDRs:     nil,
+			expectAllowed:    true,
+			expectedWarnings: 0,
+		},
+		{
+			name:             "both pod and service CIDRs empty allowed",
+			podCIDRs:         nil,
+			serviceCIDRs:     nil,
+			expectAllowed:    true,
+			expectedWarnings: 0,
+		},
+		{
+			name:          "empty pod CIDRs still validates service CIDR size",
+			podCIDRs:      nil,
+			serviceCIDRs:  []string{"10.96.0.0/24"},
+			expectAllowed: false,
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Service CIDR \"10.96.0.0/24\" is too small",
+					field:       "$.spec.clusterNetwork.services.cidrBlocks",
+				},
+			},
+			expectedWarnings: 0,
+		},
+		{
+			name:          "empty service CIDRs still validates pod CIDR size",
+			podCIDRs:      []string{"10.244.0.0/24"},
+			serviceCIDRs:  nil,
+			expectAllowed: false,
+			expectedCauses: []expectedCause{
+				{
+					messagePart: "Pod CIDR \"10.244.0.0/24\" has prefix /24, which is too small for multi-node clusters",
+					field:       "$.spec.clusterNetwork.pods.cidrBlocks",
+				},
+			},
+			expectedWarnings: 0,
+		},
 	}
 
 	for _, tt := range tests {
