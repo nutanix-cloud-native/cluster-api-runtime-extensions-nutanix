@@ -1,0 +1,73 @@
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+{{- if .MaxPods }}
+maxPods: {{ .MaxPods }}
+{{- end }}
+{{- if .SystemReserved }}
+systemReserved:
+  {{- range $k, $v := .SystemReserved }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- if .KubeReserved }}
+kubeReserved:
+  {{- range $k, $v := .KubeReserved }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- if .EvictionHard }}
+evictionHard:
+  {{- range $k, $v := .EvictionHard }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- if .EvictionSoft }}
+evictionSoft:
+  {{- range $k, $v := .EvictionSoft }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- if .EvictionSoftGracePeriod }}
+evictionSoftGracePeriod:
+  {{- range $k, $v := .EvictionSoftGracePeriod }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- if .ProtectKernelDefaults }}
+protectKernelDefaults: {{ .ProtectKernelDefaults }}
+{{- end }}
+{{- if .TopologyManagerPolicy }}
+topologyManagerPolicy: {{ .TopologyManagerPolicy }}
+{{- end }}
+{{- if .CPUManagerPolicy }}
+cpuManagerPolicy: {{ .CPUManagerPolicy }}
+{{- end }}
+{{- if .MemoryManagerPolicy }}
+memoryManagerPolicy: {{ .MemoryManagerPolicy }}
+{{- end }}
+{{- if .PodPidsLimit }}
+podPidsLimit: {{ .PodPidsLimit }}
+{{- end }}
+{{- if .ContainerLogMaxSize }}
+containerLogMaxSize: {{ .ContainerLogMaxSize }}
+{{- end }}
+{{- if .ContainerLogMaxFiles }}
+containerLogMaxFiles: {{ .ContainerLogMaxFiles }}
+{{- end }}
+{{- if .ImageGCHighThresholdPercent }}
+imageGCHighThresholdPercent: {{ .ImageGCHighThresholdPercent }}
+{{- end }}
+{{- if .ImageGCLowThresholdPercent }}
+imageGCLowThresholdPercent: {{ .ImageGCLowThresholdPercent }}
+{{- end }}
+{{- if .MaxParallelImagePulls }}
+serializeImagePulls: false
+maxParallelImagePulls: {{ .MaxParallelImagePulls }}
+{{- end }}
+{{- if .ShutdownGracePeriod }}
+shutdownGracePeriod: {{ .ShutdownGracePeriod }}
+{{- end }}
+{{- if .ShutdownGracePeriodCriticalPods }}
+shutdownGracePeriodCriticalPods: {{ .ShutdownGracePeriodCriticalPods }}
+{{- end }}
