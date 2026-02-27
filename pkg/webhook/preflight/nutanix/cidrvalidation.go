@@ -19,18 +19,21 @@ const (
 	clusterNetworkServicesFieldPath = "$.spec.clusterNetwork.services.cidrBlocks"
 )
 
+// nodeSubnetSource pairs a Nutanix subnet identifier with its JSONPath field and the PE cluster it belongs to.
 type nodeSubnetSource struct {
 	id      capxv1.NutanixResourceIdentifier
 	field   string
 	cluster *capxv1.NutanixResourceIdentifier
 }
 
+// resolvedNodeSubnet holds a resolved IPv4 prefix for a node subnet along with its field path and display name.
 type resolvedNodeSubnet struct {
 	prefix netip.Prefix
 	field  string
 	name   string
 }
 
+// cidrValidationCheck validates Pod/Service CIDRs for size, mutual overlap, and overlap with node subnets.
 type cidrValidationCheck struct {
 	cd *checkDependencies
 
@@ -121,6 +124,7 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 	return result
 }
 
+// newCIDRValidationChecks creates the CIDR validation preflight check.
 func newCIDRValidationChecks(cd *checkDependencies) []preflight.Check {
 	if cd == nil || cd.cluster == nil {
 		return nil
@@ -133,6 +137,7 @@ func newCIDRValidationChecks(cd *checkDependencies) []preflight.Check {
 	}
 }
 
+// parseCIDRBlocks parses a slice of CIDR strings into masked netip.Prefix values.
 func parseCIDRBlocks(cidrs []string) ([]netip.Prefix, error) {
 	prefixes := make([]netip.Prefix, 0, len(cidrs))
 	for _, cidr := range cidrs {
@@ -145,6 +150,7 @@ func parseCIDRBlocks(cidrs []string) ([]netip.Prefix, error) {
 	return prefixes, nil
 }
 
+// validatePodCIDR checks that Pod CIDRs are large enough for multi-node clusters.
 func validatePodCIDR(result *preflight.CheckResult, prefixes []netip.Prefix) {
 	if result == nil {
 		return
@@ -179,6 +185,7 @@ func validatePodCIDR(result *preflight.CheckResult, prefixes []netip.Prefix) {
 	}
 }
 
+// validateServiceCIDR checks that Service CIDRs are large enough for scaling.
 func validateServiceCIDR(result *preflight.CheckResult, prefixes []netip.Prefix) {
 	if result == nil {
 		return
@@ -227,6 +234,7 @@ func validateServiceCIDR(result *preflight.CheckResult, prefixes []netip.Prefix)
 	}
 }
 
+// validatePodAndServiceCIDRsNotOverlapping checks that Pod and Service CIDRs do not overlap.
 func validatePodAndServiceCIDRsNotOverlapping(
 	result *preflight.CheckResult,
 	podCIDRs, serviceCIDRs []netip.Prefix,
@@ -252,6 +260,7 @@ func validatePodAndServiceCIDRsNotOverlapping(
 	}
 }
 
+// validateSubnetAndPodCIDRsNotOverlapping checks that no node subnet overlaps with any Pod CIDR.
 func validateSubnetAndPodCIDRsNotOverlapping(
 	result *preflight.CheckResult,
 	podCIDRs []netip.Prefix,
@@ -279,6 +288,7 @@ func validateSubnetAndPodCIDRsNotOverlapping(
 	}
 }
 
+// validateSubnetAndServiceCIDRsNotOverlapping checks that no node subnet overlaps with any Service CIDR.
 func validateSubnetAndServiceCIDRsNotOverlapping(
 	result *preflight.CheckResult,
 	serviceCIDRs []netip.Prefix,
@@ -306,6 +316,7 @@ func validateSubnetAndServiceCIDRsNotOverlapping(
 	}
 }
 
+// ipv4CIDRCapacity returns the total number of IP addresses in an IPv4 prefix.
 func ipv4CIDRCapacity(prefix netip.Prefix) (int, bool) {
 	if !prefix.Addr().Is4() {
 		return 0, false
@@ -318,6 +329,7 @@ func ipv4CIDRCapacity(prefix netip.Prefix) (int, bool) {
 	return 1 << hostBits, true
 }
 
+// maxNodesForPodCIDR calculates how many nodes a Pod CIDR can support given a per-node mask size.
 func maxNodesForPodCIDR(podMaskSize, nodeMaskSize int) int {
 	if podMaskSize >= nodeMaskSize {
 		return 1
@@ -325,10 +337,13 @@ func maxNodesForPodCIDR(podMaskSize, nodeMaskSize int) int {
 	return 1 << (nodeMaskSize - podMaskSize)
 }
 
+// prefixesOverlap returns true if two IP prefixes share any addresses.
 func prefixesOverlap(a, b netip.Prefix) bool {
 	return a.Overlaps(b)
 }
 
+// collectNodeSubnetSources gathers subnet identifiers from control plane and worker machine deployment
+// configs, paired with their field paths and PE cluster references.
 func collectNodeSubnetSources(cd *checkDependencies) []nodeSubnetSource {
 	if cd == nil {
 		return nil
@@ -373,6 +388,7 @@ func collectNodeSubnetSources(cd *checkDependencies) []nodeSubnetSource {
 	return sources
 }
 
+// subnetIdentifierKey returns a string key for caching resolved prefixes by subnet identifier type and value.
 func subnetIdentifierKey(id capxv1.NutanixResourceIdentifier) string {
 	switch {
 	case id.IsUUID():
@@ -384,6 +400,8 @@ func subnetIdentifierKey(id capxv1.NutanixResourceIdentifier) string {
 	}
 }
 
+// resolveNodeSubnets fetches subnet details from Prism Central and extracts IPv4 prefixes,
+// with caching to avoid duplicate API calls.
 func resolveNodeSubnets(
 	ctx context.Context,
 	nclient client,
@@ -460,6 +478,8 @@ func resolveNodeSubnets(
 	return resolved, warnings, nil
 }
 
+// filterSubnetsByPECluster narrows a set of subnets to those belonging to the target PE cluster
+// or to no PE (overlay subnets).
 func filterSubnetsByPECluster(
 	ctx context.Context,
 	nclient client,
@@ -484,6 +504,7 @@ func filterSubnetsByPECluster(
 	return filtered
 }
 
+// resolvePEClusterUUID resolves a PE cluster identifier to its UUID, looking it up by name if necessary.
 func resolvePEClusterUUID(
 	ctx context.Context,
 	nclient client,
@@ -508,6 +529,7 @@ func resolvePEClusterUUID(
 	return *clusters[0].ExtId, nil
 }
 
+// subnetIdentifierForMessage returns a human-readable string for a subnet identifier (name or UUID).
 func subnetIdentifierForMessage(id capxv1.NutanixResourceIdentifier) string {
 	switch {
 	case id.IsUUID():
@@ -519,6 +541,8 @@ func subnetIdentifierForMessage(id capxv1.NutanixResourceIdentifier) string {
 	}
 }
 
+// extractIPv4PrefixesFromSubnet extracts IPv4 prefixes from a Nutanix subnet's IP configuration.
+// Returns nil for external IPAM subnets.
 func extractIPv4PrefixesFromSubnet(subnet *netv4.Subnet) ([]netip.Prefix, error) {
 	if len(subnet.IpConfig) == 0 {
 		return nil, nil
