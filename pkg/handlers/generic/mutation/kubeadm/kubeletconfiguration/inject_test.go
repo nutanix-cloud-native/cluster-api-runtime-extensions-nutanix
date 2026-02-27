@@ -127,7 +127,8 @@ func TestRenderKubeletConfigPatch_PodPidsLimit(t *testing.T) {
 }
 
 func TestRenderKubeletConfigPatch_ContainerLogMaxSize(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{ContainerLogMaxSize: ptr.To("50Mi")}
+	qty := resource.MustParse("50Mi")
+	cfg := &v1alpha1.KubeletConfiguration{ContainerLogMaxSize: &qty}
 	f, err := renderKubeletConfigPatch(cfg)
 	require.NoError(t, err)
 	assert.Contains(t, f.Content, "containerLogMaxSize: 50Mi")

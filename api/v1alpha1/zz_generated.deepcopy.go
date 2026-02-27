@@ -1720,8 +1720,8 @@ func (in *KubeletConfiguration) DeepCopyInto(out *KubeletConfiguration) {
 	}
 	if in.ContainerLogMaxSize != nil {
 		in, out := &in.ContainerLogMaxSize, &out.ContainerLogMaxSize
-		*out = new(string)
-		**out = **in
+		x := (*in).DeepCopy()
+		*out = &x
 	}
 	if in.ContainerLogMaxFiles != nil {
 		in, out := &in.ContainerLogMaxFiles, &out.ContainerLogMaxFiles
