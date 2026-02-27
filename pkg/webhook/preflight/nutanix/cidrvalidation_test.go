@@ -370,16 +370,16 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 
 			check := &cidrValidationCheck{
 				cd: cd,
-				resolveNodeSubnetsFunc: func(
-					_ context.Context,
-					_ client,
-					sources []nodeSubnetSource,
-				) ([]resolvedNodeSubnet, []string, error) {
-					if !tt.withConfiguredSubnet {
-						require.Empty(t, sources)
-					} else {
-						require.NotEmpty(t, sources)
-					}
+			resolveNodeSubnetsFunc: func(
+				_ context.Context,
+				_ client,
+				subnets []nutanixSubnet,
+			) ([]resolvedNodeSubnet, []string, error) {
+				if !tt.withConfiguredSubnet {
+					require.Empty(t, subnets)
+				} else {
+					require.NotEmpty(t, subnets)
+				}
 					if tt.resolveSubnetErr != nil {
 						return nil, nil, tt.resolveSubnetErr
 					}
@@ -452,28 +452,28 @@ func TestCollectNodeSubnetSources(t *testing.T) {
 		},
 	}
 
-	sources := collectNodeSubnetSources(cd)
-	// 2 from control plane + 1 from worker = 3 (no dedup, sources are distinct)
-	require.Len(t, sources, 3)
+	subnets := collectNutanixSubnets(cd)
+	// 2 from control plane + 1 from worker = 3 (no dedup, subnets are distinct)
+	require.Len(t, subnets, 3)
 
 	assert.Equal(t,
 		`$.spec.topology.variables[?@.name=="clusterConfig"].value.controlPlane.nutanix.machineDetails.subnets[0]`,
-		sources[0].field,
+		subnets[0].field,
 	)
-	assert.Equal(t, cpCluster, sources[0].cluster)
+	assert.Equal(t, cpCluster, subnets[0].cluster)
 
 	assert.Equal(t,
 		`$.spec.topology.variables[?@.name=="clusterConfig"].value.controlPlane.nutanix.machineDetails.subnets[1]`,
-		sources[1].field,
+		subnets[1].field,
 	)
-	assert.Equal(t, cpCluster, sources[1].cluster)
+	assert.Equal(t, cpCluster, subnets[1].cluster)
 
 	assert.Equal(
 		t,
 		`$.spec.topology.workers.machineDeployments[?@.name=="md-1"].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[0]`,
-		sources[2].field,
+		subnets[2].field,
 	)
-	assert.Equal(t, workerCluster, sources[2].cluster)
+	assert.Equal(t, workerCluster, subnets[2].cluster)
 }
 
 func TestExtractIPv4PrefixesFromSubnet(t *testing.T) {

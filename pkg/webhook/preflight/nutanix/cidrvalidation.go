@@ -19,8 +19,8 @@ const (
 	clusterNetworkServicesFieldPath = "$.spec.clusterNetwork.services.cidrBlocks"
 )
 
-// nodeSubnetSource pairs a Nutanix subnet identifier with its JSONPath field and the PE cluster it belongs to.
-type nodeSubnetSource struct {
+// nutanixSubnet pairs a Nutanix subnet identifier with its JSONPath field and the PE cluster it belongs to.
+type nutanixSubnet struct {
 	id      capxv1.NutanixResourceIdentifier
 	field   string
 	cluster *capxv1.NutanixResourceIdentifier
@@ -40,7 +40,7 @@ type cidrValidationCheck struct {
 	resolveNodeSubnetsFunc func(
 		ctx context.Context,
 		nclient client,
-		sources []nodeSubnetSource,
+		subnets []nutanixSubnet,
 	) ([]resolvedNodeSubnet, []string, error)
 }
 
@@ -90,8 +90,8 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 	validateServiceCIDR(&result, serviceCIDRs)
 	validatePodAndServiceCIDRsNotOverlapping(&result, podCIDRs, serviceCIDRs)
 
-	nodeSubnetSources := collectNodeSubnetSources(c.cd)
-	if len(nodeSubnetSources) == 0 {
+	nutanixSubnets := collectNutanixSubnets(c.cd)
+	if len(nutanixSubnets) == 0 {
 		return result
 	}
 
@@ -104,7 +104,7 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 		resolveNodeSubnetsFn = resolveNodeSubnets
 	}
 
-	resolvedSubnets, resolveWarnings, err := resolveNodeSubnetsFn(ctx, c.cd.nclient, nodeSubnetSources)
+	resolvedSubnets, resolveWarnings, err := resolveNodeSubnetsFn(ctx, c.cd.nclient, nutanixSubnets)
 	result.Warnings = append(result.Warnings, resolveWarnings...)
 	if err != nil {
 		result.Allowed = false
@@ -342,21 +342,21 @@ func prefixesOverlap(a, b netip.Prefix) bool {
 	return a.Overlaps(b)
 }
 
-// collectNodeSubnetSources gathers subnet identifiers from control plane and worker machine deployment
+// collectNutanixSubnets gathers subnet identifiers from control plane and worker machine deployment
 // configs, paired with their field paths and PE cluster references.
-func collectNodeSubnetSources(cd *checkDependencies) []nodeSubnetSource {
+func collectNutanixSubnets(cd *checkDependencies) []nutanixSubnet {
 	if cd == nil {
 		return nil
 	}
 
-	sources := make([]nodeSubnetSource, 0)
+	subnets := make([]nutanixSubnet, 0)
 
 	if cd.nutanixClusterConfigSpec != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
 		cpDetails := &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails
 		for i, subnetID := range cpDetails.Subnets {
-			sources = append(sources, nodeSubnetSource{
+			subnets = append(subnets, nutanixSubnet{
 				id: subnetID,
 				field: fmt.Sprintf(
 					"$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails.subnets[%d]", //nolint:lll // Field path is long.
@@ -373,7 +373,7 @@ func collectNodeSubnetSources(cd *checkDependencies) []nodeSubnetSource {
 		}
 		workerDetails := &worker.Nutanix.MachineDetails
 		for i, subnetID := range workerDetails.Subnets {
-			sources = append(sources, nodeSubnetSource{
+			subnets = append(subnets, nutanixSubnet{
 				id: subnetID,
 				field: fmt.Sprintf(
 					"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[%d]", //nolint:lll // Field path is long.
@@ -385,7 +385,7 @@ func collectNodeSubnetSources(cd *checkDependencies) []nodeSubnetSource {
 		}
 	}
 
-	return sources
+	return subnets
 }
 
 // subnetIdentifierKey returns a string key for caching resolved prefixes by subnet identifier type and value.
@@ -405,7 +405,7 @@ func subnetIdentifierKey(id capxv1.NutanixResourceIdentifier) string {
 func resolveNodeSubnets(
 	ctx context.Context,
 	nclient client,
-	sources []nodeSubnetSource,
+	subnets []nutanixSubnet,
 ) ([]resolvedNodeSubnet, []string, error) {
 	resolved := make([]resolvedNodeSubnet, 0)
 	var warnings []string
@@ -413,41 +413,41 @@ func resolveNodeSubnets(
 	// when the same subnet is referenced by multiple node pools.
 	prefixCache := map[string][]netip.Prefix{}
 
-	for _, src := range sources {
-		cacheKey := subnetIdentifierKey(src.id)
+	for _, subnet := range subnets {
+		cacheKey := subnetIdentifierKey(subnet.id)
 
 		cached, ok := prefixCache[cacheKey]
 		if !ok {
-			subnets, err := getSubnets(ctx, nclient, &src.id)
+			pcSubnets, err := getSubnets(ctx, nclient, &subnet.id)
 			if err != nil {
 				return nil, warnings, fmt.Errorf(
-					"failed to get subnet %q: %w", subnetIdentifierForMessage(src.id), err,
+					"failed to get subnet %q: %w", subnetIdentifierForMessage(subnet.id), err,
 				)
 			}
-			if len(subnets) == 0 {
+			if len(pcSubnets) == 0 {
 				return nil, warnings, fmt.Errorf(
-					"found no subnets for identifier %q", subnetIdentifierForMessage(src.id),
+					"found no subnets for identifier %q", subnetIdentifierForMessage(subnet.id),
 				)
 			}
 
-			if src.id.IsName() && len(subnets) > 1 {
-				subnets = filterSubnetsByPECluster(ctx, nclient, subnets, src.cluster)
-				if len(subnets) != 1 {
+			if subnet.id.IsName() && len(pcSubnets) > 1 {
+				pcSubnets = filterSubnetsByPECluster(ctx, nclient, pcSubnets, subnet.cluster)
+				if len(pcSubnets) != 1 {
 					return nil, warnings, fmt.Errorf(
 						"found %d subnets matching name %q on the target Prism Element cluster; "+
 							"there must be exactly 1; use subnet UUID instead",
-						len(subnets), *src.id.Name,
+						len(pcSubnets), *subnet.id.Name,
 					)
 				}
 			}
 
 			prefixes := make([]netip.Prefix, 0)
-			for i := range subnets {
-				subnetPrefixes, err := extractIPv4PrefixesFromSubnet(&subnets[i])
+			for i := range pcSubnets {
+				subnetPrefixes, err := extractIPv4PrefixesFromSubnet(&pcSubnets[i])
 				if err != nil {
 					return nil, warnings, fmt.Errorf(
 						"failed to extract IPv4 CIDR for subnet %q: %w",
-						subnetIdentifierForMessage(src.id),
+						subnetIdentifierForMessage(subnet.id),
 						err,
 					)
 				}
@@ -458,7 +458,7 @@ func resolveNodeSubnets(
 				warnings = append(warnings, fmt.Sprintf(
 					"Subnet %q appears to use external IPAM (no IP configuration found). "+
 						"CIDR overlap validation will be skipped for this subnet.",
-					subnetIdentifierForMessage(src.id),
+					subnetIdentifierForMessage(subnet.id),
 				))
 			}
 
@@ -469,8 +469,8 @@ func resolveNodeSubnets(
 		for _, prefix := range cached {
 			resolved = append(resolved, resolvedNodeSubnet{
 				prefix: prefix,
-				field:  src.field,
-				name:   subnetIdentifierForMessage(src.id),
+				field:  subnet.field,
+				name:   subnetIdentifierForMessage(subnet.id),
 			})
 		}
 	}
