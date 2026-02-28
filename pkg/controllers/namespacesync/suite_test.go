@@ -54,11 +54,22 @@ func TestMain(m *testing.M) {
 		if err != nil {
 			panic(fmt.Sprintf("unable to create unstructuredCachineClient: %v", err))
 		}
+
+		// Create a label selector that matches namespaces with the target label key
+		targetSelector, err := metav1.ParseToLabelSelector(targetNamespaceLabelKey)
+		if err != nil {
+			panic(fmt.Sprintf("unable to parse label selector: %v", err))
+		}
+		targetLabelSelector, err := metav1.LabelSelectorAsSelector(targetSelector)
+		if err != nil {
+			panic(fmt.Sprintf("unable to convert label selector: %v", err))
+		}
+
 		if err := (&Reconciler{
 			Client:                      mgr.GetClient(),
 			UnstructuredCachingClient:   unstructuredCachingClient,
 			SourceClusterClassNamespace: sourceClusterClassNamespace,
-			IsTargetNamespace:           NamespaceHasLabelKey(targetNamespaceLabelKey),
+			TargetNamespaceSelector:     targetLabelSelector,
 		}).SetupWithManager(mgr, &controller.Options{MaxConcurrentReconciles: 1}); err != nil {
 			panic(fmt.Sprintf("unable to create reconciler: %v", err))
 		}
