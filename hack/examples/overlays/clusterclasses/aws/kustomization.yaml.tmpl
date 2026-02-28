@@ -19,11 +19,11 @@ patches:
         value:
           - name: "cluster-config"
             external:
-              generatePatchesExtension: "awsclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "awsclusterv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "awsclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix"
           - name: "worker-config"
             external:
-              generatePatchesExtension: "awsworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "awsworkerv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "awsworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
   - target:
       kind: AWSMachineTemplate

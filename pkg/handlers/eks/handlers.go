@@ -12,6 +12,7 @@ import (
 	eksmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation"
 	eksworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/workerconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	eksmutationvprev "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v5/eks/mutation"
 )
 
 type Handlers struct{}
@@ -27,7 +28,9 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		eksclusterconfig.NewVariable(),
 		eksworkerconfig.NewVariable(),
 		eksmutation.MetaPatchHandler(mgr),
+		eksmutationvprev.MetaPatchHandler(mgr),
 		eksmutation.MetaWorkerPatchHandler(mgr),
+		eksmutationvprev.MetaWorkerPatchHandler(mgr),
 	}
 }
 
