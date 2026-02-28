@@ -370,16 +370,16 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 
 			check := &cidrValidationCheck{
 				cd: cd,
-			resolveNodeSubnetsFunc: func(
-				_ context.Context,
-				_ client,
-				subnets []nutanixSubnet,
-			) ([]resolvedNodeSubnet, []string, error) {
-				if !tt.withConfiguredSubnet {
-					require.Empty(t, subnets)
-				} else {
-					require.NotEmpty(t, subnets)
-				}
+				resolveNodeSubnetsFunc: func(
+					_ context.Context,
+					_ client,
+					subnets []nutanixSubnet,
+				) ([]resolvedNodeSubnet, []string, error) {
+					if !tt.withConfiguredSubnet {
+						require.Empty(t, subnets)
+					} else {
+						require.NotEmpty(t, subnets)
+					}
 					if tt.resolveSubnetErr != nil {
 						return nil, nil, tt.resolveSubnetErr
 					}
