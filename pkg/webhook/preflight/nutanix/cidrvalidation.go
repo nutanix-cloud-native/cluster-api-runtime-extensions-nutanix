@@ -99,12 +99,7 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 		return result
 	}
 
-	resolveNodeSubnetsFn := c.resolveNodeSubnetsFunc
-	if resolveNodeSubnetsFn == nil {
-		resolveNodeSubnetsFn = resolveNodeSubnets
-	}
-
-	resolvedSubnets, resolveWarnings, err := resolveNodeSubnetsFn(ctx, c.cd.nclient, nutanixSubnets)
+	resolvedSubnets, resolveWarnings, err := c.resolveNodeSubnetsFunc(ctx, c.cd.nclient, nutanixSubnets)
 	result.Warnings = append(result.Warnings, resolveWarnings...)
 	if err != nil {
 		result.Allowed = false
@@ -132,7 +127,8 @@ func newCIDRValidationChecks(cd *checkDependencies) []preflight.Check {
 
 	return []preflight.Check{
 		&cidrValidationCheck{
-			cd: cd,
+			cd:                     cd,
+			resolveNodeSubnetsFunc: resolveNodeSubnets,
 		},
 	}
 }
