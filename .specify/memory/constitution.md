@@ -40,6 +40,22 @@ Automated linting via `golangci-lint` (35+ linters) and `pre-commit` is the base
 - Vendored/forked API types preferred over importing upstream provider packages directly.
 - `depguard` linter config is the enforced blocklist — blocked packages must never be imported.
 
+### VII. Handler Version Safety (No Silent Rollouts)
+
+Upgrading CAREN on a management cluster MUST be a no-op for existing Clusters until they explicitly opt in. This is enforced through handler versioning:
+
+- Every topology mutation handler name embeds a version (e.g. `awsClusterv5configpatch`).
+- A **new handler version** MUST be created whenever:
+  1. An existing handler's patch output changes in a way that would cause a Cluster or MachineDeployment rollout.
+  2. A new handler is introduced that is enabled by default and produces patches affecting Cluster or Machine resources.
+- When creating a new version (e.g. v5 -> v6):
+  1. Copy the current implementation to `pkg/handlers/v{current}/`.
+  2. Bump the version in the handler name (e.g. `v5` -> `v6`) in `pkg/handlers/{provider}/mutation/`.
+  3. Register both old and new versions so existing ClusterClasses continue to work.
+  4. Update default ClusterClass definitions to reference the new version.
+- The old handler version MUST remain registered and functional indefinitely (until a documented deprecation cycle removes it).
+- Violating this principle causes uncontrolled Machine rollouts across all managed clusters. There are no exceptions.
+
 ## Quality Gates
 
 All of the following must pass before a PR can merge:
@@ -60,4 +76,4 @@ No exceptions. Flaky e2e tests are fixed, not skipped.
 
 This constitution supersedes ad-hoc practices. Amendments require a dedicated PR with at least one maintainer approval. The PR must document what changed and why.
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-27
+**Version**: 1.1.0 | **Ratified**: 2026-02-28
