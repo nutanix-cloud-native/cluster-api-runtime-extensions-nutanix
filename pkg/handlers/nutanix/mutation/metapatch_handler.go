@@ -29,7 +29,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixClusterv5configpatch",
+		"nutanixClusterv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -43,7 +43,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixWorkerv5configpatch",
+		"nutanixWorkerv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

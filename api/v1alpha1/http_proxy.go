@@ -41,6 +41,13 @@ type HTTPProxy struct {
 	AdditionalNo []string `json:"additionalNo,omitempty"`
 }
 
+// GenerateNoProxyNormalized creates default NO_PROXY values and normalizes every CIDR
+// and IP range entry to include both notations, so that runtimes supporting either
+// format (Go uses CIDR, Node.js uses ranges) all correctly bypass the proxy.
+func (p *HTTPProxy) GenerateNoProxyNormalized(cluster *clusterv1beta2.Cluster) []string {
+	return NormalizeNoProxyEntries(p.GenerateNoProxy(cluster))
+}
+
 // GenerateNoProxy creates default NO_PROXY values that should be applied on cluster
 // in any environment and are preventing the use of proxy for cluster internal
 // networking. It appends additional values from HTTPProxy.AdditionalNo.
@@ -74,8 +81,8 @@ func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1beta2.Cluster) []string {
 		fmt.Sprintf(".svc.%s.", strings.TrimLeft(serviceDomain, ".")),
 	)
 
-	if cluster.Spec.InfrastructureRef.Name == "" {
-		return NormalizeNoProxyEntries(append(noProxy, p.AdditionalNo...))
+	if cluster.Spec.InfrastructureRef.Kind == "" {
+		return append(noProxy, p.AdditionalNo...)
 	}
 
 	// Add infra-specific entries
@@ -107,5 +114,5 @@ func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1beta2.Cluster) []string {
 	default:
 		// Unknown infrastructure. Do nothing.
 	}
-	return NormalizeNoProxyEntries(append(noProxy, p.AdditionalNo...))
+	return append(noProxy, p.AdditionalNo...)
 }

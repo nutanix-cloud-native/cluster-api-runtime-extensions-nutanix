@@ -118,7 +118,7 @@ Environment="no_proxy=localhost,127.0.0.1,no-proxy.example.com,no-proxy-1.exampl
 				}}
 			}
 
-			g.Expect(generateSystemdFiles(tt.vars, append(tt.noProxy, tt.vars.AdditionalNo...))).
+			g.Expect(GenerateSystemdFiles(tt.vars, append(tt.noProxy, tt.vars.AdditionalNo...))).
 				Should(Equal(expectedFiles))
 		})
 	}

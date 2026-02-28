@@ -1,4 +1,4 @@
-// Copyright 2025 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package mutation
@@ -12,30 +12,41 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/cni/calico"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/controlplaneloadbalancer"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/iaminstanceprofile"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/identityref"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/instancetype"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/network"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/placementgroup"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/placementgroupnfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/region"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/securitygroups"
-	genericmutationvprev "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v4/generic/mutation"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/tags"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/volumes"
+	genericmutationvprev "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v5/generic/mutation"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
 		calico.NewPatch(),
+		tags.NewClusterPatch(),
 		region.NewPatch(),
 		network.NewPatch(),
 		controlplaneloadbalancer.NewPatch(),
+		tags.NewControlPlanePatch(),
+		identityref.NewPatch(),
 		iaminstanceprofile.NewControlPlanePatch(),
 		instancetype.NewControlPlanePatch(),
 		ami.NewControlPlanePatch(),
 		securitygroups.NewControlPlanePatch(),
+		volumes.NewControlPlanePatch(),
+		placementgroup.NewControlPlanePatch(),
+		placementgroupnfd.NewControlPlanePatch(),
 	}
 	patchHandlers = append(patchHandlers, genericmutationvprev.MetaMutators(mgr)...)
 	patchHandlers = append(patchHandlers, genericmutationvprev.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsClusterv4configpatch",
+		"awsClusterv5configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -44,15 +55,19 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers := []mutation.MetaMutator{
+		tags.NewWorkerPatch(),
 		iaminstanceprofile.NewWorkerPatch(),
 		instancetype.NewWorkerPatch(),
 		ami.NewWorkerPatch(),
 		securitygroups.NewWorkerPatch(),
+		volumes.NewWorkerPatch(),
+		placementgroup.NewWorkerPatch(),
+		placementgroupnfd.NewWorkerPatch(),
 	}
 	patchHandlers = append(patchHandlers, genericmutationvprev.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsWorkerv4configpatch",
+		"awsWorkerv5configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

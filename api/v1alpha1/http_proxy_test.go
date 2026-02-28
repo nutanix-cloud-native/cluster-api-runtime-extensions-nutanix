@@ -48,8 +48,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1",
-			"10.0.0.0/24", "10.0.0.0-10.0.0.255",
-			"10.0.1.0/24", "10.0.1.0-10.0.1.255",
+			"10.0.0.0/24",
+			"10.0.1.0/24",
 			"kubernetes", "kubernetes.default",
 			".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
@@ -145,8 +145,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1",
-			"172.16.0.0/24", "172.16.0.0-172.16.0.255",
-			"172.16.1.0/24", "172.16.1.0-172.16.1.255",
+			"172.16.0.0/24",
+			"172.16.1.0/24",
 			"kubernetes", "kubernetes.default",
 			".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
@@ -181,8 +181,8 @@ func TestGenerateNoProxy(t *testing.T) {
 		additonalNo: []string{"example.com"},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1",
-			"10.10.0.0/16", "10.10.0.0-10.10.255.255",
-			"172.16.0.0/16", "172.16.0.0-172.16.255.255",
+			"10.10.0.0/16",
+			"172.16.0.0/16",
 			"kubernetes", "kubernetes.default",
 			".svc", ".svc.foo.bar", ".svc.foo.bar.",
 			"example.com",
@@ -198,6 +198,59 @@ func TestGenerateNoProxy(t *testing.T) {
 			g.Expect((&v1alpha1.HTTPProxy{
 				AdditionalNo: tt.additonalNo,
 			}).GenerateNoProxy(tt.cluster)).To(gomega.Equal(tt.expectedNoProxy))
+		})
+	}
+}
+
+func TestGenerateNoProxyNormalized(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name            string
+		cluster         *clusterv1beta2.Cluster
+		expectedNoProxy []string
+		additonalNo     []string
+	}{{
+		name:    "no networking config",
+		cluster: &clusterv1beta2.Cluster{},
+		expectedNoProxy: []string{
+			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
+		},
+	}, {
+		name: "CIDRs are expanded to include IP ranges",
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				ClusterNetwork: clusterv1beta2.ClusterNetwork{
+					Pods: clusterv1beta2.NetworkRanges{
+						CIDRBlocks: []string{"10.0.0.0/24"},
+					},
+					Services: clusterv1beta2.NetworkRanges{
+						CIDRBlocks: []string{"172.16.0.0/16"},
+					},
+				},
+			},
+		},
+		additonalNo: []string{"example.com"},
+		expectedNoProxy: []string{
+			"localhost", "127.0.0.1",
+			"10.0.0.0/24", "10.0.0.0-10.0.0.255",
+			"172.16.0.0/16", "172.16.0.0-172.16.255.255",
+			"kubernetes", "kubernetes.default",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
+			"example.com",
+		},
+	}}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			g := gomega.NewWithT(t)
+
+			g.Expect((&v1alpha1.HTTPProxy{
+				AdditionalNo: tt.additonalNo,
+			}).GenerateNoProxyNormalized(tt.cluster)).To(gomega.Equal(tt.expectedNoProxy))
 		})
 	}
 }
