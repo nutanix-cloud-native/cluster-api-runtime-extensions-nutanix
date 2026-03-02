@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capie2eframework "sigs.k8s.io/cluster-api/test/framework"
@@ -458,7 +458,9 @@ func dumpAllResources(
 	})
 
 	// If the cluster still exists, dump pods and nodes of the workload cluster.
-	if err := clusterProxy.GetClient().Get(ctx, client.ObjectKeyFromObject(cluster), &clusterv1.Cluster{}); err == nil {
+	if err := clusterProxy.GetClient().Get(
+		ctx, client.ObjectKeyFromObject(cluster), &clusterv1.Cluster{},
+	); err == nil {
 		capie2e.Byf("Dumping Pods and Nodes of Cluster %s", klog.KObj(cluster))
 		capie2eframework.DumpResourcesForCluster(ctx, capie2eframework.DumpResourcesForClusterInput{
 			Lister: clusterProxy.GetWorkloadCluster(ctx, cluster.Namespace, cluster.Name).
