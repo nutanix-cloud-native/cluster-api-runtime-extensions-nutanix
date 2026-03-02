@@ -77,6 +77,8 @@ spec:
                 value: "false"
               - name: service-account-lookup
                 value: "true"
+              - name: tls-cipher-suites
+                value: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
             extraVolumes:
               - hostPath: /etc/kubernetes/admission.yaml
                 mountPath: /etc/kubernetes/admission.yaml
