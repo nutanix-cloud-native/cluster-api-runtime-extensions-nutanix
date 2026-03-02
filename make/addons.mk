@@ -88,8 +88,8 @@ generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating h
 	./hack/addons/generate-mindthegap-repofile.sh
 
 .PHONY: template-helm-repository
-template-helm-repository: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
-	yq -i '.data |= (to_entries | map(.value |= (. | fromjson | .RepositoryURL |= "{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}" + . + "{{ end }}" | to_yaml)) | from_entries)' ./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml
+template-helm-repository: generate-mindthegap-repofile ## this is used by goreleaser to set the helm value to this.
+	./hack/addons/inject-helm-repo-url-template.sh
 
 .PHONY: list-images
 list-images:

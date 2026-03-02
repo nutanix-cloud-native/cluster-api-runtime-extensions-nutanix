@@ -200,6 +200,24 @@ func RetrieveValuesTemplate(
 	return configMap.Data[configMapKey], nil
 }
 
+// NormalizeHelmChartOCIRepoURL normalizes OCI repository URLs for HelmChartProxy.
+// The CAPI Helm addon provider expects RepoURL to be the OCI registry base (e.g. oci://harbor.example.com/project)
+// and ChartName to be the chart name. When users override with a full OCI path (e.g. oci://harbor.example.com/project/chart-name),
+// we strip the chart name suffix so the provider receives the correct RepoURL and ChartName.
+func NormalizeHelmChartOCIRepoURL(repoURL, chartName string) (repoURLOut, chartNameOut string) {
+	repoURLOut = repoURL
+	chartNameOut = chartName
+	if !strings.HasPrefix(repoURL, "oci://") {
+		return
+	}
+	suffix := "/" + chartName
+	trimmed := strings.TrimSuffix(strings.TrimSuffix(repoURL, "/"), suffix)
+	if trimmed != repoURL {
+		repoURLOut = trimmed
+	}
+	return
+}
+
 func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
 	if strings.Contains(hcp.Spec.RepoURL, "helm-repository") {
 		hcp.Spec.TLSConfig = &caaphv1.TLSConfig{
