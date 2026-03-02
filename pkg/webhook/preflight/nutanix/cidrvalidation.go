@@ -59,14 +59,9 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 
 	var podCIDRBlocks []string
 	var serviceCIDRBlocks []string
-	if c.cd.cluster.Spec.ClusterNetwork != nil {
-		if c.cd.cluster.Spec.ClusterNetwork.Pods != nil {
-			podCIDRBlocks = c.cd.cluster.Spec.ClusterNetwork.Pods.CIDRBlocks
-		}
-		if c.cd.cluster.Spec.ClusterNetwork.Services != nil {
-			serviceCIDRBlocks = c.cd.cluster.Spec.ClusterNetwork.Services.CIDRBlocks
-		}
-	}
+	cn := c.cd.cluster.Spec.ClusterNetwork
+	podCIDRBlocks = cn.Pods.CIDRBlocks
+	serviceCIDRBlocks = cn.Services.CIDRBlocks
 
 	podCIDRs, err := parseCIDRBlocks(podCIDRBlocks)
 	if err != nil {
