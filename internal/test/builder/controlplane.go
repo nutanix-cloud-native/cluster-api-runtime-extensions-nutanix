@@ -26,7 +26,7 @@ var (
 	// ControlPlaneGroupVersion is group version used for control plane objects.
 	ControlPlaneGroupVersion = schema.GroupVersion{
 		Group:   "controlplane.cluster.x-k8s.io",
-		Version: "v1beta1",
+		Version: "v1beta2",
 	}
 
 	// GenericControlPlaneKind is the Kind for the GenericControlPlane.

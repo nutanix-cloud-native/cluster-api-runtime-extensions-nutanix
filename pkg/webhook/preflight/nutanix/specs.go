@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -70,18 +70,18 @@ func newConfigurationCheck(
 	failureDomainByMachineDeploymentName := make(map[string]string)
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName := make(map[string]*carenv1.NutanixWorkerNodeConfigSpec)
 
-	if cd.cluster.Spec.Topology.Workers != nil {
+	if len(cd.cluster.Spec.Topology.Workers.MachineDeployments) > 0 {
 		for i := range cd.cluster.Spec.Topology.Workers.MachineDeployments {
 			md := &cd.cluster.Spec.Topology.Workers.MachineDeployments[i]
 
 			// Save the failureDomain only if it is configured
-			if md.FailureDomain != nil && *md.FailureDomain != "" {
-				failureDomainByMachineDeploymentName[md.Name] = *md.FailureDomain
+			if md.FailureDomain != "" {
+				failureDomainByMachineDeploymentName[md.Name] = md.FailureDomain
 			}
 
 			var workerConfigVar *clusterv1.ClusterVariable
 			var workerConfigFieldPath string
-			if md.Variables != nil {
+			if len(md.Variables.Overrides) > 0 {
 				workerConfigVar = variables.GetClusterVariableByName(
 					carenv1.WorkerConfigVariableName,
 					md.Variables.Overrides,

@@ -1,10 +1,31 @@
+/*
+Copyright 2026 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1beta2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+)
+
+const (
+	// NodeadmConfigKind is the Kind for the NodeadmConfig resource.
+	NodeadmConfigKind = "NodeadmConfig"
 )
 
 // NodeadmConfigSpec defines the desired state of NodeadmConfig.
@@ -82,20 +103,25 @@ const (
 )
 
 // GetConditions returns the observations of the operational state of the NodeadmConfig resource.
-func (r *NodeadmConfig) GetConditions() clusterv1.Conditions {
+func (r *NodeadmConfig) GetConditions() clusterv1beta1.Conditions {
 	return r.Status.Conditions
 }
 
 // SetConditions sets the underlying service state of the NodeadmConfig to the predescribed clusterv1.Conditions.
-func (r *NodeadmConfig) SetConditions(conditions clusterv1.Conditions) {
+func (r *NodeadmConfig) SetConditions(conditions clusterv1beta1.Conditions) {
 	r.Status.Conditions = conditions
 }
 
 // NodeadmConfigStatus defines the observed state of NodeadmConfig.
 type NodeadmConfigStatus struct {
+	// Deprecated: This field will be removed with the CAPI v1beta2 transition
 	// Ready indicates the BootstrapData secret is ready to be consumed.
 	// +optional
 	Ready bool `json:"ready,omitempty"`
+	// Initialization provides observations of the NodeadmConfig initialization process.
+	// NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Machine provisioning.
+	// +optional
+	Initialization NodeadmConfigInitializationStatus `json:"initialization,omitempty"`
 
 	// DataSecretName is the name of the secret that stores the bootstrap data script.
 	// +optional
@@ -115,7 +141,15 @@ type NodeadmConfigStatus struct {
 
 	// Conditions defines current service state of the NodeadmConfig.
 	// +optional
-	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
+	Conditions clusterv1beta1.Conditions `json:"conditions,omitempty"`
+}
+
+// NodeadmConfigInitializationStatus provides observations of the NodeadmConfig initialization process.
+type NodeadmConfigInitializationStatus struct {
+	// DataSecretCreated is true when the Machine's bootstrap secret is created.
+	// NOTE: This field is part of the Cluster API contract, and it is used to orchestrate initial Machine provisioning.
+	// +optional
+	DataSecretCreated *bool `json:"dataSecretCreated,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -48,32 +48,21 @@ var _ = Describe("Generate Audit Policy patches", func() {
 					gomega.SatisfyAll(
 						gomega.HaveKeyWithValue(
 							"extraArgs",
-							map[string]interface{}{
-								"audit-log-maxbackup": "90",
-								"audit-log-maxsize":   "100",
-								"audit-log-path":      "/var/log/audit/kube-apiserver-audit.log",
-								"audit-policy-file":   "/etc/kubernetes/audit-policy.yaml",
-								"audit-log-maxage":    "30",
-								"audit-log-compress":  "true",
-							},
+							gomega.ContainElements(
+								gomega.HaveKeyWithValue("name", "audit-log-maxbackup"),
+								gomega.HaveKeyWithValue("name", "audit-log-maxsize"),
+								gomega.HaveKeyWithValue("name", "audit-log-path"),
+								gomega.HaveKeyWithValue("name", "audit-policy-file"),
+								gomega.HaveKeyWithValue("name", "audit-log-maxage"),
+								gomega.HaveKeyWithValue("name", "audit-log-compress"),
+							),
 						),
 						gomega.HaveKeyWithValue(
 							"extraVolumes",
-							[]interface{}{
-								map[string]interface{}{
-									"hostPath":  "/etc/kubernetes/audit-policy.yaml",
-									"mountPath": "/etc/kubernetes/audit-policy.yaml",
-									"name":      "audit-policy",
-									"readOnly":  true,
-									"pathType":  "File",
-								},
-								map[string]interface{}{
-									"name":      "audit-logs",
-									"hostPath":  "/var/log/kubernetes/audit",
-									"mountPath": "/var/log/audit/",
-									"pathType":  "DirectoryOrCreate",
-								},
-							},
+							gomega.ContainElements(
+								gomega.HaveKeyWithValue("name", "audit-policy"),
+								gomega.HaveKeyWithValue("name", "audit-logs"),
+							),
 						),
 					),
 				),

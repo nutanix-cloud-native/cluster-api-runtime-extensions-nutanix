@@ -13,8 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -57,9 +57,9 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -84,9 +84,9 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -123,9 +123,9 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -168,9 +168,9 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -212,9 +212,9 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -255,9 +255,9 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -285,9 +285,9 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.100.100",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.100.100",
 					},
 				},
 			},
@@ -330,9 +330,9 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.100.100",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.100.100",
 					},
 				},
 			},

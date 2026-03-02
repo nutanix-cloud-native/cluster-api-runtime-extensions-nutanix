@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"net/http"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -50,7 +50,7 @@ func (a *workloadClusterAutoEnabler) defaulter(
 		return admission.Allowed("")
 	}
 
-	if cluster.Spec.Topology == nil {
+	if !cluster.Spec.Topology.IsDefined() {
 		return admission.Allowed("")
 	}
 
@@ -96,7 +96,7 @@ func (a *workloadClusterAutoEnabler) defaulter(
 		return admission.Allowed("")
 	}
 	// Check if the management cluster is a ClusterClass based cluster, just return if it is not.
-	if managementCluster.Spec.Topology == nil {
+	if !managementCluster.Spec.Topology.IsDefined() {
 		return admission.Allowed("")
 	}
 	// Check if the addon is enabled in the management cluster, if not just return.

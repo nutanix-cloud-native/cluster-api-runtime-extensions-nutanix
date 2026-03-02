@@ -16,17 +16,20 @@ export KUBE_VIP_CONTENT
 
 # For details why the exec command is structured like this , see
 # https://www.shellcheck.net/wiki/SC2156.
-find "${SCRIPT_DIR}" -name kustomization.yaml.tmpl \
+# Exclude release/ so we do not require CAREN_RELEASE_VERSION and CC_TEMPLATE (used only by release).
+find "${SCRIPT_DIR}" -name kustomization.yaml.tmpl ! -path "${SCRIPT_DIR}/release/*" \
   -exec sh -c 'k="${1}"; envsubst -no-unset -i "${k}" -o "${k%.tmpl}"' shell {} \;
 
 readonly EXAMPLE_CLUSTERCLASSES_DIR=charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses
-mkdir -p "${EXAMPLE_CLUSTERCLASSES_DIR}"
 readonly EXAMPLE_CLUSTERS_DIR=examples/capi-quick-start
-mkdir -p "${EXAMPLE_CLUSTERS_DIR}"
+mkdir -p "${EXAMPLE_CLUSTERCLASSES_DIR}" "${EXAMPLE_CLUSTERS_DIR}"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+readonly REPO_ROOT
 
 for provider in "aws" "docker" "nutanix"; do
   kustomize build --load-restrictor LoadRestrictionsNone \
     ./hack/examples/overlays/clusterclasses/"${provider}" >"${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml
+  (cd "${REPO_ROOT}" && go run ./hack/tools/clusterclass-v1beta2/main.go) <"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml" >"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" && mv "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml"
 
   for cni in "calico" "cilium"; do
     for strategy in "helm-addon" "crs"; do
@@ -51,9 +54,18 @@ for provider in "nutanix"; do
 done
 unset provider cni strategy
 
+# Nutanix templates use Cluster v1beta2 (patch cluster-apiversion-v1beta2.yaml) so only classRef
+# is used; v1beta1 would reject classRef at apply time. Strip any legacy class line from other providers.
+for f in "${EXAMPLE_CLUSTERS_DIR}"/*.yaml; do
+  if [ -f "${f}" ]; then
+    sed '/^    class: /d' "${f}" >"${f}.tmp" && mv "${f}.tmp" "${f}"
+  fi
+done
+
 kustomize build --load-restrictor LoadRestrictionsNone \
-  ./hack/examples/overlays/clusterclasses/eks |
-  sed 's/ name: eks-eks-/ name: eks-/' >"${EXAMPLE_CLUSTERCLASSES_DIR}"/eks-cluster-class.yaml
+  ./hack/examples/overlays/clusterclasses/eks >"${EXAMPLE_CLUSTERCLASSES_DIR}"/eks-cluster-class.yaml
+(cd "${REPO_ROOT}" && go run ./hack/tools/clusterclass-v1beta2/main.go) <"${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml" >"${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml.tmp" && mv "${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml.tmp" "${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml"
+sed -i'' 's/ name: eks-eks-/ name: eks-/' "${EXAMPLE_CLUSTERCLASSES_DIR}"/eks-cluster-class.yaml
 
 kustomize build --load-restrictor LoadRestrictionsNone \
   ./hack/examples/overlays/clusters/eks \

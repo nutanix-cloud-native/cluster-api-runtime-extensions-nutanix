@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -23,76 +23,76 @@ func Test_shouldDeleteServicesWithLoadBalancer(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		cluster      *v1beta1.Cluster
+		cluster      *v1beta2.Cluster
 		shouldDelete bool
 	}{{
 		name: "should delete",
-		cluster: &v1beta1.Cluster{
+		cluster: &v1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster-should-delete",
 			},
-			Status: v1beta1.ClusterStatus{
-				Conditions: v1beta1.Conditions{{
-					Type:   v1beta1.ControlPlaneInitializedCondition,
-					Status: corev1.ConditionTrue,
+			Status: v1beta2.ClusterStatus{
+				Conditions: []metav1.Condition{{
+					Type:   v1beta2.ClusterControlPlaneInitializedCondition,
+					Status: metav1.ConditionTrue,
 				}},
-				Phase: string(v1beta1.ClusterPhaseProvisioned),
+				Phase: string(v1beta2.ClusterPhaseProvisioned),
 			},
 		},
 		shouldDelete: true,
 	}, {
 		name: "should delete: annotation is set to true",
-		cluster: &v1beta1.Cluster{
+		cluster: &v1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster-should-delete",
 				Annotations: map[string]string{
 					LoadBalancerGCAnnotation: "true",
 				},
 			},
-			Status: v1beta1.ClusterStatus{
-				Conditions: v1beta1.Conditions{{
-					Type:   v1beta1.ControlPlaneInitializedCondition,
-					Status: corev1.ConditionTrue,
+			Status: v1beta2.ClusterStatus{
+				Conditions: []metav1.Condition{{
+					Type:   v1beta2.ClusterControlPlaneInitializedCondition,
+					Status: metav1.ConditionTrue,
 				}},
-				Phase: string(v1beta1.ClusterPhaseProvisioned),
+				Phase: string(v1beta2.ClusterPhaseProvisioned),
 			},
 		},
 		shouldDelete: true,
 	}, {
 		name: "should not delete: annotation is set to false",
-		cluster: &v1beta1.Cluster{
+		cluster: &v1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster-should-delete",
 				Annotations: map[string]string{
 					LoadBalancerGCAnnotation: "false",
 				},
 			},
-			Status: v1beta1.ClusterStatus{
-				Phase: string(v1beta1.ClusterPhaseProvisioned),
+			Status: v1beta2.ClusterStatus{
+				Phase: string(v1beta2.ClusterPhaseProvisioned),
 			},
 		},
 		shouldDelete: false,
 	}, {
 		name: "should not delete: phase is Pending",
-		cluster: &v1beta1.Cluster{
+		cluster: &v1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster-should-delete",
 			},
-			Status: v1beta1.ClusterStatus{
-				Phase: string(v1beta1.ClusterPhasePending),
+			Status: v1beta2.ClusterStatus{
+				Phase: string(v1beta2.ClusterPhasePending),
 			},
 		},
 		shouldDelete: false,
 	}, {
 		name: "should not delete: ControlPlaneInitialized condition is False",
-		cluster: &v1beta1.Cluster{
+		cluster: &v1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster-should-delete",
 			},
-			Status: v1beta1.ClusterStatus{
-				Conditions: v1beta1.Conditions{{
-					Type:   v1beta1.ControlPlaneInitializedCondition,
-					Status: corev1.ConditionFalse,
+			Status: v1beta2.ClusterStatus{
+				Conditions: []metav1.Condition{{
+					Type:   v1beta2.ClusterControlPlaneInitializedCondition,
+					Status: metav1.ConditionFalse,
 				}},
 			},
 		},

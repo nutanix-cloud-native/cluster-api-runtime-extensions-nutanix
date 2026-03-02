@@ -1,5 +1,11 @@
 CLUSTERCTL_DISABLE_VERSIONCHECK: "true"
 
+# Required for ClusterClass external patches and ExtensionConfig (Runtime SDK).
+CLUSTER_TOPOLOGY: "true"
+EXP_RUNTIME_SDK: "true"
+EXP_MACHINE_POOL: "true"
+CAPA_EKS: "true"
+
 providers:
   - name: "aws"
     url: "https://github.com/nutanix-cloud-native/cluster-api-provider-aws/releases/${CAPA_VERSION}/infrastructure-components.yaml"
