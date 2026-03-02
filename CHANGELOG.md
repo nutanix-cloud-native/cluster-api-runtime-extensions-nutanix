@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.44.0 (2026-02-27)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: support registry addon PersistentVolume expansion by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1454
+* feat: Require every NTP server to be a unique IP or DNS name by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1492
+* feat: Preflight checks for validating pod and service CIDRs by @legacyrj in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1493
+### Fixes 🔧
+* fix: Skip preflight when only spec change is paused field by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1485
+* fix: changing self-hosted runners for CI jobs by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1494
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.43.0...v0.44.0
+
 ## 0.43.0 (2026-02-10)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
