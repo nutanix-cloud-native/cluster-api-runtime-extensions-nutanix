@@ -11,8 +11,8 @@ import (
 	"github.com/onsi/gomega"
 	"k8s.io/apiserver/pkg/storage/names"
 	"k8s.io/utils/ptr"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -41,7 +41,7 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				Passwd:       ptr.To("example"),
+				Passwd:       "example",
 				LockPassword: ptr.To(false),
 			},
 		},
@@ -54,7 +54,6 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				Passwd:       nil,
 				LockPassword: ptr.To(true),
 			},
 		},
@@ -68,7 +67,6 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				Passwd:       nil,
 				LockPassword: ptr.To(true),
 			},
 		},
@@ -82,7 +80,7 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				Sudo:         ptr.To("example"),
+				Sudo:         "example",
 				LockPassword: ptr.To(true),
 			},
 		},
@@ -95,7 +93,6 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				Sudo:         nil,
 				LockPassword: ptr.To(true),
 			},
 		},
@@ -109,7 +106,6 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				Sudo:         nil,
 				LockPassword: ptr.To(true),
 			},
 		},

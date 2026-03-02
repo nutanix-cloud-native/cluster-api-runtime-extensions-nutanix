@@ -7,7 +7,8 @@ metadata:
     preflight.cluster.caren.nutanix.com/skip: all
 spec:
   topology:
-    class: eks-quick-start
+    classRef:
+      name: eks-quick-start
     version: ${KUBERNETES_VERSION}
     variables: []
     controlPlane: {}

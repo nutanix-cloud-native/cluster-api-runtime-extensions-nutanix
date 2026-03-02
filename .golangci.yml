@@ -64,7 +64,7 @@ linters:
         - style
     importas:
       alias:
-        - pkg: sigs.k8s.io/cluster-api/api/v1beta1
+        - pkg: sigs.k8s.io/cluster-api/api/core/v1beta2
           alias: clusterv1
       no-unaliased: false
     lll:
@@ -151,6 +151,10 @@ linters:
           - gocritic
         path: internal/test/envtest
         text: 'hugeParam: input is heavy'
+      # CAPI v1beta1 packages are deprecated in v1.12+; suppress until the full v1beta2 migration is complete.
+      - linters:
+          - staticcheck
+        text: 'SA1019:.*is deprecated'
 
       # START kube-api-linter rules
       - path: ".*"

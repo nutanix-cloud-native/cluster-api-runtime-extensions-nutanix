@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -109,13 +109,19 @@ func TestDefaultingShouldBeSkippedWithNonTopologyCluster(t *testing.T) {
 			},
 		},
 	)
-	// Create a workload cluster.
+	// Create a workload cluster without topology (non-ClusterClass).
 	workloadCluster := &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-cluster-",
 			Namespace:    metav1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{},
+		Spec: clusterv1.ClusterSpec{
+			InfrastructureRef: clusterv1.ContractVersionedObjectReference{
+				APIGroup: "infrastructure.cluster.x-k8s.io",
+				Kind:     "DockerCluster",
+				Name:     "dummy",
+			},
+		},
 	}
 	g.Expect(env.Client.Create(ctx, workloadCluster)).To(Succeed())
 	t.Cleanup(func() {
@@ -123,7 +129,7 @@ func TestDefaultingShouldBeSkippedWithNonTopologyCluster(t *testing.T) {
 	})
 
 	// Validate that the registry addon is not automatically enabled in a non-topology cluster.
-	g.Expect(workloadCluster.Spec.Topology).To(BeNil())
+	g.Expect(workloadCluster.Spec.Topology.IsDefined()).To(BeFalse())
 }
 
 func TestDefaultingShouldBeSkippedWhenRegistryAlreadyEnabled(t *testing.T) {
@@ -275,7 +281,11 @@ func TestDefaultingShouldBeSkippedWhenManagementClusterHasNoTopology(t *testing.
 			Namespace:    metav1.NamespaceDefault,
 		},
 		Spec: clusterv1.ClusterSpec{
-			// No Topology field - simulates a non-ClusterClass management cluster
+			InfrastructureRef: clusterv1.ContractVersionedObjectReference{
+				APIGroup: "infrastructure.cluster.x-k8s.io",
+				Kind:     "DockerCluster",
+				Name:     "dummy",
+			},
 		},
 	}
 	g.Expect(env.Client.Create(ctx, managementCluster)).To(Succeed())
@@ -351,9 +361,9 @@ func createTestCluster(
 			Namespace:    metav1.NamespaceDefault,
 		},
 		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Class:   "dummy-class",
-				Version: "dummy-version",
+			Topology: clusterv1.Topology{
+				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+				Version:  "dummy-version",
 				Variables: []clusterv1.ClusterVariable{
 					*variable,
 				},

@@ -8,9 +8,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -87,9 +86,6 @@ func (h *imageRepositoryPatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting imageRepository in kubeadm config spec")
 
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{}
-			}
 			obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.ImageRepository = imageRepositoryVar
 
 			return nil

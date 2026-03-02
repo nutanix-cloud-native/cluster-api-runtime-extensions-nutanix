@@ -11,12 +11,11 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -44,10 +43,8 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{
-							ControlPlane: true,
-						},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -67,10 +64,8 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{
-							ControlPlane: true,
-						},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -90,10 +85,8 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd2": clusterv1.FailureDomainSpec{
-							ControlPlane: true,
-						},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -114,7 +107,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 						},
 					},
 					Spec: clusterv1.MachineSpec{
-						FailureDomain: ptr.To("fd1"), // Using fd1 which is now removed
+						FailureDomain: "fd1", // Using fd1 which is now removed
 					},
 				},
 			},
@@ -129,10 +122,8 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{
-							ControlPlane: false, // Disabled for control plane
-						},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(false)}, // Disabled for control plane
 					},
 				},
 			},
@@ -153,7 +144,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 						},
 					},
 					Spec: clusterv1.MachineSpec{
-						FailureDomain: ptr.To("fd1"), // Using fd1 which is now disabled
+						FailureDomain: "fd1", // Using fd1 which is now disabled
 					},
 				},
 			},
@@ -168,13 +159,9 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{
-							ControlPlane: true,
-						},
-						"fd2": clusterv1.FailureDomainSpec{
-							ControlPlane: true,
-						},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -195,7 +182,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 						},
 					},
 					Spec: clusterv1.MachineSpec{
-						FailureDomain: ptr.To("fd1"), // Using fd1 which is still available
+						FailureDomain: "fd1", // Using fd1 which is still available
 					},
 				},
 			},
@@ -209,13 +196,9 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{
-							ControlPlane: true,
-						},
-						"fd2": clusterv1.FailureDomainSpec{
-							ControlPlane: true,
-						},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -239,7 +222,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 						},
 					},
 					Spec: clusterv1.MachineSpec{
-						FailureDomain: ptr.To("fd1"),
+						FailureDomain: "fd1",
 					},
 				},
 				{
@@ -252,7 +235,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 						},
 					},
 					Spec: clusterv1.MachineSpec{
-						FailureDomain: ptr.To("fd1"),
+						FailureDomain: "fd1",
 					},
 				},
 				{
@@ -265,7 +248,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 						},
 					},
 					Spec: clusterv1.MachineSpec{
-						FailureDomain: ptr.To("fd1"),
+						FailureDomain: "fd1",
 					},
 				},
 			},
@@ -698,13 +681,15 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 				},
 				Spec: clusterv1.ClusterSpec{
 					// No Topology set
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -719,12 +704,12 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
 					// No ControlPlaneRef set
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -739,9 +724,11 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
@@ -759,15 +746,17 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd2": clusterv1.FailureDomainSpec{ControlPlane: false},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: ptr.To(false)},
 					},
 				},
 			},
@@ -811,8 +800,8 @@ func TestReconciler_shouldSkipRollout(t *testing.T) {
 					// No RolloutAfter set
 				},
 				Status: controlplanev1.KubeadmControlPlaneStatus{
-					Replicas:        3,
-					UpdatedReplicas: 3,
+					Replicas:         ptr.To[int32](3),
+					UpToDateReplicas: ptr.To[int32](3),
 				},
 			},
 			expectedSkip:         false,
@@ -827,11 +816,13 @@ func TestReconciler_shouldSkipRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: controlplanev1.KubeadmControlPlaneSpec{
-					RolloutAfter: &metav1.Time{Time: time.Now().Add(-5 * time.Minute)},
+					Rollout: controlplanev1.KubeadmControlPlaneRolloutSpec{
+						After: metav1.Time{Time: time.Now().Add(-5 * time.Minute)},
+					},
 				},
 				Status: controlplanev1.KubeadmControlPlaneStatus{
-					Replicas:        3,
-					UpdatedReplicas: 3,
+					Replicas:         ptr.To[int32](3),
+					UpToDateReplicas: ptr.To[int32](3),
 				},
 			},
 			expectedSkip:         true,
@@ -846,11 +837,13 @@ func TestReconciler_shouldSkipRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: controlplanev1.KubeadmControlPlaneSpec{
-					RolloutAfter: &metav1.Time{Time: time.Now().Add(-25 * time.Minute)},
+					Rollout: controlplanev1.KubeadmControlPlaneRolloutSpec{
+						After: metav1.Time{Time: time.Now().Add(-25 * time.Minute)},
+					},
 				},
 				Status: controlplanev1.KubeadmControlPlaneStatus{
-					Replicas:        3,
-					UpdatedReplicas: 3,
+					Replicas:         ptr.To[int32](3),
+					UpToDateReplicas: ptr.To[int32](3),
 				},
 			},
 			expectedSkip:         false,
@@ -868,8 +861,8 @@ func TestReconciler_shouldSkipRollout(t *testing.T) {
 					// No RolloutAfter set
 				},
 				Status: controlplanev1.KubeadmControlPlaneStatus{
-					Replicas:        3,
-					UpdatedReplicas: 1, // Rollout in progress
+					Replicas:         ptr.To[int32](3),
+					UpToDateReplicas: ptr.To[int32](1), // Rollout in progress
 				},
 			},
 			expectedSkip:         true,
@@ -887,12 +880,12 @@ func TestReconciler_shouldSkipRollout(t *testing.T) {
 					// No RolloutAfter set
 				},
 				Status: controlplanev1.KubeadmControlPlaneStatus{
-					Replicas:        3,
-					UpdatedReplicas: 3,
-					Conditions: []clusterv1.Condition{
+					Replicas:         ptr.To[int32](3),
+					UpToDateReplicas: ptr.To[int32](3),
+					Conditions: []metav1.Condition{
 						{
-							Type:   controlplanev1.MachinesSpecUpToDateCondition,
-							Status: corev1.ConditionFalse,
+							Type:   controlplanev1.KubeadmControlPlaneMachinesUpToDateCondition,
+							Status: metav1.ConditionFalse,
 						},
 					},
 				},
@@ -909,11 +902,13 @@ func TestReconciler_shouldSkipRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: controlplanev1.KubeadmControlPlaneSpec{
-					RolloutAfter: &metav1.Time{Time: time.Now().Add(-5 * time.Minute)},
+					Rollout: controlplanev1.KubeadmControlPlaneRolloutSpec{
+						After: metav1.Time{Time: time.Now().Add(-5 * time.Minute)},
+					},
 				},
 				Status: controlplanev1.KubeadmControlPlaneStatus{
-					Replicas:        3,
-					UpdatedReplicas: 1, // Also in progress
+					Replicas:         ptr.To[int32](3),
+					UpToDateReplicas: ptr.To[int32](1), // Also in progress
 				},
 			},
 			expectedSkip:         true,
@@ -957,14 +952,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -993,15 +990,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: false}, // Disabled
-						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(false)}, // Disabled
+						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -1030,16 +1029,18 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd3": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd3", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -1069,15 +1070,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -1106,17 +1109,19 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd3": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd4": clusterv1.FailureDomainSpec{ControlPlane: true}, // 4th FD added
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd3", ControlPlane: ptr.To(true)},
+						{Name: "fd4", ControlPlane: ptr.To(true)}, // 4th FD added
 					},
 				},
 			},
@@ -1146,15 +1151,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -1189,16 +1196,18 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Generation: 5, // Higher than observedGeneration
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
 					ObservedGeneration: 2, // Lower than generation
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -1233,16 +1242,18 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Generation: 5, // Higher than observedGeneration
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
 					ObservedGeneration: 2, // Lower than generation
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
-						"fd2": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -1278,14 +1289,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Finalizers:        []string{"test-finalizer"},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -1313,14 +1326,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -1352,14 +1367,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Finalizers:        []string{"test-finalizer"},
 				},
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{},
-					ControlPlaneRef: &corev1.ObjectReference{
-						Name: "test-kcp",
+					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+						Name:     "test-kcp",
+						Kind:     "KubeadmControlPlane",
+						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
 				Status: clusterv1.ClusterStatus{
-					FailureDomains: clusterv1.FailureDomains{
-						"fd1": clusterv1.FailureDomainSpec{ControlPlane: true},
+					FailureDomains: []clusterv1.FailureDomain{
+						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
 			},
@@ -1389,7 +1406,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Paused: true,
+					Paused: ptr.To(true),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{
@@ -1410,7 +1427,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Paused: false,
+					Paused: ptr.To(false),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{
@@ -1446,7 +1463,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}
 
 			// Store initial state
-			initialRolloutAfter := tt.kcp.Spec.RolloutAfter
+			initialRolloutAfter := tt.kcp.Spec.Rollout.After
 
 			// Execute reconciliation
 			req := reconcile.Request{
@@ -1472,7 +1489,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				require.Equal(
 					t,
 					initialRolloutAfter,
-					updatedKCP.Spec.RolloutAfter,
+					updatedKCP.Spec.Rollout.After,
 					"RolloutAfter should not be changed in requeue scenarios",
 				)
 			} else {
@@ -1484,17 +1501,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 				require.NoError(t, err, "Should be able to get updated KCP")
 
 				if tt.expectRolloutTriggered {
-					require.NotNil(t, updatedKCP.Spec.RolloutAfter, "RolloutAfter should be set")
-					require.NotEqual(t, initialRolloutAfter, updatedKCP.Spec.RolloutAfter, "RolloutAfter should be updated")
+					require.False(t, updatedKCP.Spec.Rollout.After.IsZero(), "RolloutAfter should be set")
+					require.NotEqual(t, initialRolloutAfter, updatedKCP.Spec.Rollout.After, "RolloutAfter should be updated")
 					require.WithinDuration(
 						t,
 						time.Now(),
-						updatedKCP.Spec.RolloutAfter.Time,
+						updatedKCP.Spec.Rollout.After.Time,
 						5*time.Second,
 						"RolloutAfter should be recent",
 					)
 				} else {
-					require.Equal(t, initialRolloutAfter, updatedKCP.Spec.RolloutAfter, "RolloutAfter should not be changed")
+					require.Equal(t, initialRolloutAfter, updatedKCP.Spec.Rollout.After, "RolloutAfter should not be changed")
 				}
 			}
 		})
@@ -1799,7 +1816,7 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Paused: false,
+					Paused: ptr.To(false),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{
@@ -1819,7 +1836,7 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Paused: true,
+					Paused: ptr.To(true),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{
@@ -1851,7 +1868,7 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Paused: true,
+					Paused: ptr.To(true),
 				},
 			},
 			kcp:            nil,
@@ -1873,7 +1890,7 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1.ClusterSpec{
-					Paused: false,
+					Paused: ptr.To(false),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{
@@ -1954,7 +1971,7 @@ func createMachine(name, failureDomain string) clusterv1.Machine {
 			},
 		},
 		Spec: clusterv1.MachineSpec{
-			FailureDomain: ptr.To(failureDomain),
+			FailureDomain: failureDomain,
 		},
 	}
 }

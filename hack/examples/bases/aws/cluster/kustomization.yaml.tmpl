@@ -20,8 +20,9 @@ patches:
     kind: Cluster
   patch: |-
     - op: "add"
-      path: "/spec/topology/class"
-      value: "aws-quick-start"
+      path: "/spec/topology/classRef"
+      value:
+        name: aws-quick-start
     - op: "remove"
       path: "/metadata/labels"
 - target:

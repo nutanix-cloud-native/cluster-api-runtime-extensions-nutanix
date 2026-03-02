@@ -10,7 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,7 +23,8 @@ func copyClusterClassAndTemplates(
 ) error {
 	target := copyObjectForCreate(source, source.Name, namespace)
 
-	if err := walkReferences(ctx, target, func(ctx context.Context, ref *corev1.ObjectReference) error {
+	// Use source (not target) for walking references so we fetch templates from the source namespace.
+	if err := walkReferences(ctx, source, func(ctx context.Context, ref *corev1.ObjectReference) error {
 		// Get referenced Template
 		sourceTemplate, err := getReference(ctx, templateReader, ref)
 		if err != nil {

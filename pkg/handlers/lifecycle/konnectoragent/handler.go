@@ -18,9 +18,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -33,6 +33,7 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/utils"
@@ -118,8 +119,14 @@ func (n *DefaultKonnectorAgent) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
+	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
+		return
+	}
 	commonResponse := &runtimehooksv1.CommonResponse{}
-	n.apply(ctx, &req.Cluster, commonResponse)
+	n.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
 }
@@ -129,8 +136,14 @@ func (n *DefaultKonnectorAgent) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
+	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
+		return
+	}
 	commonResponse := &runtimehooksv1.CommonResponse{}
-	n.apply(ctx, &req.Cluster, commonResponse)
+	n.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
 }
@@ -340,16 +353,16 @@ func extractCategoryMappings(cluster *clusterv1.Cluster) string {
 	var categories []string
 
 	// Extract control plane nodes categories from cluster topology variables
-	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Variables != nil {
+	if cluster.Spec.Topology.IsDefined() && cluster.Spec.Topology.Variables != nil {
 		varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 		categories = append(categories, extractCategoriesFromVarMap(varMap)...)
 	}
 
 	// Append machine deployment overrides from all machine deployments
-	if cluster.Spec.Topology != nil && cluster.Spec.Topology.Workers != nil {
+	if cluster.Spec.Topology.IsDefined() && len(cluster.Spec.Topology.Workers.MachineDeployments) > 0 {
 		for i := range cluster.Spec.Topology.Workers.MachineDeployments {
 			md := &cluster.Spec.Topology.Workers.MachineDeployments[i]
-			if md.Variables != nil && len(md.Variables.Overrides) > 0 {
+			if len(md.Variables.Overrides) > 0 {
 				mdVarMap := variables.ClusterVariablesToVariablesMap(md.Variables.Overrides)
 				mdCategories := extractCategoriesFromVarMap(mdVarMap)
 				if len(mdCategories) > 0 {
@@ -436,7 +449,12 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	req *runtimehooksv1.BeforeClusterDeleteRequest,
 	resp *runtimehooksv1.BeforeClusterDeleteResponse,
 ) {
-	cluster := &req.Cluster
+	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
+		return
+	}
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(
@@ -444,8 +462,15 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		clusterKey,
 	)
 
+	if !cluster.Spec.Topology.IsDefined() {
+		log.Info(
+			"Skipping Konnector Agent cleanup, cluster has no topology",
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	_, err := variables.Get[apivariables.NutanixKonnectorAgent](
+	_, err = variables.Get[apivariables.NutanixKonnectorAgent](
 		varMap,
 		n.variableName,
 		n.variablePath...)

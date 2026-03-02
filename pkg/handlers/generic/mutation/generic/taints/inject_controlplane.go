@@ -6,11 +6,12 @@ package taints
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"k8s.io/utils/ptr"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -85,19 +86,19 @@ func (h *taintsControlPlanePatchHandler) Mutate(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding taints to worker node kubeadm config template")
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1.InitConfiguration{}
-			}
-			if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration == nil {
-				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
-			}
-			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints = toCoreTaints(
+			initTaints := ptr.Deref(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints,
-				taintsVar,
+				[]corev1.Taint{},
 			)
-			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints = toCoreTaints(
+			joinTaints := ptr.Deref(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints,
-				taintsVar,
+				[]corev1.Taint{},
+			)
+			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints = ptr.To(
+				toCoreTaints(initTaints, taintsVar),
+			)
+			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints = ptr.To(
+				toCoreTaints(joinTaints, taintsVar),
 			)
 
 			return nil

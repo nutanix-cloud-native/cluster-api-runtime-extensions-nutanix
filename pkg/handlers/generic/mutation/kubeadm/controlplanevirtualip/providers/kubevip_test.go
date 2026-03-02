@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -42,9 +42,9 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				}}),
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "v1.29.0",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "v1.29.0",
 					},
 				},
 			},
@@ -81,9 +81,9 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				}}),
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "v1.28.0",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "v1.28.0",
 					},
 				},
 			},
@@ -115,9 +115,9 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				}}),
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "v1.28.0",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "v1.28.0",
 					},
 				},
 			},
@@ -148,9 +148,9 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				}}),
 			cluster: &clusterv1.Cluster{
 				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "v1.28.0",
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+						Version:  "v1.28.0",
 					},
 				},
 			},

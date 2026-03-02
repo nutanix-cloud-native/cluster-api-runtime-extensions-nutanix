@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -88,6 +88,12 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 				GenerateName: "test-management-cluster-",
 				Namespace:    corev1.NamespaceDefault,
 			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
+			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
 
@@ -120,6 +126,12 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-management-cluster-",
 				Namespace:    corev1.NamespaceDefault,
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
 			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
@@ -184,6 +196,12 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
 			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
+			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
 
@@ -219,6 +237,12 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
 			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
@@ -267,6 +291,12 @@ var _ = Describe("Test EnsureRegistryServerCertificateSecretOnRemoteCluster", fu
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
 			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
@@ -333,6 +363,12 @@ var _ = Describe("Test EnsureRegistryServerCertificateSecretOnRemoteCluster", fu
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
+			},
+			Spec: clusterv1.ClusterSpec{
+				Topology: clusterv1.Topology{
+					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
 			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())

@@ -14,7 +14,8 @@ spec:
       cidrBlocks:
       - ${SERVICE_CIDR:-10.128.0.0/12}
   topology:
-    class: aws-quick-start
+    classRef:
+      name: aws-quick-start
     controlPlane:
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}
     variables:

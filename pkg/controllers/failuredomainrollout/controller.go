@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	"k8s.io/utils/ptr"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -80,12 +80,12 @@ func (r *Reconciler) areResourcesPaused(cluster *clusterv1.Cluster, kcp *control
 // shouldSkipClusterReconciliation checks if the cluster should be skipped for reconciliation
 // based on early validation checks. Returns true if reconciliation should be skipped.
 func (r *Reconciler) shouldSkipClusterReconciliation(cluster *clusterv1.Cluster, logger logr.Logger) bool {
-	if cluster.Spec.Topology == nil {
+	if !cluster.Spec.Topology.IsDefined() {
 		logger.V(5).Info("Cluster is not using topology, skipping reconciliation")
 		return true
 	}
 
-	if cluster.Spec.ControlPlaneRef == nil {
+	if cluster.Spec.ControlPlaneRef.Kind == "" {
 		logger.V(5).Info("Cluster has no control plane reference, skipping reconciliation")
 		return true
 	}
@@ -175,7 +175,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Set rolloutAfter to trigger immediate rollout
 	now := metav1.Now()
 	kcpCopy := kcp.DeepCopy()
-	kcpCopy.Spec.RolloutAfter = &now
+	kcpCopy.Spec.Rollout.After = now
 
 	if err := r.Update(ctx, kcpCopy); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to update KubeAdmControlPlane %s: %w", kcpKey, err)
@@ -206,8 +206,8 @@ func (r *Reconciler) getMachineDistribution(ctx context.Context, cluster *cluste
 		if !machines.Items[i].DeletionTimestamp.IsZero() {
 			continue
 		}
-		if machines.Items[i].Spec.FailureDomain != nil {
-			distribution[*machines.Items[i].Spec.FailureDomain]++
+		if machines.Items[i].Spec.FailureDomain != "" {
+			distribution[machines.Items[i].Spec.FailureDomain]++
 		}
 	}
 
@@ -228,12 +228,13 @@ func (r *Reconciler) shouldTriggerRollout(
 		return false, "", fmt.Errorf("failed to get current machine distribution: %w", err)
 	}
 
+	fdMap := failureDomainsToMap(cluster.Status.FailureDomains)
 	// Check if any currently used failure domain is disabled or removed
 	for usedFD := range currentDistribution {
-		if fd, exists := cluster.Status.FailureDomains[usedFD]; !exists {
+		if fd, exists := fdMap[usedFD]; !exists {
 			logger.V(5).Info("Found removed failure domain in use", "failureDomain", usedFD)
 			return true, fmt.Sprintf("failure domain %s is removed", usedFD), nil
-		} else if !fd.ControlPlane {
+		} else if !ptr.Deref(fd.ControlPlane, false) {
 			logger.V(5).Info("Found disabled failure domain in use", "failureDomain", usedFD)
 			return true, fmt.Sprintf("failure domain %s is disabled for control plane", usedFD), nil
 		}
@@ -252,22 +253,22 @@ func (r *Reconciler) shouldTriggerRollout(
 // Returns true if rollout should be skipped and the duration to wait before checking again.
 func (r *Reconciler) shouldSkipRollout(kcp *controlplanev1.KubeadmControlPlane) (bool, time.Duration) {
 	// Check if rollout was triggered recently
-	if kcp.Spec.RolloutAfter != nil {
-		timeSinceRollout := time.Since(kcp.Spec.RolloutAfter.Time)
+	if !kcp.Spec.Rollout.After.IsZero() {
+		timeSinceRollout := time.Since(kcp.Spec.Rollout.After.Time)
 		if timeSinceRollout < 15*time.Minute {
 			return true, 5 * time.Minute
 		}
 	}
 
 	// Check if KCP is currently rolling out by comparing updated vs total replicas
-	if kcp.Status.UpdatedReplicas < kcp.Status.Replicas {
+	if ptr.Deref(kcp.Status.UpToDateReplicas, 0) < ptr.Deref(kcp.Status.Replicas, 0) {
 		return true, 2 * time.Minute
 	}
 
 	// Check conditions for ongoing updates
 	for _, condition := range kcp.Status.Conditions {
-		if condition.Type == controlplanev1.MachinesSpecUpToDateCondition &&
-			condition.Status == corev1.ConditionFalse {
+		if condition.Type == controlplanev1.KubeadmControlPlaneMachinesUpToDateCondition &&
+			condition.Status == metav1.ConditionFalse {
 			return true, 2 * time.Minute
 		}
 	}
@@ -355,12 +356,21 @@ func (r *Reconciler) calculateMaxIdealPerFD(replicas, availableCount int) int {
 	return base
 }
 
+// failureDomainsToMap converts a list of failure domains to a map by name.
+func failureDomainsToMap(fds []clusterv1.FailureDomain) map[string]clusterv1.FailureDomain {
+	m := make(map[string]clusterv1.FailureDomain, len(fds))
+	for _, fd := range fds {
+		m[fd.Name] = fd
+	}
+	return m
+}
+
 // getAvailableFailureDomains returns the names of available failure domains for control plane.
-func getAvailableFailureDomains(failureDomains clusterv1.FailureDomains) []string {
+func getAvailableFailureDomains(failureDomains []clusterv1.FailureDomain) []string {
 	var available []string
-	for fd, info := range failureDomains {
-		if info.ControlPlane {
-			available = append(available, fd)
+	for _, fd := range failureDomains {
+		if ptr.Deref(fd.ControlPlane, false) {
+			available = append(available, fd.Name)
 		}
 	}
 	return available
