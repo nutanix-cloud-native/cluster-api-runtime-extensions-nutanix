@@ -96,10 +96,14 @@ spec:
                 value: "false"
               - name: terminated-pod-gc-threshold
                 value: "10000"
+              - name: tls-min-version
+                value: VersionTLS12
           scheduler:
             extraArgs:
               - name: profiling
                 value: "false"
+              - name: tls-min-version
+                value: VersionTLS12
         files:
           - content: |
               apiVersion: kubelet.config.k8s.io/v1beta1

@@ -103,3 +103,9 @@ patches:
       kind: KubeadmConfigTemplate
     path: ../../../patches/cis/kubeadmconfigtemplate/kubelet-file-permissions.yaml
   # END CIS patches
+
+  # BEGIN STIG patches
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/stig/kubeadmcontrolplanetemplate/control-plane-flags.yaml
+  # END STIG patches
