@@ -201,9 +201,6 @@ func RetrieveValuesTemplate(
 }
 
 // NormalizeHelmChartOCIRepoURL normalizes OCI repository URLs for HelmChartProxy.
-// The CAPI Helm addon provider expects RepoURL to be the OCI registry base (e.g. oci://harbor.example.com/project)
-// and ChartName to be the chart name. When users override with a full OCI path (e.g. oci://harbor.example.com/project/chart-name),
-// we strip the chart name suffix so the provider receives the correct RepoURL and ChartName.
 func NormalizeHelmChartOCIRepoURL(repoURL, chartName string) (repoURLOut, chartNameOut string) {
 	repoURLOut = repoURL
 	chartNameOut = chartName

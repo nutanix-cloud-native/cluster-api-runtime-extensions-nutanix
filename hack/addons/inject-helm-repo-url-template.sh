@@ -15,11 +15,13 @@ source "${SCRIPT_DIR}/../common.sh"
 
 HELM_CONFIG="${GIT_REPO_ROOT}/charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml"
 
-if [[ ! -f "${HELM_CONFIG}" ]]; then
+if [[ ! -f ${HELM_CONFIG} ]]; then
   echo "error: ${HELM_CONFIG} not found" >&2
   exit 1
 fi
 
+# Single quotes intentional: yq expression must be passed literally (no shell expansion)
+# shellcheck disable=SC2016
 yq -i '
   .data |= with_entries(
     .key as $k
