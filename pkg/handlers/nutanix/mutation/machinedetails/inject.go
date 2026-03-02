@@ -10,8 +10,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -67,7 +67,7 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.V(5).Info("Nutanix machine details variable for workers not defined")
+			log.V(5).Info("Nutanix machine details variable not defined, skipping patch")
 			return nil
 		}
 		return err
@@ -92,7 +92,7 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-			).Info("setting Nutanix machine details in worker NutanixMachineTemplate spec")
+			).Info("setting Nutanix machine details in NutanixMachineTemplate spec")
 
 			spec := obj.Spec.Template.Spec
 
