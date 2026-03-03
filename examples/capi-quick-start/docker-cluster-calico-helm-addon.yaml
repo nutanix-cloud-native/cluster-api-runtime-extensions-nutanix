@@ -15,7 +15,7 @@ spec:
       - ${SERVICE_CIDR:-10.128.0.0/12}
   topology:
     classRef:
-      name: quick-start
+      name: docker-quick-start
     controlPlane:
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}
     variables:

@@ -26,16 +26,16 @@ spec:
       templateRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
         kind: DockerMachineTemplate
-        name: quick-start-control-plane
+        name: docker-quick-start-control-plane
     templateRef:
       apiVersion: controlplane.cluster.x-k8s.io/v1beta2
       kind: KubeadmControlPlaneTemplate
-      name: quick-start-control-plane
+      name: docker-quick-start-control-plane
   infrastructure:
     templateRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
       kind: DockerClusterTemplate
-      name: quick-start-cluster
+      name: docker-quick-start-cluster
   patches:
     - external:
         discoverVariablesExtension: dockerclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
@@ -51,7 +51,7 @@ spec:
           templateRef:
             apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
             kind: KubeadmConfigTemplate
-            name: quick-start-default-worker-bootstraptemplate
+            name: docker-quick-start-default-worker-bootstraptemplate
         class: default-worker
         healthCheck:
           checks:
@@ -73,7 +73,7 @@ spec:
           templateRef:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: DockerMachineTemplate
-            name: quick-start-default-worker-machinetemplate
+            name: docker-quick-start-default-worker-machinetemplate
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: DockerClusterTemplate
