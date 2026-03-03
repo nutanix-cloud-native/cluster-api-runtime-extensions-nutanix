@@ -18,3 +18,7 @@ extraEnv:
   - name: KUBERNETES_SERVICE_PORT
     value: "{{ .Port }}"
 {{- end }}
+
+# For the Metro milestone-1 QA drop
+image:
+  tag: "0.7.0-alpha.1"
