@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -119,7 +119,7 @@ func (n *DefaultCOSIController) BeforeClusterUpgrade(
 
 func (n *DefaultCOSIController) apply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)

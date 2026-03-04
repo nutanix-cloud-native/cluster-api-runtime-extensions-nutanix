@@ -15,7 +15,7 @@ import (
 	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	clusterctlcluster "sigs.k8s.io/cluster-api/cmd/clusterctl/client/cluster"
 	"sigs.k8s.io/cluster-api/test/framework"
 
@@ -53,7 +53,7 @@ const (
 )
 
 var (
-	coreGroupVersion = clusterv1.GroupVersion.String()
+	coreGroupVersion = clusterv1beta2.GroupVersion.String()
 
 	clusterOwner = metav1.OwnerReference{
 		Kind:       clusterKind,

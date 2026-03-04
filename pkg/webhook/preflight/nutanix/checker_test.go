@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 
@@ -249,7 +249,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 
 			// Call Init
 			ctx := context.Background()
-			checks := checker.Init(ctx, nil, &clusterv1.Cluster{
+			checks := checker.Init(ctx, nil, &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "default",
@@ -400,7 +400,7 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 				},
 			}
 
-			cluster := &clusterv1.Cluster{
+			cluster := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: tt.annotations,
 				},

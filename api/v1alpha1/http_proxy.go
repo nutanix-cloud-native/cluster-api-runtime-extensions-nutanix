@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 const (
@@ -44,7 +44,7 @@ type HTTPProxy struct {
 // GenerateNoProxy creates default NO_PROXY values that should be applied on cluster
 // in any environment and are preventing the use of proxy for cluster internal
 // networking. It appends additional values from HTTPProxy.AdditionalNo.
-func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1.Cluster) []string {
+func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1beta2.Cluster) []string {
 	noProxy := []string{
 		"localhost",
 		"127.0.0.1",

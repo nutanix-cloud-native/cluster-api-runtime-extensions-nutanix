@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -27,7 +27,7 @@ func (p *fakeCSIProvider) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
 	defaultStorage v1alpha1.DefaultStorage,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) error {
 	return p.returnedErr
@@ -54,11 +54,11 @@ func testReq(csi *apivariables.CSI) (*runtimehooksv1.AfterControlPlaneInitialize
 		return nil, err
 	}
 
-	cluster := &clusterv1.Cluster{
-		Spec: clusterv1.ClusterSpec{
-			Topology: clusterv1.Topology{
-				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
-				Variables: []clusterv1.ClusterVariable{
+	cluster := &clusterv1beta2.Cluster{
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+				Variables: []clusterv1beta2.ClusterVariable{
 					*cv,
 				},
 			},

@@ -19,7 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,7 +32,7 @@ import (
 
 type WaitForCSIToBeReadyInWorkloadClusterInput struct {
 	CSI                         *apivariables.CSI
-	WorkloadCluster             *clusterv1.Cluster
+	WorkloadCluster             *clusterv1beta2.Cluster
 	ClusterProxy                framework.ClusterProxy
 	DeploymentIntervals         []interface{}
 	DaemonSetIntervals          []interface{}
@@ -131,7 +131,7 @@ func WaitForCSIToBeReadyInWorkloadCluster(
 
 type waitForLocalPathCSIToBeReadyInWorkloadClusterInput struct {
 	strategy                    v1alpha1.AddonStrategy
-	workloadCluster             *clusterv1.Cluster
+	workloadCluster             *clusterv1beta2.Cluster
 	clusterProxy                framework.ClusterProxy
 	deploymentIntervals         []interface{}
 	helmReleaseIntervals        []interface{}
@@ -199,7 +199,7 @@ func waitForLocalPathCSIToBeReadyInWorkloadCluster(
 
 type waitForAWSEBSCSIToBeReadyInWorkloadClusterInput struct {
 	strategy                    v1alpha1.AddonStrategy
-	workloadCluster             *clusterv1.Cluster
+	workloadCluster             *clusterv1beta2.Cluster
 	clusterProxy                framework.ClusterProxy
 	deploymentIntervals         []interface{}
 	daemonSetIntervals          []interface{}
@@ -277,7 +277,7 @@ func waitForAWSEBSCSIToBeReadyInWorkloadCluster(
 
 type waitForNutanixCSIToBeReadyInWorkloadClusterInput struct {
 	strategy             v1alpha1.AddonStrategy
-	workloadCluster      *clusterv1.Cluster
+	workloadCluster      *clusterv1beta2.Cluster
 	clusterProxy         framework.ClusterProxy
 	deploymentIntervals  []interface{}
 	daemonSetIntervals   []interface{}
@@ -337,7 +337,7 @@ type waitForStorageClassesToExistInWorkloadClusterInput struct {
 	providerName                  string
 	storageClasses                map[string]v1alpha1.StorageClassConfig
 	defaultStorage                v1alpha1.DefaultStorage
-	workloadCluster               *clusterv1.Cluster
+	workloadCluster               *clusterv1beta2.Cluster
 	clusterProxy                  framework.ClusterProxy
 	defaultStorageClassParameters map[string]string
 }
@@ -438,7 +438,7 @@ func waitForStorageClassToExistInWorkloadCluster(
 
 type waitForSnapshotControllerToBeReadyInWorkloadClusterInput struct {
 	strategy                    v1alpha1.AddonStrategy
-	workloadCluster             *clusterv1.Cluster
+	workloadCluster             *clusterv1beta2.Cluster
 	clusterProxy                framework.ClusterProxy
 	deploymentIntervals         []interface{}
 	helmReleaseIntervals        []interface{}

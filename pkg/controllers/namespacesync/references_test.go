@@ -9,7 +9,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
 )
@@ -17,7 +17,7 @@ import (
 func TestWalkReferences(t *testing.T) {
 	tests := []struct {
 		name         string
-		clusterClass *clusterv1.ClusterClass
+		clusterClass *clusterv1beta2.ClusterClass
 	}{
 		{
 			name:         "nil ClusterClass should return nil without calling callback",
@@ -151,7 +151,7 @@ func TestWalkReferences(t *testing.T) {
 	}
 }
 
-func collectExpectedRefs(cc *clusterv1.ClusterClass) []*corev1.ObjectReference {
+func collectExpectedRefs(cc *clusterv1beta2.ClusterClass) []*corev1.ObjectReference {
 	var refs []*corev1.ObjectReference
 
 	if ref := cc.Spec.Infrastructure.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {

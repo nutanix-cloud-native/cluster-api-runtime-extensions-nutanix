@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -79,7 +79,7 @@ func newConfigurationCheck(
 				failureDomainByMachineDeploymentName[md.Name] = md.FailureDomain
 			}
 
-			var workerConfigVar *clusterv1.ClusterVariable
+			var workerConfigVar *clusterv1beta2.ClusterVariable
 			var workerConfigFieldPath string
 			if len(md.Variables.Overrides) > 0 {
 				workerConfigVar = variables.GetClusterVariableByName(

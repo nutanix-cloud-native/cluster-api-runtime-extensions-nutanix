@@ -11,7 +11,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,7 +28,7 @@ type MutateFunc func(
 	clusterKey client.ObjectKey,
 ) error
 
-type ClusterGetter func(context.Context) (*clusterv1.Cluster, error)
+type ClusterGetter func(context.Context) (*clusterv1beta2.Cluster, error)
 
 type MetaMutator interface {
 	Mutate(
@@ -65,10 +65,10 @@ func (mgp metaGeneratePatches) Name() string {
 
 func (mgp metaGeneratePatches) CreateClusterGetter(
 	clusterKey client.ObjectKey,
-) func(context.Context) (*clusterv1.Cluster, error) {
-	return func(ctx context.Context) (*clusterv1.Cluster, error) {
+) func(context.Context) (*clusterv1beta2.Cluster, error) {
+	return func(ctx context.Context) (*clusterv1beta2.Cluster, error) {
 		var (
-			cluster clusterv1.Cluster
+			cluster clusterv1beta2.Cluster
 			err     error
 			once    sync.Once
 		)

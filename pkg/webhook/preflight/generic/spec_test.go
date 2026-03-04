@@ -10,7 +10,7 @@ import (
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
@@ -19,16 +19,16 @@ import (
 func TestNewConfigurationCheck(t *testing.T) {
 	tests := []struct {
 		name                             string
-		cluster                          *clusterv1.Cluster
+		cluster                          *clusterv1beta2.Cluster
 		expectedResult                   preflight.CheckResult
 		expectedGenericClusterConfigSpec bool
 	}{
 		{
 			name: "global image registry mirror config",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -55,10 +55,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "multiple image registries config",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -87,10 +87,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "invalid cluster config json",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{

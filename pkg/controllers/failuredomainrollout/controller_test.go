@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -24,26 +24,26 @@ import (
 
 func TestReconciler_shouldTriggerRollout(t *testing.T) {
 	scheme := runtime.NewScheme()
-	require.NoError(t, clusterv1.AddToScheme(scheme))
+	require.NoError(t, clusterv1beta2.AddToScheme(scheme))
 	require.NoError(t, controlplanev1.AddToScheme(scheme))
 
 	tests := []struct {
 		name            string
-		cluster         *clusterv1.Cluster
+		cluster         *clusterv1beta2.Cluster
 		kcp             *controlplanev1.KubeadmControlPlane
-		machines        []clusterv1.Machine
+		machines        []clusterv1beta2.Machine
 		expectedRollout bool
 		expectedReason  string
 	}{
 		{
 			name: "no previous hash - should not trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
@@ -58,13 +58,13 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 		},
 		{
 			name: "same failure domains - should not trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
@@ -79,13 +79,13 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 		},
 		{
 			name: "used failure domain removed - should trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
@@ -96,17 +96,17 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-machine-1",
 						Namespace: "test-namespace",
 						Labels: map[string]string{
-							clusterv1.ClusterNameLabel:         "test-cluster",
-							clusterv1.MachineControlPlaneLabel: "",
+							clusterv1beta2.ClusterNameLabel:         "test-cluster",
+							clusterv1beta2.MachineControlPlaneLabel: "",
 						},
 					},
-					Spec: clusterv1.MachineSpec{
+					Spec: clusterv1beta2.MachineSpec{
 						FailureDomain: "fd1", // Using fd1 which is now removed
 					},
 				},
@@ -116,13 +116,13 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 		},
 		{
 			name: "used failure domain disabled - should trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(false)}, // Disabled for control plane
 					},
 				},
@@ -133,17 +133,17 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-machine-1",
 						Namespace: "test-namespace",
 						Labels: map[string]string{
-							clusterv1.ClusterNameLabel:         "test-cluster",
-							clusterv1.MachineControlPlaneLabel: "",
+							clusterv1beta2.ClusterNameLabel:         "test-cluster",
+							clusterv1beta2.MachineControlPlaneLabel: "",
 						},
 					},
-					Spec: clusterv1.MachineSpec{
+					Spec: clusterv1beta2.MachineSpec{
 						FailureDomain: "fd1", // Using fd1 which is now disabled
 					},
 				},
@@ -153,13 +153,13 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 		},
 		{
 			name: "new failure domain added - should not trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
@@ -171,17 +171,17 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-machine-1",
 						Namespace: "test-namespace",
 						Labels: map[string]string{
-							clusterv1.ClusterNameLabel:         "test-cluster",
-							clusterv1.MachineControlPlaneLabel: "",
+							clusterv1beta2.ClusterNameLabel:         "test-cluster",
+							clusterv1beta2.MachineControlPlaneLabel: "",
 						},
 					},
-					Spec: clusterv1.MachineSpec{
+					Spec: clusterv1beta2.MachineSpec{
 						FailureDomain: "fd1", // Using fd1 which is still available
 					},
 				},
@@ -190,13 +190,13 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 		},
 		{
 			name: "new failure domain improves distribution - should trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
@@ -211,17 +211,17 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 					Replicas: ptr.To[int32](3),
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-machine-1",
 						Namespace: "test-namespace",
 						Labels: map[string]string{
-							clusterv1.ClusterNameLabel:         "test-cluster",
-							clusterv1.MachineControlPlaneLabel: "",
+							clusterv1beta2.ClusterNameLabel:         "test-cluster",
+							clusterv1beta2.MachineControlPlaneLabel: "",
 						},
 					},
-					Spec: clusterv1.MachineSpec{
+					Spec: clusterv1beta2.MachineSpec{
 						FailureDomain: "fd1",
 					},
 				},
@@ -230,11 +230,11 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 						Name:      "test-machine-2",
 						Namespace: "test-namespace",
 						Labels: map[string]string{
-							clusterv1.ClusterNameLabel:         "test-cluster",
-							clusterv1.MachineControlPlaneLabel: "",
+							clusterv1beta2.ClusterNameLabel:         "test-cluster",
+							clusterv1beta2.MachineControlPlaneLabel: "",
 						},
 					},
-					Spec: clusterv1.MachineSpec{
+					Spec: clusterv1beta2.MachineSpec{
 						FailureDomain: "fd1",
 					},
 				},
@@ -243,11 +243,11 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 						Name:      "test-machine-3",
 						Namespace: "test-namespace",
 						Labels: map[string]string{
-							clusterv1.ClusterNameLabel:         "test-cluster",
-							clusterv1.MachineControlPlaneLabel: "",
+							clusterv1beta2.ClusterNameLabel:         "test-cluster",
+							clusterv1beta2.MachineControlPlaneLabel: "",
 						},
 					},
-					Spec: clusterv1.MachineSpec{
+					Spec: clusterv1beta2.MachineSpec{
 						FailureDomain: "fd1",
 					},
 				},
@@ -285,13 +285,13 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 
 func TestReconciler_shouldImproveDistribution(t *testing.T) {
 	scheme := runtime.NewScheme()
-	require.NoError(t, clusterv1.AddToScheme(scheme))
+	require.NoError(t, clusterv1beta2.AddToScheme(scheme))
 	require.NoError(t, controlplanev1.AddToScheme(scheme))
 
 	tests := []struct {
 		name                    string
 		replicas                int32
-		machines                []clusterv1.Machine
+		machines                []clusterv1beta2.Machine
 		availableFailureDomains []string
 		expectedImprove         bool
 		description             string
@@ -300,7 +300,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "1 replica, 1 FD - already optimal",
 			replicas: 1,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 			},
 			availableFailureDomains: []string{"fd1"},
@@ -310,7 +310,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "1 replica, 1 FD, new FD added - no improvement possible",
 			replicas: 1,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 			},
 			availableFailureDomains: []string{"fd1", "fd2"},
@@ -322,7 +322,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "3 replicas, 1 FD - should improve when 2nd FD added",
 			replicas: 3,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd1"),
 				createMachine("m3", "fd1"),
@@ -334,7 +334,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "3 replicas, 2 FDs [2,1] - should improve when 3rd FD added",
 			replicas: 3,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd1"),
 				createMachine("m3", "fd2"),
@@ -346,7 +346,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "3 replicas, 3 FDs [1,1,1] - already optimal",
 			replicas: 3,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 				createMachine("m3", "fd3"),
@@ -358,7 +358,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "3 replicas, 3 FDs [1,1,1], 4th FD added - no improvement needed",
 			replicas: 3,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 				createMachine("m3", "fd3"),
@@ -372,7 +372,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "5 replicas, 1 FD - should improve when 2nd FD added",
 			replicas: 5,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd1"),
 				createMachine("m3", "fd1"),
@@ -386,7 +386,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "5 replicas, 2 FDs [3,2] - should improve when 3rd FD added",
 			replicas: 5,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd1"),
 				createMachine("m3", "fd1"),
@@ -400,7 +400,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "5 replicas, 3 FDs [2,2,1] - should improve when 4th FD added",
 			replicas: 5,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd1"),
 				createMachine("m3", "fd2"),
@@ -414,7 +414,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "5 replicas, 4 FDs [2,1,1,1] - should improve when 5th FD added",
 			replicas: 5,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd1"),
 				createMachine("m3", "fd2"),
@@ -428,7 +428,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "5 replicas, 5 FDs [1,1,1,1,1] - already optimal",
 			replicas: 5,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 				createMachine("m3", "fd3"),
@@ -442,7 +442,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:     "5 replicas, 5 FDs [1,1,1,1,1], 6th FD added - no improvement needed",
 			replicas: 5,
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 				createMachine("m3", "fd3"),
@@ -458,7 +458,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:                    "no replicas specified",
 			replicas:                0,
-			machines:                []clusterv1.Machine{},
+			machines:                []clusterv1beta2.Machine{},
 			availableFailureDomains: []string{"fd1", "fd2"},
 			expectedImprove:         false,
 			description:             "0 replicas should not trigger improvement",
@@ -467,7 +467,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 		{
 			name:                    "no available failure domains",
 			replicas:                0,
-			machines:                []clusterv1.Machine{},
+			machines:                []clusterv1beta2.Machine{},
 			availableFailureDomains: []string{},
 			expectedImprove:         false,
 			description:             "0 replicas should not trigger improvement",
@@ -476,7 +476,7 @@ func TestReconciler_shouldImproveDistribution(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cluster := &clusterv1.Cluster{
+			cluster := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
@@ -663,32 +663,32 @@ func TestReconciler_canImproveWithMoreFDs(t *testing.T) {
 
 func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 	scheme := runtime.NewScheme()
-	require.NoError(t, clusterv1.AddToScheme(scheme))
+	require.NoError(t, clusterv1beta2.AddToScheme(scheme))
 	require.NoError(t, controlplanev1.AddToScheme(scheme))
 
 	tests := []struct {
 		name         string
-		cluster      *clusterv1.Cluster
+		cluster      *clusterv1beta2.Cluster
 		expectedSkip bool
 		description  string
 	}{
 		{
 			name: "cluster without topology - should skip",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
+				Spec: clusterv1beta2.ClusterSpec{
 					// No Topology set
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
@@ -698,17 +698,17 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 		},
 		{
 			name: "cluster without control plane ref - should skip",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
 					// No ControlPlaneRef set
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
@@ -718,20 +718,20 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 		},
 		{
 			name: "cluster without failure domains - should skip",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
+				Status: clusterv1beta2.ClusterStatus{
 					// No FailureDomains set
 				},
 			},
@@ -740,21 +740,21 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 		},
 		{
 			name: "cluster with all required fields - should not skip",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 						{Name: "fd2", ControlPlane: ptr.To(false)},
 					},
@@ -779,7 +779,7 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 
 func TestReconciler_shouldSkipRollout(t *testing.T) {
 	scheme := runtime.NewScheme()
-	require.NoError(t, clusterv1.AddToScheme(scheme))
+	require.NoError(t, clusterv1beta2.AddToScheme(scheme))
 	require.NoError(t, controlplanev1.AddToScheme(scheme))
 
 	tests := []struct {
@@ -931,14 +931,14 @@ func TestReconciler_shouldSkipRollout(t *testing.T) {
 
 func TestReconciler_Reconcile(t *testing.T) {
 	scheme := runtime.NewScheme()
-	require.NoError(t, clusterv1.AddToScheme(scheme))
+	require.NoError(t, clusterv1beta2.AddToScheme(scheme))
 	require.NoError(t, controlplanev1.AddToScheme(scheme))
 
 	tests := []struct {
 		name                   string
-		cluster                *clusterv1.Cluster
+		cluster                *clusterv1beta2.Cluster
 		kcp                    *controlplanev1.KubeadmControlPlane
-		machines               []clusterv1.Machine
+		machines               []clusterv1beta2.Machine
 		expectRolloutTriggered bool
 		expectRequeue          bool
 		expectedRequeueAfter   time.Duration
@@ -946,21 +946,21 @@ func TestReconciler_Reconcile(t *testing.T) {
 	}{
 		{
 			name: "failure domain removed - should trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
 				},
@@ -974,7 +974,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Replicas: ptr.To[int32](3),
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 			},
@@ -984,21 +984,21 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "failure domain disabled - should trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(false)}, // Disabled
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
@@ -1013,7 +1013,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Replicas: ptr.To[int32](3),
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 			},
@@ -1023,21 +1023,21 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "distribution improvement - should trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 						{Name: "fd3", ControlPlane: ptr.To(true)},
@@ -1053,7 +1053,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Replicas: ptr.To[int32](3),
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd1"),
 				createMachine("m3", "fd2"),
@@ -1064,21 +1064,21 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "no changes - should not trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
@@ -1093,7 +1093,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Replicas: ptr.To[int32](3),
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 			},
@@ -1103,21 +1103,21 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "no meaningful changes - should not trigger rollout",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 						{Name: "fd3", ControlPlane: ptr.To(true)},
@@ -1134,7 +1134,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Replicas: ptr.To[int32](3),
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 				createMachine("m3", "fd3"),
@@ -1145,21 +1145,21 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "kubeadmcontrolplane not reconciled - should requeue",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
@@ -1178,7 +1178,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					ObservedGeneration: 4, // Lower than generation
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 			},
@@ -1189,23 +1189,23 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "cluster not reconciled - should requeue",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "test-cluster",
 					Namespace:  "test-namespace",
 					Generation: 5, // Higher than observedGeneration
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
+				Status: clusterv1beta2.ClusterStatus{
 					ObservedGeneration: 2, // Lower than generation
-					FailureDomains: []clusterv1.FailureDomain{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
@@ -1224,7 +1224,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					ObservedGeneration: 3, // Same as generation - KCP is reconciled
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 			},
@@ -1235,23 +1235,23 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "both cluster and kcp not reconciled - should requeue",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "test-cluster",
 					Namespace:  "test-namespace",
 					Generation: 5, // Higher than observedGeneration
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
+				Status: clusterv1beta2.ClusterStatus{
 					ObservedGeneration: 2, // Lower than generation
-					FailureDomains: []clusterv1.FailureDomain{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 						{Name: "fd2", ControlPlane: ptr.To(true)},
 					},
@@ -1270,7 +1270,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					ObservedGeneration: 4, // Lower than generation
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 				createMachine("m2", "fd2"),
 			},
@@ -1281,23 +1281,23 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "cluster being deleted - should skip reconciliation",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "test-cluster",
 					Namespace:         "test-namespace",
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
 					Finalizers:        []string{"test-finalizer"},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
@@ -1311,7 +1311,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Replicas: ptr.To[int32](3),
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 			},
 			expectRolloutTriggered: false,
@@ -1320,21 +1320,21 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "kcp being deleted - should skip reconciliation",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
@@ -1350,7 +1350,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Replicas: ptr.To[int32](3),
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 			},
 			expectRolloutTriggered: false,
@@ -1359,23 +1359,23 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "both cluster and kcp being deleted - should skip reconciliation",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "test-cluster",
 					Namespace:         "test-namespace",
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
 					Finalizers:        []string{"test-finalizer"},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{ClassRef: clusterv1.ClusterClassRef{Name: "test-class"}},
-					ControlPlaneRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"}},
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						Name:     "test-kcp",
 						Kind:     "KubeadmControlPlane",
 						APIGroup: "controlplane.cluster.x-k8s.io",
 					},
 				},
-				Status: clusterv1.ClusterStatus{
-					FailureDomains: []clusterv1.FailureDomain{
+				Status: clusterv1beta2.ClusterStatus{
+					FailureDomains: []clusterv1beta2.FailureDomain{
 						{Name: "fd1", ControlPlane: ptr.To(true)},
 					},
 				},
@@ -1391,7 +1391,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Replicas: ptr.To[int32](3),
 				},
 			},
-			machines: []clusterv1.Machine{
+			machines: []clusterv1beta2.Machine{
 				createMachine("m1", "fd1"),
 			},
 			expectRolloutTriggered: false,
@@ -1400,12 +1400,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "cluster paused - should skip reconciliation",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
+				Spec: clusterv1beta2.ClusterSpec{
 					Paused: ptr.To(true),
 				},
 			},
@@ -1421,12 +1421,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 		},
 		{
 			name: "kcp paused via annotation - should skip reconciliation",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
+				Spec: clusterv1beta2.ClusterSpec{
 					Paused: ptr.To(false),
 				},
 			},
@@ -1522,13 +1522,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 func TestReconciler_areResourcesDeleting(t *testing.T) {
 	tests := []struct {
 		name     string
-		cluster  *clusterv1.Cluster
+		cluster  *clusterv1beta2.Cluster
 		kcp      *controlplanev1.KubeadmControlPlane
 		expected bool
 	}{
 		{
 			name: "no deletion timestamps - should not be deleting",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
@@ -1544,7 +1544,7 @@ func TestReconciler_areResourcesDeleting(t *testing.T) {
 		},
 		{
 			name: "cluster has deletion timestamp - should be deleting",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "test-cluster",
 					Namespace:         "test-namespace",
@@ -1562,7 +1562,7 @@ func TestReconciler_areResourcesDeleting(t *testing.T) {
 		},
 		{
 			name: "kcp has deletion timestamp - should be deleting",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
@@ -1580,7 +1580,7 @@ func TestReconciler_areResourcesDeleting(t *testing.T) {
 		},
 		{
 			name: "both have deletion timestamps - should be deleting",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "test-cluster",
 					Namespace:         "test-namespace",
@@ -1611,7 +1611,7 @@ func TestReconciler_areResourcesDeleting(t *testing.T) {
 		},
 		{
 			name: "nil kcp - should not be deleting",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
@@ -1635,19 +1635,19 @@ func TestReconciler_areResourcesDeleting(t *testing.T) {
 func TestReconciler_areResourcesUpdating(t *testing.T) {
 	tests := []struct {
 		name     string
-		cluster  *clusterv1.Cluster
+		cluster  *clusterv1beta2.Cluster
 		kcp      *controlplanev1.KubeadmControlPlane
 		expected bool
 	}{
 		{
 			name: "both resources reconciled - should not be updating",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "test-cluster",
 					Namespace:  "test-namespace",
 					Generation: 5,
 				},
-				Status: clusterv1.ClusterStatus{
+				Status: clusterv1beta2.ClusterStatus{
 					ObservedGeneration: 5,
 				},
 			},
@@ -1665,13 +1665,13 @@ func TestReconciler_areResourcesUpdating(t *testing.T) {
 		},
 		{
 			name: "cluster not reconciled - should be updating",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "test-cluster",
 					Namespace:  "test-namespace",
 					Generation: 5,
 				},
-				Status: clusterv1.ClusterStatus{
+				Status: clusterv1beta2.ClusterStatus{
 					ObservedGeneration: 3, // Lower than generation
 				},
 			},
@@ -1689,13 +1689,13 @@ func TestReconciler_areResourcesUpdating(t *testing.T) {
 		},
 		{
 			name: "kcp not reconciled - should be updating",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "test-cluster",
 					Namespace:  "test-namespace",
 					Generation: 5,
 				},
-				Status: clusterv1.ClusterStatus{
+				Status: clusterv1beta2.ClusterStatus{
 					ObservedGeneration: 5,
 				},
 			},
@@ -1713,13 +1713,13 @@ func TestReconciler_areResourcesUpdating(t *testing.T) {
 		},
 		{
 			name: "both not reconciled - should be updating",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "test-cluster",
 					Namespace:  "test-namespace",
 					Generation: 5,
 				},
-				Status: clusterv1.ClusterStatus{
+				Status: clusterv1beta2.ClusterStatus{
 					ObservedGeneration: 2, // Lower than generation
 				},
 			},
@@ -1752,13 +1752,13 @@ func TestReconciler_areResourcesUpdating(t *testing.T) {
 		},
 		{
 			name: "nil kcp - should not be updating",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "test-cluster",
 					Namespace:  "test-namespace",
 					Generation: 5,
 				},
-				Status: clusterv1.ClusterStatus{
+				Status: clusterv1beta2.ClusterStatus{
 					ObservedGeneration: 5,
 				},
 			},
@@ -1778,24 +1778,24 @@ func TestReconciler_areResourcesUpdating(t *testing.T) {
 
 func TestReconciler_areResourcesPaused(t *testing.T) {
 	scheme := runtime.NewScheme()
-	require.NoError(t, clusterv1.AddToScheme(scheme))
+	require.NoError(t, clusterv1beta2.AddToScheme(scheme))
 	require.NoError(t, controlplanev1.AddToScheme(scheme))
 
 	tests := []struct {
 		name           string
-		cluster        *clusterv1.Cluster
+		cluster        *clusterv1beta2.Cluster
 		kcp            *controlplanev1.KubeadmControlPlane
 		expectedPaused bool
 		description    string
 	}{
 		{
 			name: "cluster not paused - should not be paused",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
+				Spec: clusterv1beta2.ClusterSpec{
 					// Paused field not set (defaults to false)
 				},
 			},
@@ -1810,12 +1810,12 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 		},
 		{
 			name: "cluster explicitly not paused - should not be paused",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
+				Spec: clusterv1beta2.ClusterSpec{
 					Paused: ptr.To(false),
 				},
 			},
@@ -1830,12 +1830,12 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 		},
 		{
 			name: "cluster paused - should be paused",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
+				Spec: clusterv1beta2.ClusterSpec{
 					Paused: ptr.To(true),
 				},
 			},
@@ -1862,12 +1862,12 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 		},
 		{
 			name: "nil kcp - should respect cluster paused state",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
+				Spec: clusterv1beta2.ClusterSpec{
 					Paused: ptr.To(true),
 				},
 			},
@@ -1884,12 +1884,12 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 		},
 		{
 			name: "kcp with paused annotation - should be paused",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
+				Spec: clusterv1beta2.ClusterSpec{
 					Paused: ptr.To(false),
 				},
 			},
@@ -1960,17 +1960,17 @@ func TestOptions_AddFlags(t *testing.T) {
 }
 
 // Helper function to create machines for testing.
-func createMachine(name, failureDomain string) clusterv1.Machine {
-	return clusterv1.Machine{
+func createMachine(name, failureDomain string) clusterv1beta2.Machine {
+	return clusterv1beta2.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "test-namespace",
 			Labels: map[string]string{
-				clusterv1.ClusterNameLabel:         "test-cluster",
-				clusterv1.MachineControlPlaneLabel: "",
+				clusterv1beta2.ClusterNameLabel:         "test-cluster",
+				clusterv1beta2.MachineControlPlaneLabel: "",
 			},
 		},
-		Spec: clusterv1.MachineSpec{
+		Spec: clusterv1beta2.MachineSpec{
 			FailureDomain: failureDomain,
 		},
 	}

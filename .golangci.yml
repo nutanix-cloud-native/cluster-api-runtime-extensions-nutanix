@@ -65,7 +65,7 @@ linters:
     importas:
       alias:
         - pkg: sigs.k8s.io/cluster-api/api/core/v1beta2
-          alias: clusterv1
+          alias: clusterv1beta2
       no-unaliased: false
     lll:
       line-length: 120

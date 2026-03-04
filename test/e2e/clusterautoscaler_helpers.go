@@ -18,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/yaml"
 
@@ -30,7 +30,7 @@ const clusterAutoscalerReleaseName = "ca"
 
 type WaitForClusterAutoscalerToBeReadyForWorkloadClusterInput struct {
 	ClusterAutoscaler           *v1alpha1.ClusterAutoscaler
-	WorkloadCluster             *clusterv1.Cluster
+	WorkloadCluster             *clusterv1beta2.Cluster
 	ClusterProxy                framework.ClusterProxy
 	DeploymentIntervals         []interface{}
 	DaemonSetIntervals          []interface{}

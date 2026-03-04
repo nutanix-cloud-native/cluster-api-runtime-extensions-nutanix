@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -270,7 +270,7 @@ func containerdConfigFromImageRegistry(
 func containerdConfigFromRegistryAddon(
 	ctx context.Context,
 	c ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) (containerdConfig, error) {
 	serviceIP, err := registryutils.ServiceIPForCluster(cluster)
 	if err != nil {

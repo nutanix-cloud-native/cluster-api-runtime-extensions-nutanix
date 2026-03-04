@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -28,7 +28,7 @@ type fakeServiceLoadBalancerProvider struct {
 func (p *fakeServiceLoadBalancerProvider) Apply(
 	ctx context.Context,
 	slb v1alpha1.ServiceLoadBalancer,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) error {
 	return p.returnedErr
@@ -45,7 +45,7 @@ var testProviderHandlers = map[string]ServiceLoadBalancerProvider{
 func testClusterVariable(
 	t *testing.T,
 	slb *v1alpha1.ServiceLoadBalancer,
-) *clusterv1.ClusterVariable {
+) *clusterv1beta2.ClusterVariable {
 	t.Helper()
 	cv, err := apivariables.MarshalToClusterVariable(
 		"clusterConfig",
@@ -65,7 +65,7 @@ func testClusterVariable(
 
 type testCase struct {
 	name            string
-	clusterVariable *clusterv1.ClusterVariable
+	clusterVariable *clusterv1beta2.ClusterVariable
 	wantStatus      runtimehooksv1.ResponseStatus
 }
 
@@ -82,7 +82,7 @@ func testCases(t *testing.T) []testCase {
 		},
 		{
 			name: "request is malformed",
-			clusterVariable: &clusterv1.ClusterVariable{
+			clusterVariable: &clusterv1beta2.ClusterVariable{
 				Name: "clusterConfig",
 				Value: apiextensionsv1.JSON{
 					Raw: []byte("{\"addons\":{\"serviceLoadBalancer\":{\"provider\": %%% }}}"),
@@ -131,11 +131,11 @@ func TestAfterControlPlaneInitialized(t *testing.T) {
 			handler := New(client, testProviderHandlers)
 			resp := &runtimehooksv1.AfterControlPlaneInitializedResponse{}
 
-			cluster := &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
-						Variables: []clusterv1.ClusterVariable{
+			cluster := &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Variables: []clusterv1beta2.ClusterVariable{
 							*tt.clusterVariable,
 						},
 					},
@@ -183,11 +183,11 @@ func TestBeforeClusterUpgrade(t *testing.T) {
 			handler := New(client, testProviderHandlers)
 			resp := &runtimehooksv1.BeforeClusterUpgradeResponse{}
 
-			cluster := &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
-						Variables: []clusterv1.ClusterVariable{
+			cluster := &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Variables: []clusterv1beta2.ClusterVariable{
 							*tt.clusterVariable,
 						},
 					},

@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -26,7 +26,7 @@ type EnsureCRSForClusterFromObjectsOptions struct {
 	// This allows setting the owner to something other than the workload cluster, which is
 	// needed specifically for the ClusterAutoscaler addon which can be deployed in a different
 	// namespace to the target cluster as it must exist in the management cluster.
-	OwnerCluster *clusterv1.Cluster
+	OwnerCluster *clusterv1beta2.Cluster
 }
 
 func DefaultEnsureCRSForClusterFromObjectsOptions() EnsureCRSForClusterFromObjectsOptions {
@@ -34,7 +34,7 @@ func DefaultEnsureCRSForClusterFromObjectsOptions() EnsureCRSForClusterFromObjec
 }
 
 func (o EnsureCRSForClusterFromObjectsOptions) WithOwnerCluster(
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) EnsureCRSForClusterFromObjectsOptions {
 	o.OwnerCluster = cluster
 	return o
@@ -44,7 +44,7 @@ func EnsureCRSForClusterFromObjects(
 	ctx context.Context,
 	crsName string,
 	c ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	opts EnsureCRSForClusterFromObjectsOptions,
 	objects ...runtime.Object,
 ) error {
@@ -86,7 +86,7 @@ func EnsureCRSForClusterFromObjects(
 			Resources: resources,
 			Strategy:  string(crsv1.ClusterResourceSetStrategyReconcile),
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: cluster.Name},
+				MatchLabels: map[string]string{clusterv1beta2.ClusterNameLabel: cluster.Name},
 			},
 		},
 	}

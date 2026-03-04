@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -286,16 +286,16 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 	testCases := []struct {
 		name            string
-		cluster         *clusterv1.Cluster
+		cluster         *clusterv1beta2.Cluster
 		expectedVersion string
 		expectedChecks  int
 		nclient         client
 	}{
 		{
 			name: "cluster with topology version",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
 						Version: "v1.32.3",
 					},
 				},
@@ -306,9 +306,9 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "cluster with topology version without v prefix",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
 						Version: "1.32.3",
 					},
 				},
@@ -319,9 +319,9 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "cluster without topology",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{},
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{},
 				},
 			},
 			expectedVersion: "",
@@ -330,9 +330,9 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "client not initialized",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
 						Version: "v1.32.3",
 					},
 				},

@@ -27,7 +27,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util/kubeconfig"
 	"sigs.k8s.io/cluster-api/util/secret"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -155,10 +155,10 @@ func (t *TestEnvironment) GetK8sClientWithScheme(
 }
 
 // WithFakeRemoteClusterClient creates a fake remote cluster client Secret pointing to the test API server.
-func (t *TestEnvironment) WithFakeRemoteClusterClient(cluster *clusterv1.Cluster) error {
+func (t *TestEnvironment) WithFakeRemoteClusterClient(cluster *clusterv1beta2.Cluster) error {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(scheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 
 	cfg := t.GetConfig()
 	c, err := client.New(cfg, client.Options{Scheme: clientScheme})
@@ -166,7 +166,7 @@ func (t *TestEnvironment) WithFakeRemoteClusterClient(cluster *clusterv1.Cluster
 		return err
 	}
 
-	v1beta2Cluster := &clusterv1.Cluster{
+	v1beta2Cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: *cluster.ObjectMeta.DeepCopy(),
 	}
 	kubeconfigBytes := kubeconfig.FromEnvTestConfig(cfg, v1beta2Cluster)
@@ -178,7 +178,7 @@ func (t *TestEnvironment) WithFakeRemoteClusterClient(cluster *clusterv1.Cluster
 		Data: map[string][]byte{
 			secret.KubeconfigDataName: kubeconfigBytes,
 		},
-		Type: clusterv1.ClusterSecretType,
+		Type: clusterv1beta2.ClusterSecretType,
 	}
 	err = controllerutil.SetOwnerReference(cluster, kubeconfigSecret, c.Scheme())
 	if err != nil {

@@ -16,7 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -26,7 +26,7 @@ import (
 type registryCheck struct {
 	field                 string
 	kclient               ctrlclient.Client
-	cluster               *clusterv1.Cluster
+	cluster               *clusterv1beta2.Cluster
 	regClientPingerGetter regClientPingerFactory
 	log                   logr.Logger
 

@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -37,7 +37,7 @@ func NewNutanixClusterTemplateRequestItem(
 	return request.NewRequestItem(
 		nutanixClusterTemplate,
 		&runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 			FieldPath:  "spec.infrastructureRef",
 			Name:       request.ClusterName,
@@ -85,7 +85,7 @@ func NewWorkerNutanixMachineTemplateRequestItem(
 			},
 		},
 		&runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			FieldPath:  "spec.template.spec.infrastructureRef",
 		},

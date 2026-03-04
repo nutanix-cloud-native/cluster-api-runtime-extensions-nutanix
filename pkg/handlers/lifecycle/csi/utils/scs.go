@@ -11,7 +11,7 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -69,7 +69,7 @@ func CreateStorageClassesOnRemote(
 	ctx context.Context,
 	cl ctrlclient.Client,
 	configs map[string]v1alpha1.StorageClassConfig,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	defaultStorage v1alpha1.DefaultStorage,
 	csiProvider string,
 	provisioner v1alpha1.StorageProvisioner,

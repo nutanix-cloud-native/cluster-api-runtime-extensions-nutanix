@@ -8,12 +8,12 @@ import (
 	"fmt"
 
 	netutils "k8s.io/utils/net"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 const ipIndex = 20
 
-func ServiceIPForCluster(cluster *clusterv1.Cluster) (string, error) {
+func ServiceIPForCluster(cluster *clusterv1beta2.Cluster) (string, error) {
 	var serviceCIDRBlocks []string
 	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) > 0 {
 		serviceCIDRBlocks = cluster.Spec.ClusterNetwork.Services.CIDRBlocks

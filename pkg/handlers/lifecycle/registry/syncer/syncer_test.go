@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/storage/names"
 	featuregatetesting "k8s.io/component-base/featuregate/testing"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -32,8 +32,8 @@ func Test_shouldApplyRegistrySyncer(t *testing.T) {
 	clusterWithSameNameAndNamespace := clusterWithRegistry(t)
 	tests := []struct {
 		name              string
-		cluster           *clusterv1.Cluster
-		managementCluster *clusterv1.Cluster
+		cluster           *clusterv1beta2.Cluster
+		managementCluster *clusterv1beta2.Cluster
 		enableFeatureGate bool
 		shouldApply       bool
 	}{
@@ -67,7 +67,7 @@ func Test_shouldApplyRegistrySyncer(t *testing.T) {
 		},
 		{
 			name: "should not apply when cluster has skip annotation",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						carenv1.SkipSynchronizingWorkloadClusterRegistry: "true",
@@ -109,13 +109,13 @@ func Test_templateValues(t *testing.T) {
 	assert.Equal(t, expectedRegistrySyncerValues, result)
 }
 
-func clusterWithRegistry(t *testing.T) *clusterv1.Cluster {
+func clusterWithRegistry(t *testing.T) *clusterv1beta2.Cluster {
 	t.Helper()
 
 	return namedClusterWithRegistry(t, names.SimpleNameGenerator.GenerateName("with-registry-"))
 }
 
-func namedClusterWithRegistry(t *testing.T, name string) *clusterv1.Cluster {
+func namedClusterWithRegistry(t *testing.T, name string) *clusterv1beta2.Cluster {
 	t.Helper()
 
 	clusterConfigSpec := &carenv1.DockerClusterConfigSpec{
@@ -128,28 +128,28 @@ func namedClusterWithRegistry(t *testing.T, name string) *clusterv1.Cluster {
 	}
 	variable, err := variables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfigSpec)
 	require.NoError(t, err)
-	return &clusterv1.Cluster{
+	return &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: clusterv1.ClusterNetwork{
-				Services: clusterv1.NetworkRanges{
+		Spec: clusterv1beta2.ClusterSpec{
+			ClusterNetwork: clusterv1beta2.ClusterNetwork{
+				Services: clusterv1beta2.NetworkRanges{
 					CIDRBlocks: []string{
 						"192.168.0.0/16",
 					},
 				},
 			},
-			Topology: clusterv1.Topology{
-				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
-				Variables: []clusterv1.ClusterVariable{*variable},
+			Topology: clusterv1beta2.Topology{
+				ClassRef:  clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+				Variables: []clusterv1beta2.ClusterVariable{*variable},
 				Version:   "v1.30.100",
 			},
 		},
 	}
 }
 
-func clusterWithoutRegistry(t *testing.T) *clusterv1.Cluster {
+func clusterWithoutRegistry(t *testing.T) *clusterv1beta2.Cluster {
 	t.Helper()
 
 	clusterConfigSpec := &carenv1.DockerClusterConfigSpec{
@@ -161,21 +161,21 @@ func clusterWithoutRegistry(t *testing.T) *clusterv1.Cluster {
 	}
 	variable, err := variables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfigSpec)
 	require.NoError(t, err)
-	return &clusterv1.Cluster{
+	return &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: names.SimpleNameGenerator.GenerateName("without-registry-"),
 		},
-		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: clusterv1.ClusterNetwork{
-				Services: clusterv1.NetworkRanges{
+		Spec: clusterv1beta2.ClusterSpec{
+			ClusterNetwork: clusterv1beta2.ClusterNetwork{
+				Services: clusterv1beta2.NetworkRanges{
 					CIDRBlocks: []string{
 						"192.168.0.0/16",
 					},
 				},
 			},
-			Topology: clusterv1.Topology{
-				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
-				Variables: []clusterv1.ClusterVariable{*variable},
+			Topology: clusterv1beta2.Topology{
+				ClassRef:  clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+				Variables: []clusterv1beta2.ClusterVariable{*variable},
 			},
 		},
 	}

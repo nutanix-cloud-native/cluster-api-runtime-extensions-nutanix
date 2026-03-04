@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capie2eframework "sigs.k8s.io/cluster-api/test/framework"
@@ -73,7 +73,7 @@ type SelfHostedSpecInput struct {
 	WorkerMachineCount *int64
 
 	// PostClusterMoved is a function that is called after the cluster is moved to self-hosted.
-	PostClusterMoved func(proxy capie2eframework.ClusterProxy, cluster *clusterv1.Cluster)
+	PostClusterMoved func(proxy capie2eframework.ClusterProxy, cluster *clusterv1beta2.Cluster)
 }
 
 // SelfHostedSpec implements a test that verifies Cluster API creating a cluster, pivoting to a self-hosted cluster.
@@ -88,7 +88,7 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 		selfHostedClusterProxy  capie2eframework.ClusterProxy
 		selfHostedNamespace     *corev1.Namespace
 		selfHostedCancelWatches context.CancelFunc
-		selfHostedCluster       *clusterv1.Cluster
+		selfHostedCluster       *clusterv1beta2.Cluster
 
 		controlPlaneMachineCount int64
 		workerMachineCount       int64
@@ -434,7 +434,7 @@ func dumpAllResources(
 	clusterctlConfigPath string,
 	artifactFolder string,
 	namespace *corev1.Namespace,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) {
 	capie2e.Byf("Dumping logs from the %q workload cluster", cluster.Name)
 
@@ -459,7 +459,7 @@ func dumpAllResources(
 
 	// If the cluster still exists, dump pods and nodes of the workload cluster.
 	if err := clusterProxy.GetClient().Get(
-		ctx, client.ObjectKeyFromObject(cluster), &clusterv1.Cluster{},
+		ctx, client.ObjectKeyFromObject(cluster), &clusterv1beta2.Cluster{},
 	); err == nil {
 		capie2e.Byf("Dumping Pods and Nodes of Cluster %s", klog.KObj(cluster))
 		capie2eframework.DumpResourcesForCluster(ctx, capie2eframework.DumpResourcesForClusterInput{
@@ -494,7 +494,7 @@ func dumpSpecResourcesAndCleanup(
 	artifactFolder string,
 	namespace *corev1.Namespace,
 	cancelWatches context.CancelFunc,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	intervalsGetter func(spec, key string) []interface{},
 	skipCleanup bool,
 ) {

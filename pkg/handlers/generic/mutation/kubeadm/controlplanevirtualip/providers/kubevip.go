@@ -11,7 +11,7 @@ import (
 	"github.com/blang/semver/v4"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
@@ -61,7 +61,7 @@ func (p *kubeVIPFromKCPTemplateProvider) Name() string {
 func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
 	_ context.Context,
 	spec v1alpha1.ControlPlaneEndpointSpec,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) (files []bootstrapv1.File, preKubeadmCommands, postKubeadmCommands []string, err error) {
 	data, err := getTemplate(p.template)
 	if err != nil {
@@ -149,7 +149,7 @@ func getTemplate(kcp *controlplanev1.KubeadmControlPlaneTemplate) (string, error
 	return "", missingTemplateError{path: kubeVIPFilePath}
 }
 
-func needHackCommands(cluster *clusterv1.Cluster) (bool, error) {
+func needHackCommands(cluster *clusterv1beta2.Cluster) (bool, error) {
 	version, err := semver.ParseTolerant(cluster.Spec.Topology.Version)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse version from cluster: %w", err)

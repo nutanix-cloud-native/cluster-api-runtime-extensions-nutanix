@@ -5,7 +5,7 @@ package handlers
 
 import (
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -15,7 +15,7 @@ func ClusterKeyFromReq(req *runtimehooksv1.GeneratePatchesRequest) client.Object
 		item := req.Items[i]
 		if item.HolderReference.Kind == "Cluster" &&
 			(item.HolderReference.APIVersion == clusterv1beta1.GroupVersion.String() ||
-				item.HolderReference.APIVersion == clusterv1.GroupVersion.String()) {
+				item.HolderReference.APIVersion == clusterv1beta2.GroupVersion.String()) {
 			return client.ObjectKey{
 				Namespace: item.HolderReference.Namespace,
 				Name:      item.HolderReference.Name,

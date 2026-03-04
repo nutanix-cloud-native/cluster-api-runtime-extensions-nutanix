@@ -20,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
@@ -158,7 +158,7 @@ type CertificateSpec struct {
 func EnsureCASecretForCluster(
 	ctx context.Context,
 	c ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) error {
 	globalTLSCertificateSecret, err := handlersutils.SecretForRegistryAddonRootCA(ctx, c)
 	if err != nil {
@@ -188,7 +188,7 @@ func EnsureCASecretForCluster(
 func EnsureRegistryServerCertificateSecretOnRemoteCluster(
 	ctx context.Context,
 	c ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	opts *EnsureCertificateOpts,
 ) error {
 	globalTLSCertificateSecret, err := handlersutils.SecretForRegistryAddonRootCA(ctx, c)
@@ -217,7 +217,7 @@ func EnsureRegistryServerCertificateSecretOnRemoteCluster(
 
 func buildClusterCASecret(
 	globalTLSCertificateSecret *corev1.Secret,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) *corev1.Secret {
 	// The root CA will have, tls.crt, tls.key, and ca.crt.
 	// We only copy the ca.crt from the global TLS secret to the cluster CA secret.
@@ -329,7 +329,7 @@ func generateCertificateData(
 func copyTLSCertificateSecretToRemoteCluster(
 	ctx context.Context,
 	c ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	key ctrlclient.ObjectKey,
 	certPEM, keyPEM, caPEM []byte,
 ) error {

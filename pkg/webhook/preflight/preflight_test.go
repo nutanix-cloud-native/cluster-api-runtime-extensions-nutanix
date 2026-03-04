@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -33,7 +33,7 @@ type mockChecker struct {
 	checks []Check
 }
 
-func (m *mockChecker) Init(_ context.Context, _ ctrlclient.Client, _ *clusterv1.Cluster) []Check {
+func (m *mockChecker) Init(_ context.Context, _ ctrlclient.Client, _ *clusterv1beta2.Cluster) []Check {
 	return m.checks
 }
 
@@ -73,17 +73,17 @@ func (m *mockDecoder) DecodeRaw(raw runtime.RawExtension, obj runtime.Object) er
 	return m.decodeRaw(raw, obj)
 }
 
-func topologyCluster(skippedCheckNames ...string) *clusterv1.Cluster {
-	return &clusterv1.Cluster{
+func topologyCluster(skippedCheckNames ...string) *clusterv1beta2.Cluster {
+	return &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
 			Annotations: map[string]string{
 				carenv1.PreflightChecksSkipAnnotationKey: strings.Join(skippedCheckNames, ","),
 			},
 		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: clusterv1.Topology{
-				ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
 				Version:  "dummy-version",
 			},
 		},
@@ -92,15 +92,15 @@ func topologyCluster(skippedCheckNames ...string) *clusterv1.Cluster {
 
 func TestHandle(t *testing.T) {
 	scheme := runtime.NewScheme()
-	err := clusterv1.AddToScheme(scheme)
+	err := clusterv1beta2.AddToScheme(scheme)
 	require.NoError(t, err)
 
 	tests := []struct {
 		name             string
 		operation        admissionv1.Operation
 		decoder          admission.Decoder
-		oldCluster       *clusterv1.Cluster
-		cluster          *clusterv1.Cluster
+		oldCluster       *clusterv1beta2.Cluster
+		cluster          *clusterv1beta2.Cluster
 		checkers         []Checker
 		expectedResponse admission.Response
 	}{
@@ -118,7 +118,7 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "skip paused clusters",
 			operation: admissionv1.Create,
-			cluster: func() *clusterv1.Cluster {
+			cluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Paused = ptr.To(true)
 				return cluster
@@ -132,11 +132,11 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "allow non topology clusters",
 			operation: admissionv1.Create,
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
 				},
-				Spec: clusterv1.ClusterSpec{},
+				Spec: clusterv1beta2.ClusterSpec{},
 			},
 			expectedResponse: admission.Response{
 				AdmissionResponse: admissionv1.AdmissionResponse{
@@ -167,11 +167,11 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "on update, handle decoder error",
 			operation: admissionv1.Update,
-			oldCluster: &clusterv1.Cluster{
+			oldCluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
 				},
-				Spec: clusterv1.ClusterSpec{},
+				Spec: clusterv1beta2.ClusterSpec{},
 			},
 			cluster: topologyCluster(),
 			decoder: &mockDecoder{
@@ -424,12 +424,12 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "update operation with passing checks, allowed",
 			operation: admissionv1.Update,
-			oldCluster: func() *clusterv1.Cluster {
+			oldCluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Topology.Version = "old"
 				return cluster
 			}(),
-			cluster: func() *clusterv1.Cluster {
+			cluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Topology.Version = "new"
 				return cluster
@@ -455,12 +455,12 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "update operation with failing checks, not allowed",
 			operation: admissionv1.Update,
-			oldCluster: func() *clusterv1.Cluster {
+			oldCluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Topology.Version = "old"
 				return cluster
 			}(),
-			cluster: func() *clusterv1.Cluster {
+			cluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Topology.Version = "new"
 				return cluster
@@ -486,12 +486,12 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "update operation while cluster is being deleted, allowed",
 			operation: admissionv1.Update,
-			oldCluster: func() *clusterv1.Cluster {
+			oldCluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Topology.Version = "old"
 				return cluster
 			}(),
-			cluster: func() *clusterv1.Cluster {
+			cluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Topology.Version = "new"
 				cluster.DeletionTimestamp = &metav1.Time{Time: time.Now()}
@@ -517,12 +517,12 @@ func TestHandle(t *testing.T) {
 		{
 			name:      "update operation changes only the paused state, allowed",
 			operation: admissionv1.Update,
-			oldCluster: func() *clusterv1.Cluster {
+			oldCluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Paused = ptr.To(false)
 				return cluster
 			}(),
-			cluster: func() *clusterv1.Cluster {
+			cluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
 				cluster.Spec.Paused = ptr.To(true)
 				return cluster
@@ -621,7 +621,7 @@ func (c *cancellableCheck) Run(ctx context.Context) CheckResult {
 // TestHandleCancelledContext needs special treatment because it relies on context cancellation.
 func TestHandleCancelledContext(t *testing.T) {
 	scheme := runtime.NewScheme()
-	err := clusterv1.AddToScheme(scheme)
+	err := clusterv1beta2.AddToScheme(scheme)
 	require.NoError(t, err)
 	decoder := admission.NewDecoder(scheme)
 

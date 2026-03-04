@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -77,20 +77,20 @@ FYnq6/jDVxCbWmmP2u4TT557gMqao0DaJstf/NSXlK0bhA2B64M=
 var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 
 	It("new root CA Secret should be created", func(ctx SpecContext) {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-management-cluster-",
 				Namespace:    corev1.NamespaceDefault,
 			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: clusterv1.Topology{
-					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
 					Version:  "v1.28.0",
 				},
 			},
@@ -106,8 +106,8 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 		Expect(globalTLSCertificateSecret.OwnerReferences).To(
 			ContainElement(
 				metav1.OwnerReference{
-					APIVersion: clusterv1.GroupVersion.String(),
-					Kind:       clusterv1.ClusterKind,
+					APIVersion: clusterv1beta2.GroupVersion.String(),
+					Kind:       clusterv1beta2.ClusterKind,
 					Name:       cluster.Name,
 					UID:        cluster.UID,
 				},
@@ -122,14 +122,14 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-management-cluster-",
 				Namespace:    corev1.NamespaceDefault,
 			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: clusterv1.Topology{
-					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
 					Version:  "v1.28.0",
 				},
 			},
@@ -177,7 +177,7 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 		)
 
 		// Clean up any clusters created during the test.
-		err = c.DeleteAllOf(ctx, &clusterv1.Cluster{}, ctrlclient.InNamespace(corev1.NamespaceDefault))
+		err = c.DeleteAllOf(ctx, &clusterv1beta2.Cluster{}, ctrlclient.InNamespace(corev1.NamespaceDefault))
 		Expect(err).To(Succeed())
 	})
 })
@@ -185,20 +185,20 @@ var _ = Describe("Test EnsureRegistryAddonRootCASecret", func() {
 var _ = Describe("Test EnsureCASecretForCluster", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 
 	It("CA Secret should be created for a cluster", func(ctx SpecContext) {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
 			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: clusterv1.Topology{
-					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
 					Version:  "v1.28.0",
 				},
 			},
@@ -218,8 +218,8 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 		Expect(caSecret.OwnerReferences).To(
 			ContainElement(
 				metav1.OwnerReference{
-					APIVersion: clusterv1.GroupVersion.String(),
-					Kind:       clusterv1.ClusterKind,
+					APIVersion: clusterv1beta2.GroupVersion.String(),
+					Kind:       clusterv1beta2.ClusterKind,
 					Name:       cluster.Name,
 					UID:        cluster.UID,
 				},
@@ -233,14 +233,14 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
 			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: clusterv1.Topology{
-					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
 					Version:  "v1.28.0",
 				},
 			},
@@ -273,7 +273,7 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 		)
 
 		// Clean up any clusters created during the test.
-		err = c.DeleteAllOf(ctx, &clusterv1.Cluster{}, ctrlclient.InNamespace(corev1.NamespaceDefault))
+		err = c.DeleteAllOf(ctx, &clusterv1beta2.Cluster{}, ctrlclient.InNamespace(corev1.NamespaceDefault))
 		Expect(err).To(Succeed())
 	})
 })
@@ -281,20 +281,20 @@ var _ = Describe("Test EnsureCASecretForCluster", func() {
 var _ = Describe("Test EnsureRegistryServerCertificateSecretOnRemoteCluster", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 
 	It("TLS Secret should be created/updated on the remote cluster", func(ctx SpecContext) {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
 			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: clusterv1.Topology{
-					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
 					Version:  "v1.28.0",
 				},
 			},
@@ -359,14 +359,14 @@ var _ = Describe("Test EnsureRegistryServerCertificateSecretOnRemoteCluster", fu
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
 			},
-			Spec: clusterv1.ClusterSpec{
-				Topology: clusterv1.Topology{
-					ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
 					Version:  "v1.28.0",
 				},
 			},
@@ -394,7 +394,7 @@ var _ = Describe("Test EnsureRegistryServerCertificateSecretOnRemoteCluster", fu
 		)
 
 		// Clean up any clusters created during the test.
-		err = c.DeleteAllOf(ctx, &clusterv1.Cluster{}, ctrlclient.InNamespace(corev1.NamespaceDefault))
+		err = c.DeleteAllOf(ctx, &clusterv1beta2.Cluster{}, ctrlclient.InNamespace(corev1.NamespaceDefault))
 		Expect(err).To(Succeed())
 	})
 })

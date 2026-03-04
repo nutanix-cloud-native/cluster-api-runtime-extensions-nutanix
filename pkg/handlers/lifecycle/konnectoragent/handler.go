@@ -18,7 +18,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -150,7 +150,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterUpgrade(
 
 func (n *DefaultKonnectorAgent) apply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
@@ -286,9 +286,9 @@ func (n *DefaultKonnectorAgent) apply(
 }
 
 func templateValuesFunc(
-	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1.Cluster,
-) func(*clusterv1.Cluster, string) (string, error) {
-	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
+	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1beta2.Cluster,
+) func(*clusterv1beta2.Cluster, string) (string, error) {
+	return func(_ *clusterv1beta2.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
 			"joinQuoted": func(items []string) string {
 				for i, item := range items {
@@ -349,7 +349,7 @@ func templateValuesFunc(
 
 // extractCategoryMappings extracts additionalCategories from both control plane and worker config variables
 // and converts them to comma-separated format.
-func extractCategoryMappings(cluster *clusterv1.Cluster) string {
+func extractCategoryMappings(cluster *clusterv1beta2.Cluster) string {
 	var categories []string
 
 	// Extract control plane nodes categories from cluster topology variables
@@ -572,7 +572,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 
 func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) error {
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
@@ -626,7 +626,7 @@ func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 // Returns: status ("completed", "in-progress", "not-started", or "timed-out"), status message, and error.
 func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) (status, statusMsg string, err error) {
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
@@ -701,7 +701,7 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 func isClusterRegisteredInPC(
 	ctx context.Context,
 	client ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) (bool, error) {
 	// Get cluster config to extract PC endpoint

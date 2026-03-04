@@ -15,7 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -49,7 +49,7 @@ func (a *advancedCiliumConfigurationValidator) validate(
 		return admission.Allowed("")
 	}
 
-	cluster := &clusterv1.Cluster{}
+	cluster := &clusterv1beta2.Cluster{}
 	err := a.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -112,7 +112,7 @@ func (a *advancedCiliumConfigurationValidator) validate(
 	return admission.Allowed("")
 }
 
-func hasSkipAnnotation(cluster *clusterv1.Cluster) bool {
+func hasSkipAnnotation(cluster *clusterv1beta2.Cluster) bool {
 	if cluster.Annotations == nil {
 		return false
 	}
@@ -121,7 +121,7 @@ func hasSkipAnnotation(cluster *clusterv1.Cluster) bool {
 }
 
 // templateValues applies Go template expansion to the values string using only ControlPlaneEndpoint.
-func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
+func templateValues(cluster *clusterv1beta2.Cluster, text string) (string, error) {
 	funcMap := template.FuncMap{
 		"trimPrefix": strings.TrimPrefix,
 	}
@@ -131,7 +131,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	type input struct {
-		ControlPlaneEndpoint clusterv1.APIEndpoint
+		ControlPlaneEndpoint clusterv1beta2.APIEndpoint
 	}
 
 	templateInput := input{
@@ -157,7 +157,7 @@ type ciliumValues struct {
 func getCiliumValues(
 	ctx context.Context,
 	client ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	cni *v1alpha1.CNI,
 ) (*ciliumValues, error) {
 	configMapName := cni.Values.SourceRef.Name

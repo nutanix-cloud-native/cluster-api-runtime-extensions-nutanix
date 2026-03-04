@@ -25,7 +25,7 @@ import (
 	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 func main() {
@@ -344,7 +344,7 @@ func convertClusterClassCAPI(srcJSON []byte) ([]byte, error) {
 	if err := json.Unmarshal(srcJSON, &src); err != nil {
 		return nil, fmt.Errorf("clusterclass unmarshal: %w", err)
 	}
-	var dst clusterv1.ClusterClass
+	var dst clusterv1beta2.ClusterClass
 	if err := src.ConvertTo(&dst); err != nil {
 		return nil, fmt.Errorf("clusterclass ConvertTo: %w", err)
 	}

@@ -4,7 +4,7 @@
 package utils
 
 import (
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 )
 
@@ -20,7 +20,7 @@ func NewLabels(fs ...LabelFn) map[string]string {
 
 func WithClusterName(clusterName string) LabelFn {
 	return func(labels map[string]string) {
-		labels[clusterv1.ClusterNameLabel] = clusterName
+		labels[clusterv1beta2.ClusterNameLabel] = clusterName
 	}
 }
 

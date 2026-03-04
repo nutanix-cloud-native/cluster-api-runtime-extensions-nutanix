@@ -20,7 +20,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -32,7 +32,7 @@ import (
 var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 
 	decoder := admission.NewDecoder(clientScheme)
 
@@ -75,13 +75,13 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 			c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 			Expect(err).To(BeNil())
 
-			cluster := &clusterv1.Cluster{
+			cluster := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					GenerateName: "test-cluster-",
 					Namespace:    corev1.NamespaceDefault,
 				},
-				Spec: clusterv1.ClusterSpec{
-					InfrastructureRef: clusterv1.ContractVersionedObjectReference{
+				Spec: clusterv1beta2.ClusterSpec{
+					InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
 						APIGroup: "infrastructure.cluster.x-k8s.io",
 						Kind:     "DockerCluster",
 						Name:     "dummy",
@@ -203,7 +203,7 @@ var _ = Describe("KonnectorAgentLegacyValidator", Serial, func() {
 
 			cluster := createTestClusterWithKonnectorAgent()
 			// Remove konnector agent from cluster config
-			cluster.Spec.Topology.Variables = []clusterv1.ClusterVariable{}
+			cluster.Spec.Topology.Variables = []clusterv1beta2.ClusterVariable{}
 			Expect(c.Create(ctx, cluster)).To(Succeed())
 			cluster.Status.Initialization.InfrastructureProvisioned = ptr.To(false)
 			Expect(c.Status().Update(ctx, cluster)).To(Succeed())
@@ -331,7 +331,7 @@ After removing the legacy release(s), re-run the operation.`, ns.Name, ns.Name, 
 })
 
 // createTestClusterWithKonnectorAgent creates a test Cluster and a corresponding kubeconfig Secret.
-func createTestClusterWithKonnectorAgent() *clusterv1.Cluster {
+func createTestClusterWithKonnectorAgent() *clusterv1beta2.Cluster {
 	clusterConfig := &variables.ClusterConfigSpec{
 		Addons: &variables.Addons{
 			NutanixKonnectorAgent: &variables.NutanixKonnectorAgent{},
@@ -341,16 +341,16 @@ func createTestClusterWithKonnectorAgent() *clusterv1.Cluster {
 	clusterConfigRaw, err := json.Marshal(clusterConfig)
 	Expect(err).NotTo(HaveOccurred())
 
-	return &clusterv1.Cluster{
+	return &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-cluster-",
 			Namespace:    corev1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: clusterv1.Topology{
-				ClassRef: clusterv1.ClusterClassRef{Name: "test-class"},
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
 				Version:  "v1.30.0",
-				Variables: []clusterv1.ClusterVariable{
+				Variables: []clusterv1beta2.ClusterVariable{
 					{
 						Name: v1alpha1.ClusterConfigVariableName,
 						Value: apiextensionsv1.JSON{

@@ -6,7 +6,7 @@ package testutils
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
@@ -37,7 +37,7 @@ func NewEKSControlPlaneRequestItem(
 	return request.NewRequestItem(
 		eksClusterTemplate,
 		&runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 			FieldPath:  "spec.controlPlaneRef",
 			Name:       request.ClusterName,

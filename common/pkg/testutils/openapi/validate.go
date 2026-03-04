@@ -18,7 +18,7 @@ import (
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	celconfig "k8s.io/apiserver/pkg/apis/cel"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 // ValidateClusterVariable validates a clusterVariable.
@@ -26,8 +26,8 @@ import (
 //
 //nolint:lll // Adding for URL above, does not work when adding to end of line in a comment block.
 func ValidateClusterVariable[T any](
-	value *clusterv1.ClusterVariable,
-	definition *clusterv1.ClusterClassVariable,
+	value *clusterv1beta2.ClusterVariable,
+	definition *clusterv1beta2.ClusterClassVariable,
 	fldPath *field.Path,
 ) field.ErrorList {
 	validator, apiExtensionsSchema, structuralSchema, err := validatorAndSchemas(fldPath, definition)
@@ -57,7 +57,7 @@ func ValidateClusterVariable[T any](
 
 func unmarshalAndDefaultVariableValue[T any](
 	fldPath *field.Path,
-	value *clusterv1.ClusterVariable,
+	value *clusterv1beta2.ClusterVariable,
 	s *structuralschema.Structural,
 ) (T, *field.Error) {
 	// Parse JSON value.
@@ -79,7 +79,7 @@ func unmarshalAndDefaultVariableValue[T any](
 }
 
 func validatorAndSchemas(
-	fldPath *field.Path, definition *clusterv1.ClusterClassVariable,
+	fldPath *field.Path, definition *clusterv1beta2.ClusterClassVariable,
 ) (validation.SchemaValidator, *apiextensions.JSONSchemaProps, *structuralschema.Structural, *field.Error) {
 	// Convert schema to Kubernetes APIExtensions Schema.
 	apiExtensionsSchema, allErrs := ConvertJSONSchemaPropsToAPIExtensions(
@@ -169,7 +169,7 @@ func validateCEL[T any](
 //nolint:lll // Adding for URL above, does not work when adding to end of line in a comment block.
 func validateUnknownFields(
 	fldPath *field.Path,
-	clusterVariable *clusterv1.ClusterVariable,
+	clusterVariable *clusterv1beta2.ClusterVariable,
 	variableValue interface{},
 	variableSchema *apiextensions.JSONSchemaProps,
 ) field.ErrorList {
@@ -220,8 +220,8 @@ func validateUnknownFields(
 
 // ValidateClusterVariableUpdate validates an update to a clusterVariable.
 func ValidateClusterVariableUpdate[T any](
-	value, oldValue *clusterv1.ClusterVariable,
-	definition *clusterv1.ClusterClassVariable,
+	value, oldValue *clusterv1beta2.ClusterVariable,
+	definition *clusterv1beta2.ClusterClassVariable,
 	fldPath *field.Path,
 ) field.ErrorList {
 	validator, apiExtensionsSchema, structuralSchema, err := validatorAndSchemas(fldPath, definition)

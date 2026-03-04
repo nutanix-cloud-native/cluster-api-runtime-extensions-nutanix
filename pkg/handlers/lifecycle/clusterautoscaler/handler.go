@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,14 +30,14 @@ const (
 type addonStrategy interface {
 	apply(
 		context.Context,
-		*clusterv1.Cluster,
+		*clusterv1beta2.Cluster,
 		string,
 		logr.Logger,
 	) error
 
 	delete(
 		context.Context,
-		*clusterv1.Cluster,
+		*clusterv1beta2.Cluster,
 		logr.Logger,
 	) error
 }
@@ -122,7 +122,7 @@ func (n *DefaultClusterAutoscaler) BeforeClusterUpgrade(
 
 func (n *DefaultClusterAutoscaler) apply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
@@ -267,7 +267,7 @@ func (n *DefaultClusterAutoscaler) BeforeClusterDelete(
 }
 
 func (n *DefaultClusterAutoscaler) getCAVariable(
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) (*v1alpha1.ClusterAutoscaler, error) {
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 
@@ -286,6 +286,6 @@ func (n *DefaultClusterAutoscaler) getCAVariable(
 	return &caVar, nil
 }
 
-func addonResourceNameForCluster(cluster *clusterv1.Cluster) string {
+func addonResourceNameForCluster(cluster *clusterv1beta2.Cluster) string {
 	return fmt.Sprintf("%s-%s", addonName, cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey])
 }

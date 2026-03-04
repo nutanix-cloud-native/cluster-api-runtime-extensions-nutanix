@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -33,7 +33,7 @@ var (
 			Name: "test-secret",
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: clusterv1.GroupVersion.String(),
+					APIVersion: clusterv1beta2.GroupVersion.String(),
 					Kind:       "Cluster",
 					Name:       testCluster.Name,
 					UID:        "12345",
@@ -42,18 +42,18 @@ var (
 		},
 	}
 
-	testCluster = &clusterv1.Cluster{
+	testCluster = &clusterv1beta2.Cluster{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
 		},
 	}
-	anotherTestCluster = &clusterv1.Cluster{
+	anotherTestCluster = &clusterv1beta2.Cluster{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -69,7 +69,7 @@ func Test_EnsureOwnerReferenceForSecret(t *testing.T) {
 		name          string
 		client        client.Client
 		secretName    string
-		cluster       *clusterv1.Cluster
+		cluster       *clusterv1beta2.Cluster
 		wantOwnerRefs int
 		wantErr       error
 	}{
@@ -148,6 +148,6 @@ func buildFakeClient(t *testing.T, objs ...client.Object) client.Client {
 	t.Helper()
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 	return fake.NewClientBuilder().WithScheme(clientScheme).WithObjects(objs...).Build()
 }

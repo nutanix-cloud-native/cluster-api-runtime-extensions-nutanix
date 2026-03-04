@@ -10,7 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -71,7 +71,7 @@ func (l *LocalPathProvisionerCSI) Apply(
 	ctx context.Context,
 	provider v1alpha1.CSIProvider,
 	defaultStorage v1alpha1.DefaultStorage,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) error {
 	var strategy addons.Applier

@@ -8,24 +8,24 @@ import (
 	"fmt"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-func MarshalToClusterVariable[T any](name string, obj T) (*clusterv1.ClusterVariable, error) {
+func MarshalToClusterVariable[T any](name string, obj T) (*clusterv1beta2.ClusterVariable, error) {
 	marshaled, err := json.Marshal(obj)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal variable value %q: %w", name, err)
 	}
-	return &clusterv1.ClusterVariable{
+	return &clusterv1beta2.ClusterVariable{
 		Name:  name,
 		Value: apiextensionsv1.JSON{Raw: marshaled},
 	}, nil
 }
 
 func UnmarshalClusterConfigVariable(
-	clusterVariables []clusterv1.ClusterVariable,
+	clusterVariables []clusterv1beta2.ClusterVariable,
 ) (*ClusterConfigSpec, error) {
 	variableName := v1alpha1.ClusterConfigVariableName
 	clusterConfig := GetClusterVariableByName(variableName, clusterVariables)
@@ -42,7 +42,7 @@ func UnmarshalClusterConfigVariable(
 }
 
 func UnmarshalWorkerConfigVariable(
-	clusterVariables []clusterv1.ClusterVariable,
+	clusterVariables []clusterv1beta2.ClusterVariable,
 ) (*WorkerNodeConfigSpec, error) {
 	variableName := v1alpha1.WorkerConfigVariableName
 	workerConfig := GetClusterVariableByName(variableName, clusterVariables)
@@ -58,7 +58,7 @@ func UnmarshalWorkerConfigVariable(
 	return spec, nil
 }
 
-func UnmarshalClusterVariable[T any](clusterVariable *clusterv1.ClusterVariable, obj *T) error {
+func UnmarshalClusterVariable[T any](clusterVariable *clusterv1beta2.ClusterVariable, obj *T) error {
 	err := json.Unmarshal(clusterVariable.Value.Raw, obj)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal json: %w", err)
@@ -69,8 +69,8 @@ func UnmarshalClusterVariable[T any](clusterVariable *clusterv1.ClusterVariable,
 
 func GetClusterVariableByName(
 	name string,
-	clusterVariables []clusterv1.ClusterVariable,
-) *clusterv1.ClusterVariable {
+	clusterVariables []clusterv1beta2.ClusterVariable,
+) *clusterv1beta2.ClusterVariable {
 	for _, clusterVar := range clusterVariables {
 		if clusterVar.Name == name {
 			return &clusterVar
@@ -82,9 +82,9 @@ func GetClusterVariableByName(
 // UpdateClusterVariable updates the variable in the list of cluster variables.
 // If the variable does not exist, it appends it to the list.
 func UpdateClusterVariable(
-	variable *clusterv1.ClusterVariable,
-	clusterVariables []clusterv1.ClusterVariable,
-) []clusterv1.ClusterVariable {
+	variable *clusterv1beta2.ClusterVariable,
+	clusterVariables []clusterv1beta2.ClusterVariable,
+) []clusterv1beta2.ClusterVariable {
 	name := variable.Name
 	for i := range clusterVariables {
 		if clusterVariables[i].Name == name {

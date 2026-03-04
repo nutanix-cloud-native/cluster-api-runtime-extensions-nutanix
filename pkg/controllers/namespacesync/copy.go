@@ -10,7 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,7 +18,7 @@ func copyClusterClassAndTemplates(
 	ctx context.Context,
 	w client.Writer,
 	templateReader client.Reader,
-	source *clusterv1.ClusterClass,
+	source *clusterv1beta2.ClusterClass,
 	namespace string,
 ) error {
 	target := copyObjectForCreate(source, source.Name, namespace)

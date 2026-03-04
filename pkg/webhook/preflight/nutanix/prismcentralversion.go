@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 	nutanixutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/nutanix/utils"
@@ -119,7 +119,7 @@ func (c *prismCentralVersionCheck) Run(_ context.Context) preflight.CheckResult 
 	return c.result
 }
 
-func isPCVersionCheckSkipped(cluster *clusterv1.Cluster) bool {
+func isPCVersionCheckSkipped(cluster *clusterv1beta2.Cluster) bool {
 	if cluster == nil {
 		return false
 	}

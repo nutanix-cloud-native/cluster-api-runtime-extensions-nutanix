@@ -16,7 +16,7 @@ import (
 	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -146,10 +146,10 @@ func (h *kubeProxyMode) Mutate(
 		obj,
 		vars,
 		&holderRef,
-		clusterv1.PatchSelector{
+		clusterv1beta2.PatchSelector{
 			APIVersion: eksv1.GroupVersion.String(),
 			Kind:       "AWSManagedControlPlaneTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				ControlPlane: ptr.To(true),
 			},
 		},

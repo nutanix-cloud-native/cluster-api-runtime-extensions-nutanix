@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -21,7 +21,7 @@ import (
 
 type WaitForIngressToBeReadyInWorkloadClusterInput struct {
 	Ingress              *apivariables.Ingress
-	WorkloadCluster      *clusterv1.Cluster
+	WorkloadCluster      *clusterv1beta2.Cluster
 	ClusterProxy         framework.ClusterProxy
 	DeploymentIntervals  []interface{}
 	HelmReleaseIntervals []interface{}
@@ -57,7 +57,7 @@ func WaitForIngressToBeReadyInWorkloadCluster(
 }
 
 type waitForAWSLoadBalancerControllerToBeReadyInWorkloadClusterInput struct {
-	workloadCluster      *clusterv1.Cluster
+	workloadCluster      *clusterv1beta2.Cluster
 	clusterProxy         framework.ClusterProxy
 	deploymentIntervals  []interface{}
 	helmReleaseIntervals []interface{}

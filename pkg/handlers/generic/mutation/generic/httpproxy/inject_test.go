@@ -14,7 +14,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -36,7 +36,7 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 		// This will allow ginkgo to initialize testEnv variable during test execution time.
 		clientScheme := runtime.NewScheme()
 		utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-		utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+		utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 		cl, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		gomega.Expect(err).To(gomega.BeNil())
 		return mutation.NewMetaGeneratePatchesHandler(
@@ -117,17 +117,17 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 		It(tt.Name, func() {
 			clientScheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-			utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+			utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 			cl, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 			gomega.Expect(err).To(gomega.BeNil())
-			c := &clusterv1.Cluster{
+			c := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						ClassRef: clusterv1.ClusterClassRef{Name: "test"},
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "test"},
 						Version:  "v1.30.0",
 					},
 				},

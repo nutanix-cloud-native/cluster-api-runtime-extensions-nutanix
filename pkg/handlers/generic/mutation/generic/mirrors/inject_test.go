@@ -18,7 +18,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -45,7 +45,7 @@ func TestMirrorsPatch(t *testing.T) {
 var _ = Describe("Generate Global mirror patches", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 
 	patchGenerator := func() mutation.GeneratePatches {
 		// Always initialize the testEnv variable in the closure.
@@ -430,14 +430,14 @@ var _ = Describe("Generate Global mirror patches", func() {
 
 		gomega.Expect(client.Create(
 			ctx,
-			&clusterv1.Cluster{
+			&clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
 				},
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: clusterv1.ClusterNetwork{
-						Services: clusterv1.NetworkRanges{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{
+						Services: clusterv1beta2.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},
@@ -465,7 +465,7 @@ var _ = Describe("Generate Global mirror patches", func() {
 
 		gomega.Expect(client.Delete(
 			ctx,
-			&clusterv1.Cluster{
+			&clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
@@ -487,7 +487,7 @@ func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 	tests := []struct {
 		name    string
 		c       ctrlclient.Client
-		cluster *clusterv1.Cluster
+		cluster *clusterv1beta2.Cluster
 		want    containerdConfig
 		wantErr error
 	}{
@@ -496,14 +496,14 @@ func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 			c: fake.NewClientBuilder().WithObjects(
 				newRegistrySecretWithCA(registryAddonCAForCluster),
 			).Build(),
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: corev1.NamespaceDefault,
 				},
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: clusterv1.ClusterNetwork{
-						Services: clusterv1.NetworkRanges{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{
+						Services: clusterv1beta2.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},
@@ -519,13 +519,13 @@ func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 		{
 			name: "error: missing Services CIDR",
 			c:    fake.NewClientBuilder().Build(),
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: corev1.NamespaceDefault,
 				},
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: clusterv1.ClusterNetwork{},
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{},
 				},
 			},
 			wantErr: fmt.Errorf(
@@ -540,14 +540,14 @@ func Test_containerdConfigFromRegistryAddon(t *testing.T) {
 			c: fake.NewClientBuilder().WithObjects(
 				newRegistrySecretWithoutCA("test-cluster-registry-addon-ca"),
 			).Build(),
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: corev1.NamespaceDefault,
 				},
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: clusterv1.ClusterNetwork{
-						Services: clusterv1.NetworkRanges{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{
+						Services: clusterv1beta2.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},

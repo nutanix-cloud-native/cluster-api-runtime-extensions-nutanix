@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -39,7 +39,7 @@ type crsStrategy struct {
 
 func (s crsStrategy) Apply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {
@@ -82,7 +82,7 @@ func (s crsStrategy) Apply(
 }
 
 func generateAWSEBSCSIConfigMap(
-	defaultAWSEBSCSIConfigMap *corev1.ConfigMap, cluster *clusterv1.Cluster,
+	defaultAWSEBSCSIConfigMap *corev1.ConfigMap, cluster *clusterv1beta2.Cluster,
 ) *corev1.ConfigMap {
 	namespacedAWSEBSConfigMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{

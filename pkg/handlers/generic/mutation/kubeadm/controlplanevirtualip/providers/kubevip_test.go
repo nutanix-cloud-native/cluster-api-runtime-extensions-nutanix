@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -22,7 +22,7 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 	tests := []struct {
 		name                        string
 		controlPlaneEndpointSpec    v1alpha1.ControlPlaneEndpointSpec
-		cluster                     *clusterv1.Cluster
+		cluster                     *clusterv1beta2.Cluster
 		kcp                         *controlplanev1.KubeadmControlPlaneTemplate
 		expectedFiles               []bootstrapv1.File
 		expectedPreKubeadmCommands  []string
@@ -40,10 +40,10 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 					Path:    kubeVIPFilePath,
 					Content: validKubeVIPTemplate,
 				}}),
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
 						Version:  "v1.29.0",
 					},
 				},
@@ -79,10 +79,10 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 					Path:    kubeVIPFilePath,
 					Content: validKubeVIPTemplate,
 				}}),
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
 						Version:  "v1.28.0",
 					},
 				},
@@ -113,10 +113,10 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 					Path:    kubeVIPFilePath,
 					Content: validKubeVIPTemplate,
 				}}),
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
 						Version:  "v1.28.0",
 					},
 				},
@@ -146,10 +146,10 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 					Path:    kubeVIPFilePath,
 					Content: validKubeVIPTemplate,
 				}}),
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: clusterv1.Topology{
-						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
 						Version:  "v1.28.0",
 					},
 				},

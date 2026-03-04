@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/matchers"
@@ -25,7 +25,7 @@ func TestMatchesSelector(t *testing.T) {
 		obj               runtime.Object
 		templateVariables map[string]apiextensionsv1.JSON
 		holderRef         *runtimehooksv1.HolderReference
-		selector          clusterv1.PatchSelector
+		selector          clusterv1beta2.PatchSelector
 		match             bool
 	}{{
 		name: "Don't match: apiVersion mismatch",
@@ -35,7 +35,7 @@ func TestMatchesSelector(t *testing.T) {
 				"kind":       "AzureMachineTemplate",
 			},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1alpha4",
 			Kind:       "AzureMachineTemplate",
 		},
@@ -48,7 +48,7 @@ func TestMatchesSelector(t *testing.T) {
 				"kind":       "AzureMachineTemplate",
 			},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureClusterTemplate",
 		},
@@ -62,16 +62,16 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 			Name:       "my-cluster",
 			Namespace:  "default",
 			FieldPath:  "spec.infrastructureRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureClusterTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				InfrastructureCluster: ptr.To(true),
 			},
 		},
@@ -85,16 +85,16 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 			Name:       "my-cluster",
 			Namespace:  "default",
 			FieldPath:  "spec.infrastructureRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion:     "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:           "AzureClusterTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{},
+			MatchResources: clusterv1beta2.PatchSelectorMatch{},
 		},
 		match: false,
 	}, {
@@ -106,16 +106,16 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 			Name:       "my-cluster",
 			Namespace:  "default",
 			FieldPath:  "spec.infrastructureRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureClusterTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				InfrastructureCluster: ptr.To(false),
 			},
 		},
@@ -129,16 +129,16 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 			Name:       "my-cluster",
 			Namespace:  "default",
 			FieldPath:  "spec.controlPlaneRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 			Kind:       "ControlPlaneTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				ControlPlane: ptr.To(true),
 			},
 		},
@@ -152,16 +152,16 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 			Name:       "my-cluster",
 			Namespace:  "default",
 			FieldPath:  "spec.controlPlaneRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion:     "controlplane.cluster.x-k8s.io/v1beta2",
 			Kind:           "ControlPlaneTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{},
+			MatchResources: clusterv1beta2.PatchSelectorMatch{},
 		},
 		match: false,
 	}, {
@@ -173,16 +173,16 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 			Name:       "my-cluster",
 			Namespace:  "default",
 			FieldPath:  "spec.controlPlaneRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 			Kind:       "ControlPlaneTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				ControlPlane: ptr.To(false),
 			},
 		},
@@ -202,10 +202,10 @@ func TestMatchesSelector(t *testing.T) {
 			Namespace:  "default",
 			FieldPath:  "spec.machineTemplate.infrastructureRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureMachineTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				ControlPlane: ptr.To(true),
 			},
 		},
@@ -219,7 +219,7 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			Name:       "my-md-0",
 			Namespace:  "default",
@@ -228,11 +228,11 @@ func TestMatchesSelector(t *testing.T) {
 		templateVariables: map[string]apiextensionsv1.JSON{
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
-				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
+				MachineDeploymentClass: &clusterv1beta2.PatchSelectorMatchMachineDeploymentClass{
 					Names: []string{"classA"},
 				},
 			},
@@ -247,7 +247,7 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			Name:       "my-md-0",
 			Namespace:  "default",
@@ -256,11 +256,11 @@ func TestMatchesSelector(t *testing.T) {
 		templateVariables: map[string]apiextensionsv1.JSON{
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
-				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
+				MachineDeploymentClass: &clusterv1beta2.PatchSelectorMatchMachineDeploymentClass{
 					Names: []string{"*"},
 				},
 			},
@@ -275,7 +275,7 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			Name:       "my-md-0",
 			Namespace:  "default",
@@ -284,11 +284,11 @@ func TestMatchesSelector(t *testing.T) {
 		templateVariables: map[string]apiextensionsv1.JSON{
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"class-A"}}`)},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
-				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
+				MachineDeploymentClass: &clusterv1beta2.PatchSelectorMatchMachineDeploymentClass{
 					Names: []string{"class-*"},
 				},
 			},
@@ -303,7 +303,7 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			Name:       "my-md-0",
 			Namespace:  "default",
@@ -312,11 +312,11 @@ func TestMatchesSelector(t *testing.T) {
 		templateVariables: map[string]apiextensionsv1.JSON{
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"class-A"}}`)},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
-				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
+				MachineDeploymentClass: &clusterv1beta2.PatchSelectorMatchMachineDeploymentClass{
 					Names: []string{"*-A"},
 				},
 			},
@@ -331,7 +331,7 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			Name:       "my-md-0",
 			Namespace:  "default",
@@ -340,11 +340,11 @@ func TestMatchesSelector(t *testing.T) {
 		templateVariables: map[string]apiextensionsv1.JSON{
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
-				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
+				MachineDeploymentClass: &clusterv1beta2.PatchSelectorMatchMachineDeploymentClass{
 					Names: []string{},
 				},
 			},
@@ -359,7 +359,7 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			Name:       "my-md-0",
 			Namespace:  "default",
@@ -368,10 +368,10 @@ func TestMatchesSelector(t *testing.T) {
 		templateVariables: map[string]apiextensionsv1.JSON{
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				MachineDeploymentClass: nil,
 			},
 		},
@@ -385,7 +385,7 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			Name:       "my-md-0",
 			Namespace:  "default",
@@ -394,10 +394,10 @@ func TestMatchesSelector(t *testing.T) {
 		templateVariables: map[string]apiextensionsv1.JSON{
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion:     "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:           "BootstrapTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{},
+			MatchResources: clusterv1beta2.PatchSelectorMatch{},
 		},
 		match: false,
 	}, {
@@ -409,7 +409,7 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			Name:       "my-md-0",
 			Namespace:  "default",
@@ -418,11 +418,11 @@ func TestMatchesSelector(t *testing.T) {
 		templateVariables: map[string]apiextensionsv1.JSON{
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "bootstrap.cluster.x-k8s.io/v1beta2",
 			Kind:       "BootstrapTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
-				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
+				MachineDeploymentClass: &clusterv1beta2.PatchSelectorMatchMachineDeploymentClass{
 					Names: []string{"classB"},
 				},
 			},
@@ -437,7 +437,7 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			Name:       "my-md-0",
 			Namespace:  "default",
@@ -446,11 +446,11 @@ func TestMatchesSelector(t *testing.T) {
 		templateVariables: map[string]apiextensionsv1.JSON{
 			runtimehooksv1.BuiltinsName: {Raw: []byte(`{"machineDeployment":{"class":"classA"}}`)},
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 			Kind:       "AzureMachineTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
-				MachineDeploymentClass: &clusterv1.PatchSelectorMatchMachineDeploymentClass{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
+				MachineDeploymentClass: &clusterv1beta2.PatchSelectorMatchMachineDeploymentClass{
 					Names: []string{"classA"},
 				},
 			},
@@ -471,10 +471,10 @@ func TestMatchesSelector(t *testing.T) {
 			Namespace:  "default",
 			FieldPath:  "spec.machineTemplate.spec.infrastructureRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 			Kind:       "NutanixMachineTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				ControlPlane: ptr.To(true),
 			},
 		},
@@ -494,10 +494,10 @@ func TestMatchesSelector(t *testing.T) {
 			Namespace:  "default",
 			FieldPath:  "spec.template.spec.infrastructureRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 			Kind:       "NutanixMachineTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				ControlPlane: ptr.To(true),
 			},
 		},
@@ -511,16 +511,16 @@ func TestMatchesSelector(t *testing.T) {
 			},
 		},
 		holderRef: &runtimehooksv1.HolderReference{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Custom",
 			Name:       "my-md-0",
 			Namespace:  "default",
 			FieldPath:  "spec.machineTemplate.unknown.infrastructureRef",
 		},
-		selector: clusterv1.PatchSelector{
+		selector: clusterv1beta2.PatchSelector{
 			APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 			Kind:       "ControlPlaneTemplate",
-			MatchResources: clusterv1.PatchSelectorMatch{
+			MatchResources: clusterv1beta2.PatchSelectorMatch{
 				ControlPlane: ptr.To(true),
 			},
 		},

@@ -18,7 +18,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -351,7 +351,7 @@ func TestRegistryCheck(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup test cluster
-			cluster := &clusterv1.Cluster{
+			cluster := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "test-ns",
 				},
@@ -442,7 +442,7 @@ func TestNewRegistryCheck(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			cd := &checkDependencies{
 				genericClusterConfigSpec: tc.genericClusterConfigSpec,
-				cluster: &clusterv1.Cluster{
+				cluster: &clusterv1beta2.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "test-ns",
 					},

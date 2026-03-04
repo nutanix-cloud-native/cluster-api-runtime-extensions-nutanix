@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -549,14 +549,14 @@ func TestExtractIPv4PrefixesFromSubnet(t *testing.T) {
 	}
 }
 
-func testCluster(podCIDRs, serviceCIDRs []string) *clusterv1.Cluster {
-	return &clusterv1.Cluster{
-		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: clusterv1.ClusterNetwork{
-				Pods: clusterv1.NetworkRanges{
+func testCluster(podCIDRs, serviceCIDRs []string) *clusterv1beta2.Cluster {
+	return &clusterv1beta2.Cluster{
+		Spec: clusterv1beta2.ClusterSpec{
+			ClusterNetwork: clusterv1beta2.ClusterNetwork{
+				Pods: clusterv1beta2.NetworkRanges{
 					CIDRBlocks: podCIDRs,
 				},
-				Services: clusterv1.NetworkRanges{
+				Services: clusterv1beta2.NetworkRanges{
 					CIDRBlocks: serviceCIDRs,
 				},
 			},

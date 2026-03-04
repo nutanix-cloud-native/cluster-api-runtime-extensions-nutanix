@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -114,7 +114,7 @@ func Test_updateStatefulSetVolumeClaimTemplate(t *testing.T) {
 
 	tests := []struct {
 		name                   string
-		cluster                *clusterv1.Cluster
+		cluster                *clusterv1beta2.Cluster
 		hcp                    *caaphv1.HelmChartProxy
 		existingStatefulSet    *appsv1.StatefulSet
 		wantStatefulSetDeleted bool
@@ -246,7 +246,7 @@ func Test_expandPersistentVolumeClaims(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		cluster      *clusterv1.Cluster
+		cluster      *clusterv1beta2.Cluster
 		hcp          *caaphv1.HelmChartProxy
 		existingPVCs []*corev1.PersistentVolumeClaim
 		wantSizes    map[string]string // PVC name: expected storage size
@@ -438,24 +438,24 @@ func buildFakeClient(t *testing.T, objs ...client.Object) client.Client {
 	t.Helper()
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(clusterv1.AddToScheme(scheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(scheme))
 	utilruntime.Must(appsv1.AddToScheme(scheme))
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).Build()
 }
 
-func testCluster() *clusterv1.Cluster {
-	return &clusterv1.Cluster{
+func testCluster() *clusterv1beta2.Cluster {
+	return &clusterv1beta2.Cluster{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: clusterv1.GroupVersion.String(),
+			APIVersion: clusterv1beta2.GroupVersion.String(),
 			Kind:       "Cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-cluster",
 			Namespace: corev1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: clusterv1.ClusterNetwork{
-				Services: clusterv1.NetworkRanges{
+		Spec: clusterv1beta2.ClusterSpec{
+			ClusterNetwork: clusterv1beta2.ClusterNetwork{
+				Services: clusterv1beta2.NetworkRanges{
 					CIDRBlocks: []string{"10.96.0.0/12"},
 				},
 			},

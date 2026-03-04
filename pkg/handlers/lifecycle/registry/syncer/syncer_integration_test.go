@@ -16,7 +16,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	featuregatetesting "k8s.io/component-base/featuregate/testing"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
@@ -31,7 +31,7 @@ import (
 var _ = Describe("Test Syncer", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
 
 	It("Should create HelmChartProxy and then delete it", func(ctx SpecContext) {
@@ -100,7 +100,7 @@ var _ = Describe("Test Syncer", func() {
 		expectedReleaseName := addonResourceNameForCluster(workloadCluster)
 		Expect(registrySyncerHelmChartProxy.Spec.ReleaseName).To(Equal(expectedReleaseName))
 
-		expectedMatchLabels := map[string]string{clusterv1.ClusterNameLabel: managementCluster.Name}
+		expectedMatchLabels := map[string]string{clusterv1beta2.ClusterNameLabel: managementCluster.Name}
 		Expect(registrySyncerHelmChartProxy.Spec.ClusterSelector.MatchLabels).To(Equal(expectedMatchLabels))
 
 		// Run the cleanup and verify that the HelmChartProxy is deleted.
@@ -123,7 +123,7 @@ func createTestManagementCluster(
 	ctx context.Context,
 	c ctrlclient.Client,
 	clusterConfigSpec *carenv1.DockerClusterConfigSpec,
-) *clusterv1.Cluster {
+) *clusterv1beta2.Cluster {
 	managementCluster := createTestCluster(
 		ctx, c,
 		nil,
@@ -135,8 +135,8 @@ func createTestManagementCluster(
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-node",
 			Annotations: map[string]string{
-				clusterv1.ClusterNameAnnotation:      managementCluster.Name,
-				clusterv1.ClusterNamespaceAnnotation: managementCluster.Namespace,
+				clusterv1beta2.ClusterNameAnnotation:      managementCluster.Name,
+				clusterv1beta2.ClusterNamespaceAnnotation: managementCluster.Namespace,
 			},
 		},
 	}
@@ -150,27 +150,27 @@ func createTestCluster(
 	c ctrlclient.Client,
 	annotations map[string]string,
 	clusterConfigSpec *carenv1.DockerClusterConfigSpec,
-) *clusterv1.Cluster {
+) *clusterv1beta2.Cluster {
 	variable, err := variables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfigSpec)
 	Expect(err).ToNot(HaveOccurred())
-	cluster := &clusterv1.Cluster{
+	cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-cluster-",
 			Annotations:  annotations,
 			Namespace:    metav1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{
-			ClusterNetwork: clusterv1.ClusterNetwork{
-				Services: clusterv1.NetworkRanges{
+		Spec: clusterv1beta2.ClusterSpec{
+			ClusterNetwork: clusterv1beta2.ClusterNetwork{
+				Services: clusterv1beta2.NetworkRanges{
 					CIDRBlocks: []string{
 						"192.168.0.0/16",
 					},
 				},
 			},
-			Topology: clusterv1.Topology{
-				ClassRef:  clusterv1.ClusterClassRef{Name: "dummy-class"},
+			Topology: clusterv1beta2.Topology{
+				ClassRef:  clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
 				Version:   "dummy-version",
-				Variables: []clusterv1.ClusterVariable{*variable},
+				Variables: []clusterv1beta2.ClusterVariable{*variable},
 			},
 		},
 	}

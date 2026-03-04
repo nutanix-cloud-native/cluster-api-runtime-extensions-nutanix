@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
@@ -24,7 +24,7 @@ func TestMutateIfApplicable(t *testing.T) {
 		name          string
 		input         *unstructured.Unstructured
 		holderRef     *runtimehooksv1.HolderReference
-		patchSelector clusterv1.PatchSelector
+		patchSelector clusterv1beta2.PatchSelector
 		mutFn         func(T) error
 		expected      *unstructured.Unstructured
 	}

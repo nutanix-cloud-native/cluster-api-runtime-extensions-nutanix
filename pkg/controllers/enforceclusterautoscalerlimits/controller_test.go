@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
@@ -20,7 +20,7 @@ import (
 func newMachineDeploymentWithTemplates(
 	namespace, name, clusterName string,
 	buildOpts ...func(*builder.MachineDeploymentBuilder) *builder.MachineDeploymentBuilder,
-) (*clusterv1.MachineDeployment, []client.Object) {
+) (*clusterv1beta2.MachineDeployment, []client.Object) {
 	bootstrapTemplate := builder.BootstrapTemplate(namespace, name).Build()
 	infraTemplate := builder.InfrastructureMachineTemplate(namespace, name).Build()
 	b := builder.MachineDeployment(namespace, name).
@@ -55,7 +55,11 @@ func TestReconcileMachineDeploymentWithNoReplicasOrClusterAutoscalerAnnotations(
 	}()
 
 	g.Eventually(func() error {
-		return env.Client.Get(ctx, client.ObjectKeyFromObject(sourceMachineDeployment), &clusterv1.MachineDeployment{})
+		return env.Client.Get(
+			ctx,
+			client.ObjectKeyFromObject(sourceMachineDeployment),
+			&clusterv1beta2.MachineDeployment{},
+		)
 	}, timeout).To(Succeed())
 
 	g.Consistently(func() error {
@@ -91,7 +95,11 @@ func TestReconcileMachineDeploymentWithReplicasOnly(t *testing.T) {
 	}()
 
 	g.Eventually(func() error {
-		return env.Client.Get(ctx, client.ObjectKeyFromObject(sourceMachineDeployment), &clusterv1.MachineDeployment{})
+		return env.Client.Get(
+			ctx,
+			client.ObjectKeyFromObject(sourceMachineDeployment),
+			&clusterv1beta2.MachineDeployment{},
+		)
 	}).To(Succeed())
 
 	g.Consistently(func() error {
@@ -129,7 +137,11 @@ func TestReconcileMachineDeploymentWithReplicasAndMinAnnotationOnly(t *testing.T
 	}()
 
 	g.Eventually(func() error {
-		return env.Client.Get(ctx, client.ObjectKeyFromObject(sourceMachineDeployment), &clusterv1.MachineDeployment{})
+		return env.Client.Get(
+			ctx,
+			client.ObjectKeyFromObject(sourceMachineDeployment),
+			&clusterv1beta2.MachineDeployment{},
+		)
 	}, timeout).To(Succeed())
 
 	g.Consistently(func() error {
@@ -167,7 +179,11 @@ func TestReconcileMachineDeploymentWithReplicasAndMaxAnnotationOnly(t *testing.T
 	}()
 
 	g.Eventually(func() error {
-		return env.Client.Get(ctx, client.ObjectKeyFromObject(sourceMachineDeployment), &clusterv1.MachineDeployment{})
+		return env.Client.Get(
+			ctx,
+			client.ObjectKeyFromObject(sourceMachineDeployment),
+			&clusterv1beta2.MachineDeployment{},
+		)
 	}, timeout).To(Succeed())
 
 	g.Consistently(func() error {
@@ -205,7 +221,11 @@ func TestReconcileMachineDeploymentWithReplicasWithinMinMaxBounds(t *testing.T) 
 	}()
 
 	g.Eventually(func() error {
-		return env.Client.Get(ctx, client.ObjectKeyFromObject(sourceMachineDeployment), &clusterv1.MachineDeployment{})
+		return env.Client.Get(
+			ctx,
+			client.ObjectKeyFromObject(sourceMachineDeployment),
+			&clusterv1beta2.MachineDeployment{},
+		)
 	}, timeout).To(Succeed())
 
 	g.Consistently(func() error {
@@ -311,7 +331,11 @@ func TestReconcileMachineDeploymentWithInvalidClusterAutoscalerAnnotations(t *te
 	}()
 
 	g.Eventually(func() error {
-		return env.Client.Get(ctx, client.ObjectKeyFromObject(sourceMachineDeployment), &clusterv1.MachineDeployment{})
+		return env.Client.Get(
+			ctx,
+			client.ObjectKeyFromObject(sourceMachineDeployment),
+			&clusterv1beta2.MachineDeployment{},
+		)
 	}).To(Succeed())
 
 	g.Consistently(func() error {
@@ -330,7 +354,7 @@ func verifyMachineDeploymentReplicas(
 	key client.ObjectKey,
 	expectedReplicas *int32,
 ) error {
-	var md clusterv1.MachineDeployment
+	var md clusterv1beta2.MachineDeployment
 	if err := c.Get(ctx, key, &md); err != nil {
 		return fmt.Errorf("failed to get MachineDeployment %s: %w", key, err)
 	}

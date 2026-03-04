@@ -15,7 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -143,7 +143,7 @@ func (c *CiliumCNI) BeforeClusterUpgrade(
 // skipCiliumPreflight returns true if the cluster has the skip-cilium-preflight annotation
 // set (e.g. "true", "1"), in which case the Cilium preflight Helm addon
 // should not be run (e.g. during BeforeClusterUpgrade).
-func skipCiliumPreflight(cluster *clusterv1.Cluster) bool {
+func skipCiliumPreflight(cluster *clusterv1beta2.Cluster) bool {
 	val, ok := cluster.Annotations[v1alpha1.SkipCiliumPreflightAnnotationKey]
 	if !ok || val == "" {
 		return false
@@ -157,7 +157,7 @@ func skipCiliumPreflight(cluster *clusterv1.Cluster) bool {
 
 func (c *CiliumCNI) apply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 	opts applyOpts,
 ) {
@@ -331,7 +331,7 @@ func (c *CiliumCNI) apply(
 func runApply(
 	ctx context.Context,
 	client ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	strategy addons.Applier,
 	targetNamespace string,
 	log logr.Logger,
@@ -405,7 +405,7 @@ func runApply(
 
 func runPreflightApply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	strategy addons.Applier,
 	targetNamespace string,
 	log logr.Logger,
@@ -426,7 +426,7 @@ func runPreflightApply(
 func waitForCiliumPreflightResources(
 	ctx context.Context,
 	client ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) error {
 	remoteClient, err := remote.NewClusterClient(

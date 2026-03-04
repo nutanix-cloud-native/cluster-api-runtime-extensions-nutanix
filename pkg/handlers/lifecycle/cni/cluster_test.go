@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 func Test_PodCIDR(t *testing.T) {
@@ -16,22 +16,22 @@ func Test_PodCIDR(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		cluster  *clusterv1.Cluster
+		cluster  *clusterv1beta2.Cluster
 		wantCIDR string
 		wantErr  error
 	}{
 		{
 			name: "no Pods CIDR set",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{},
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{},
 			},
 		},
 		{
 			name: "no Pods CIDR set, but Services CIDR is set",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: clusterv1.ClusterNetwork{
-						Services: clusterv1.NetworkRanges{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{
+						Services: clusterv1beta2.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},
@@ -40,10 +40,10 @@ func Test_PodCIDR(t *testing.T) {
 		},
 		{
 			name: "Pods CIDR set",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: clusterv1.ClusterNetwork{
-						Pods: clusterv1.NetworkRanges{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{
+						Pods: clusterv1beta2.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16"},
 						},
 					},
@@ -53,10 +53,10 @@ func Test_PodCIDR(t *testing.T) {
 		},
 		{
 			name: "error: multiple Pods CIDRs set",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: clusterv1.ClusterNetwork{
-						Pods: clusterv1.NetworkRanges{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{
+						Pods: clusterv1beta2.NetworkRanges{
 							CIDRBlocks: []string{"192.168.0.1/16", "10.0.0.1/16"},
 						},
 					},
