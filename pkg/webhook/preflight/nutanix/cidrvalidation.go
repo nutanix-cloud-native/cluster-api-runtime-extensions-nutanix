@@ -106,7 +106,7 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 		result.InternalError = true
 		result.Causes = append(result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
-				"Failed to resolve node subnet CIDRs from Prism Central: %s. This is usually a temporary error. Please retry.",
+				"Failed to resolve node subnet CIDRs from Prism Central: %s. Please retry.",
 				err,
 			),
 		})
