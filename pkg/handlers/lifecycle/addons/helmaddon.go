@@ -221,6 +221,8 @@ func (a *helmAddonApplier) Apply(
 		helmReleaseName = applyOpts.helmReleaseName
 	}
 
+	repoURL, chartName := handlersutils.NormalizeHelmChartOCIRepoURL(a.helmChart.Repository, a.helmChart.Name)
+
 	chartProxy := &caaphv1.HelmChartProxy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: caaphv1.GroupVersion.String(),
@@ -231,8 +233,8 @@ func (a *helmAddonApplier) Apply(
 			Name:      fmt.Sprintf("%s-%s", a.config.defaultHelmReleaseName, clusterUUID),
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			RepoURL:   a.helmChart.Repository,
-			ChartName: a.helmChart.Name,
+			RepoURL:   repoURL,
+			ChartName: chartName,
 			ClusterSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: targetCluster.Name},
 			},

@@ -200,6 +200,21 @@ func RetrieveValuesTemplate(
 	return configMap.Data[configMapKey], nil
 }
 
+// NormalizeHelmChartOCIRepoURL normalizes OCI repository URLs for HelmChartProxy.
+func NormalizeHelmChartOCIRepoURL(repoURL, chartName string) (repoURLOut, chartNameOut string) {
+	repoURLOut = repoURL
+	chartNameOut = chartName
+	if !strings.HasPrefix(repoURL, "oci://") {
+		return
+	}
+	suffix := "/" + chartName
+	trimmed := strings.TrimSuffix(strings.TrimSuffix(repoURL, "/"), suffix)
+	if trimmed != repoURL {
+		repoURLOut = trimmed
+	}
+	return
+}
+
 func SetTLSConfigForHelmChartProxyIfNeeded(hcp *caaphv1.HelmChartProxy) {
 	if strings.Contains(hcp.Spec.RepoURL, "helm-repository") {
 		hcp.Spec.TLSConfig = &caaphv1.TLSConfig{

@@ -10,71 +10,71 @@ data:
   aws-ccm: |
     ChartName: aws-cloud-controller-manager
     ChartVersion: 0.0.9
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/cloud-provider-aws{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "aws-ccm" "defaultURL" "https://kubernetes.github.io/cloud-provider-aws" "context" .) }}'
   aws-ebs-csi: |
     ChartName: aws-ebs-csi-driver
     ChartVersion: 2.51.0
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/aws-ebs-csi-driver{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "aws-ebs-csi" "defaultURL" "https://kubernetes-sigs.github.io/aws-ebs-csi-driver" "context" .) }}'
   aws-load-balancer-controller: |
     ChartName: aws-load-balancer-controller
     ChartVersion: 1.13.4
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://aws.github.io/eks-charts{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "aws-load-balancer-controller" "defaultURL" "https://aws.github.io/eks-charts" "context" .) }}'
   cilium: |
     ChartName: cilium
     ChartVersion: 1.18.6
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://helm.cilium.io/{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "cilium" "defaultURL" "https://helm.cilium.io/" "context" .) }}'
   cluster-autoscaler: |
     ChartName: cluster-autoscaler
     ChartVersion: 9.52.0
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes.github.io/autoscaler{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "cluster-autoscaler" "defaultURL" "https://kubernetes.github.io/autoscaler" "context" .) }}'
   cncf-distribution-registry: |
     ChartName: docker-registry
     ChartVersion: 2.3.5
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/staging/{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "cncf-distribution-registry" "defaultURL" "https://mesosphere.github.io/charts/staging/" "context" .) }}'
   cosi-controller: |
     ChartName: cosi
     ChartVersion: 0.2.2
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/stable/{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "cosi-controller" "defaultURL" "https://mesosphere.github.io/charts/stable/" "context" .) }}'
   konnector-agent: |
     ChartName: konnector-agent
     ChartVersion: 1.3.0
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "konnector-agent" "defaultURL" "https://nutanix.github.io/helm-releases/" "context" .) }}'
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
     ChartVersion: 0.0.32
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://charts.containeroo.ch{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "local-path-provisioner-csi" "defaultURL" "https://charts.containeroo.ch" "context" .) }}'
   metallb: |
     ChartName: metallb
     ChartVersion: 0.15.2
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://metallb.github.io/metallb{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "metallb" "defaultURL" "https://metallb.github.io/metallb" "context" .) }}'
   multus: |
     ChartName: multus
     ChartVersion: 0.1.0
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/stable/{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "multus" "defaultURL" "https://mesosphere.github.io/charts/stable/" "context" .) }}'
   nfd: |
     ChartName: node-feature-discovery
     ChartVersion: 0.18.1
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/node-feature-discovery/charts{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "nfd" "defaultURL" "https://kubernetes-sigs.github.io/node-feature-discovery/charts" "context" .) }}'
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
     ChartVersion: 0.6.2
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "nutanix-ccm" "defaultURL" "https://nutanix.github.io/helm/" "context" .) }}'
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
     ChartVersion: 3.3.8
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "nutanix-storage-csi" "defaultURL" "https://nutanix.github.io/helm-releases/" "context" .) }}'
   registry-syncer: |
     ChartName: registry-syncer
     ChartVersion: 0.1.0
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/staging/{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "registry-syncer" "defaultURL" "https://mesosphere.github.io/charts/staging/" "context" .) }}'
   snapshot-controller: |
     ChartName: snapshot-controller
     ChartVersion: 4.1.0
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://piraeus.io/helm-charts/{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "snapshot-controller" "defaultURL" "https://piraeus.io/helm-charts/" "context" .) }}'
   tigera-operator: |
     ChartName: tigera-operator
     ChartVersion: v3.29.6
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}'
+    RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "tigera-operator" "defaultURL" "https://docs.tigera.io/calico/charts" "context" .) }}'
 kind: ConfigMap
 metadata:
   creationTimestamp: null
