@@ -21,6 +21,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -54,6 +55,11 @@ const (
 	// helmUninstallTimeout is the maximum time to wait for HelmChartProxy deletion
 	// before giving up and allowing cluster deletion to proceed.
 	helmUninstallTimeout = 5 * time.Minute
+
+	// workloadClusterAPITimeout is the maximum time to wait for workload cluster API calls
+	// (e.g. checking PC registration). Kept short so that unreachable/misconfigured clusters
+	// do not block cluster deletion or webhook admission.
+	workloadClusterAPITimeout = 5 * time.Second
 
 	// maxClusterNameLength is the maximum cluster name length supported by Prism Central.
 	maxClusterNameLength = 40
@@ -470,8 +476,32 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
-	// Check cluster is registered in PC
-	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, cluster, log)
+	// Skip when cluster phase means we should not call the workload API or run cleanup.
+	// - Pending/Provisioning: Kubernetes API has not been created / user could not create resources.
+	// - Deleting: it's too late to try to cleanup.
+	phase := cluster.Status.GetTypedPhase()
+	if phase == clusterv1.ClusterPhasePending ||
+		phase == clusterv1.ClusterPhaseProvisioning ||
+		phase == clusterv1.ClusterPhaseDeleting {
+		log.Info("Skipping Konnector Agent cleanup based on cluster phase", "phase", phase)
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
+	// Skip workload cluster API call when control plane was never initialized (e.g. misconfigured
+	// cluster, control plane endpoint in use). Avoid calling the
+	// workload API when the cluster is not reachable.
+	if !conditions.IsTrue(cluster, clusterv1.ControlPlaneInitializedCondition) {
+		log.Info("Control plane not initialized, skipping Konnector Agent cleanup and allowing deletion")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
+	// Use a short timeout for workload cluster API so unreachable/misconfigured clusters
+	// do not block cluster deletion (e.g. topology controller cannot proceed to delete NutanixCluster).
+	apiCtx, apiCancel := context.WithTimeout(ctx, workloadClusterAPITimeout)
+	defer apiCancel()
+	clusterRegistered, err := isClusterRegisteredInPC(apiCtx, n.client, cluster, log)
 	if err != nil {
 		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
 		// setting response status to success to allow cluster deletion to proceed

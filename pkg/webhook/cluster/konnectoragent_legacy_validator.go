@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	v1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
+	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -39,6 +41,10 @@ const (
 
 	releaseNameAnnotation      = "meta.helm.sh/release-name"
 	releaseNamespaceAnnotation = "meta.helm.sh/release-namespace"
+
+	// workloadClusterAPITimeout limits time spent calling the workload cluster API.
+	// Kept short so unreachable clusters do not block Cluster updates or hit webhook timeout (~10s).
+	workloadClusterAPITimeout = 5 * time.Second
 )
 
 type konnectorAgentLegacyValidator struct {
@@ -87,10 +93,24 @@ func (k *konnectorAgentLegacyValidator) validate(
 		return admission.Allowed("")
 	}
 
+	// Skip when cluster is already in Deleting phase. During teardown we get many UPDATEs
+	// (e.g. finalizer removal, status updates). Connecting to the workload cluster here would
+	// block those updates if the API is unreachable; the legacy check is irrelevant during deletion.
+	phase := cluster.Status.GetTypedPhase()
+	if phase == clusterv1.ClusterPhaseDeleting {
+		return admission.Allowed("")
+	}
+
 	// This check requires connecting to the workload cluster to list Helm releases.
 	// Skip validation if infrastructure is not ready, as we cannot connect to the cluster yet.
 	// This can happen during UPDATE operations early in cluster provisioning.
 	if !cluster.Status.InfrastructureReady {
+		return admission.Allowed("")
+	}
+
+	// Skip when control plane is not initialized (e.g. misconfigured cluster, endpoint in use).
+	// Avoids blocking Cluster updates when the workload API is unreachable.
+	if !conditions.IsTrue(cluster, clusterv1.ControlPlaneInitializedCondition) {
 		return admission.Allowed("")
 	}
 
@@ -107,9 +127,12 @@ func (k *konnectorAgentLegacyValidator) validate(
 		return admission.Allowed("")
 	}
 
-	// Get remote client for the cluster.
+	// Use a short timeout so unreachable workload clusters do not block Cluster updates
+	// (e.g. finalizer removal) or hit webhook timeout (~10s).
+	apiCtx, apiCancel := context.WithTimeout(ctx, workloadClusterAPITimeout)
+	defer apiCancel()
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
-	remoteClient, err := remote.NewClusterClient(ctx, "", k.client, clusterKey)
+	remoteClient, err := remote.NewClusterClient(apiCtx, "", k.client, clusterKey)
 	if err != nil {
 		// If we can't reach the workload cluster API,
 		// skip the check to avoid blocking valid operations unnecessarily.
@@ -117,7 +140,7 @@ func (k *konnectorAgentLegacyValidator) validate(
 		return admission.Allowed("")
 	}
 
-	legacyReleases, err := findLegacyReleases(ctx, remoteClient)
+	legacyReleases, err := findLegacyReleases(apiCtx, remoteClient)
 	if err != nil {
 		// If legacy releases cannot be listed,
 		// skip the check to avoid blocking valid upgrade operations unnecessarily.
