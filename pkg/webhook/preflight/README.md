@@ -39,7 +39,7 @@ package myprovider
 import (
     "context"
 
-    clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+    clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
     ctrl "sigs.k8s.io/controller-runtime"
     ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -63,7 +63,7 @@ type checkDependencies struct {
 func (m *myChecker) Init(
     ctx context.Context,
     client ctrlclient.Client,
-    cluster *clusterv1.Cluster,
+    cluster *clusterv1beta2.Cluster,
 ) []preflight.Check {
     log := ctrl.LoggerFrom(ctx).WithName("preflight/myprovider")
 

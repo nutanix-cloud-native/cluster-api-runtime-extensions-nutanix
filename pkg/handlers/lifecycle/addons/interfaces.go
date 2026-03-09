@@ -7,13 +7,13 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 type Applier interface {
 	Apply(
 		ctx context.Context,
-		cluster *clusterv1.Cluster,
+		cluster *clusterv1beta2.Cluster,
 		defaultsNamespace string,
 		log logr.Logger,
 	) error
@@ -23,7 +23,7 @@ type Applier interface {
 type Deleter interface {
 	Delete(
 		ctx context.Context,
-		cluster *clusterv1.Cluster,
+		cluster *clusterv1beta2.Cluster,
 		log logr.Logger,
 	) error
 }

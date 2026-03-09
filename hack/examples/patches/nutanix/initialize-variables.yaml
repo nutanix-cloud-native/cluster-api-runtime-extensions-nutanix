@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 - op: "add"
-  path: "/spec/topology/class"
-  value: "nutanix-quick-start"
+  path: "/spec/topology/classRef"
+  value:
+    name: nutanix-quick-start
 - op: "add"
   path: "/spec/topology/variables/0/value/nutanix"
   value:

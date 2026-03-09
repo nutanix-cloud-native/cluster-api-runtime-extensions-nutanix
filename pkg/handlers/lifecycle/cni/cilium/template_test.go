@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -18,12 +18,12 @@ import (
 func Test_templateValues(t *testing.T) {
 	tests := []struct {
 		name                           string
-		cluster                        func(t *testing.T) *clusterv1.Cluster
+		cluster                        func(t *testing.T) *clusterv1beta2.Cluster
 		expectedRenderedValuesTemplate string
 	}{
 		{
 			name: "EKS cluster with https prefix in controlPlaneEndpoint.Host",
-			cluster: func(t *testing.T) *clusterv1.Cluster {
+			cluster: func(t *testing.T) *clusterv1beta2.Cluster {
 				return createTestCluster(
 					t,
 					"test-eks-cluster",
@@ -37,7 +37,7 @@ func Test_templateValues(t *testing.T) {
 		},
 		{
 			name: "Non-EKS (Nutanix) cluster (should set ipam mode to kubernetes)",
-			cluster: func(t *testing.T) *clusterv1.Cluster {
+			cluster: func(t *testing.T) *clusterv1beta2.Cluster {
 				return createTestCluster(t,
 					"test-cluster",
 					"test-namespace",
@@ -97,19 +97,19 @@ func Test_templateValues_TrimPrefixFunction(t *testing.T) {
 func Test_preflightTemplateValues(t *testing.T) {
 	tests := []struct {
 		name                           string
-		cluster                        func(t *testing.T) *clusterv1.Cluster
+		cluster                        func(t *testing.T) *clusterv1beta2.Cluster
 		expectedRenderedValuesTemplate string
 	}{
 		{
 			name: "preflight with kube-proxy replacement enabled",
-			cluster: func(t *testing.T) *clusterv1.Cluster {
+			cluster: func(t *testing.T) *clusterv1beta2.Cluster {
 				return createTestClusterForPreflight(t, "test-cluster", "test-namespace", "192.168.1.100", 6443, true)
 			},
 			expectedRenderedValuesTemplate: expectedPreflightWithKubeProxyReplacement,
 		},
 		{
 			name: "preflight with kube-proxy replacement disabled",
-			cluster: func(t *testing.T) *clusterv1.Cluster {
+			cluster: func(t *testing.T) *clusterv1beta2.Cluster {
 				return createTestClusterForPreflight(t, "test-cluster", "test-namespace", "192.168.1.100", 6443, false)
 			},
 			expectedRenderedValuesTemplate: expectedPreflightWithoutKubeProxyReplacement,
@@ -125,7 +125,7 @@ func Test_preflightTemplateValues(t *testing.T) {
 }
 
 // createTestCluster creates a test EKS cluster using ClusterBuilder
-func createTestCluster(t *testing.T, name, namespace, provider, host string, port int32) *clusterv1.Cluster {
+func createTestCluster(t *testing.T, name, namespace, provider, host string, port int32) *clusterv1beta2.Cluster {
 	// Create cluster config with kube-proxy disabled
 	clusterConfigSpec := &apivariables.ClusterConfigSpec{
 		KubeProxy: &carenv1.KubeProxy{
@@ -139,21 +139,21 @@ func createTestCluster(t *testing.T, name, namespace, provider, host string, por
 		t.Fatalf("failed to marshal cluster config to cluster variable: %v", err)
 	}
 
-	topology := &clusterv1.Topology{
-		Class:     "test-cluster-class",
+	topology := &clusterv1beta2.Topology{
+		ClassRef:  clusterv1beta2.ClusterClassRef{Name: "test-cluster-class"},
 		Version:   "v1.29.0",
-		Variables: []clusterv1.ClusterVariable{*variable},
+		Variables: []clusterv1beta2.ClusterVariable{*variable},
 	}
 
 	cluster := builder.Cluster(namespace, name).
 		WithLabels(map[string]string{
-			clusterv1.ProviderNameLabel: provider,
+			clusterv1beta2.ProviderNameLabel: provider,
 		}).
 		WithTopology(topology).
 		Build()
 
 	// Set ControlPlaneEndpoint after building since ClusterBuilder doesn't support it
-	cluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+	cluster.Spec.ControlPlaneEndpoint = clusterv1beta2.APIEndpoint{
 		Host: host,
 		Port: port,
 	}
@@ -168,7 +168,7 @@ func createTestClusterForPreflight(
 	name, namespace, host string,
 	port int32,
 	kubeProxyDisabled bool,
-) *clusterv1.Cluster {
+) *clusterv1beta2.Cluster {
 	clusterConfigSpec := &apivariables.ClusterConfigSpec{}
 	if kubeProxyDisabled {
 		clusterConfigSpec.KubeProxy = &carenv1.KubeProxy{
@@ -181,17 +181,17 @@ func createTestClusterForPreflight(
 		t.Fatalf("failed to marshal cluster config to cluster variable: %v", err)
 	}
 
-	topology := &clusterv1.Topology{
-		Class:     "test-cluster-class",
+	topology := &clusterv1beta2.Topology{
+		ClassRef:  clusterv1beta2.ClusterClassRef{Name: "test-cluster-class"},
 		Version:   "v1.29.0",
-		Variables: []clusterv1.ClusterVariable{*variable},
+		Variables: []clusterv1beta2.ClusterVariable{*variable},
 	}
 
 	cluster := builder.Cluster(namespace, name).
 		WithTopology(topology).
 		Build()
 
-	cluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+	cluster.Spec.ControlPlaneEndpoint = clusterv1beta2.APIEndpoint{
 		Host: host,
 		Port: port,
 	}
@@ -202,7 +202,7 @@ func createTestClusterForPreflight(
 func Test_skipCiliumPreflight(t *testing.T) {
 	tests := []struct {
 		name    string
-		cluster *clusterv1.Cluster
+		cluster *clusterv1beta2.Cluster
 		want    bool
 	}{
 		{

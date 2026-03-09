@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,7 +32,7 @@ import (
 
 type WaitForServiceLoadBalancerToBeReadyInWorkloadClusterInput struct {
 	ServiceLoadBalancer  *v1alpha1.ServiceLoadBalancer
-	WorkloadCluster      *clusterv1.Cluster
+	WorkloadCluster      *clusterv1beta2.Cluster
 	ClusterProxy         framework.ClusterProxy
 	DeploymentIntervals  []interface{}
 	DaemonSetIntervals   []interface{}
@@ -72,7 +72,7 @@ func WaitForServiceLoadBalancerToBeReadyInWorkloadCluster(
 }
 
 type waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadClusterInput struct {
-	workloadCluster      *clusterv1.Cluster
+	workloadCluster      *clusterv1beta2.Cluster
 	clusterProxy         framework.ClusterProxy
 	helmReleaseIntervals []interface{}
 	deploymentIntervals  []interface{}
@@ -142,7 +142,7 @@ func waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadCluster(
 }
 
 type EnsureLoadBalancerServiceInput struct {
-	WorkloadCluster  *clusterv1.Cluster
+	WorkloadCluster  *clusterv1beta2.Cluster
 	ClusterProxy     framework.ClusterProxy
 	ServiceIntervals []interface{}
 }

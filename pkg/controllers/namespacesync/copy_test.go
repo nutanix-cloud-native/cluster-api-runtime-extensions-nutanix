@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -148,7 +148,7 @@ func interceptors(createdObjs *[]client.Object, kindThatFailsGet, kindThatFailsC
 func newTestClusterClassAndTemplates(
 	namespace,
 	prefix string,
-) (*clusterv1.ClusterClass, []client.Object) {
+) (*clusterv1beta2.ClusterClass, []client.Object) {
 	bootstrapTemplate := builder.BootstrapTemplate(namespace, prefix).Build()
 	infraMachineTemplateControlPlane := builder.InfrastructureMachineTemplate(
 		namespace,
@@ -168,7 +168,7 @@ func newTestClusterClassAndTemplates(
 		WithInfrastructureClusterTemplate(infraClusterTemplate).
 		WithControlPlaneTemplate(controlPlaneTemplate).
 		WithControlPlaneInfrastructureMachineTemplate(infraMachineTemplateControlPlane).
-		WithWorkerMachineDeploymentClasses(*machineDeploymentClass).
+		WithWorkerMachineDeploymentClasses(machineDeploymentClass).
 		Build()
 
 	templates := []client.Object{

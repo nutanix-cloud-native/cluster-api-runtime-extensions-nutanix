@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -67,7 +67,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 
 	fakeKubeClient := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(fd1, fd2, fd3, fd4).Build()
 
-	clusterObj := &clusterv1.Cluster{
+	clusterObj := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-cluster",
 			Namespace: "default",
@@ -82,7 +82,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 		expectedChecksCount                  int
 		nclient                              client
 		kclient                              ctrlclient.Client
-		cluster                              *clusterv1.Cluster
+		cluster                              *clusterv1beta2.Cluster
 	}{
 		{
 			name:                         "client not initialized",

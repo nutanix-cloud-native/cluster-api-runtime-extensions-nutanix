@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -83,8 +83,14 @@ func (m *MultusHandler) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
+	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
+		return
+	}
 	commonResponse := &runtimehooksv1.CommonResponse{}
-	m.apply(ctx, &req.Cluster, commonResponse)
+	m.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
 }
@@ -94,15 +100,21 @@ func (m *MultusHandler) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
+	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
+		return
+	}
 	commonResponse := &runtimehooksv1.CommonResponse{}
-	m.apply(ctx, &req.Cluster, commonResponse)
+	m.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
 	resp.Message = commonResponse.GetMessage()
 }
 
 func (m *MultusHandler) apply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)

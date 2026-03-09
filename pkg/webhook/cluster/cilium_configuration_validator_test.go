@@ -15,7 +15,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -38,7 +38,7 @@ var _ = Describe("AdvancedCiliumConfigurationValidator", func() {
 	BeforeEach(func() {
 		scheme = runtime.NewScheme()
 		Expect(corev1.AddToScheme(scheme)).To(Succeed())
-		Expect(clusterv1.AddToScheme(scheme)).To(Succeed())
+		Expect(clusterv1beta2.AddToScheme(scheme)).To(Succeed())
 		Expect(v1alpha1.AddToScheme(scheme)).To(Succeed())
 
 		decoder = admission.NewDecoder(scheme)
@@ -60,7 +60,7 @@ var _ = Describe("AdvancedCiliumConfigurationValidator", func() {
 
 	Context("when cluster has no topology", func() {
 		It("should allow the cluster", func() {
-			cluster := &clusterv1.Cluster{
+			cluster := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
@@ -571,7 +571,7 @@ func createTestCluster(
 	name, namespace string,
 	kubeProxyMode v1alpha1.KubeProxyMode,
 	cni *v1alpha1.CNI,
-) *clusterv1.Cluster {
+) *clusterv1beta2.Cluster {
 	clusterConfig := &variables.ClusterConfigSpec{
 		KubeProxy: &v1alpha1.KubeProxy{
 			Mode: kubeProxyMode,
@@ -589,16 +589,16 @@ func createTestCluster(
 	clusterConfigRaw, err := json.Marshal(clusterConfig)
 	Expect(err).NotTo(HaveOccurred())
 
-	return &clusterv1.Cluster{
+	return &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Class:   "test-class",
-				Version: "v1.30.0",
-				Variables: []clusterv1.ClusterVariable{
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
+				Version:  "v1.30.0",
+				Variables: []clusterv1beta2.ClusterVariable{
 					{
 						Name: v1alpha1.ClusterConfigVariableName,
 						Value: apiextensionsv1.JSON{
@@ -617,16 +617,16 @@ func createTestClusterWithControlPlaneEndpoint(
 	cni *v1alpha1.CNI,
 	host string,
 	port int32,
-) *clusterv1.Cluster {
+) *clusterv1beta2.Cluster {
 	cluster := createTestCluster(name, namespace, kubeProxyMode, cni)
-	cluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+	cluster.Spec.ControlPlaneEndpoint = clusterv1beta2.APIEndpoint{
 		Host: host,
 		Port: port,
 	}
 	return cluster
 }
 
-func createAdmissionRequest(cluster *clusterv1.Cluster) admission.Request {
+func createAdmissionRequest(cluster *clusterv1beta2.Cluster) admission.Request {
 	objRaw, err := json.Marshal(cluster)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -637,8 +637,8 @@ func createAdmissionRequest(cluster *clusterv1.Cluster) admission.Request {
 				Raw: objRaw,
 			},
 			RequestKind: &metav1.GroupVersionKind{
-				Group:   clusterv1.GroupVersion.Group,
-				Version: clusterv1.GroupVersion.Version,
+				Group:   clusterv1beta2.GroupVersion.Group,
+				Version: clusterv1beta2.GroupVersion.Version,
 				Kind:    "Cluster",
 			},
 		},

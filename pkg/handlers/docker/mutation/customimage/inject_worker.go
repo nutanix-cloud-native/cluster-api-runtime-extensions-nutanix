@@ -8,8 +8,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
-	capdv1 "sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	capdv1beta2 "sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -82,11 +82,11 @@ func (h *customImageWorkerPatchHandler) Mutate(
 		vars,
 		&holderRef,
 		selectors.InfrastructureWorkerMachineTemplates(
-			capdv1.GroupVersion.Version,
+			capdv1beta2.GroupVersion.Version,
 			"DockerMachineTemplate",
 		),
 		log,
-		func(obj *capdv1.DockerMachineTemplate) error {
+		func(obj *capdv1beta2.DockerMachineTemplate) error {
 			fieldPath := []string{runtimehooksv1.BuiltinsName, "machineDeployment", "version"}
 
 			if customImageVar == "" {

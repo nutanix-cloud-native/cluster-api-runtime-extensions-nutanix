@@ -10,10 +10,10 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -32,7 +32,7 @@ const (
 
 var (
 	HelmReleaseNameHashLabel = "addons.cluster.x-k8s.io/helm-release-name-hash"
-	ClusterNamespaceLabel    = clusterv1.ClusterNamespaceAnnotation
+	ClusterNamespaceLabel    = clusterv1beta2.ClusterNamespaceAnnotation
 )
 
 type HelmAddonConfig struct {
@@ -87,7 +87,7 @@ func NewHelmAddonApplier(
 	}
 }
 
-type valueTemplaterFunc func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error)
+type valueTemplaterFunc func(cluster *clusterv1beta2.Cluster, valuesTemplate string) (string, error)
 
 type waiterFunc func(ctx context.Context, client ctrlclient.Client, hcp *caaphv1.HelmChartProxy) error
 
@@ -99,13 +99,13 @@ type postApplyHookFunc func(
 	ctx context.Context,
 	client ctrlclient.Client,
 	remoteClient ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	hcp *caaphv1.HelmChartProxy,
 ) error
 
 type applyOptions struct {
 	valueTemplater     valueTemplaterFunc
-	targetCluster      *clusterv1.Cluster
+	targetCluster      *clusterv1beta2.Cluster
 	helmReleaseName    string
 	shouldRunPreflight bool
 	waiter             waiterFunc
@@ -124,7 +124,7 @@ func (a *helmAddonApplier) WithValueTemplater(
 	return a
 }
 
-func (a *helmAddonApplier) WithTargetCluster(cluster *clusterv1.Cluster) *helmAddonApplier {
+func (a *helmAddonApplier) WithTargetCluster(cluster *clusterv1beta2.Cluster) *helmAddonApplier {
 	a.opts = append(a.opts, func(o *applyOptions) {
 		o.targetCluster = cluster
 	})
@@ -166,7 +166,7 @@ func (a *helmAddonApplier) WithPostApplyHook(postApplyHookFuncs ...postApplyHook
 
 func (a *helmAddonApplier) Apply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {
@@ -234,7 +234,7 @@ func (a *helmAddonApplier) Apply(
 			RepoURL:   a.helmChart.Repository,
 			ChartName: a.helmChart.Name,
 			ClusterSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{clusterv1.ClusterNameLabel: targetCluster.Name},
+				MatchLabels: map[string]string{clusterv1beta2.ClusterNameLabel: targetCluster.Name},
 			},
 			ReleaseNamespace: a.config.defaultHelmReleaseNamespace,
 			ReleaseName:      helmReleaseName,
@@ -282,7 +282,7 @@ func (a *helmAddonApplier) Apply(
 // the Helm release uninstall on the target cluster.
 func (a *helmAddonApplier) Delete(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) error {
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
@@ -335,7 +335,7 @@ func waitToBeReady(
 				if obj.Generation != obj.Status.ObservedGeneration {
 					return false, nil
 				}
-				return conditions.IsTrue(obj, clusterv1.ReadyCondition), nil
+				return apimeta.IsStatusConditionTrue(obj.GetConditions(), clusterv1beta2.ReadyCondition), nil
 			},
 			Interval: 5 * time.Second,
 			Timeout:  30 * time.Second,

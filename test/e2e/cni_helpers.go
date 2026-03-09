@@ -14,8 +14,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -23,7 +23,7 @@ import (
 
 type WaitForCNIToBeReadyInWorkloadClusterInput struct {
 	CNI                         *v1alpha1.CNI
-	WorkloadCluster             *clusterv1.Cluster
+	WorkloadCluster             *clusterv1beta2.Cluster
 	ClusterProxy                framework.ClusterProxy
 	DeploymentIntervals         []interface{}
 	DaemonSetIntervals          []interface{}
@@ -78,7 +78,7 @@ func WaitForCNIToBeReadyInWorkloadCluster(
 
 type waitForCalicoToBeReadyInWorkloadClusterInput struct {
 	strategy                    v1alpha1.AddonStrategy
-	workloadCluster             *clusterv1.Cluster
+	workloadCluster             *clusterv1beta2.Cluster
 	clusterProxy                framework.ClusterProxy
 	deploymentIntervals         []interface{}
 	daemonSetIntervals          []interface{}
@@ -192,7 +192,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 
 type waitForCiliumToBeReadyInWorkloadClusterInput struct {
 	strategy                    v1alpha1.AddonStrategy
-	workloadCluster             *clusterv1.Cluster
+	workloadCluster             *clusterv1beta2.Cluster
 	clusterProxy                framework.ClusterProxy
 	deploymentIntervals         []interface{}
 	daemonSetIntervals          []interface{}

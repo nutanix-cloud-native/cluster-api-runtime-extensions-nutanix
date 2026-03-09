@@ -9,19 +9,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 func Test_templateData(t *testing.T) {
 	tests := []struct {
 		name    string
-		cluster *clusterv1.Cluster
+		cluster *clusterv1beta2.Cluster
 		data    map[string]string
 		want    map[string]string
 	}{
 		{
 			name: "template data",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
@@ -36,7 +36,7 @@ func Test_templateData(t *testing.T) {
 		},
 		{
 			name: "no data to template",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
@@ -62,13 +62,13 @@ func Test_templateData(t *testing.T) {
 func Test_templateValues(t *testing.T) {
 	tests := []struct {
 		name    string
-		cluster *clusterv1.Cluster
+		cluster *clusterv1beta2.Cluster
 		text    string
 		want    string
 	}{
 		{
 			name: "template values",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
@@ -79,7 +79,7 @@ func Test_templateValues(t *testing.T) {
 		},
 		{
 			name: "no values to template",
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",

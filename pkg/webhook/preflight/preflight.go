@@ -14,7 +14,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"k8s.io/utils/ptr"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -33,7 +34,7 @@ type (
 	// such as an infrastructure API client.
 	Checker interface {
 		// Init returns the checks that should run for the cluster.
-		Init(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) []Check
+		Init(ctx context.Context, client ctrlclient.Client, cluster *clusterv1beta2.Cluster) []Check
 	}
 
 	// Check represents a single preflight check that can be run against a cluster.
@@ -120,7 +121,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
-	cluster := &clusterv1.Cluster{}
+	cluster := &clusterv1beta2.Cluster{}
 	err := h.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -133,12 +134,12 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	}
 
 	// Checks run only for ClusterClass-based clusters.
-	if cluster.Spec.Topology == nil {
+	if !cluster.Spec.Topology.IsDefined() {
 		log.V(5).Info("Skipping preflight checks for non-topology cluster")
 		return admission.Allowed("")
 	}
 
-	if cluster.Spec.Paused {
+	if ptr.Deref(cluster.Spec.Paused, false) {
 		// If the cluster is paused, skip all checks.
 		// This allows the cluster to be moved to another API server without running checks.
 		log.V(5).Info("Skipping preflight checks for paused cluster")
@@ -146,7 +147,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	}
 
 	if req.Operation == admissionv1.Update {
-		oldCluster := &clusterv1.Cluster{}
+		oldCluster := &clusterv1beta2.Cluster{}
 		err := h.decoder.DecodeRaw(req.OldObject, oldCluster)
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -157,14 +158,14 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		if cmp.Equal(
 			oldCluster.Spec,
 			cluster.Spec,
-			cmpopts.IgnoreFields(clusterv1.ClusterSpec{}, "Paused"),
+			cmpopts.IgnoreFields(clusterv1beta2.ClusterSpec{}, "Paused"),
 		) {
 			msg := "Skipping preflight checks because spec has not changed"
-			if cluster.Spec.Paused != oldCluster.Spec.Paused {
+			if ptr.Deref(cluster.Spec.Paused, false) != ptr.Deref(oldCluster.Spec.Paused, false) {
 				msg += fmt.Sprintf(
 					" (ignoring paused state, which changed from %t to %t)",
-					oldCluster.Spec.Paused,
-					cluster.Spec.Paused,
+					ptr.Deref(oldCluster.Spec.Paused, false),
+					ptr.Deref(cluster.Spec.Paused, false),
 				)
 			}
 			log.V(5).Info(msg)
@@ -245,7 +246,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 // Checker are initialized concurrently, and checks runs concurrently as well.
 func run(ctx context.Context,
 	client ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	skipEvaluator *skip.Evaluator,
 	checkers []Checker,
 ) [][]namedResult {
@@ -257,7 +258,7 @@ func run(ctx context.Context,
 		go func(
 			ctx context.Context,
 			client ctrlclient.Client,
-			cluster *clusterv1.Cluster,
+			cluster *clusterv1beta2.Cluster,
 			skipEvaluator *skip.Evaluator,
 			checker Checker,
 			i int,

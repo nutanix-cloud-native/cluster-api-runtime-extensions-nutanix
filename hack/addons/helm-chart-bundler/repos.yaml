@@ -15,7 +15,7 @@ repositories:
     repoURL: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
     charts:
       aws-ebs-csi-driver:
-      - 2.51.0
+      - 2.51.3
   aws-load-balancer-controller:
     repoURL: https://aws.github.io/eks-charts
     charts:

@@ -13,8 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -30,14 +30,14 @@ func TestKubernetesDNSPatchHandlerPatchHandler(t *testing.T) {
 
 type testObj struct {
 	patchTest capitest.PatchTestDef
-	cluster   clusterv1.Cluster
+	cluster   clusterv1beta2.Cluster
 }
 
 var _ = Describe("Generate CoreDNS patches", func() {
 	patchGenerator := func() mutation.GeneratePatches {
 		clientScheme := runtime.NewScheme()
 		utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-		utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+		utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 		cl, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		gomega.Expect(err).To(gomega.BeNil())
 		return mutation.NewMetaGeneratePatchesHandler("", cl, NewPatch()).(mutation.GeneratePatches)
@@ -48,18 +48,18 @@ var _ = Describe("Generate CoreDNS patches", func() {
 			patchTest: capitest.PatchTestDef{
 				Name: "unset variable",
 			},
-			cluster: clusterv1.Cluster{
+			cluster: clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: request.Namespace,
 					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "nutanix",
+						clusterv1beta2.ProviderNameLabel: "nutanix",
 					},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -75,18 +75,18 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					),
 				},
 			},
-			cluster: clusterv1.Cluster{
+			cluster: clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: request.Namespace,
 					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "nutanix",
+						clusterv1beta2.ProviderNameLabel: "nutanix",
 					},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -114,18 +114,18 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					),
 				}},
 			},
-			cluster: clusterv1.Cluster{
+			cluster: clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: request.Namespace,
 					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "nutanix",
+						clusterv1beta2.ProviderNameLabel: "nutanix",
 					},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -159,18 +159,18 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					),
 				}},
 			},
-			cluster: clusterv1.Cluster{
+			cluster: clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: request.Namespace,
 					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "nutanix",
+						clusterv1beta2.ProviderNameLabel: "nutanix",
 					},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -203,18 +203,18 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					),
 				}},
 			},
-			cluster: clusterv1.Cluster{
+			cluster: clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: request.Namespace,
 					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "nutanix",
+						clusterv1beta2.ProviderNameLabel: "nutanix",
 					},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -246,18 +246,18 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					),
 				}},
 			},
-			cluster: clusterv1.Cluster{
+			cluster: clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: request.Namespace,
 					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "nutanix",
+						clusterv1beta2.ProviderNameLabel: "nutanix",
 					},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.30.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.30.100",
 					},
 				},
 			},
@@ -276,18 +276,18 @@ var _ = Describe("Generate CoreDNS patches", func() {
 				},
 				ExpectedFailure: true,
 			},
-			cluster: clusterv1.Cluster{
+			cluster: clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: request.Namespace,
 					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "nutanix",
+						clusterv1beta2.ProviderNameLabel: "nutanix",
 					},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.100.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.100.100",
 					},
 				},
 			},
@@ -321,18 +321,18 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					),
 				}},
 			},
-			cluster: clusterv1.Cluster{
+			cluster: clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: request.Namespace,
 					Labels: map[string]string{
-						clusterv1.ProviderNameLabel: "nutanix",
+						clusterv1beta2.ProviderNameLabel: "nutanix",
 					},
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "1.100.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "1.100.100",
 					},
 				},
 			},
@@ -344,7 +344,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 		It(tt.patchTest.Name, func() {
 			clientScheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-			utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+			utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 			cl, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 			gomega.Expect(err).To(gomega.BeNil())
 			err = cl.Create(context.Background(), &tt.cluster)

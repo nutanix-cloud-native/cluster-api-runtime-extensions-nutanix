@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
@@ -59,7 +59,7 @@ func New(
 // Apply applies the registry syncer on the target cluster.
 func (n *RegistrySyncer) Apply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) error {
 	log.Info("Checking if registry syncer needs to be applied")
@@ -108,7 +108,7 @@ func (n *RegistrySyncer) Apply(
 // Since cross-namespace owner references are not allowed, we need to delete the HelmChartProxy directly.
 func (n *RegistrySyncer) Cleanup(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	log logr.Logger,
 ) error {
 	log.Info("Checking if registry syncer needs to be cleaned up")
@@ -152,7 +152,7 @@ func (n *RegistrySyncer) Cleanup(
 // - the registry addon is not enabled in the cluster
 // - the registry addon is not enabled in the management cluster
 // Otherwise, it returns true.
-func shouldApplyRegistrySyncer(cluster, managementCluster *clusterv1.Cluster) (bool, error) {
+func shouldApplyRegistrySyncer(cluster, managementCluster *clusterv1beta2.Cluster) (bool, error) {
 	if managementCluster == nil {
 		return false, nil
 	}
@@ -189,7 +189,7 @@ func shouldApplyRegistrySyncer(cluster, managementCluster *clusterv1.Cluster) (b
 	return true, nil
 }
 
-func hasRegistrySyncerSkipAnnotation(cluster *clusterv1.Cluster) bool {
+func hasRegistrySyncerSkipAnnotation(cluster *clusterv1beta2.Cluster) bool {
 	if cluster.Annotations == nil {
 		return false
 	}
@@ -197,7 +197,7 @@ func hasRegistrySyncerSkipAnnotation(cluster *clusterv1.Cluster) bool {
 	return ok
 }
 
-func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
+func templateValues(cluster *clusterv1beta2.Cluster, text string) (string, error) {
 	valuesTemplate, err := template.New("").Parse(text)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
@@ -245,6 +245,6 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	return b.String(), nil
 }
 
-func addonResourceNameForCluster(cluster *clusterv1.Cluster) string {
+func addonResourceNameForCluster(cluster *clusterv1beta2.Cluster) string {
 	return fmt.Sprintf("%s-%s", defaultHelmReleaseName, cluster.Annotations[carenv1.ClusterUUIDAnnotationKey])
 }

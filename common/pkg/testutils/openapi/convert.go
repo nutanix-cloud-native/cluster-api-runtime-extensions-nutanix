@@ -11,16 +11,16 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
-// ConvertJSONSchemaPropsToAPIExtensions converts a clusterv1.JSONSchemaProps to apiextensions.JSONSchemaProp.
+// ConvertJSONSchemaPropsToAPIExtensions converts a clusterv1beta2.JSONSchemaProps to apiextensions.JSONSchemaProp.
 // NOTE: This is used whenever we want to use one of the upstream libraries, as they use apiextensions.JSONSchemaProp.
-// NOTE: If new fields are added to clusterv1.JSONSchemaProps (e.g. to support complex types), the corresponding
+// NOTE: If new fields are added to clusterv1beta2.JSONSchemaProps (e.g. to support complex types), the corresponding
 // schema validation must be added to validateRootSchema too.
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/v1.5.1/internal/topology/variables/schema.go#L35
 func ConvertJSONSchemaPropsToAPIExtensions(
-	schema *clusterv1.JSONSchemaProps, fldPath *field.Path,
+	schema *clusterv1beta2.JSONSchemaProps, fldPath *field.Path,
 ) (*apiextensions.JSONSchemaProps, field.ErrorList) {
 	var allErrs field.ErrorList
 
@@ -29,19 +29,19 @@ func ConvertJSONSchemaPropsToAPIExtensions(
 		Required:         schema.Required,
 		MaxItems:         schema.MaxItems,
 		MinItems:         schema.MinItems,
-		UniqueItems:      schema.UniqueItems,
+		UniqueItems:      ptr.Deref(schema.UniqueItems, false),
 		Format:           schema.Format,
 		MaxLength:        schema.MaxLength,
 		MinLength:        schema.MinLength,
 		Pattern:          schema.Pattern,
-		ExclusiveMaximum: schema.ExclusiveMaximum,
-		ExclusiveMinimum: schema.ExclusiveMinimum,
+		ExclusiveMaximum: ptr.Deref(schema.ExclusiveMaximum, false),
+		ExclusiveMinimum: ptr.Deref(schema.ExclusiveMinimum, false),
 	}
 
 	// Only set XPreserveUnknownFields to true if it's true.
 	// apiextensions.JSONSchemaProps only allows setting XPreserveUnknownFields
 	// to true or undefined, false is forbidden.
-	if schema.XPreserveUnknownFields {
+	if ptr.Deref(schema.XPreserveUnknownFields, false) {
 		props.XPreserveUnknownFields = ptr.To(true)
 	}
 

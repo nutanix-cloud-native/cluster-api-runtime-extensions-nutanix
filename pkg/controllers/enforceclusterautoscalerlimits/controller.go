@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -25,7 +25,7 @@ func (r *Reconciler) SetupWithManager(
 	options *controller.Options,
 ) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&clusterv1.MachineDeployment{}).
+		For(&clusterv1beta2.MachineDeployment{}).
 		WithOptions(*options).
 		Complete(r)
 }
@@ -33,7 +33,7 @@ func (r *Reconciler) SetupWithManager(
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.LoggerFrom(ctx).WithValues("machineDeployment", req.NamespacedName)
 
-	var md clusterv1.MachineDeployment
+	var md clusterv1beta2.MachineDeployment
 	if err := r.Get(ctx, req.NamespacedName, &md); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(5).Info("MachineDeployment not found, skipping reconciliation")
@@ -120,7 +120,7 @@ var (
 // Returns errMissingMinAnnotation if the annotation doesn't exist or
 // errInvalidMinAnnotation if the value is not of type int.
 func minReplicasFromAnnotations(annotations map[string]string) (int, error) {
-	val, found := annotations[clusterv1.AutoscalerMinSizeAnnotation]
+	val, found := annotations[clusterv1beta2.AutoscalerMinSizeAnnotation]
 	if !found {
 		return 0, errMissingMinAnnotation
 	}
@@ -136,7 +136,7 @@ func minReplicasFromAnnotations(annotations map[string]string) (int, error) {
 // Returns errMissingMaxAnnotation if the annotation doesn't exist or
 // errInvalidMaxAnnotation if the value is not of type int.
 func maxReplicasFromAnnotations(annotations map[string]string) (int, error) {
-	val, found := annotations[clusterv1.AutoscalerMaxSizeAnnotation]
+	val, found := annotations[clusterv1beta2.AutoscalerMaxSizeAnnotation]
 	if !found {
 		return 0, errMissingMaxAnnotation
 	}

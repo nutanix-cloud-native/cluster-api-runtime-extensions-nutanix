@@ -14,13 +14,14 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	"k8s.io/utils/ptr"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 )
 
 func MatchesSelector(
-	selector clusterv1.PatchSelector,
+	selector clusterv1beta2.PatchSelector,
 	obj runtime.Object,
 	holderRef *runtimehooksv1.HolderReference,
 	templateVariables map[string]apiextensionsv1.JSON,
@@ -29,11 +30,11 @@ func MatchesSelector(
 		return false
 	}
 
-	if selector.MatchResources.InfrastructureCluster && MatchesInfrastructure(holderRef) {
+	if ptr.Deref(selector.MatchResources.InfrastructureCluster, false) && MatchesInfrastructure(holderRef) {
 		return true
 	}
 
-	if selector.MatchResources.ControlPlane && MatchesControlPlane(holderRef) {
+	if ptr.Deref(selector.MatchResources.ControlPlane, false) && MatchesControlPlane(holderRef) {
 		return true
 	}
 
@@ -69,10 +70,18 @@ func MatchesControlPlane(holderRef *runtimehooksv1.HolderReference) bool {
 	if holderRef.Kind == "Cluster" && holderRef.FieldPath == "spec.controlPlaneRef" {
 		return true
 	}
-	// *.spec.machineTemplate.infrastructureRef holds the InfrastructureMachineTemplate of a ControlPlane.
-	// Note: this field path is only used in this context.
+	// v1beta1 contract: spec.machineTemplate.infrastructureRef (CAPI PR #12684).
 	// NOTE(mh): https://github.com/kubernetes-sigs/cluster-api/blob/main/internal/contract/controlplane.go#L281-L286
 	if holderRef.FieldPath == "spec.machineTemplate.infrastructureRef" {
+		return true
+	}
+	// v1beta2 contract: spec.machineTemplate.spec.infrastructureRef (CAPI 1.11+; PR #12684 sets it per contract in 1.12).
+	if holderRef.FieldPath == "spec.machineTemplate.spec.infrastructureRef" {
+		return true
+	}
+	// Alternative template path; distinguish from MachineDeployment by holder Kind.
+	if holderRef.FieldPath == "spec.template.spec.infrastructureRef" &&
+		(holderRef.Kind == "KubeadmControlPlaneTemplate" || holderRef.Kind == "KubeadmControlPlane") {
 		return true
 	}
 

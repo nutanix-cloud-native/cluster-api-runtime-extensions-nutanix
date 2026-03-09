@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -72,7 +72,7 @@ func New(
 
 func (p *provider) Apply(
 	ctx context.Context,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 	clusterConfig *apivariables.ClusterConfigSpec,
 	log logr.Logger,
 ) error {
@@ -143,8 +143,8 @@ func (p *provider) Apply(
 
 func templateValuesFunc(
 	nutanixConfig *v1alpha1.NutanixSpec,
-) func(*clusterv1.Cluster, string) (string, error) {
-	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
+) func(*clusterv1beta2.Cluster, string) (string, error) {
+	return func(_ *clusterv1beta2.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
 			"joinQuoted": func(items []string) string {
 				for i, item := range items {

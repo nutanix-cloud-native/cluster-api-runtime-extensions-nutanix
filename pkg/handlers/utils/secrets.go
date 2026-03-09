@@ -9,7 +9,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -30,7 +30,7 @@ func CopySecretToRemoteCluster(
 	cl ctrlclient.Client,
 	srcSecretName string,
 	dstSecretKey ctrlclient.ObjectKey,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) error {
 	sourceSecret, err := getSecretForCluster(ctx, cl, srcSecretName, cluster)
 	if err != nil {
@@ -74,7 +74,7 @@ func EnsureSecretOnRemoteCluster(
 	ctx context.Context,
 	cl ctrlclient.Client,
 	secret *corev1.Secret,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) error {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 	remoteClient, err := remote.NewClusterClient(ctx, "", cl, clusterKey)
@@ -99,7 +99,7 @@ func EnsureSecretForLocalCluster(
 	ctx context.Context,
 	cl ctrlclient.Client,
 	secret *corev1.Secret,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) error {
 	if secret.Namespace != "" &&
 		secret.Namespace != cluster.Namespace {
@@ -173,7 +173,7 @@ func SecretForRegistryAddonRootCA(
 func SecretForClusterRegistryAddonCA(
 	ctx context.Context,
 	c ctrlclient.Reader,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) (*corev1.Secret, error) {
 	secret, err := getSecretForCluster(ctx, c, SecretNameForRegistryAddonCA(cluster), cluster)
 	if err != nil {
@@ -183,17 +183,17 @@ func SecretForClusterRegistryAddonCA(
 }
 
 // SecretNameForRegistryAddonCA returns the name of the registry addon CA Secret.
-func SecretNameForRegistryAddonCA(cluster *clusterv1.Cluster) string {
-	return fmt.Sprintf("%s-registry-addon-ca", cluster.Name)
+func SecretNameForRegistryAddonCA(cluster metav1.Object) string {
+	return fmt.Sprintf("%s-registry-addon-ca", cluster.GetName())
 }
 
 func getSecretForCluster(
 	ctx context.Context,
 	c ctrlclient.Reader,
 	secretName string,
-	cluster *clusterv1.Cluster,
+	cluster metav1.Object,
 ) (*corev1.Secret, error) {
-	return getSecret(ctx, c, secretName, cluster.Namespace)
+	return getSecret(ctx, c, secretName, cluster.GetNamespace())
 }
 
 func getSecret(

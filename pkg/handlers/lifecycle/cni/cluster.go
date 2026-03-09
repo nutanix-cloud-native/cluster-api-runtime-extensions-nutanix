@@ -6,7 +6,7 @@ package cni
 import (
 	"errors"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 var ErrMultiplePodsCIDRBlocks = errors.New("cluster has more than 1 Pods network CIDR blocks")
@@ -14,10 +14,9 @@ var ErrMultiplePodsCIDRBlocks = errors.New("cluster has more than 1 Pods network
 // PodCIDR will return the Pods network CIDR.
 // If not set returns an empty string.
 // If more than 1 CIDRBlocks is defined will return an error.
-func PodCIDR(cluster *clusterv1.Cluster) (string, error) {
+func PodCIDR(cluster *clusterv1beta2.Cluster) (string, error) {
 	var subnets []string
-	if cluster.Spec.ClusterNetwork != nil &&
-		cluster.Spec.ClusterNetwork.Pods != nil {
+	if len(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks) > 0 {
 		subnets = cluster.Spec.ClusterNetwork.Pods.CIDRBlocks
 	}
 	switch {

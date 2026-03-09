@@ -13,10 +13,10 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
-func MustSchemaFromCRDYAML(yaml []byte) clusterv1.VariableSchema {
+func MustSchemaFromCRDYAML(yaml []byte) clusterv1beta2.VariableSchema {
 	schema, err := SchemaFromCRDYAML(yaml)
 	if err != nil {
 		panic(err)
@@ -24,52 +24,52 @@ func MustSchemaFromCRDYAML(yaml []byte) clusterv1.VariableSchema {
 	return schema
 }
 
-func SchemaFromCRDYAML(yaml []byte) (clusterv1.VariableSchema, error) {
+func SchemaFromCRDYAML(yaml []byte) (clusterv1beta2.VariableSchema, error) {
 	sch := runtime.NewScheme()
 	utilruntime.Must(apiextensionsv1.AddToScheme(sch))
 	decode := serializer.NewCodecFactory(sch).UniversalDeserializer().Decode
 	obj, gKV, _ := decode(yaml, nil, nil)
 	if gKV.Kind != "CustomResourceDefinition" {
-		return clusterv1.VariableSchema{}, fmt.Errorf(
+		return clusterv1beta2.VariableSchema{}, fmt.Errorf(
 			"expected CustomResourceDefinition, got %s",
 			gKV.Kind,
 		)
 	}
 	crd := obj.(*apiextensionsv1.CustomResourceDefinition)
 	if len(crd.Spec.Versions) != 1 {
-		return clusterv1.VariableSchema{}, fmt.Errorf(
+		return clusterv1beta2.VariableSchema{}, fmt.Errorf(
 			"expected exactly one version, got %d",
 			len(crd.Spec.Versions),
 		)
 	}
 	if crd.Spec.Versions[0].Schema.OpenAPIV3Schema == nil {
-		return clusterv1.VariableSchema{}, fmt.Errorf("expected OpenAPIV3Schema, got nil")
+		return clusterv1beta2.VariableSchema{}, fmt.Errorf("expected OpenAPIV3Schema, got nil")
 	}
 
 	spec, ok := crd.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"]
 	if !ok {
-		return clusterv1.VariableSchema{}, fmt.Errorf("missing spec")
+		return clusterv1beta2.VariableSchema{}, fmt.Errorf("missing spec")
 	}
 
 	jsonSchemaProps, err := ConvertAPIExtensionsToJSONSchemaProps(
 		&spec, field.NewPath(""),
 	)
 	if err != nil {
-		return clusterv1.VariableSchema{}, fmt.Errorf(
+		return clusterv1beta2.VariableSchema{}, fmt.Errorf(
 			"failed to parse CRD into variables schema: %w",
 			err.ToAggregate(),
 		)
 	}
 
-	return clusterv1.VariableSchema{
+	return clusterv1beta2.VariableSchema{
 		OpenAPIV3Schema: *jsonSchemaProps,
 	}, nil
 }
 
-// ConvertAPIExtensionsToJSONSchemaProps converts a apiextensions.JSONSchemaProp to clusterv1.JSONSchemaProps.
+// ConvertAPIExtensionsToJSONSchemaProps converts a apiextensions.JSONSchemaProp to clusterv1beta2.JSONSchemaProps.
 func ConvertAPIExtensionsToJSONSchemaProps(
 	schema *apiextensionsv1.JSONSchemaProps, fldPath *field.Path,
-) (*clusterv1.JSONSchemaProps, field.ErrorList) {
+) (*clusterv1beta2.JSONSchemaProps, field.ErrorList) {
 	var allErrs field.ErrorList
 
 	// Check if minimum/maximum is a whole number that we can convert to int64 without loss of precision.
@@ -105,21 +105,21 @@ func ConvertAPIExtensionsToJSONSchemaProps(
 		}
 	}
 
-	props := &clusterv1.JSONSchemaProps{
+	props := &clusterv1beta2.JSONSchemaProps{
 		Type:                   schema.Type,
 		Required:               schema.Required,
 		MaxItems:               schema.MaxItems,
 		MinItems:               schema.MinItems,
-		UniqueItems:            schema.UniqueItems,
+		UniqueItems:            ptr.To(schema.UniqueItems),
 		Format:                 schema.Format,
 		MaxLength:              schema.MaxLength,
 		MinLength:              schema.MinLength,
 		Pattern:                schema.Pattern,
 		Maximum:                maximumAsInt64Ptr,
 		Minimum:                minimumAsInt64Ptr,
-		ExclusiveMaximum:       schema.ExclusiveMaximum,
-		ExclusiveMinimum:       schema.ExclusiveMinimum,
-		XPreserveUnknownFields: ptr.Deref(schema.XPreserveUnknownFields, false),
+		ExclusiveMaximum:       ptr.To(schema.ExclusiveMaximum),
+		ExclusiveMinimum:       ptr.To(schema.ExclusiveMinimum),
+		XPreserveUnknownFields: ptr.To(ptr.Deref(schema.XPreserveUnknownFields, false)),
 		Default:                schema.Default,
 		Enum:                   schema.Enum,
 		Example:                schema.Example,
@@ -147,7 +147,7 @@ func ConvertAPIExtensionsToJSONSchemaProps(
 	}
 
 	if len(schema.Properties) > 0 {
-		props.Properties = make(map[string]clusterv1.JSONSchemaProps, len(schema.Properties))
+		props.Properties = make(map[string]clusterv1beta2.JSONSchemaProps, len(schema.Properties))
 		for propertyName := range schema.Properties {
 			p := schema.Properties[propertyName]
 			apiExtensionsSchema, err := ConvertAPIExtensionsToJSONSchemaProps(
@@ -189,17 +189,17 @@ func ConvertAPIExtensionsToJSONSchemaProps(
 	}
 
 	if schema.XValidations != nil {
-		props.XValidations = make([]clusterv1.ValidationRule, 0, len(schema.XValidations))
+		props.XValidations = make([]clusterv1beta2.ValidationRule, 0, len(schema.XValidations))
 		for _, v := range schema.XValidations {
 			reason := ""
 			if v.Reason != nil {
 				reason = string(*v.Reason)
 			}
-			props.XValidations = append(props.XValidations, clusterv1.ValidationRule{
+			props.XValidations = append(props.XValidations, clusterv1beta2.ValidationRule{
 				Rule:              v.Rule,
 				Message:           v.Message,
 				MessageExpression: v.MessageExpression,
-				Reason:            clusterv1.FieldValueErrorReason(reason),
+				Reason:            clusterv1beta2.FieldValueErrorReason(reason),
 				FieldPath:         v.FieldPath,
 			})
 		}

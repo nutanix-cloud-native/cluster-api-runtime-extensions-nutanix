@@ -12,9 +12,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/util"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -89,18 +90,16 @@ var _ = Describe("Self-hosted", Serial, func() {
 													util.RandomString(
 														maxClusterNameLength-len(clusterNamePrefix),
 													)),
-												PostClusterMoved: func(proxy capiframework.ClusterProxy, cluster *clusterv1.Cluster) {
+												PostClusterMoved: func(proxy capiframework.ClusterProxy, cluster *clusterv1beta2.Cluster) {
 													By(
 														"Waiting for all requested addons to be ready in workload cluster",
 													)
-													workloadCluster := capiframework.GetClusterByName(
+													workloadCluster := &clusterv1beta2.Cluster{}
+													Expect(proxy.GetClient().Get(
 														ctx,
-														capiframework.GetClusterByNameInput{
-															Namespace: cluster.GetNamespace(),
-															Name:      cluster.GetName(),
-															Getter:    proxy.GetClient(),
-														},
-													)
+														client.ObjectKeyFromObject(cluster),
+														workloadCluster,
+													)).To(Succeed())
 													Expect(
 														workloadCluster.Spec.Topology,
 													).ToNot(BeNil())

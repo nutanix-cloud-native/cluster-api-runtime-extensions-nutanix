@@ -6,7 +6,7 @@ package utils
 import (
 	"fmt"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -37,12 +37,12 @@ type RegistryMetadata struct {
 }
 
 // GetRegistryMetadata returns the registry metadata for a given cluster based on the addon provider.
-func GetRegistryMetadata(cluster *clusterv1.Cluster) (*RegistryMetadata, error) {
+func GetRegistryMetadata(cluster *clusterv1beta2.Cluster) (*RegistryMetadata, error) {
 	// Only a single registry provider is supported for now
 	return getRegistryMetadataForCNCFDistribution(cluster)
 }
 
-func getRegistryMetadataForCNCFDistribution(cluster *clusterv1.Cluster) (*RegistryMetadata, error) {
+func getRegistryMetadataForCNCFDistribution(cluster *clusterv1beta2.Cluster) (*RegistryMetadata, error) {
 	const (
 		defaultHelmReleaseName      = "cncf-distribution-registry"
 		defaultHelmReleaseNamespace = "registry-system"

@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -23,16 +23,22 @@ import (
 var _ = Describe("Test EnsureSecretOnRemoteCluster", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 
 	It("Secret should be created in the default namespace on the remote cluster", func(ctx SpecContext) {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
+			},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
 			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
@@ -68,10 +74,16 @@ var _ = Describe("Test EnsureSecretOnRemoteCluster", func() {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
+			},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
 			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
@@ -107,10 +119,16 @@ var _ = Describe("Test EnsureSecretOnRemoteCluster", func() {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
+			},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
 			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
@@ -139,16 +157,22 @@ var _ = Describe("Test EnsureSecretOnRemoteCluster", func() {
 var _ = Describe("Test EnsureSecretForLocalCluster", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 
 	It("Secret should be created in the cluster", func(ctx SpecContext) {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
+			},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
 			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())
@@ -174,8 +198,8 @@ var _ = Describe("Test EnsureSecretForLocalCluster", func() {
 		Expect(secret.OwnerReferences).To(
 			ContainElement(
 				metav1.OwnerReference{
-					APIVersion: clusterv1.GroupVersion.String(),
-					Kind:       clusterv1.ClusterKind,
+					APIVersion: clusterv1beta2.GroupVersion.String(),
+					Kind:       clusterv1beta2.ClusterKind,
 					Name:       cluster.Name,
 					UID:        cluster.UID,
 				},
@@ -186,10 +210,16 @@ var _ = Describe("Test EnsureSecretForLocalCluster", func() {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
 
-		cluster := &clusterv1.Cluster{
+		cluster := &clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-cluster-",
 				Namespace:    corev1.NamespaceDefault,
+			},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "test-class"},
+					Version:  "v1.28.0",
+				},
 			},
 		}
 		Expect(c.Create(ctx, cluster)).To(Succeed())

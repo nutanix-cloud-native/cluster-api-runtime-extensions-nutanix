@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 const (
@@ -285,12 +285,12 @@ prismEndPoint: endpoint
 
 		type input struct {
 			Provider                   string
-			ControlPlaneEndpoint       clusterv1.APIEndpoint
+			ControlPlaneEndpoint       clusterv1beta2.APIEndpoint
 			EnableKubeProxyReplacement bool
 		}
 		templateInput := input{
 			Provider: "test",
-			ControlPlaneEndpoint: clusterv1.APIEndpoint{
+			ControlPlaneEndpoint: clusterv1beta2.APIEndpoint{
 				Host: "https://test.dummy.com",
 				Port: 443,
 			},
@@ -318,7 +318,7 @@ prismEndPoint: endpoint
 
 		// CAAPH uses unstructured internally, so we need to create an unstructured copy of a cluster
 		// to pass to the CAAPH values template.
-		c, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterv1.Cluster{})
+		c, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterv1beta2.Cluster{})
 		if err != nil {
 			return "", fmt.Errorf("failed to convert cluster to unstructured %w", err)
 		}
@@ -344,7 +344,7 @@ prismEndPoint: endpoint
 			return "", fmt.Errorf("failed to create temp file: %w", err)
 		}
 
-		c := clusterv1.Cluster{
+		c := clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "tmplCluster",
 				Namespace: "templNamespace",
@@ -354,7 +354,7 @@ prismEndPoint: endpoint
 			},
 		}
 		type input struct {
-			Cluster *clusterv1.Cluster
+			Cluster *clusterv1beta2.Cluster
 		}
 
 		templateInput := input{
@@ -438,7 +438,7 @@ prismEndPoint: endpoint
 
 		// CAAPH uses unstructured internally, so we need to create an unstructured copy of a cluster
 		// to pass to the CAAPH values template.
-		c, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterv1.Cluster{
+		c, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterv1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "tmplCluster",
 				Labels: map[string]string{

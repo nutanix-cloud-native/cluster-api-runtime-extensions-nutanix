@@ -10,8 +10,7 @@ import (
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
@@ -20,7 +19,7 @@ import (
 func TestNewConfigurationCheck(t *testing.T) {
 	tests := []struct {
 		name                                      string
-		cluster                                   *clusterv1.Cluster
+		cluster                                   *clusterv1beta2.Cluster
 		expectedResult                            preflight.CheckResult
 		expectedNutanixClusterConfigSpec          bool
 		expectedWorkerNodeConfigSpecMapNotEmpty   bool
@@ -28,10 +27,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 	}{
 		{
 			name: "valid cluster config",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -51,10 +50,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "valid control plane config",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -76,10 +75,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "valid worker config",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -87,12 +86,12 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 							},
 						},
-						Workers: &clusterv1.WorkersTopology{
-							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						Workers: clusterv1beta2.WorkersTopology{
+							MachineDeployments: []clusterv1beta2.MachineDeploymentTopology{
 								{
 									Name: "md-0",
-									Variables: &clusterv1.MachineDeploymentVariables{
-										Overrides: []clusterv1.ClusterVariable{
+									Variables: clusterv1beta2.MachineDeploymentVariables{
+										Overrides: []clusterv1beta2.ClusterVariable{
 											{
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
@@ -118,10 +117,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "invalid cluster config",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -148,10 +147,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "invalid worker config",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -159,12 +158,12 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 							},
 						},
-						Workers: &clusterv1.WorkersTopology{
-							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						Workers: clusterv1beta2.WorkersTopology{
+							MachineDeployments: []clusterv1beta2.MachineDeploymentTopology{
 								{
 									Name: "md-0",
-									Variables: &clusterv1.MachineDeploymentVariables{
-										Overrides: []clusterv1.ClusterVariable{
+									Variables: clusterv1beta2.MachineDeploymentVariables{
+										Overrides: []clusterv1beta2.ClusterVariable{
 											{
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
@@ -195,10 +194,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "no nutanix config",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -218,10 +217,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "multiple worker configs",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -229,12 +228,12 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 							},
 						},
-						Workers: &clusterv1.WorkersTopology{
-							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						Workers: clusterv1beta2.WorkersTopology{
+							MachineDeployments: []clusterv1beta2.MachineDeploymentTopology{
 								{
 									Name: "md-0",
-									Variables: &clusterv1.MachineDeploymentVariables{
-										Overrides: []clusterv1.ClusterVariable{
+									Variables: clusterv1beta2.MachineDeploymentVariables{
+										Overrides: []clusterv1beta2.ClusterVariable{
 											{
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
@@ -248,8 +247,8 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 								{
 									Name: "md-1",
-									Variables: &clusterv1.MachineDeploymentVariables{
-										Overrides: []clusterv1.ClusterVariable{
+									Variables: clusterv1beta2.MachineDeploymentVariables{
+										Overrides: []clusterv1beta2.ClusterVariable{
 											{
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
@@ -275,10 +274,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "worker config from cluster variables",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -294,8 +293,8 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 							},
 						},
-						Workers: &clusterv1.WorkersTopology{
-							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						Workers: clusterv1beta2.WorkersTopology{
+							MachineDeployments: []clusterv1beta2.MachineDeploymentTopology{
 								{
 									Name: "md-0",
 								},
@@ -313,10 +312,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "worker config with failure domain",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -326,12 +325,12 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 							},
 						},
-						Workers: &clusterv1.WorkersTopology{
-							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						Workers: clusterv1beta2.WorkersTopology{
+							MachineDeployments: []clusterv1beta2.MachineDeploymentTopology{
 								{
 									Name: "md-0",
-									Variables: &clusterv1.MachineDeploymentVariables{
-										Overrides: []clusterv1.ClusterVariable{
+									Variables: clusterv1beta2.MachineDeploymentVariables{
+										Overrides: []clusterv1beta2.ClusterVariable{
 											{
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
@@ -342,7 +341,7 @@ func TestNewConfigurationCheck(t *testing.T) {
 											},
 										},
 									},
-									FailureDomain: ptr.To("fd-1"),
+									FailureDomain: "fd-1",
 								},
 							},
 						},
@@ -358,10 +357,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "worker config without nutanix field",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -369,12 +368,12 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 							},
 						},
-						Workers: &clusterv1.WorkersTopology{
-							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						Workers: clusterv1beta2.WorkersTopology{
+							MachineDeployments: []clusterv1beta2.MachineDeploymentTopology{
 								{
 									Name: "md-0",
-									Variables: &clusterv1.MachineDeploymentVariables{
-										Overrides: []clusterv1.ClusterVariable{
+									Variables: clusterv1beta2.MachineDeploymentVariables{
+										Overrides: []clusterv1beta2.ClusterVariable{
 											{
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
@@ -398,10 +397,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "machineDeployment without variables",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -409,8 +408,8 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 							},
 						},
-						Workers: &clusterv1.WorkersTopology{
-							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						Workers: clusterv1beta2.WorkersTopology{
+							MachineDeployments: []clusterv1beta2.MachineDeploymentTopology{
 								{
 									Name: "md-0",
 								},
@@ -428,10 +427,10 @@ func TestNewConfigurationCheck(t *testing.T) {
 		},
 		{
 			name: "mixed worker scenarios - with/without overrides and with/without failure domains",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Variables: []clusterv1.ClusterVariable{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name: carenv1.ClusterConfigVariableName,
 								Value: v1.JSON{
@@ -445,12 +444,12 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 							},
 						},
-						Workers: &clusterv1.WorkersTopology{
-							MachineDeployments: []clusterv1.MachineDeploymentTopology{
+						Workers: clusterv1beta2.WorkersTopology{
+							MachineDeployments: []clusterv1beta2.MachineDeploymentTopology{
 								{
 									Name: "md-with-overrides",
-									Variables: &clusterv1.MachineDeploymentVariables{
-										Overrides: []clusterv1.ClusterVariable{
+									Variables: clusterv1beta2.MachineDeploymentVariables{
+										Overrides: []clusterv1beta2.ClusterVariable{
 											{
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
@@ -467,9 +466,9 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 								{
 									Name:          "md-with-overrides-and-fd",
-									FailureDomain: ptr.To("fd-1"),
-									Variables: &clusterv1.MachineDeploymentVariables{
-										Overrides: []clusterv1.ClusterVariable{
+									FailureDomain: "fd-1",
+									Variables: clusterv1beta2.MachineDeploymentVariables{
+										Overrides: []clusterv1beta2.ClusterVariable{
 											{
 												Name: carenv1.WorkerConfigVariableName,
 												Value: v1.JSON{
@@ -483,7 +482,7 @@ func TestNewConfigurationCheck(t *testing.T) {
 								},
 								{
 									Name:          "md-without-overrides-and-fd",
-									FailureDomain: ptr.To("fd-1"),
+									FailureDomain: "fd-1",
 								},
 							},
 						},

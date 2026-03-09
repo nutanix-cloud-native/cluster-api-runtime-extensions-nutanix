@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,7 +78,7 @@ func (r *Reconciler) SetupWithManager(
 					},
 				},
 			)).
-		Watches(&clusterv1.ClusterClass{},
+		Watches(&clusterv1beta2.ClusterClass{},
 			handler.EnqueueRequestsFromMapFunc(r.clusterClassToNamespaces),
 		).
 		Named("syncclusterclass").
@@ -130,7 +130,7 @@ func (r *Reconciler) Reconcile(
 
 	// TODO Consider running in parallel.
 	for i := range sccs {
-		scc := &sccs[i]
+		scc := sccs[i].DeepCopy()
 		err := copyClusterClassAndTemplates(
 			ctx,
 			r.Client,
@@ -156,7 +156,7 @@ func (r *Reconciler) Reconcile(
 func (r *Reconciler) listSourceClusterClasses(
 	ctx context.Context,
 ) (
-	[]clusterv1.ClusterClass,
+	[]clusterv1beta2.ClusterClass,
 	error,
 ) {
 	// Handle the empty string explicitly, because listing resources with an empty
@@ -165,7 +165,7 @@ func (r *Reconciler) listSourceClusterClasses(
 		return nil, nil
 	}
 
-	ccl := &clusterv1.ClusterClassList{}
+	ccl := &clusterv1beta2.ClusterClassList{}
 	err := r.Client.List(ctx, ccl, client.InNamespace(r.SourceClusterClassNamespace))
 	if err != nil {
 		return nil, err

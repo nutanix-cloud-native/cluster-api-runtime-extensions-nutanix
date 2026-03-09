@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -30,7 +30,7 @@ import (
 var _ = Describe("Test runApply", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 
 	It("should clean kube-proxy when neccesery", func(ctx SpecContext) {
 		c, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
@@ -148,16 +148,16 @@ var _ = Describe("Test runApply", func() {
 func setupTestCluster(
 	ctx SpecContext,
 	c ctrlclient.Client,
-) (*clusterv1.Cluster, ctrlclient.Client) {
-	cluster := &clusterv1.Cluster{
+) (*clusterv1beta2.Cluster, ctrlclient.Client) {
+	cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-cluster-",
 			Namespace:    corev1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Class:   "dummy-class",
-				Version: "dummy-version",
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+				Version:  "dummy-version",
 			},
 		},
 	}
@@ -266,7 +266,7 @@ func setupTestCluster(
 	return cluster, remoteClient
 }
 
-func disableKubeProxy(cluster *clusterv1.Cluster) error {
+func disableKubeProxy(cluster *clusterv1beta2.Cluster) error {
 	spec, err := apivariables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal cluster variable: %w", err)

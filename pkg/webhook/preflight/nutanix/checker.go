@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -68,7 +68,7 @@ type nutanixChecker struct {
 
 type checkDependencies struct {
 	kclient ctrlclient.Client
-	cluster *clusterv1.Cluster
+	cluster *clusterv1beta2.Cluster
 
 	nutanixClusterConfigSpec                           *carenv1.NutanixClusterConfigSpec
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
@@ -82,7 +82,7 @@ type checkDependencies struct {
 func (n *nutanixChecker) Init(
 	ctx context.Context,
 	kclient ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster *clusterv1beta2.Cluster,
 ) []preflight.Check {
 	cd := &checkDependencies{
 		kclient:   kclient,
