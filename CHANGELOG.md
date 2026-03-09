@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.44.1 (2026-03-09)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Improve log messaging for CIDR preflight check by @legacyrj in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1505
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.44.0...v0.44.1
+
 ## 0.44.0 (2026-02-27)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
