@@ -69,8 +69,4 @@ const (
 	// the Cilium preflight Helm addon (e.g. during BeforeClusterUpgrade). When set (e.g. "true", "1"),
 	// the preflight release is not applied before Cilium upgrade.
 	SkipCiliumPreflightAnnotationKey = APIGroup + "/skip-cilium-preflight"
-
-	// SkipKonnectorAgentLegacyDeploymentValidation is the key of the annotation on the Cluster
-	// used to skip Konnector Agent legacy deployment validation.
-	SkipKonnectorAgentLegacyDeploymentValidation = APIGroup + "/skip-konnector-agent-legacy-deployment-validation"
 )
