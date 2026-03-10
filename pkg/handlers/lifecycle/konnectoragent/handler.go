@@ -56,11 +56,6 @@ const (
 	// before giving up and allowing cluster deletion to proceed.
 	helmUninstallTimeout = 5 * time.Minute
 
-	// workloadClusterAPITimeout is the maximum time to wait for workload cluster API calls
-	// (e.g. checking PC registration). Kept short so that unreachable/misconfigured clusters
-	// do not block cluster deletion or webhook admission.
-	workloadClusterAPITimeout = 5 * time.Second
-
 	// maxClusterNameLength is the maximum cluster name length supported by Prism Central.
 	maxClusterNameLength = 40
 )
@@ -497,11 +492,8 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
-	// Use a short timeout for workload cluster API so unreachable/misconfigured clusters
-	// do not block cluster deletion (e.g. topology controller cannot proceed to delete NutanixCluster).
-	apiCtx, apiCancel := context.WithTimeout(ctx, workloadClusterAPITimeout)
-	defer apiCancel()
-	clusterRegistered, err := isClusterRegisteredInPC(apiCtx, n.client, cluster, log)
+	// Check cluster is registered in PC
+	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, cluster, log)
 	if err != nil {
 		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
 		// setting response status to success to allow cluster deletion to proceed
