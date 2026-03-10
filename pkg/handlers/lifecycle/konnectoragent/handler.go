@@ -495,6 +495,26 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
+	// Skip when cluster phase means we should not call the workload API or run cleanup.
+	// - Pending/Provisioning: Kubernetes API has not been created / user could not create resources.
+	phase := cluster.Status.GetTypedPhase()
+	log.Info("Cluster phase in konnector agent before cluster delete", "phase", phase)
+	if phase == clusterv1beta2.ClusterPhasePending ||
+		phase == clusterv1beta2.ClusterPhaseProvisioning {
+		log.Info("Skipping Konnector Agent cleanup based on cluster phase", "phase", phase)
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
+	// Skip workload cluster API call when control plane was never initialized (e.g. misconfigured
+	// cluster, control plane endpoint in use). Avoid calling the
+	// workload API when the cluster is not reachable.
+	if !isV1Beta2ConditionTrue(cluster, clusterv1beta2.ClusterControlPlaneInitializedCondition) {
+		log.Info("Control plane not initialized, skipping Konnector Agent cleanup and allowing deletion")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
 	// Check cluster is registered in PC
 	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, cluster, log)
 	if err != nil {
@@ -568,6 +588,18 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 	resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
 	resp.SetMessage("Konnector Agent cleanup initiated. Waiting for HelmChartProxy deletion to start.")
+}
+
+// isV1Beta2ConditionTrue checks if a v1beta2 condition is True on the cluster.
+// This is a local equivalent of conditions.IsTrue that works with v1beta2 Cluster types,
+// since the upstream util/conditions package now requires metav1.Condition getters.
+func isV1Beta2ConditionTrue(cluster *clusterv1beta2.Cluster, condType string) bool {
+	for _, c := range cluster.GetConditions() {
+		if c.Type == condType && c.Status == metav1.ConditionTrue {
+			return true
+		}
+	}
+	return false
 }
 
 func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
