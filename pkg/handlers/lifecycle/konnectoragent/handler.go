@@ -56,6 +56,15 @@ const (
 	// before giving up and allowing cluster deletion to proceed.
 	helmUninstallTimeout = 5 * time.Minute
 
+	// workloadClusterAPITimeout limits the PC registration check so we return a response
+	// before the BeforeClusterDelete hook timeout (typically 10s in ExtensionConfig).
+	// If we exceed the hook timeout, the controller never receives our success and retries
+	// indefinitely, so deletion hangs. Use a shorter timeout so we fail fast and allow deletion.
+	// TODO: Remove the PC call (isClusterRegisteredInPC) once konnector-agent exposes onboarding
+	// status via a configmap in the target cluster; we will then use that configmap to decide
+	// whether the cluster is onboarded.
+	workloadClusterAPITimeout = 5 * time.Second
+
 	// maxClusterNameLength is the maximum cluster name length supported by Prism Central.
 	maxClusterNameLength = 40
 )
@@ -473,11 +482,10 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 
 	// Skip when cluster phase means we should not call the workload API or run cleanup.
 	// - Pending/Provisioning: Kubernetes API has not been created / user could not create resources.
-	// - Deleting: it's too late to try to cleanup.
 	phase := cluster.Status.GetTypedPhase()
+	log.Info("Cluster phase in konnector agent before cluster delete", "phase", phase)
 	if phase == clusterv1.ClusterPhasePending ||
-		phase == clusterv1.ClusterPhaseProvisioning ||
-		phase == clusterv1.ClusterPhaseDeleting {
+		phase == clusterv1.ClusterPhaseProvisioning {
 		log.Info("Skipping Konnector Agent cleanup based on cluster phase", "phase", phase)
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
@@ -492,8 +500,12 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
+	// Use a timeout shorter than the hook timeout so we return success before the controller
+	// gives up; otherwise the controller never sees our response and deletion hangs (retry loop).
+	apiCtx, apiCancel := context.WithTimeout(ctx, workloadClusterAPITimeout)
+	defer apiCancel()
 	// Check cluster is registered in PC
-	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, cluster, log)
+	clusterRegistered, err := isClusterRegisteredInPC(apiCtx, n.client, cluster, log)
 	if err != nil {
 		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
 		// setting response status to success to allow cluster deletion to proceed
