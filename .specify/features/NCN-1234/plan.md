@@ -77,8 +77,8 @@ type KubeletConfiguration struct {
 	// MaxPods defines the maximum number of pods that can run on a node.
 	// Default kubelet value is 110.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=4096
+	// +kubebuilder:validation:Minimum=50
+	// +kubebuilder:validation:Maximum=256
 	MaxPods *int32 `json:"maxPods,omitempty"`
 
 	// SystemReserved is a set of ResourceName=ResourceQuantity pairs that describe
