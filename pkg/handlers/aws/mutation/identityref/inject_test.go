@@ -43,7 +43,7 @@ var _ = Describe("Generate AWS IdentityRef patches", func() {
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/identityRef",
-				ValueMatcher: gomega.Equal(map[string]interface{}{
+				ValueMatcher: gomega.Equal(map[string]any{
 					"kind": string(capav1.ClusterStaticIdentityKind),
 					"name": "test-identity",
 				}),

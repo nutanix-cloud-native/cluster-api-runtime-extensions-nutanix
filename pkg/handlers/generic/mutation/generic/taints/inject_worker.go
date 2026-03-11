@@ -96,7 +96,9 @@ func (h *taintsWorkerPatchHandler) Mutate(
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding taints to worker node kubeadm config template")
 			joinTaints := ptr.Deref(obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.Taints, []v1.Taint{})
-			obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.Taints = ptr.To(toCoreTaints(joinTaints, taintsVar))
+			obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.Taints = ptr.To(
+				toCoreTaints(joinTaints, taintsVar),
+			)
 			return nil
 		}); err != nil {
 		return err

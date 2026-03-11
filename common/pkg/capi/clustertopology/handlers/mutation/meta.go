@@ -112,7 +112,14 @@ func (mgp metaGeneratePatches) GeneratePatches(
 				handlerName := fmt.Sprintf("%T", h)
 				log.V(5).Info("Running mutator", "index", i, "handler", handlerName)
 
-				if err := h.Mutate(ctx, obj.(*unstructured.Unstructured), vars, holderRef, clusterKey, clusterGetter); err != nil {
+				if err := h.Mutate(
+					ctx,
+					obj.(*unstructured.Unstructured),
+					vars,
+					holderRef,
+					clusterKey,
+					clusterGetter,
+				); err != nil {
 					log.Error(err, "Mutator failed", "index", i, "handler", handlerName)
 					return err
 				}

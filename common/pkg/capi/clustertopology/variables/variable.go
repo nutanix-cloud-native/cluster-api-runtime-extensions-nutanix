@@ -52,7 +52,7 @@ func Get[T any](
 	jsonValue := variable.Raw
 
 	if len(fields) > 0 {
-		var unstr map[string]interface{}
+		var unstr map[string]any
 		err = json.Unmarshal(jsonValue, &unstr)
 		if err != nil {
 			return value, err

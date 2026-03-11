@@ -268,7 +268,7 @@ func generateCertificateData(
 	if keyBlock == nil {
 		return nil, nil, nil, fmt.Errorf("failed to decode CA private key PEM")
 	}
-	var caPriv interface{}
+	var caPriv any
 	switch keyBlock.Type {
 	case "RSA PRIVATE KEY":
 		caPriv, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)

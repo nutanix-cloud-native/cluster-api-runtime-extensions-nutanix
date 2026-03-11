@@ -173,7 +173,7 @@ func TestFailureDomainCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -188,7 +188,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -214,7 +214,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -231,7 +231,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
+				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*netv4.GetSubnetApiResponse, error) {
 					return nil, nil
 				},
 				ListSubnetsFunc: func(
@@ -242,7 +242,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby_ *string,
 					expand_ *string,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (*netv4.ListSubnetsApiResponse, error) {
 					return nil, fmt.Errorf("failed to list subnets")
 				},
@@ -265,7 +265,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -282,7 +282,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
+				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*netv4.GetSubnetApiResponse, error) {
 					return nil, nil
 				},
 				ListSubnetsFunc: func(
@@ -293,7 +293,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby_ *string,
 					expand_ *string,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (*netv4.ListSubnetsApiResponse, error) {
 					resp := &netv4.ListSubnetsApiResponse{
 						ObjectType_: ptr.To("networking.v4.config.ListSubnetsApiResponse"),

@@ -108,7 +108,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
 					ValueMatcher: gomega.HaveKeyWithValue(
 						"dns",
-						map[string]interface{}{
+						map[string]any{
 							"imageTag": "v1.11.3",
 						},
 					),
@@ -152,7 +152,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
 					ValueMatcher: gomega.HaveKeyWithValue(
 						"dns",
-						map[string]interface{}{
+						map[string]any{
 							"imageRepository": "my-registry.io/my-org/my-repo",
 							"imageTag":        "v1.11.3_custom.0",
 						},
@@ -196,7 +196,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
 					ValueMatcher: gomega.HaveKeyWithValue(
 						"dns",
-						map[string]interface{}{
+						map[string]any{
 							"imageRepository": "my-registry.io/my-org/my-repo",
 							"imageTag":        "v1.11.3",
 						},
@@ -240,7 +240,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
 					ValueMatcher: gomega.HaveKeyWithValue(
 						"dns",
-						map[string]interface{}{
+						map[string]any{
 							"imageTag": "v1.11.3_custom.0",
 						},
 					),
@@ -314,7 +314,7 @@ var _ = Describe("Generate CoreDNS patches", func() {
 					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
 					ValueMatcher: gomega.HaveKeyWithValue(
 						"dns",
-						map[string]interface{}{
+						map[string]any{
 							"imageRepository": "my-registry.io/my-org/my-repo",
 							"imageTag":        "v1.11.3_custom.0",
 						},

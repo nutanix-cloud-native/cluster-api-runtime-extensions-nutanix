@@ -908,7 +908,7 @@ func InfrastructureMachineTemplate(namespace, name string) *InfrastructureMachin
 	obj.SetAPIVersion(InfrastructureGroupVersion.String())
 	obj.SetKind(GenericInfrastructureMachineTemplateKind)
 	// Set the mandatory spec fields for the object.
-	setSpecFields(obj, map[string]interface{}{"spec.template.spec": map[string]interface{}{}})
+	setSpecFields(obj, map[string]any{"spec.template.spec": map[string]any{}})
 	return &InfrastructureMachineTemplateBuilder{
 		obj,
 	}
@@ -923,7 +923,7 @@ func InfrastructureMachineTemplate(namespace, name string) *InfrastructureMachin
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *InfrastructureMachineTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *InfrastructureMachineTemplateBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -949,7 +949,7 @@ func TestInfrastructureMachineTemplate(
 	obj.SetAPIVersion(InfrastructureGroupVersion.String())
 	obj.SetKind(TestInfrastructureMachineTemplateKind)
 	// Set the mandatory spec fields for the object.
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(obj.Object, map[string]any{}, "spec", "template", "spec"); err != nil {
 		panic(err)
 	}
 	return &TestInfrastructureMachineTemplateBuilder{
@@ -966,7 +966,7 @@ func TestInfrastructureMachineTemplate(
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *TestInfrastructureMachineTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestInfrastructureMachineTemplateBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -992,7 +992,7 @@ func InfrastructureMachinePoolTemplate(
 	obj.SetAPIVersion(InfrastructureGroupVersion.String())
 	obj.SetKind(GenericInfrastructureMachinePoolTemplateKind)
 	// Set the mandatory spec fields for the object.
-	setSpecFields(obj, map[string]interface{}{"spec.template.spec": map[string]interface{}{}})
+	setSpecFields(obj, map[string]any{"spec.template.spec": map[string]any{}})
 	return &InfrastructureMachinePoolTemplateBuilder{
 		obj,
 	}
@@ -1007,7 +1007,7 @@ func InfrastructureMachinePoolTemplate(
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *InfrastructureMachinePoolTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *InfrastructureMachinePoolTemplateBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -1033,7 +1033,7 @@ func TestInfrastructureMachinePoolTemplate(
 	obj.SetAPIVersion(InfrastructureGroupVersion.String())
 	obj.SetKind(TestInfrastructureMachinePoolTemplateKind)
 	// Set the mandatory spec fields for the object.
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(obj.Object, map[string]any{}, "spec", "template", "spec"); err != nil {
 		panic(err)
 	}
 	return &TestInfrastructureMachinePoolTemplateBuilder{
@@ -1050,7 +1050,7 @@ func TestInfrastructureMachinePoolTemplate(
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *TestInfrastructureMachinePoolTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestInfrastructureMachinePoolTemplateBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -1074,7 +1074,7 @@ func InfrastructureMachinePool(namespace, name string) *InfrastructureMachinePoo
 	obj.SetAPIVersion(InfrastructureGroupVersion.String())
 	obj.SetKind(GenericInfrastructureMachinePoolKind)
 	// Set the mandatory spec fields for the object.
-	setSpecFields(obj, map[string]interface{}{"spec": map[string]interface{}{}})
+	setSpecFields(obj, map[string]any{"spec": map[string]any{}})
 	return &InfrastructureMachinePoolBuilder{
 		obj,
 	}
@@ -1089,7 +1089,7 @@ func InfrastructureMachinePool(namespace, name string) *InfrastructureMachinePoo
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *InfrastructureMachinePoolBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *InfrastructureMachinePoolBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -1113,7 +1113,7 @@ func TestInfrastructureMachinePool(namespace, name string) *TestInfrastructureMa
 	obj.SetAPIVersion(InfrastructureGroupVersion.String())
 	obj.SetKind(TestInfrastructureMachinePoolKind)
 	// Set the mandatory spec fields for the object.
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec"); err != nil {
+	if err := unstructured.SetNestedField(obj.Object, map[string]any{}, "spec"); err != nil {
 		panic(err)
 	}
 	return &TestInfrastructureMachinePoolBuilder{
@@ -1130,7 +1130,7 @@ func TestInfrastructureMachinePool(namespace, name string) *TestInfrastructureMa
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *TestInfrastructureMachinePoolBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestInfrastructureMachinePoolBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -1153,14 +1153,14 @@ func BootstrapTemplate(namespace, name string) *BootstrapTemplateBuilder {
 	obj.SetKind(GenericBootstrapConfigTemplateKind)
 	obj.SetNamespace(namespace)
 	obj.SetName(name)
-	setSpecFields(obj, map[string]interface{}{"spec.template.spec": map[string]interface{}{}})
+	setSpecFields(obj, map[string]any{"spec.template.spec": map[string]any{}})
 
 	return &BootstrapTemplateBuilder{obj: obj}
 }
 
 // WithSpecFields will add fields of any type to the object spec. It takes an argument, fields, which is of the form path: object.
 func (b *BootstrapTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *BootstrapTemplateBuilder {
 	setSpecFields(b.obj, fields)
 	return b
@@ -1183,7 +1183,7 @@ func TestBootstrapTemplate(namespace, name string) *TestBootstrapTemplateBuilder
 	obj.SetKind(TestBootstrapConfigTemplateKind)
 	obj.SetNamespace(namespace)
 	obj.SetName(name)
-	setSpecFields(obj, map[string]interface{}{"spec.template.spec": map[string]interface{}{}})
+	setSpecFields(obj, map[string]any{"spec.template.spec": map[string]any{}})
 
 	return &TestBootstrapTemplateBuilder{
 		obj: obj,
@@ -1193,7 +1193,7 @@ func TestBootstrapTemplate(namespace, name string) *TestBootstrapTemplateBuilder
 // WithSpecFields will add fields of any type to the object spec. It takes an argument, fields, which is of the form path: object.
 // NOTE: The path should correspond to a field defined in the CRD.
 func (b *TestBootstrapTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestBootstrapTemplateBuilder {
 	setSpecFields(b.obj, fields)
 	return b
@@ -1216,14 +1216,14 @@ func BootstrapConfig(namespace, name string) *BootstrapConfigBuilder {
 	obj.SetKind(GenericBootstrapConfigKind)
 	obj.SetNamespace(namespace)
 	obj.SetName(name)
-	setSpecFields(obj, map[string]interface{}{"spec": map[string]interface{}{}})
+	setSpecFields(obj, map[string]any{"spec": map[string]any{}})
 
 	return &BootstrapConfigBuilder{obj: obj}
 }
 
 // WithSpecFields will add fields of any type to the object spec. It takes an argument, fields, which is of the form path: object.
 func (b *BootstrapConfigBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *BootstrapConfigBuilder {
 	setSpecFields(b.obj, fields)
 	return b
@@ -1246,7 +1246,7 @@ func TestBootstrapConfig(namespace, name string) *TestBootstrapConfigBuilder {
 	obj.SetKind(TestBootstrapConfigKind)
 	obj.SetNamespace(namespace)
 	obj.SetName(name)
-	setSpecFields(obj, map[string]interface{}{"spec": map[string]interface{}{}})
+	setSpecFields(obj, map[string]any{"spec": map[string]any{}})
 
 	return &TestBootstrapConfigBuilder{
 		obj: obj,
@@ -1256,7 +1256,7 @@ func TestBootstrapConfig(namespace, name string) *TestBootstrapConfigBuilder {
 // WithSpecFields will add fields of any type to the object spec. It takes an argument, fields, which is of the form path: object.
 // NOTE: The path should correspond to a field defined in the CRD.
 func (b *TestBootstrapConfigBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestBootstrapConfigBuilder {
 	setSpecFields(b.obj, fields)
 	return b
@@ -1279,7 +1279,7 @@ func InfrastructureClusterTemplate(namespace, name string) *InfrastructureCluste
 	obj.SetKind(GenericInfrastructureClusterTemplateKind)
 	obj.SetNamespace(namespace)
 	obj.SetName(name)
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(obj.Object, map[string]any{}, "spec", "template", "spec"); err != nil {
 		panic(err)
 	}
 	return &InfrastructureClusterTemplateBuilder{
@@ -1296,7 +1296,7 @@ func InfrastructureClusterTemplate(namespace, name string) *InfrastructureCluste
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *InfrastructureClusterTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *InfrastructureClusterTemplateBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -1321,7 +1321,7 @@ func TestInfrastructureClusterTemplate(
 	obj.SetKind(TestInfrastructureClusterTemplateKind)
 	obj.SetNamespace(namespace)
 	obj.SetName(name)
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(obj.Object, map[string]any{}, "spec", "template", "spec"); err != nil {
 		panic(err)
 	}
 	return &TestInfrastructureClusterTemplateBuilder{
@@ -1338,7 +1338,7 @@ func TestInfrastructureClusterTemplate(
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *TestInfrastructureClusterTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestInfrastructureClusterTemplateBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -1363,7 +1363,7 @@ func ControlPlaneTemplate(namespace, name string) *ControlPlaneTemplateBuilder {
 	obj.SetName(name)
 
 	// Initialize the spec.template.spec to make the object valid in reconciliation.
-	setSpecFields(obj, map[string]interface{}{"spec.template.spec": map[string]interface{}{}})
+	setSpecFields(obj, map[string]any{"spec.template.spec": map[string]any{}})
 	return &ControlPlaneTemplateBuilder{obj: obj}
 }
 
@@ -1376,7 +1376,7 @@ func ControlPlaneTemplate(namespace, name string) *ControlPlaneTemplateBuilder {
 //	    "spec.version": "v1.2.3",
 //	}.
 func (c *ControlPlaneTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *ControlPlaneTemplateBuilder {
 	setSpecFields(c.obj, fields)
 	return c
@@ -1410,7 +1410,7 @@ func TestControlPlaneTemplate(namespace, name string) *TestControlPlaneTemplateB
 	obj.SetAPIVersion(ControlPlaneGroupVersion.String())
 	obj.SetKind(TestControlPlaneTemplateKind)
 	// Set the mandatory spec field for the object.
-	if err := unstructured.SetNestedField(obj.Object, map[string]interface{}{}, "spec", "template", "spec"); err != nil {
+	if err := unstructured.SetNestedField(obj.Object, map[string]any{}, "spec", "template", "spec"); err != nil {
 		panic(err)
 	}
 	return &TestControlPlaneTemplateBuilder{
@@ -1427,7 +1427,7 @@ func TestControlPlaneTemplate(namespace, name string) *TestControlPlaneTemplateB
 //	    "spec.version": "v1.2.3",
 //	}.
 func (c *TestControlPlaneTemplateBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestControlPlaneTemplateBuilder {
 	setSpecFields(c.obj, fields)
 	return c
@@ -1462,7 +1462,7 @@ type InfrastructureClusterBuilder struct {
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *InfrastructureClusterBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *InfrastructureClusterBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -1509,7 +1509,7 @@ func TestInfrastructureCluster(namespace, name string) *TestInfrastructureCluste
 //	    "spec.version": "v1.2.3",
 //	}.
 func (i *TestInfrastructureClusterBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestInfrastructureClusterBuilder {
 	setSpecFields(i.obj, fields)
 	return i
@@ -1572,7 +1572,7 @@ func (c *ControlPlaneBuilder) WithVersion(version string) *ControlPlaneBuilder {
 //	Example map: map[string]interface{}{
 //	    "spec.version": "v1.2.3",
 //	}.
-func (c *ControlPlaneBuilder) WithSpecFields(fields map[string]interface{}) *ControlPlaneBuilder {
+func (c *ControlPlaneBuilder) WithSpecFields(fields map[string]any) *ControlPlaneBuilder {
 	setSpecFields(c.obj, fields)
 	return c
 }
@@ -1585,7 +1585,7 @@ func (c *ControlPlaneBuilder) WithSpecFields(fields map[string]interface{}) *Con
 //	Example map: map[string]interface{}{
 //	    "status.version": "v1.2.3",
 //	}.
-func (c *ControlPlaneBuilder) WithStatusFields(fields map[string]interface{}) *ControlPlaneBuilder {
+func (c *ControlPlaneBuilder) WithStatusFields(fields map[string]any) *ControlPlaneBuilder {
 	setStatusFields(c.obj, fields)
 	return c
 }
@@ -1648,7 +1648,7 @@ func (c *TestControlPlaneBuilder) WithVersion(version string) *TestControlPlaneB
 //	    "spec.version": "v1.2.3",
 //	}.
 func (c *TestControlPlaneBuilder) WithSpecFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestControlPlaneBuilder {
 	setSpecFields(c.obj, fields)
 	return c
@@ -1663,7 +1663,7 @@ func (c *TestControlPlaneBuilder) WithSpecFields(
 //	    "status.version": "v1.2.3",
 //	}.
 func (c *TestControlPlaneBuilder) WithStatusFields(
-	fields map[string]interface{},
+	fields map[string]any,
 ) *TestControlPlaneBuilder {
 	setStatusFields(c.obj, fields)
 	return c
@@ -2179,7 +2179,7 @@ func objToContractRef(ref *corev1.ObjectReference) clusterv1beta2.ContractVersio
 
 // setNestedRef sets the value of a nested field to a reference to the refObj provided.
 func setNestedRef(obj, refObj *unstructured.Unstructured, fields ...string) error {
-	ref := map[string]interface{}{
+	ref := map[string]any{
 		"kind":       refObj.GetKind(),
 		"namespace":  refObj.GetNamespace(),
 		"name":       refObj.GetName(),
@@ -2189,7 +2189,7 @@ func setNestedRef(obj, refObj *unstructured.Unstructured, fields ...string) erro
 }
 
 // setSpecFields sets fields in an unstructured object from a map.
-func setSpecFields(obj *unstructured.Unstructured, fields map[string]interface{}) {
+func setSpecFields(obj *unstructured.Unstructured, fields map[string]any) {
 	for k, v := range fields {
 		fieldParts := strings.Split(k, ".")
 		if len(fieldParts) == 0 {
@@ -2205,7 +2205,7 @@ func setSpecFields(obj *unstructured.Unstructured, fields map[string]interface{}
 }
 
 // setStatusFields sets fields in an unstructured object from a map.
-func setStatusFields(obj *unstructured.Unstructured, fields map[string]interface{}) {
+func setStatusFields(obj *unstructured.Unstructured, fields map[string]any) {
 	for k, v := range fields {
 		fieldParts := strings.Split(k, ".")
 		if len(fieldParts) == 0 {

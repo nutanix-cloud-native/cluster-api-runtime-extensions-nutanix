@@ -46,7 +46,11 @@ func MutateIfApplicable[T runtime.Object](
 
 	// Convert the unstructured object to the expected type.
 	var typed T
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructuredWithValidation(obj.Object, &typed, true); err != nil {
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructuredWithValidation(
+		obj.Object,
+		&typed,
+		true,
+	); err != nil {
 		log.V(5).WithValues(
 			"objKind", obj.GetObjectKind().GroupVersionKind(),
 			"expectedType", fmt.Sprintf("%T", &typed),

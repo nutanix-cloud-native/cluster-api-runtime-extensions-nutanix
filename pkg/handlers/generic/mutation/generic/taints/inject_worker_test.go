@@ -55,7 +55,7 @@ var _ = Describe("Generate taints patches for Worker", func() {
 				Operation: "add",
 				Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/taints",
 				ValueMatcher: gomega.ConsistOf(
-					map[string]interface{}{"key": "key", "effect": "NoExecute", "value": "value"},
+					map[string]any{"key": "key", "effect": "NoExecute", "value": "value"},
 				),
 			}},
 		},

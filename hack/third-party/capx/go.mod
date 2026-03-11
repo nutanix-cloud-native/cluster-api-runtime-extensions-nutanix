@@ -5,7 +5,7 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/ex
 
 go 1.24.0
 
-toolchain go1.24.3
+toolchain go1.26.1
 
 require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.9.0
 
