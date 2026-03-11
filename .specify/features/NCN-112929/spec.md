@@ -5,8 +5,8 @@
 
 # Feature Specification: KubeletConfiguration Variable & Mutation Handler
 
-**Jira Ticket**: NCN-1234
-**Feature Branch**: `NCN-1234-kubelet-configuration`
+**Jira Ticket**: NCN-112929
+**Feature Branch**: `NCN-112929-kubelet-configuration`
 **Created**: 2026-02-27
 **Status**: Draft
 **Input**: User description: "Create a variable and mutation handler that allows adding extra args to kubelet, with args derived from available kubelet flags to be as strongly typed as possible."

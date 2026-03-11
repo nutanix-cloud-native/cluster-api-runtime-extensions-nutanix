@@ -222,7 +222,7 @@ Expected: SUCCESS
 
 ```bash
 git add api/v1alpha1/kubelet_types.go
-git commit -m "feat: [NCN-1234] Add KubeletConfiguration API type with 17 strongly-typed fields"
+git commit -m "feat: [NCN-112929] Add KubeletConfiguration API type with 17 strongly-typed fields"
 ```
 
 ---
@@ -273,7 +273,7 @@ Expected: SUCCESS
 
 ```bash
 git add api/v1alpha1/clusterconfig_types.go api/v1alpha1/nodeconfig_types.go
-git commit -m "feat: [NCN-1234] Wire KubeletConfiguration into cluster and node config specs"
+git commit -m "feat: [NCN-112929] Wire KubeletConfiguration into cluster and node config specs"
 ```
 
 ---
@@ -310,7 +310,7 @@ Expected: SUCCESS
 
 ```bash
 git add api/v1alpha1/crds/ api/v1alpha1/zz_generated.deepcopy.go
-git commit -m "build: [NCN-1234] Regenerate CRDs and deepcopy for KubeletConfiguration"
+git commit -m "build: [NCN-112929] Regenerate CRDs and deepcopy for KubeletConfiguration"
 ```
 
 ---
@@ -406,7 +406,7 @@ shutdownGracePeriodCriticalPods: {{ .ShutdownGracePeriodCriticalPods }}
 
 ```bash
 git add pkg/handlers/generic/mutation/kubeadm/kubeletconfiguration/embedded/
-git commit -m "feat: [NCN-1234] Add KubeletConfiguration strategic merge patch template"
+git commit -m "feat: [NCN-112929] Add KubeletConfiguration strategic merge patch template"
 ```
 
 ---
@@ -460,7 +460,7 @@ Expected: PASS
 
 ```bash
 git add pkg/handlers/generic/mutation/kubeadm/kubeletconfiguration/
-git commit -m "feat: [NCN-1234] Implement KubeletConfiguration mutation handler"
+git commit -m "feat: [NCN-112929] Implement KubeletConfiguration mutation handler"
 ```
 
 ---
@@ -498,7 +498,7 @@ field wins. Test for both control plane and worker paths.
 
 ```bash
 git add pkg/handlers/generic/mutation/kubeadm/kubeletconfiguration/
-git commit -m "feat: [NCN-1234] Add control plane and worker kubelet config handlers with merge"
+git commit -m "feat: [NCN-112929] Add control plane and worker kubelet config handlers with merge"
 ```
 
 ---
@@ -528,7 +528,7 @@ deprecated one is, copy its value into `MaxParallelImagePulls`.
 
 ```bash
 git add pkg/handlers/generic/mutation/kubeadm/kubeletconfiguration/
-git commit -m "feat: [NCN-1234] Handle deprecated maxParallelImagePullsPerNode with lower precedence"
+git commit -m "feat: [NCN-112929] Handle deprecated maxParallelImagePullsPerNode with lower precedence"
 ```
 
 ---
@@ -554,7 +554,7 @@ Expected: SUCCESS
 
 ```bash
 git add pkg/handlers/generic/mutation/handlers.go
-git commit -m "feat: [NCN-1234] Register KubeletConfiguration mutation handlers"
+git commit -m "feat: [NCN-112929] Register KubeletConfiguration mutation handlers"
 ```
 
 ---
@@ -598,7 +598,7 @@ Add the new validator to the `admission.MultiValidatingHandler()` call.
 git add pkg/webhook/cluster/kubeletconfiguration_validator.go \
        pkg/webhook/cluster/kubeletconfiguration_validator_test.go \
        pkg/webhook/cluster/validator.go
-git commit -m "feat: [NCN-1234] Add webhook validation for KubeletConfiguration"
+git commit -m "feat: [NCN-112929] Add webhook validation for KubeletConfiguration"
 ```
 
 ---
@@ -630,7 +630,7 @@ Expected: ALL PASS
 
 ```bash
 git add pkg/handlers/generic/mutation/kubeadm/kubeletconfiguration/
-git commit -m "test: [NCN-1234] Add comprehensive unit tests for KubeletConfiguration handler"
+git commit -m "test: [NCN-112929] Add comprehensive unit tests for KubeletConfiguration handler"
 ```
 
 ---
@@ -654,7 +654,7 @@ Run: `ls pkg/handlers/v4/generic/mutation/`
 
 ```bash
 git add pkg/handlers/v4/
-git commit -m "feat: [NCN-1234] Register KubeletConfiguration handler in v4 handlers"
+git commit -m "feat: [NCN-112929] Register KubeletConfiguration handler in v4 handlers"
 ```
 
 ---
@@ -676,5 +676,5 @@ Expected: ALL PASS
 **Step 4: Final commit if fixups needed**
 
 ```bash
-git commit -m "fix: [NCN-1234] Address lint and test issues"
+git commit -m "fix: [NCN-112929] Address lint and test issues"
 ```
