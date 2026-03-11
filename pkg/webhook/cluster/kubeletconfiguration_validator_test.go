@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -32,7 +32,7 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 
 	BeforeEach(func() {
 		scheme = runtime.NewScheme()
-		Expect(clusterv1.AddToScheme(scheme)).To(Succeed())
+		Expect(clusterv1beta2.AddToScheme(scheme)).To(Succeed())
 		Expect(v1alpha1.AddToScheme(scheme)).To(Succeed())
 
 		decoder = admission.NewDecoder(scheme)
@@ -163,16 +163,18 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 			clusterConfigRaw, err := json.Marshal(clusterConfig)
 			Expect(err).NotTo(HaveOccurred())
 
-			cluster := &clusterv1.Cluster{
+			cluster := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "test-class",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{
+							Name: "test-class",
+						},
 						Version: "v1.30.0",
-						Variables: []clusterv1.ClusterVariable{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name:  v1alpha1.ClusterConfigVariableName,
 								Value: apiextensionsv1.JSON{Raw: clusterConfigRaw},
@@ -208,16 +210,18 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 			clusterConfigRaw, err := json.Marshal(clusterConfig)
 			Expect(err).NotTo(HaveOccurred())
 
-			cluster := &clusterv1.Cluster{
+			cluster := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "test-namespace",
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "test-class",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{
+							Name: "test-class",
+						},
 						Version: "v1.30.0",
-						Variables: []clusterv1.ClusterVariable{
+						Variables: []clusterv1beta2.ClusterVariable{
 							{
 								Name:  v1alpha1.ClusterConfigVariableName,
 								Value: apiextensionsv1.JSON{Raw: clusterConfigRaw},
@@ -244,7 +248,7 @@ func ptrOf[T any](v T) *T {
 	return &v
 }
 
-func createClusterWithKubeletConfig(cfg *v1alpha1.KubeletConfiguration) *clusterv1.Cluster {
+func createClusterWithKubeletConfig(cfg *v1alpha1.KubeletConfiguration) *clusterv1beta2.Cluster {
 	clusterConfig := &variables.ClusterConfigSpec{
 		KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
 			KubeletConfiguration: cfg,
@@ -254,16 +258,18 @@ func createClusterWithKubeletConfig(cfg *v1alpha1.KubeletConfiguration) *cluster
 	clusterConfigRaw, err := json.Marshal(clusterConfig)
 	Expect(err).NotTo(HaveOccurred())
 
-	return &clusterv1.Cluster{
+	return &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-cluster",
 			Namespace: "test-namespace",
 		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Class:   "test-class",
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				ClassRef: clusterv1beta2.ClusterClassRef{
+					Name: "test-class",
+				},
 				Version: "v1.30.0",
-				Variables: []clusterv1.ClusterVariable{
+				Variables: []clusterv1beta2.ClusterVariable{
 					{
 						Name: v1alpha1.ClusterConfigVariableName,
 						Value: apiextensionsv1.JSON{
@@ -276,7 +282,7 @@ func createClusterWithKubeletConfig(cfg *v1alpha1.KubeletConfiguration) *cluster
 	}
 }
 
-func createKubeletAdmissionRequest(cluster *clusterv1.Cluster) admission.Request {
+func createKubeletAdmissionRequest(cluster *clusterv1beta2.Cluster) admission.Request {
 	objRaw, err := json.Marshal(cluster)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -287,8 +293,8 @@ func createKubeletAdmissionRequest(cluster *clusterv1.Cluster) admission.Request
 				Raw: objRaw,
 			},
 			RequestKind: &metav1.GroupVersionKind{
-				Group:   clusterv1.GroupVersion.Group,
-				Version: clusterv1.GroupVersion.Version,
+				Group:   clusterv1beta2.GroupVersion.Group,
+				Version: clusterv1beta2.GroupVersion.Version,
 				Kind:    "Cluster",
 			},
 		},

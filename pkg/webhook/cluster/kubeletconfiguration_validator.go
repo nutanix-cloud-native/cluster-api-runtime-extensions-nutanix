@@ -133,7 +133,6 @@ func (k *kubeletConfigurationValidator) validate(
 		}
 	}
 
-	//nolint:staticcheck // Intentional access to deprecated field for backwards compatibility.
 	if clusterConfig.MaxParallelImagePullsPerNode != nil &&
 		clusterConfig.KubeletConfiguration != nil &&
 		clusterConfig.KubeletConfiguration.MaxParallelImagePulls != nil {
