@@ -665,8 +665,8 @@ spec:
                             MaxPods defines the maximum number of pods that can run on a node.
                             Default kubelet value is 110.
                           format: int32
-                          maximum: 4096
-                          minimum: 1
+                          maximum: 256
+                          minimum: 50
                           type: integer
                         memoryManagerPolicy:
                           description: |-
@@ -1067,8 +1067,8 @@ spec:
                         MaxPods defines the maximum number of pods that can run on a node.
                         Default kubelet value is 110.
                       format: int32
-                      maximum: 4096
-                      minimum: 1
+                      maximum: 256
+                      minimum: 50
                       type: integer
                     memoryManagerPolicy:
                       description: |-
