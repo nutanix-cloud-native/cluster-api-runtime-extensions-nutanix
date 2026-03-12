@@ -12,7 +12,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +24,7 @@ import (
 // WaitForHelmReleaseProxyReadyInput is the input for WaitForHelmReleaseProxyReady.
 type WaitForHelmReleaseProxyReadyForClusterInput struct {
 	GetLister       framework.GetLister
-	Cluster         *clusterv1beta2.Cluster
+	Cluster         *clusterv1.Cluster
 	HelmReleaseName string
 }
 
@@ -56,14 +56,14 @@ func WaitForHelmReleaseProxyReadyForCluster(
 	Eventually(func() bool {
 		err := input.GetLister.Get(ctx, hrpKey, hrp)
 
-		return err == nil && apimeta.IsStatusConditionTrue(hrp.GetConditions(), clusterv1beta2.ReadyCondition)
+		return err == nil && apimeta.IsStatusConditionTrue(hrp.GetConditions(), clusterv1.ReadyCondition)
 	}, intervals...).Should(
 		BeTrue(),
 		fmt.Sprintf(
 			"HelmReleaseProxy %s failed to become ready and have up to date revision: ready condition = %+v, "+
 				"revision = %v, full object is:\n%+v\n`",
 			hrpKey,
-			apimeta.FindStatusCondition(hrp.GetConditions(), clusterv1beta2.ReadyCondition),
+			apimeta.FindStatusCondition(hrp.GetConditions(), clusterv1.ReadyCondition),
 			hrp.Status.Revision,
 			hrp,
 		),
@@ -81,7 +81,7 @@ func getHelmReleaseProxy(
 	// Get the HelmReleaseProxy using label selectors since we don't know the name of the HelmReleaseProxy.
 	releaseList := &helmaddonsv1.HelmReleaseProxyList{}
 	labels := map[string]string{
-		clusterv1beta2.ClusterNameLabel:      clusterName,
+		clusterv1.ClusterNameLabel:           clusterName,
 		helmaddonsv1.HelmChartProxyLabelName: helmChartProxyName,
 	}
 	if err := getLister.List(

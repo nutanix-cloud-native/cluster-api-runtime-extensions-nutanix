@@ -7,7 +7,7 @@ import (
 	_ "embed"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
@@ -70,7 +70,7 @@ type AWSClusterConfig struct {
 	Spec *AWSClusterConfigSpec `json:"spec,omitempty"`
 }
 
-func (s AWSClusterConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s AWSClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return awsClusterConfigVariableSchema
 }
 
@@ -113,7 +113,7 @@ type DockerClusterConfig struct {
 	Spec *DockerClusterConfigSpec `json:"spec,omitempty"`
 }
 
-func (s DockerClusterConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s DockerClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return dockerClusterConfigVariableSchema
 }
 
@@ -160,7 +160,7 @@ type NutanixClusterConfig struct {
 	Spec *NutanixClusterConfigSpec `json:"spec,omitempty"`
 }
 
-func (s NutanixClusterConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s NutanixClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return nutanixClusterConfigVariableSchema
 }
 
@@ -206,7 +206,7 @@ type EKSClusterConfig struct {
 	Spec EKSClusterConfigSpec `json:"spec,omitempty"`
 }
 
-func (s EKSClusterConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s EKSClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return eksClusterConfigVariableSchema
 }
 
@@ -237,7 +237,7 @@ type KubeadmClusterConfig struct {
 	Spec KubeadmClusterConfigSpec `json:"spec,omitempty"`
 }
 
-func (s KubeadmClusterConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s KubeadmClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return kubeadmClusterConfigVariableSchema
 }
 
@@ -278,7 +278,7 @@ type GenericClusterConfig struct {
 	Spec *GenericClusterConfigSpec `json:"spec,omitempty"`
 }
 
-func (s GenericClusterConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s GenericClusterConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return genericClusterConfigVariableSchema
 }
 

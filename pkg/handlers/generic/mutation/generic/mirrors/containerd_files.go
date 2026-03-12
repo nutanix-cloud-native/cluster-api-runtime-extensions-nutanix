@@ -14,7 +14,7 @@ import (
 	"text/template"
 
 	"github.com/samber/lo"
-	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
@@ -73,7 +73,7 @@ func (c containerdConfig) needContainerdConfiguration() bool {
 //  2. Setting CA certificate for global image registry mirror.
 func generateContainerdDefaultHostsFile(
 	configs []containerdConfig,
-) (*cabpkv1.File, error) {
+) (*bootstrapv1.File, error) {
 	if len(configs) == 0 {
 		return nil, nil
 	}
@@ -124,7 +124,7 @@ func generateContainerdDefaultHostsFile(
 	if err != nil {
 		return nil, fmt.Errorf("failed executing template for Containerd hosts.toml file: %w", err)
 	}
-	return &cabpkv1.File{
+	return &bootstrapv1.File{
 		Path: containerdHostsConfigurationOnRemote,
 		// Trimming the leading and trailing whitespaces in the template did not work as expected with multiple configs.
 		Content:     fmt.Sprintf("%s\n", strings.TrimSpace(b.String())),
@@ -134,23 +134,23 @@ func generateContainerdDefaultHostsFile(
 
 func generateRegistryCACertFiles(
 	configs []containerdConfig,
-) ([]cabpkv1.File, error) {
+) ([]bootstrapv1.File, error) {
 	if len(configs) == 0 {
 		return nil, nil
 	}
 
-	var files []cabpkv1.File //nolint:prealloc // We don't know the size of the slice yet.
+	var files []bootstrapv1.File //nolint:prealloc // We don't know the size of the slice yet.
 
 	filesToGenerate, err := registryCACertFiles(configs)
 	if err != nil {
 		return nil, err
 	}
 	for _, file := range filesToGenerate {
-		files = append(files, cabpkv1.File{
+		files = append(files, bootstrapv1.File{
 			Path:        file.path,
 			Permissions: "0600",
-			ContentFrom: cabpkv1.FileSource{
-				Secret: cabpkv1.SecretFileSource{
+			ContentFrom: bootstrapv1.FileSource{
+				Secret: bootstrapv1.SecretFileSource{
 					Name: file.caSecretName,
 					Key:  secretKeyForCACert,
 				},
@@ -161,8 +161,8 @@ func generateRegistryCACertFiles(
 	return files, nil
 }
 
-func generateContainerdRegistryConfigDropInFile() []cabpkv1.File {
-	return []cabpkv1.File{
+func generateContainerdRegistryConfigDropInFile() []bootstrapv1.File {
+	return []bootstrapv1.File{
 		{
 			Path:        containerdRegistryConfigDropInFileOnRemote,
 			Content:     string(containerdRegistryConfigDropIn),

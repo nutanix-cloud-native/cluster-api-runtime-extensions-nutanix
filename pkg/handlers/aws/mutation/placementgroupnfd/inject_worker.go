@@ -8,7 +8,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -75,12 +75,12 @@ func (h *workerPatchHandler) Mutate(
 		vars,
 		&holderRef,
 		selectors.WorkersKubeadmConfigTemplateSelector(), log,
-		func(obj *cabpkv1.KubeadmConfigTemplate) error {
+		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting placement group for local node feature discovery in AWS workers KubeadmConfig template")
-			obj.Spec.Template.Spec.Files = append(obj.Spec.Template.Spec.Files, cabpkv1.File{
+			obj.Spec.Template.Spec.Files = append(obj.Spec.Template.Spec.Files, bootstrapv1.File{
 				Path:        PlacementGroupDiscoveryScriptFileOnRemote,
 				Content:     string(PlacementgroupDiscoveryScript),
 				Permissions: "0700",

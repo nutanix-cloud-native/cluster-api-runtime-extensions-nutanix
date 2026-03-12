@@ -11,7 +11,7 @@ import (
 	"text/template"
 
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -26,7 +26,7 @@ type Provider interface {
 	GenerateFilesAndCommands(
 		ctx context.Context,
 		spec v1alpha1.ControlPlaneEndpointSpec,
-		cluster *clusterv1beta2.Cluster,
+		cluster *clusterv1.Cluster,
 	) ([]bootstrapv1.File, []string, []string, error)
 }
 

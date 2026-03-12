@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/utils/ptr"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,7 +72,7 @@ func (k *konnectorAgentLegacyValidator) validate(
 		return admission.Allowed("")
 	}
 
-	cluster := &clusterv1beta2.Cluster{}
+	cluster := &clusterv1.Cluster{}
 	err := k.decoder.Decode(req, cluster)
 	if err != nil {
 		log.Error(err, "Failed to decode cluster")
@@ -229,7 +229,7 @@ func findLegacyReleases(ctx context.Context, client ctrlclient.Client) ([]Legacy
 	return legacyReleases, nil
 }
 
-func hasKonnectorAgentSkipAnnotation(cluster *clusterv1beta2.Cluster) bool {
+func hasKonnectorAgentSkipAnnotation(cluster *clusterv1.Cluster) bool {
 	if cluster.Annotations == nil {
 		return false
 	}

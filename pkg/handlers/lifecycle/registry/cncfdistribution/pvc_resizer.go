@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/utils/ptr"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -35,7 +35,7 @@ func updateStatefulSetVolumeClaimTemplate(
 	ctx context.Context,
 	_ ctrlclient.Client,
 	remoteClient ctrlclient.Client,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	hcp *caaphv1.HelmChartProxy,
 ) error {
 	// Get the expected persistence size from the Helm values.
@@ -108,7 +108,7 @@ func expandPersistentVolumeClaims(
 	ctx context.Context,
 	_ ctrlclient.Client,
 	remoteClient ctrlclient.Client,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	hcp *caaphv1.HelmChartProxy,
 ) error {
 	// Get the expected persistence size from the Helm values.

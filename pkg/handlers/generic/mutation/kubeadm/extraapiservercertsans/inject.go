@@ -10,7 +10,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -112,7 +112,7 @@ func (h *extraAPIServerCertSANsPatchHandler) Mutate(
 	)
 }
 
-func getDefaultAPIServerSANs(cluster *clusterv1beta2.Cluster) []string {
+func getDefaultAPIServerSANs(cluster *clusterv1.Cluster) []string {
 	switch utils.GetProvider(cluster) {
 	case "docker":
 		return v1alpha1.DefaultDockerCertSANs

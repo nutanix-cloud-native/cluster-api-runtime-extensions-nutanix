@@ -15,13 +15,13 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/exp/runtime/topologymutation"
 )
 
 func MatchesSelector(
-	selector clusterv1beta2.PatchSelector,
+	selector clusterv1.PatchSelector,
 	obj runtime.Object,
 	holderRef *runtimehooksv1.HolderReference,
 	templateVariables map[string]apiextensionsv1.JSON,

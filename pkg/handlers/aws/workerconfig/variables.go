@@ -8,7 +8,7 @@ import (
 
 	"k8s.io/utils/ptr"
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -41,7 +41,7 @@ func (h *awsWorkerConfigVariableHandler) DiscoverVariables(
 	_ *runtimehooksv1.DiscoverVariablesRequest,
 	resp *runtimehooksv1.DiscoverVariablesResponse,
 ) {
-	v1beta2Var := clusterv1beta2.ClusterClassVariable{
+	v1beta2Var := clusterv1.ClusterClassVariable{
 		Name:     v1alpha1.WorkerConfigVariableName,
 		Required: ptr.To(false),
 		Schema:   v1alpha1.AWSWorkerNodeConfig{}.VariableSchema(),

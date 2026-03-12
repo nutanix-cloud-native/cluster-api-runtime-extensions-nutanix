@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"text/template"
 
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni"
@@ -17,8 +17,8 @@ import (
 // templateValuesFunc returns a template function that parses the Multus values template
 // and replaces socket-related placeholders with the readiness socket path.
 // It looks up the socket path internally based on the CNI provider.
-func templateValuesFunc(cniVar v1alpha1.CNI) func(*clusterv1beta2.Cluster, string) (string, error) {
-	return func(_ *clusterv1beta2.Cluster, valuesTemplate string) (string, error) {
+func templateValuesFunc(cniVar v1alpha1.CNI) func(*clusterv1.Cluster, string) (string, error) {
+	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		// Look up the readiness socket path for the CNI provider
 		readinessSocketPath, err := cni.ReadinessSocketPath(cniVar.Provider)
 		if err != nil {

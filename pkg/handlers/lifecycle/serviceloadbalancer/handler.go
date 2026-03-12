@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +24,7 @@ type ServiceLoadBalancerProvider interface {
 	Apply(
 		ctx context.Context,
 		slb v1alpha1.ServiceLoadBalancer,
-		cluster *clusterv1beta2.Cluster,
+		cluster *clusterv1.Cluster,
 		log logr.Logger,
 	) error
 }
@@ -93,7 +93,7 @@ func (s *ServiceLoadBalancerHandler) BeforeClusterUpgrade(
 
 func (s *ServiceLoadBalancerHandler) apply(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
