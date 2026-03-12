@@ -268,10 +268,10 @@ func generateProviderCNIManifestsConfigMap(
 				return nil, fmt.Errorf("missing ipPools in unstructured object")
 			}
 
-			ipPools := ipPoolsRef.([]interface{})
+			ipPools := ipPoolsRef.([]any)
 
 			err = unstructured.SetNestedField(
-				ipPools[0].(map[string]interface{}),
+				ipPools[0].(map[string]any),
 				podSubnet,
 				"cidr",
 			)

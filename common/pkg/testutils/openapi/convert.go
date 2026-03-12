@@ -46,7 +46,7 @@ func ConvertJSONSchemaPropsToAPIExtensions(
 	}
 
 	if schema.Default != nil && schema.Default.Raw != nil {
-		var v interface{}
+		var v any
 		if err := json.Unmarshal(schema.Default.Raw, &v); err != nil {
 			allErrs = append(
 				allErrs,
@@ -80,7 +80,7 @@ func ConvertJSONSchemaPropsToAPIExtensions(
 				continue
 			}
 
-			var v interface{}
+			var v any
 			if err := json.Unmarshal(enum.Raw, &v); err != nil {
 				allErrs = append(
 					allErrs,
@@ -107,7 +107,7 @@ func ConvertJSONSchemaPropsToAPIExtensions(
 	}
 
 	if schema.Example != nil && schema.Example.Raw != nil {
-		var v interface{}
+		var v any
 		if err := json.Unmarshal(schema.Example.Raw, &v); err != nil {
 			allErrs = append(
 				allErrs,

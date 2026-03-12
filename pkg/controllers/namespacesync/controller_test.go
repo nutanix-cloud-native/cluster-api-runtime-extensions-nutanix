@@ -393,7 +393,7 @@ func createManagedClusterClassAndTemplates(
 
 func createTargetNamespaces(number int) ([]*corev1.Namespace, error) {
 	targetNamespaces := []*corev1.Namespace{}
-	for i := 0; i < number; i++ {
+	for range number {
 		targetNamespace, err := env.CreateNamespace(ctx, "target", map[string]string{
 			targetNamespaceLabelKey: "",
 		})

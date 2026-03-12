@@ -176,11 +176,8 @@ func (h *ControlPlaneVirtualIP) Mutate(
 
 func deleteFiles(files []bootstrapv1.File, filePathsToDelete ...string) []bootstrapv1.File {
 	for i := len(files) - 1; i >= 0; i-- {
-		for _, path := range filePathsToDelete {
-			if files[i].Path == path {
-				files = slices.Delete(files, i, i+1)
-				break
-			}
+		if slices.Contains(filePathsToDelete, files[i].Path) {
+			files = slices.Delete(files, i, i+1)
 		}
 	}
 

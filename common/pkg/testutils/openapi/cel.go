@@ -89,7 +89,7 @@ func validateCELRecursively(
 	return errs
 }
 
-func reflectValueToInterface(v reflect.Value) interface{} {
+func reflectValueToInterface(v reflect.Value) any {
 	if !v.IsValid() {
 		return nil
 	}

@@ -262,7 +262,7 @@ func Test_runHooksInParallel(t *testing.T) {
 			// As we call funcs in parallel, response messages could be in any order so let's split the string and
 			// compare using regex.
 			gotResponseMessage := gotResponse.GetMessage()
-			for _, expectedMessagePart := range strings.Split(tt.expectedAggregatedResponse.GetMessage(), ", ") {
+			for expectedMessagePart := range strings.SplitSeq(tt.expectedAggregatedResponse.GetMessage(), ", ") {
 				g.Expect(gotResponseMessage).To(
 					gomega.MatchRegexp(
 						fmt.Sprintf("((^|, )%s(, |$))", expectedMessagePart),

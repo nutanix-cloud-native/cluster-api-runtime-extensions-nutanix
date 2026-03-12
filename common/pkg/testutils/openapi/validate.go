@@ -170,13 +170,13 @@ func validateCEL[T any](
 func validateUnknownFields(
 	fldPath *field.Path,
 	clusterVariable *clusterv1beta2.ClusterVariable,
-	variableValue interface{},
+	variableValue any,
 	variableSchema *apiextensions.JSONSchemaProps,
 ) field.ErrorList {
 	// Structural schema pruning does not work with scalar values,
 	// so we wrap the schema and the variable in objects.
 	// <variable-name>: <variable-value>
-	wrappedVariable := map[string]interface{}{
+	wrappedVariable := map[string]any{
 		clusterVariable.Name: variableValue,
 	}
 	// type: object

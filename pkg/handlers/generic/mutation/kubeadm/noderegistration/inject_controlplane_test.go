@@ -39,19 +39,22 @@ var _ = Describe("Generate NodeRegistration patches for Control Plane", func() {
 				),
 			},
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
-				Operation: "add",
-				Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/ignorePreflightErrors",
-				ValueMatcher: gomega.ConsistOf(
-					[]string{"all"},
-				),
-			}, {
-				Operation: "add",
-				Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/ignorePreflightErrors",
-				ValueMatcher: gomega.ConsistOf(
-					[]string{"all"},
-				),
-			}},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/ignorePreflightErrors",
+					ValueMatcher: gomega.ConsistOf(
+						[]string{"all"},
+					),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/ignorePreflightErrors",
+					ValueMatcher: gomega.ConsistOf(
+						[]string{"all"},
+					),
+				},
+			},
 		},
 	}
 

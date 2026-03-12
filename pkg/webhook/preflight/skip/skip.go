@@ -34,7 +34,7 @@ func New(cluster *clusterv1beta2.Cluster) *Evaluator {
 		return o
 	}
 
-	for _, checkName := range strings.Split(value, ",") {
+	for checkName := range strings.SplitSeq(value, ",") {
 		if checkName == "" {
 			// Ignore whitespace between commas.
 			continue

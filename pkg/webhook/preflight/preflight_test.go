@@ -1003,9 +1003,9 @@ func TestRun_LargeNumberOfCheckersAndChecks(t *testing.T) {
 	checkers := make([]Checker, checkerCount)
 	expectedTotal := checkerCount * checksPerChecker
 
-	for i := 0; i < checkerCount; i++ {
+	for i := range checkerCount {
 		checks := make([]Check, checksPerChecker)
-		for j := 0; j < checksPerChecker; j++ {
+		for j := range checksPerChecker {
 			checkerIndex := i
 			checkIndex := j
 			checks[j] = &mockCheck{

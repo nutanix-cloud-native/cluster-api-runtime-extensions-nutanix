@@ -50,7 +50,7 @@ var _ = Describe("Generate AWS Tags patches for Worker", func() {
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/additionalTags",
-				ValueMatcher: gomega.Equal(map[string]interface{}{
+				ValueMatcher: gomega.Equal(map[string]any{
 					"Environment": "production",
 					"Team":        "platform",
 					"CostCenter":  "12345",
@@ -101,7 +101,7 @@ var _ = Describe("Generate AWS Tags patches for Worker", func() {
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/additionalTags",
-				ValueMatcher: gomega.Equal(map[string]interface{}{
+				ValueMatcher: gomega.Equal(map[string]any{
 					"kubernetes.io/cluster/test-cluster": "owned",
 					"Name":                               "test-cluster-worker",
 					"Environment":                        "dev",

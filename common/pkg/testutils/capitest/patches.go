@@ -121,7 +121,7 @@ func containPatches(
 		)
 	}
 
-	patchMatchers := make([]interface{}, 0, len(jsonMatchers))
+	patchMatchers := make([]any, 0, len(jsonMatchers))
 	for patchIdx := range jsonMatchers {
 		unexpectedPatch := jsonMatchers[patchIdx]
 		patchMatchers = append(patchMatchers, gstruct.MatchAllFields(gstruct.Fields{

@@ -91,8 +91,8 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 					),
 					HaveKeyWithValue(
 						"contentFrom",
-						map[string]interface{}{
-							"secret": map[string]interface{}{
+						map[string]any{
+							"secret": map[string]any{
 								"key":  "config",
 								"name": defaultEncryptionSecretName(request.ClusterName),
 							},

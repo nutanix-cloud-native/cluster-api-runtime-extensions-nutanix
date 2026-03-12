@@ -479,7 +479,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -494,7 +494,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -518,7 +518,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
@@ -556,7 +556,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -573,7 +573,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -597,7 +597,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
@@ -642,7 +642,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -657,7 +657,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -681,7 +681,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
@@ -727,7 +727,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -774,7 +774,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -789,7 +789,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -822,7 +822,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -837,7 +837,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -861,7 +861,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
@@ -894,7 +894,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -909,7 +909,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -933,7 +933,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
@@ -969,7 +969,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -984,7 +984,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1008,7 +1008,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
@@ -1051,7 +1051,7 @@ func TestStorageContainerCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -1066,7 +1066,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1090,7 +1090,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
@@ -1142,7 +1142,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1174,7 +1174,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListStorageContainersApiResponse,
 					error,
@@ -1322,7 +1322,7 @@ func TestGetClusters(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -1355,7 +1355,7 @@ func TestGetClusters(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -1376,7 +1376,7 @@ func TestGetClusters(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -1403,7 +1403,7 @@ func TestGetClusters(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1439,7 +1439,7 @@ func TestGetClusters(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1463,7 +1463,7 @@ func TestGetClusters(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1487,7 +1487,7 @@ func TestGetClusters(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1514,7 +1514,7 @@ func TestGetClusters(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1540,7 +1540,7 @@ func TestGetClusters(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1569,7 +1569,7 @@ func TestGetClusters(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -1613,7 +1613,7 @@ func TestGetClusters(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -1637,7 +1637,7 @@ func TestGetClusters(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,

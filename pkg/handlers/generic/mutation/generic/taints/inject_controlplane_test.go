@@ -45,13 +45,13 @@ var _ = Describe("Generate taints patches for Control Plane", func() {
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/taints",
 				ValueMatcher: gomega.ConsistOf(
-					map[string]interface{}{"key": "key", "effect": "NoExecute", "value": "value"},
+					map[string]any{"key": "key", "effect": "NoExecute", "value": "value"},
 				),
 			}, {
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/joinConfiguration/nodeRegistration/taints",
 				ValueMatcher: gomega.ConsistOf(
-					map[string]interface{}{"key": "key", "effect": "NoExecute", "value": "value"},
+					map[string]any{"key": "key", "effect": "NoExecute", "value": "value"},
 				),
 			}},
 		},

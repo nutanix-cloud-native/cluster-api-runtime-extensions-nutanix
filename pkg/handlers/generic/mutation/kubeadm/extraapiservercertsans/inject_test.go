@@ -68,7 +68,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 						"apiServer",
 						gomega.HaveKeyWithValue(
 							"certSANs",
-							[]interface{}{"a.b.c.example.com", "d.e.f.example.com"},
+							[]any{"a.b.c.example.com", "d.e.f.example.com"},
 						),
 					),
 				}},
@@ -110,7 +110,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 						"apiServer",
 						gomega.HaveKeyWithValue(
 							"certSANs",
-							[]interface{}{
+							[]any{
 								"0.0.0.0",
 								"127.0.0.1",
 								"a.b.c.example.com",
@@ -158,7 +158,7 @@ var _ = Describe("Generate Extra API server certificate patches", func() {
 						"apiServer",
 						gomega.HaveKeyWithValue(
 							"certSANs",
-							[]interface{}{
+							[]any{
 								"0.0.0.0",
 								"127.0.0.1",
 								"a.b.c.example.com",

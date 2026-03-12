@@ -183,7 +183,7 @@ func expectedPersistenceSize(hcp *caaphv1.HelmChartProxy) (string, error) {
 	}
 
 	// Parse the values YAML into a generic map.
-	var valuesObj map[string]interface{}
+	var valuesObj map[string]any
 	if err := yaml.Unmarshal([]byte(values), &valuesObj); err != nil {
 		return "", fmt.Errorf("failed to parse values: %w", err)
 	}

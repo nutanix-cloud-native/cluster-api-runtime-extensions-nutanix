@@ -38,7 +38,7 @@ type client interface {
 	GetImageById(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*vmmv4.GetImageApiResponse,
 		error,
@@ -51,7 +51,7 @@ type client interface {
 		filter_ *string,
 		orderby_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*vmmv4.ListImagesApiResponse,
 		error,
@@ -60,7 +60,7 @@ type client interface {
 	GetClusterById(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.GetClusterApiResponse, error,
 	)
@@ -73,7 +73,7 @@ type client interface {
 		orderby_ *string,
 		apply_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.ListClustersApiResponse,
 		error,
@@ -85,7 +85,7 @@ type client interface {
 		filter_ *string,
 		orderby_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.ListStorageContainersApiResponse,
 		error,
@@ -94,7 +94,7 @@ type client interface {
 	GetSubnetById(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*netv4.GetSubnetApiResponse, error,
 	)
@@ -107,7 +107,7 @@ type client interface {
 		orderby_ *string,
 		expand_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*netv4.ListSubnetsApiResponse, error,
 	)
@@ -128,7 +128,7 @@ type clientWrapper struct {
 	GetImageByIdFunc func(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*vmmv4.GetImageApiResponse, error,
 	)
@@ -140,7 +140,7 @@ type clientWrapper struct {
 		filter_ *string,
 		orderby_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*vmmv4.ListImagesApiResponse,
 		error,
@@ -149,7 +149,7 @@ type clientWrapper struct {
 	GetClusterByIdFunc func(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.GetClusterApiResponse, error,
 	)
@@ -162,7 +162,7 @@ type clientWrapper struct {
 		orderby_ *string,
 		apply_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.ListClustersApiResponse,
 		error,
@@ -174,7 +174,7 @@ type clientWrapper struct {
 		filter_ *string,
 		orderby_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.ListStorageContainersApiResponse,
 		error,
@@ -183,7 +183,7 @@ type clientWrapper struct {
 	GetSubnetByIdFunc func(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*netv4.GetSubnetApiResponse, error,
 	)
@@ -196,7 +196,7 @@ type clientWrapper struct {
 		orderby_ *string,
 		expand_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*netv4.ListSubnetsApiResponse, error,
 	)
@@ -292,7 +292,7 @@ func newClient(
 		GetImageByIdFunc: func(
 			ctx context.Context,
 			uuid *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*vmmv4.GetImageApiResponse, error) {
 			if uuid == nil {
 				return nil, fmt.Errorf("uuid cannot be nil")
@@ -315,7 +315,7 @@ func newClient(
 			filter_ *string,
 			orderby_ *string,
 			select_ *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*vmmv4.ListImagesApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
 			images, err := convergedc.Images.List(ctx, opts...)
@@ -332,7 +332,7 @@ func newClient(
 		GetClusterByIdFunc: func(
 			ctx context.Context,
 			uuid *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*clustermgmtv4.GetClusterApiResponse, error) {
 			if uuid == nil {
 				return nil, fmt.Errorf("uuid cannot be nil")
@@ -352,7 +352,7 @@ func newClient(
 			ctx context.Context,
 			page_, limit_ *int,
 			filter_, orderby_, apply_, select_ *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*clustermgmtv4.ListClustersApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
 			if apply_ != nil && *apply_ != "" {
@@ -376,7 +376,7 @@ func newClient(
 			filter_ *string,
 			orderby_ *string,
 			select_ *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*clustermgmtv4.ListStorageContainersApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
 			containers, err := convergedc.StorageContainers.List(ctx, opts...)
@@ -393,7 +393,7 @@ func newClient(
 		GetSubnetByIdFunc: func(
 			ctx context.Context,
 			uuid *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*netv4.GetSubnetApiResponse, error) {
 			if uuid == nil {
 				return nil, fmt.Errorf("uuid cannot be nil")
@@ -417,7 +417,7 @@ func newClient(
 			orderby_ *string,
 			expand_ *string,
 			select_ *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*netv4.ListSubnetsApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
 			if expand_ != nil && *expand_ != "" {
@@ -455,7 +455,7 @@ func (c *clientWrapper) GetPrismCentralVersion(
 func (c *clientWrapper) GetImageById(
 	ctx context.Context,
 	uuid *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*vmmv4.GetImageApiResponse,
 	error,
@@ -476,7 +476,7 @@ func (c *clientWrapper) ListImages(
 	filter_ *string,
 	orderby_ *string,
 	select_ *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*vmmv4.ListImagesApiResponse,
 	error,
@@ -497,7 +497,7 @@ func (c *clientWrapper) ListImages(
 func (c *clientWrapper) GetClusterById(
 	ctx context.Context,
 	uuid *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*clustermgmtv4.GetClusterApiResponse,
 	error,
@@ -519,7 +519,7 @@ func (c *clientWrapper) ListClusters(
 	orderby_ *string,
 	apply_ *string,
 	select_ *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*clustermgmtv4.ListClustersApiResponse,
 	error,
@@ -545,7 +545,7 @@ func (c *clientWrapper) ListStorageContainers(
 	filter_ *string,
 	orderby_ *string,
 	select_ *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*clustermgmtv4.ListStorageContainersApiResponse,
 	error,
@@ -566,7 +566,7 @@ func (c *clientWrapper) ListStorageContainers(
 func (c *clientWrapper) GetSubnetById(
 	ctx context.Context,
 	uuid *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*netv4.GetSubnetApiResponse,
 	error,
@@ -588,7 +588,7 @@ func (c *clientWrapper) ListSubnets(
 	orderby_ *string,
 	expand_ *string,
 	select_ *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*netv4.ListSubnetsApiResponse,
 	error,

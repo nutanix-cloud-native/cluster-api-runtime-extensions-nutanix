@@ -177,8 +177,8 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 
 	if b.version != nil {
 		marshaledBuiltin, _ := json.Marshal( //nolint:errchkjson // Marshalling is guaranteed to succeed.
-			map[string]interface{}{
-				"controlPlane": map[string]interface{}{
+			map[string]any{
+				"controlPlane": map[string]any{
 					"version": *b.version,
 				},
 			},

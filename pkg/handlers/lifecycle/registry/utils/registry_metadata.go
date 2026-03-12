@@ -109,7 +109,7 @@ func getCertificateDNSNames(workloadName, headlessServiceName, namespace string,
 		fmt.Sprintf("%s.%s.svc", workloadName, namespace),
 		fmt.Sprintf("%s.%s.svc.cluster.local", workloadName, namespace),
 	}
-	for i := 0; i < replicas; i++ {
+	for i := range replicas {
 		names = append(names,
 			[]string{
 				fmt.Sprintf("%s-%d", workloadName, i),

@@ -5,7 +5,7 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/ex
 
 go 1.24.0
 
-toolchain go1.24.5
+toolchain go1.26.1
 
 require sigs.k8s.io/cluster-api-addon-provider-helm v0.5.3
 
