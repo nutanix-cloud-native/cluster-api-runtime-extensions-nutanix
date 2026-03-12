@@ -25,15 +25,18 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // getReference gets the object referenced in ref.
 func getReference(
 	ctx context.Context,
 	cli client.Reader,
+	scheme *runtime.Scheme,
 	ref *corev1.ObjectReference,
 ) (
 	*unstructured.Unstructured,
@@ -47,6 +50,13 @@ func getReference(
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get %s %s/%s", ref.Kind, ref.Name, ref.Namespace)
 	}
+
+	gvk, err := apiutil.GVKForObject(obj, scheme)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get GVK for %s %s/%s", ref.Kind, ref.Name, ref.Namespace)
+	}
+	obj.SetGroupVersionKind(gvk)
+
 	return obj, nil
 }
 
