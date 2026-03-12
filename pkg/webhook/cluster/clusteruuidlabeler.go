@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	v1 "k8s.io/api/admission/v1"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -44,7 +44,7 @@ func (a *clusterUUIDLabeler) defaulter(
 	ctx context.Context,
 	req admission.Request,
 ) admission.Response {
-	cluster := &clusterv1beta2.Cluster{}
+	cluster := &clusterv1.Cluster{}
 	err := a.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -69,7 +69,7 @@ func (a *clusterUUIDLabeler) defaulter(
 		// https://github.com/kubernetes-sigs/cluster-api/blob/v1.7.4/cmd/clusterctl/client/cluster/mover.go#L1188).
 		// Without this logic, the UUID would be deleted and the UUID validation webhook would fail.
 		case v1.Update:
-			oldCluster := &clusterv1beta2.Cluster{}
+			oldCluster := &clusterv1.Cluster{}
 			err := a.decoder.DecodeRaw(req.OldObject, oldCluster)
 			if err != nil {
 				return admission.Errored(
@@ -106,7 +106,7 @@ func (a *clusterUUIDLabeler) validate(
 	ctx context.Context,
 	req admission.Request,
 ) admission.Response {
-	cluster := &clusterv1beta2.Cluster{}
+	cluster := &clusterv1.Cluster{}
 	err := a.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -127,7 +127,7 @@ func (a *clusterUUIDLabeler) validate(
 	}
 
 	if req.Operation == v1.Update {
-		oldCluster := &clusterv1beta2.Cluster{}
+		oldCluster := &clusterv1.Cluster{}
 		err := a.decoder.DecodeRaw(req.OldObject, oldCluster)
 		if err != nil {
 			return admission.Errored(

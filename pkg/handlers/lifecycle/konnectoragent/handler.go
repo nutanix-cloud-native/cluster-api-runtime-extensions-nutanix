@@ -18,7 +18,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -151,7 +151,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterUpgrade(
 
 func (n *DefaultKonnectorAgent) apply(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
@@ -287,9 +287,9 @@ func (n *DefaultKonnectorAgent) apply(
 }
 
 func templateValuesFunc(
-	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1beta2.Cluster,
-) func(*clusterv1beta2.Cluster, string) (string, error) {
-	return func(_ *clusterv1beta2.Cluster, valuesTemplate string) (string, error) {
+	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1.Cluster,
+) func(*clusterv1.Cluster, string) (string, error) {
+	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
 			"joinQuoted": func(items []string) string {
 				for i, item := range items {
@@ -350,7 +350,7 @@ func templateValuesFunc(
 
 // extractCategoryMappings extracts additionalCategories from both control plane and worker config variables
 // and converts them to comma-separated format.
-func extractCategoryMappings(cluster *clusterv1beta2.Cluster) string {
+func extractCategoryMappings(cluster *clusterv1.Cluster) string {
 	var categories []string
 
 	// Extract control plane nodes categories from cluster topology variables
@@ -498,7 +498,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 
 	// CAPI 1.12+ strips cluster status from the hook request. Fetch the full Cluster from the API
 	// so we have phase and conditions for the cleanup skip logic.
-	clusterWithStatus := &clusterv1beta2.Cluster{}
+	clusterWithStatus := &clusterv1.Cluster{}
 	if err := n.client.Get(ctx, clusterKey, clusterWithStatus); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("Cluster not found (may already be deleted), allowing deletion")
@@ -521,8 +521,8 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	// ClusterPhaseDeleting here.
 	phase := clusterWithStatus.Status.GetTypedPhase()
 	log.Info("Cluster phase in konnector agent before cluster delete", "phase", phase)
-	if phase == clusterv1beta2.ClusterPhasePending ||
-		phase == clusterv1beta2.ClusterPhaseProvisioning {
+	if phase == clusterv1.ClusterPhasePending ||
+		phase == clusterv1.ClusterPhaseProvisioning {
 		log.Info("Skipping Konnector Agent cleanup based on cluster phase", "phase", phase)
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
@@ -531,7 +531,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	// Skip workload cluster API call when control plane was never initialized (e.g. misconfigured
 	// cluster, control plane endpoint in use). Avoid calling the
 	// workload API when the cluster is not reachable.
-	if !conditions.IsTrue(clusterWithStatus, clusterv1beta2.ClusterControlPlaneInitializedCondition) {
+	if !conditions.IsTrue(clusterWithStatus, clusterv1.ClusterControlPlaneInitializedCondition) {
 		log.Info("Control plane not initialized, skipping Konnector Agent cleanup and allowing deletion")
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
@@ -614,7 +614,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 
 func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
@@ -668,7 +668,7 @@ func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 // Returns: status ("completed", "in-progress", "not-started", or "timed-out"), status message, and error.
 func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) (status, statusMsg string, err error) {
 	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
@@ -743,7 +743,7 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 func isClusterRegisteredInPC(
 	ctx context.Context,
 	client ctrlclient.Client,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) (bool, error) {
 	// Get cluster config to extract PC endpoint

@@ -14,7 +14,7 @@ import (
 	gomegatypes "github.com/onsi/gomega/types"
 	"gomodules.xyz/jsonpatch/v2"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -53,7 +53,7 @@ func AssertGeneratePatches[T mutation.GeneratePatches](
 			tt.RequestItem,
 			{
 				HolderReference: runtimehooksv1.HolderReference{
-					APIVersion: clusterv1beta2.GroupVersion.String(),
+					APIVersion: clusterv1.GroupVersion.String(),
 					Kind:       "Cluster",
 					Namespace:  request.Namespace,
 					Name:       request.ClusterName,

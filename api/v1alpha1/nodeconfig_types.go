@@ -7,7 +7,7 @@ import (
 	_ "embed"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
@@ -43,7 +43,7 @@ type AWSWorkerNodeConfig struct {
 	Spec *AWSWorkerNodeConfigSpec `json:"spec,omitempty"`
 }
 
-func (s AWSWorkerNodeConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s AWSWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return awsNodeConfigVariableSchema
 }
 
@@ -69,7 +69,7 @@ type DockerWorkerNodeConfig struct {
 	Spec *DockerControlPlaneSpec `json:"spec,omitempty"`
 }
 
-func (s DockerWorkerNodeConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s DockerWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return dockerNodeConfigVariableSchema
 }
 
@@ -95,7 +95,7 @@ type NutanixWorkerNodeConfig struct {
 	Spec *NutanixWorkerNodeConfigSpec `json:"spec,omitempty"`
 }
 
-func (s NutanixWorkerNodeConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s NutanixWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return nutanixNodeConfigVariableSchema
 }
 
@@ -119,7 +119,7 @@ type EKSWorkerNodeConfig struct {
 	Spec EKSWorkerNodeConfigSpec `json:"spec,omitempty"`
 }
 
-func (s EKSWorkerNodeConfig) VariableSchema() clusterv1beta2.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
+func (s EKSWorkerNodeConfig) VariableSchema() clusterv1.VariableSchema { //nolint:gocritic,lll // Passed by value for no potential side-effect.
 	return eksNodeConfigVariableSchema
 }
 

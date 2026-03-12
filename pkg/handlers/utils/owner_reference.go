@@ -9,7 +9,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/external"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -20,7 +20,7 @@ func EnsureClusterOwnerReferenceForObject(
 	ctx context.Context,
 	cl ctrlclient.Client,
 	objectRef corev1.TypedLocalObjectReference,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 ) error {
 	targetObj, err := getResourceFromTypedLocalObjectReference(
 		ctx,

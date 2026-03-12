@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -61,7 +61,7 @@ func New(
 func (n *CNCFDistribution) Setup(
 	ctx context.Context,
 	_ v1alpha1.RegistryAddon,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
 	log.Info("Setting up root CA for CNCF Distribution registry if not already present")
@@ -86,7 +86,7 @@ func (n *CNCFDistribution) Setup(
 func (n *CNCFDistribution) Apply(
 	ctx context.Context,
 	_ v1alpha1.RegistryAddon,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
 	registryMetadata, err := utils.GetRegistryMetadata(cluster)
@@ -160,7 +160,7 @@ func (n *CNCFDistribution) Apply(
 func (n *CNCFDistribution) Cleanup(
 	ctx context.Context,
 	_ v1alpha1.RegistryAddon,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
 	// Delete any registry syncer artifacts.
@@ -177,7 +177,7 @@ func (n *CNCFDistribution) Cleanup(
 	return nil
 }
 
-func templateValues(cluster *clusterv1beta2.Cluster, text string) (string, error) {
+func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	valuesTemplate, err := template.New("").Parse(text)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)

@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 type TestStrategy struct {
@@ -20,7 +20,7 @@ func NewTestStrategy(err error) *TestStrategy {
 
 func (s TestStrategy) Apply(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {

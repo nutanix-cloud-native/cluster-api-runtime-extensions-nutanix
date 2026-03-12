@@ -25,7 +25,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -52,7 +52,7 @@ func getReference(
 
 func walkReferences(
 	ctx context.Context,
-	cc *clusterv1beta2.ClusterClass,
+	cc *clusterv1.ClusterClass,
 	fn func(ctx context.Context,
 		ref *corev1.ObjectReference,
 	) error,

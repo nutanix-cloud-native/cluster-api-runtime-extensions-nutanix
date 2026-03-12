@@ -5,7 +5,7 @@ package skip
 import (
 	"strings"
 
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -17,7 +17,7 @@ type Evaluator struct {
 }
 
 // New creates a new Evaluator from the cluster's annotations.
-func New(cluster *clusterv1beta2.Cluster) *Evaluator {
+func New(cluster *clusterv1.Cluster) *Evaluator {
 	o := &Evaluator{
 		normalizedCheckNames: make(map[string]struct{}),
 	}

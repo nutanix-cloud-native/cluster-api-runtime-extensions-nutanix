@@ -8,7 +8,7 @@ package e2e
 import (
 	"context"
 
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework"
 
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -16,7 +16,7 @@ import (
 
 type WaitForAddonsToBeReadyInWorkloadClusterInput struct {
 	AddonsConfig                apivariables.Addons
-	WorkloadCluster             *clusterv1beta2.Cluster
+	WorkloadCluster             *clusterv1.Cluster
 	InfrastructureProvider      string
 	ClusterProxy                framework.ClusterProxy
 	DeploymentIntervals         []interface{}

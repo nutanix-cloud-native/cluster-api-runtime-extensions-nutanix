@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"text/template"
 
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 // templateData uses golang template to replace values in a map.
-func templateData(cluster *clusterv1beta2.Cluster, data map[string]string) (map[string]string, error) {
+func templateData(cluster *clusterv1.Cluster, data map[string]string) (map[string]string, error) {
 	templated := make(map[string]string, len(data))
 	for k, v := range data {
 		templatedV, err := templateValues(cluster, v)
@@ -25,14 +25,14 @@ func templateData(cluster *clusterv1beta2.Cluster, data map[string]string) (map[
 }
 
 // templateValues replaces Cluster.Name and Cluster.Namespace in Helm values text.
-func templateValues(cluster *clusterv1beta2.Cluster, text string) (string, error) {
+func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	clusterAutoscalerTemplate, err := template.New("").Parse(text)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
 	type input struct {
-		Cluster *clusterv1beta2.Cluster
+		Cluster *clusterv1.Cluster
 	}
 
 	templateInput := input{
