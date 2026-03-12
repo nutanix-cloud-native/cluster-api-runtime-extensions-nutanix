@@ -135,6 +135,7 @@ func (r *Reconciler) Reconcile(
 			ctx,
 			r.Client,
 			r.UnstructuredCachingClient,
+			r.Client.Scheme(),
 			scc,
 			namespace,
 		)

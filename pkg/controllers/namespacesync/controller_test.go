@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,6 +43,7 @@ func TestReconcileExistingNamespaceWithUpdatedLabels(t *testing.T) {
 	g.Eventually(func() error {
 		return verifyClusterClassAndTemplates(
 			env.Client,
+			env.Client.Scheme(),
 			sourceClusterClassName,
 			targetNamespace.Name,
 		)
@@ -69,6 +71,7 @@ func TestReconcileNewNamespaces(t *testing.T) {
 		g.Eventually(func() error {
 			return verifyClusterClassAndTemplates(
 				env.Client,
+				env.Client.Scheme(),
 				sourceClusterClassName,
 				targetNamespace.Name,
 			)
@@ -111,6 +114,7 @@ func TestReconcileNewClusterClass(t *testing.T) {
 				g.Eventually(func() error {
 					return verifyClusterClassAndTemplates(
 						env.Client,
+						env.Client.Scheme(),
 						sourceClusterClassName,
 						targetNamespace.Name,
 					)
@@ -191,6 +195,7 @@ func TestReconcileAfterPartialFailureToCopy(t *testing.T) {
 	g.Eventually(func() error {
 		return verifyClusterClassAndTemplates(
 			env.Client,
+			env.Client.Scheme(),
 			sourceClusterClassName,
 			targetNamespace.Name,
 		)
@@ -201,6 +206,7 @@ func TestReconcileAfterPartialFailureToCopy(t *testing.T) {
 
 func verifyClusterClassAndTemplates(
 	cli client.Reader,
+	scheme *runtime.Scheme,
 	name,
 	namespace string,
 ) error {
@@ -215,7 +221,7 @@ func verifyClusterClassAndTemplates(
 	}
 
 	return walkReferences(ctx, cc, func(ctx context.Context, ref *corev1.ObjectReference) error {
-		_, err := getReference(ctx, cli, ref)
+		_, err := getReference(ctx, cli, scheme, ref)
 		return err
 	})
 }
