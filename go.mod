@@ -15,7 +15,6 @@ replace (
 require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/go-logr/logr v1.4.3
-	github.com/gobuffalo/flect v1.0.3
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api v0.0.0-00010101000000-000000000000
@@ -101,6 +100,7 @@ require (
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/gobuffalo/flect v1.0.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/cel-go v0.26.0 // indirect
