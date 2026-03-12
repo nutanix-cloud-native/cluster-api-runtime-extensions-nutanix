@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,7 +55,21 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 		clusterKey,
 	)
 
-	shouldDelete, err := shouldDeleteServicesWithLoadBalancer(cluster)
+	// CAPI 1.12+ strips cluster status from the hook request. Fetch the full Cluster from the API
+	// so we have phase and conditions for the cleanup decision (shouldDeleteServicesWithLoadBalancer).
+	clusterWithStatus := &clusterv1beta2.Cluster{}
+	if err := s.client.Get(ctx, clusterKey, clusterWithStatus); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("Cluster not found (may already be deleted), allowing deletion")
+			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+			return
+		}
+		log.Error(err, "Failed to get cluster with status for Service LB GC decision, allowing deletion to proceed")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
+	shouldDelete, err := shouldDeleteServicesWithLoadBalancer(clusterWithStatus)
 	if err != nil {
 		resp.Status = runtimehooksv1.ResponseStatusFailure
 		resp.Message = fmt.Sprintf(

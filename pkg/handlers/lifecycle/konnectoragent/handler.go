@@ -495,9 +495,28 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
+	// CAPI 1.12+ strips cluster status from the hook request. Fetch the full Cluster from the API
+	// so we have phase and conditions for the cleanup skip logic.
+	clusterWithStatus := &clusterv1beta2.Cluster{}
+	if err := n.client.Get(ctx, clusterKey, clusterWithStatus); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("Cluster not found (may already be deleted), allowing deletion")
+			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+			return
+		}
+		log.Error(err, "Failed to get cluster with status for cleanup decision, allowing deletion to proceed")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
 	// Skip when cluster phase means we should not call the workload API or run cleanup.
 	// - Pending/Provisioning: Kubernetes API has not been created / user could not create resources.
-	phase := cluster.Status.GetTypedPhase()
+	// We intentionally do NOT skip when phase is Deleting: we must wait until Konnector Agent
+	// completes unregistration of the cluster in Prism Central. If we skipped on Deleting, we would
+	// allow cluster deletion before cleanup finishes. We rely on checkCleanupStatus to handle
+	// in-progress and completed states of HelmChartProxy deletion, so we should not include
+	// ClusterPhaseDeleting here.
+	phase := clusterWithStatus.Status.GetTypedPhase()
 	log.Info("Cluster phase in konnector agent before cluster delete", "phase", phase)
 	if phase == clusterv1beta2.ClusterPhasePending ||
 		phase == clusterv1beta2.ClusterPhaseProvisioning {
@@ -509,14 +528,14 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	// Skip workload cluster API call when control plane was never initialized (e.g. misconfigured
 	// cluster, control plane endpoint in use). Avoid calling the
 	// workload API when the cluster is not reachable.
-	if !isV1Beta2ConditionTrue(cluster, clusterv1beta2.ClusterControlPlaneInitializedCondition) {
+	if !isV1Beta2ConditionTrue(clusterWithStatus, clusterv1beta2.ClusterControlPlaneInitializedCondition) {
 		log.Info("Control plane not initialized, skipping Konnector Agent cleanup and allowing deletion")
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	}
 
 	// Check cluster is registered in PC
-	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, cluster, log)
+	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, clusterWithStatus, log)
 	if err != nil {
 		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
 		// setting response status to success to allow cluster deletion to proceed
@@ -530,7 +549,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	}
 
 	// Check if cleanup is already in progress or completed
-	cleanupStatus, statusMsg, err := n.checkCleanupStatus(ctx, cluster, log)
+	cleanupStatus, statusMsg, err := n.checkCleanupStatus(ctx, clusterWithStatus, log)
 	if err != nil {
 		log.Error(err, "Failed to check cleanup status")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -575,7 +594,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		// Proceed with cleanup below
 	}
 
-	err = n.deleteHelmChartProxy(ctx, cluster, log)
+	err = n.deleteHelmChartProxy(ctx, clusterWithStatus, log)
 	if err != nil {
 		log.Error(err, "Failed to delete HelmChartProxy")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
