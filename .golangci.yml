@@ -64,9 +64,17 @@ linters:
         - style
     importas:
       alias:
+        - pkg: sigs.k8s.io/cluster-api/api/addons/v1beta2
+          alias: crsv1
+        - pkg: sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2
+          alias: bootstrapv1
+        - pkg: sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2
+          alias: controlplanev1
         - pkg: sigs.k8s.io/cluster-api/api/core/v1beta2
-          alias: clusterv1beta2
-      no-unaliased: false
+          alias: clusterv1
+        - pkg: sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1
+          alias: runtimehooksv1
+      no-unaliased: true
     lll:
       line-length: 120
     staticcheck:
