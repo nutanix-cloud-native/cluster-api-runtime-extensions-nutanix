@@ -21,6 +21,7 @@ import (
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
+	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -530,7 +531,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	// Skip workload cluster API call when control plane was never initialized (e.g. misconfigured
 	// cluster, control plane endpoint in use). Avoid calling the
 	// workload API when the cluster is not reachable.
-	if !isV1Beta2ConditionTrue(clusterWithStatus, clusterv1beta2.ClusterControlPlaneInitializedCondition) {
+	if !conditions.IsTrue(clusterWithStatus, clusterv1beta2.ClusterControlPlaneInitializedCondition) {
 		log.Info("Control plane not initialized, skipping Konnector Agent cleanup and allowing deletion")
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
@@ -609,18 +610,6 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 	resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
 	resp.SetMessage("Konnector Agent cleanup initiated. Waiting for HelmChartProxy deletion to start.")
-}
-
-// isV1Beta2ConditionTrue checks if a v1beta2 condition is True on the cluster.
-// This is a local equivalent of conditions.IsTrue that works with v1beta2 Cluster types,
-// since the upstream util/conditions package now requires metav1.Condition getters.
-func isV1Beta2ConditionTrue(cluster *clusterv1beta2.Cluster, condType string) bool {
-	for _, c := range cluster.GetConditions() {
-		if c.Type == condType && c.Status == metav1.ConditionTrue {
-			return true
-		}
-	}
-	return false
 }
 
 func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
