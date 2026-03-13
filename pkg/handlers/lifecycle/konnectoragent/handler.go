@@ -504,8 +504,10 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 			return
 		}
-		log.Error(err, "Failed to get cluster with status for cleanup decision, allowing deletion to proceed")
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		log.Error(err, "Failed to get cluster with status for cleanup decision, will retry")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("failed to get cluster with status: %v", err))
+		resp.SetRetryAfterSeconds(5)
 		return
 	}
 
