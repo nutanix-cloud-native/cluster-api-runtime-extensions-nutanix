@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.45.0 (2026-03-14)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat(STIG): set tls-min-version for scheduler and controllerManager by @Vedansh074 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1503
+### Fixes 🔧
+* fix: update Go toolchain to 1.26.1 in all go.mod files by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1513
+* fix: Skip Konnector Agent BCD workload API when phase is Pending/Provisioning or control plane not initialized by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1515
+
+## New Contributors
+* @Vedansh074 made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1503
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.44.1...v0.45.0
+
 ## 0.44.1 (2026-03-09)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
