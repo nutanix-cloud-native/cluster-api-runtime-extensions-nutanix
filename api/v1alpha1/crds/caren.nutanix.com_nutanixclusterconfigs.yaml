@@ -339,6 +339,202 @@ spec:
                       required:
                         - daysBeforeExpiry
                       type: object
+                    kubeletConfiguration:
+                      description: |-
+                        KubeletConfiguration defines kubelet settings for this node group.
+                        When set, these values override the cluster-level kubeletConfiguration defaults.
+                        Override semantics are per-field (not deep merge of map values within a field).
+                      properties:
+                        containerLogMaxFiles:
+                          description: |-
+                            ContainerLogMaxFiles specifies the maximum number of container log files
+                            that can be present for a container.
+                            Default kubelet value is 5.
+                          format: int32
+                          minimum: 2
+                          type: integer
+                        containerLogMaxSize:
+                          anyOf:
+                            - type: integer
+                            - type: string
+                          description: |-
+                            ContainerLogMaxSize defines the maximum size of the container log file
+                            before it is rotated. Value is a quantity (e.g. "10Mi", "256Ki").
+                            Default kubelet value is "10Mi".
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        cpuManagerPolicy:
+                          description: |-
+                            CPUManagerPolicy controls how cpusets are assigned to containers.
+                            "static" enables exclusive CPU pinning for Guaranteed QoS pods.
+                            Default kubelet value is "none".
+                          enum:
+                            - none
+                            - static
+                          type: string
+                        evictionHard:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            EvictionHard is a map of signal names to quantities that define hard eviction
+                            thresholds. When the node reaches these thresholds, pods are evicted immediately
+                            with no grace period. Values may be absolute quantities (e.g. "100Mi") or
+                            percentages (e.g. "10%").
+                          maxProperties: 6
+                          type: object
+                          x-kubernetes-validations:
+                            - message: only valid eviction signal names are allowed
+                              rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
+                        evictionSoft:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            EvictionSoft is a map of signal names to quantities that define soft eviction
+                            thresholds. Pods are evicted after the grace period specified in
+                            evictionSoftGracePeriod has elapsed. Values may be absolute quantities or
+                            percentages.
+                          maxProperties: 6
+                          type: object
+                          x-kubernetes-validations:
+                            - message: only valid eviction signal names are allowed
+                              rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
+                        evictionSoftGracePeriod:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            EvictionSoftGracePeriod is a map of signal names to durations that define
+                            grace periods for soft eviction signals. Each key must correspond to an entry
+                            in evictionSoft.
+                          maxProperties: 6
+                          type: object
+                          x-kubernetes-validations:
+                            - message: only valid eviction signal names are allowed
+                              rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
+                        imageGCHighThresholdPercent:
+                          description: |-
+                            ImageGCHighThresholdPercent is the percent of disk usage after which image
+                            garbage collection is always run. Must be greater than
+                            imageGCLowThresholdPercent when both are set.
+                            Default kubelet value is 85.
+                          format: int32
+                          maximum: 100
+                          minimum: 0
+                          type: integer
+                        imageGCLowThresholdPercent:
+                          description: |-
+                            ImageGCLowThresholdPercent is the percent of disk usage before which image
+                            garbage collection is never run. Must be less than
+                            imageGCHighThresholdPercent when both are set.
+                            Default kubelet value is 80.
+                          format: int32
+                          maximum: 100
+                          minimum: 0
+                          type: integer
+                        kubeReserved:
+                          additionalProperties:
+                            anyOf:
+                              - type: integer
+                              - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: |-
+                            KubeReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                            resources reserved for Kubernetes system components (the kubelet, container
+                            runtime, etc.).
+                            Valid keys: cpu, memory, ephemeral-storage, pid.
+                          maxProperties: 4
+                          type: object
+                          x-kubernetes-validations:
+                            - message: only cpu, memory, ephemeral-storage, and pid are valid keys
+                              rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
+                        maxParallelImagePulls:
+                          description: |-
+                            MaxParallelImagePulls defines the maximum number of image pulls performed
+                            in parallel by the kubelet. A value of zero means unlimited. When set to a
+                            value > 0, serializeImagePulls is automatically set to false.
+                            Default kubelet value is nil (serial pulls).
+                          format: int32
+                          minimum: 0
+                          type: integer
+                        maxPods:
+                          description: |-
+                            MaxPods defines the maximum number of pods that can run on a node.
+                            Default kubelet value is 110.
+                          format: int32
+                          maximum: 256
+                          minimum: 50
+                          type: integer
+                        memoryManagerPolicy:
+                          description: |-
+                            MemoryManagerPolicy controls the memory management policy on the node.
+                            "Static" enables NUMA-aware memory allocation for Guaranteed QoS pods.
+                            Default kubelet value is "None".
+                          enum:
+                            - None
+                            - Static
+                          type: string
+                        podPidsLimit:
+                          description: |-
+                            PodPidsLimit is the maximum number of PIDs in any pod.
+                            Prevents fork bombs and enforces per-pod PID limits.
+                            Default kubelet value is -1 (unlimited).
+                          format: int64
+                          minimum: -1
+                          type: integer
+                        protectKernelDefaults:
+                          description: |-
+                            ProtectKernelDefaults when enabled causes the kubelet to error if kernel flags
+                            are not as it expects. Typically required by CIS benchmarks and DISA STIG.
+                          type: boolean
+                        shutdownGracePeriod:
+                          description: |-
+                            ShutdownGracePeriod specifies the total duration that the node should delay
+                            the shutdown by for pod termination during a node shutdown.
+                            Default kubelet value is "0s" (disabled).
+                          type: string
+                        shutdownGracePeriodCriticalPods:
+                          description: |-
+                            ShutdownGracePeriodCriticalPods specifies the duration used to terminate
+                            critical pods during a node shutdown. This should be less than
+                            shutdownGracePeriod.
+                            Default kubelet value is "0s".
+                          type: string
+                        systemReserved:
+                          additionalProperties:
+                            anyOf:
+                              - type: integer
+                              - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: |-
+                            SystemReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                            resources reserved for OS system daemons. Kubernetes components such as the
+                            kubelet are excluded from this reservation.
+                            Valid keys: cpu, memory, ephemeral-storage, pid.
+                          maxProperties: 4
+                          type: object
+                          x-kubernetes-validations:
+                            - message: only cpu, memory, ephemeral-storage, and pid are valid keys
+                              rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
+                        topologyManagerPolicy:
+                          description: |-
+                            TopologyManagerPolicy controls the NUMA-aware resource alignment policy.
+                            Relevant for workloads sensitive to hardware topology (GPU, HPC, telco).
+                            Default kubelet value is "none".
+                          enum:
+                            - none
+                            - best-effort
+                            - restricted
+                            - single-numa-node
+                          type: string
+                      type: object
+                      x-kubernetes-validations:
+                        - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
+                          rule: '!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent) || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent'
+                        - message: evictionSoft must be set when evictionSoftGracePeriod is set
+                          rule: '!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)'
+                        - message: evictionSoftGracePeriod keys must match evictionSoft keys
+                          rule: '!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft) || self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)'
                     nodeRegistration:
                       default: {}
                       description: NodeRegistration holds fields that relate to registering the new node to the cluster.
@@ -787,6 +983,201 @@ spec:
                         - message: Value cannot be changed after cluster creation
                           rule: self == oldSelf
                   type: object
+                kubeletConfiguration:
+                  description: |-
+                    KubeletConfiguration defines kubelet settings applied to all nodes by default.
+                    Per-node-group overrides can be set via controlPlane or workerConfig.
+                  properties:
+                    containerLogMaxFiles:
+                      description: |-
+                        ContainerLogMaxFiles specifies the maximum number of container log files
+                        that can be present for a container.
+                        Default kubelet value is 5.
+                      format: int32
+                      minimum: 2
+                      type: integer
+                    containerLogMaxSize:
+                      anyOf:
+                        - type: integer
+                        - type: string
+                      description: |-
+                        ContainerLogMaxSize defines the maximum size of the container log file
+                        before it is rotated. Value is a quantity (e.g. "10Mi", "256Ki").
+                        Default kubelet value is "10Mi".
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    cpuManagerPolicy:
+                      description: |-
+                        CPUManagerPolicy controls how cpusets are assigned to containers.
+                        "static" enables exclusive CPU pinning for Guaranteed QoS pods.
+                        Default kubelet value is "none".
+                      enum:
+                        - none
+                        - static
+                      type: string
+                    evictionHard:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        EvictionHard is a map of signal names to quantities that define hard eviction
+                        thresholds. When the node reaches these thresholds, pods are evicted immediately
+                        with no grace period. Values may be absolute quantities (e.g. "100Mi") or
+                        percentages (e.g. "10%").
+                      maxProperties: 6
+                      type: object
+                      x-kubernetes-validations:
+                        - message: only valid eviction signal names are allowed
+                          rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
+                    evictionSoft:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        EvictionSoft is a map of signal names to quantities that define soft eviction
+                        thresholds. Pods are evicted after the grace period specified in
+                        evictionSoftGracePeriod has elapsed. Values may be absolute quantities or
+                        percentages.
+                      maxProperties: 6
+                      type: object
+                      x-kubernetes-validations:
+                        - message: only valid eviction signal names are allowed
+                          rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
+                    evictionSoftGracePeriod:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        EvictionSoftGracePeriod is a map of signal names to durations that define
+                        grace periods for soft eviction signals. Each key must correspond to an entry
+                        in evictionSoft.
+                      maxProperties: 6
+                      type: object
+                      x-kubernetes-validations:
+                        - message: only valid eviction signal names are allowed
+                          rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
+                    imageGCHighThresholdPercent:
+                      description: |-
+                        ImageGCHighThresholdPercent is the percent of disk usage after which image
+                        garbage collection is always run. Must be greater than
+                        imageGCLowThresholdPercent when both are set.
+                        Default kubelet value is 85.
+                      format: int32
+                      maximum: 100
+                      minimum: 0
+                      type: integer
+                    imageGCLowThresholdPercent:
+                      description: |-
+                        ImageGCLowThresholdPercent is the percent of disk usage before which image
+                        garbage collection is never run. Must be less than
+                        imageGCHighThresholdPercent when both are set.
+                        Default kubelet value is 80.
+                      format: int32
+                      maximum: 100
+                      minimum: 0
+                      type: integer
+                    kubeReserved:
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: |-
+                        KubeReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                        resources reserved for Kubernetes system components (the kubelet, container
+                        runtime, etc.).
+                        Valid keys: cpu, memory, ephemeral-storage, pid.
+                      maxProperties: 4
+                      type: object
+                      x-kubernetes-validations:
+                        - message: only cpu, memory, ephemeral-storage, and pid are valid keys
+                          rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
+                    maxParallelImagePulls:
+                      description: |-
+                        MaxParallelImagePulls defines the maximum number of image pulls performed
+                        in parallel by the kubelet. A value of zero means unlimited. When set to a
+                        value > 0, serializeImagePulls is automatically set to false.
+                        Default kubelet value is nil (serial pulls).
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    maxPods:
+                      description: |-
+                        MaxPods defines the maximum number of pods that can run on a node.
+                        Default kubelet value is 110.
+                      format: int32
+                      maximum: 256
+                      minimum: 50
+                      type: integer
+                    memoryManagerPolicy:
+                      description: |-
+                        MemoryManagerPolicy controls the memory management policy on the node.
+                        "Static" enables NUMA-aware memory allocation for Guaranteed QoS pods.
+                        Default kubelet value is "None".
+                      enum:
+                        - None
+                        - Static
+                      type: string
+                    podPidsLimit:
+                      description: |-
+                        PodPidsLimit is the maximum number of PIDs in any pod.
+                        Prevents fork bombs and enforces per-pod PID limits.
+                        Default kubelet value is -1 (unlimited).
+                      format: int64
+                      minimum: -1
+                      type: integer
+                    protectKernelDefaults:
+                      description: |-
+                        ProtectKernelDefaults when enabled causes the kubelet to error if kernel flags
+                        are not as it expects. Typically required by CIS benchmarks and DISA STIG.
+                      type: boolean
+                    shutdownGracePeriod:
+                      description: |-
+                        ShutdownGracePeriod specifies the total duration that the node should delay
+                        the shutdown by for pod termination during a node shutdown.
+                        Default kubelet value is "0s" (disabled).
+                      type: string
+                    shutdownGracePeriodCriticalPods:
+                      description: |-
+                        ShutdownGracePeriodCriticalPods specifies the duration used to terminate
+                        critical pods during a node shutdown. This should be less than
+                        shutdownGracePeriod.
+                        Default kubelet value is "0s".
+                      type: string
+                    systemReserved:
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: |-
+                        SystemReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                        resources reserved for OS system daemons. Kubernetes components such as the
+                        kubelet are excluded from this reservation.
+                        Valid keys: cpu, memory, ephemeral-storage, pid.
+                      maxProperties: 4
+                      type: object
+                      x-kubernetes-validations:
+                        - message: only cpu, memory, ephemeral-storage, and pid are valid keys
+                          rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
+                    topologyManagerPolicy:
+                      description: |-
+                        TopologyManagerPolicy controls the NUMA-aware resource alignment policy.
+                        Relevant for workloads sensitive to hardware topology (GPU, HPC, telco).
+                        Default kubelet value is "none".
+                      enum:
+                        - none
+                        - best-effort
+                        - restricted
+                        - single-numa-node
+                      type: string
+                  type: object
+                  x-kubernetes-validations:
+                    - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
+                      rule: '!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent) || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent'
+                    - message: evictionSoft must be set when evictionSoftGracePeriod is set
+                      rule: '!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)'
+                    - message: evictionSoftGracePeriod keys must match evictionSoft keys
+                      rule: '!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft) || self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)'
                 kubernetesImageRepository:
                   description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
                   maxLength: 2048
@@ -795,9 +1186,11 @@ spec:
                   type: string
                 maxParallelImagePullsPerNode:
                   description: |-
+                    Deprecated: Use kubeletConfiguration.maxParallelImagePulls instead.
                     MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
                     If not set, the default value of 1 will be used.
                     If set to 0, the maximum number of parallel image pulls will be unlimited.
+                    When both this field and kubeletConfiguration.maxParallelImagePulls are set, the latter takes precedence.
                   format: int32
                   minimum: 0
                   type: integer
