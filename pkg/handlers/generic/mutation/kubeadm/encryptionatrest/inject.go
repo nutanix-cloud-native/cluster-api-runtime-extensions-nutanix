@@ -16,9 +16,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
 	"k8s.io/utils/ptr"
-	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -141,7 +141,7 @@ func (h *encryptionPatchHandler) Mutate(
 				}
 			}
 			if !hasEncryptionConfig {
-				apiServer.ExtraArgs = append(apiServer.ExtraArgs, cabpkv1.Arg{
+				apiServer.ExtraArgs = append(apiServer.ExtraArgs, bootstrapv1.Arg{
 					Name:  apiServerEncryptionConfigArg,
 					Value: ptr.To(encryptionConfigurationOnRemote),
 				})
@@ -151,12 +151,12 @@ func (h *encryptionPatchHandler) Mutate(
 		})
 }
 
-func generateEncryptionCredentialsFile(cluster *clusterv1beta2.Cluster) cabpkv1.File {
+func generateEncryptionCredentialsFile(cluster *clusterv1.Cluster) bootstrapv1.File {
 	secretName := defaultEncryptionSecretName(cluster.Name)
-	return cabpkv1.File{
+	return bootstrapv1.File{
 		Path: encryptionConfigurationOnRemote,
-		ContentFrom: cabpkv1.FileSource{
-			Secret: cabpkv1.SecretFileSource{
+		ContentFrom: bootstrapv1.FileSource{
+			Secret: bootstrapv1.SecretFileSource{
 				Name: secretName,
 				Key:  SecretKeyForEtcdEncryption,
 			},
@@ -193,7 +193,7 @@ func (h *encryptionPatchHandler) generateEncryptionConfiguration(
 
 func (h *encryptionPatchHandler) defaultEncryptionSecretExists(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 ) (bool, error) {
 	secretName := defaultEncryptionSecretName(cluster.Name)
 	existingSecret := &corev1.Secret{
@@ -219,7 +219,7 @@ func (h *encryptionPatchHandler) defaultEncryptionSecretExists(
 func (h *encryptionPatchHandler) createEncryptionConfigurationSecret(
 	ctx context.Context,
 	encryptionConfig *apiserverv1.EncryptionConfiguration,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 ) error {
 	dataYaml, err := yaml.Marshal(encryptionConfig)
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
@@ -17,8 +17,8 @@ import (
 func findTargetCluster(
 	ctx context.Context,
 	c client.Client,
-	cluster *clusterv1beta2.Cluster,
-) (*clusterv1beta2.Cluster, error) {
+	cluster *clusterv1.Cluster,
+) (*clusterv1.Cluster, error) {
 	existingManagementCluster, err := capiutils.ManagementCluster(ctx, c)
 	if err != nil {
 		return nil, fmt.Errorf(

@@ -12,10 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
-	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
+	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	clusterctlcluster "sigs.k8s.io/cluster-api/cmd/clusterctl/client/cluster"
 	"sigs.k8s.io/cluster-api/test/framework"
 
@@ -53,7 +53,7 @@ const (
 )
 
 var (
-	coreGroupVersion = clusterv1beta2.GroupVersion.String()
+	coreGroupVersion = clusterv1.GroupVersion.String()
 
 	clusterOwner = metav1.OwnerReference{
 		Kind:       clusterKind,
@@ -75,7 +75,7 @@ var (
 	}
 	clusterResourceSetOwner = metav1.OwnerReference{
 		Kind:       clusterResourceSetKind,
-		APIVersion: addonsv1.GroupVersion.String(),
+		APIVersion: crsv1.GroupVersion.String(),
 	}
 	helmChartProxyOwner = metav1.OwnerReference{
 		Kind:       helmChartProxyKind,

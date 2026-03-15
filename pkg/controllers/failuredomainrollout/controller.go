@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,7 +30,7 @@ func (r *Reconciler) SetupWithManager(
 	options *controller.Options,
 ) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&clusterv1beta2.Cluster{}).
+		For(&clusterv1.Cluster{}).
 		WithOptions(*options).
 		Complete(r)
 }
@@ -38,7 +38,7 @@ func (r *Reconciler) SetupWithManager(
 // areResourcesDeleting checks if either the cluster or KCP has a deletion timestamp.
 // Returns true if any resource is being deleted and reconciliation should be skipped.
 func (r *Reconciler) areResourcesDeleting(
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	kcp *controlplanev1.KubeadmControlPlane,
 ) bool {
 	if cluster != nil && !cluster.DeletionTimestamp.IsZero() {
@@ -55,7 +55,7 @@ func (r *Reconciler) areResourcesDeleting(
 // areResourcesUpdating checks if either the cluster or KCP has not fully reconciled.
 // Returns true if any resource is still being updated and reconciliation should be requeued.
 func (r *Reconciler) areResourcesUpdating(
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	kcp *controlplanev1.KubeadmControlPlane,
 ) bool {
 	if cluster != nil && cluster.Status.ObservedGeneration < cluster.Generation {
@@ -71,7 +71,7 @@ func (r *Reconciler) areResourcesUpdating(
 
 // areResourcesPaused checks if either the cluster or KCP is paused.
 // Uses the standard CAPI annotations.IsPaused utility which handles both cluster.Spec.Paused and paused annotations.
-func (r *Reconciler) areResourcesPaused(cluster *clusterv1beta2.Cluster, kcp *controlplanev1.KubeadmControlPlane) bool {
+func (r *Reconciler) areResourcesPaused(cluster *clusterv1.Cluster, kcp *controlplanev1.KubeadmControlPlane) bool {
 	if cluster != nil && annotations.IsPaused(cluster, cluster) {
 		return true
 	}
@@ -85,7 +85,7 @@ func (r *Reconciler) areResourcesPaused(cluster *clusterv1beta2.Cluster, kcp *co
 
 // shouldSkipClusterReconciliation checks if the cluster should be skipped for reconciliation
 // based on early validation checks. Returns true if reconciliation should be skipped.
-func (r *Reconciler) shouldSkipClusterReconciliation(cluster *clusterv1beta2.Cluster, logger logr.Logger) bool {
+func (r *Reconciler) shouldSkipClusterReconciliation(cluster *clusterv1.Cluster, logger logr.Logger) bool {
 	if !cluster.Spec.Topology.IsDefined() {
 		logger.V(5).Info("Cluster is not using topology, skipping reconciliation")
 		return true
@@ -108,7 +108,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	logger := ctrl.LoggerFrom(ctx).WithValues("cluster", req.NamespacedName)
 	logger.V(5).Info("Starting failure domain rollout reconciliation")
 
-	var cluster clusterv1beta2.Cluster
+	var cluster clusterv1.Cluster
 	if err := r.Get(ctx, req.NamespacedName, &cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(5).Info("Cluster not found, skipping reconciliation")
@@ -199,12 +199,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 // getMachineDistribution returns the current distribution of machines across failure domains.
 func (r *Reconciler) getMachineDistribution(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 ) (map[string]int, error) {
-	var machines clusterv1beta2.MachineList
+	var machines clusterv1.MachineList
 	if err := r.List(ctx, &machines, client.InNamespace(cluster.Namespace), client.MatchingLabels{
-		clusterv1beta2.ClusterNameLabel:         cluster.Name,
-		clusterv1beta2.MachineControlPlaneLabel: "",
+		clusterv1.ClusterNameLabel:         cluster.Name,
+		clusterv1.MachineControlPlaneLabel: "",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to list control plane machines: %w", err)
 	}
@@ -226,7 +226,7 @@ func (r *Reconciler) getMachineDistribution(
 // shouldTriggerRollout determines if a rollout should be triggered based on current failure domain state.
 func (r *Reconciler) shouldTriggerRollout(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	kcp *controlplanev1.KubeadmControlPlane,
 ) (shouldTrigger bool, reason string, err error) {
 	logger := ctrl.LoggerFrom(ctx).WithValues("cluster", client.ObjectKeyFromObject(cluster))
@@ -366,8 +366,8 @@ func (r *Reconciler) calculateMaxIdealPerFD(replicas, availableCount int) int {
 }
 
 // failureDomainsToMap converts a list of failure domains to a map by name.
-func failureDomainsToMap(fds []clusterv1beta2.FailureDomain) map[string]clusterv1beta2.FailureDomain {
-	m := make(map[string]clusterv1beta2.FailureDomain, len(fds))
+func failureDomainsToMap(fds []clusterv1.FailureDomain) map[string]clusterv1.FailureDomain {
+	m := make(map[string]clusterv1.FailureDomain, len(fds))
 	for _, fd := range fds {
 		m[fd.Name] = fd
 	}
@@ -375,7 +375,7 @@ func failureDomainsToMap(fds []clusterv1beta2.FailureDomain) map[string]clusterv
 }
 
 // getAvailableFailureDomains returns the names of available failure domains for control plane.
-func getAvailableFailureDomains(failureDomains []clusterv1beta2.FailureDomain) []string {
+func getAvailableFailureDomains(failureDomains []clusterv1.FailureDomain) []string {
 	var available []string
 	for _, fd := range failureDomains {
 		if ptr.Deref(fd.ControlPlane, false) {

@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructuredscheme"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -57,7 +57,7 @@ type crsStrategy struct {
 
 func (s crsStrategy) apply(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {
@@ -109,7 +109,7 @@ func (s crsStrategy) apply(
 
 func (s crsStrategy) ensureCNICRSForCluster(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	defaultInstallationConfigMapName string,
 	tigeraConfigMap *corev1.ConfigMap,
@@ -170,7 +170,7 @@ func (s crsStrategy) ensureCNICRSForCluster(
 
 func (s crsStrategy) ensureTigeraOperatorConfigMap(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 ) (*corev1.ConfigMap, error) {
 	defaultTigeraOperatorConfigMap := &corev1.ConfigMap{
@@ -203,7 +203,7 @@ func (s crsStrategy) ensureTigeraOperatorConfigMap(
 }
 
 func generateTigeraOperatorConfigMap(
-	defaultTigeraOperatorConfigMap *corev1.ConfigMap, cluster *clusterv1beta2.Cluster,
+	defaultTigeraOperatorConfigMap *corev1.ConfigMap, cluster *clusterv1.Cluster,
 ) *corev1.ConfigMap {
 	namespacedTigeraConfigMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -223,7 +223,7 @@ func generateTigeraOperatorConfigMap(
 
 func generateProviderCNIManifestsConfigMap(
 	installationConfigMap *corev1.ConfigMap,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 ) (*corev1.ConfigMap, error) {
 	defaultManifestStrings := make([]string, 0, len(installationConfigMap.Data))
 	for _, v := range installationConfigMap.Data {

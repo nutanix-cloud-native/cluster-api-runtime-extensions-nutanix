@@ -10,7 +10,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,7 +30,7 @@ const (
 type nutanixMachineDetailsPatchHandler struct {
 	metaVariableName  string
 	variableFieldPath []string
-	patchSelector     clusterv1beta2.PatchSelector
+	patchSelector     clusterv1.PatchSelector
 }
 
 // ErrNoImageOrImageLookupSet is an error that gets returned only if image and lookup are both set.
@@ -39,7 +39,7 @@ var ErrNoImageOrImageLookupSet = errors.New("image or image lookup must be set")
 func newNutanixMachineDetailsPatchHandler(
 	metaVariableName string,
 	variableFieldPath []string,
-	patchSelector clusterv1beta2.PatchSelector,
+	patchSelector clusterv1.PatchSelector,
 ) *nutanixMachineDetailsPatchHandler {
 	return &nutanixMachineDetailsPatchHandler{
 		metaVariableName:  metaVariableName,

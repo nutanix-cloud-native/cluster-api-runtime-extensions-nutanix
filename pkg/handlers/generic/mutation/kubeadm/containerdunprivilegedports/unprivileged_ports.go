@@ -5,7 +5,7 @@ package containerdunprivilegedports
 import (
 	_ "embed"
 
-	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
@@ -18,8 +18,8 @@ var (
 	)
 )
 
-func generateUnprivilegedPortsConfigDropIn() cabpkv1.File {
-	return cabpkv1.File{
+func generateUnprivilegedPortsConfigDropIn() bootstrapv1.File {
+	return bootstrapv1.File{
 		Path:        unprivilegedPortsConfigDropInFileOnRemote,
 		Content:     string(unprivilegedPortsConfigDropIn),
 		Permissions: "0600",

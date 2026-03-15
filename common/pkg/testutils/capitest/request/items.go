@@ -15,7 +15,7 @@ import (
 	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	capdv1beta2 "sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta2"
 
@@ -166,7 +166,7 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 	requestItem := NewRequestItem(
 		cpTemplate,
 		&runtimehooksv1.HolderReference{
-			APIVersion: clusterv1beta2.GroupVersion.String(),
+			APIVersion: clusterv1.GroupVersion.String(),
 			Kind:       "Cluster",
 			FieldPath:  "spec.controlPlaneRef",
 			Name:       ClusterName,
@@ -237,7 +237,7 @@ func NewWorkerDockerMachineTemplateRequestItem(
 			},
 		},
 		&runtimehooksv1.HolderReference{
-			APIVersion: clusterv1beta2.GroupVersion.String(),
+			APIVersion: clusterv1.GroupVersion.String(),
 			Kind:       "MachineDeployment",
 			FieldPath:  "spec.template.spec.infrastructureRef",
 		},

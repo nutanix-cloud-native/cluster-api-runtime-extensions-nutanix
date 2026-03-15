@@ -11,7 +11,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 // ConvertJSONSchemaPropsToAPIExtensions converts a clusterv1beta2.JSONSchemaProps to apiextensions.JSONSchemaProp.
@@ -20,7 +20,7 @@ import (
 // schema validation must be added to validateRootSchema too.
 // See: https://github.com/kubernetes-sigs/cluster-api/blob/v1.5.1/internal/topology/variables/schema.go#L35
 func ConvertJSONSchemaPropsToAPIExtensions(
-	schema *clusterv1beta2.JSONSchemaProps, fldPath *field.Path,
+	schema *clusterv1.JSONSchemaProps, fldPath *field.Path,
 ) (*apiextensions.JSONSchemaProps, field.ErrorList) {
 	var allErrs field.ErrorList
 

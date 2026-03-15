@@ -11,12 +11,12 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ManagementCluster returns a Cluster object if c is pointing to a management cluster, otherwise returns nil.
-func ManagementCluster(ctx context.Context, c client.Reader) (*clusterv1beta2.Cluster, error) {
+func ManagementCluster(ctx context.Context, c client.Reader) (*clusterv1.Cluster, error) {
 	clusterName, clusterNamespace, err := clusterAnnotationsFromNodes(ctx, c)
 	if err != nil {
 		return nil, fmt.Errorf("error getting cluster annotations from Nodes: %w", err)
@@ -41,22 +41,22 @@ func ManagementCluster(ctx context.Context, c client.Reader) (*clusterv1beta2.Cl
 // when c is a client to the management cluster.
 // Or a cluster that is assumed to become the management cluster in the future,
 // when is c is a client to a bootstrap cluster and there is only a single Cluster object.
-func ManagementOrFutureManagementCluster(ctx context.Context, c client.Reader) (*clusterv1beta2.Cluster, error) {
+func ManagementOrFutureManagementCluster(ctx context.Context, c client.Reader) (*clusterv1.Cluster, error) {
 	clusterName, clusterNamespace, err := clusterAnnotationsFromNodes(ctx, c)
 	if err != nil {
 		return nil, fmt.Errorf("error getting cluster annotations from Nodes: %w", err)
 	}
 
-	var cluster *clusterv1beta2.Cluster
+	var cluster *clusterv1.Cluster
 	switch {
 	case clusterName != "" && clusterNamespace != "":
 		cluster, err = managementClusterFromNodeAnnotations(ctx, c, clusterName, clusterNamespace)
 	case clusterName == "" && clusterNamespace == "":
 		cluster, err = managementClusterFromBootstrapClient(ctx, c)
 	case clusterName == "":
-		err = fmt.Errorf("missing %q annotation", clusterv1beta2.ClusterNameAnnotation)
+		err = fmt.Errorf("missing %q annotation", clusterv1.ClusterNameAnnotation)
 	case clusterNamespace == "":
-		err = fmt.Errorf("missing %q annotation", clusterv1beta2.ClusterNamespaceAnnotation)
+		err = fmt.Errorf("missing %q annotation", clusterv1.ClusterNamespaceAnnotation)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error determining management cluster for the provided client: %w", err)
@@ -79,15 +79,15 @@ func clusterAnnotationsFromNodes(
 	if len(allNodes.Items) > 0 {
 		annotations = allNodes.Items[0].Annotations
 	}
-	return annotations[clusterv1beta2.ClusterNameAnnotation], annotations[clusterv1beta2.ClusterNamespaceAnnotation], nil
+	return annotations[clusterv1.ClusterNameAnnotation], annotations[clusterv1.ClusterNamespaceAnnotation], nil
 }
 
 func managementClusterFromNodeAnnotations(
 	ctx context.Context,
 	c client.Reader,
 	clusterName, clusterNamespace string,
-) (*clusterv1beta2.Cluster, error) {
-	cluster := &clusterv1beta2.Cluster{}
+) (*clusterv1.Cluster, error) {
+	cluster := &clusterv1.Cluster{}
 	key := client.ObjectKey{
 		Name:      clusterName,
 		Namespace: clusterNamespace,
@@ -105,8 +105,8 @@ func managementClusterFromNodeAnnotations(
 func managementClusterFromBootstrapClient(
 	ctx context.Context,
 	c client.Reader,
-) (*clusterv1beta2.Cluster, error) {
-	clusters := &clusterv1beta2.ClusterList{}
+) (*clusterv1.Cluster, error) {
+	clusters := &clusterv1.ClusterList{}
 	err := c.List(ctx, clusters)
 	if err != nil {
 		return nil, fmt.Errorf("error listing Clusters: %w", err)
@@ -122,16 +122,16 @@ func managementClusterFromBootstrapClient(
 	}
 }
 
-func GetProvider(cluster *clusterv1beta2.Cluster) string {
+func GetProvider(cluster *clusterv1.Cluster) string {
 	if cluster == nil {
 		return ""
 	}
-	return cluster.GetLabels()[clusterv1beta2.ProviderNameLabel]
+	return cluster.GetLabels()[clusterv1.ProviderNameLabel]
 }
 
 // ConvertV1Beta1ClusterToV1Beta2 converts a v1beta1 Cluster to v1beta2 Cluster using CAPI conversion.
-func ConvertV1Beta1ClusterToV1Beta2(src *clusterv1beta1.Cluster) (*clusterv1beta2.Cluster, error) {
-	dst := &clusterv1beta2.Cluster{}
+func ConvertV1Beta1ClusterToV1Beta2(src *clusterv1beta1.Cluster) (*clusterv1.Cluster, error) {
+	dst := &clusterv1.Cluster{}
 	if err := src.ConvertTo(dst); err != nil {
 		return nil, fmt.Errorf("failed to convert v1beta1 Cluster to v1beta2: %w", err)
 	}
@@ -139,7 +139,7 @@ func ConvertV1Beta1ClusterToV1Beta2(src *clusterv1beta1.Cluster) (*clusterv1beta
 }
 
 // ConvertV1Beta2ClusterToV1Beta1 converts a v1beta2 Cluster to v1beta1 Cluster using CAPI conversion.
-func ConvertV1Beta2ClusterToV1Beta1(src *clusterv1beta2.Cluster) (*clusterv1beta1.Cluster, error) {
+func ConvertV1Beta2ClusterToV1Beta1(src *clusterv1.Cluster) (*clusterv1beta1.Cluster, error) {
 	dst := &clusterv1beta1.Cluster{}
 	if err := dst.ConvertFrom(src); err != nil {
 		return nil, fmt.Errorf("failed to convert v1beta2 Cluster to v1beta1: %w", err)

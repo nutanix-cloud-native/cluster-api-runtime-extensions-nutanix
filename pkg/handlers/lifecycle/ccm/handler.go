@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,7 +29,7 @@ const (
 type CCMProvider interface {
 	Apply(
 		context.Context,
-		*clusterv1beta2.Cluster,
+		*clusterv1.Cluster,
 		*apivariables.ClusterConfigSpec,
 		logr.Logger,
 	) error
@@ -100,7 +100,7 @@ func (c *CCMHandler) BeforeClusterUpgrade(
 
 func (c *CCMHandler) apply(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
