@@ -37,7 +37,7 @@ var _ = Describe("Generate AWS Calico CNI ingress patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.CNI{
+					v1alpha1.GenericCNI{
 						Provider: v1alpha1.CNIProviderCalico,
 					},
 					"addons",
@@ -105,7 +105,7 @@ var _ = Describe("Generate AWS Calico CNI ingress patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.CNI{
+					v1alpha1.GenericCNI{
 						Provider: v1alpha1.CNIProviderCalico,
 					},
 					"addons",
@@ -198,7 +198,7 @@ var _ = Describe("Generate AWS Calico CNI ingress patches", func() {
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
-					v1alpha1.CNI{
+					v1alpha1.GenericCNI{
 						Provider: v1alpha1.CNIProviderCalico,
 					},
 					"addons",

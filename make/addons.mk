@@ -31,6 +31,8 @@ export COSI_CONTROLLER_VERSION := 0.2.2
 
 export KONNECTOR_AGENT_VERSION := 1.3.0
 
+export NUTANIX_FLOW_CNI_VERSION := 1.0.0
+
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi kube-vip)
 addons.sync: $(addprefix update-addon.aws-ccm.,130 131 132 133 134)

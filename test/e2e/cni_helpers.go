@@ -22,7 +22,7 @@ import (
 )
 
 type WaitForCNIToBeReadyInWorkloadClusterInput struct {
-	CNI                         *v1alpha1.CNI
+	CNI                         *v1alpha1.GenericCNI
 	WorkloadCluster             *clusterv1beta2.Cluster
 	ClusterProxy                framework.ClusterProxy
 	DeploymentIntervals         []interface{}
@@ -57,6 +57,19 @@ func WaitForCNIToBeReadyInWorkloadCluster(
 		waitForCiliumToBeReadyInWorkloadCluster(
 			ctx,
 			waitForCiliumToBeReadyInWorkloadClusterInput{
+				strategy:                    input.CNI.Strategy,
+				workloadCluster:             input.WorkloadCluster,
+				clusterProxy:                input.ClusterProxy,
+				deploymentIntervals:         input.DeploymentIntervals,
+				daemonSetIntervals:          input.DaemonSetIntervals,
+				helmReleaseIntervals:        input.HelmReleaseIntervals,
+				clusterResourceSetIntervals: input.ClusterResourceSetIntervals,
+			},
+		)
+	case v1alpha1.CNIProviderFlow:
+		waitForFlowToBeReadyInWorkloadCluster(
+			ctx,
+			waitForFlowToBeReadyInWorkloadClusterInput{
 				strategy:                    input.CNI.Strategy,
 				workloadCluster:             input.WorkloadCluster,
 				clusterProxy:                input.ClusterProxy,
@@ -280,4 +293,89 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 			Deployment: deployment,
 		}, input.deploymentIntervals...)
 	}
+}
+
+type waitForFlowToBeReadyInWorkloadClusterInput struct {
+	strategy                    v1alpha1.AddonStrategy
+	workloadCluster             *clusterv1beta2.Cluster
+	clusterProxy                framework.ClusterProxy
+	deploymentIntervals         []interface{}
+	daemonSetIntervals          []interface{}
+	helmReleaseIntervals        []interface{}
+	clusterResourceSetIntervals []interface{}
+}
+
+func waitForFlowToBeReadyInWorkloadCluster(
+	ctx context.Context,
+	input waitForFlowToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
+) {
+	switch input.strategy {
+	case v1alpha1.AddonStrategyHelmAddon:
+		WaitForHelmReleaseProxyReadyForCluster(
+			ctx,
+			WaitForHelmReleaseProxyReadyForClusterInput{
+				GetLister:       input.clusterProxy.GetClient(),
+				Cluster:         input.workloadCluster,
+				HelmReleaseName: "nutanix-flow-cni",
+			},
+			input.helmReleaseIntervals...,
+		)
+	default:
+		Fail(
+			fmt.Sprintf(
+				"Do not know how to wait for Flow using strategy %s to be ready",
+				input.strategy,
+			),
+		)
+	}
+
+	workloadClusterClient := input.clusterProxy.GetWorkloadCluster(
+		ctx, input.workloadCluster.Namespace, input.workloadCluster.Name,
+	).GetClient()
+
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "flow-cni",
+				Namespace: "flow-cni-system",
+			},
+		},
+	}, input.deploymentIntervals...)
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ovnkube-db",
+				Namespace: "ovn-kubernetes",
+			},
+		},
+	}, input.deploymentIntervals...)
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ovnkube-master",
+				Namespace: "ovn-kubernetes",
+			},
+		},
+	}, input.deploymentIntervals...)
+	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
+		Getter: workloadClusterClient,
+		DaemonSet: &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ovnkube-node",
+				Namespace: "ovn-kubernetes",
+			},
+		},
+	}, input.daemonSetIntervals...)
+	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
+		Getter: workloadClusterClient,
+		DaemonSet: &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ovs-node",
+				Namespace: "ovn-kubernetes",
+			},
+		},
+	}, input.daemonSetIntervals...)
 }

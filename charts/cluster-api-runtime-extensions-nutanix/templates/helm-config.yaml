@@ -59,6 +59,10 @@ data:
     ChartName: nutanix-cloud-provider
     ChartVersion: 0.6.2
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}'
+  nutanix-flow-cni: |
+    ChartName: nutanix-flow-cni
+    ChartVersion: 1.0.0
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases{{ end }}'
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
     ChartVersion: 3.3.8

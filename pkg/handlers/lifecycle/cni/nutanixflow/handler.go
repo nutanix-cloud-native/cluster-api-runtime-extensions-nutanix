@@ -1,14 +1,14 @@
-// Copyright 2023 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package calico
+package nutanixflow
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,32 +19,41 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
-type addonStrategy interface {
-	apply(
-		context.Context,
-		*clusterv1beta2.Cluster,
-		string,
-		logr.Logger,
-	) error
-}
+const (
+	defaultNutanixFlowReleaseName = "flow-cni"
+	defaultNutanixFlowNamespace   = "kube-system"
+)
 
 type CNIConfig struct {
 	*options.GlobalOptions
 
-	crsConfig       crsConfig
 	helmAddonConfig helmAddonConfig
 }
 
+type helmAddonConfig struct {
+	defaultValuesTemplateConfigMapName string
+}
+
+func (c *helmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
+	flags.StringVar(
+		&c.defaultValuesTemplateConfigMapName,
+		prefix+".default-values-template-configmap-name",
+		"default-nutanix-flow-cni-helm-values-template",
+		"default values ConfigMap name",
+	)
+}
+
 func (c *CNIConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
-	c.crsConfig.AddFlags(prefix+".crs", flags)
 	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
-type CalicoCNI struct {
+type NutanixFlowCNI struct {
 	client              ctrlclient.Client
 	config              *CNIConfig
 	helmChartInfoGetter *config.HelmChartGetter
@@ -54,17 +63,17 @@ type CalicoCNI struct {
 }
 
 var (
-	_ commonhandlers.Named                   = &CalicoCNI{}
-	_ lifecycle.AfterControlPlaneInitialized = &CalicoCNI{}
-	_ lifecycle.BeforeClusterUpgrade         = &CalicoCNI{}
+	_ commonhandlers.Named                   = &NutanixFlowCNI{}
+	_ lifecycle.AfterControlPlaneInitialized = &NutanixFlowCNI{}
+	_ lifecycle.BeforeClusterUpgrade         = &NutanixFlowCNI{}
 )
 
 func New(
 	c ctrlclient.Client,
 	cfg *CNIConfig,
 	helmChartInfoGetter *config.HelmChartGetter,
-) *CalicoCNI {
-	return &CalicoCNI{
+) *NutanixFlowCNI {
+	return &NutanixFlowCNI{
 		client:              c,
 		config:              cfg,
 		helmChartInfoGetter: helmChartInfoGetter,
@@ -73,11 +82,11 @@ func New(
 	}
 }
 
-func (c *CalicoCNI) Name() string {
-	return "CalicoCNI"
+func (c *NutanixFlowCNI) Name() string {
+	return "NutanixFlowCNI"
 }
 
-func (c *CalicoCNI) AfterControlPlaneInitialized(
+func (c *NutanixFlowCNI) AfterControlPlaneInitialized(
 	ctx context.Context,
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
@@ -94,7 +103,7 @@ func (c *CalicoCNI) AfterControlPlaneInitialized(
 	resp.Message = commonResponse.GetMessage()
 }
 
-func (c *CalicoCNI) BeforeClusterUpgrade(
+func (c *NutanixFlowCNI) BeforeClusterUpgrade(
 	ctx context.Context,
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
@@ -111,91 +120,120 @@ func (c *CalicoCNI) BeforeClusterUpgrade(
 	resp.Message = commonResponse.GetMessage()
 }
 
-func (c *CalicoCNI) apply(
+func (c *NutanixFlowCNI) apply(
 	ctx context.Context,
 	cluster *clusterv1beta2.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
-
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		clusterKey,
 	)
+
+	if cluster.Spec.InfrastructureRef.Kind != "NutanixCluster" {
+		log.V(5).Info(
+			"Skipping Nutanix Flow CNI handler, cluster infrastructure is not NutanixCluster",
+		)
+		return
+	}
 
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 
 	cniVar, err := variables.Get[v1alpha1.GenericCNI](varMap, c.variableName, c.variablePath...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.V(5).
-				Info(
-					"Skipping Calico CNI handler, cluster does not specify request CNI addon deployment",
-				)
+			log.V(5).Info(
+				"Skipping Nutanix Flow CNI handler, cluster does not specify CNI addon deployment",
+			)
 			return
 		}
-		log.Error(
-			err,
-			"failed to read CNI provider from cluster definition",
-		)
+		log.Error(err, "failed to read CNI provider from cluster definition")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(
-			fmt.Sprintf("failed to read CNI provider from cluster definition: %v",
-				err,
-			),
+			fmt.Sprintf("failed to read CNI provider from cluster definition: %v", err),
 		)
 		return
 	}
-	if cniVar.Provider != v1alpha1.CNIProviderCalico {
+	if cniVar.Provider != v1alpha1.CNIProviderFlow {
 		log.V(5).Info(
 			fmt.Sprintf(
-				"Skipping Calico CNI handler, cluster does not specify %q as value of CNI provider variable",
-				v1alpha1.CNIProviderCalico,
+				"Skipping Nutanix Flow CNI handler, cluster does not specify %q as value of CNI provider variable",
+				v1alpha1.CNIProviderFlow,
 			),
 		)
 		return
 	}
 
-	var strategy addonStrategy
-	switch cniVar.Strategy {
-	case v1alpha1.AddonStrategyClusterResourceSet:
-		strategy = crsStrategy{
-			config: c.config.crsConfig,
-			client: c.client,
-		}
-	case v1alpha1.AddonStrategyHelmAddon:
-		// this is tigera and not calico because we deploy calico via operataor
-		log.Info("fetching settings for tigera-operator-config")
-		helmChart, err := c.helmChartInfoGetter.For(ctx, log, config.Tigera)
+	if cniVar.Strategy != v1alpha1.AddonStrategyHelmAddon {
+		log.Error(nil, fmt.Sprintf(
+			"Nutanix Flow CNI only supports %q strategy, got %q",
+			v1alpha1.AddonStrategyHelmAddon,
+			cniVar.Strategy,
+		))
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf(
+			"Nutanix Flow CNI only supports %q addon strategy",
+			v1alpha1.AddonStrategyHelmAddon,
+		))
+		return
+	}
+
+	helmChart, err := c.helmChartInfoGetter.For(ctx, log, config.NutanixFlowCNI)
+	if err != nil {
+		log.Error(err, "failed to get configmap with helm settings")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(
+			fmt.Sprintf("failed to get configuration to create helm addon: %v", err),
+		)
+		return
+	}
+
+	targetNamespace := c.config.DefaultsNamespace()
+
+	helmValuesSourceRefName := c.config.helmAddonConfig.defaultValuesTemplateConfigMapName
+	if cniVar.Values != nil && cniVar.Values.SourceRef != nil {
+		helmValuesSourceRefName = cniVar.Values.SourceRef.Name
+		targetNamespace = cluster.Namespace
+
+		err := handlersutils.EnsureClusterOwnerReferenceForObject(
+			ctx,
+			c.client,
+			corev1.TypedLocalObjectReference{
+				Kind: cniVar.Values.SourceRef.Kind,
+				Name: cniVar.Values.SourceRef.Name,
+			},
+			cluster,
+		)
 		if err != nil {
 			log.Error(
 				err,
-				"failed to get configmap with helm settings",
+				"error updating Cluster's owner reference on Flow CNI helm values source object",
+				"name", cniVar.Values.SourceRef.Name,
+				"kind", cniVar.Values.SourceRef.Kind,
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(
-				fmt.Sprintf("failed to get configuration to create helm addon: %v",
-					err,
-				),
-			)
+			resp.SetMessage(fmt.Sprintf(
+				"failed to set Cluster's owner reference on Flow CNI helm values source object: %v",
+				err,
+			))
 			return
 		}
-		log.Info(fmt.Sprintf("using settings %v to install helm chart config", helmChart))
-		strategy = helmAddonStrategy{
-			config:    c.config.helmAddonConfig,
-			client:    c.client,
-			helmChart: helmChart,
-		}
-	case "":
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage("strategy not specified for CNI addon")
-	default:
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("unknown CNI addon deployment strategy %q", cniVar.Strategy))
-		return
 	}
 
-	if err := strategy.apply(ctx, cluster, c.config.DefaultsNamespace(), log); err != nil {
+	strategy := addons.NewHelmAddonApplier(
+		addons.NewHelmAddonConfig(
+			helmValuesSourceRefName,
+			defaultNutanixFlowNamespace,
+			defaultNutanixFlowReleaseName,
+		),
+		c.client,
+		helmChart,
+	).
+		WithValueTemplater(templateValues).
+		WithDefaultWaiter()
+
+	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return

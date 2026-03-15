@@ -78,7 +78,7 @@ var _ = Describe("AdvancedCiliumConfigurationValidator", func() {
 
 	Context("when skip annotation is present", func() {
 		It("should skip validation when annotation is true", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -121,7 +121,7 @@ kubeProxyReplacement: false
 		})
 
 		It("should not skip validation when annotation is false", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -164,7 +164,7 @@ kubeProxyReplacement: false
 		})
 
 		It("should not skip validation when annotation is missing", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -227,7 +227,7 @@ kubeProxyReplacement: false
 		})
 
 		It("should allow when CNI provider is not Cilium", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCalico,
 			}
 			cluster := createTestCluster("test-cluster", "test-namespace", v1alpha1.KubeProxyModeDisabled, cni)
@@ -241,7 +241,7 @@ kubeProxyReplacement: false
 		})
 
 		It("should allow when Cilium is configured with default values", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 			}
 			cluster := createTestCluster("test-cluster", "test-namespace", v1alpha1.KubeProxyModeDisabled, cni)
@@ -255,7 +255,7 @@ kubeProxyReplacement: false
 		})
 
 		It("should allow when ConfigMap does not exist", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -277,7 +277,7 @@ kubeProxyReplacement: false
 		})
 
 		It("should allow when ConfigMap does not have values.yaml key", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -310,7 +310,7 @@ kubeProxyReplacement: false
 		})
 
 		It("should deny when ConfigMap does not have kubeProxyReplacement enabled", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -347,7 +347,7 @@ ipam:
 		})
 
 		It("should deny when kubeProxyReplacement is set to false", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -385,7 +385,7 @@ kubeProxyReplacement: false
 		})
 
 		It("should allow when kubeProxyReplacement is set to true", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -422,7 +422,7 @@ kubeProxyReplacement: true
 		})
 
 		It("should allow when ConfigMap uses templated values with ControlPlaneEndpoint", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -470,7 +470,7 @@ k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 		})
 
 		It("should deny when ConfigMap uses templated values that would be false after templating", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -518,7 +518,7 @@ k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 		})
 
 		It("should error out when ConfigMap uses unknown templated values", func() {
-			cni := &v1alpha1.CNI{
+			cni := &v1alpha1.GenericCNI{
 				Provider: v1alpha1.CNIProviderCilium,
 				AddonConfig: v1alpha1.AddonConfig{
 					Values: &v1alpha1.AddonValues{
@@ -570,7 +570,7 @@ k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 func createTestCluster(
 	name, namespace string,
 	kubeProxyMode v1alpha1.KubeProxyMode,
-	cni *v1alpha1.CNI,
+	cni *v1alpha1.GenericCNI,
 ) *clusterv1beta2.Cluster {
 	clusterConfig := &variables.ClusterConfigSpec{
 		KubeProxy: &v1alpha1.KubeProxy{
@@ -580,9 +580,7 @@ func createTestCluster(
 
 	if cni != nil {
 		clusterConfig.Addons = &variables.Addons{
-			GenericAddons: v1alpha1.GenericAddons{
-				CNI: cni,
-			},
+			CNI: cni,
 		}
 	}
 
@@ -614,7 +612,7 @@ func createTestCluster(
 func createTestClusterWithControlPlaneEndpoint(
 	name, namespace string,
 	kubeProxyMode v1alpha1.KubeProxyMode,
-	cni *v1alpha1.CNI,
+	cni *v1alpha1.GenericCNI,
 	host string,
 	port int32,
 ) *clusterv1beta2.Cluster {

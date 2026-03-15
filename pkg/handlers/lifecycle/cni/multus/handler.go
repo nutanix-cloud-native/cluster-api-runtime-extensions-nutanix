@@ -138,7 +138,7 @@ func (m *MultusHandler) apply(
 	// Read CNI configuration to detect which CNI is deployed
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 
-	cniVar, err := variables.Get[v1alpha1.CNI](
+	cniVar, err := variables.Get[v1alpha1.GenericCNI](
 		varMap,
 		v1alpha1.ClusterConfigVariableName,
 		[]string{"addons", v1alpha1.CNIVariableName}...)

@@ -120,8 +120,8 @@ func namedClusterWithRegistry(t *testing.T, name string) *clusterv1beta2.Cluster
 
 	clusterConfigSpec := &carenv1.DockerClusterConfigSpec{
 		Addons: &carenv1.DockerAddons{
+			CNI: &carenv1.GenericCNI{},
 			GenericAddons: carenv1.GenericAddons{
-				CNI:      &carenv1.CNI{},
 				Registry: &carenv1.RegistryAddon{},
 			},
 		},
@@ -154,9 +154,7 @@ func clusterWithoutRegistry(t *testing.T) *clusterv1beta2.Cluster {
 
 	clusterConfigSpec := &carenv1.DockerClusterConfigSpec{
 		Addons: &carenv1.DockerAddons{
-			GenericAddons: carenv1.GenericAddons{
-				CNI: &carenv1.CNI{},
-			},
+			CNI: &carenv1.GenericCNI{},
 		},
 	}
 	variable, err := variables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfigSpec)

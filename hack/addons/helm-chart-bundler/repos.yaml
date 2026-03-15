@@ -76,6 +76,11 @@ repositories:
     charts:
       nutanix-csi-storage:
       - 3.3.8
+  nutanix-flow-cni:
+    repoURL: https://nutanix.github.io/helm-releases
+    charts:
+      nutanix-flow-cni:
+      - 1.0.0
   registry-syncer:
     repoURL: https://mesosphere.github.io/charts/staging/
     charts:

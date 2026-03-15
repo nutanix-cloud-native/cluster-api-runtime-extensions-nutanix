@@ -169,7 +169,7 @@ func (c *CiliumCNI) apply(
 
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 
-	cniVar, err := variables.Get[v1alpha1.CNI](varMap, c.variableName, c.variablePath...)
+	cniVar, err := variables.Get[v1alpha1.GenericCNI](varMap, c.variableName, c.variablePath...)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).

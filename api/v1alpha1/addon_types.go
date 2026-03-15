@@ -18,6 +18,7 @@ import (
 const (
 	CNIProviderCalico = "Calico"
 	CNIProviderCilium = "Cilium"
+	CNIProviderFlow   = "Flow"
 
 	CSIProviderAWSEBS    = "aws-ebs"
 	CSIProviderNutanix   = "nutanix"
@@ -66,6 +67,9 @@ type AWSAddons struct {
 	GenericAddons `json:",inline"`
 
 	// +kubebuilder:validation:Optional
+	CNI *GenericCNI `json:"cni,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	CSI *AWSCSI `json:"csi,omitempty"`
 
 	// +kubebuilder:validation:Optional
@@ -74,6 +78,9 @@ type AWSAddons struct {
 
 type DockerAddons struct {
 	GenericAddons `json:",inline"`
+
+	// +kubebuilder:validation:Optional
+	CNI *GenericCNI `json:"cni,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CSI *DockerCSI `json:"csi,omitempty"`
@@ -86,6 +93,9 @@ type NutanixAddons struct {
 	GenericAddons `json:",inline"`
 
 	// +kubebuilder:validation:Optional
+	CNI *NutanixCNI `json:"cni,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	CSI *NutanixCSI `json:"csi,omitempty"`
 
 	// +kubebuilder:validation:Optional
@@ -96,9 +106,6 @@ type NutanixAddons struct {
 }
 
 type GenericAddons struct {
-	// +kubebuilder:validation:Optional
-	CNI *CNI `json:"cni,omitempty"`
-
 	// +kubebuilder:validation:Optional
 	NFD *NFD `json:"nfd,omitempty"`
 
@@ -117,11 +124,29 @@ type GenericAddons struct {
 
 type AddonStrategy string
 
-// CNI required for providing CNI configuration.
-type CNI struct {
+// GenericCNI defines CNI configuration for providers that support Calico and Cilium.
+type GenericCNI struct {
 	// CNI provider to deploy.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=Calico;Cilium
+	Provider string `json:"provider"`
+
+	// Addon strategy used to deploy the CNI provider to the workload cluster.
+	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
+	Strategy AddonStrategy `json:"strategy,omitzero"`
+
+	// AddonConfig contains the configuration for the CNI provider.
+	// +kubebuilder:validation:Optional
+	AddonConfig `json:",inline"`
+}
+
+// NutanixCNI defines CNI configuration for Nutanix clusters, which additionally support Flow.
+type NutanixCNI struct {
+	// CNI provider to deploy.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=Calico;Cilium;Flow
 	Provider string `json:"provider"`
 
 	// Addon strategy used to deploy the CNI provider to the workload cluster.

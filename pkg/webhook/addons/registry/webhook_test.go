@@ -23,8 +23,8 @@ func TestDefaultingRegistryAddon(t *testing.T) {
 		t,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
+				CNI: &carenv1.GenericCNI{},
 				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
 					Registry: &carenv1.RegistryAddon{
 						Provider: carenv1.RegistryProviderCNCFDistribution,
 					},
@@ -38,9 +38,7 @@ func TestDefaultingRegistryAddon(t *testing.T) {
 		nil,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
-				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
-				},
+				CNI: &carenv1.GenericCNI{},
 			},
 		},
 	)
@@ -61,8 +59,8 @@ func TestDefaultingShouldBeSkippedWithAnnotation(t *testing.T) {
 		nil,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
+				CNI: &carenv1.GenericCNI{},
 				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
 					Registry: &carenv1.RegistryAddon{
 						Provider: carenv1.RegistryProviderCNCFDistribution,
 					},
@@ -78,9 +76,7 @@ func TestDefaultingShouldBeSkippedWithAnnotation(t *testing.T) {
 		},
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
-				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
-				},
+				CNI: &carenv1.GenericCNI{},
 			},
 		},
 	)
@@ -100,8 +96,8 @@ func TestDefaultingShouldBeSkippedWithNonTopologyCluster(t *testing.T) {
 		nil,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
+				CNI: &carenv1.GenericCNI{},
 				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
 					Registry: &carenv1.RegistryAddon{
 						Provider: carenv1.RegistryProviderCNCFDistribution,
 					},
@@ -141,8 +137,8 @@ func TestDefaultingShouldBeSkippedWhenRegistryAlreadyEnabled(t *testing.T) {
 		nil,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
+				CNI: &carenv1.GenericCNI{},
 				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
 					Registry: &carenv1.RegistryAddon{
 						Provider: carenv1.RegistryProviderCNCFDistribution,
 					},
@@ -156,8 +152,8 @@ func TestDefaultingShouldBeSkippedWhenRegistryAlreadyEnabled(t *testing.T) {
 		nil,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
+				CNI: &carenv1.GenericCNI{},
 				GenericAddons: carenv1.GenericAddons{
-					CNI:      &carenv1.CNI{},
 					Registry: &carenv1.RegistryAddon{},
 				},
 			},
@@ -180,8 +176,8 @@ func TestDefaultingShouldBeSkippedWhenGlobalImageRegistryMirrorIsSet(t *testing.
 		nil,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
+				CNI: &carenv1.GenericCNI{},
 				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
 					Registry: &carenv1.RegistryAddon{
 						Provider: carenv1.RegistryProviderCNCFDistribution,
 					},
@@ -200,9 +196,7 @@ func TestDefaultingShouldBeSkippedWhenGlobalImageRegistryMirrorIsSet(t *testing.
 				},
 			},
 			Addons: &carenv1.DockerAddons{
-				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
-				},
+				CNI: &carenv1.GenericCNI{},
 			},
 		},
 	)
@@ -222,9 +216,7 @@ func TestDefaultingShouldBeSkippedWhenRegistryNotEnabledInManagementCluster(t *t
 		nil,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
-				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
-				},
+				CNI: &carenv1.GenericCNI{},
 			},
 		},
 	)
@@ -236,9 +228,7 @@ func TestDefaultingShouldBeSkippedWhenRegistryNotEnabledInManagementCluster(t *t
 		},
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
-				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
-				},
+				CNI: &carenv1.GenericCNI{},
 			},
 		},
 	)
@@ -258,9 +248,7 @@ func TestDefaultingShouldBeSkippedForAManagementCluster(t *testing.T) {
 		nil,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
-				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
-				},
+				CNI: &carenv1.GenericCNI{},
 			},
 		},
 	)
@@ -299,9 +287,7 @@ func TestDefaultingShouldBeSkippedWhenManagementClusterHasNoTopology(t *testing.
 		nil,
 		&carenv1.DockerClusterConfigSpec{
 			Addons: &carenv1.DockerAddons{
-				GenericAddons: carenv1.GenericAddons{
-					CNI: &carenv1.CNI{},
-				},
+				CNI: &carenv1.GenericCNI{},
 			},
 		},
 	)
