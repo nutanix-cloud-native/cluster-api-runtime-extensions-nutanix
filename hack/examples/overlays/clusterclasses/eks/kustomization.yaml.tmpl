@@ -24,11 +24,11 @@ patches:
         value:
           - name: "cluster-config"
             external:
-              generatePatchesExtension: "eksclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "eksclusterv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "eksclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix"
           - name: "worker-config"
             external:
-              generatePatchesExtension: "eksworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "eksworkerv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "eksworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
   - target:
       kind: AWSMachineTemplate

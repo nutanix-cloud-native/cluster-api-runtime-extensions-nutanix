@@ -19,6 +19,7 @@ require (
 	github.com/onsi/gomega v1.39.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
+	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 	k8s.io/api v0.34.3
 	k8s.io/apiextensions-apiserver v0.34.3
 	k8s.io/apimachinery v0.34.3
