@@ -29,8 +29,37 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework/nutanix"
 )
 
+type providerConfiguration struct {
+	cniProviders map[string][]string
+}
+
+var providerConfigurations = map[string]providerConfiguration{
+	"Docker": {
+		cniProviders: map[string][]string{
+			// TODO: Reenable Calico tests later once we fix flakiness.
+			//"Calico": {"HelmAddon", "ClusterResourceSet"},
+			"Cilium": {"HelmAddon", "ClusterResourceSet"},
+		},
+	},
+	"Nutanix": {
+		cniProviders: map[string][]string{
+			"Cilium": {"HelmAddon", "ClusterResourceSet"},
+			// TODO: Reenable Calico tests later once we fix flakiness.
+			// "Calico": {"HelmAddon", "ClusterResourceSet"},
+			"Flow": {"HelmAddon"},
+		},
+	},
+	"AWS": {
+		cniProviders: map[string][]string{
+			"Cilium": {"HelmAddon", "ClusterResourceSet"},
+			// TODO: Reenable Calico tests later once we fix flakiness.
+			// "Calico": {"HelmAddon", "ClusterResourceSet"},
+		},
+	},
+}
+
 var _ = Describe("Quick start", func() {
-	for _, provider := range []string{"Docker", "AWS", "Nutanix"} {
+	for provider, providerCfg := range providerConfigurations {
 		// Add any provider specific decorators here.
 		// Currently, only Docker requires Serial decorator to ensure the machine running the Docker e2e tests
 		// doesn't have resources exhausted and lead to flaky tests.
@@ -42,9 +71,9 @@ var _ = Describe("Quick start", func() {
 
 		Context(provider, Label("provider:"+provider), providerSpecificDecorators, func() {
 			lowercaseProvider := strings.ToLower(provider)
-			for _, cniProvider := range []string{"Cilium"} { // TODO: Reenable Calico tests later once we fix flakiness.
+			for cniProvider, addonStrategies := range providerCfg.cniProviders {
 				Context(cniProvider, Label("cni:"+cniProvider), func() {
-					for _, addonStrategy := range []string{"HelmAddon", "ClusterResourceSet"} {
+					for _, addonStrategy := range addonStrategies {
 						Context(addonStrategy, Label("addonStrategy:"+addonStrategy), func() {
 							strategy := ""
 							switch addonStrategy {
@@ -80,6 +109,21 @@ var _ = Describe("Quick start", func() {
 										)
 
 										BeforeEach(func() {
+											// For Nutanix provider with Flow CNI, we need to set the Docker Hub username and password
+											// because the Flow CNI images require a Docker account to pull the images.
+											if provider == "Nutanix" && cniProvider == "Flow" {
+												if testE2EConfig.GetVariableOrEmpty(
+													"NUTANIX_DOCKER_HUB_USERNAME",
+												) == "" ||
+													testE2EConfig.GetVariableOrEmpty(
+														"NUTANIX_DOCKER_HUB_PASSWORD",
+													) == "" {
+													Skip(
+														"Both NUTANIX_DOCKER_HUB_USERNAME and NUTANIX_DOCKER_HUB_PASSWORD must be set",
+													)
+												}
+											}
+
 											testE2EConfig = e2eConfig.DeepCopy()
 
 											// Check if a provider-specific Kubernetes version is set in the environment and use that. This allows

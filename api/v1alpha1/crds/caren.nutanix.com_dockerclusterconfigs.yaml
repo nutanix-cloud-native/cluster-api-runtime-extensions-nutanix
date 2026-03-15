@@ -87,7 +87,7 @@ spec:
                           type: string
                       type: object
                     cni:
-                      description: CNI required for providing CNI configuration.
+                      description: GenericCNI defines CNI configuration for providers that support Calico and Cilium.
                       properties:
                         provider:
                           description: CNI provider to deploy.

@@ -158,7 +158,7 @@ func getCiliumValues(
 	ctx context.Context,
 	client ctrlclient.Client,
 	cluster *clusterv1beta2.Cluster,
-	cni *v1alpha1.CNI,
+	cni *v1alpha1.GenericCNI,
 ) (*ciliumValues, error) {
 	configMapName := cni.Values.SourceRef.Name
 	configMapNamespace := cluster.Namespace

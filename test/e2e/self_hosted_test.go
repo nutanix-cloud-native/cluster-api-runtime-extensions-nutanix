@@ -24,7 +24,11 @@ import (
 )
 
 var _ = Describe("Self-hosted", Serial, func() {
-	for _, provider := range []string{"Docker", "Nutanix"} {
+	for provider, providerCfg := range providerConfigurations {
+		// AWS is not supported for self-hosted cluster tests yet.
+		if provider == "AWS" {
+			continue
+		}
 		// Add any provider specific decorators here.
 		// Currently, only Docker requires Serial decorator to ensure the machine running the Docker e2e tests
 		// doesn't have resources exhausted and lead to flaky tests.
@@ -35,9 +39,9 @@ var _ = Describe("Self-hosted", Serial, func() {
 		}
 		Context(provider, Label("provider:"+provider), providerSpecificDecorators, func() {
 			lowercaseProvider := strings.ToLower(provider)
-			for _, cniProvider := range []string{"Cilium"} { // TODO: Reenable Calico tests later once we fix flakiness.
+			for cniProvider, addonStrategies := range providerCfg.cniProviders {
 				Context(cniProvider, Label("cni:"+cniProvider), func() {
-					for _, addonStrategy := range []string{"HelmAddon", "ClusterResourceSet"} {
+					for _, addonStrategy := range addonStrategies {
 						Context(addonStrategy, Label("addonStrategy:"+addonStrategy), func() {
 							strategy := ""
 							switch addonStrategy {

@@ -63,6 +63,8 @@ type WorkerNodeConfigSpec struct {
 type Addons struct {
 	carenv1.GenericAddons `json:",inline"`
 
+	CNI *carenv1.GenericCNI `json:"cni,omitempty"`
+
 	CSI *CSI `json:"csi,omitempty"`
 
 	COSI *COSI `json:"cosi,omitempty"`

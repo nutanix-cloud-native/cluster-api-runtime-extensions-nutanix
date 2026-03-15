@@ -34,6 +34,7 @@ const (
 	RegistrySyncer            Component = "registry-syncer"
 	KonnectorAgent            Component = "konnector-agent"
 	Multus                    Component = "multus"
+	NutanixFlowCNI            Component = "nutanix-flow-cni"
 )
 
 type HelmChartGetter struct {

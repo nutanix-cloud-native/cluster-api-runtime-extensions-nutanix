@@ -51,8 +51,8 @@ var _ = Describe("Test Syncer", func() {
 			ctx, c,
 			&carenv1.DockerClusterConfigSpec{
 				Addons: &carenv1.DockerAddons{
+					CNI: &carenv1.GenericCNI{},
 					GenericAddons: carenv1.GenericAddons{
-						CNI: &carenv1.CNI{},
 						Registry: &carenv1.RegistryAddon{
 							Provider: carenv1.RegistryProviderCNCFDistribution,
 						},
@@ -68,8 +68,8 @@ var _ = Describe("Test Syncer", func() {
 			},
 			&carenv1.DockerClusterConfigSpec{
 				Addons: &carenv1.DockerAddons{
+					CNI: &carenv1.GenericCNI{},
 					GenericAddons: carenv1.GenericAddons{
-						CNI: &carenv1.CNI{},
 						Registry: &carenv1.RegistryAddon{
 							Provider: carenv1.RegistryProviderCNCFDistribution,
 						},

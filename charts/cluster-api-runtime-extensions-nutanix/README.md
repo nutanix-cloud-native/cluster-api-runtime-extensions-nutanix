@@ -80,6 +80,8 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-cilium-cni-helm-values-template"` |  |
 | hooks.cni.multus.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.cni.multus.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-multus-values-template"` |  |
+| hooks.cni.nutanixFlow.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
+| hooks.cni.nutanixFlow.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-flow-cni-helm-values-template"` |  |
 | hooks.cosi.controller.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.cosi.controller.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-cosi-controller-helm-values-template"` |  |
 | hooks.csi.aws-ebs.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |

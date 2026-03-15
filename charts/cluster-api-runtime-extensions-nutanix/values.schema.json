@@ -402,6 +402,27 @@
                                     }
                                 }
                             }
+                        },
+                        "nutanixFlow": {
+                            "type": "object",
+                            "properties": {
+                                "helmAddonStrategy": {
+                                    "type": "object",
+                                    "properties": {
+                                        "defaultValueTemplateConfigMap": {
+                                            "type": "object",
+                                            "properties": {
+                                                "create": {
+                                                    "type": "boolean"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 },

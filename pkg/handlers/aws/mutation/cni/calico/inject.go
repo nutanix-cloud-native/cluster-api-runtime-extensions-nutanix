@@ -62,7 +62,7 @@ func (h *calicoPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	cniVar, err := variables.Get[v1alpha1.CNI](
+	cniVar, err := variables.Get[v1alpha1.GenericCNI](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
