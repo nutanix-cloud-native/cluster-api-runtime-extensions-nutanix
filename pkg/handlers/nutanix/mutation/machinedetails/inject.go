@@ -5,7 +5,6 @@ package machinedetails
 
 import (
 	"context"
-	"errors"
 	"slices"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -24,17 +23,23 @@ import (
 
 const (
 	// VariableName is the external patch variable name.
-	VariableName = "machineDetails"
+	VariableName     = "machineDetails"
+	DefaultImageName = "placeholder-image"
 )
+
+func defaultImage() *capxv1.NutanixResourceIdentifier {
+	name := DefaultImageName
+	return &capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierName,
+		Name: &name,
+	}
+}
 
 type nutanixMachineDetailsPatchHandler struct {
 	metaVariableName  string
 	variableFieldPath []string
 	patchSelector     clusterv1beta2.PatchSelector
 }
-
-// ErrNoImageOrImageLookupSet is an error that gets returned only if image and lookup are both set.
-var ErrNoImageOrImageLookupSet = errors.New("image or image lookup must be set")
 
 func newNutanixMachineDetailsPatchHandler(
 	metaVariableName string,
@@ -109,7 +114,12 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 				spec.ImageLookup = nutanixMachineDetailsVar.ImageLookup.DeepCopy()
 				spec.Image = nil
 			default:
-				return ErrNoImageOrImageLookupSet
+				// Autofill default image when neither image nor imageLookup is set (e.g. upgrade from previous version).
+				log.Info("neither image nor imageLookup set, applying default image",
+					"imageName", DefaultImageName,
+				)
+				spec.Image = defaultImage()
+				spec.ImageLookup = nil
 			}
 
 			spec.VCPUSockets = nutanixMachineDetailsVar.VCPUSockets
