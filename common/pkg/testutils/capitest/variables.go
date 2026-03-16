@@ -12,7 +12,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -29,7 +29,7 @@ type VariableTestDef struct {
 func ValidateDiscoverVariables[V mutation.DiscoverVariables](
 	t *testing.T,
 	variableName string,
-	variableSchema *clusterv1beta2.VariableSchema,
+	variableSchema *clusterv1.VariableSchema,
 	variableRequired bool,
 	handlerCreator func() V,
 	variableTestDefs ...VariableTestDef,
@@ -49,7 +49,7 @@ func ValidateDiscoverVariables[V mutation.DiscoverVariables](
 func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 	t *testing.T,
 	variableName string,
-	variableSchema *clusterv1beta2.VariableSchema,
+	variableSchema *clusterv1.VariableSchema,
 	variableRequired bool,
 	handlerCreator func() V,
 	variableTestDefs ...VariableTestDef,
@@ -71,7 +71,7 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 	g.Expect(resp.Variables).To(gomega.HaveLen(1))
 
 	variableV1Beta1 := resp.Variables[0]
-	var variableV1Beta2 clusterv1beta2.ClusterClassVariable
+	var variableV1Beta2 clusterv1.ClusterClassVariable
 	_ = clusterv1beta1.Convert_v1beta1_ClusterClassVariable_To_v1beta2_ClusterClassVariable(
 		&variableV1Beta1,
 		&variableV1Beta2,
@@ -102,11 +102,11 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 				encodedOldVals, err := json.Marshal(tt.OldVals)
 				g.Expect(err).NotTo(gomega.HaveOccurred())
 				validateErr = openapi.ValidateClusterVariableUpdate[T](
-					&clusterv1beta2.ClusterVariable{
+					&clusterv1.ClusterVariable{
 						Name:  variableName,
 						Value: apiextensionsv1.JSON{Raw: encodedVals},
 					},
-					&clusterv1beta2.ClusterVariable{
+					&clusterv1.ClusterVariable{
 						Name:  variableName,
 						Value: apiextensionsv1.JSON{Raw: encodedOldVals},
 					},
@@ -115,7 +115,7 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 				).ToAggregate()
 			default:
 				validateErr = openapi.ValidateClusterVariable[T](
-					&clusterv1beta2.ClusterVariable{
+					&clusterv1.ClusterVariable{
 						Name:  variableName,
 						Value: apiextensionsv1.JSON{Raw: encodedVals},
 					},

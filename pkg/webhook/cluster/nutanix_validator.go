@@ -12,7 +12,7 @@ import (
 
 	v1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -48,7 +48,7 @@ func (a *nutanixValidator) validate(
 		return admission.Allowed("")
 	}
 
-	cluster := &clusterv1beta2.Cluster{}
+	cluster := &clusterv1.Cluster{}
 	err := a.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -154,7 +154,7 @@ func validateFailureDomainXORMachineDetails(
 // validateTopologyFailureDomainConfig validates the failure domain related configuration in cluster topology.
 func validateTopologyFailureDomainConfig(
 	clusterConfig *variables.ClusterConfigSpec,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 ) error {
 	fldErrs := field.ErrorList{}
 
@@ -206,7 +206,7 @@ func validateControlPlaneFailureDomainConfig(clusterConfig *variables.ClusterCon
 // validateWorkerFailureDomainConfig validates XOR behavior: either failureDomain is set
 // OR cluster and subnets are set with machineDetails, but not both, for workers.
 func validateWorkerFailureDomainConfig(
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 ) field.ErrorList {
 	fldErrs := field.ErrorList{}
 	workerConfigVarPath := field.NewPath("spec", "topology", "variables", "workerConfig")

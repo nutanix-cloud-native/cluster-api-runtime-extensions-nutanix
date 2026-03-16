@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"text/template"
 
-	cabpkv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
@@ -38,8 +38,8 @@ var (
 	)
 )
 
-func templateFilesAndCommandsForInstallKubeletCredentialProviders() ([]cabpkv1.File, []string, error) {
-	var files []cabpkv1.File
+func templateFilesAndCommandsForInstallKubeletCredentialProviders() ([]bootstrapv1.File, []string, error) {
+	var files []bootstrapv1.File
 	var commands []string
 
 	installKCPScriptFile, installKCPScriptCommand, err := templateInstallKubeletCredentialProviders()
@@ -54,7 +54,7 @@ func templateFilesAndCommandsForInstallKubeletCredentialProviders() ([]cabpkv1.F
 	return files, commands, nil
 }
 
-func templateInstallKubeletCredentialProviders() (*cabpkv1.File, string, error) {
+func templateInstallKubeletCredentialProviders() (*bootstrapv1.File, string, error) {
 	templateInput := struct {
 		DynamicCredentialProviderImage string
 		CredentialProviderTargetDir    string
@@ -69,7 +69,7 @@ func templateInstallKubeletCredentialProviders() (*cabpkv1.File, string, error) 
 		return nil, "", fmt.Errorf("failed executing template: %w", err)
 	}
 
-	return &cabpkv1.File{
+	return &bootstrapv1.File{
 		Path:        installKubeletCredentialProvidersScriptOnRemote,
 		Content:     b.String(),
 		Permissions: "0700",

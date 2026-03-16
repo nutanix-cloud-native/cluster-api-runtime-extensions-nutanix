@@ -19,7 +19,7 @@ import (
 	"k8s.io/klog/v2"
 	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -59,7 +59,7 @@ func main() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
 	utilruntime.Must(crsv1.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
 	utilruntime.Must(controlplanev1.AddToScheme(clientScheme))
 	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
 	utilruntime.Must(capxv1.AddToScheme(clientScheme))

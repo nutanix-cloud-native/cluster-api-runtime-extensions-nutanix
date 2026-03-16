@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"net/http"
 
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -40,7 +40,7 @@ func (a *workloadClusterAutoEnabler) defaulter(
 	ctx context.Context,
 	req admission.Request,
 ) admission.Response {
-	cluster := &clusterv1beta2.Cluster{}
+	cluster := &clusterv1.Cluster{}
 	err := a.decoder.Decode(req, cluster)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -131,7 +131,7 @@ func (a *workloadClusterAutoEnabler) defaulter(
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledCluster)
 }
 
-func hasSkipAnnotation(cluster *clusterv1beta2.Cluster) bool {
+func hasSkipAnnotation(cluster *clusterv1.Cluster) bool {
 	if cluster.Annotations == nil {
 		return false
 	}
@@ -139,7 +139,7 @@ func hasSkipAnnotation(cluster *clusterv1beta2.Cluster) bool {
 	return ok
 }
 
-func globalImageRegistryMirrorFromCluster(cluster *clusterv1beta2.Cluster) (*carenv1.GlobalImageRegistryMirror, error) {
+func globalImageRegistryMirrorFromCluster(cluster *clusterv1.Cluster) (*carenv1.GlobalImageRegistryMirror, error) {
 	spec, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal cluster variable: %w", err)
@@ -151,7 +151,7 @@ func globalImageRegistryMirrorFromCluster(cluster *clusterv1beta2.Cluster) (*car
 	return spec.GlobalImageRegistryMirror, nil
 }
 
-func enabledSameRegistryAddonInCluster(cluster *clusterv1beta2.Cluster, sourceAddon *carenv1.RegistryAddon) error {
+func enabledSameRegistryAddonInCluster(cluster *clusterv1.Cluster, sourceAddon *carenv1.RegistryAddon) error {
 	spec, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal cluster variable: %w", err)

@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
@@ -46,7 +46,7 @@ type helmAddonStrategy struct {
 
 func (s helmAddonStrategy) apply(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	log logr.Logger,
 ) error {

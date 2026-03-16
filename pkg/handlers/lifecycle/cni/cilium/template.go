@@ -9,13 +9,13 @@ import (
 	"strings"
 	"text/template"
 
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
-func templateValues(cluster *clusterv1beta2.Cluster, text string) (string, error) {
+func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	kubeProxyIsDisabled, err := apivariables.KubeProxyIsDisabled(cluster)
 	if err != nil {
 		return "", fmt.Errorf("failed to check if kube-proxy is disabled: %w", err)
@@ -31,7 +31,7 @@ func templateValues(cluster *clusterv1beta2.Cluster, text string) (string, error
 
 	type input struct {
 		Provider                   string
-		ControlPlaneEndpoint       clusterv1beta2.APIEndpoint
+		ControlPlaneEndpoint       clusterv1.APIEndpoint
 		EnableKubeProxyReplacement bool
 	}
 
@@ -55,7 +55,7 @@ func templateValues(cluster *clusterv1beta2.Cluster, text string) (string, error
 }
 
 // https://docs.cilium.io/en/stable/operations/upgrade/#running-pre-flight-check-required
-func preflightTemplateValues(cluster *clusterv1beta2.Cluster, text string) (string, error) {
+func preflightTemplateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	kubeProxyIsDisabled, err := apivariables.KubeProxyIsDisabled(cluster)
 	if err != nil {
 		return "", fmt.Errorf("failed to check if kube-proxy is disabled: %w", err)
@@ -70,7 +70,7 @@ func preflightTemplateValues(cluster *clusterv1beta2.Cluster, text string) (stri
 	}
 
 	type input struct {
-		ControlPlaneEndpoint       clusterv1beta2.APIEndpoint
+		ControlPlaneEndpoint       clusterv1.APIEndpoint
 		EnableKubeProxyReplacement bool
 	}
 

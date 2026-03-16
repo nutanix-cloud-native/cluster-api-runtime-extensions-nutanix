@@ -12,7 +12,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -22,7 +22,7 @@ import (
 
 type WaitForRegistryAddonToBeReadyInWorkloadClusterInput struct {
 	Registry             *v1alpha1.RegistryAddon
-	WorkloadCluster      *clusterv1beta2.Cluster
+	WorkloadCluster      *clusterv1.Cluster
 	ClusterProxy         framework.ClusterProxy
 	StatefulSetIntervals []interface{}
 	HelmReleaseIntervals []interface{}
@@ -63,7 +63,7 @@ func WaitForRegistryAddonToBeReadyInWorkloadCluster(
 
 type EnsureClusterCAForRegistryAddonInput struct {
 	Registry        *v1alpha1.RegistryAddon
-	WorkloadCluster *clusterv1beta2.Cluster
+	WorkloadCluster *clusterv1.Cluster
 	ClusterProxy    framework.ClusterProxy
 }
 
@@ -104,7 +104,7 @@ func EnsureClusterCAForRegistryAddon(
 
 type EnsureAntiAffnityForRegistryAddonInput struct {
 	Registry        *v1alpha1.RegistryAddon
-	WorkloadCluster *clusterv1beta2.Cluster
+	WorkloadCluster *clusterv1.Cluster
 	ClusterProxy    framework.ClusterProxy
 }
 

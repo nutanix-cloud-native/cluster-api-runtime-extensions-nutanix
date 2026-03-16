@@ -17,8 +17,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/yaml"
 
@@ -30,7 +30,7 @@ const clusterAutoscalerReleaseName = "ca"
 
 type WaitForClusterAutoscalerToBeReadyForWorkloadClusterInput struct {
 	ClusterAutoscaler           *v1alpha1.ClusterAutoscaler
-	WorkloadCluster             *clusterv1beta2.Cluster
+	WorkloadCluster             *clusterv1.Cluster
 	ClusterProxy                framework.ClusterProxy
 	DeploymentIntervals         []interface{}
 	DaemonSetIntervals          []interface{}
@@ -59,7 +59,7 @@ func WaitForClusterAutoscalerToBeReadyForWorkloadCluster(
 
 	switch input.ClusterAutoscaler.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		crs := &addonsv1.ClusterResourceSet{}
+		crs := &crsv1.ClusterResourceSet{}
 		Expect(input.ClusterProxy.GetClient().Get(
 			ctx,
 			types.NamespacedName{

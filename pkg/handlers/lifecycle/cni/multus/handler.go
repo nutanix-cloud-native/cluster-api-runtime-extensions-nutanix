@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -114,7 +114,7 @@ func (m *MultusHandler) BeforeClusterUpgrade(
 
 func (m *MultusHandler) apply(
 	ctx context.Context,
-	cluster *clusterv1beta2.Cluster,
+	cluster *clusterv1.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
