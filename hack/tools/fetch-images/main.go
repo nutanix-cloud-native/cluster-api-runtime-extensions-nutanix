@@ -462,6 +462,37 @@ prismEndPoint: endpoint
 		}
 
 		return tempFile.Name(), nil
+	case "nutanix-cloud-provider":
+		f := filepath.Join(carenChartDirectory, "addons", "ccm", "nutanix", defaultHelmAddonFilename)
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+
+		templateInput := struct {
+			PrismCentralHost                  string
+			PrismCentralPort                  uint16
+			PrismCentralInsecure              bool
+			PrismCentralAdditionalTrustBundle string
+			IPsToIgnore                       []string
+			ControlPlaneEndpoint              *clusterv1beta2.APIEndpoint
+		}{
+			PrismCentralHost:     "prism-central.example.com",
+			PrismCentralPort:     9440,
+			PrismCentralInsecure: true,
+		}
+
+		funcMap := template.FuncMap{
+			"trimPrefix": strings.TrimPrefix,
+			"joinQuoted": func(s []string) string { return "" },
+		}
+		err = template.Must(
+			template.New(defaultHelmAddonFilename).Funcs(funcMap).ParseFiles(f)).Execute(tempFile, &templateInput)
+		if err != nil {
+			return "", fmt.Errorf("failed to execute helm values template %w", err)
+		}
+
+		return tempFile.Name(), nil
 	default:
 		return "", nil
 	}
