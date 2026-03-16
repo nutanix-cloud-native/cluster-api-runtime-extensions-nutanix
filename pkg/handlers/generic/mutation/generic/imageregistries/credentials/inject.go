@@ -430,7 +430,7 @@ func createSecretIfNeeded(
 // in which case it is valid for static credentials to not be set and will be skipped, no error
 // and this handler will skip generating any credential plugin related configuration.
 func providerConfigsThatNeedConfiguration(configs []providerConfig) ([]providerConfig, error) {
-	var needConfiguration []providerConfig //nolint:prealloc // We don't know the size of the slice yet.
+	var needConfiguration []providerConfig
 	for _, config := range configs {
 		requiresStaticCredentials, err := config.requiresStaticCredentials()
 		if err != nil {

@@ -23,6 +23,7 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		region.NewPatch(),
 		network.NewPatch(),
@@ -40,6 +41,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		iaminstanceprofile.NewWorkerPatch(),
 		instancetype.NewWorkerPatch(),

@@ -73,6 +73,7 @@ func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
 		return nil, nil, nil, fmt.Errorf("failed templating static Pod: %w", err)
 	}
 
+	//nolint:prealloc // Only has a maximum size of 2, prealloc is unnecessary.
 	files = []bootstrapv1.File{
 		{
 			Content:     kubeVIPStaticPod,

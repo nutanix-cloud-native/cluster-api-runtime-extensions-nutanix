@@ -103,23 +103,19 @@ func getRegistryMetadataForCNCFDistribution(cluster *clusterv1.Cluster) (*Regist
 }
 
 func getCertificateDNSNames(workloadName, headlessServiceName, namespace string, replicas int) []string {
-	names := []string{
+	names := make([]string, 0, 4+(replicas*4))
+	names = append(names,
 		workloadName,
 		fmt.Sprintf("%s.%s", workloadName, namespace),
 		fmt.Sprintf("%s.%s.svc", workloadName, namespace),
 		fmt.Sprintf("%s.%s.svc.cluster.local", workloadName, namespace),
-	}
+	)
 	for i := range replicas {
 		names = append(names,
-			[]string{
-				fmt.Sprintf("%s-%d", workloadName, i),
-				fmt.Sprintf("%s-%d.%s.%s", workloadName, i, headlessServiceName, namespace),
-				fmt.Sprintf("%s-%d.%s.%s.svc", workloadName, i, headlessServiceName, namespace),
-				fmt.Sprintf(
-					"%s-%d.%s.%s.svc.cluster.local",
-					workloadName, i, headlessServiceName, namespace,
-				),
-			}...,
+			fmt.Sprintf("%s-%d", workloadName, i),
+			fmt.Sprintf("%s-%d.%s.%s", workloadName, i, headlessServiceName, namespace),
+			fmt.Sprintf("%s-%d.%s.%s.svc", workloadName, i, headlessServiceName, namespace),
+			fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", workloadName, i, headlessServiceName, namespace),
 		)
 	}
 

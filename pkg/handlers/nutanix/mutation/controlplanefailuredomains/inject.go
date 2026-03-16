@@ -97,9 +97,9 @@ func (h *nutanixControlPlaneFailureDomains) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting controlPlaneFailureDomains in NutanixCluster spec")
 
-			fdRefs := []corev1.LocalObjectReference{}
-			for _, fd := range controlPlaneFDsVar {
-				fdRefs = append(fdRefs, corev1.LocalObjectReference{Name: fd})
+			fdRefs := make([]corev1.LocalObjectReference, len(controlPlaneFDsVar))
+			for i, fd := range controlPlaneFDsVar {
+				fdRefs[i] = corev1.LocalObjectReference{Name: fd}
 			}
 
 			// set controlPlaneFailureDomains in NutanixCluster spec

@@ -113,6 +113,7 @@ func Run(ctx context.Context, input RunInput) int {
 		config := kubeconfig.FromEnvTestConfig(env.Config, &clusterv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 		})
+		//nolint:gosec // OK in tests.
 		if err := os.WriteFile(kubeconfigPath, config, 0o600); err != nil {
 			panic(errors.Wrapf(err, "failed to write the test env kubeconfig"))
 		}

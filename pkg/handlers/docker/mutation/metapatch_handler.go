@@ -14,6 +14,7 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPD clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		customimage.NewControlPlanePatch(),
 	}
@@ -29,6 +30,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		customimage.NewWorkerPatch(),
 	}

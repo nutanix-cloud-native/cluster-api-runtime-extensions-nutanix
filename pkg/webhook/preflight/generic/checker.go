@@ -4,6 +4,7 @@ package generic
 
 import (
 	"context"
+	"slices"
 
 	"github.com/go-logr/logr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -45,10 +46,12 @@ func (g *genericChecker) Init(
 		cluster: cluster,
 		log:     ctrl.LoggerFrom(ctx).WithName("preflight/generic"),
 	}
-	checks := []preflight.Check{
-		// The configuration check must run first, because it initializes data used by all other checks.
-		g.configurationCheckFactory(cd),
-	}
-	checks = append(checks, g.registryCheckFactory(cd)...)
+	checks := slices.Concat(
+		[]preflight.Check{
+			// The configuration check must run first, because it initializes data used by all other checks.
+			g.configurationCheckFactory(cd),
+		},
+		g.registryCheckFactory(cd),
+	)
 	return checks
 }
