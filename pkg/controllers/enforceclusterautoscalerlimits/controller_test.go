@@ -12,9 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/util/test/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
 )
 
 func newMachineDeploymentWithTemplates(
@@ -122,7 +121,11 @@ func TestReconcileMachineDeploymentWithReplicasAndMinAnnotationOnly(t *testing.T
 		"test-md",
 		"test",
 		func(b *builder.MachineDeploymentBuilder) *builder.MachineDeploymentBuilder {
-			return b.WithReplicas(5).WithMinClusterAutoscalerAnnotation(12)
+			return b.
+				WithReplicas(5).
+				WithAnnotations(map[string]string{
+					clusterv1beta2.AutoscalerMinSizeAnnotation: "12",
+				})
 		},
 	)
 	for _, obj := range templates {
@@ -164,7 +167,11 @@ func TestReconcileMachineDeploymentWithReplicasAndMaxAnnotationOnly(t *testing.T
 		"test-md",
 		"test",
 		func(b *builder.MachineDeploymentBuilder) *builder.MachineDeploymentBuilder {
-			return b.WithReplicas(5).WithMaxClusterAutoscalerAnnotation(3)
+			return b.
+				WithReplicas(5).
+				WithAnnotations(map[string]string{
+					clusterv1beta2.AutoscalerMaxSizeAnnotation: "3",
+				})
 		},
 	)
 	for _, obj := range templates {
@@ -206,7 +213,12 @@ func TestReconcileMachineDeploymentWithReplicasWithinMinMaxBounds(t *testing.T) 
 		"test-md",
 		"test",
 		func(b *builder.MachineDeploymentBuilder) *builder.MachineDeploymentBuilder {
-			return b.WithReplicas(5).WithMinClusterAutoscalerAnnotation(3).WithMaxClusterAutoscalerAnnotation(12)
+			return b.
+				WithReplicas(5).
+				WithAnnotations(map[string]string{
+					clusterv1beta2.AutoscalerMinSizeAnnotation: "3",
+					clusterv1beta2.AutoscalerMaxSizeAnnotation: "12",
+				})
 		},
 	)
 	for _, obj := range templates {
@@ -248,7 +260,12 @@ func TestReconcileMachineDeploymentWithReplicasLessThanMinBound(t *testing.T) {
 		"test-md",
 		"test",
 		func(b *builder.MachineDeploymentBuilder) *builder.MachineDeploymentBuilder {
-			return b.WithReplicas(5).WithMinClusterAutoscalerAnnotation(7).WithMaxClusterAutoscalerAnnotation(12)
+			return b.
+				WithReplicas(5).
+				WithAnnotations(map[string]string{
+					clusterv1beta2.AutoscalerMinSizeAnnotation: "7",
+					clusterv1beta2.AutoscalerMaxSizeAnnotation: "12",
+				})
 		},
 	)
 	for _, obj := range templates {
@@ -282,7 +299,12 @@ func TestReconcileMachineDeploymentWithReplicasMoreThanMaxBound(t *testing.T) {
 		"test-md",
 		"test",
 		func(b *builder.MachineDeploymentBuilder) *builder.MachineDeploymentBuilder {
-			return b.WithReplicas(15).WithMinClusterAutoscalerAnnotation(7).WithMaxClusterAutoscalerAnnotation(12)
+			return b.
+				WithReplicas(15).
+				WithAnnotations(map[string]string{
+					clusterv1beta2.AutoscalerMinSizeAnnotation: "7",
+					clusterv1beta2.AutoscalerMaxSizeAnnotation: "12",
+				})
 		},
 	)
 	for _, obj := range templates {
@@ -316,7 +338,12 @@ func TestReconcileMachineDeploymentWithInvalidClusterAutoscalerAnnotations(t *te
 		"test-md",
 		"test",
 		func(b *builder.MachineDeploymentBuilder) *builder.MachineDeploymentBuilder {
-			return b.WithReplicas(1).WithMaxClusterAutoscalerAnnotation(3).WithMinClusterAutoscalerAnnotation(7)
+			return b.
+				WithReplicas(1).
+				WithAnnotations(map[string]string{
+					clusterv1beta2.AutoscalerMaxSizeAnnotation: "3",
+					clusterv1beta2.AutoscalerMinSizeAnnotation: "7",
+				})
 		},
 	)
 	for _, obj := range templates {

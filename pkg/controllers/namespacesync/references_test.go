@@ -10,8 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
+	"sigs.k8s.io/cluster-api/util/test/builder"
 )
 
 func TestWalkReferences(t *testing.T) {
@@ -52,7 +51,7 @@ func TestWalkReferences(t *testing.T) {
 			name: "ClusterClass with MachineDeployments template references",
 			clusterClass: builder.ClusterClass("default", "test-cc").
 				WithWorkerMachineDeploymentClasses(
-					builder.MachineDeploymentClass("worker-1").
+					*builder.MachineDeploymentClass("worker-1").
 						WithInfrastructureTemplate(
 							builder.InfrastructureMachineTemplate("default", "worker-infra-template").Build(),
 						).
@@ -65,7 +64,7 @@ func TestWalkReferences(t *testing.T) {
 			name: "ClusterClass with MachineDeployments having nil Infrastructure template reference",
 			clusterClass: builder.ClusterClass("default", "test-cc").
 				WithWorkerMachineDeploymentClasses(
-					builder.MachineDeploymentClass("worker-1").
+					*builder.MachineDeploymentClass("worker-1").
 						WithBootstrapTemplate(
 							builder.BootstrapTemplate("default", "worker-bootstrap-template").Build(),
 						).Build(),
@@ -75,7 +74,7 @@ func TestWalkReferences(t *testing.T) {
 			name: "ClusterClass with MachineDeployments having nil Bootstrap template reference",
 			clusterClass: builder.ClusterClass("default", "test-cc").
 				WithWorkerMachineDeploymentClasses(
-					builder.MachineDeploymentClass("worker-1").
+					*builder.MachineDeploymentClass("worker-1").
 						WithInfrastructureTemplate(
 							builder.InfrastructureMachineTemplate("default", "worker-infra-template").Build(),
 						).Build(),
@@ -101,14 +100,14 @@ func TestWalkReferences(t *testing.T) {
 					builder.InfrastructureMachineTemplate("default", "cp-machine-template").Build(),
 				).
 				WithWorkerMachineDeploymentClasses(
-					builder.MachineDeploymentClass("worker-1").
+					*builder.MachineDeploymentClass("worker-1").
 						WithInfrastructureTemplate(
 							builder.InfrastructureMachineTemplate("default", "worker-infra-template").Build(),
 						).
 						WithBootstrapTemplate(
 							builder.BootstrapTemplate("default", "worker-bootstrap-template").Build(),
 						).Build(),
-					builder.MachineDeploymentClass("worker-2").
+					*builder.MachineDeploymentClass("worker-2").
 						WithInfrastructureTemplate(
 							builder.InfrastructureMachineTemplate("default", "worker2-infra-template").Build(),
 						).

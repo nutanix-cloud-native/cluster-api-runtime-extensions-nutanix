@@ -13,12 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/util/test/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
 )
 
 const (
@@ -178,7 +177,7 @@ func newTestClusterClassAndTemplates(
 		WithInfrastructureClusterTemplate(infraClusterTemplate).
 		WithControlPlaneTemplate(controlPlaneTemplate).
 		WithControlPlaneInfrastructureMachineTemplate(infraMachineTemplateControlPlane).
-		WithWorkerMachineDeploymentClasses(machineDeploymentClass).
+		WithWorkerMachineDeploymentClasses(*machineDeploymentClass).
 		Build()
 
 	templates := []client.Object{

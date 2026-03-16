@@ -14,9 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/util/test/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
 )
 
 func TestReconcileExistingNamespaceWithUpdatedLabels(t *testing.T) {
@@ -280,7 +279,7 @@ func createClusterClassAndTemplates(
 		WithInfrastructureClusterTemplate(infraClusterTemplate).
 		WithControlPlaneTemplate(controlPlaneTemplate).
 		WithControlPlaneInfrastructureMachineTemplate(infraMachineTemplateControlPlane).
-		WithWorkerMachineDeploymentClasses(machineDeploymentClass).
+		WithWorkerMachineDeploymentClasses(*machineDeploymentClass).
 		Build()
 
 	// Create the set of initObjects from the objects above to add to the API server when the test environment starts.
@@ -364,7 +363,7 @@ func createManagedClusterClassAndTemplates(
 	clusterClass := builder.ClusterClass(namespace, prefix).
 		WithInfrastructureClusterTemplate(infraClusterTemplate).
 		WithControlPlaneTemplate(controlPlaneTemplate).
-		WithWorkerMachineDeploymentClasses(machineDeploymentClass).
+		WithWorkerMachineDeploymentClasses(*machineDeploymentClass).
 		Build()
 
 	// Create the set of initObjects from the objects above to add to the API server when the test environment starts.
