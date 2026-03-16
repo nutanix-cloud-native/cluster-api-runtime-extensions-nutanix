@@ -11,7 +11,7 @@ import (
 
 	v1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -49,7 +49,7 @@ func (k *kubeletConfigurationValidator) validate(
 		return admission.Allowed("")
 	}
 
-	cluster := &clusterv1beta2.Cluster{}
+	cluster := &clusterv1.Cluster{}
 	if err := k.decoder.Decode(req, cluster); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
