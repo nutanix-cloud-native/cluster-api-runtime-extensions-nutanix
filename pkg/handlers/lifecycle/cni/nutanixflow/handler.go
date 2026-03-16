@@ -33,6 +33,11 @@ const (
 	defaultImagePullSecretName = "flow-cni-image-pull-secret"
 )
 
+var imagePullSecretNamespaces = []string{
+	"flow-cni-system",
+	"ovn-kubernetes",
+}
+
 type CNIConfig struct {
 	*options.GlobalOptions
 
@@ -217,28 +222,32 @@ func (c *NutanixFlowCNI) apply(
 			return
 		}
 
-		key := ctrlclient.ObjectKey{
-			Name:      defaultImagePullSecretName,
-			Namespace: defaultNutanixFlowNamespace,
-		}
-		err = handlersutils.CopySecretToRemoteCluster(
-			ctx,
-			c.client,
-			cniVar.ImagePullCredentials.SecretRef.Name,
-			key,
-			cluster,
-		)
-		if err != nil {
-			log.Error(
-				err,
-				"error copying image pull Secret for Flow CNI to remote cluster",
+		for _, ns := range imagePullSecretNamespaces {
+			key := ctrlclient.ObjectKey{
+				Name:      defaultImagePullSecretName,
+				Namespace: ns,
+			}
+			err = handlersutils.CopySecretToRemoteCluster(
+				ctx,
+				c.client,
+				cniVar.ImagePullCredentials.SecretRef.Name,
+				key,
+				cluster,
 			)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(fmt.Sprintf(
-				"failed to copy image pull Secret for Flow CNI to remote cluster: %v",
-				err,
-			))
-			return
+			if err != nil {
+				log.Error(
+					err,
+					"error copying image pull Secret for Flow CNI to remote cluster",
+					"namespace", ns,
+				)
+				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+				resp.SetMessage(fmt.Sprintf(
+					"failed to copy image pull Secret for Flow CNI to namespace %q on remote cluster: %v",
+					ns,
+					err,
+				))
+				return
+			}
 		}
 
 		imagePullSecretName = defaultImagePullSecretName
