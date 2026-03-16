@@ -167,6 +167,7 @@ Create a `kubernetes.io/dockerconfigjson` Secret in the same namespace as the Cl
 management cluster:
 
 ```yaml
+# You can create the Secret manifest manually:
 apiVersion: v1
 kind: Secret
 metadata:
@@ -175,6 +176,15 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 data:
   .dockerconfigjson: <BASE64_ENCODED_DOCKER_CONFIG>
+```
+
+Or create it directly with kubectl using your Docker Hub credentials:
+
+```shell
+kubectl create secret docker-registry nutanix-docker-hub-credentials \
+  --docker-username=<USERNAME> \
+  --docker-password=<PASSWORD> \
+  --namespace=<CLUSTER_NAMESPACE>
 ```
 
 Then reference it in the cluster configuration:
