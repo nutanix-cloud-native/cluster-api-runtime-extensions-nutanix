@@ -55,6 +55,21 @@ var testDefs = []capitest.VariableTestDef{{
 		},
 	},
 }, {
+	Name: "set with valid provider using HelmAddon strategy and image pull credentials",
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCilium,
+				Strategy: v1alpha1.AddonStrategyHelmAddon,
+				ImagePullCredentials: &v1alpha1.ImagePullCredentials{
+					SecretRef: v1alpha1.LocalObjectReference{
+						Name: "my-image-pull-secret",
+					},
+				},
+			},
+		},
+	},
+}, {
 	Name: "set with invalid provider",
 	Vals: apivariables.ClusterConfigSpec{
 		Addons: &apivariables.Addons{
@@ -101,6 +116,21 @@ var nutanixFlowTestDefs = []capitest.VariableTestDef{{
 							Name: "custom-flow-cni-helm-values",
 							Kind: "ConfigMap",
 						},
+					},
+				},
+			},
+		},
+	},
+}, {
+	Name: "set with Flow provider using HelmAddon strategy and image pull credentials",
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderFlow,
+				Strategy: v1alpha1.AddonStrategyHelmAddon,
+				ImagePullCredentials: &v1alpha1.ImagePullCredentials{
+					SecretRef: v1alpha1.LocalObjectReference{
+						Name: "flow-docker-hub-secret",
 					},
 				},
 			},

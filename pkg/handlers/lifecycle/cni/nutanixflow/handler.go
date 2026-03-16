@@ -28,6 +28,9 @@ import (
 const (
 	defaultNutanixFlowReleaseName = "flow-cni"
 	defaultNutanixFlowNamespace   = "kube-system"
+
+	//nolint:gosec // Does not contain hard coded credentials.
+	defaultImagePullSecretName = "flow-cni-image-pull-secret"
 )
 
 type CNIConfig struct {
@@ -189,6 +192,58 @@ func (c *NutanixFlowCNI) apply(
 		return
 	}
 
+	var imagePullSecretName string
+	if cniVar.ImagePullCredentials != nil {
+		err := handlersutils.EnsureClusterOwnerReferenceForObject(
+			ctx,
+			c.client,
+			corev1.TypedLocalObjectReference{
+				Kind: "Secret",
+				Name: cniVar.ImagePullCredentials.SecretRef.Name,
+			},
+			cluster,
+		)
+		if err != nil {
+			log.Error(
+				err,
+				"error updating Cluster's owner reference on Flow CNI image pull Secret",
+				"name", cniVar.ImagePullCredentials.SecretRef.Name,
+			)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(fmt.Sprintf(
+				"failed to set Cluster's owner reference on Flow CNI image pull Secret: %v",
+				err,
+			))
+			return
+		}
+
+		key := ctrlclient.ObjectKey{
+			Name:      defaultImagePullSecretName,
+			Namespace: defaultNutanixFlowNamespace,
+		}
+		err = handlersutils.CopySecretToRemoteCluster(
+			ctx,
+			c.client,
+			cniVar.ImagePullCredentials.SecretRef.Name,
+			key,
+			cluster,
+		)
+		if err != nil {
+			log.Error(
+				err,
+				"error copying image pull Secret for Flow CNI to remote cluster",
+			)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(fmt.Sprintf(
+				"failed to copy image pull Secret for Flow CNI to remote cluster: %v",
+				err,
+			))
+			return
+		}
+
+		imagePullSecretName = defaultImagePullSecretName
+	}
+
 	targetNamespace := c.config.DefaultsNamespace()
 
 	helmValuesSourceRefName := c.config.helmAddonConfig.defaultValuesTemplateConfigMapName
@@ -230,7 +285,9 @@ func (c *NutanixFlowCNI) apply(
 		c.client,
 		helmChart,
 	).
-		WithValueTemplater(templateValues).
+		WithValueTemplater(func(cluster *clusterv1.Cluster, text string) (string, error) {
+			return templateValues(cluster, text, imagePullSecretName)
+		}).
 		WithDefaultWaiter()
 
 	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {

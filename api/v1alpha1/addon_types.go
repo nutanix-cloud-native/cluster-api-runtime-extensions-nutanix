@@ -140,6 +140,11 @@ type CNI struct {
 	// AddonConfig contains the configuration for the CNI provider.
 	// +kubebuilder:validation:Optional
 	AddonConfig `json:",inline"`
+
+	// ImagePullCredentials is a reference to a Secret with image pull credentials
+	// for the CNI provider images. The Secret will be copied to the workload cluster.
+	// +kubebuilder:validation:Optional
+	ImagePullCredentials *ImagePullCredentials `json:"imagePullCredentials,omitempty"`
 }
 
 // NutanixCNI defines CNI configuration for Nutanix clusters, which additionally support Flow.
@@ -158,6 +163,11 @@ type NutanixCNI struct {
 	// AddonConfig contains the configuration for the CNI provider.
 	// +kubebuilder:validation:Optional
 	AddonConfig `json:",inline"`
+
+	// ImagePullCredentials is a reference to a Secret with image pull credentials
+	// for the CNI provider images. The Secret will be copied to the workload cluster.
+	// +kubebuilder:validation:Optional
+	ImagePullCredentials *ImagePullCredentials `json:"imagePullCredentials,omitempty"`
 }
 
 // AddonConfig contains the configuration for the Addon provider.
@@ -173,6 +183,12 @@ type AddonValues struct {
 	// which contains inline YAML representing the values for the Helm chart.
 	// +kubebuilder:validation:Optional
 	SourceRef *ValuesReference `json:"sourceRef,omitempty"`
+}
+
+type ImagePullCredentials struct {
+	// A reference to the Secret containing the image pull credentials.
+	// +kubebuilder:validation:Required
+	SecretRef LocalObjectReference `json:"secretRef"`
 }
 
 // ValuesReference contains enough information to let you locate the

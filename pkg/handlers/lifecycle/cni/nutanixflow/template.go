@@ -11,7 +11,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
-func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
+func templateValues(cluster *clusterv1.Cluster, text, imagePullSecretName string) (string, error) {
 	t, err := template.New("").Parse(text)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
@@ -21,6 +21,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		ControlPlaneEndpoint clusterv1.APIEndpoint
 		PodCIDR              string
 		ServiceCIDR          string
+		ImagePullSecretName  string
 	}
 
 	var podCIDR string
@@ -37,6 +38,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		ControlPlaneEndpoint: cluster.Spec.ControlPlaneEndpoint,
 		PodCIDR:              podCIDR,
 		ServiceCIDR:          serviceCIDR,
+		ImagePullSecretName:  imagePullSecretName,
 	}
 
 	var b bytes.Buffer
