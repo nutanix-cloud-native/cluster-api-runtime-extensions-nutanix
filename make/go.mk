@@ -160,17 +160,19 @@ lint.%: hack/tools/golangci-lint-kube-api-linter fmt.% ; $(info $(M) linting $* 
 
 # Ensure that the golangci-lint-kube-api-linter tool is using the same version of Go as the golangci-lint tool, which
 # should in turn be the same language version as the project.
-GOLANGCI_LINT_VERSION := $(shell golangci-lint version --json 2>/dev/null | gojq --raw-output '.goVersion')
-GOLANGCI_LINT_KUBE_API_LINTER_VERSION := $(shell hack/tools/golangci-lint-kube-api-linter version --json 2>/dev/null | gojq --raw-output '.goVersion')
-ifneq ($(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_KUBE_API_LINTER_VERSION))
+GOLANGCI_LINT_GO_VERSION := $(shell golangci-lint version --json 2>/dev/null | gojq --raw-output '.goVersion')
+GOLANGCI_LINT_KUBE_API_LINTER_GO_VERSION := $(shell hack/tools/golangci-lint-kube-api-linter version --json 2>/dev/null | gojq --raw-output '.goVersion')
+GOLANGCI_LINT_VERSION := v$(shell golangci-lint version --json 2>/dev/null | gojq --raw-output '.version')
+GOLANGCI_LINT_KUBE_API_LINTER_VERSION := $(shell hack/tools/golangci-lint-kube-api-linter version --json 2>/dev/null | gojq --raw-output '.version | split("-") | .[0]')
+ifneq ($(GOLANGCI_LINT_VERSION)_$(GOLANGCI_LINT_GO_VERSION),$(GOLANGCI_LINT_KUBE_API_LINTER_VERSION)_$(GOLANGCI_LINT_KUBE_API_LINTER_GO_VERSION))
 .PHONY: hack/tools/golangci-lint-kube-api-linter
 endif
 # Explicitly set the GOTOOLCHAIN environment variable to the same version of Go as the golangci-lint tool
 # to ensure that the go version is the same as the golangci-lint tool.
-hack/tools/golangci-lint-kube-api-linter: export GOTOOLCHAIN := $(GOLANGCI_LINT_VERSION)
+hack/tools/golangci-lint-kube-api-linter: export GOTOOLCHAIN := $(GOLANGCI_LINT_GO_VERSION)
 hack/tools/golangci-lint-kube-api-linter: hack/tools/.custom-gcl.yml
 hack/tools/golangci-lint-kube-api-linter: ; $(info $(M) installing golangci-lint-kube-api-linter tool)
-	cd hack/tools && golangci-lint custom --verbose
+	cd hack/tools && golangci-lint custom --verbose --version=$(GOLANGCI_LINT_VERSION)
 
 .PHONY: mod-tidy
 mod-tidy: ## Run go mod tidy for all modules
