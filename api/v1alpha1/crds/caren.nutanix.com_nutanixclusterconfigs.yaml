@@ -87,13 +87,14 @@ spec:
                           type: string
                       type: object
                     cni:
-                      description: CNI required for providing CNI configuration.
+                      description: NutanixCNI defines CNI configuration for Nutanix clusters, which additionally support Flow.
                       properties:
                         provider:
                           description: CNI provider to deploy.
                           enum:
                             - Calico
                             - Cilium
+                            - Flow
                           type: string
                         strategy:
                           default: HelmAddon

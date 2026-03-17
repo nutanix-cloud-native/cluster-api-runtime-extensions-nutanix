@@ -1,0 +1,4 @@
+nutanix-core-flow-ovn-kubernetes:
+  k8sAPIServer: "https://{{ .ControlPlaneEndpoint.Host }}:{{ .ControlPlaneEndpoint.Port }}"
+  podNetwork: "{{ .PodCIDR }}"
+  serviceNetwork: "{{ .ServiceCIDR }}"
