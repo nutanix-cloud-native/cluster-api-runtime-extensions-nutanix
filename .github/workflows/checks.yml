@@ -127,6 +127,8 @@ jobs:
         module: [api, common, .]
       fail-fast: false
     permissions:
+      checks: write
+      contents: read
       pull-requests: write
     steps:
       - name: Check out code
@@ -151,6 +153,8 @@ jobs:
   lint-gha:
     runs-on: ubuntu-24.04
     permissions:
+      checks: write
+      contents: read
       pull-requests: write
     steps:
       - name: Check out code
