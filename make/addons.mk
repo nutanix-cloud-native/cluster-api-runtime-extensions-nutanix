@@ -8,7 +8,7 @@ export CLUSTER_AUTOSCALER_CHART_VERSION := 9.56.0
 export AWS_EBS_CSI_CHART_VERSION := 2.57.1
 export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.6.0
 export LOCAL_PATH_CSI_CHART_VERSION := 0.0.35
-export SNAPSHOT_CONTROLLER_CHART_VERSION := 5.0.3
+export SNAPSHOT_CONTROLLER_CHART_VERSION := 4.2.0
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
 # be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
 export AWS_CCM_CHART_VERSION := 0.0.10

@@ -90,7 +90,7 @@ repositories:
     repoURL: https://piraeus.io/helm-charts/
     charts:
       snapshot-controller:
-      - 5.0.3
+      - 4.2.0
   tigera-operator:
     repoURL: https://docs.tigera.io/calico/charts
     charts:

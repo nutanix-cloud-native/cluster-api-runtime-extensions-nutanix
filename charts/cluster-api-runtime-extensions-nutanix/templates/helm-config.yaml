@@ -73,7 +73,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://mesosphere.github.io/charts/staging/{{ end }}'
   snapshot-controller: |
     ChartName: snapshot-controller
-    ChartVersion: 5.0.3
+    ChartVersion: 4.2.0
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://piraeus.io/helm-charts/{{ end }}'
   tigera-operator: |
     ChartName: tigera-operator
