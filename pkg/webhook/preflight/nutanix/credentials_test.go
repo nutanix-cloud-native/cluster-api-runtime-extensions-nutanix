@@ -23,7 +23,7 @@ import (
 
 func TestNewCredentialsCheck_Success(t *testing.T) {
 	cd := validCheckDependencies()
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{
 			ValidateCredentialsFunc: func(ctx context.Context) error {
 				return nil
@@ -40,7 +40,7 @@ func TestNewCredentialsCheck_Success(t *testing.T) {
 func TestNewCredentialsCheck_NoNutanixConfig(t *testing.T) {
 	cd := validCheckDependencies()
 	cd.nutanixClusterConfigSpec = nil
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -53,7 +53,7 @@ func TestNewCredentialsCheck_NoNutanixConfig(t *testing.T) {
 func TestNewCredentialsCheck_MissingNutanixField(t *testing.T) {
 	cd := validCheckDependencies()
 	cd.nutanixClusterConfigSpec.Nutanix = nil
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -71,7 +71,7 @@ func TestNewCredentialsCheck_MissingNutanixField(t *testing.T) {
 func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
 	cd := validCheckDependencies()
 	cd.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint.URL = "not-a-url"
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -88,7 +88,7 @@ func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
 func TestNewCredentialsCheck_SecretNotFound(t *testing.T) {
 	cd := validCheckDependencies()
 	cd.kclient = fake.NewClientBuilder().Build() // no secret
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -126,7 +126,7 @@ func TestNewCredentialsCheck_SecretGetError(t *testing.T) {
 			return fmt.Errorf("fake error")
 		},
 	}
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -150,7 +150,7 @@ func TestNewCredentialsCheck_SecretEmpty(t *testing.T) {
 	}
 	cd := validCheckDependencies()
 	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -172,7 +172,7 @@ func TestNewCredentialsCheck_SecretMissingKey(t *testing.T) {
 	}
 	cd := validCheckDependencies()
 	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -194,7 +194,7 @@ func TestNewCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 	}
 	cd := validCheckDependencies()
 	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -204,9 +204,23 @@ func TestNewCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 	assert.Contains(t, result.Causes[0].Message, "Failed to parse Prism Central credentials")
 }
 
+func TestNewCredentialsCheck_InvalidAdditionalTrustBundle(t *testing.T) {
+	cd := validCheckDependencies()
+	cd.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint.AdditionalTrustBundle = "not-valid-base64!!!"
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+		return &clientWrapper{}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
+	result := check.Run(context.Background())
+	assert.False(t, result.Allowed)
+	assert.False(t, result.InternalError)
+	assert.Contains(t, result.Causes[0].Message, "Failed to decode Prism Central additionalTrustBundle")
+	assert.Contains(t, result.Causes[0].Field, "additionalTrustBundle")
+}
+
 func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
 	// Simulate a failure in creating the v4 client
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return nil, assert.AnError
 	}
 	cd := validCheckDependencies()
@@ -222,8 +236,8 @@ func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
 }
 
 func TestNewCredentialsCheck_FailedToValidateCredentials(t *testing.T) {
-	// Simulate a failure in validating credentials
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	// Simulate a generic failure in validating credentials (default case)
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{
 			ValidateCredentialsFunc: func(ctx context.Context) error {
 				return assert.AnError
@@ -235,12 +249,19 @@ func TestNewCredentialsCheck_FailedToValidateCredentials(t *testing.T) {
 	result := check.Run(context.Background())
 	assert.False(t, result.Allowed)
 	assert.True(t, result.InternalError)
-	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials: "+
-		assert.AnError.Error())
+	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials: ")
+	assert.Contains(
+		t,
+		result.Causes[0].Message,
+		"The error may be related to the URL, or the credentials. Please check both.",
+	)
+	assert.Contains(t, result.Causes[0].Field, "prismCentralEndpoint")
+	assert.NotContains(t, result.Causes[0].Field, ".url")
+	assert.NotContains(t, result.Causes[0].Field, ".credentials.secretRef")
 }
 
 func TestNewCredentialsCheck_ValidateCredentialsInvalidCredentials(t *testing.T) {
-	nclientFactory := func(_ prismgoclient.Credentials) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
 		return &clientWrapper{
 			ValidateCredentialsFunc: func(ctx context.Context) error {
 				return fmt.Errorf("invalid Nutanix credentials")
@@ -254,6 +275,50 @@ func TestNewCredentialsCheck_ValidateCredentialsInvalidCredentials(t *testing.T)
 	assert.False(t, result.InternalError)
 	assert.Contains(t, result.Causes[0].Message, "Failed to validate credentials: "+
 		"invalid Nutanix credentials")
+}
+
+func TestNewCredentialsCheck_ValidateCredentialsCertificateErrorNoTrustBundle(t *testing.T) {
+	// Certificate verification fails and no additionalTrustBundle was provided
+	nclientFactory := func(_ prismgoclient.Credentials, trustBundlePEM string) (client, error) {
+		assert.Empty(t, trustBundlePEM, "test expects no trust bundle")
+		return &clientWrapper{
+			ValidateCredentialsFunc: func(ctx context.Context) error {
+				return fmt.Errorf("failed to verify certificate: x509: certificate signed by unknown authority")
+			},
+		}, nil
+	}
+	cd := validCheckDependencies()
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
+	result := check.Run(context.Background())
+	assert.False(t, result.Allowed)
+	assert.False(t, result.InternalError)
+	assert.Len(t, result.Causes, 1)
+	assert.Contains(t, result.Causes[0].Message, "Failed to verify certificate:")
+	assert.Contains(t, result.Causes[0].Message, "you need to provide the additional trust bundle")
+	assert.Contains(t, result.Causes[0].Field, "additionalTrustBundle")
+}
+
+func TestNewCredentialsCheck_ValidateCredentialsCertificateErrorWithTrustBundle(t *testing.T) {
+	// Certificate verification fails but additionalTrustBundle was provided (wrong or incomplete)
+	validBase64PEM := "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVjekNDQTF1Z0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRUUZBRC4uLi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K" // minimal valid base64
+	cd := validCheckDependencies()
+	cd.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint.AdditionalTrustBundle = validBase64PEM
+	nclientFactory := func(_ prismgoclient.Credentials, trustBundlePEM string) (client, error) {
+		assert.NotEmpty(t, trustBundlePEM, "test expects trust bundle to be passed")
+		return &clientWrapper{
+			ValidateCredentialsFunc: func(ctx context.Context) error {
+				return fmt.Errorf("failed to verify certificate: x509: certificate signed by unknown authority")
+			},
+		}, nil
+	}
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
+	result := check.Run(context.Background())
+	assert.False(t, result.Allowed)
+	assert.False(t, result.InternalError)
+	assert.Len(t, result.Causes, 1)
+	assert.Contains(t, result.Causes[0].Message, "Failed to verify certificate:")
+	assert.Contains(t, result.Causes[0].Message, "Please check the additional trust bundle")
+	assert.Contains(t, result.Causes[0].Field, "additionalTrustBundle")
 }
 
 func validCheckDependencies() *checkDependencies {

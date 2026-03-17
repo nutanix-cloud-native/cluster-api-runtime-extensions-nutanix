@@ -228,8 +228,12 @@ func buildODataOptions(page, limit *int, filter, orderby, selectFields *string) 
 	return opts
 }
 
-// buildManagementEndpoint creates a ManagementEndpoint from credentials and trust bundle.
-func buildManagementEndpoint(credentials *prismgoclient.Credentials) (*types.ManagementEndpoint, error) {
+// buildManagementEndpoint creates a ManagementEndpoint from credentials and optional trust bundle.
+// additionalTrustBundlePEM is PEM-encoded certificate bundle (empty string if not set).
+func buildManagementEndpoint(
+	credentials *prismgoclient.Credentials,
+	additionalTrustBundlePEM string,
+) (*types.ManagementEndpoint, error) {
 	urlStr := credentials.URL
 
 	// Prepend https:// if no scheme is present
@@ -250,8 +254,9 @@ func buildManagementEndpoint(credentials *prismgoclient.Credentials) (*types.Man
 	}
 
 	return &types.ManagementEndpoint{
-		Address:  parsedURL,
-		Insecure: credentials.Insecure,
+		Address:               parsedURL,
+		Insecure:              credentials.Insecure,
+		AdditionalTrustBundle: additionalTrustBundlePEM,
 		ApiCredentials: types.ApiCredentials{
 			Username: credentials.Username,
 			Password: credentials.Password,
@@ -260,11 +265,14 @@ func buildManagementEndpoint(credentials *prismgoclient.Credentials) (*types.Man
 }
 
 // newClient creates a client with optional cluster information for cache key.
+// additionalTrustBundlePEM is the PEM-encoded trust bundle from clusterConfig
+// field nutanix.prismCentralEndpoint.additionalTrustBundle (empty if not set).
 func newClient(
 	credentials prismgoclient.Credentials, //nolint:gocritic // hugeParam is fine
 	clusterNamespacedName k8stypes.NamespacedName,
+	additionalTrustBundlePEM string,
 ) (client, error) {
-	endpoint, err := buildManagementEndpoint(&credentials)
+	endpoint, err := buildManagementEndpoint(&credentials, additionalTrustBundlePEM)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build management endpoint: %w", err)
 	}
