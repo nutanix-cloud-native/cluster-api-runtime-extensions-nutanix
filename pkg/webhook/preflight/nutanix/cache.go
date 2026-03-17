@@ -4,10 +4,10 @@
 package nutanix
 
 import (
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/types"
 
 	v4Converged "github.com/nutanix-cloud-native/prism-go-client/converged/v4"
-	"github.com/nutanix-cloud-native/prism-go-client/environment/types"
+	prismtypes "github.com/nutanix-cloud-native/prism-go-client/environment/types"
 	v3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 )
 
@@ -23,12 +23,12 @@ var NutanixConvergedClientV4Cache = v4Converged.NewClientCache()
 
 // CacheParams is the struct that implements ClientCacheParams interface from prism-go-client.
 type CacheParams struct {
-	ClusterNamespacedName   k8stypes.NamespacedName // Optional: cluster namespaced name for user-queryable cache key
-	PrismManagementEndpoint *types.ManagementEndpoint
+	ClusterNamespacedName   types.NamespacedName // Optional: cluster namespaced name for user-queryable cache key
+	PrismManagementEndpoint *prismtypes.ManagementEndpoint
 }
 
 // ManagementEndpoint returns the management endpoint of the NutanixCluster CR.
-func (c *CacheParams) ManagementEndpoint() types.ManagementEndpoint {
+func (c *CacheParams) ManagementEndpoint() prismtypes.ManagementEndpoint {
 	return *c.PrismManagementEndpoint
 }
 

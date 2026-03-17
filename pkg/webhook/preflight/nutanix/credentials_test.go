@@ -23,7 +23,7 @@ import (
 
 func TestNewCredentialsCheck_Success(t *testing.T) {
 	cd := validCheckDependencies()
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{
 			ValidateCredentialsFunc: func(ctx context.Context) error {
 				return nil
@@ -40,7 +40,7 @@ func TestNewCredentialsCheck_Success(t *testing.T) {
 func TestNewCredentialsCheck_NoNutanixConfig(t *testing.T) {
 	cd := validCheckDependencies()
 	cd.nutanixClusterConfigSpec = nil
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -53,7 +53,7 @@ func TestNewCredentialsCheck_NoNutanixConfig(t *testing.T) {
 func TestNewCredentialsCheck_MissingNutanixField(t *testing.T) {
 	cd := validCheckDependencies()
 	cd.nutanixClusterConfigSpec.Nutanix = nil
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -71,7 +71,7 @@ func TestNewCredentialsCheck_MissingNutanixField(t *testing.T) {
 func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
 	cd := validCheckDependencies()
 	cd.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint.URL = "not-a-url"
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -87,8 +87,8 @@ func TestNewCredentialsCheck_InvalidURL(t *testing.T) {
 
 func TestNewCredentialsCheck_SecretNotFound(t *testing.T) {
 	cd := validCheckDependencies()
-	cd.kclient = fake.NewClientBuilder().Build() // no secret
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	cd.kclient = fake.NewClientBuilder().Build()                                                            // no secret
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -126,7 +126,7 @@ func TestNewCredentialsCheck_SecretGetError(t *testing.T) {
 			return fmt.Errorf("fake error")
 		},
 	}
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -150,7 +150,7 @@ func TestNewCredentialsCheck_SecretEmpty(t *testing.T) {
 	}
 	cd := validCheckDependencies()
 	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -172,7 +172,7 @@ func TestNewCredentialsCheck_SecretMissingKey(t *testing.T) {
 	}
 	cd := validCheckDependencies()
 	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -194,7 +194,7 @@ func TestNewCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 	}
 	cd := validCheckDependencies()
 	cd.kclient = fake.NewClientBuilder().WithObjects(secret).Build()
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -207,7 +207,7 @@ func TestNewCredentialsCheck_InvalidCredentialsFormat(t *testing.T) {
 func TestNewCredentialsCheck_InvalidAdditionalTrustBundle(t *testing.T) {
 	cd := validCheckDependencies()
 	cd.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint.AdditionalTrustBundle = "not-valid-base64!!!"
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{}, nil
 	}
 	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
@@ -220,7 +220,7 @@ func TestNewCredentialsCheck_InvalidAdditionalTrustBundle(t *testing.T) {
 
 func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
 	// Simulate a failure in creating the v4 client
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return nil, assert.AnError
 	}
 	cd := validCheckDependencies()
@@ -237,7 +237,7 @@ func TestNewCredentialsCheck_FailedToCreateClient(t *testing.T) {
 
 func TestNewCredentialsCheck_FailedToValidateCredentials(t *testing.T) {
 	// Simulate a generic failure in validating credentials (default case)
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{
 			ValidateCredentialsFunc: func(ctx context.Context) error {
 				return assert.AnError
@@ -261,7 +261,7 @@ func TestNewCredentialsCheck_FailedToValidateCredentials(t *testing.T) {
 }
 
 func TestNewCredentialsCheck_ValidateCredentialsInvalidCredentials(t *testing.T) {
-	nclientFactory := func(_ prismgoclient.Credentials, _ string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		return &clientWrapper{
 			ValidateCredentialsFunc: func(ctx context.Context) error {
 				return fmt.Errorf("invalid Nutanix credentials")
@@ -279,7 +279,7 @@ func TestNewCredentialsCheck_ValidateCredentialsInvalidCredentials(t *testing.T)
 
 func TestNewCredentialsCheck_ValidateCredentialsCertificateErrorNoTrustBundle(t *testing.T) {
 	// Certificate verification fails and no additionalTrustBundle was provided
-	nclientFactory := func(_ prismgoclient.Credentials, trustBundlePEM string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, trustBundlePEM string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		assert.Empty(t, trustBundlePEM, "test expects no trust bundle")
 		return &clientWrapper{
 			ValidateCredentialsFunc: func(ctx context.Context) error {
@@ -303,7 +303,7 @@ func TestNewCredentialsCheck_ValidateCredentialsCertificateErrorWithTrustBundle(
 	validBase64PEM := "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVjekNDQTF1Z0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRUUZBRC4uLi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K" // minimal valid base64
 	cd := validCheckDependencies()
 	cd.nutanixClusterConfigSpec.Nutanix.PrismCentralEndpoint.AdditionalTrustBundle = validBase64PEM
-	nclientFactory := func(_ prismgoclient.Credentials, trustBundlePEM string) (client, error) {
+	nclientFactory := func(_ prismgoclient.Credentials, _ types.NamespacedName, trustBundlePEM string) (client, error) { ///nolint:gocritic // hugeParam is fine
 		assert.NotEmpty(t, trustBundlePEM, "test expects trust bundle to be passed")
 		return &clientWrapper{
 			ValidateCredentialsFunc: func(ctx context.Context) error {

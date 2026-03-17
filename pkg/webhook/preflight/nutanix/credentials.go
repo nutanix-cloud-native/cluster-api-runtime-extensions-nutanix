@@ -35,7 +35,11 @@ func (c *credentialsCheck) Run(_ context.Context) preflight.CheckResult {
 
 func newCredentialsCheck(
 	ctx context.Context,
-	nclientFactory func(prismgoclient.Credentials, string) (client, error),
+	nclientFactory func(
+		credentials prismgoclient.Credentials,
+		clusterNamespacedName types.NamespacedName,
+		additionalTrustBundlePEM string,
+	) (client, error),
 	cd *checkDependencies,
 ) preflight.Check {
 	cd.log.V(5).Info("Initializing Nutanix credentials check")
@@ -197,7 +201,14 @@ func newCredentialsCheck(
 	}
 
 	// Initialize the Nutanix client (with optional additional trust bundle).
-	nclient, err := nclientFactory(credentials, additionalTrustBundlePEM)
+	nclient, err := nclientFactory(
+		credentials,
+		types.NamespacedName{
+			Name:      cd.cluster.Name,
+			Namespace: cd.cluster.Namespace,
+		},
+		additionalTrustBundlePEM,
+	)
 	if err != nil {
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.InternalError = true
