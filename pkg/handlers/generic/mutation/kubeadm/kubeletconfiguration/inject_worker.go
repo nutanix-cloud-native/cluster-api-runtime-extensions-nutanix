@@ -72,13 +72,19 @@ func (h *kubeletConfigurationWorkerPatchHandler) Mutate(
 		return err
 	}
 
-	merged := mergeKubeletConfig(clusterCfg, workerCfg)
-	merged, err := applyDeprecatedMaxParallelImagePulls(merged, vars, h.clusterVariableName)
+	var finalCfg *v1alpha1.KubeletConfiguration
+	if workerCfg != nil {
+		finalCfg = workerCfg
+	} else if clusterCfg != nil {
+		finalCfg = clusterCfg
+	}
+
+	finalCfg, err := applyDeprecatedMaxParallelImagePulls(finalCfg, vars, h.clusterVariableName)
 	if err != nil {
 		return err
 	}
-	if isKubeletConfigEmpty(merged) {
-		log.V(5).Info("kubeletConfiguration is empty after merge, skipping worker mutation")
+	if finalCfg.IsEmpty() {
+		log.V(5).Info("kubeletConfiguration is empty, skipping worker mutation")
 		return nil
 	}
 
@@ -88,7 +94,7 @@ func (h *kubeletConfigurationWorkerPatchHandler) Mutate(
 		"workerVariableFieldPath", h.workerVariableFieldPath,
 	)
 
-	kubeletConfigPatch, err := renderKubeletConfigPatch(merged)
+	kubeletConfigPatch, err := renderKubeletConfigPatch(finalCfg)
 	if err != nil {
 		return err
 	}

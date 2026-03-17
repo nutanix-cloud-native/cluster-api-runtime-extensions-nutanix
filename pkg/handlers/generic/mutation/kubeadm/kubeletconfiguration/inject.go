@@ -11,7 +11,6 @@ import (
 	"text/template"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
@@ -103,7 +102,7 @@ func (h *kubeletConfigurationPatch) Mutate(
 		return err
 	}
 
-	if isKubeletConfigEmpty(&cfg) {
+	if cfg.IsEmpty() {
 		log.V(5).Info("kubeletConfiguration is empty, skipping mutation")
 		return nil
 	}
@@ -167,42 +166,35 @@ func (h *kubeletConfigurationPatch) Mutate(
 	return nil
 }
 
-// isKubeletConfigEmpty returns true if cfg is nil or has no fields set.
-func isKubeletConfigEmpty(cfg *v1alpha1.KubeletConfiguration) bool {
-	if cfg == nil {
-		return true
-	}
-	return cfg.MaxPods == nil &&
-		len(cfg.SystemReserved) == 0 &&
-		len(cfg.KubeReserved) == 0 &&
-		len(cfg.EvictionHard) == 0 &&
-		len(cfg.EvictionSoft) == 0 &&
-		len(cfg.EvictionSoftGracePeriod) == 0 &&
-		cfg.ProtectKernelDefaults == nil &&
-		cfg.TopologyManagerPolicy == nil &&
-		cfg.CPUManagerPolicy == nil &&
-		cfg.MemoryManagerPolicy == nil &&
-		cfg.PodPidsLimit == nil &&
-		cfg.ContainerLogMaxSize == nil &&
-		cfg.ContainerLogMaxFiles == nil &&
-		cfg.ImageGCHighThresholdPercent == nil &&
-		cfg.ImageGCLowThresholdPercent == nil &&
-		cfg.MaxParallelImagePulls == nil &&
-		cfg.ShutdownGracePeriod == nil &&
-		cfg.ShutdownGracePeriodCriticalPods == nil
-}
-
 // toTemplateInput converts v1alpha1.KubeletConfiguration to template-friendly struct.
 func toTemplateInput(cfg *v1alpha1.KubeletConfiguration) *kubeletConfigTemplateInput {
 	if cfg == nil {
 		return &kubeletConfigTemplateInput{}
 	}
 
-	in := &kubeletConfigTemplateInput{}
-
-	if cfg.MaxPods != nil {
-		in.MaxPods = *cfg.MaxPods
+	in := &kubeletConfigTemplateInput{
+		MaxPods:                     cfg.MaxPods,
+		ProtectKernelDefaults:       cfg.ProtectKernelDefaults,
+		TopologyManagerPolicy:       cfg.TopologyManagerPolicy,
+		CPUManagerPolicy:            cfg.CPUManagerPolicy,
+		MemoryManagerPolicy:         cfg.MemoryManagerPolicy,
+		PodPidsLimit:                cfg.PodPidsLimit,
+		ContainerLogMaxFiles:        cfg.ContainerLogMaxFiles,
+		ImageGCHighThresholdPercent: cfg.ImageGCHighThresholdPercent,
+		ImageGCLowThresholdPercent:  cfg.ImageGCLowThresholdPercent,
+		MaxParallelImagePulls:       cfg.MaxParallelImagePulls,
 	}
+
+	if cfg.ContainerLogMaxSize != nil {
+		in.ContainerLogMaxSize = cfg.ContainerLogMaxSize.String()
+	}
+	if cfg.ShutdownGracePeriod != nil {
+		in.ShutdownGracePeriod = cfg.ShutdownGracePeriod.Duration.String()
+	}
+	if cfg.ShutdownGracePeriodCriticalPods != nil {
+		in.ShutdownGracePeriodCriticalPods = cfg.ShutdownGracePeriodCriticalPods.Duration.String()
+	}
+
 	if len(cfg.SystemReserved) > 0 {
 		in.SystemReserved = make(map[string]string, len(cfg.SystemReserved))
 		for k, v := range cfg.SystemReserved {
@@ -227,42 +219,6 @@ func toTemplateInput(cfg *v1alpha1.KubeletConfiguration) *kubeletConfigTemplateI
 			in.EvictionSoftGracePeriod[k] = v.Duration.String()
 		}
 	}
-	if cfg.ProtectKernelDefaults != nil {
-		in.ProtectKernelDefaults = *cfg.ProtectKernelDefaults
-	}
-	if cfg.TopologyManagerPolicy != nil {
-		in.TopologyManagerPolicy = string(*cfg.TopologyManagerPolicy)
-	}
-	if cfg.CPUManagerPolicy != nil {
-		in.CPUManagerPolicy = string(*cfg.CPUManagerPolicy)
-	}
-	if cfg.MemoryManagerPolicy != nil {
-		in.MemoryManagerPolicy = string(*cfg.MemoryManagerPolicy)
-	}
-	if cfg.PodPidsLimit != nil {
-		in.PodPidsLimit = *cfg.PodPidsLimit
-	}
-	if cfg.ContainerLogMaxSize != nil {
-		in.ContainerLogMaxSize = cfg.ContainerLogMaxSize.String()
-	}
-	if cfg.ContainerLogMaxFiles != nil {
-		in.ContainerLogMaxFiles = *cfg.ContainerLogMaxFiles
-	}
-	if cfg.ImageGCHighThresholdPercent != nil {
-		in.ImageGCHighThresholdPercent = *cfg.ImageGCHighThresholdPercent
-	}
-	if cfg.ImageGCLowThresholdPercent != nil {
-		in.ImageGCLowThresholdPercent = *cfg.ImageGCLowThresholdPercent
-	}
-	if cfg.MaxParallelImagePulls != nil {
-		in.MaxParallelImagePulls = *cfg.MaxParallelImagePulls
-	}
-	if cfg.ShutdownGracePeriod != nil {
-		in.ShutdownGracePeriod = cfg.ShutdownGracePeriod.Duration.String()
-	}
-	if cfg.ShutdownGracePeriodCriticalPods != nil {
-		in.ShutdownGracePeriodCriticalPods = cfg.ShutdownGracePeriodCriticalPods.Duration.String()
-	}
 
 	return in
 }
@@ -283,98 +239,27 @@ func renderKubeletConfigPatch(cfg *v1alpha1.KubeletConfiguration) (*bootstrapv1.
 }
 
 // applyDeprecatedMaxParallelImagePulls copies the deprecated maxParallelImagePullsPerNode
-// into merged.MaxParallelImagePulls if the new field is not set. The new field takes
+// into cfg.MaxParallelImagePulls if the new field is not set. The new field takes
 // precedence; if both are set, the deprecated value is ignored.
 func applyDeprecatedMaxParallelImagePulls(
-	merged *v1alpha1.KubeletConfiguration,
+	cfg *v1alpha1.KubeletConfiguration,
 	vars map[string]apiextensionsv1.JSON,
 	clusterVariableName string,
 ) (*v1alpha1.KubeletConfiguration, error) {
 	deprecatedVal, err := variables.Get[int32](vars, clusterVariableName, "maxParallelImagePullsPerNode")
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			return merged, nil
+			return cfg, nil
 		}
-		return merged, err
+		return cfg, err
 	}
 	// New field takes precedence; skip if already set
-	if merged != nil && merged.MaxParallelImagePulls != nil {
-		return merged, nil
+	if cfg != nil && cfg.MaxParallelImagePulls != nil {
+		return cfg, nil
 	}
-	if merged == nil {
-		merged = &v1alpha1.KubeletConfiguration{}
+	if cfg == nil {
+		cfg = &v1alpha1.KubeletConfiguration{}
 	}
-	merged.MaxParallelImagePulls = ptr.To(deprecatedVal)
-	return merged, nil
-}
-
-// mergeKubeletConfig merges base and override. Override fields take precedence over base.
-// Returns a new struct; does not mutate inputs.
-func mergeKubeletConfig(base, override *v1alpha1.KubeletConfiguration) *v1alpha1.KubeletConfiguration {
-	if override == nil {
-		return base
-	}
-	if base == nil {
-		return override
-	}
-	merged := &v1alpha1.KubeletConfiguration{}
-	merged.MaxPods = ptrOrDefault(override.MaxPods, base.MaxPods)
-	merged.SystemReserved = mapOrDefault(override.SystemReserved, base.SystemReserved)
-	merged.KubeReserved = mapOrDefault(override.KubeReserved, base.KubeReserved)
-	merged.EvictionHard = mapStrOrDefault(override.EvictionHard, base.EvictionHard)
-	merged.EvictionSoft = mapStrOrDefault(override.EvictionSoft, base.EvictionSoft)
-	merged.EvictionSoftGracePeriod = mapDurationOrDefault(
-		override.EvictionSoftGracePeriod,
-		base.EvictionSoftGracePeriod,
-	)
-	merged.ProtectKernelDefaults = ptrOrDefault(override.ProtectKernelDefaults, base.ProtectKernelDefaults)
-	merged.TopologyManagerPolicy = ptrOrDefault(override.TopologyManagerPolicy, base.TopologyManagerPolicy)
-	merged.CPUManagerPolicy = ptrOrDefault(override.CPUManagerPolicy, base.CPUManagerPolicy)
-	merged.MemoryManagerPolicy = ptrOrDefault(override.MemoryManagerPolicy, base.MemoryManagerPolicy)
-	merged.PodPidsLimit = ptrOrDefault(override.PodPidsLimit, base.PodPidsLimit)
-	merged.ContainerLogMaxSize = ptrOrDefault(override.ContainerLogMaxSize, base.ContainerLogMaxSize)
-	merged.ContainerLogMaxFiles = ptrOrDefault(override.ContainerLogMaxFiles, base.ContainerLogMaxFiles)
-	merged.ImageGCHighThresholdPercent = ptrOrDefault(
-		override.ImageGCHighThresholdPercent,
-		base.ImageGCHighThresholdPercent,
-	)
-	merged.ImageGCLowThresholdPercent = ptrOrDefault(
-		override.ImageGCLowThresholdPercent,
-		base.ImageGCLowThresholdPercent,
-	)
-	merged.MaxParallelImagePulls = ptrOrDefault(override.MaxParallelImagePulls, base.MaxParallelImagePulls)
-	merged.ShutdownGracePeriod = ptrOrDefault(override.ShutdownGracePeriod, base.ShutdownGracePeriod)
-	merged.ShutdownGracePeriodCriticalPods = ptrOrDefault(
-		override.ShutdownGracePeriodCriticalPods,
-		base.ShutdownGracePeriodCriticalPods,
-	)
-	return merged
-}
-
-func ptrOrDefault[T any](override, base *T) *T {
-	if override != nil {
-		return override
-	}
-	return base
-}
-
-func mapOrDefault[K comparable, V any](override, base map[K]V) map[K]V {
-	if len(override) > 0 {
-		return override
-	}
-	return base
-}
-
-func mapStrOrDefault(override, base map[string]string) map[string]string {
-	if len(override) > 0 {
-		return override
-	}
-	return base
-}
-
-func mapDurationOrDefault(override, base map[string]metav1.Duration) map[string]metav1.Duration {
-	if len(override) > 0 {
-		return override
-	}
-	return base
+	cfg.MaxParallelImagePulls = ptr.To(deprecatedVal)
+	return cfg, nil
 }

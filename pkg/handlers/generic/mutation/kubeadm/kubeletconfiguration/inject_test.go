@@ -185,55 +185,8 @@ func TestRenderKubeletConfigPatch_ShutdownGracePeriodCriticalPods(t *testing.T) 
 	)
 }
 
-func TestIsKubeletConfigEmpty(t *testing.T) {
-	assert.True(t, isKubeletConfigEmpty(nil))
-
-	empty := &v1alpha1.KubeletConfiguration{}
-	assert.True(t, isKubeletConfigEmpty(empty))
-
-	withField := &v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(110))}
-	assert.False(t, isKubeletConfigEmpty(withField))
-}
-
-func TestMergeKubeletConfig_ClusterOnly(t *testing.T) {
-	cluster := &v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(110))}
-	node := (*v1alpha1.KubeletConfiguration)(nil)
-
-	merged := mergeKubeletConfig(cluster, node)
-	require.NotNil(t, merged)
-	assert.Equal(t, int32(110), *merged.MaxPods)
-}
-
-func TestMergeKubeletConfig_NodeOnly(t *testing.T) {
-	cluster := (*v1alpha1.KubeletConfiguration)(nil)
-	node := &v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(50))}
-
-	merged := mergeKubeletConfig(cluster, node)
-	require.NotNil(t, merged)
-	assert.Equal(t, int32(50), *merged.MaxPods)
-}
-
-func TestMergeKubeletConfig_UnionDifferentFields(t *testing.T) {
-	cluster := &v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(110))}
-	node := &v1alpha1.KubeletConfiguration{ProtectKernelDefaults: ptr.To(true)}
-
-	merged := mergeKubeletConfig(cluster, node)
-	require.NotNil(t, merged)
-	assert.Equal(t, int32(110), *merged.MaxPods)
-	assert.True(t, *merged.ProtectKernelDefaults)
-}
-
-func TestMergeKubeletConfig_NodeWins(t *testing.T) {
-	cluster := &v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(110))}
-	node := &v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(50))}
-
-	merged := mergeKubeletConfig(cluster, node)
-	require.NotNil(t, merged)
-	assert.Equal(t, int32(50), *merged.MaxPods)
-}
-
 func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
-	merged := &v1alpha1.KubeletConfiguration{}
+	cfg := &v1alpha1.KubeletConfiguration{}
 	vars := map[string]apiextensionsv1.JSON{
 		v1alpha1.ClusterConfigVariableName: {
 			Raw: []byte(`{"maxParallelImagePullsPerNode": 4}`),
@@ -241,7 +194,7 @@ func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
 	}
 
 	result, err := applyDeprecatedMaxParallelImagePulls(
-		merged, vars, v1alpha1.ClusterConfigVariableName,
+		cfg, vars, v1alpha1.ClusterConfigVariableName,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -249,7 +202,7 @@ func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
 }
 
 func TestApplyDeprecatedMaxParallelImagePulls_NewFieldWins(t *testing.T) {
-	merged := &v1alpha1.KubeletConfiguration{MaxParallelImagePulls: ptr.To(int32(8))}
+	cfg := &v1alpha1.KubeletConfiguration{MaxParallelImagePulls: ptr.To(int32(8))}
 	vars := map[string]apiextensionsv1.JSON{
 		v1alpha1.ClusterConfigVariableName: {
 			Raw: []byte(`{"maxParallelImagePullsPerNode": 4}`),
@@ -257,7 +210,7 @@ func TestApplyDeprecatedMaxParallelImagePulls_NewFieldWins(t *testing.T) {
 	}
 
 	result, err := applyDeprecatedMaxParallelImagePulls(
-		merged, vars, v1alpha1.ClusterConfigVariableName,
+		cfg, vars, v1alpha1.ClusterConfigVariableName,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, result)

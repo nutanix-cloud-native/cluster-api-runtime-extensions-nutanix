@@ -72,13 +72,19 @@ func (h *kubeletConfigurationControlPlanePatchHandler) Mutate(
 		return err
 	}
 
-	merged := mergeKubeletConfig(clusterCfg, cpCfg)
-	merged, err := applyDeprecatedMaxParallelImagePulls(merged, vars, h.clusterVariableName)
+	var finalCfg *v1alpha1.KubeletConfiguration
+	if cpCfg != nil {
+		finalCfg = cpCfg
+	} else if clusterCfg != nil {
+		finalCfg = clusterCfg
+	}
+
+	finalCfg, err := applyDeprecatedMaxParallelImagePulls(finalCfg, vars, h.clusterVariableName)
 	if err != nil {
 		return err
 	}
-	if isKubeletConfigEmpty(merged) {
-		log.V(5).Info("kubeletConfiguration is empty after merge, skipping control plane mutation")
+	if finalCfg.IsEmpty() {
+		log.V(5).Info("kubeletConfiguration is empty, skipping control plane mutation")
 		return nil
 	}
 
@@ -88,7 +94,7 @@ func (h *kubeletConfigurationControlPlanePatchHandler) Mutate(
 		"cpVariableFieldPath", h.cpVariableFieldPath,
 	)
 
-	kubeletConfigPatch, err := renderKubeletConfigPatch(merged)
+	kubeletConfigPatch, err := renderKubeletConfigPatch(finalCfg)
 	if err != nil {
 		return err
 	}

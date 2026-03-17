@@ -4,6 +4,7 @@
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -175,4 +176,12 @@ type KubeletConfiguration struct {
 	// Default kubelet value is "0s".
 	// +kubebuilder:validation:Optional
 	ShutdownGracePeriodCriticalPods *metav1.Duration `json:"shutdownGracePeriodCriticalPods,omitempty"`
+}
+
+// IsEmpty returns true if the KubeletConfiguration is nil or has no fields set.
+func (c *KubeletConfiguration) IsEmpty() bool {
+	if c == nil {
+		return true
+	}
+	return equality.Semantic.DeepEqual(c, &KubeletConfiguration{})
 }
