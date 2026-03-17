@@ -112,12 +112,8 @@ var _ = Describe("Quick start", func() {
 											// For Nutanix provider with Flow CNI, we need to set the Docker Hub username and password
 											// because the Flow CNI images require a Docker account to pull the images.
 											if provider == "Nutanix" && cniProvider == "Flow" {
-												if testE2EConfig.GetVariableOrEmpty(
-													"NUTANIX_DOCKER_HUB_USERNAME",
-												) == "" ||
-													testE2EConfig.GetVariableOrEmpty(
-														"NUTANIX_DOCKER_HUB_PASSWORD",
-													) == "" {
+												if e2eConfig.GetVariableOrEmpty("NUTANIX_DOCKER_HUB_USERNAME") == "" ||
+													e2eConfig.GetVariableOrEmpty("NUTANIX_DOCKER_HUB_PASSWORD") == "" {
 													Skip(
 														"Both NUTANIX_DOCKER_HUB_USERNAME and NUTANIX_DOCKER_HUB_PASSWORD must be set",
 													)

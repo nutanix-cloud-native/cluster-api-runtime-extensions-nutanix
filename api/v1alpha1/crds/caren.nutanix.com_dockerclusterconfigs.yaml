@@ -87,7 +87,7 @@ spec:
                           type: string
                       type: object
                     cni:
-                      description: CNI defines CNI configuration for providers that support Calico and Cilium.
+                      description: CNI defines CNI provider configuration.
                       properties:
                         imagePullCredentials:
                           description: |-

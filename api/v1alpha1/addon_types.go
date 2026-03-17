@@ -124,7 +124,7 @@ type GenericAddons struct {
 
 type AddonStrategy string
 
-// CNI defines CNI configuration for providers that support Calico and Cilium.
+// CNI defines CNI provider configuration.
 type CNI struct {
 	// CNI provider to deploy.
 	// +kubebuilder:validation:Required
