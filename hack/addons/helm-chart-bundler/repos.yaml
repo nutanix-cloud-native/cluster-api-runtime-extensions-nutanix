@@ -20,7 +20,7 @@ repositories:
     repoURL: https://aws.github.io/eks-charts
     charts:
       aws-load-balancer-controller:
-      - 3.1.0
+      - 1.17.1
   cilium:
     repoURL: https://helm.cilium.io/
     charts:
