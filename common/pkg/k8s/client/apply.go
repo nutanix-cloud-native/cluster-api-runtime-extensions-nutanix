@@ -6,6 +6,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -25,8 +26,10 @@ func ServerSideApply(
 	obj ctrlclient.Object,
 	opts ...ctrlclient.PatchOption,
 ) error {
-	options := []ctrlclient.PatchOption{ctrlclient.FieldOwner(FieldOwner)}
-	options = append(options, opts...)
+	options := slices.Concat(
+		[]ctrlclient.PatchOption{ctrlclient.FieldOwner(FieldOwner)},
+		opts,
+	)
 	err := c.Patch(
 		ctx,
 		obj,

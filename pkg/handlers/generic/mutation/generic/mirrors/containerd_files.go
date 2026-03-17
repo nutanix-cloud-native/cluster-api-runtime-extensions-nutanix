@@ -139,7 +139,7 @@ func generateRegistryCACertFiles(
 		return nil, nil
 	}
 
-	var files []bootstrapv1.File //nolint:prealloc // We don't know the size of the slice yet.
+	var files []bootstrapv1.File
 
 	filesToGenerate, err := registryCACertFiles(configs)
 	if err != nil {

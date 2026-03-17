@@ -279,7 +279,7 @@ func testServiceLoadBalancer(
 	var output string
 	Eventually(func(g Gomega) string {
 		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), http.NoBody)
-		resp, err := hc.Do(req)
+		resp, err := hc.Do(req) //nolint:gosec // OK in tests.
 		if err != nil {
 			return ""
 		}

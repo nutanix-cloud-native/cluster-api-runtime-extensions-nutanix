@@ -169,9 +169,9 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 		// In case the infrastructure-docker provider is installed, ensure to add the preload images variable to load the
 		// controller images into the nodes.
 		if hasDockerInfrastructureProvider {
-			images := []string{}
-			for _, image := range input.E2EConfig.Images {
-				images = append(images, fmt.Sprintf("%q", image.Name))
+			images := make([]string, len(input.E2EConfig.Images))
+			for i, image := range input.E2EConfig.Images {
+				images[i] = fmt.Sprintf("%q", image.Name)
 			}
 			clusterctlVariables["DOCKER_PRELOAD_IMAGES"] = `[` + strings.Join(images, ",") + `]`
 		}

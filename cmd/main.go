@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,7 +33,6 @@ import (
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	metallbv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta1"
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/enforceclusterautoscalerlimits"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/failuredomainrollout"
@@ -174,13 +174,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	var allHandlers []handlers.Named
-	allHandlers = append(allHandlers, lifecycleHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, awsMetaHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, dockerMetaHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, nutanixMetaHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, eksMetaHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, genericMetaHandlers.AllHandlers(mgr)...)
+	allHandlers := slices.Concat(
+		lifecycleHandlers.AllHandlers(mgr),
+		awsMetaHandlers.AllHandlers(mgr),
+		dockerMetaHandlers.AllHandlers(mgr),
+		nutanixMetaHandlers.AllHandlers(mgr),
+		eksMetaHandlers.AllHandlers(mgr),
+		genericMetaHandlers.AllHandlers(mgr),
+	)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
 

@@ -5,6 +5,7 @@ package nutanix
 
 import (
 	"context"
+	"slices"
 
 	"github.com/go-logr/logr"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -108,13 +109,14 @@ func (n *nutanixChecker) Init(
 		n.prismCentralVersionCheckFactory(ctx, cd),
 	}
 
-	checks = append(checks, n.failureDomainCheckFactory(cd)...)
-	checks = append(checks, n.vmImageChecksFactory(cd)...)
-	checks = append(checks, n.vmImageKubernetesVersionChecksFactory(cd)...)
-	checks = append(checks, n.cidrValidationChecksFactory(cd)...)
-	checks = append(checks, n.storageContainerChecksFactory(cd)...)
-
-	// Add more checks here as needed.
+	checks = slices.Concat(
+		checks,
+		n.failureDomainCheckFactory(cd),
+		n.vmImageChecksFactory(cd),
+		n.vmImageKubernetesVersionChecksFactory(cd),
+		n.cidrValidationChecksFactory(cd),
+		n.storageContainerChecksFactory(cd),
+	)
 
 	return checks
 }

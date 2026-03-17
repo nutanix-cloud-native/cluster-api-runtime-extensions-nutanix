@@ -1,8 +1,8 @@
 # Copyright 2025 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-version: v2.2.2
+version: ${GOLANGCI_LINT_VERSION}
 name: golangci-lint-kube-api-linter
 plugins:
 - module: 'sigs.k8s.io/kube-api-linter'
-  version: v0.0.0-20250710131328-b566fe88b732
+  version: v0.0.0-20260206102632-39e3d06a2850

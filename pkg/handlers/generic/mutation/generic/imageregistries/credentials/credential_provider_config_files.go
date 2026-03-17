@@ -54,7 +54,7 @@ var (
 type providerConfig struct {
 	URL       string
 	Username  string
-	Password  string
+	Password  string //nolint:gosec // Does not contain hard coded credentials.
 	HasCACert bool
 	Mirror    bool
 }

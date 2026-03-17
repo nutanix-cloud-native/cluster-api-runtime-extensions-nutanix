@@ -4,6 +4,8 @@
 package mutation
 
 import (
+	"slices"
+
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
@@ -14,11 +16,13 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPD clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := []mutation.MetaMutator{
-		customimage.NewControlPlanePatch(),
-	}
-	patchHandlers = append(patchHandlers, genericmutationvprev.MetaMutators(mgr)...)
-	patchHandlers = append(patchHandlers, genericmutationvprev.ControlPlaneMetaMutators()...)
+	patchHandlers := slices.Concat(
+		[]mutation.MetaMutator{
+			customimage.NewControlPlanePatch(),
+		},
+		genericmutationvprev.MetaMutators(mgr),
+		genericmutationvprev.ControlPlaneMetaMutators(),
+	)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"dockerClusterv4configpatch",
@@ -29,10 +33,12 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := []mutation.MetaMutator{
-		customimage.NewWorkerPatch(),
-	}
-	patchHandlers = append(patchHandlers, genericmutationvprev.WorkerMetaMutators()...)
+	patchHandlers := slices.Concat(
+		[]mutation.MetaMutator{
+			customimage.NewWorkerPatch(),
+		},
+		genericmutationvprev.WorkerMetaMutators(),
+	)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"dockerWorkerv4configpatch",

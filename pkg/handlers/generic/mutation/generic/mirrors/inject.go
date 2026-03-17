@@ -105,7 +105,7 @@ func (h *globalMirrorPatchHandler) Mutate(
 		return registryAddonErr
 	}
 
-	var registriesWithOptionalCA []containerdConfig //nolint:prealloc // We don't know the size of the slice yet.
+	var registriesWithOptionalCA []containerdConfig
 	if globalMirrorErr == nil {
 		registryConfig, err := containerdConfigFromGlobalMirror(
 			ctx,

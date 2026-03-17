@@ -85,10 +85,10 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 	type templateInput struct {
 		RegistryHost string
 		Username     string
-		Password     string
+		Password     string //nolint:gosec // Does not contain hard coded credentials.
 	}
 
-	var inputs []templateInput //nolint:prealloc // We don't know the size of the slice yet.
+	var inputs []templateInput
 	for _, config := range configs {
 		requiresStaticCredentials, err := config.requiresStaticCredentials()
 		if err != nil {

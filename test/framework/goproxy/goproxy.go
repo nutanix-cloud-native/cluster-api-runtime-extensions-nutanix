@@ -91,7 +91,7 @@ func (g *Client) GetVersions(ctx context.Context, gomodulePath string) (semver.V
 			func(context.Context) (bool, error) {
 				retryError = nil
 
-				resp, err := http.DefaultClient.Do(req)
+				resp, err := http.DefaultClient.Do(req) //nolint:gosec // OK in tests.
 				if err != nil {
 					retryError = fmt.Errorf("failed to get versions: failed to do request: %w", err)
 					return false, nil
