@@ -12,7 +12,7 @@ data:
     kind: CustomResourceDefinition
     metadata:
       annotations:
-        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1150
+        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1337
         controller-gen.kubebuilder.io/version: v0.15.0
       name: volumegroupsnapshotclasses.groupsnapshot.storage.k8s.io
     spec:
@@ -40,6 +40,7 @@ data:
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
+        deprecated: true
         name: v1beta1
         schema:
           openAPIV3Schema:
@@ -99,6 +100,89 @@ data:
             - driver
             type: object
         served: true
+        storage: false
+        subresources: {}
+      - additionalPrinterColumns:
+        - jsonPath: .driver
+          name: Driver
+          type: string
+        - description: Determines whether a VolumeGroupSnapshotContent created through
+            the VolumeGroupSnapshotClass should be deleted when its bound VolumeGroupSnapshot
+            is deleted.
+          jsonPath: .deletionPolicy
+          name: DeletionPolicy
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+        name: v1beta2
+        schema:
+          openAPIV3Schema:
+            description: |-
+              VolumeGroupSnapshotClass specifies parameters that a underlying storage system
+              uses when creating a volume group snapshot. A specific VolumeGroupSnapshotClass
+              is used by specifying its name in a VolumeGroupSnapshot object.
+              VolumeGroupSnapshotClasses are non-namespaced.
+            properties:
+              apiVersion:
+                description: |-
+                  APIVersion defines the versioned schema of this representation of an object.
+                  Servers should convert recognized schemas to the latest internal value, and
+                  may reject unrecognized values.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+                type: string
+              deletionPolicy:
+                description: |-
+                  DeletionPolicy determines whether a VolumeGroupSnapshotContent created
+                  through the VolumeGroupSnapshotClass should be deleted when its bound
+                  VolumeGroupSnapshot is deleted.
+                  Supported values are "Retain" and "Delete".
+                  "Retain" means that the VolumeGroupSnapshotContent and its physical group
+                  snapshot on underlying storage system are kept.
+                  "Delete" means that the VolumeGroupSnapshotContent and its physical group
+                  snapshot on underlying storage system are deleted.
+                  Required.
+                enum:
+                - Delete
+                - Retain
+                type: string
+                x-kubernetes-validations:
+                - message: deletionPolicy is immutable once set
+                  rule: self == oldSelf
+              driver:
+                description: |-
+                  Driver is the name of the storage driver expected to handle this VolumeGroupSnapshotClass.
+                  Required.
+                type: string
+                x-kubernetes-validations:
+                - message: driver is immutable once set
+                  rule: self == oldSelf
+              kind:
+                description: |-
+                  Kind is a string value representing the REST resource this object represents.
+                  Servers may infer this from the endpoint the client submits requests to.
+                  Cannot be updated.
+                  In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                type: string
+              metadata:
+                type: object
+              parameters:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Parameters is a key-value map with storage driver specific parameters for
+                  creating group snapshots.
+                  These values are opaque to Kubernetes and are passed directly to the driver.
+                type: object
+                x-kubernetes-validations:
+                - message: parameters are immutable once set
+                  rule: self == oldSelf
+            required:
+            - deletionPolicy
+            - driver
+            type: object
+        served: true
         storage: true
         subresources: {}
     ---
@@ -106,10 +190,21 @@ data:
     kind: CustomResourceDefinition
     metadata:
       annotations:
-        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1150
+        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1337
         controller-gen.kubebuilder.io/version: v0.15.0
       name: volumegroupsnapshotcontents.groupsnapshot.storage.k8s.io
     spec:
+      conversion:
+        strategy: Webhook
+        webhook:
+          clientConfig:
+            caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURrRENDQW5pZ0F3SUJBZ0lRU2U1RnVVN3JlNHNMSVJDMm5lMDhPREFOQmdrcWhraUc5dzBCQVFzRkFEQkIKTVQ4d1BRWURWUVFERXpaemJtRndjMmh2ZEMxamIyNTBjbTlzYkdWeUxXTnZiblpsY25OcGIyNHRkMlZpYUc5dgpheTVyZFdKbExYTjVjM1JsYlM1emRtTXdIaGNOTWpZd016STJNVEUxT1RBM1doY05Nell3TXpJek1URTFPVEEzCldqQkJNVDh3UFFZRFZRUURFelp6Ym1Gd2MyaHZkQzFqYjI1MGNtOXNiR1Z5TFdOdmJuWmxjbk5wYjI0dGQyVmkKYUc5dmF5NXJkV0psTFhONWMzUmxiUzV6ZG1Nd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFSwpBb0lCQVFETHhoZ2p6Tk0rTnQvNnV2dGkxNGQ3dXR4MnpjWWZWeGRTNUlLTExuNTI4dzR3ek55c2NQQlY3TGxjClhKcWliL2NFdGFoVFJ3M2pyY0dLYkRsbEJrTGNteGlZencvOTFUZWd5c2toVVI5VUdsaXlPN2lBeTVBeWs2OFkKZTNLOEh6UVd1RTBZdTFPTFpHU25lenU5OG9BN1hhdEEvZWJvenBFbmU3L2wzWkRZVGRJZ05oMTZRaGsvYmc4SgpjY3ZVOGxmeUErQXBzdVBEKzJPcC84NjBHajZPVVJBOTBISnFpZ1NHVDZGMGd4NFNZSDN5R1BVYXBUaUdFNnVmCnBnZW5kZ3dtRE55bjRuZUhwZkV2TmVwQzBCOS9ZMFpXWFFqdnNuMjJySWdJYktVYW81U3IzYXhUTlpFY1JIcjQKczREcm1DMnRLQnM0V1NCMkh3akMzU1NiNVRIRkFnTUJBQUdqZ1lNd2dZQXdEZ1lEVlIwUEFRSC9CQVFEQWdXZwpNQjBHQTFVZEpRUVdNQlFHQ0NzR0FRVUZCd01CQmdnckJnRUZCUWNEQWpBTUJnTlZIUk1CQWY4RUFqQUFNRUVHCkExVWRFUVE2TURpQ05uTnVZWEJ6YUc5MExXTnZiblJ5YjJ4c1pYSXRZMjl1ZG1WeWMybHZiaTEzWldKb2IyOXIKTG10MVltVXRjM2x6ZEdWdExuTjJZekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBSVRZNnlPTm90ajFwOGdhUQppUmcxZ2svR2JLZEJwR0tIeDZIZkVWYmVYdG5xdVlJcGhDbVNMbUczRUxEUW5mNWhrVmx3M0ErZ3RmbjFnQ2NuCmlkVHVzSm15Q0NBTTV3eDg2SDBxczZ6SjJzSzh2OXgrWDRVREJUclY4cy95RzA4Y0hKbEsvRWF2dlVIU1pIem4KR2pLV2ZIaXJTMEVuVkE2STYzSEFKVlFyOUhSRTRMaHd6MUpzdmJnZFNoeUdFYk5KQlZxOVp4S0ZIRkN3LzROVAplYThFbitxQStmMEQzNmtvQlFvM1VqRGpDbXFHTzdINlpkVU8vZkZGaXpyZndHWnE4M2hDM2VaN0M4cFJZenlXCmJqOEdwMGgwdWEzU0llRFQ1RHhaU3BESGVRSmpnR0QvNFl6MTNXQWk5NFBuU3FkRkNXQ3Y3WldHc2I4Mmo1bUEKKy9mcmNBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+            service:
+              name: snapshot-controller-conversion-webhook
+              namespace: kube-system
+              path: /convert
+          conversionReviewVersions:
+          - v1
       group: groupsnapshot.storage.k8s.io
       names:
         kind: VolumeGroupSnapshotContent
@@ -156,6 +251,7 @@ data:
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
+        deprecated: true
         name: v1beta1
         schema:
           openAPIV3Schema:
@@ -422,6 +518,333 @@ data:
             - spec
             type: object
         served: true
+        storage: false
+        subresources:
+          status: {}
+      - additionalPrinterColumns:
+        - description: Indicates if all the individual snapshots in the group are ready
+            to be used to restore a group of volumes.
+          jsonPath: .status.readyToUse
+          name: ReadyToUse
+          type: boolean
+        - description: Determines whether this VolumeGroupSnapshotContent and its physical
+            group snapshot on the underlying storage system should be deleted when its
+            bound VolumeGroupSnapshot is deleted.
+          jsonPath: .spec.deletionPolicy
+          name: DeletionPolicy
+          type: string
+        - description: Name of the CSI driver used to create the physical group snapshot
+            on the underlying storage system.
+          jsonPath: .spec.driver
+          name: Driver
+          type: string
+        - description: Name of the VolumeGroupSnapshotClass from which this group snapshot
+            was (or will be) created.
+          jsonPath: .spec.volumeGroupSnapshotClassName
+          name: VolumeGroupSnapshotClass
+          type: string
+        - description: Namespace of the VolumeGroupSnapshot object to which this VolumeGroupSnapshotContent
+            object is bound.
+          jsonPath: .spec.volumeGroupSnapshotRef.namespace
+          name: VolumeGroupSnapshotNamespace
+          type: string
+        - description: Name of the VolumeGroupSnapshot object to which this VolumeGroupSnapshotContent
+            object is bound.
+          jsonPath: .spec.volumeGroupSnapshotRef.name
+          name: VolumeGroupSnapshot
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+        name: v1beta2
+        schema:
+          openAPIV3Schema:
+            description: |-
+              VolumeGroupSnapshotContent represents the actual "on-disk" group snapshot object
+              in the underlying storage system
+            properties:
+              apiVersion:
+                description: |-
+                  APIVersion defines the versioned schema of this representation of an object.
+                  Servers should convert recognized schemas to the latest internal value, and
+                  may reject unrecognized values.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+                type: string
+              kind:
+                description: |-
+                  Kind is a string value representing the REST resource this object represents.
+                  Servers may infer this from the endpoint the client submits requests to.
+                  Cannot be updated.
+                  In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                type: string
+              metadata:
+                type: object
+              spec:
+                description: |-
+                  Spec defines properties of a VolumeGroupSnapshotContent created by the underlying storage system.
+                  Required.
+                properties:
+                  deletionPolicy:
+                    description: |-
+                      DeletionPolicy determines whether this VolumeGroupSnapshotContent and the
+                      physical group snapshot on the underlying storage system should be deleted
+                      when the bound VolumeGroupSnapshot is deleted.
+                      Supported values are "Retain" and "Delete".
+                      "Retain" means that the VolumeGroupSnapshotContent and its physical group
+                      snapshot on underlying storage system are kept.
+                      "Delete" means that the VolumeGroupSnapshotContent and its physical group
+                      snapshot on underlying storage system are deleted.
+                      For dynamically provisioned group snapshots, this field will automatically
+                      be filled in by the CSI snapshotter sidecar with the "DeletionPolicy" field
+                      defined in the corresponding VolumeGroupSnapshotClass.
+                      For pre-existing snapshots, users MUST specify this field when creating the
+                      VolumeGroupSnapshotContent object.
+                      Required.
+                    enum:
+                    - Delete
+                    - Retain
+                    type: string
+                  driver:
+                    description: |-
+                      Driver is the name of the CSI driver used to create the physical group snapshot on
+                      the underlying storage system.
+                      This MUST be the same as the name returned by the CSI GetPluginName() call for
+                      that driver.
+                      Required.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: driver is immutable once set
+                      rule: self == oldSelf
+                  source:
+                    description: |-
+                      Source specifies whether the snapshot is (or should be) dynamically provisioned
+                      or already exists, and just requires a Kubernetes object representation.
+                      This field is immutable after creation.
+                      Required.
+                    properties:
+                      groupSnapshotHandles:
+                        description: |-
+                          GroupSnapshotHandles specifies the CSI "group_snapshot_id" of a pre-existing
+                          group snapshot and a list of CSI "snapshot_id" of pre-existing snapshots
+                          on the underlying storage system for which a Kubernetes object
+                          representation was (or should be) created.
+                          This field is immutable.
+                        properties:
+                          volumeGroupSnapshotHandle:
+                            description: |-
+                              VolumeGroupSnapshotHandle specifies the CSI "group_snapshot_id" of a pre-existing
+                              group snapshot on the underlying storage system for which a Kubernetes object
+                              representation was (or should be) created.
+                              This field is immutable.
+                              Required.
+                            type: string
+                          volumeSnapshotHandles:
+                            description: |-
+                              VolumeSnapshotHandles is a list of CSI "snapshot_id" of pre-existing
+                              snapshots on the underlying storage system for which Kubernetes objects
+                              representation were (or should be) created.
+                              This field is immutable.
+                              Required.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - volumeGroupSnapshotHandle
+                        - volumeSnapshotHandles
+                        type: object
+                        x-kubernetes-validations:
+                        - message: groupSnapshotHandles is immutable
+                          rule: self == oldSelf
+                      volumeHandles:
+                        description: |-
+                          VolumeHandles is a list of volume handles on the backend to be snapshotted
+                          together. It is specified for dynamic provisioning of the VolumeGroupSnapshot.
+                          This field is immutable.
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-validations:
+                        - message: volumeHandles is immutable
+                          rule: self == oldSelf
+                    type: object
+                    x-kubernetes-validations:
+                    - message: volumeHandles is required once set
+                      rule: '!has(oldSelf.volumeHandles) || has(self.volumeHandles)'
+                    - message: groupSnapshotHandles is required once set
+                      rule: '!has(oldSelf.groupSnapshotHandles) || has(self.groupSnapshotHandles)'
+                    - message: exactly one of volumeHandles and groupSnapshotHandles must
+                        be set
+                      rule: (has(self.volumeHandles) && !has(self.groupSnapshotHandles))
+                        || (!has(self.volumeHandles) && has(self.groupSnapshotHandles))
+                  volumeGroupSnapshotClassName:
+                    description: |-
+                      VolumeGroupSnapshotClassName is the name of the VolumeGroupSnapshotClass from
+                      which this group snapshot was (or will be) created.
+                      Note that after provisioning, the VolumeGroupSnapshotClass may be deleted or
+                      recreated with different set of values, and as such, should not be referenced
+                      post-snapshot creation.
+                      For dynamic provisioning, this field must be set.
+                      This field may be unset for pre-provisioned snapshots.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: volumeGroupSnapshotClassName is immutable once set
+                      rule: self == oldSelf
+                  volumeGroupSnapshotRef:
+                    description: |-
+                      VolumeGroupSnapshotRef specifies the VolumeGroupSnapshot object to which this
+                      VolumeGroupSnapshotContent object is bound.
+                      VolumeGroupSnapshot.Spec.VolumeGroupSnapshotContentName field must reference to
+                      this VolumeGroupSnapshotContent's name for the bidirectional binding to be valid.
+                      For a pre-existing VolumeGroupSnapshotContent object, name and namespace of the
+                      VolumeGroupSnapshot object MUST be provided for binding to happen.
+                      This field is immutable after creation.
+                      Required.
+                    properties:
+                      apiVersion:
+                        description: API version of the referent.
+                        type: string
+                      fieldPath:
+                        description: |-
+                          If referring to a piece of an object instead of an entire object, this string
+                          should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                          For example, if the object reference is to a container within a pod, this would take on a value like:
+                          "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                          the event) or if no container name is specified "spec.containers[2]" (container with
+                          index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                          referencing a part of an object.
+                          TODO: this design is not final and this field is subject to change in the future.
+                        type: string
+                      kind:
+                        description: |-
+                          Kind of the referent.
+                          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                        type: string
+                      name:
+                        description: |-
+                          Name of the referent.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                      namespace:
+                        description: |-
+                          Namespace of the referent.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                        type: string
+                      resourceVersion:
+                        description: |-
+                          Specific resourceVersion to which this reference is made, if any.
+                          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                        type: string
+                      uid:
+                        description: |-
+                          UID of the referent.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                    x-kubernetes-validations:
+                    - message: both volumeGroupSnapshotRef.name and volumeGroupSnapshotRef.namespace
+                        must be set
+                      rule: has(self.name) && has(self.__namespace__)
+                    - message: volumeGroupSnapshotRef.name and volumeGroupSnapshotRef.namespace
+                        are immutable
+                      rule: self.name == oldSelf.name && self.__namespace__ == oldSelf.__namespace__
+                    - message: volumeGroupSnapshotRef.uid is immutable once set
+                      rule: '!has(oldSelf.uid) || (has(self.uid) && self.uid == oldSelf.uid)'
+                required:
+                - deletionPolicy
+                - driver
+                - source
+                - volumeGroupSnapshotRef
+                type: object
+              status:
+                description: status represents the current information of a group snapshot.
+                properties:
+                  creationTime:
+                    description: |-
+                      CreationTime is the timestamp when the point-in-time group snapshot is taken
+                      by the underlying storage system.
+                      If not specified, it indicates the creation time is unknown.
+                      If not specified, it means the readiness of a group snapshot is unknown.
+                      This field is the source for the CreationTime field in VolumeGroupSnapshotStatus
+                    format: date-time
+                    type: string
+                  error:
+                    description: |-
+                      Error is the last observed error during group snapshot creation, if any.
+                      Upon success after retry, this error field will be cleared.
+                    properties:
+                      message:
+                        description: |-
+                          message is a string detailing the encountered error during snapshot
+                          creation if specified.
+                          NOTE: message may be logged, and it should not contain sensitive
+                          information.
+                        type: string
+                      time:
+                        description: time is the timestamp when the error was encountered.
+                        format: date-time
+                        type: string
+                    type: object
+                  readyToUse:
+                    description: |-
+                      ReadyToUse indicates if all the individual snapshots in the group are ready to be
+                      used to restore a group of volumes.
+                      ReadyToUse becomes true when ReadyToUse of all individual snapshots become true.
+                    type: boolean
+                  volumeGroupSnapshotHandle:
+                    description: |-
+                      VolumeGroupSnapshotHandle is a unique id returned by the CSI driver
+                      to identify the VolumeGroupSnapshot on the storage system.
+                      If a storage system does not provide such an id, the
+                      CSI driver can choose to return the VolumeGroupSnapshot name.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: volumeGroupSnapshotHandle is immutable once set
+                      rule: self == oldSelf
+                  volumeSnapshotInfoList:
+                    description: |-
+                      This field is introduced in v1beta2
+                      It is replacing VolumeSnapshotHandlePairList
+                      VolumeSnapshotInfoList is a list of snapshot information returned by
+                      by the CSI driver to identify snapshots on the storage system.
+                    items:
+                      description: |-
+                        The VolumeSnapshotInfo struct is added in v1beta2
+                        VolumeSnapshotInfo contains information for a snapshot
+                      properties:
+                        creationTime:
+                          description: |-
+                            creationTime is the timestamp when the point-in-time snapshot is taken
+                            by the underlying storage system.
+                          format: int64
+                          type: integer
+                        readyToUse:
+                          description: ReadyToUse indicates if the snapshot is ready to
+                            be used to restore a volume.
+                          type: boolean
+                        restoreSize:
+                          description: |-
+                            RestoreSize represents the minimum size of volume required to create a volume
+                            from this snapshot.
+                          format: int64
+                          type: integer
+                        snapshotHandle:
+                          description: SnapshotHandle is the CSI "snapshot_id" of this
+                            snapshot on the underlying storage system.
+                          type: string
+                        volumeHandle:
+                          description: |-
+                            VolumeHandle specifies the CSI "volume_id" of the volume from which this snapshot
+                            was taken from.
+                          type: string
+                      type: object
+                    type: array
+                type: object
+            required:
+            - spec
+            type: object
+        served: true
         storage: true
         subresources:
           status: {}
@@ -430,7 +853,7 @@ data:
     kind: CustomResourceDefinition
     metadata:
       annotations:
-        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1150
+        api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/1337
         controller-gen.kubebuilder.io/version: v0.15.0
       name: volumegroupsnapshots.groupsnapshot.storage.k8s.io
     spec:
@@ -470,6 +893,7 @@ data:
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
+        deprecated: true
         name: v1beta1
         schema:
           openAPIV3Schema:
@@ -625,6 +1049,226 @@ data:
                       The format of this field is a Unix nanoseconds time encoded as an int64.
                       On Unix, the command date +%s%N returns the current time in nanoseconds
                       since 1970-01-01 00:00:00 UTC.
+                      This field is updated based on the CreationTime field in VolumeGroupSnapshotContentStatus
+                    format: date-time
+                    type: string
+                  error:
+                    description: |-
+                      Error is the last observed error during group snapshot creation, if any.
+                      This field could be helpful to upper level controllers (i.e., application
+                      controller) to decide whether they should continue on waiting for the group
+                      snapshot to be created based on the type of error reported.
+                      The snapshot controller will keep retrying when an error occurs during the
+                      group snapshot creation. Upon success, this error field will be cleared.
+                    properties:
+                      message:
+                        description: |-
+                          message is a string detailing the encountered error during snapshot
+                          creation if specified.
+                          NOTE: message may be logged, and it should not contain sensitive
+                          information.
+                        type: string
+                      time:
+                        description: time is the timestamp when the error was encountered.
+                        format: date-time
+                        type: string
+                    type: object
+                  readyToUse:
+                    description: |-
+                      ReadyToUse indicates if all the individual snapshots in the group are ready
+                      to be used to restore a group of volumes.
+                      ReadyToUse becomes true when ReadyToUse of all individual snapshots become true.
+                      If not specified, it means the readiness of a group snapshot is unknown.
+                    type: boolean
+                type: object
+            required:
+            - spec
+            type: object
+        served: true
+        storage: false
+        subresources:
+          status: {}
+      - additionalPrinterColumns:
+        - description: Indicates if all the individual snapshots in the group are ready
+            to be used to restore a group of volumes.
+          jsonPath: .status.readyToUse
+          name: ReadyToUse
+          type: boolean
+        - description: The name of the VolumeGroupSnapshotClass requested by the VolumeGroupSnapshot.
+          jsonPath: .spec.volumeGroupSnapshotClassName
+          name: VolumeGroupSnapshotClass
+          type: string
+        - description: Name of the VolumeGroupSnapshotContent object to which the VolumeGroupSnapshot
+            object intends to bind to. Please note that verification of binding actually
+            requires checking both VolumeGroupSnapshot and VolumeGroupSnapshotContent
+            to ensure both are pointing at each other. Binding MUST be verified prior
+            to usage of this object.
+          jsonPath: .status.boundVolumeGroupSnapshotContentName
+          name: VolumeGroupSnapshotContent
+          type: string
+        - description: Timestamp when the point-in-time group snapshot was taken by the
+            underlying storage system.
+          jsonPath: .status.creationTime
+          name: CreationTime
+          type: date
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+        name: v1beta2
+        schema:
+          openAPIV3Schema:
+            description: |-
+              VolumeGroupSnapshot is a user's request for creating either a point-in-time
+              group snapshot or binding to a pre-existing group snapshot.
+            properties:
+              apiVersion:
+                description: |-
+                  APIVersion defines the versioned schema of this representation of an object.
+                  Servers should convert recognized schemas to the latest internal value, and
+                  may reject unrecognized values.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+                type: string
+              kind:
+                description: |-
+                  Kind is a string value representing the REST resource this object represents.
+                  Servers may infer this from the endpoint the client submits requests to.
+                  Cannot be updated.
+                  In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                type: string
+              metadata:
+                type: object
+              spec:
+                description: |-
+                  Spec defines the desired characteristics of a group snapshot requested by a user.
+                  Required.
+                properties:
+                  source:
+                    description: |-
+                      Source specifies where a group snapshot will be created from.
+                      This field is immutable after creation.
+                      Required.
+                    properties:
+                      selector:
+                        description: |-
+                          Selector is a label query over persistent volume claims that are to be
+                          grouped together for snapshotting.
+                          This labelSelector will be used to match the label added to a PVC.
+                          If the label is added or removed to a volume after a group snapshot
+                          is created, the existing group snapshots won't be modified.
+                          Once a VolumeGroupSnapshotContent is created and the sidecar starts to process
+                          it, the volume list will not change with retries.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: |-
+                                A label selector requirement is a selector that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: |-
+                                    operator represents a key's relationship to a set of values.
+                                    Valid operators are In, NotIn, Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: |-
+                                    values is an array of string values. If the operator is In or NotIn,
+                                    the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                    the values array must be empty. This array is replaced during a strategic
+                                    merge patch.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                            x-kubernetes-list-type: atomic
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: |-
+                              matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                              map is equivalent to an element of matchExpressions, whose key field is "key", the
+                              operator is "In", and the values array contains only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                        x-kubernetes-map-type: atomic
+                        x-kubernetes-validations:
+                        - message: selector is immutable
+                          rule: self == oldSelf
+                      volumeGroupSnapshotContentName:
+                        description: |-
+                          VolumeGroupSnapshotContentName specifies the name of a pre-existing VolumeGroupSnapshotContent
+                          object representing an existing volume group snapshot.
+                          This field should be set if the volume group snapshot already exists and
+                          only needs a representation in Kubernetes.
+                          This field is immutable.
+                        type: string
+                        x-kubernetes-validations:
+                        - message: volumeGroupSnapshotContentName is immutable
+                          rule: self == oldSelf
+                    type: object
+                    x-kubernetes-validations:
+                    - message: selector is required once set
+                      rule: '!has(oldSelf.selector) || has(self.selector)'
+                    - message: volumeGroupSnapshotContentName is required once set
+                      rule: '!has(oldSelf.volumeGroupSnapshotContentName) || has(self.volumeGroupSnapshotContentName)'
+                    - message: exactly one of selector and volumeGroupSnapshotContentName
+                        must be set
+                      rule: (has(self.selector) && !has(self.volumeGroupSnapshotContentName))
+                        || (!has(self.selector) && has(self.volumeGroupSnapshotContentName))
+                  volumeGroupSnapshotClassName:
+                    description: |-
+                      VolumeGroupSnapshotClassName is the name of the VolumeGroupSnapshotClass
+                      requested by the VolumeGroupSnapshot.
+                      VolumeGroupSnapshotClassName may be left nil to indicate that the default
+                      class will be used.
+                      Empty string is not allowed for this field.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: volumeGroupSnapshotClassName must not be the empty string
+                        when set
+                      rule: size(self) > 0
+                required:
+                - source
+                type: object
+              status:
+                description: |-
+                  Status represents the current information of a group snapshot.
+                  Consumers must verify binding between VolumeGroupSnapshot and
+                  VolumeGroupSnapshotContent objects is successful (by validating that both
+                  VolumeGroupSnapshot and VolumeGroupSnapshotContent point to each other) before
+                  using this object.
+                properties:
+                  boundVolumeGroupSnapshotContentName:
+                    description: |-
+                      BoundVolumeGroupSnapshotContentName is the name of the VolumeGroupSnapshotContent
+                      object to which this VolumeGroupSnapshot object intends to bind to.
+                      If not specified, it indicates that the VolumeGroupSnapshot object has not
+                      been successfully bound to a VolumeGroupSnapshotContent object yet.
+                      NOTE: To avoid possible security issues, consumers must verify binding between
+                      VolumeGroupSnapshot and VolumeGroupSnapshotContent objects is successful
+                      (by validating that both VolumeGroupSnapshot and VolumeGroupSnapshotContent
+                      point at each other) before using this object.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: boundVolumeGroupSnapshotContentName is immutable once set
+                      rule: self == oldSelf
+                  creationTime:
+                    description: |-
+                      CreationTime is the timestamp when the point-in-time group snapshot is taken
+                      by the underlying storage system.
+                      If not specified, it may indicate that the creation time of the group snapshot
+                      is unknown.
                       This field is updated based on the CreationTime field in VolumeGroupSnapshotContentStatus
                     format: date-time
                     type: string
@@ -1793,8 +2437,8 @@ data:
         app.kubernetes.io/instance: snapshot-controller
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: snapshot-controller
-        app.kubernetes.io/version: v8.3.0
-        helm.sh/chart: snapshot-controller-4.1.0
+        app.kubernetes.io/version: v8.5.0
+        helm.sh/chart: snapshot-controller-5.0.3
       name: snapshot-controller
       namespace: kube-system
     ---
@@ -1964,6 +2608,23 @@ data:
       name: snapshot-controller
       namespace: kube-system
     ---
+    apiVersion: v1
+    data:
+      ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURrRENDQW5pZ0F3SUJBZ0lRU2U1RnVVN3JlNHNMSVJDMm5lMDhPREFOQmdrcWhraUc5dzBCQVFzRkFEQkIKTVQ4d1BRWURWUVFERXpaemJtRndjMmh2ZEMxamIyNTBjbTlzYkdWeUxXTnZiblpsY25OcGIyNHRkMlZpYUc5dgpheTVyZFdKbExYTjVjM1JsYlM1emRtTXdIaGNOTWpZd016STJNVEUxT1RBM1doY05Nell3TXpJek1URTFPVEEzCldqQkJNVDh3UFFZRFZRUURFelp6Ym1Gd2MyaHZkQzFqYjI1MGNtOXNiR1Z5TFdOdmJuWmxjbk5wYjI0dGQyVmkKYUc5dmF5NXJkV0psTFhONWMzUmxiUzV6ZG1Nd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFSwpBb0lCQVFETHhoZ2p6Tk0rTnQvNnV2dGkxNGQ3dXR4MnpjWWZWeGRTNUlLTExuNTI4dzR3ek55c2NQQlY3TGxjClhKcWliL2NFdGFoVFJ3M2pyY0dLYkRsbEJrTGNteGlZencvOTFUZWd5c2toVVI5VUdsaXlPN2lBeTVBeWs2OFkKZTNLOEh6UVd1RTBZdTFPTFpHU25lenU5OG9BN1hhdEEvZWJvenBFbmU3L2wzWkRZVGRJZ05oMTZRaGsvYmc4SgpjY3ZVOGxmeUErQXBzdVBEKzJPcC84NjBHajZPVVJBOTBISnFpZ1NHVDZGMGd4NFNZSDN5R1BVYXBUaUdFNnVmCnBnZW5kZ3dtRE55bjRuZUhwZkV2TmVwQzBCOS9ZMFpXWFFqdnNuMjJySWdJYktVYW81U3IzYXhUTlpFY1JIcjQKczREcm1DMnRLQnM0V1NCMkh3akMzU1NiNVRIRkFnTUJBQUdqZ1lNd2dZQXdEZ1lEVlIwUEFRSC9CQVFEQWdXZwpNQjBHQTFVZEpRUVdNQlFHQ0NzR0FRVUZCd01CQmdnckJnRUZCUWNEQWpBTUJnTlZIUk1CQWY4RUFqQUFNRUVHCkExVWRFUVE2TURpQ05uTnVZWEJ6YUc5MExXTnZiblJ5YjJ4c1pYSXRZMjl1ZG1WeWMybHZiaTEzWldKb2IyOXIKTG10MVltVXRjM2x6ZEdWdExuTjJZekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBSVRZNnlPTm90ajFwOGdhUQppUmcxZ2svR2JLZEJwR0tIeDZIZkVWYmVYdG5xdVlJcGhDbVNMbUczRUxEUW5mNWhrVmx3M0ErZ3RmbjFnQ2NuCmlkVHVzSm15Q0NBTTV3eDg2SDBxczZ6SjJzSzh2OXgrWDRVREJUclY4cy95RzA4Y0hKbEsvRWF2dlVIU1pIem4KR2pLV2ZIaXJTMEVuVkE2STYzSEFKVlFyOUhSRTRMaHd6MUpzdmJnZFNoeUdFYk5KQlZxOVp4S0ZIRkN3LzROVAplYThFbitxQStmMEQzNmtvQlFvM1VqRGpDbXFHTzdINlpkVU8vZkZGaXpyZndHWnE4M2hDM2VaN0M4cFJZenlXCmJqOEdwMGgwdWEzU0llRFQ1RHhaU3BESGVRSmpnR0QvNFl6MTNXQWk5NFBuU3FkRkNXQ3Y3WldHc2I4Mmo1bUEKKy9mcmNBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+      tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURrRENDQW5pZ0F3SUJBZ0lRU2U1RnVVN3JlNHNMSVJDMm5lMDhPREFOQmdrcWhraUc5dzBCQVFzRkFEQkIKTVQ4d1BRWURWUVFERXpaemJtRndjMmh2ZEMxamIyNTBjbTlzYkdWeUxXTnZiblpsY25OcGIyNHRkMlZpYUc5dgpheTVyZFdKbExYTjVjM1JsYlM1emRtTXdIaGNOTWpZd016STJNVEUxT1RBM1doY05Nell3TXpJek1URTFPVEEzCldqQkJNVDh3UFFZRFZRUURFelp6Ym1Gd2MyaHZkQzFqYjI1MGNtOXNiR1Z5TFdOdmJuWmxjbk5wYjI0dGQyVmkKYUc5dmF5NXJkV0psTFhONWMzUmxiUzV6ZG1Nd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFSwpBb0lCQVFETHhoZ2p6Tk0rTnQvNnV2dGkxNGQ3dXR4MnpjWWZWeGRTNUlLTExuNTI4dzR3ek55c2NQQlY3TGxjClhKcWliL2NFdGFoVFJ3M2pyY0dLYkRsbEJrTGNteGlZencvOTFUZWd5c2toVVI5VUdsaXlPN2lBeTVBeWs2OFkKZTNLOEh6UVd1RTBZdTFPTFpHU25lenU5OG9BN1hhdEEvZWJvenBFbmU3L2wzWkRZVGRJZ05oMTZRaGsvYmc4SgpjY3ZVOGxmeUErQXBzdVBEKzJPcC84NjBHajZPVVJBOTBISnFpZ1NHVDZGMGd4NFNZSDN5R1BVYXBUaUdFNnVmCnBnZW5kZ3dtRE55bjRuZUhwZkV2TmVwQzBCOS9ZMFpXWFFqdnNuMjJySWdJYktVYW81U3IzYXhUTlpFY1JIcjQKczREcm1DMnRLQnM0V1NCMkh3akMzU1NiNVRIRkFnTUJBQUdqZ1lNd2dZQXdEZ1lEVlIwUEFRSC9CQVFEQWdXZwpNQjBHQTFVZEpRUVdNQlFHQ0NzR0FRVUZCd01CQmdnckJnRUZCUWNEQWpBTUJnTlZIUk1CQWY4RUFqQUFNRUVHCkExVWRFUVE2TURpQ05uTnVZWEJ6YUc5MExXTnZiblJ5YjJ4c1pYSXRZMjl1ZG1WeWMybHZiaTEzWldKb2IyOXIKTG10MVltVXRjM2x6ZEdWdExuTjJZekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBSVRZNnlPTm90ajFwOGdhUQppUmcxZ2svR2JLZEJwR0tIeDZIZkVWYmVYdG5xdVlJcGhDbVNMbUczRUxEUW5mNWhrVmx3M0ErZ3RmbjFnQ2NuCmlkVHVzSm15Q0NBTTV3eDg2SDBxczZ6SjJzSzh2OXgrWDRVREJUclY4cy95RzA4Y0hKbEsvRWF2dlVIU1pIem4KR2pLV2ZIaXJTMEVuVkE2STYzSEFKVlFyOUhSRTRMaHd6MUpzdmJnZFNoeUdFYk5KQlZxOVp4S0ZIRkN3LzROVAplYThFbitxQStmMEQzNmtvQlFvM1VqRGpDbXFHTzdINlpkVU8vZkZGaXpyZndHWnE4M2hDM2VaN0M4cFJZenlXCmJqOEdwMGgwdWEzU0llRFQ1RHhaU3BESGVRSmpnR0QvNFl6MTNXQWk5NFBuU3FkRkNXQ3Y3WldHc2I4Mmo1bUEKKy9mcmNBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+      tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb1FJQkFBS0NBUUVBeThZWUk4elRQamJmK3JyN1l0ZUhlN3JjZHMzR0gxY1hVdVNDaXk1K2R2TU9NTXpjCnJIRHdWZXk1WEZ5YW9tLzNCTFdvVTBjTjQ2M0JpbXc1WlFaQzNKc1ltTThQL2RVM29NckpJVkVmVkJwWXNqdTQKZ011UU1wT3ZHSHR5dkI4MEZyaE5HTHRUaTJSa3Azczd2ZktBTzEyclFQM202TTZSSjN1LzVkMlEyRTNTSURZZApla0laUDI0UENYSEwxUEpYOGdQZ0tiTGp3L3RqcWYvT3RCbytqbEVRUGRCeWFvb0VoaytoZElNZUVtQjk4aGoxCkdxVTRoaE9ybjZZSHAzWU1KZ3pjcCtKM2g2WHhMelhxUXRBZmYyTkdWbDBJNzdKOXRxeUlDR3lsR3FPVXE5MnMKVXpXUkhFUjYrTE9BNjVndHJTZ2JPRmtnZGg4SXd0MGttK1V4eFFJREFRQUJBb0lCQUNHdURDOWVtMHVkSmtmNgp2N0lHalk0VnhIcWVhRENsNUdUKy85U2hTcVcrWm9vS1VpN3VPOHIzNVdzdW95QldBUzMyR0d3clFsQnZWNTNaClpXTWROYy9na3FBdkdTV0xLRGFiVGNNRDlYbWhJU2ZVVnhweWl0TFJOZytGMStEZ0IydjU2a1E4TWdMSUJScnAKYzJaaHZuQVJlMHl5cW9ld0hLMjU5bTIzd1VqK3lEYXljNDYwK25QVnY4aXBHM3gxWEtMdmxkeTVGV3VsT0w3Nwp2NnFnSUQzS1I5Mnh0MWw4dVExY3p1SUhRTFBPcmdvbXN4Y3dPWFBMUGRIWVdJN0h6U1dvQnBrYllER1lJSUNqCnJpSFdPNENUdHRtenA3c0tiMnhmY1BLRFN5dmV2QktjM3doUHJJQmVxSkI1U2M3Y2R2NkcrUTVzWGVQQUJQTGMKNDR4bTBBRUNnWUVBMmZLWUVBRGhJT1FwSHdnT1JscnR0OGRZQzJvZXRPT0RwVW1WQ0kvV1pydUdyUXV5UTFBdAp3M1ZkeFV2Wml2TUwyVjVlYjZESUg2VG5SZU1Ec3NWQk1mZmVjcVk5U0s4cEd3MmkyOElmc1EwQmoybVVhOVl5CllVOUtsa1RvVVFwWWNLU0I2RStVczFjZXkxUzlaaU5TSWVMSjZWcUVGSEhJSXQ3YVNCRTFWa0VDZ1lFQTcxbjgKV0ZGNDlGM3BWNmN1ZStSQlNvTGQ2bU8zVEtOVi9FckJ4eUFjUW9IL2trWlBtZG43QXpEeXRIdFViYzJxMEp4UQpWRjR1WWNQeUlEcG9tODRvRjMrOHJzMEpqRkZMb1B3S013MUE4WUFEWWVlZW16MWZWLzBuQkovZkl1emtlalpxCkdKaEVmSlpmVkllT29UVUhnOGRrRU5kR2syTk5QU3d4T0phSzRvVUNnWUJiU3g4Zk5QOFlnL29sb1g0NVFrVnAKUWZ0RGJNUklDVFZQdXk3T1UxSC8zblZmYnhMUTEza1Q4c25BcHpFTTN4b0xoMWdQY2szaDAzVjg5TWJMejR5cgpuYVIwYWVZcDJCVmoyNlpvWHp4Zk1ZK0J2endJbjhTaXRsQUwrZmxHV1FzS3hCNFdiWjlnTUJJYUlmamtHODkvCm1qdnhuNVRMNjQxbDdldUpYSXYzQVFKL1J3NXYyOGhVSURmQkRrU1RpRFE3TGVPci9lbWNnU1A4WXVuT25VN3IKRk5PREMrblR0OWorcS9QY0diaURXQlcyb0RmSG9VUlVnTEdyTCtZbktCb0x6TzRmRmNYSkQ5OFNsTGcrVHVtZwpYaEdpNzIzVHFFS1FDNDhjQmtOdit1NVk1ZTlCa0F1a1NWaGE5TDFKbXBJanFQdUl1WGN2ZkpIK1hDckNjZ28vCk1RS0JnUUNuelRxUG9sYU9kTElOaUNjSWwxeTFoZGZBc0NKS09xWTJ6Zlg2WkhPOXViaDUyVmpnR0E0a3dwNmwKdTJwdzJma1BqbFpUeEdmWmJsSVM5OGpydTlac3pqQ1VyTUE3UHZ1RkwzYVROcEU1VDhuK0NWTWpyR09BK0ErcApZZ2tkYmgzTzdPMnVtVXJFU0lzcUFuU25ZMmlpbkV3UXVjK3B6cC9POXhUSmpxWXNIUT09Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+    kind: Secret
+    metadata:
+      labels:
+        app.kubernetes.io/instance: snapshot-controller
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: conversion-webhook
+        app.kubernetes.io/version: v8.5.0
+        helm.sh/chart: conversion-webhook-5.0.3
+      name: snapshot-controller-conversion-webhook
+      namespace: kube-system
+    type: kubernetes.io/tls
+    ---
     apiVersion: apps/v1
     kind: Deployment
     metadata:
@@ -1971,8 +2632,8 @@ data:
         app.kubernetes.io/instance: snapshot-controller
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: snapshot-controller
-        app.kubernetes.io/version: v8.3.0
-        helm.sh/chart: snapshot-controller-4.1.0
+        app.kubernetes.io/version: v8.5.0
+        helm.sh/chart: snapshot-controller-5.0.3
       name: snapshot-controller
       namespace: kube-system
     spec:
@@ -1990,6 +2651,7 @@ data:
         spec:
           containers:
           - args:
+            - --feature-gates=CSIVolumeGroupSnapshot=true
             - --http-endpoint=:8080
             - --leader-election=true
             - --leader-election-namespace=$(NAMESPACE)
@@ -1998,7 +2660,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            image: registry.k8s.io/sig-storage/snapshot-controller:v8.3.0
+            image: registry.k8s.io/sig-storage/snapshot-controller:v8.5.0
             imagePullPolicy: IfNotPresent
             livenessProbe:
               httpGet:

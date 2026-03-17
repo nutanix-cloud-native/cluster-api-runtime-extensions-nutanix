@@ -16,8 +16,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.31
-        helm.sh/chart: local-path-provisioner-0.0.32
+        app.kubernetes.io/version: v0.0.34
+        helm.sh/chart: local-path-provisioner-0.0.35
       name: local-path-provisioner-csi
       namespace: kube-system
     ---
@@ -28,8 +28,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.31
-        helm.sh/chart: local-path-provisioner-0.0.32
+        app.kubernetes.io/version: v0.0.34
+        helm.sh/chart: local-path-provisioner-0.0.35
       name: local-path-provisioner-csi
       namespace: kube-system
     rules:
@@ -53,15 +53,14 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.31
-        helm.sh/chart: local-path-provisioner-0.0.32
+        app.kubernetes.io/version: v0.0.34
+        helm.sh/chart: local-path-provisioner-0.0.35
       name: local-path-provisioner-csi
     rules:
     - apiGroups:
       - ""
       resources:
       - nodes
-      - persistentvolumeclaims
       - configmaps
       - pods
       - pods/log
@@ -69,6 +68,15 @@ data:
       - get
       - list
       - watch
+    - apiGroups:
+      - ""
+      resources:
+      - persistentvolumeclaims
+      verbs:
+      - get
+      - list
+      - watch
+      - update
     - apiGroups:
       - ""
       resources:
@@ -104,8 +112,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.31
-        helm.sh/chart: local-path-provisioner-0.0.32
+        app.kubernetes.io/version: v0.0.34
+        helm.sh/chart: local-path-provisioner-0.0.35
       name: local-path-provisioner-csi
       namespace: kube-system
     roleRef:
@@ -124,8 +132,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.31
-        helm.sh/chart: local-path-provisioner-0.0.32
+        app.kubernetes.io/version: v0.0.34
+        helm.sh/chart: local-path-provisioner-0.0.35
       name: local-path-provisioner-csi
     roleRef:
       apiGroup: rbac.authorization.k8s.io
@@ -155,6 +163,12 @@ data:
         metadata:
           name: helper-pod
           namespace: kube-system
+          labels:
+            app.kubernetes.io/name: local-path-provisioner
+            helm.sh/chart: local-path-provisioner-0.0.35
+            app.kubernetes.io/instance: local-path-provisioner-csi
+            app.kubernetes.io/version: "v0.0.34"
+            app.kubernetes.io/managed-by: Helm
         spec:
           priorityClassName: system-node-critical
           tolerations:
@@ -181,8 +195,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.31
-        helm.sh/chart: local-path-provisioner-0.0.32
+        app.kubernetes.io/version: v0.0.34
+        helm.sh/chart: local-path-provisioner-0.0.35
       name: local-path-config
       namespace: kube-system
     ---
@@ -193,8 +207,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.31
-        helm.sh/chart: local-path-provisioner-0.0.32
+        app.kubernetes.io/version: v0.0.34
+        helm.sh/chart: local-path-provisioner-0.0.35
       name: local-path-provisioner-csi
       namespace: kube-system
     spec:
@@ -209,8 +223,8 @@ data:
             app.kubernetes.io/instance: local-path-provisioner-csi
             app.kubernetes.io/managed-by: Helm
             app.kubernetes.io/name: local-path-provisioner
-            app.kubernetes.io/version: v0.0.31
-            helm.sh/chart: local-path-provisioner-0.0.32
+            app.kubernetes.io/version: v0.0.34
+            helm.sh/chart: local-path-provisioner-0.0.35
         spec:
           containers:
           - command:
@@ -229,10 +243,12 @@ data:
             - local-path-config
             env:
             - name: POD_NAMESPACE
-              value: kube-system
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: CONFIG_MOUNT_PATH
               value: /etc/config/
-            image: rancher/local-path-provisioner:v0.0.31
+            image: rancher/local-path-provisioner:v0.0.34
             imagePullPolicy: IfNotPresent
             name: local-path-provisioner
             resources: {}
@@ -240,6 +256,7 @@ data:
             volumeMounts:
             - mountPath: /etc/config/
               name: config-volume
+          hostUsers: true
           securityContext: {}
           serviceAccountName: local-path-provisioner-csi
           tolerations:
