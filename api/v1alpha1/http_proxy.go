@@ -44,7 +44,7 @@ type HTTPProxy struct {
 // GenerateNoProxyNormalized creates default NO_PROXY values and normalizes every CIDR
 // and IP range entry to include both notations, so that runtimes supporting either
 // format (Go uses CIDR, Node.js uses ranges) all correctly bypass the proxy.
-func (p *HTTPProxy) GenerateNoProxyNormalized(cluster *clusterv1beta2.Cluster) []string {
+func (p *HTTPProxy) GenerateNoProxyNormalized(cluster *clusterv1.Cluster) []string {
 	return NormalizeNoProxyEntries(p.GenerateNoProxy(cluster))
 }
 
