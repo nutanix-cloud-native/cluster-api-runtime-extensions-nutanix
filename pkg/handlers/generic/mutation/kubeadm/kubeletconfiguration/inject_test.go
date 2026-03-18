@@ -119,11 +119,27 @@ func TestRenderKubeletConfigPatch_MemoryManagerPolicy(t *testing.T) {
 }
 
 func TestRenderKubeletConfigPatch_PodPidsLimit(t *testing.T) {
-	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-		PodPidsLimit: ptr.To(int64(4096)),
+	t.Run("mid-range value", func(t *testing.T) {
+		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+			PodPidsLimit: ptr.To(int64(4096)),
+		})
+		require.NotNil(t, kubeletCfg.PodPidsLimit)
+		assert.Equal(t, int64(4096), *kubeletCfg.PodPidsLimit)
 	})
-	require.NotNil(t, kubeletCfg.PodPidsLimit)
-	assert.Equal(t, int64(4096), *kubeletCfg.PodPidsLimit)
+	t.Run("minimum boundary", func(t *testing.T) {
+		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+			PodPidsLimit: ptr.To(int64(1024)),
+		})
+		require.NotNil(t, kubeletCfg.PodPidsLimit)
+		assert.Equal(t, int64(1024), *kubeletCfg.PodPidsLimit)
+	})
+	t.Run("maximum boundary", func(t *testing.T) {
+		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+			PodPidsLimit: ptr.To(int64(16384)),
+		})
+		require.NotNil(t, kubeletCfg.PodPidsLimit)
+		assert.Equal(t, int64(16384), *kubeletCfg.PodPidsLimit)
+	})
 }
 
 func TestRenderKubeletConfigPatch_ContainerLogMaxSize(t *testing.T) {

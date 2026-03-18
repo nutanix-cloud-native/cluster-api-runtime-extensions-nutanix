@@ -30,7 +30,7 @@ const (
 	// VariableName is the external patch variable name.
 	VariableName = "kubeletConfiguration"
 
-	kubeletConfigurationPatchFilePath = "/etc/kubernetes/patches/kubeletconfiguration+strategic.json"
+	kubeletConfigurationPatchFilePath = "/etc/kubernetes/patches/kubeletconfiguration1+strategic.json"
 )
 
 var (

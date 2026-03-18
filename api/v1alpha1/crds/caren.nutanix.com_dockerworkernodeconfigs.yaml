@@ -202,9 +202,9 @@ spec:
                       description: |-
                         PodPidsLimit is the maximum number of PIDs in any pod.
                         Prevents fork bombs and enforces per-pod PID limits.
-                        Default kubelet value is -1 (unlimited).
                       format: int64
-                      minimum: -1
+                      maximum: 16384
+                      minimum: 1024
                       type: integer
                     protectKernelDefaults:
                       description: |-

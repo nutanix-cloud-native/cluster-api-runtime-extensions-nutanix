@@ -120,9 +120,9 @@ type KubeletConfiguration struct {
 
 	// PodPidsLimit is the maximum number of PIDs in any pod.
 	// Prevents fork bombs and enforces per-pod PID limits.
-	// Default kubelet value is -1 (unlimited).
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Minimum=-1
+	// +kubebuilder:validation:Minimum=1024
+	// +kubebuilder:validation:Maximum=16384
 	PodPidsLimit *int64 `json:"podPidsLimit,omitempty"`
 
 	// ContainerLogMaxSize defines the maximum size of the container log file

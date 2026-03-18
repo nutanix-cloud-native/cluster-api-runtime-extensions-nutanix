@@ -133,6 +133,28 @@ var testDefs = []capitest.VariableTestDef{
 		ExpectError: true,
 	},
 	{
+		Name: "invalid podPidsLimit below minimum",
+		Vals: v1alpha1.DockerClusterConfigSpec{
+			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+					PodPidsLimit: ptr.To(int64(500)),
+				},
+			},
+		},
+		ExpectError: true,
+	},
+	{
+		Name: "invalid podPidsLimit above maximum",
+		Vals: v1alpha1.DockerClusterConfigSpec{
+			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+					PodPidsLimit: ptr.To(int64(20000)),
+				},
+			},
+		},
+		ExpectError: true,
+	},
+	{
 		Name: "invalid kubeReserved key",
 		Vals: v1alpha1.DockerClusterConfigSpec{
 			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
