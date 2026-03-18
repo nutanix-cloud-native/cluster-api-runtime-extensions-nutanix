@@ -26,9 +26,12 @@ import (
 var _ = Describe("Self-hosted", Serial, func() {
 	for provider, providerCfg := range providerConfigurations {
 		// AWS is not supported for self-hosted cluster tests yet.
-		if provider == "AWS" {
-			continue
-		}
+		BeforeEach(func() {
+			if provider == "AWS" {
+				Skip("AWS is not supported for self-hosted cluster tests yet")
+			}
+		})
+
 		// Add any provider specific decorators here.
 		// Currently, only Docker requires Serial decorator to ensure the machine running the Docker e2e tests
 		// doesn't have resources exhausted and lead to flaky tests.
@@ -41,6 +44,19 @@ var _ = Describe("Self-hosted", Serial, func() {
 			lowercaseProvider := strings.ToLower(provider)
 			for cniProvider, addonStrategies := range providerCfg.cniProviders {
 				Context(cniProvider, Label("cni:"+cniProvider), func() {
+					BeforeEach(func() {
+						// For Flow CNI, we need to set the Docker Hub username and password
+						// because the Flow CNI images require a Docker account to pull the images.
+						if cniProvider == "Flow" {
+							if e2eConfig.GetVariableOrEmpty("NUTANIX_FLOW_DOCKER_HUB_USERNAME") == "" ||
+								e2eConfig.GetVariableOrEmpty("NUTANIX_FLOW_DOCKER_HUB_TOKEN") == "" {
+								Skip(
+									"Both NUTANIX_FLOW_DOCKER_HUB_USERNAME and NUTANIX_FLOW_DOCKER_HUB_TOKEN must be set",
+								)
+							}
+						}
+					})
+
 					for _, addonStrategy := range addonStrategies {
 						Context(addonStrategy, Label("addonStrategy:"+addonStrategy), func() {
 							strategy := ""

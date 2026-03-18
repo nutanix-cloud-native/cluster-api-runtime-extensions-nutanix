@@ -73,6 +73,19 @@ var _ = Describe("Quick start", func() {
 			lowercaseProvider := strings.ToLower(provider)
 			for cniProvider, addonStrategies := range providerCfg.cniProviders {
 				Context(cniProvider, Label("cni:"+cniProvider), func() {
+					BeforeEach(func() {
+						// For Flow CNI, we need to set the Docker Hub username and password
+						// because the Flow CNI images require a Docker account to pull the images.
+						if cniProvider == "Flow" {
+							if e2eConfig.GetVariableOrEmpty("NUTANIX_FLOW_DOCKER_HUB_USERNAME") == "" ||
+								e2eConfig.GetVariableOrEmpty("NUTANIX_FLOW_DOCKER_HUB_TOKEN") == "" {
+								Skip(
+									"Both NUTANIX_FLOW_DOCKER_HUB_USERNAME and NUTANIX_FLOW_DOCKER_HUB_TOKEN must be set",
+								)
+							}
+						}
+					})
+
 					for _, addonStrategy := range addonStrategies {
 						Context(addonStrategy, Label("addonStrategy:"+addonStrategy), func() {
 							strategy := ""
@@ -109,17 +122,6 @@ var _ = Describe("Quick start", func() {
 										)
 
 										BeforeEach(func() {
-											// For Nutanix provider with Flow CNI, we need to set the Docker Hub username and password
-											// because the Flow CNI images require a Docker account to pull the images.
-											if provider == "Nutanix" && cniProvider == "Flow" {
-												if e2eConfig.GetVariableOrEmpty("NUTANIX_DOCKER_HUB_USERNAME") == "" ||
-													e2eConfig.GetVariableOrEmpty("NUTANIX_DOCKER_HUB_PASSWORD") == "" {
-													Skip(
-														"Both NUTANIX_DOCKER_HUB_USERNAME and NUTANIX_DOCKER_HUB_PASSWORD must be set",
-													)
-												}
-											}
-
 											testE2EConfig = e2eConfig.DeepCopy()
 
 											// Check if a provider-specific Kubernetes version is set in the environment and use that. This allows
