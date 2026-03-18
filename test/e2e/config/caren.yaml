@@ -126,7 +126,7 @@ providers:
   type: AddonProvider
   versions:
   - name: "${CAAPH_VERSION}"
-    value: "https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm/releases/download/${CAAPH_VERSION}/addon-components.yaml"
+    value: "https://github.com/mesosphere/cluster-api-addon-provider-helm/releases/download/${CAAPH_VERSION}/addon-components.yaml"
     type: "url"
     contract: v1beta1
     files:
