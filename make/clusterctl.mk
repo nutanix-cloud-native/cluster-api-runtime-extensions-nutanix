@@ -5,7 +5,7 @@ export CAPI_VERSION := $(shell GOWORK=off go list -m -f '{{ .Version }}' sigs.k8
 export CAPD_VERSION := $(shell GOWORK=off go list -m -f '{{ .Version }}' sigs.k8s.io/cluster-api/test)
 export CAPA_VERSION := $(shell cd hack/third-party/capa && GOWORK=off go list -m -f '{{ .Version }}' sigs.k8s.io/cluster-api-provider-aws/v2)-ncn.1
 export CAPX_VERSION := $(shell cd hack/third-party/capx && GOWORK=off go list -m -f '{{ .Version }}' github.com/nutanix-cloud-native/cluster-api-provider-nutanix)
-export CAAPH_VERSION := $(shell cd hack/third-party/caaph && GOWORK=off go list -m -f '{{ .Version }}' sigs.k8s.io/cluster-api-addon-provider-helm)
+export CAAPH_VERSION := $(shell cd hack/third-party/caaph && GOWORK=off go list -m -f '{{ .Replace.Version }}' sigs.k8s.io/cluster-api-addon-provider-helm)
 
 # Leave Nutanix credentials empty here and set it when creating the clusters
 .PHONY: clusterctl.init
@@ -16,7 +16,7 @@ clusterctl.init:
 	    CAPA_EKS=true \
 	    AWS_B64ENCODED_CREDENTIALS=$$(clusterctl-aws bootstrap credentials encode-as-profile) \
 	    NUTANIX_ENDPOINT="" NUTANIX_PASSWORD="" NUTANIX_USER="" \
-	    clusterctl init \
+	    clusterctl init -v=10 \
 	      --kubeconfig=$(KIND_KUBECONFIG) \
 	      --core cluster-api:$(CAPI_VERSION) \
 	      --bootstrap kubeadm:$(CAPI_VERSION) \

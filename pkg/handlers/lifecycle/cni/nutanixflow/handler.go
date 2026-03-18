@@ -297,7 +297,8 @@ func (c *NutanixFlowCNI) apply(
 		WithValueTemplater(func(cluster *clusterv1.Cluster, text string) (string, error) {
 			return templateValues(cluster, text, imagePullSecretName)
 		}).
-		WithDefaultWaiter()
+		WithDefaultWaiter().
+		WithTakeOwnership()
 
 	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)

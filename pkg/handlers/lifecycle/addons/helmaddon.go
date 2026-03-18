@@ -110,6 +110,7 @@ type applyOptions struct {
 	shouldRunPreflight bool
 	waiter             waiterFunc
 	hooks              hooksFuncs
+	takeOwnership      bool
 }
 
 type applyOption func(*applyOptions)
@@ -159,6 +160,14 @@ func (a *helmAddonApplier) WithDefaultWaiter() *helmAddonApplier {
 func (a *helmAddonApplier) WithPostApplyHook(postApplyHookFuncs ...postApplyHookFunc) *helmAddonApplier {
 	a.opts = append(a.opts, func(o *applyOptions) {
 		o.hooks.postApplyHookFuncs = postApplyHookFuncs
+	})
+
+	return a
+}
+
+func (a *helmAddonApplier) WithTakeOwnership() *helmAddonApplier {
+	a.opts = append(a.opts, func(o *applyOptions) {
+		o.takeOwnership = true
 	})
 
 	return a
@@ -240,6 +249,9 @@ func (a *helmAddonApplier) Apply(
 			ReleaseName:      helmReleaseName,
 			Version:          a.helmChart.Version,
 			ValuesTemplate:   values,
+			Options: caaphv1.HelmOptions{
+				TakeOwnership: applyOpts.takeOwnership,
+			},
 		},
 	}
 
