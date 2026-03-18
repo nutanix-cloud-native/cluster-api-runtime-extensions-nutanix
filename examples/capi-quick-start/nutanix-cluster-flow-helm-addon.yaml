@@ -1,21 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  labels:
-    cluster.x-k8s.io/provider: nutanix
-  name: ${CLUSTER_NAME}-dockerhub-credentials
-stringData:
-  password: ${DOCKER_HUB_PASSWORD}
-  username: ${DOCKER_HUB_USERNAME}
-type: Opaque
----
-apiVersion: v1
-kind: Secret
-metadata:
-  labels:
-    cluster.x-k8s.io/provider: nutanix
   name: ${CLUSTER_NAME}-flow-image-pull-secret
-type: kubernetes.io/dockerconfigjson # The specific type K8s looks for
 stringData:
   .dockerconfigjson: |
     {
@@ -25,6 +11,18 @@ stringData:
         }
       }
     }
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
+  name: ${CLUSTER_NAME}-dockerhub-credentials
+stringData:
+  password: ${DOCKER_HUB_PASSWORD}
+  username: ${DOCKER_HUB_USERNAME}
+type: Opaque
 ---
 apiVersion: v1
 kind: Secret
@@ -98,10 +96,10 @@ spec:
             strategy: HelmAddon
           clusterAutoscaler: {}
           cni:
-            provider: Flow
             imagePullCredentials:
               secretRef:
                 name: ${CLUSTER_NAME}-flow-image-pull-secret
+            provider: Flow
           cosi: {}
           csi:
             defaultStorage:
