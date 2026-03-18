@@ -156,8 +156,7 @@ func validatePodCIDR(result *preflight.CheckResult, prefixes []netip.Prefix) {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Pod CIDR %q has prefix /%d, which is too small for multi-node clusters. "+
-						"With a /24 node mask, this supports at most %d node(s). Use a larger Pod CIDR (for example /16).",
+					"Pod CIDR %q has prefix /%d, which is too small for a cluster with %d nodes. This prefix size does not allow the cluster to temporarily scale up during an upgrade, or replacement of a failed node. Use a larger prefix, for example /16.", ///nolint:lll // Message is long.
 					prefix.String(),
 					maskSize,
 					maxNodes,
@@ -166,8 +165,7 @@ func validatePodCIDR(result *preflight.CheckResult, prefixes []netip.Prefix) {
 			})
 		case maskSize >= 21:
 			result.Warnings = append(result.Warnings, fmt.Sprintf(
-				"Pod CIDR %q has prefix /%d, which supports only %d node(s) with a /24 node mask. "+
-					"Consider a larger Pod CIDR (for example /16).",
+				"Pod CIDR %q has prefix /%d, which supports only %d node(s) with a /24 node mask. Consider a larger prefix, for example /16.", ///nolint:lll // Message is long.
 				prefix.String(),
 				maskSize,
 				maxNodes,
