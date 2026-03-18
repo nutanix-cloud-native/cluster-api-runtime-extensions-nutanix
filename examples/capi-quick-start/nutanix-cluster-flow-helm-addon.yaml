@@ -14,6 +14,23 @@ kind: Secret
 metadata:
   labels:
     cluster.x-k8s.io/provider: nutanix
+  name: ${CLUSTER_NAME}-flow-image-pull-secret
+type: kubernetes.io/dockerconfigjson # The specific type K8s looks for
+stringData:
+  .dockerconfigjson: |
+    {
+      "auths": {
+        "https://index.docker.io/v1/": {
+          "auth": "${NUTANIX_FLOW_DOCKER_HUB_AUTH_BASICAUTH_BASE64}"
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: nutanix
   name: ${CLUSTER_NAME}-pc-creds-for-csi
 stringData:
   key: ${NUTANIX_ENDPOINT}:${NUTANIX_PORT}:${NUTANIX_USER}:${NUTANIX_PASSWORD}
@@ -82,6 +99,9 @@ spec:
           clusterAutoscaler: {}
           cni:
             provider: Flow
+            imagePullCredentials:
+              secretRef:
+                name: ${CLUSTER_NAME}-flow-image-pull-secret
           cosi: {}
           csi:
             defaultStorage:
