@@ -50,7 +50,7 @@ repositories:
     repoURL: https://charts.containeroo.ch
     charts:
       local-path-provisioner:
-      - 0.0.35
+      - 0.0.36
   metallb:
     repoURL: https://metallb.github.io/metallb
     charts:
@@ -90,7 +90,7 @@ repositories:
     repoURL: https://piraeus.io/helm-charts/
     charts:
       snapshot-controller:
-      - 4.2.0
+      - 5.0.3
   tigera-operator:
     repoURL: https://docs.tigera.io/calico/charts
     charts:
