@@ -206,8 +206,8 @@ variables:
   # # Name of the Prism Element cluster.
   # NUTANIX_PRISM_ELEMENT_CLUSTER_NAME: ""
   # # Name of the OS image pre-uploaded in PC.
-  NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT: "nkp-{{.BaseOS}}-release-{{.K8sVersion}}-*"
-  NUTANIX_MACHINE_TEMPLATE_BASE_OS: "rocky-9.6"
+  NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT: "nkp-{{.BaseOS}}-release-cis-{{.K8sVersion}}-*"
+  NUTANIX_MACHINE_TEMPLATE_BASE_OS: "rocky-9.7"
   # # Name of the subnet to be assigned to the VMs.
   # NUTANIX_SUBNET_NAME: ""
   # # Name of the storage container to CSI driver
