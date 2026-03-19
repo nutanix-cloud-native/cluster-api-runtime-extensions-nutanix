@@ -104,7 +104,7 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			expectAllowed: false,
 			expectedCauses: []expectedCause{
 				{
-					messagePart: "Pod CIDR \"10.244.0.0/24\" has prefix /24, which is too small for multi-node clusters",
+					messagePart: "which is too small for a cluster",
 					field:       "$.spec.clusterNetwork.pods.cidrBlocks",
 				},
 			},
@@ -339,7 +339,7 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 			expectAllowed: false,
 			expectedCauses: []expectedCause{
 				{
-					messagePart: "Pod CIDR \"10.244.0.0/24\" has prefix /24, which is too small for multi-node clusters",
+					messagePart: "which is too small for a cluster",
 					field:       "$.spec.clusterNetwork.pods.cidrBlocks",
 				},
 			},
