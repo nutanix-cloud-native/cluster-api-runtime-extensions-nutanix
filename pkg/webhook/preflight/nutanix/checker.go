@@ -37,7 +37,7 @@ type nutanixChecker struct {
 
 	credentialsCheckFactory func(
 		ctx context.Context,
-		nclientFactory func(prismgoclient.Credentials) (client, error),
+		nclientFactory func(prismgoclient.Credentials, string) (client, error),
 		cd *checkDependencies,
 	) preflight.Check
 
@@ -98,11 +98,11 @@ func (n *nutanixChecker) Init(
 		n.configurationCheckFactory(cd),
 		n.credentialsCheckFactory(
 			ctx,
-			func(creds prismgoclient.Credentials) (client, error) {
+			func(creds prismgoclient.Credentials, additionalTrustBundlePEM string) (client, error) {
 				return newClient(creds, k8stypes.NamespacedName{
 					Name:      cluster.Name,
 					Namespace: cluster.Namespace,
-				})
+				}, additionalTrustBundlePEM)
 			},
 			cd,
 		),

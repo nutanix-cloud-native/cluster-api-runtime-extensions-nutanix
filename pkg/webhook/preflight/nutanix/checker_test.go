@@ -148,7 +148,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 
 			checker.credentialsCheckFactory = func(
 				ctx context.Context,
-				nclientFactory func(prismgoclient.Credentials) (client, error),
+				nclientFactory func(prismgoclient.Credentials, string) (client, error),
 				cd *checkDependencies,
 			) preflight.Check {
 				credsCheckCalled = true
@@ -344,7 +344,7 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 				},
 				credentialsCheckFactory: func(
 					ctx context.Context,
-					nclientFactory func(prismgoclient.Credentials) (client, error),
+					nclientFactory func(prismgoclient.Credentials, string) (client, error),
 					cd *checkDependencies,
 				) preflight.Check {
 					cd.nclient = &clientWrapper{}

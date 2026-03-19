@@ -5,6 +5,7 @@ package nutanix
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -34,7 +35,7 @@ func (c *credentialsCheck) Run(_ context.Context) preflight.CheckResult {
 
 func newCredentialsCheck(
 	ctx context.Context,
-	nclientFactory func(prismgoclient.Credentials) (client, error),
+	nclientFactory func(prismgoclient.Credentials, string) (client, error),
 	cd *checkDependencies,
 ) preflight.Check {
 	cd.log.V(5).Info("Initializing Nutanix credentials check")
@@ -166,6 +167,26 @@ func newCredentialsCheck(
 		return credentialsCheck
 	}
 
+	// Decode optional additional trust bundle from base64 (clusterConfig value) to PEM for the client.
+	var additionalTrustBundlePEM string
+	if prismCentralEndpointSpec.AdditionalTrustBundle != "" {
+		decoded, err := base64.StdEncoding.DecodeString(prismCentralEndpointSpec.AdditionalTrustBundle)
+		if err != nil {
+			credentialsCheck.result.Allowed = false
+			credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
+				preflight.Cause{
+					Message: fmt.Sprintf(
+						"Failed to decode Prism Central additionalTrustBundle (expected base64 PEM): %s.",
+						err,
+					),
+					Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.additionalTrustBundle", ///nolint:lll // Field is long.
+				},
+			)
+			return credentialsCheck
+		}
+		additionalTrustBundlePEM = string(decoded)
+	}
+
 	// Initialize the credentials.
 	credentials := prismgoclient.Credentials{
 		Endpoint: fmt.Sprintf("%s:%d", host, port),
@@ -175,8 +196,8 @@ func newCredentialsCheck(
 		Insecure: prismCentralEndpointSpec.Insecure,
 	}
 
-	// Initialize the Nutanix client.
-	nclient, err := nclientFactory(credentials)
+	// Initialize the Nutanix client (with optional additional trust bundle).
+	nclient, err := nclientFactory(credentials, additionalTrustBundlePEM)
 	if err != nil {
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.InternalError = true
@@ -200,7 +221,9 @@ func newCredentialsCheck(
 		return credentialsCheck
 	}
 
-	if strings.Contains(err.Error(), "invalid Nutanix credentials") {
+	// Handle the different error cases.
+	switch {
+	case strings.Contains(err.Error(), "invalid Nutanix credentials"):
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
@@ -211,21 +234,42 @@ func newCredentialsCheck(
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
 			},
 		)
-		return credentialsCheck
+	case strings.Contains(err.Error(), "failed to verify certificate"):
+		credentialsCheck.result.Allowed = false
+		if additionalTrustBundlePEM == "" {
+			credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
+				preflight.Cause{
+					Message: fmt.Sprintf(
+						"Failed to verify certificate: %s. If you are using a self-signed certificate, you need to provide the additional trust bundle.", ///nolint:lll // Message is long.
+						err,
+					),
+					Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.additionalTrustBundle", ///nolint:lll // Field is long.
+				},
+			)
+		} else {
+			credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
+				preflight.Cause{
+					Message: fmt.Sprintf(
+						"Failed to verify certificate: %s. Please check the additional trust bundle.", ///nolint:lll // Message is long.
+						err,
+					),
+					Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.additionalTrustBundle", ///nolint:lll // Field is long.
+				},
+			)
+		}
+	default:
+		credentialsCheck.result.Allowed = false
+		credentialsCheck.result.InternalError = true
+		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
+			preflight.Cause{
+				Message: fmt.Sprintf(
+					"Failed to validate credentials: %s. The error may be related to the URL, or the credentials. Please check both.", //nolint:lll // Message is long.
+					err,
+				),
+				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint", ///nolint:lll // Field is long.
+			},
+		)
 	}
 
-	credentialsCheck.result.Allowed = false
-	credentialsCheck.result.InternalError = true
-	credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
-		preflight.Cause{
-			Message: fmt.Sprintf(
-				"Failed to validate credentials: %s. This is usually a temporary error. Please retry.", ///nolint:lll // Message is long.
-				err,
-			),
-			// We do not add ".url" or ".credentials.secretRef" to the field, because we do not know
-			// if the error is related to the URL, or the credentials.
-			Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint",
-		},
-	)
 	return credentialsCheck
 }
