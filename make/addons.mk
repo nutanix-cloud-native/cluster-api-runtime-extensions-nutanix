@@ -11,7 +11,7 @@ export LOCAL_PATH_CSI_CHART_VERSION := 0.0.32
 export SNAPSHOT_CONTROLLER_CHART_VERSION := 4.1.0
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
 # be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
-export AWS_CCM_CHART_VERSION := 0.0.9
+export AWS_CCM_CHART_VERSION := 0.0.10
 # A map of AWS CCM versions.
 export AWS_CCM_VERSION_133 := v1.33.2
 export AWS_CCM_VERSION_134 := v1.34.0
