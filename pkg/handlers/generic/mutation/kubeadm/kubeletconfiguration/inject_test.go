@@ -210,7 +210,7 @@ func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
 	}
 
 	result, err := applyDeprecatedMaxParallelImagePulls(
-		cfg, vars, v1alpha1.ClusterConfigVariableName,
+		cfg, vars,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -226,7 +226,7 @@ func TestApplyDeprecatedMaxParallelImagePulls_NewFieldWins(t *testing.T) {
 	}
 
 	result, err := applyDeprecatedMaxParallelImagePulls(
-		cfg, vars, v1alpha1.ClusterConfigVariableName,
+		cfg, vars,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, result)

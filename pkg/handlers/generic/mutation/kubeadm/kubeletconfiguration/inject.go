@@ -30,7 +30,7 @@ const (
 	// VariableName is the external patch variable name.
 	VariableName = "kubeletConfiguration"
 
-	kubeletConfigurationPatchFilePath = "/etc/kubernetes/patches/kubeletconfiguration1+strategic.json"
+	kubeletConfigurationPatchFilePath = "/etc/kubernetes/patches/kubeletconfiguration99+strategic.json"
 )
 
 var (
@@ -244,14 +244,13 @@ func renderKubeletConfigPatch(cfg *v1alpha1.KubeletConfiguration) (*bootstrapv1.
 func applyDeprecatedMaxParallelImagePulls(
 	cfg *v1alpha1.KubeletConfiguration,
 	vars map[string]apiextensionsv1.JSON,
-	clusterVariableName string,
 ) (*v1alpha1.KubeletConfiguration, error) {
-	deprecatedVal, err := variables.Get[int32](vars, clusterVariableName, "maxParallelImagePullsPerNode")
+	deprecatedVal, err := variables.Get[int32](vars, v1alpha1.ClusterConfigVariableName, "maxParallelImagePullsPerNode")
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			return cfg, nil
 		}
-		return cfg, err
+		return nil, err
 	}
 	// New field takes precedence; skip if already set
 	if cfg != nil && cfg.MaxParallelImagePulls != nil {

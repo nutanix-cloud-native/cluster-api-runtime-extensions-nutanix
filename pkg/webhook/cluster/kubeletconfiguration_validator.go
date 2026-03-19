@@ -76,9 +76,7 @@ func (k *kubeletConfigurationValidator) validate(
 	cfgsToValidate := []struct {
 		cfg  *v1alpha1.KubeletConfiguration
 		path string
-	}{
-		{clusterConfig.KubeletConfiguration, "clusterConfig.kubeletConfiguration"},
-	}
+	}{}
 
 	if clusterConfig.ControlPlane != nil {
 		cfgsToValidate = append(cfgsToValidate, struct {
@@ -133,9 +131,14 @@ func (k *kubeletConfigurationValidator) validate(
 		}
 	}
 
+	hasControlPlaneMaxParallel := clusterConfig.ControlPlane != nil &&
+		clusterConfig.ControlPlane.KubeletConfiguration != nil &&
+		clusterConfig.ControlPlane.KubeletConfiguration.MaxParallelImagePulls != nil
+	hasWorkerMaxParallel := workerConfig != nil &&
+		workerConfig.KubeletConfiguration != nil &&
+		workerConfig.KubeletConfiguration.MaxParallelImagePulls != nil
 	if clusterConfig.MaxParallelImagePullsPerNode != nil &&
-		clusterConfig.KubeletConfiguration != nil &&
-		clusterConfig.KubeletConfiguration.MaxParallelImagePulls != nil {
+		(hasControlPlaneMaxParallel || hasWorkerMaxParallel) {
 		warnings = append(
 			warnings,
 			"both maxParallelImagePullsPerNode and "+

@@ -155,8 +155,12 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 			clusterConfig := &variables.ClusterConfigSpec{
 				KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
 					MaxParallelImagePullsPerNode: ptr.To(int32(4)), //nolint:staticcheck // testing deprecated field
-					KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-						MaxParallelImagePulls: ptr.To(int32(8)),
+				},
+				ControlPlane: &variables.ControlPlaneSpec{
+					KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+						KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+							MaxParallelImagePulls: ptr.To(int32(8)),
+						},
 					},
 				},
 			}
@@ -250,8 +254,10 @@ func ptrOf[T any](v T) *T {
 
 func createClusterWithKubeletConfig(cfg *v1alpha1.KubeletConfiguration) *clusterv1beta2.Cluster {
 	clusterConfig := &variables.ClusterConfigSpec{
-		KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-			KubeletConfiguration: cfg,
+		ControlPlane: &variables.ControlPlaneSpec{
+			KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+				KubeletConfiguration: cfg,
+			},
 		},
 	}
 

@@ -19,6 +19,18 @@ import (
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
+func dockerClusterConfigWithKubelet(
+	cfg *v1alpha1.KubeletConfiguration,
+) v1alpha1.DockerClusterConfigSpec {
+	return v1alpha1.DockerClusterConfigSpec{
+		ControlPlane: &v1alpha1.DockerControlPlaneSpec{
+			KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+				KubeletConfiguration: cfg,
+			},
+		},
+	}
+}
+
 var testDefs = []capitest.VariableTestDef{
 	{
 		Name: "unset",
@@ -26,87 +38,73 @@ var testDefs = []capitest.VariableTestDef{
 	},
 	{
 		Name: "set with string resource quantities",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					KubeReserved: map[string]resource.Quantity{
-						"cpu":    resource.MustParse("500m"),
-						"memory": resource.MustParse("256Mi"),
-					},
-					SystemReserved: map[string]resource.Quantity{
-						"cpu":    resource.MustParse("100m"),
-						"memory": resource.MustParse("128Mi"),
-					},
-					ContainerLogMaxSize: ptr.To(resource.MustParse("50Mi")),
-				},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			KubeReserved: map[string]resource.Quantity{
+				"cpu":    resource.MustParse("500m"),
+				"memory": resource.MustParse("256Mi"),
 			},
-		},
+			SystemReserved: map[string]resource.Quantity{
+				"cpu":    resource.MustParse("100m"),
+				"memory": resource.MustParse("128Mi"),
+			},
+			ContainerLogMaxSize: ptr.To(resource.MustParse("50Mi")),
+		}),
 	},
 	{
 		Name: "set with all kubelet fields",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					MaxPods: ptr.To(int32(110)),
-					KubeReserved: map[string]resource.Quantity{
-						"cpu": resource.MustParse("500m"),
-					},
-					SystemReserved: map[string]resource.Quantity{
-						"cpu": resource.MustParse("100m"),
-					},
-					EvictionHard: map[string]string{
-						"memory.available": "100Mi",
-					},
-					EvictionSoft: map[string]string{
-						"memory.available": "200Mi",
-					},
-					EvictionSoftGracePeriod: map[string]metav1.Duration{
-						"memory.available": {Duration: 30 * time.Second},
-					},
-					ProtectKernelDefaults: ptr.To(true),
-					TopologyManagerPolicy: ptr.To(v1alpha1.TopologyManagerPolicyNone),
-					CPUManagerPolicy:      ptr.To(v1alpha1.CPUManagerPolicyStatic),
-					MemoryManagerPolicy:   ptr.To(v1alpha1.MemoryManagerPolicyNone),
-					PodPidsLimit:          ptr.To(int64(4096)),
-					ContainerLogMaxSize:   ptr.To(resource.MustParse("10Mi")),
-					ContainerLogMaxFiles:  ptr.To(int32(5)),
-					MaxParallelImagePulls: ptr.To(int32(5)),
-					ShutdownGracePeriod:   &metav1.Duration{Duration: 60 * time.Second},
-					ShutdownGracePeriodCriticalPods: &metav1.Duration{
-						Duration: 10 * time.Second,
-					},
-				},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			MaxPods: ptr.To(int32(110)),
+			KubeReserved: map[string]resource.Quantity{
+				"cpu": resource.MustParse("500m"),
 			},
-		},
+			SystemReserved: map[string]resource.Quantity{
+				"cpu": resource.MustParse("100m"),
+			},
+			EvictionHard: map[string]string{
+				"memory.available": "100Mi",
+			},
+			EvictionSoft: map[string]string{
+				"memory.available": "200Mi",
+			},
+			EvictionSoftGracePeriod: map[string]metav1.Duration{
+				"memory.available": {Duration: 30 * time.Second},
+			},
+			ProtectKernelDefaults: ptr.To(true),
+			TopologyManagerPolicy: ptr.To(v1alpha1.TopologyManagerPolicyNone),
+			CPUManagerPolicy:      ptr.To(v1alpha1.CPUManagerPolicyStatic),
+			MemoryManagerPolicy:   ptr.To(v1alpha1.MemoryManagerPolicyNone),
+			PodPidsLimit:          ptr.To(int64(4096)),
+			ContainerLogMaxSize:   ptr.To(resource.MustParse("10Mi")),
+			ContainerLogMaxFiles:  ptr.To(int32(5)),
+			MaxParallelImagePulls: ptr.To(int32(5)),
+			ShutdownGracePeriod:   &metav1.Duration{Duration: 60 * time.Second},
+			ShutdownGracePeriodCriticalPods: &metav1.Duration{
+				Duration: 10 * time.Second,
+			},
+		}),
 	},
 	{
 		Name: "suffixless string quantity in kubeReserved",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					KubeReserved: map[string]resource.Quantity{
-						"cpu": resource.MustParse("2"),
-					},
-				},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			KubeReserved: map[string]resource.Quantity{
+				"cpu": resource.MustParse("2"),
 			},
-		},
+		}),
 	},
 	{
 		Name: "suffixless string quantity in containerLogMaxSize",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					ContainerLogMaxSize: ptr.To(resource.MustParse("50")),
-				},
-			},
-		},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ContainerLogMaxSize: ptr.To(resource.MustParse("50")),
+		}),
 	},
 	{
 		Name: "bare integer in kubeReserved rejected by string-only schema",
 		Vals: map[string]any{
-			"kubeletConfiguration": map[string]any{
-				"kubeReserved": map[string]any{
-					"cpu": 2,
+			"controlPlane": map[string]any{
+				"kubeletConfiguration": map[string]any{
+					"kubeReserved": map[string]any{
+						"cpu": 2,
+					},
 				},
 			},
 		},
@@ -115,94 +113,68 @@ var testDefs = []capitest.VariableTestDef{
 	{
 		Name: "bare integer in containerLogMaxSize rejected by string-only schema",
 		Vals: map[string]any{
-			"kubeletConfiguration": map[string]any{
-				"containerLogMaxSize": 50,
+			"controlPlane": map[string]any{
+				"kubeletConfiguration": map[string]any{
+					"containerLogMaxSize": 50,
+				},
 			},
 		},
 		ExpectError: true,
 	},
 	{
 		Name: "invalid maxPods below minimum",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					MaxPods: ptr.To(int32(10)),
-				},
-			},
-		},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			MaxPods: ptr.To(int32(10)),
+		}),
 		ExpectError: true,
 	},
 	{
 		Name: "invalid podPidsLimit below minimum",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					PodPidsLimit: ptr.To(int64(500)),
-				},
-			},
-		},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			PodPidsLimit: ptr.To(int64(500)),
+		}),
 		ExpectError: true,
 	},
 	{
 		Name: "invalid podPidsLimit above maximum",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					PodPidsLimit: ptr.To(int64(20000)),
-				},
-			},
-		},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			PodPidsLimit: ptr.To(int64(20000)),
+		}),
 		ExpectError: true,
 	},
 	{
 		Name: "invalid kubeReserved key",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					KubeReserved: map[string]resource.Quantity{
-						"gpu": resource.MustParse("1"),
-					},
-				},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			KubeReserved: map[string]resource.Quantity{
+				"gpu": resource.MustParse("1"),
 			},
-		},
+		}),
 		ExpectError: true,
 	},
 	{
 		Name: "invalid systemReserved key",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					SystemReserved: map[string]resource.Quantity{
-						"gpu": resource.MustParse("1"),
-					},
-				},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			SystemReserved: map[string]resource.Quantity{
+				"gpu": resource.MustParse("1"),
 			},
-		},
+		}),
 		ExpectError: true,
 	},
 	{
 		Name: "invalid evictionHard key",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					EvictionHard: map[string]string{
-						"invalid.signal": "100Mi",
-					},
-				},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			EvictionHard: map[string]string{
+				"invalid.signal": "100Mi",
 			},
-		},
+		}),
 		ExpectError: true,
 	},
 	{
 		Name: "imageGCHighThresholdPercent must be greater than low",
-		Vals: v1alpha1.DockerClusterConfigSpec{
-			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-				KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-					ImageGCHighThresholdPercent: ptr.To(int32(70)),
-					ImageGCLowThresholdPercent:  ptr.To(int32(80)),
-				},
-			},
-		},
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageGCHighThresholdPercent: ptr.To(int32(70)),
+			ImageGCLowThresholdPercent:  ptr.To(int32(80)),
+		}),
 		ExpectError: true,
 	},
 }
@@ -226,12 +198,16 @@ func TestVariableValidation_AWS(t *testing.T) {
 			ExpectError: td.ExpectError,
 		}
 		if dockerSpec, ok := td.Vals.(v1alpha1.DockerClusterConfigSpec); ok {
+			kubeadmNodeSpec := v1alpha1.KubeadmNodeSpec{}
+			if dockerSpec.ControlPlane != nil {
+				kubeadmNodeSpec = dockerSpec.ControlPlane.KubeadmNodeSpec
+			}
 			awsTestDefs[i].Vals = v1alpha1.AWSClusterConfigSpec{
-				KubeadmClusterConfigSpec: dockerSpec.KubeadmClusterConfigSpec,
 				ControlPlane: &v1alpha1.AWSControlPlaneSpec{
 					AWS: &v1alpha1.AWSControlPlaneNodeSpec{
 						InstanceType: "t3.medium",
 					},
+					KubeadmNodeSpec: kubeadmNodeSpec,
 				},
 			}
 		} else {
@@ -257,8 +233,11 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 			ExpectError: td.ExpectError,
 		}
 		if dockerSpec, ok := td.Vals.(v1alpha1.DockerClusterConfigSpec); ok {
+			kubeadmNodeSpec := v1alpha1.KubeadmNodeSpec{}
+			if dockerSpec.ControlPlane != nil {
+				kubeadmNodeSpec = dockerSpec.ControlPlane.KubeadmNodeSpec
+			}
 			nutanixTestDefs[i].Vals = v1alpha1.NutanixClusterConfigSpec{
-				KubeadmClusterConfigSpec: dockerSpec.KubeadmClusterConfigSpec,
 				ControlPlane: &v1alpha1.NutanixControlPlaneSpec{
 					Nutanix: &v1alpha1.NutanixControlPlaneNodeSpec{
 						MachineDetails: v1alpha1.NutanixMachineDetails{
@@ -283,6 +262,7 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 							},
 						},
 					},
+					KubeadmNodeSpec: kubeadmNodeSpec,
 				},
 			}
 		} else {

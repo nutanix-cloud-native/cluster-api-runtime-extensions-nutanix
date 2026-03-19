@@ -21,21 +21,36 @@ import (
 )
 
 type kubeletConfigurationControlPlanePatchHandler struct {
-	clusterVariableName      string
-	clusterVariableFieldPath []string
-	cpVariableName           string
-	cpVariableFieldPath      []string
+	cpVariableName      string
+	cpVariableFieldPath []string
 }
 
 // NewControlPlanePatch returns a handler that merges cluster-level and control-plane
 // kubeletConfiguration and applies the patch to KubeadmControlPlaneTemplate.
 func NewControlPlanePatch() *kubeletConfigurationControlPlanePatchHandler {
 	return &kubeletConfigurationControlPlanePatchHandler{
-		clusterVariableName:      v1alpha1.ClusterConfigVariableName,
-		clusterVariableFieldPath: []string{VariableName},
-		cpVariableName:           v1alpha1.ClusterConfigVariableName,
-		cpVariableFieldPath:      []string{v1alpha1.ControlPlaneConfigVariableName, VariableName},
+		cpVariableName:      v1alpha1.ClusterConfigVariableName,
+		cpVariableFieldPath: []string{v1alpha1.ControlPlaneConfigVariableName, VariableName},
 	}
+}
+
+// getControlPlaneKubeletConfiguration returns control plane kubeletConfiguration if it exists and is not empty.
+func (h *kubeletConfigurationControlPlanePatchHandler) getControlPlaneKubeletConfiguration(
+	vars map[string]apiextensionsv1.JSON,
+) (*v1alpha1.KubeletConfiguration, error) {
+	cfg, err := variables.Get[v1alpha1.KubeletConfiguration](
+		vars,
+		h.cpVariableName,
+		h.cpVariableFieldPath...,
+	)
+	if err != nil && !variables.IsNotFoundError(err) {
+		return nil, err
+	}
+	if !cfg.IsEmpty() {
+		return &cfg, nil
+	}
+
+	return nil, nil
 }
 
 func (h *kubeletConfigurationControlPlanePatchHandler) Mutate(
@@ -50,36 +65,12 @@ func (h *kubeletConfigurationControlPlanePatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	var clusterCfg *v1alpha1.KubeletConfiguration
-	if cfg, err := variables.Get[v1alpha1.KubeletConfiguration](
-		vars,
-		h.clusterVariableName,
-		h.clusterVariableFieldPath...,
-	); err == nil {
-		clusterCfg = &cfg
-	} else if !variables.IsNotFoundError(err) {
+	finalCfg, err := h.getControlPlaneKubeletConfiguration(vars)
+	if err != nil {
 		return err
 	}
 
-	var cpCfg *v1alpha1.KubeletConfiguration
-	if cfg, err := variables.Get[v1alpha1.KubeletConfiguration](
-		vars,
-		h.cpVariableName,
-		h.cpVariableFieldPath...,
-	); err == nil {
-		cpCfg = &cfg
-	} else if !variables.IsNotFoundError(err) {
-		return err
-	}
-
-	var finalCfg *v1alpha1.KubeletConfiguration
-	if cpCfg != nil {
-		finalCfg = cpCfg
-	} else if clusterCfg != nil {
-		finalCfg = clusterCfg
-	}
-
-	finalCfg, err := applyDeprecatedMaxParallelImagePulls(finalCfg, vars, h.clusterVariableName)
+	finalCfg, err = applyDeprecatedMaxParallelImagePulls(finalCfg, vars)
 	if err != nil {
 		return err
 	}
@@ -89,9 +80,8 @@ func (h *kubeletConfigurationControlPlanePatchHandler) Mutate(
 	}
 
 	log = log.WithValues(
-		"variableName", h.clusterVariableName,
-		"variableFieldPath", h.clusterVariableFieldPath,
-		"cpVariableFieldPath", h.cpVariableFieldPath,
+		"variableName", h.cpVariableName,
+		"variableFieldPath", h.cpVariableFieldPath,
 	)
 
 	kubeletConfigPatch, err := renderKubeletConfigPatch(finalCfg)

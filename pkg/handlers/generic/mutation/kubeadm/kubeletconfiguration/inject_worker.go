@@ -21,21 +21,36 @@ import (
 )
 
 type kubeletConfigurationWorkerPatchHandler struct {
-	clusterVariableName      string
-	clusterVariableFieldPath []string
-	workerVariableName       string
-	workerVariableFieldPath  []string
+	workerVariableName      string
+	workerVariableFieldPath []string
 }
 
 // NewWorkerPatch returns a handler that merges cluster-level and worker
 // kubeletConfiguration and applies the patch to KubeadmConfigTemplate.
 func NewWorkerPatch() *kubeletConfigurationWorkerPatchHandler {
 	return &kubeletConfigurationWorkerPatchHandler{
-		clusterVariableName:      v1alpha1.ClusterConfigVariableName,
-		clusterVariableFieldPath: []string{VariableName},
-		workerVariableName:       v1alpha1.WorkerConfigVariableName,
-		workerVariableFieldPath:  []string{VariableName},
+		workerVariableName:      v1alpha1.WorkerConfigVariableName,
+		workerVariableFieldPath: []string{VariableName},
 	}
+}
+
+// getWorkerKubeletConfiguration returns worker kubeletConfiguration if it exists and is not empty.
+func (h *kubeletConfigurationWorkerPatchHandler) getWorkerKubeletConfiguration(
+	vars map[string]apiextensionsv1.JSON,
+) (*v1alpha1.KubeletConfiguration, error) {
+	cfg, err := variables.Get[v1alpha1.KubeletConfiguration](
+		vars,
+		h.workerVariableName,
+		h.workerVariableFieldPath...,
+	)
+	if err != nil && !variables.IsNotFoundError(err) {
+		return nil, err
+	}
+	if !cfg.IsEmpty() {
+		return &cfg, nil
+	}
+
+	return nil, nil
 }
 
 func (h *kubeletConfigurationWorkerPatchHandler) Mutate(
@@ -50,36 +65,12 @@ func (h *kubeletConfigurationWorkerPatchHandler) Mutate(
 		"holderRef", holderRef,
 	)
 
-	var clusterCfg *v1alpha1.KubeletConfiguration
-	if cfg, err := variables.Get[v1alpha1.KubeletConfiguration](
-		vars,
-		h.clusterVariableName,
-		h.clusterVariableFieldPath...,
-	); err == nil {
-		clusterCfg = &cfg
-	} else if !variables.IsNotFoundError(err) {
+	finalCfg, err := h.getWorkerKubeletConfiguration(vars)
+	if err != nil {
 		return err
 	}
 
-	var workerCfg *v1alpha1.KubeletConfiguration
-	if cfg, err := variables.Get[v1alpha1.KubeletConfiguration](
-		vars,
-		h.workerVariableName,
-		h.workerVariableFieldPath...,
-	); err == nil {
-		workerCfg = &cfg
-	} else if !variables.IsNotFoundError(err) {
-		return err
-	}
-
-	var finalCfg *v1alpha1.KubeletConfiguration
-	if workerCfg != nil {
-		finalCfg = workerCfg
-	} else if clusterCfg != nil {
-		finalCfg = clusterCfg
-	}
-
-	finalCfg, err := applyDeprecatedMaxParallelImagePulls(finalCfg, vars, h.clusterVariableName)
+	finalCfg, err = applyDeprecatedMaxParallelImagePulls(finalCfg, vars)
 	if err != nil {
 		return err
 	}
@@ -89,8 +80,7 @@ func (h *kubeletConfigurationWorkerPatchHandler) Mutate(
 	}
 
 	log = log.WithValues(
-		"variableName", h.clusterVariableName,
-		"variableFieldPath", h.clusterVariableFieldPath,
+		"workerVariableName", h.workerVariableName,
 		"workerVariableFieldPath", h.workerVariableFieldPath,
 	)
 

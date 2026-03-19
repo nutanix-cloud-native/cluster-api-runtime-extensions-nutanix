@@ -143,8 +143,7 @@ type KubeadmNodeSpec struct {
 	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
 
 	// KubeletConfiguration defines kubelet settings for this node group.
-	// When set, these values override the cluster-level kubeletConfiguration defaults.
-	// Override semantics are per-field (not deep merge of map values within a field).
+	// These values apply only to the nodes in this group.
 	// +kubebuilder:validation:Optional
 	KubeletConfiguration *KubeletConfiguration `json:"kubeletConfiguration,omitempty"`
 }
