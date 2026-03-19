@@ -1,0 +1,31 @@
+---
+description: Ensures all mutation and lifecycle handlers are documented in docs/content for the project website.
+globs: "pkg/handlers/**/*.go"
+---
+
+# Handler Documentation
+
+## The Requirement
+
+All handlers, both mutation and lifecycle, MUST be documented in `docs/content` for publication to the project website. See the constitution (Principle VIII).
+
+## When Documentation Is Required
+
+Before creating or modifying any handler under `pkg/handlers/*/mutation/` or `pkg/handlers/*/lifecycle/`:
+
+1. Does this introduce a new handler?
+2. Does this change handler behavior, configuration, or user-facing output?
+
+If the answer to EITHER question is **yes**, you MUST:
+
+1. Add or update documentation in `docs/content/` under the appropriate section (e.g. `customization/`, `addons/`, `lifecycle/`).
+2. Include what the handler does, how to configure it, and example YAML.
+3. Ensure the documentation PR is included in the same change as the handler code.
+
+## Documentation Structure
+
+- **Mutation handlers** (customizations): `docs/content/customization/{provider}/{handler-topic}.md`
+- **Lifecycle handlers**: `docs/content/lifecycle/{handler-name}.md`
+- **Addon handlers**: `docs/content/addons/{addon-name}.md`
+
+Follow the structure of existing docs (e.g. `docs/content/customization/kubeadm/kube-proxy-mode.md`) for consistency.

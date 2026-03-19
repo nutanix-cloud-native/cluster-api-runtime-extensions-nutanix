@@ -56,6 +56,10 @@ Upgrading CAREN on a management cluster MUST be a no-op for existing Clusters un
 - The old handler version MUST remain registered and functional indefinitely (until a documented deprecation cycle removes it).
 - Violating this principle causes uncontrolled Machine rollouts across all managed clusters. There are no exceptions.
 
+### VIII. Handler Documentation
+
+All handlers, both mutation and lifecycle, MUST be documented in `docs/content` for publication to the project website. Every handler under `pkg/handlers/*/mutation/` and `pkg/handlers/*/lifecycle/` must have corresponding user-facing documentation that explains what the handler does, how to configure it, and includes example YAML. New or modified handlers require documentation updates in the same PR.
+
 ## Quality Gates
 
 All of the following must pass before a PR can merge:
