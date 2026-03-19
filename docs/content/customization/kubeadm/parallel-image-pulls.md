@@ -2,6 +2,8 @@
 title = "Parallel Image Pulls"
 +++
 
+> **Deprecated:** This customization is deprecated. Use `kubeletConfiguration.maxParallelImagePulls` under control-plane or worker config instead. See the [Kubelet Configuration]({{< ref "customization/kubeadm/kubelet-configuration" >}}) documentation.
+
 This customization will be available when the
 [provider-specific cluster configuration patch]({{< ref "..">}}) is included in the `ClusterClass`.
 
@@ -23,7 +25,7 @@ spec:
     variables:
       - name: clusterConfig
         value:
-          maxParallelImagePullsPerNodePerNode: 10
+          maxParallelImagePullsPerNode: 10
 ```
 
 Applying this configuration will result in a `KubeletConfiguration` patch being added which will be
