@@ -13,11 +13,11 @@ import (
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/types"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 	"github.com/nutanix-cloud-native/prism-go-client/converged"
-	"github.com/nutanix-cloud-native/prism-go-client/environment/types"
+	prismtypes "github.com/nutanix-cloud-native/prism-go-client/environment/types"
 )
 
 // client contains methods to interact with Nutanix Prism converged v4 client.
@@ -233,7 +233,7 @@ func buildODataOptions(page, limit *int, filter, orderby, selectFields *string) 
 func buildManagementEndpoint(
 	credentials *prismgoclient.Credentials,
 	additionalTrustBundlePEM string,
-) (*types.ManagementEndpoint, error) {
+) (*prismtypes.ManagementEndpoint, error) {
 	urlStr := credentials.URL
 
 	// Prepend https:// if no scheme is present
@@ -253,11 +253,11 @@ func buildManagementEndpoint(
 		return nil, fmt.Errorf("invalid URL %q: %w", credentials.URL, ErrEmptyHostInURL)
 	}
 
-	return &types.ManagementEndpoint{
+	return &prismtypes.ManagementEndpoint{
 		Address:               parsedURL,
 		Insecure:              credentials.Insecure,
 		AdditionalTrustBundle: additionalTrustBundlePEM,
-		ApiCredentials: types.ApiCredentials{
+		ApiCredentials: prismtypes.ApiCredentials{
 			Username: credentials.Username,
 			Password: credentials.Password,
 		},
@@ -269,7 +269,7 @@ func buildManagementEndpoint(
 // field nutanix.prismCentralEndpoint.additionalTrustBundle (empty if not set).
 func newClient(
 	credentials prismgoclient.Credentials, //nolint:gocritic // hugeParam is fine
-	clusterNamespacedName k8stypes.NamespacedName,
+	clusterNamespacedName types.NamespacedName,
 	additionalTrustBundlePEM string,
 ) (client, error) {
 	endpoint, err := buildManagementEndpoint(&credentials, additionalTrustBundlePEM)

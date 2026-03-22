@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
@@ -148,7 +149,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 
 			checker.credentialsCheckFactory = func(
 				ctx context.Context,
-				nclientFactory func(prismgoclient.Credentials, string) (client, error),
+				nclientFactory func(prismgoclient.Credentials, types.NamespacedName, string) (client, error),
 				cd *checkDependencies,
 			) preflight.Check {
 				credsCheckCalled = true
@@ -344,7 +345,7 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 				},
 				credentialsCheckFactory: func(
 					ctx context.Context,
-					nclientFactory func(prismgoclient.Credentials, string) (client, error),
+					nclientFactory func(prismgoclient.Credentials, types.NamespacedName, string) (client, error),
 					cd *checkDependencies,
 				) preflight.Check {
 					cd.nclient = &clientWrapper{}
