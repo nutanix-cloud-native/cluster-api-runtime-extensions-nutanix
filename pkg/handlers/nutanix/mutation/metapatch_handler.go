@@ -13,6 +13,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/controlplanefailuredomains"
 	nutanixcontrolplanevirtualip "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/controlplanevirtualip"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/machinedetails"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/metro"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/mutation/prismcentralendpoint"
 )
 
@@ -25,6 +26,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 		prismcentralendpoint.NewPatch(),
 		machinedetails.NewControlPlanePatch(),
 		controlplanefailuredomains.NewPatch(),
+		metro.NewPatch(),
 	}
 	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
