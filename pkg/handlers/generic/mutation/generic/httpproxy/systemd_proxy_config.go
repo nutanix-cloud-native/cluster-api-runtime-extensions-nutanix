@@ -28,7 +28,7 @@ var (
 	}
 )
 
-func generateSystemdFiles(vars v1alpha1.HTTPProxy, noProxy []string) []bootstrapv1.File {
+func GenerateSystemdFiles(vars v1alpha1.HTTPProxy, noProxy []string) []bootstrapv1.File {
 	if vars.HTTP == "" && vars.HTTPS == "" && len(vars.AdditionalNo) == 0 {
 		return nil
 	}

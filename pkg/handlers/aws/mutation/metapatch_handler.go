@@ -47,7 +47,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsClusterv5configpatch",
+		"awsClusterv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -69,7 +69,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsWorkerv5configpatch",
+		"awsWorkerv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

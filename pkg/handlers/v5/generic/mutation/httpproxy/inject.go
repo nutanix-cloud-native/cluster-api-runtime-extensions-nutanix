@@ -1,4 +1,4 @@
-// Copyright 2023 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package httpproxy
@@ -19,6 +19,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	currenthttpproxy "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/httpproxy"
 )
 
 const (
@@ -36,18 +37,10 @@ type httpProxyPatchHandler struct {
 func NewPatch(
 	cl ctrlclient.Reader,
 ) *httpProxyPatchHandler {
-	return newHTTPProxyPatchHandler(cl, v1alpha1.ClusterConfigVariableName, VariableName)
-}
-
-func newHTTPProxyPatchHandler(
-	cl ctrlclient.Reader,
-	variableName string,
-	variableFieldPath ...string,
-) *httpProxyPatchHandler {
 	return &httpProxyPatchHandler{
 		client:            cl,
-		variableName:      variableName,
-		variableFieldPath: variableFieldPath,
+		variableName:      v1alpha1.ClusterConfigVariableName,
+		variableFieldPath: []string{currenthttpproxy.VariableName},
 	}
 }
 
@@ -56,7 +49,7 @@ func (h *httpProxyPatchHandler) Mutate(
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
-	clusterKey ctrlclient.ObjectKey,
+	_ ctrlclient.ObjectKey,
 	clusterGetter mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
@@ -96,7 +89,7 @@ func (h *httpProxyPatchHandler) Mutate(
 			).Info("adding files to control plane kubeadm config spec")
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxyNormalized(cluster))...,
+				currenthttpproxy.GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
 			)
 			return nil
 		}); err != nil {
@@ -112,7 +105,7 @@ func (h *httpProxyPatchHandler) Mutate(
 			).Info("adding files to worker node kubeadm config template")
 			obj.Spec.Template.Spec.Files = append(
 				obj.Spec.Template.Spec.Files,
-				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxyNormalized(cluster))...,
+				currenthttpproxy.GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
 			)
 			return nil
 		}); err != nil {

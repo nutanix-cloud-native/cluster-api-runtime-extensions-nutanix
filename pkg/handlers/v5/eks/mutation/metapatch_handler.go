@@ -1,4 +1,4 @@
-// Copyright 2023 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package mutation
@@ -19,21 +19,26 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/securitygroups"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/tags"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/volumes"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/kubeproxymode"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/ntp"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/taints"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/users"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
-	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		region.NewPatch(),
 		network.NewPatch(),
 		identityref.NewPatch(),
 		tags.NewClusterPatch(),
+		users.NewPatch(),
+		kubeproxymode.NewPatch(),
+		ntp.NewPatch(),
 	}
-	patchHandlers = append(patchHandlers, metaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"eksClusterv6configpatch",
+		"eksClusterv5configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -41,7 +46,6 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
-	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		iaminstanceprofile.NewWorkerPatch(),
 		instancetype.NewWorkerPatch(),
@@ -51,11 +55,11 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 		placementgroup.NewWorkerPatch(),
 		placementgroupnfd.NewWorkerPatch(),
 		tags.NewWorkerPatch(),
+		taints.NewWorkerPatch(),
 	}
-	patchHandlers = append(patchHandlers, workerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"eksWorkerv6configpatch",
+		"eksWorkerv5configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
