@@ -1,0 +1,66 @@
+// Copyright 2026 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package mutation
+
+import (
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/ami"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/iaminstanceprofile"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/identityref"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/instancetype"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/network"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/placementgroup"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/placementgroupnfd"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/region"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/securitygroups"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/tags"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/volumes"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/kubeproxymode"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/ntp"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/taints"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/users"
+)
+
+// MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
+func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+	patchHandlers := []mutation.MetaMutator{
+		region.NewPatch(),
+		network.NewPatch(),
+		identityref.NewPatch(),
+		tags.NewClusterPatch(),
+		users.NewPatch(),
+		kubeproxymode.NewPatch(),
+		ntp.NewPatch(),
+	}
+
+	return mutation.NewMetaGeneratePatchesHandler(
+		"eksClusterv5configpatch",
+		mgr.GetClient(),
+		patchHandlers...,
+	)
+}
+
+// MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
+func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
+	patchHandlers := []mutation.MetaMutator{
+		iaminstanceprofile.NewWorkerPatch(),
+		instancetype.NewWorkerPatch(),
+		ami.NewWorkerPatch(),
+		securitygroups.NewWorkerPatch(),
+		volumes.NewWorkerPatch(),
+		placementgroup.NewWorkerPatch(),
+		placementgroupnfd.NewWorkerPatch(),
+		tags.NewWorkerPatch(),
+		taints.NewWorkerPatch(),
+	}
+
+	return mutation.NewMetaGeneratePatchesHandler(
+		"eksWorkerv5configpatch",
+		mgr.GetClient(),
+		patchHandlers...,
+	)
+}

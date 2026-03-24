@@ -9,7 +9,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 var startAWSCCMConfigMap = `
@@ -79,7 +79,7 @@ func Test_generateCCMConfigMapForCluster(t *testing.T) {
 	tests := []struct {
 		name           string
 		startConfigMap *corev1.ConfigMap
-		cluster        *clusterv1.Cluster
+		cluster        *clusterv1beta2.Cluster
 	}{
 		{
 			name: "Can set cluster name in arguments",
@@ -92,7 +92,7 @@ func Test_generateCCMConfigMapForCluster(t *testing.T) {
 					"aws-ccm-v1.27.7.yaml": startAWSCCMConfigMap,
 				},
 			},
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-cool-aws-cluster",
 					Namespace: "default",

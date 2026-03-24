@@ -26,6 +26,7 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		calico.NewPatch(),
 		tags.NewClusterPatch(),
@@ -46,7 +47,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsClusterv5configpatch",
+		"awsClusterv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -54,6 +55,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		tags.NewWorkerPatch(),
 		iaminstanceprofile.NewWorkerPatch(),
@@ -67,7 +69,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsWorkerv5configpatch",
+		"awsWorkerv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

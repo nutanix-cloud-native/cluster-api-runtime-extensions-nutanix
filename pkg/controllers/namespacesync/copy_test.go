@@ -12,12 +12,12 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/util/test/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
 )
 
 const (
@@ -100,6 +100,7 @@ func TestCopyClusterClassAndTemplates(t *testing.T) {
 				ctx,
 				fakeClient,
 				fakeClient,
+				fakeClient.Scheme(),
 				sourceClusterClass,
 				targetNamespace,
 			)
@@ -125,13 +126,21 @@ func TestCopyClusterClassAndTemplates(t *testing.T) {
 func interceptors(createdObjs *[]client.Object, kindThatFailsGet, kindThatFailsCreate string) interceptor.Funcs {
 	return interceptor.Funcs{
 		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-			if kindThatFailsGet != "" && obj.GetObjectKind().GroupVersionKind().Kind == kindThatFailsGet {
+			gvk, err := apiutil.GVKForObject(obj, c.Scheme())
+			if err != nil {
+				return err
+			}
+			if kindThatFailsGet != "" && gvk.Kind == kindThatFailsGet {
 				return errFakeGet
 			}
 			return c.Get(ctx, key, obj, opts...)
 		},
 		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-			if kindThatFailsCreate != "" && obj.GetObjectKind().GroupVersionKind().Kind == kindThatFailsCreate {
+			gvk, err := apiutil.GVKForObject(obj, c.Scheme())
+			if err != nil {
+				return err
+			}
+			if kindThatFailsCreate != "" && gvk.Kind == kindThatFailsCreate {
 				return errFakeCreate
 			}
 
@@ -148,7 +157,7 @@ func interceptors(createdObjs *[]client.Object, kindThatFailsGet, kindThatFailsC
 func newTestClusterClassAndTemplates(
 	namespace,
 	prefix string,
-) (*clusterv1.ClusterClass, []client.Object) {
+) (*clusterv1beta2.ClusterClass, []client.Object) {
 	bootstrapTemplate := builder.BootstrapTemplate(namespace, prefix).Build()
 	infraMachineTemplateControlPlane := builder.InfrastructureMachineTemplate(
 		namespace,

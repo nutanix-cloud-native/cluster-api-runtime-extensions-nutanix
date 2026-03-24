@@ -18,7 +18,7 @@ import (
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	celconfig "k8s.io/apiserver/pkg/apis/cel"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 // ValidateClusterVariable validates a clusterVariable.
@@ -170,13 +170,13 @@ func validateCEL[T any](
 func validateUnknownFields(
 	fldPath *field.Path,
 	clusterVariable *clusterv1.ClusterVariable,
-	variableValue interface{},
+	variableValue any,
 	variableSchema *apiextensions.JSONSchemaProps,
 ) field.ErrorList {
 	// Structural schema pruning does not work with scalar values,
 	// so we wrap the schema and the variable in objects.
 	// <variable-name>: <variable-value>
-	wrappedVariable := map[string]interface{}{
+	wrappedVariable := map[string]any{
 		clusterVariable.Name: variableValue,
 	}
 	// type: object

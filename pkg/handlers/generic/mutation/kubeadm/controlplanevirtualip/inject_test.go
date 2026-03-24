@@ -15,10 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -42,7 +42,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 	testDefs := []struct {
 		capitest.PatchTestDef
 		virtualIPTemplate string
-		cluster           *clusterv1.Cluster
+		cluster           *clusterv1beta2.Cluster
 	}{
 		{
 			PatchTestDef: capitest.PatchTestDef{
@@ -99,15 +99,15 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				},
 			},
 			virtualIPTemplate: validKubeVIPTemplate,
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "v1.28.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "v1.28.100",
 					},
 				},
 			},
@@ -151,15 +151,15 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				},
 			},
 			virtualIPTemplate: validKubeVIPTemplate,
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "v1.29.0",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "v1.29.0",
 					},
 				},
 			},
@@ -187,15 +187,15 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				},
 			},
 			virtualIPTemplate: validKubeVIPTemplate,
-			cluster: &clusterv1.Cluster{
+			cluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
 				},
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
-						Class:   "dummy-class",
-						Version: "v1.28.100",
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
+						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+						Version:  "v1.28.100",
 					},
 				},
 			},
@@ -207,7 +207,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 		It(tt.Name, func() {
 			clientScheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-			utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+			utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 			// Always initialize the testEnv variable in the closure.
 			// This will allow ginkgo to initialize testEnv variable during test execution time.
 			testEnv := helpers.TestEnv

@@ -19,11 +19,11 @@ patches:
         value:
           - name: "cluster-config"
             external:
-              generateExtension: "nutanixclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "nutanixclusterv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "nutanixclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix"
           - name: "worker-config"
             external:
-              generateExtension: "nutanixworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "nutanixworkerv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "nutanixworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
 
   # BEGIN Initialize lists and maps
@@ -73,6 +73,8 @@ patches:
     path: ../../../patches/cis/kubeadmconfigtemplate/kubelet-file-permissions.yaml
   # END CIS patches
 
+  # BEGIN STIG patches
   - target:
-      kind: NutanixMachineTemplate
-    path: ../../../patches/nutanix/remove-cluster-and-subnet-from-machinetemplates.yaml
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/stig/kubeadmcontrolplanetemplate/control-plane-flags.yaml
+  # END STIG patches

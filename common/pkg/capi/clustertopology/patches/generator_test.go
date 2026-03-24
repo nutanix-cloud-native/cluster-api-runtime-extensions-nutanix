@@ -11,8 +11,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 )
@@ -24,14 +24,14 @@ func TestMutateIfApplicable(t *testing.T) {
 		name          string
 		input         *unstructured.Unstructured
 		holderRef     *runtimehooksv1.HolderReference
-		patchSelector clusterv1.PatchSelector
+		patchSelector clusterv1beta2.PatchSelector
 		mutFn         func(T) error
 		expected      *unstructured.Unstructured
 	}
 	tests := []testSpec[*v1.ConfigMap]{{
 		name: "empty input matches holder and selector",
-		input: &unstructured.Unstructured{Object: map[string]interface{}{
-			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+		input: &unstructured.Unstructured{Object: map[string]any{
+			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 			"kind":       "KubeadmControlPlaneTemplate",
 		}},
 		holderRef: &runtimehooksv1.HolderReference{
@@ -47,17 +47,17 @@ func TestMutateIfApplicable(t *testing.T) {
 			return nil
 		},
 		expected: &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+			Object: map[string]any{
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 				"kind":       "KubeadmControlPlaneTemplate",
-				"data": map[string]interface{}{
+				"data": map[string]any{
 					"foo": "bar",
 				},
 			},
 		},
 	}, {
 		name:  "empty input not matching holder and selector",
-		input: &unstructured.Unstructured{Object: map[string]interface{}{}},
+		input: &unstructured.Unstructured{Object: map[string]any{}},
 		holderRef: &runtimehooksv1.HolderReference{
 			Kind:      "NotMatching",
 			FieldPath: "spec.controlPlaneRef",
@@ -71,11 +71,11 @@ func TestMutateIfApplicable(t *testing.T) {
 			return nil
 		},
 		expected: &unstructured.Unstructured{
-			Object: map[string]interface{}{},
+			Object: map[string]any{},
 		},
 	}, {
 		name: "invalid typed object - ignored",
-		input: &unstructured.Unstructured{Object: map[string]interface{}{
+		input: &unstructured.Unstructured{Object: map[string]any{
 			"unknownField": "foo",
 		}},
 		holderRef: &runtimehooksv1.HolderReference{
@@ -87,16 +87,16 @@ func TestMutateIfApplicable(t *testing.T) {
 			return nil
 		},
 		expected: &unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"unknownField": "foo",
 			},
 		},
 	}, {
 		name: "check deletion of elements in slice",
-		input: &unstructured.Unstructured{Object: map[string]interface{}{
-			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+		input: &unstructured.Unstructured{Object: map[string]any{
+			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 			"kind":       "KubeadmControlPlaneTemplate",
-			"data": map[string]interface{}{
+			"data": map[string]any{
 				"existingFoo": "bar",
 			},
 		}},
@@ -114,10 +114,10 @@ func TestMutateIfApplicable(t *testing.T) {
 			return nil
 		},
 		expected: &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta1",
+			Object: map[string]any{
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 				"kind":       "KubeadmControlPlaneTemplate",
-				"data": map[string]interface{}{
+				"data": map[string]any{
 					"foo": "bar",
 				},
 			},

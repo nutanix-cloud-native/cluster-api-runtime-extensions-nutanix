@@ -15,8 +15,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	kjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/matchers"
 )
@@ -46,7 +46,11 @@ func MutateIfApplicable[T runtime.Object](
 
 	// Convert the unstructured object to the expected type.
 	var typed T
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructuredWithValidation(obj.Object, &typed, true); err != nil {
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructuredWithValidation(
+		obj.Object,
+		&typed,
+		true,
+	); err != nil {
 		log.V(5).WithValues(
 			"objKind", obj.GetObjectKind().GroupVersionKind(),
 			"expectedType", fmt.Sprintf("%T", &typed),

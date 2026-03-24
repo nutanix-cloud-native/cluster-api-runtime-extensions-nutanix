@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -183,7 +183,7 @@ func expectedPersistenceSize(hcp *caaphv1.HelmChartProxy) (string, error) {
 	}
 
 	// Parse the values YAML into a generic map.
-	var valuesObj map[string]interface{}
+	var valuesObj map[string]any
 	if err := yaml.Unmarshal([]byte(values), &valuesObj); err != nil {
 		return "", fmt.Errorf("failed to parse values: %w", err)
 	}

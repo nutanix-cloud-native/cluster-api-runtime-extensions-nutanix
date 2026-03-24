@@ -15,8 +15,8 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/util/conditions"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers"
@@ -118,7 +118,19 @@ func servicesStillExistError(svcsStillExisting []ctrlclient.ObjectKey) error {
 	)
 }
 
-func shouldDeleteServicesWithLoadBalancer(cluster *v1beta1.Cluster) (bool, error) {
+// isV1Beta2ConditionTrue checks if a v1beta2 condition is True on the cluster.
+// This is a local equivalent of conditions.IsTrue that works with v1beta2 Cluster types,
+// since the upstream util/conditions package now requires metav1.Condition getters.
+func isV1Beta2ConditionTrue(cluster *clusterv1.Cluster, condType string) bool {
+	for _, c := range cluster.GetConditions() {
+		if c.Type == condType && c.Status == metav1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
+func shouldDeleteServicesWithLoadBalancer(cluster *clusterv1.Cluster) (bool, error) {
 	// Use the Cluster annotations to skip deleting
 	val, found := cluster.GetAnnotations()[LoadBalancerGCAnnotation]
 	if !found {
@@ -141,12 +153,12 @@ func shouldDeleteServicesWithLoadBalancer(cluster *v1beta1.Cluster) (bool, error
 	//
 	// - when ClusterPhaseDeleting it's too late to try to cleanup.
 	phase := cluster.Status.GetTypedPhase()
-	skipDeleteBasedOnPhase := phase == v1beta1.ClusterPhasePending ||
-		phase == v1beta1.ClusterPhaseProvisioning ||
-		phase == v1beta1.ClusterPhaseDeleting
+	skipDeleteBasedOnPhase := phase == clusterv1.ClusterPhasePending ||
+		phase == clusterv1.ClusterPhaseProvisioning ||
+		phase == clusterv1.ClusterPhaseDeleting
 
 	// use the Cluster conditions to determine if the API server is even reachable
-	controlPlaneReachable := conditions.IsTrue(cluster, v1beta1.ControlPlaneInitializedCondition)
+	controlPlaneReachable := isV1Beta2ConditionTrue(cluster, clusterv1.ClusterControlPlaneInitializedCondition)
 
 	return shouldDeleteBasedOnAnnotation && controlPlaneReachable && !skipDeleteBasedOnPhase, nil
 }

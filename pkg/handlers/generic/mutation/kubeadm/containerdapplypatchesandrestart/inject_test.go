@@ -9,8 +9,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
@@ -109,10 +109,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 func Test_generateContainerdApplyPatchesScript(t *testing.T) {
 	wantFile := bootstrapv1.File{
 		Path:        "/etc/caren/containerd/apply-patches.sh",
-		Owner:       "",
 		Permissions: "0700",
-		Encoding:    "",
-		Append:      false,
 		//nolint:lll // just a long string
 		Content: `#!/bin/bash
 set -euo pipefail

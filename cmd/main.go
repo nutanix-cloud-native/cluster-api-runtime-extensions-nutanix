@@ -7,8 +7,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -17,9 +19,9 @@ import (
 	logsv1 "k8s.io/component-base/logs/api/v1"
 	"k8s.io/component-base/version/verflag"
 	"k8s.io/klog/v2"
-	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -32,7 +34,6 @@ import (
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	metallbv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta1"
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/enforceclusterautoscalerlimits"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/failuredomainrollout"
@@ -174,13 +175,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	var allHandlers []handlers.Named
-	allHandlers = append(allHandlers, lifecycleHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, awsMetaHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, dockerMetaHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, nutanixMetaHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, eksMetaHandlers.AllHandlers(mgr)...)
-	allHandlers = append(allHandlers, genericMetaHandlers.AllHandlers(mgr)...)
+	allHandlers := slices.Concat(
+		lifecycleHandlers.AllHandlers(mgr),
+		awsMetaHandlers.AllHandlers(mgr),
+		dockerMetaHandlers.AllHandlers(mgr),
+		nutanixMetaHandlers.AllHandlers(mgr),
+		eksMetaHandlers.AllHandlers(mgr),
+		genericMetaHandlers.AllHandlers(mgr),
+	)
 
 	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
 
@@ -191,10 +193,32 @@ func main() {
 
 	if namespacesyncOptions.Enabled {
 		if namespacesyncOptions.SourceNamespace == "" ||
-			namespacesyncOptions.TargetNamespaceLabelKey == "" {
+			namespacesyncOptions.TargetNamespaceLabelSelector == "" {
 			setupLog.Error(
 				nil,
-				"Namespace Sync is enabled, but source namespace and/or target namespace label key are not configured.",
+				"Namespace Sync is enabled, but source namespace and/or target namespace label selector are not configured.",
+			)
+			os.Exit(1)
+		}
+
+		targetSelector, err := metav1.ParseToLabelSelector(namespacesyncOptions.TargetNamespaceLabelSelector)
+		if err != nil {
+			setupLog.Error(
+				err,
+				"unable to parse target namespace label selector",
+				"selector",
+				namespacesyncOptions.TargetNamespaceLabelSelector,
+			)
+			os.Exit(1)
+		}
+
+		targetLabelSelector, err := metav1.LabelSelectorAsSelector(targetSelector)
+		if err != nil {
+			setupLog.Error(
+				err,
+				"unable to convert label selector",
+				"selector",
+				namespacesyncOptions.TargetNamespaceLabelSelector,
 			)
 			os.Exit(1)
 		}
@@ -215,7 +239,7 @@ func main() {
 			Client:                      mgr.GetClient(),
 			UnstructuredCachingClient:   unstructuredCachingClient,
 			SourceClusterClassNamespace: namespacesyncOptions.SourceNamespace,
-			IsTargetNamespace:           namespacesync.NamespaceHasLabelKey(namespacesyncOptions.TargetNamespaceLabelKey),
+			TargetNamespaceSelector:     targetLabelSelector,
 		}).SetupWithManager(
 			mgr,
 			&controller.Options{MaxConcurrentReconciles: namespacesyncOptions.Concurrency},

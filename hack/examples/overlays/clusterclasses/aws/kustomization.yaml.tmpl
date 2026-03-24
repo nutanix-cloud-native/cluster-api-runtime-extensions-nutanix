@@ -19,11 +19,11 @@ patches:
         value:
           - name: "cluster-config"
             external:
-              generateExtension: "awsclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "awsclusterv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "awsclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix"
           - name: "worker-config"
             external:
-              generateExtension: "awsworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "awsworkerv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "awsworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
   - target:
       kind: AWSMachineTemplate
@@ -103,3 +103,9 @@ patches:
       kind: KubeadmConfigTemplate
     path: ../../../patches/cis/kubeadmconfigtemplate/kubelet-file-permissions.yaml
   # END CIS patches
+
+  # BEGIN STIG patches
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/stig/kubeadmcontrolplanetemplate/control-plane-flags.yaml
+  # END STIG patches

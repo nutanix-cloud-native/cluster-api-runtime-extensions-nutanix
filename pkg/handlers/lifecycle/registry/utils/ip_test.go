@@ -9,32 +9,32 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 func Test_ServiceIPForCluster(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
-		cluster *clusterv1.Cluster
+		cluster *clusterv1beta2.Cluster
 		want    string
 		wantErr error
 	}{
 		{
 			name: "Cluster with nil service CIDR",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{},
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{},
 				},
 			},
 			wantErr: errors.New("error getting a service IP for a cluster: unexpected empty service Subnets"),
 		},
 		{
 			name: "Cluster with empty service CIDR slice",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{
-						Services: &clusterv1.NetworkRanges{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{
+						Services: clusterv1beta2.NetworkRanges{
 							CIDRBlocks: []string{},
 						},
 					},
@@ -44,10 +44,10 @@ func Test_ServiceIPForCluster(t *testing.T) {
 		},
 		{
 			name: "Cluster with a single service CIDR",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{
-						Services: &clusterv1.NetworkRanges{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{
+						Services: clusterv1beta2.NetworkRanges{
 							CIDRBlocks: []string{
 								"192.168.0.0/16",
 							},
@@ -59,10 +59,10 @@ func Test_ServiceIPForCluster(t *testing.T) {
 		},
 		{
 			name: "Cluster with a multiple service CIDRs",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					ClusterNetwork: &clusterv1.ClusterNetwork{
-						Services: &clusterv1.NetworkRanges{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					ClusterNetwork: clusterv1beta2.ClusterNetwork{
+						Services: clusterv1beta2.NetworkRanges{
 							CIDRBlocks: []string{
 								"192.168.0.0/16",
 								"10.96.0.0/12",

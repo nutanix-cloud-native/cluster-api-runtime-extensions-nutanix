@@ -5,7 +5,7 @@ package skip
 import (
 	"strings"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -34,7 +34,7 @@ func New(cluster *clusterv1.Cluster) *Evaluator {
 		return o
 	}
 
-	for _, checkName := range strings.Split(value, ",") {
+	for checkName := range strings.SplitSeq(value, ",") {
 		if checkName == "" {
 			// Ignore whitespace between commas.
 			continue

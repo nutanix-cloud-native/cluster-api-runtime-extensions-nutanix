@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -279,7 +279,7 @@ func testServiceLoadBalancer(
 	var output string
 	Eventually(func(g Gomega) string {
 		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), http.NoBody)
-		resp, err := hc.Do(req)
+		resp, err := hc.Do(req) //nolint:gosec // OK in tests.
 		if err != nil {
 			return ""
 		}

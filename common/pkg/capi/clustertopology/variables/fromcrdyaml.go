@@ -13,7 +13,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 func MustSchemaFromCRDYAML(yaml []byte) clusterv1.VariableSchema {
@@ -66,7 +66,7 @@ func SchemaFromCRDYAML(yaml []byte) (clusterv1.VariableSchema, error) {
 	}, nil
 }
 
-// ConvertAPIExtensionsToJSONSchemaProps converts a apiextensions.JSONSchemaProp to clusterv1.JSONSchemaProps.
+// ConvertAPIExtensionsToJSONSchemaProps converts a apiextensions.JSONSchemaProp to clusterv1beta2.JSONSchemaProps.
 func ConvertAPIExtensionsToJSONSchemaProps(
 	schema *apiextensionsv1.JSONSchemaProps, fldPath *field.Path,
 ) (*clusterv1.JSONSchemaProps, field.ErrorList) {
@@ -110,16 +110,16 @@ func ConvertAPIExtensionsToJSONSchemaProps(
 		Required:               schema.Required,
 		MaxItems:               schema.MaxItems,
 		MinItems:               schema.MinItems,
-		UniqueItems:            schema.UniqueItems,
+		UniqueItems:            ptr.To(schema.UniqueItems),
 		Format:                 schema.Format,
 		MaxLength:              schema.MaxLength,
 		MinLength:              schema.MinLength,
 		Pattern:                schema.Pattern,
 		Maximum:                maximumAsInt64Ptr,
 		Minimum:                minimumAsInt64Ptr,
-		ExclusiveMaximum:       schema.ExclusiveMaximum,
-		ExclusiveMinimum:       schema.ExclusiveMinimum,
-		XPreserveUnknownFields: ptr.Deref(schema.XPreserveUnknownFields, false),
+		ExclusiveMaximum:       ptr.To(schema.ExclusiveMaximum),
+		ExclusiveMinimum:       ptr.To(schema.ExclusiveMinimum),
+		XPreserveUnknownFields: ptr.To(ptr.Deref(schema.XPreserveUnknownFields, false)),
 		Default:                schema.Default,
 		Enum:                   schema.Enum,
 		Example:                schema.Example,

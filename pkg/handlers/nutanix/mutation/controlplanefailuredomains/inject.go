@@ -9,7 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -97,9 +97,9 @@ func (h *nutanixControlPlaneFailureDomains) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting controlPlaneFailureDomains in NutanixCluster spec")
 
-			fdRefs := []corev1.LocalObjectReference{}
-			for _, fd := range controlPlaneFDsVar {
-				fdRefs = append(fdRefs, corev1.LocalObjectReference{Name: fd})
+			fdRefs := make([]corev1.LocalObjectReference, len(controlPlaneFDsVar))
+			for i, fd := range controlPlaneFDsVar {
+				fdRefs[i] = corev1.LocalObjectReference{Name: fd}
 			}
 
 			// set controlPlaneFailureDomains in NutanixCluster spec

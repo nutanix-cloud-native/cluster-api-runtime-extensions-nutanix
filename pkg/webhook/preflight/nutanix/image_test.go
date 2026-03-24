@@ -47,7 +47,7 @@ func TestVMImageCheck(t *testing.T) {
 		{
 			name: "image found by uuid",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
@@ -71,7 +71,7 @@ func TestVMImageCheck(t *testing.T) {
 		{
 			name: "image not found by uuid",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					return nil, nil
 				},
 			},
@@ -99,7 +99,7 @@ func TestVMImageCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*vmmv4.ListImagesApiResponse,
 					error,
@@ -132,7 +132,7 @@ func TestVMImageCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*vmmv4.ListImagesApiResponse,
 					error,
@@ -164,7 +164,7 @@ func TestVMImageCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*vmmv4.ListImagesApiResponse,
 					error,
@@ -201,7 +201,7 @@ func TestVMImageCheck(t *testing.T) {
 		{
 			name: "error getting image by id",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					return nil, fmt.Errorf("api error")
 				},
 			},
@@ -230,7 +230,7 @@ func TestVMImageCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*vmmv4.ListImagesApiResponse,
 					error,
@@ -263,7 +263,7 @@ func TestVMImageCheck(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*vmmv4.ListImagesApiResponse,
 					error,
@@ -335,7 +335,7 @@ func TestGetVMImages(t *testing.T) {
 		{
 			name: "get image by uuid success",
 			client: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
@@ -366,7 +366,7 @@ func TestGetVMImages(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*vmmv4.ListImagesApiResponse,
 					error,
@@ -397,7 +397,7 @@ func TestGetVMImages(t *testing.T) {
 		{
 			name: "get image by uuid error",
 			client: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					return nil, fmt.Errorf("api error")
 				},
 			},
@@ -416,7 +416,7 @@ func TestGetVMImages(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*vmmv4.ListImagesApiResponse,
 					error,
@@ -443,7 +443,7 @@ func TestGetVMImages(t *testing.T) {
 		{
 			name: "no image found by uuid",
 			client: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					return nil, nil
 				},
 			},
@@ -457,7 +457,7 @@ func TestGetVMImages(t *testing.T) {
 		{
 			name: "invalid data from GetImageById",
 			client: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					return &vmmv4.GetImageApiResponse{
 						Data: &vmmv4.OneOfGetImageApiResponseData{
 							ObjectType_: ptr.To("wrong-type"),
@@ -480,7 +480,7 @@ func TestGetVMImages(t *testing.T) {
 					filter,
 					orderby,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*vmmv4.ListImagesApiResponse,
 					error,
@@ -560,7 +560,7 @@ func TestNewVMImageChecks(t *testing.T) {
 			},
 			nutanixWorkerNodeConfigSpecByMDName: nil,
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
@@ -591,7 +591,7 @@ func TestNewVMImageChecks(t *testing.T) {
 				},
 			},
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
@@ -643,7 +643,7 @@ func TestNewVMImageChecks(t *testing.T) {
 				},
 			},
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
@@ -677,7 +677,7 @@ func TestNewVMImageChecks(t *testing.T) {
 				},
 			},
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{

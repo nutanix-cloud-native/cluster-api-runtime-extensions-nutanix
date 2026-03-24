@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -231,7 +231,7 @@ func TestValidateTopologyFailureDomainConfig(t *testing.T) {
 	testcases := []struct {
 		name                string
 		clusterConfig       *variables.ClusterConfigSpec
-		cluster             *clusterv1.Cluster
+		cluster             *clusterv1beta2.Cluster
 		expectedErr         bool
 		expectedErrMessages []string
 	}{
@@ -438,20 +438,20 @@ const (
 	workerConfigNone                 workerConfigExistence = "workerConfigNone"
 )
 
-func fakeCluster(t *testing.T, fd, pe, subnets bool, wcfg workerConfigExistence) *clusterv1.Cluster {
+func fakeCluster(t *testing.T, fd, pe, subnets bool, wcfg workerConfigExistence) *clusterv1beta2.Cluster {
 	t.Helper()
 
-	cluster := &clusterv1.Cluster{
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Variables: []clusterv1.ClusterVariable{},
-				Workers: &clusterv1.WorkersTopology{
-					MachineDeployments: []clusterv1.MachineDeploymentTopology{
+	cluster := &clusterv1beta2.Cluster{
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				Variables: []clusterv1beta2.ClusterVariable{},
+				Workers: clusterv1beta2.WorkersTopology{
+					MachineDeployments: []clusterv1beta2.MachineDeploymentTopology{
 						{
 							Class: "default-worker",
 							Name:  "md-1",
-							Variables: &clusterv1.MachineDeploymentVariables{
-								Overrides: []clusterv1.ClusterVariable{},
+							Variables: clusterv1beta2.MachineDeploymentVariables{
+								Overrides: []clusterv1beta2.ClusterVariable{},
 							},
 						},
 					},
@@ -461,7 +461,7 @@ func fakeCluster(t *testing.T, fd, pe, subnets bool, wcfg workerConfigExistence)
 	}
 
 	if fd {
-		cluster.Spec.Topology.Workers.MachineDeployments[0].FailureDomain = ptr.To("fd-1")
+		cluster.Spec.Topology.Workers.MachineDeployments[0].FailureDomain = "fd-1"
 	}
 
 	workerConfig := &variables.WorkerNodeConfigSpec{

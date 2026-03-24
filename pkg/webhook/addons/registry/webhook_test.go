@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -109,13 +109,19 @@ func TestDefaultingShouldBeSkippedWithNonTopologyCluster(t *testing.T) {
 			},
 		},
 	)
-	// Create a workload cluster.
-	workloadCluster := &clusterv1.Cluster{
+	// Create a workload cluster without topology (non-ClusterClass).
+	workloadCluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-cluster-",
 			Namespace:    metav1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{},
+		Spec: clusterv1beta2.ClusterSpec{
+			InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
+				APIGroup: "infrastructure.cluster.x-k8s.io",
+				Kind:     "DockerCluster",
+				Name:     "dummy",
+			},
+		},
 	}
 	g.Expect(env.Client.Create(ctx, workloadCluster)).To(Succeed())
 	t.Cleanup(func() {
@@ -123,7 +129,7 @@ func TestDefaultingShouldBeSkippedWithNonTopologyCluster(t *testing.T) {
 	})
 
 	// Validate that the registry addon is not automatically enabled in a non-topology cluster.
-	g.Expect(workloadCluster.Spec.Topology).To(BeNil())
+	g.Expect(workloadCluster.Spec.Topology.IsDefined()).To(BeFalse())
 }
 
 func TestDefaultingShouldBeSkippedWhenRegistryAlreadyEnabled(t *testing.T) {
@@ -269,13 +275,17 @@ func TestDefaultingShouldBeSkippedWhenManagementClusterHasNoTopology(t *testing.
 	g := NewWithT(t)
 
 	// Create a non-ClusterClass management cluster.
-	managementCluster := &clusterv1.Cluster{
+	managementCluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-mgmt-cluster-",
 			Namespace:    metav1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{
-			// No Topology field - simulates a non-ClusterClass management cluster
+		Spec: clusterv1beta2.ClusterSpec{
+			InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
+				APIGroup: "infrastructure.cluster.x-k8s.io",
+				Kind:     "DockerCluster",
+				Name:     "dummy",
+			},
 		},
 	}
 	g.Expect(env.Client.Create(ctx, managementCluster)).To(Succeed())
@@ -306,7 +316,7 @@ func TestDefaultingShouldBeSkippedWhenManagementClusterHasNoTopology(t *testing.
 func createTestManagementCluster(
 	t *testing.T,
 	clusterConfigSpec *carenv1.DockerClusterConfigSpec,
-) *clusterv1.Cluster {
+) *clusterv1beta2.Cluster {
 	t.Helper()
 	g := NewWithT(t)
 
@@ -321,8 +331,8 @@ func createTestManagementCluster(
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-node",
 			Annotations: map[string]string{
-				clusterv1.ClusterNameAnnotation:      managementCluster.Name,
-				clusterv1.ClusterNamespaceAnnotation: managementCluster.Namespace,
+				clusterv1beta2.ClusterNameAnnotation:      managementCluster.Name,
+				clusterv1beta2.ClusterNamespaceAnnotation: managementCluster.Namespace,
 			},
 		},
 	}
@@ -338,23 +348,23 @@ func createTestCluster(
 	t *testing.T,
 	annotations map[string]string,
 	clusterConfigSpec *carenv1.DockerClusterConfigSpec,
-) *clusterv1.Cluster {
+) *clusterv1beta2.Cluster {
 	t.Helper()
 	g := NewWithT(t)
 
 	variable, err := variables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfigSpec)
 	g.Expect(err).ToNot(HaveOccurred())
-	cluster := &clusterv1.Cluster{
+	cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-cluster-",
 			Annotations:  annotations,
 			Namespace:    metav1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{
-			Topology: &clusterv1.Topology{
-				Class:   "dummy-class",
-				Version: "dummy-version",
-				Variables: []clusterv1.ClusterVariable{
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+				Version:  "dummy-version",
+				Variables: []clusterv1beta2.ClusterVariable{
 					*variable,
 				},
 			},

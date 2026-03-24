@@ -1,0 +1,7 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Use Cluster v1beta2 so only classRef is used (v1beta1 does not allow classRef; API server strict decode fails).
+- op: replace
+  path: /apiVersion
+  value: cluster.x-k8s.io/v1beta2

@@ -51,12 +51,12 @@ func DescribeIncorrectConfigMapData(
 	configMap *corev1.ConfigMap,
 ) string {
 	b := strings.Builder{}
-	b.WriteString(fmt.Sprintf("ConfigMap %s failed to get expected data:\n",
-		klog.KObj(input.ConfigMap)))
+	fmt.Fprintf(&b, "ConfigMap %s failed to get expected data:\n",
+		klog.KObj(input.ConfigMap))
 	if configMap == nil {
 		b.WriteString("\nConfigMap: nil\n")
 	} else {
-		b.WriteString(fmt.Sprintf("\nConfigMap:\n%s\n", framework.PrettyPrint(configMap)))
+		fmt.Fprintf(&b, "\nConfigMap:\n%s\n", framework.PrettyPrint(configMap))
 	}
 	return b.String()
 }

@@ -9,7 +9,32 @@
   outputs = inputs @ { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       with nixpkgs.legacyPackages.${system}; rec {
+        # clusterctl 1.12.3 (v1beta2-compatible) from CAPI release binaries
+        clusterctlBin =
+          let
+            version = "1.12.3";
+            base = "https://github.com/kubernetes-sigs/cluster-api/releases/download/v${version}";
+            fetch = name: hash: fetchurl {
+              url = "${base}/clusterctl-${name}";
+              sha256 = hash;
+            };
+            bins = {
+              aarch64-darwin = fetch "darwin-arm64" "1rg6sl78dhi4n86hyjr2mqlnaqz3bk6hq8ipqn8k25d39r0y7yzk";
+              x86_64-darwin = fetch "darwin-amd64" "0ay9k7jwxm8sda1v5bngd9hz74z3cmf1dw85rwcxy3bxx5wlm1i4";
+              x86_64-linux = fetch "linux-amd64" "0jbky46sb5hksslqbq3q1k9vzkhj2i4xg2jwwvn64sk52mxjhxcv";
+              aarch64-linux = fetch "linux-arm64" "1qg3yncgqvjrffg7ajy5alb1fr11qyyz8rkpv3rlv1jqzi3xyjwp";
+            };
+            bin = bins.${system} or (throw "clusterctl: unsupported system ${system}");
+          in
+          runCommand "clusterctl-${version}" { } ''
+            mkdir -p $out/bin
+            cp ${bin} $out/bin/clusterctl
+            chmod +x $out/bin/clusterctl
+          '';
+
         packages = rec {
+          clusterctl = clusterctlBin;
+
           goprintconst = buildGo124Module rec {
             name = "goprintconst";
             version = "0.0.1-dev";

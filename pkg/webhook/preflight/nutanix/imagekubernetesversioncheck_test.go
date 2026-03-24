@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -31,7 +31,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "kubernetes version matches",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -56,7 +56,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "kubernetes version mismatch",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -88,7 +88,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "kubernetes version with build metadata matches",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -113,7 +113,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "custom image name has no Kubernetes version",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -145,7 +145,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "invalid kubernetes version",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -177,7 +177,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "empty image name",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
 						ObjectType_: ptr.To("vmm.v4.content.Image"),
@@ -225,7 +225,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "no images found",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					return nil, nil
 				},
 			},
@@ -242,7 +242,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 		{
 			name: "error getting images",
 			nclient: &clientWrapper{
-				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*vmmv4.GetImageApiResponse, error) {
+				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					return nil, fmt.Errorf("some error")
 				},
 			},
@@ -286,16 +286,16 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 	testCases := []struct {
 		name            string
-		cluster         *clusterv1.Cluster
+		cluster         *clusterv1beta2.Cluster
 		expectedVersion string
 		expectedChecks  int
 		nclient         client
 	}{
 		{
 			name: "cluster with topology version",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
 						Version: "v1.32.3",
 					},
 				},
@@ -306,9 +306,9 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "cluster with topology version without v prefix",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
 						Version: "1.32.3",
 					},
 				},
@@ -319,9 +319,9 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "cluster without topology",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: nil,
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{},
 				},
 			},
 			expectedVersion: "",
@@ -330,9 +330,9 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 		},
 		{
 			name: "client not initialized",
-			cluster: &clusterv1.Cluster{
-				Spec: clusterv1.ClusterSpec{
-					Topology: &clusterv1.Topology{
+			cluster: &clusterv1beta2.Cluster{
+				Spec: clusterv1beta2.ClusterSpec{
+					Topology: clusterv1beta2.Topology{
 						Version: "v1.32.3",
 					},
 				},

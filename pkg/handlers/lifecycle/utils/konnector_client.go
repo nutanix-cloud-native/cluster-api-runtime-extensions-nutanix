@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
-	konnectorprismgoclient "github.com/nutanix-cloud-native/prism-go-client/karbon"
+	konnectorprismgoclient "github.com/nutanix-cloud-native/prism-go-client/konnector"
 )
 
 // NewPrismCentralKonnectorClient creates a new Prism Konnector client that is used to call the Konnector APIs.
@@ -33,7 +33,7 @@ func NewPrismCentralKonnectorClient(credentials *prismgoclient.Credentials, addi
 		credentials.Insecure = false
 	}
 
-	prismCentralKonnectorClient, err := konnectorprismgoclient.NewKarbonAPIClient(*credentials, clientOpts...)
+	prismCentralKonnectorClient, err := konnectorprismgoclient.NewKonnectorAPIClient(*credentials, clientOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create prism konnector client: %w", err)
 	}

@@ -13,11 +13,11 @@ import (
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/types"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 	"github.com/nutanix-cloud-native/prism-go-client/converged"
-	"github.com/nutanix-cloud-native/prism-go-client/environment/types"
+	prismtypes "github.com/nutanix-cloud-native/prism-go-client/environment/types"
 )
 
 // client contains methods to interact with Nutanix Prism converged v4 client.
@@ -38,7 +38,7 @@ type client interface {
 	GetImageById(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*vmmv4.GetImageApiResponse,
 		error,
@@ -51,7 +51,7 @@ type client interface {
 		filter_ *string,
 		orderby_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*vmmv4.ListImagesApiResponse,
 		error,
@@ -60,7 +60,7 @@ type client interface {
 	GetClusterById(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.GetClusterApiResponse, error,
 	)
@@ -73,7 +73,7 @@ type client interface {
 		orderby_ *string,
 		apply_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.ListClustersApiResponse,
 		error,
@@ -85,7 +85,7 @@ type client interface {
 		filter_ *string,
 		orderby_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.ListStorageContainersApiResponse,
 		error,
@@ -94,7 +94,7 @@ type client interface {
 	GetSubnetById(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*netv4.GetSubnetApiResponse, error,
 	)
@@ -107,7 +107,7 @@ type client interface {
 		orderby_ *string,
 		expand_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*netv4.ListSubnetsApiResponse, error,
 	)
@@ -128,7 +128,7 @@ type clientWrapper struct {
 	GetImageByIdFunc func(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*vmmv4.GetImageApiResponse, error,
 	)
@@ -140,7 +140,7 @@ type clientWrapper struct {
 		filter_ *string,
 		orderby_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*vmmv4.ListImagesApiResponse,
 		error,
@@ -149,7 +149,7 @@ type clientWrapper struct {
 	GetClusterByIdFunc func(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.GetClusterApiResponse, error,
 	)
@@ -162,7 +162,7 @@ type clientWrapper struct {
 		orderby_ *string,
 		apply_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.ListClustersApiResponse,
 		error,
@@ -174,7 +174,7 @@ type clientWrapper struct {
 		filter_ *string,
 		orderby_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*clustermgmtv4.ListStorageContainersApiResponse,
 		error,
@@ -183,7 +183,7 @@ type clientWrapper struct {
 	GetSubnetByIdFunc func(
 		ctx context.Context,
 		uuid *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*netv4.GetSubnetApiResponse, error,
 	)
@@ -196,7 +196,7 @@ type clientWrapper struct {
 		orderby_ *string,
 		expand_ *string,
 		select_ *string,
-		args ...map[string]interface{},
+		args ...map[string]any,
 	) (
 		*netv4.ListSubnetsApiResponse, error,
 	)
@@ -228,8 +228,12 @@ func buildODataOptions(page, limit *int, filter, orderby, selectFields *string) 
 	return opts
 }
 
-// buildManagementEndpoint creates a ManagementEndpoint from credentials and trust bundle.
-func buildManagementEndpoint(credentials *prismgoclient.Credentials) (*types.ManagementEndpoint, error) {
+// buildManagementEndpoint creates a ManagementEndpoint from credentials and optional trust bundle.
+// additionalTrustBundlePEM is PEM-encoded certificate bundle (empty string if not set).
+func buildManagementEndpoint(
+	credentials *prismgoclient.Credentials,
+	additionalTrustBundlePEM string,
+) (*prismtypes.ManagementEndpoint, error) {
 	urlStr := credentials.URL
 
 	// Prepend https:// if no scheme is present
@@ -249,10 +253,11 @@ func buildManagementEndpoint(credentials *prismgoclient.Credentials) (*types.Man
 		return nil, fmt.Errorf("invalid URL %q: %w", credentials.URL, ErrEmptyHostInURL)
 	}
 
-	return &types.ManagementEndpoint{
-		Address:  parsedURL,
-		Insecure: credentials.Insecure,
-		ApiCredentials: types.ApiCredentials{
+	return &prismtypes.ManagementEndpoint{
+		Address:               parsedURL,
+		Insecure:              credentials.Insecure,
+		AdditionalTrustBundle: additionalTrustBundlePEM,
+		ApiCredentials: prismtypes.ApiCredentials{
 			Username: credentials.Username,
 			Password: credentials.Password,
 		},
@@ -260,11 +265,14 @@ func buildManagementEndpoint(credentials *prismgoclient.Credentials) (*types.Man
 }
 
 // newClient creates a client with optional cluster information for cache key.
+// additionalTrustBundlePEM is the PEM-encoded trust bundle from clusterConfig
+// field nutanix.prismCentralEndpoint.additionalTrustBundle (empty if not set).
 func newClient(
 	credentials prismgoclient.Credentials, //nolint:gocritic // hugeParam is fine
-	clusterNamespacedName k8stypes.NamespacedName,
+	clusterNamespacedName types.NamespacedName,
+	additionalTrustBundlePEM string,
 ) (client, error) {
-	endpoint, err := buildManagementEndpoint(&credentials)
+	endpoint, err := buildManagementEndpoint(&credentials, additionalTrustBundlePEM)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build management endpoint: %w", err)
 	}
@@ -292,7 +300,7 @@ func newClient(
 		GetImageByIdFunc: func(
 			ctx context.Context,
 			uuid *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*vmmv4.GetImageApiResponse, error) {
 			if uuid == nil {
 				return nil, fmt.Errorf("uuid cannot be nil")
@@ -315,7 +323,7 @@ func newClient(
 			filter_ *string,
 			orderby_ *string,
 			select_ *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*vmmv4.ListImagesApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
 			images, err := convergedc.Images.List(ctx, opts...)
@@ -332,7 +340,7 @@ func newClient(
 		GetClusterByIdFunc: func(
 			ctx context.Context,
 			uuid *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*clustermgmtv4.GetClusterApiResponse, error) {
 			if uuid == nil {
 				return nil, fmt.Errorf("uuid cannot be nil")
@@ -352,7 +360,7 @@ func newClient(
 			ctx context.Context,
 			page_, limit_ *int,
 			filter_, orderby_, apply_, select_ *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*clustermgmtv4.ListClustersApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
 			if apply_ != nil && *apply_ != "" {
@@ -376,7 +384,7 @@ func newClient(
 			filter_ *string,
 			orderby_ *string,
 			select_ *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*clustermgmtv4.ListStorageContainersApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
 			containers, err := convergedc.StorageContainers.List(ctx, opts...)
@@ -393,7 +401,7 @@ func newClient(
 		GetSubnetByIdFunc: func(
 			ctx context.Context,
 			uuid *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*netv4.GetSubnetApiResponse, error) {
 			if uuid == nil {
 				return nil, fmt.Errorf("uuid cannot be nil")
@@ -417,7 +425,7 @@ func newClient(
 			orderby_ *string,
 			expand_ *string,
 			select_ *string,
-			args ...map[string]interface{},
+			args ...map[string]any,
 		) (*netv4.ListSubnetsApiResponse, error) {
 			opts := buildODataOptions(page_, limit_, filter_, orderby_, select_)
 			if expand_ != nil && *expand_ != "" {
@@ -455,7 +463,7 @@ func (c *clientWrapper) GetPrismCentralVersion(
 func (c *clientWrapper) GetImageById(
 	ctx context.Context,
 	uuid *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*vmmv4.GetImageApiResponse,
 	error,
@@ -476,7 +484,7 @@ func (c *clientWrapper) ListImages(
 	filter_ *string,
 	orderby_ *string,
 	select_ *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*vmmv4.ListImagesApiResponse,
 	error,
@@ -497,7 +505,7 @@ func (c *clientWrapper) ListImages(
 func (c *clientWrapper) GetClusterById(
 	ctx context.Context,
 	uuid *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*clustermgmtv4.GetClusterApiResponse,
 	error,
@@ -519,7 +527,7 @@ func (c *clientWrapper) ListClusters(
 	orderby_ *string,
 	apply_ *string,
 	select_ *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*clustermgmtv4.ListClustersApiResponse,
 	error,
@@ -545,7 +553,7 @@ func (c *clientWrapper) ListStorageContainers(
 	filter_ *string,
 	orderby_ *string,
 	select_ *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*clustermgmtv4.ListStorageContainersApiResponse,
 	error,
@@ -566,7 +574,7 @@ func (c *clientWrapper) ListStorageContainers(
 func (c *clientWrapper) GetSubnetById(
 	ctx context.Context,
 	uuid *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*netv4.GetSubnetApiResponse,
 	error,
@@ -588,7 +596,7 @@ func (c *clientWrapper) ListSubnets(
 	orderby_ *string,
 	expand_ *string,
 	select_ *string,
-	args ...map[string]interface{},
+	args ...map[string]any,
 ) (
 	*netv4.ListSubnetsApiResponse,
 	error,

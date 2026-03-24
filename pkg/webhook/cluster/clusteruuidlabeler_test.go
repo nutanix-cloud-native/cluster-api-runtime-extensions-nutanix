@@ -8,7 +8,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -17,15 +17,17 @@ import (
 func TestWebhookBehaviour(t *testing.T) {
 	g := NewWithT(t)
 
-	cluster := &clusterv1.Cluster{
+	cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-cluster-",
 			Namespace:    metav1.NamespaceDefault,
 		},
-		Spec: clusterv1.ClusterSpec{Topology: &clusterv1.Topology{
-			Class:   "dummy-class",
-			Version: "dummy-version",
-		}},
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+				Version:  "dummy-version",
+			},
+		},
 	}
 
 	g.Expect(env.Client.Create(ctx, cluster)).To(Succeed())
@@ -53,10 +55,17 @@ func TestWebhookBehaviour(t *testing.T) {
 func TestWebhookSkipsClusterWithNilTopology(t *testing.T) {
 	g := NewWithT(t)
 
-	cluster := &clusterv1.Cluster{
+	cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-cluster-",
 			Namespace:    metav1.NamespaceDefault,
+		},
+		Spec: clusterv1beta2.ClusterSpec{
+			InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
+				APIGroup: "infrastructure.cluster.x-k8s.io",
+				Kind:     "GenericInfrastructureCluster",
+				Name:     "test",
+			},
 		},
 	}
 
@@ -73,7 +82,7 @@ func TestWebhookSkipsClusterWithNilTopology(t *testing.T) {
 func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsAdded(t *testing.T) {
 	g := NewWithT(t)
 
-	cluster := &clusterv1.Cluster{
+	cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "preexisting-without-topology-or-uuid-annotation",
 			Namespace: metav1.NamespaceDefault,
@@ -84,9 +93,9 @@ func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsAdded(t *testing.T) {
 	g.Expect(cluster.Annotations).ToNot(HaveKey(v1alpha1.ClusterUUIDAnnotationKey))
 
 	// Validate that the webhook does assign a UUID to the cluster if the Cluster has topology added.
-	cluster.Spec.Topology = &clusterv1.Topology{
-		Class:   "dummy-class",
-		Version: "dummy-version",
+	cluster.Spec.Topology = clusterv1beta2.Topology{
+		ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+		Version:  "dummy-version",
 	}
 	g.Expect(env.Client.Update(ctx, cluster)).To(Succeed())
 	g.Expect(cluster.Annotations).
@@ -96,7 +105,7 @@ func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsAdded(t *testing.T) {
 func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsUpdated(t *testing.T) {
 	g := NewWithT(t)
 
-	cluster := &clusterv1.Cluster{
+	cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "preexisting-with-topology-without-uuid-annotation",
 			Namespace: metav1.NamespaceDefault,
@@ -105,7 +114,7 @@ func TestUUIDIsAddedToAPreexistingClusterWhenTopologyIsUpdated(t *testing.T) {
 
 	g.Expect(env.Client.Get(ctx, client.ObjectKeyFromObject(cluster), cluster)).To(Succeed())
 	g.Expect(cluster.Annotations).ToNot(HaveKey(v1alpha1.ClusterUUIDAnnotationKey))
-	g.Expect(cluster.Spec.Topology).ToNot(BeNil())
+	g.Expect(cluster.Spec.Topology.IsDefined()).To(BeTrue())
 
 	// Validate that the webhook does assign a UUID to the cluster if the topology is updated. This could be when
 	// a cluster changes to use CAREN for example, but we just change topology version here as an example of

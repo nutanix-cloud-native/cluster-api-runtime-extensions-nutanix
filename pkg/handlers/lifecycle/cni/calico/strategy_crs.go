@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructuredscheme"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
@@ -268,10 +268,10 @@ func generateProviderCNIManifestsConfigMap(
 				return nil, fmt.Errorf("missing ipPools in unstructured object")
 			}
 
-			ipPools := ipPoolsRef.([]interface{})
+			ipPools := ipPoolsRef.([]any)
 
 			err = unstructured.SetNestedField(
-				ipPools[0].(map[string]interface{}),
+				ipPools[0].(map[string]any),
 				podSubnet,
 				"cidr",
 			)

@@ -21,9 +21,10 @@ patches:
   patch: |-
     - op: "remove"
       path: "/metadata/namespace"
-    - op: "replace"
-      path: "/spec/topology/class"
-      value: "docker-quick-start"
+    - op: "add"
+      path: "/spec/topology/classRef"
+      value:
+        name: docker-quick-start
 - target:
     kind: Cluster
   path: ../../../patches/initialize/variables.yaml

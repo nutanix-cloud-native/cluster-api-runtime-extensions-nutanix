@@ -19,11 +19,11 @@ patches:
         value:
           - name: "cluster-config"
             external:
-              generateExtension: "dockerclusterv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "dockerclusterv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "dockerclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix"
           - name: "worker-config"
             external:
-              generateExtension: "dockerworkerv5configpatch-gp.cluster-api-runtime-extensions-nutanix"
+              generatePatchesExtension: "dockerworkerv6configpatch-gp.cluster-api-runtime-extensions-nutanix"
               discoverVariablesExtension: "dockerworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix"
 
   # BEGIN Initialize lists and maps
@@ -72,3 +72,9 @@ patches:
       kind: KubeadmConfigTemplate
     path: ../../../patches/cis/kubeadmconfigtemplate/kubelet-file-permissions.yaml
   # END CIS patches
+
+  # BEGIN STIG patches
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/stig/kubeadmcontrolplanetemplate/control-plane-flags.yaml
+  # END STIG patches

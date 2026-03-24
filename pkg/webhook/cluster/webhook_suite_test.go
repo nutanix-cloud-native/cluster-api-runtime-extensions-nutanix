@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlenvtest "sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -93,22 +93,29 @@ func TestMain(m *testing.M) {
 		EnvironmentOpts: []envtest.EnvironmentOpt{
 			envtest.WithPreexistingObjects(
 				// Create a pre-existing object without topology or the UUID annotation.
-				&clusterv1.Cluster{
+				&clusterv1beta2.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "preexisting-without-topology-or-uuid-annotation",
 						Namespace: metav1.NamespaceDefault,
 					},
+					Spec: clusterv1beta2.ClusterSpec{
+						InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
+							APIGroup: "infrastructure.cluster.x-k8s.io",
+							Kind:     "DockerCluster",
+							Name:     "dummy",
+						},
+					},
 				},
 				// Create a pre-existing object with topology but without the UUID annotation.
-				&clusterv1.Cluster{
+				&clusterv1beta2.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "preexisting-with-topology-without-uuid-annotation",
 						Namespace: metav1.NamespaceDefault,
 					},
-					Spec: clusterv1.ClusterSpec{
-						Topology: &clusterv1.Topology{
-							Class:   "dummy-class",
-							Version: "dummy-version",
+					Spec: clusterv1beta2.ClusterSpec{
+						Topology: clusterv1beta2.Topology{
+							ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+							Version:  "dummy-version",
 						},
 					},
 				},

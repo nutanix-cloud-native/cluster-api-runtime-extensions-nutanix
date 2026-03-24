@@ -6,6 +6,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -16,8 +17,10 @@ func Create(
 	obj ctrlclient.Object,
 	opts ...ctrlclient.CreateOption,
 ) error {
-	options := []ctrlclient.CreateOption{ctrlclient.FieldOwner(FieldOwner)}
-	options = append(options, opts...)
+	options := slices.Concat(
+		[]ctrlclient.CreateOption{ctrlclient.FieldOwner(FieldOwner)},
+		opts,
+	)
 	err := c.Create(
 		ctx,
 		obj,

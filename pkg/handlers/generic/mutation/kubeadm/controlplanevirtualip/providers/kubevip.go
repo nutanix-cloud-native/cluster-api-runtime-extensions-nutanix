@@ -9,9 +9,9 @@ import (
 	"fmt"
 
 	"github.com/blang/semver/v4"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
@@ -73,6 +73,7 @@ func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
 		return nil, nil, nil, fmt.Errorf("failed templating static Pod: %w", err)
 	}
 
+	//nolint:prealloc // Only has a maximum size of 2, prealloc is unnecessary.
 	files = []bootstrapv1.File{
 		{
 			Content:     kubeVIPStaticPod,

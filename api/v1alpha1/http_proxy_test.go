@@ -7,8 +7,7 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -18,19 +17,19 @@ func TestGenerateNoProxy(t *testing.T) {
 
 	testCases := []struct {
 		name            string
-		cluster         *clusterv1.Cluster
+		cluster         *clusterv1beta2.Cluster
 		expectedNoProxy []string
 		additonalNo     []string
 	}{{
 		name:    "no networking config",
-		cluster: &clusterv1.Cluster{},
+		cluster: &clusterv1beta2.Cluster{},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
 			".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
 	}, {
 		name:        "no networking config with additional no proxy",
-		cluster:     &clusterv1.Cluster{},
+		cluster:     &clusterv1beta2.Cluster{},
 		additonalNo: []string{"example.com"},
 		expectedNoProxy: []string{
 			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
@@ -38,24 +37,27 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "custom pod network",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				ClusterNetwork: &clusterv1.ClusterNetwork{
-					Pods: &clusterv1.NetworkRanges{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				ClusterNetwork: clusterv1beta2.ClusterNetwork{
+					Pods: clusterv1beta2.NetworkRanges{
 						CIDRBlocks: []string{"10.0.0.0/24", "10.0.1.0/24"},
 					},
 				},
 			},
 		},
 		expectedNoProxy: []string{
-			"localhost", "127.0.0.1", "10.0.0.0/24", "10.0.1.0/24", "kubernetes",
-			"kubernetes.default", ".svc", ".svc.cluster.local", ".svc.cluster.local.",
+			"localhost", "127.0.0.1",
+			"10.0.0.0/24",
+			"10.0.1.0/24",
+			"kubernetes", "kubernetes.default",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
 	}, {
 		name: "Unknown infrastructure cluster",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
 					Kind: "SomeFakeInfrastructureCluster",
 				},
 			},
@@ -66,9 +68,9 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "AWS cluster",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
 					Kind: "AWSCluster",
 				},
 			},
@@ -79,9 +81,9 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "AWS managed (EKS) cluster",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
 					Kind: "AWSManagedCluster",
 				},
 			},
@@ -92,9 +94,9 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "Azure cluster",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
 					Kind: "AzureCluster",
 				},
 			},
@@ -105,9 +107,9 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "Azure managed (AKS) cluster",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
 					Kind: "AzureCluster",
 				},
 			},
@@ -118,9 +120,9 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "GCP cluster",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				InfrastructureRef: &v1.ObjectReference{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
 					Kind: "GCPCluster",
 				},
 			},
@@ -132,24 +134,27 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "custom service network",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				ClusterNetwork: &clusterv1.ClusterNetwork{
-					Services: &clusterv1.NetworkRanges{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				ClusterNetwork: clusterv1beta2.ClusterNetwork{
+					Services: clusterv1beta2.NetworkRanges{
 						CIDRBlocks: []string{"172.16.0.0/24", "172.16.1.0/24"},
 					},
 				},
 			},
 		},
 		expectedNoProxy: []string{
-			"localhost", "127.0.0.1", "172.16.0.0/24", "172.16.1.0/24", "kubernetes",
-			"kubernetes.default", ".svc", ".svc.cluster.local", ".svc.cluster.local.",
+			"localhost", "127.0.0.1",
+			"172.16.0.0/24",
+			"172.16.1.0/24",
+			"kubernetes", "kubernetes.default",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
 		},
 	}, {
 		name: "custom servicedomain",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				ClusterNetwork: &clusterv1.ClusterNetwork{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				ClusterNetwork: clusterv1beta2.ClusterNetwork{
 					ServiceDomain: "foo.bar",
 				},
 			},
@@ -160,13 +165,13 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 	}, {
 		name: "all options",
-		cluster: &clusterv1.Cluster{
-			Spec: clusterv1.ClusterSpec{
-				ClusterNetwork: &clusterv1.ClusterNetwork{
-					Pods: &clusterv1.NetworkRanges{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				ClusterNetwork: clusterv1beta2.ClusterNetwork{
+					Pods: clusterv1beta2.NetworkRanges{
 						CIDRBlocks: []string{"10.10.0.0/16"},
 					},
-					Services: &clusterv1.NetworkRanges{
+					Services: clusterv1beta2.NetworkRanges{
 						CIDRBlocks: []string{"172.16.0.0/16"},
 					},
 					ServiceDomain: "foo.bar",
@@ -175,8 +180,12 @@ func TestGenerateNoProxy(t *testing.T) {
 		},
 		additonalNo: []string{"example.com"},
 		expectedNoProxy: []string{
-			"localhost", "127.0.0.1", "10.10.0.0/16", "172.16.0.0/16", "kubernetes",
-			"kubernetes.default", ".svc", ".svc.foo.bar", ".svc.foo.bar.", "example.com",
+			"localhost", "127.0.0.1",
+			"10.10.0.0/16",
+			"172.16.0.0/16",
+			"kubernetes", "kubernetes.default",
+			".svc", ".svc.foo.bar", ".svc.foo.bar.",
+			"example.com",
 		},
 	}}
 
@@ -189,6 +198,59 @@ func TestGenerateNoProxy(t *testing.T) {
 			g.Expect((&v1alpha1.HTTPProxy{
 				AdditionalNo: tt.additonalNo,
 			}).GenerateNoProxy(tt.cluster)).To(gomega.Equal(tt.expectedNoProxy))
+		})
+	}
+}
+
+func TestGenerateNoProxyNormalized(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name            string
+		cluster         *clusterv1beta2.Cluster
+		expectedNoProxy []string
+		additonalNo     []string
+	}{{
+		name:    "no networking config",
+		cluster: &clusterv1beta2.Cluster{},
+		expectedNoProxy: []string{
+			"localhost", "127.0.0.1", "kubernetes", "kubernetes.default",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
+		},
+	}, {
+		name: "CIDRs are expanded to include IP ranges",
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				ClusterNetwork: clusterv1beta2.ClusterNetwork{
+					Pods: clusterv1beta2.NetworkRanges{
+						CIDRBlocks: []string{"10.0.0.0/24"},
+					},
+					Services: clusterv1beta2.NetworkRanges{
+						CIDRBlocks: []string{"172.16.0.0/16"},
+					},
+				},
+			},
+		},
+		additonalNo: []string{"example.com"},
+		expectedNoProxy: []string{
+			"localhost", "127.0.0.1",
+			"10.0.0.0/24", "10.0.0.0-10.0.0.255",
+			"172.16.0.0/16", "172.16.0.0-172.16.255.255",
+			"kubernetes", "kubernetes.default",
+			".svc", ".svc.cluster.local", ".svc.cluster.local.",
+			"example.com",
+		},
+	}}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			g := gomega.NewWithT(t)
+
+			g.Expect((&v1alpha1.HTTPProxy{
+				AdditionalNo: tt.additonalNo,
+			}).GenerateNoProxyNormalized(tt.cluster)).To(gomega.Equal(tt.expectedNoProxy))
 		})
 	}
 }

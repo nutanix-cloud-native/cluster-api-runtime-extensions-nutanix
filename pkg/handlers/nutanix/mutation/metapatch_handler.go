@@ -18,6 +18,7 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPX clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		controlplaneendpoint.NewPatch(),
 		nutanixcontrolplanevirtualip.NewPatch(),
@@ -29,7 +30,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixClusterv5configpatch",
+		"nutanixClusterv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -37,13 +38,14 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPA workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		machinedetails.NewWorkerPatch(),
 	}
 	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"nutanixWorkerv5configpatch",
+		"nutanixWorkerv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

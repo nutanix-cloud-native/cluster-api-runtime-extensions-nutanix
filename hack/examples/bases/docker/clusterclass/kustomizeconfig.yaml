@@ -5,18 +5,18 @@ nameReference:
   - kind: DockerMachineTemplate
     fieldSpecs:
     - kind: ClusterClass
-      path: spec/controlPlane/machineInfrastructure/ref/name
+      path: spec/controlPlane/machineInfrastructure/templateRef/name
     - kind: ClusterClass
-      path: spec/workers/machineDeployments/template/infrastructure/ref/name
+      path: spec/workers/machineDeployments/infrastructure/templateRef/name
   - kind: KubeadmControlPlaneTemplate
     fieldSpecs:
     - kind: ClusterClass
-      path: spec/controlPlane/ref/name
+      path: spec/controlPlane/templateRef/name
   - kind: DockerClusterTemplate
     fieldSpecs:
     - kind: ClusterClass
-      path: spec/infrastructure/ref/name
+      path: spec/infrastructure/templateRef/name
   - kind: KubeadmConfigTemplate
     fieldSpecs:
     - kind: ClusterClass
-      path: spec/workers/machineDeployments/template/bootstrap/ref/name
+      path: spec/workers/machineDeployments/bootstrap/templateRef/name

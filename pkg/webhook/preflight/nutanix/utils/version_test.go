@@ -19,7 +19,6 @@ func TestCleanPCVersion(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			if got := CleanPCVersion(tt.input); got != tt.expected {
@@ -47,7 +46,6 @@ func TestComparePCVersions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			if got := ComparePCVersions(tt.v1, tt.v2); got != tt.expected {

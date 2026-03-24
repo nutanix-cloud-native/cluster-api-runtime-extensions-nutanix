@@ -566,6 +566,21 @@
                     }
                   },
                   "type": "object"
+        "imagePullSecrets": {
+            "description": "Optional secrets used for pulling the container image",
+            "type": "array"
+        },
+        "namespaceSync": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "sourceNamespace": {
+                    "type": "string"
+                },
+                "targetNamespaceLabelSelector": {
+                    "type": "string"
                 }
               },
               "type": "object"

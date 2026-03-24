@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -28,7 +28,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 	testCases := []struct {
 		name                     string
 		nutanixClusterConfigSpec *carenv1.NutanixClusterConfigSpec
-		machineDeployments       []clusterv1.MachineDeploymentTopology
+		machineDeployments       []clusterv1beta2.MachineDeploymentTopology
 		nclient                  client
 		kclient                  ctrlclient.Client
 		expectedChecksCount      int
@@ -56,7 +56,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{},
 				},
 			},
-			machineDeployments:  []clusterv1.MachineDeploymentTopology{},
+			machineDeployments:  []clusterv1beta2.MachineDeploymentTopology{},
 			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
 			expectedChecksCount: 0,
@@ -70,7 +70,7 @@ func TestInitFailureDomainChecks(t *testing.T) {
 					},
 				},
 			},
-			machineDeployments:  []clusterv1.MachineDeploymentTopology{},
+			machineDeployments:  []clusterv1beta2.MachineDeploymentTopology{},
 			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
 			expectedChecksCount: 3,
@@ -78,10 +78,10 @@ func TestInitFailureDomainChecks(t *testing.T) {
 		{
 			name:                     "worker machines with failureDomains",
 			nutanixClusterConfigSpec: nil,
-			machineDeployments: []clusterv1.MachineDeploymentTopology{{
+			machineDeployments: []clusterv1beta2.MachineDeploymentTopology{{
 				Class:         "default-worker",
 				Name:          "md-1",
-				FailureDomain: ptr.To("fd-w1"),
+				FailureDomain: "fd-w1",
 			}},
 			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
@@ -96,10 +96,10 @@ func TestInitFailureDomainChecks(t *testing.T) {
 					},
 				},
 			},
-			machineDeployments: []clusterv1.MachineDeploymentTopology{{
+			machineDeployments: []clusterv1beta2.MachineDeploymentTopology{{
 				Class:         "default-worker",
 				Name:          "md-1",
-				FailureDomain: ptr.To("fd-w1"),
+				FailureDomain: "fd-w1",
 			}},
 			nclient:             &clientWrapper{},
 			kclient:             getK8sClient(),
@@ -111,10 +111,10 @@ func TestInitFailureDomainChecks(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			cd := &checkDependencies{
 				nutanixClusterConfigSpec: tc.nutanixClusterConfigSpec,
-				cluster: &clusterv1.Cluster{
-					Spec: clusterv1.ClusterSpec{
-						Topology: &clusterv1.Topology{
-							Workers: &clusterv1.WorkersTopology{
+				cluster: &clusterv1beta2.Cluster{
+					Spec: clusterv1beta2.ClusterSpec{
+						Topology: clusterv1beta2.Topology{
+							Workers: clusterv1beta2.WorkersTopology{
 								MachineDeployments: tc.machineDeployments,
 							},
 						},
@@ -173,7 +173,7 @@ func TestFailureDomainCheck(t *testing.T) {
 				GetClusterByIdFunc: func(
 					ctx context.Context,
 					uuid *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.GetClusterApiResponse,
 					error,
@@ -188,7 +188,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -214,7 +214,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -231,7 +231,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
+				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*netv4.GetSubnetApiResponse, error) {
 					return nil, nil
 				},
 				ListSubnetsFunc: func(
@@ -242,7 +242,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby_ *string,
 					expand_ *string,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (*netv4.ListSubnetsApiResponse, error) {
 					return nil, fmt.Errorf("failed to list subnets")
 				},
@@ -265,7 +265,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby,
 					apply,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (
 					*clustermgmtv4.ListClustersApiResponse,
 					error,
@@ -282,7 +282,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					require.NoError(t, err)
 					return resp, nil
 				},
-				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]interface{}) (*netv4.GetSubnetApiResponse, error) {
+				GetSubnetByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*netv4.GetSubnetApiResponse, error) {
 					return nil, nil
 				},
 				ListSubnetsFunc: func(
@@ -293,7 +293,7 @@ func TestFailureDomainCheck(t *testing.T) {
 					orderby_ *string,
 					expand_ *string,
 					select_ *string,
-					args ...map[string]interface{},
+					args ...map[string]any,
 				) (*netv4.ListSubnetsApiResponse, error) {
 					resp := &netv4.ListSubnetsApiResponse{
 						ObjectType_: ptr.To("networking.v4.config.ListSubnetsApiResponse"),

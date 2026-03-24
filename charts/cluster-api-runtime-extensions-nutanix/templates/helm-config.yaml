@@ -13,7 +13,7 @@ data:
     RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "aws-ccm" "defaultURL" "https://kubernetes.github.io/cloud-provider-aws" "context" .) }}'
   aws-ebs-csi: |
     ChartName: aws-ebs-csi-driver
-    ChartVersion: 2.51.0
+    ChartVersion: 2.51.3
     RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "aws-ebs-csi" "defaultURL" "https://kubernetes-sigs.github.io/aws-ebs-csi-driver" "context" .) }}'
   aws-load-balancer-controller: |
     ChartName: aws-load-balancer-controller
@@ -61,7 +61,7 @@ data:
     RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "nutanix-ccm" "defaultURL" "https://nutanix.github.io/helm/" "context" .) }}'
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
-    ChartVersion: 3.3.8
+    ChartVersion: 3.6.0
     RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "nutanix-storage-csi" "defaultURL" "https://nutanix.github.io/helm-releases/" "context" .) }}'
   registry-syncer: |
     ChartName: registry-syncer
@@ -77,5 +77,4 @@ data:
     RepositoryURL: '{{ include "caren.helmAddonRepoURL" (dict "addonKey" "tigera-operator" "defaultURL" "https://docs.tigera.io/calico/charts" "context" .) }}'
 kind: ConfigMap
 metadata:
-  creationTimestamp: null
   name: '{{ .Values.helmAddonsConfigMap }}'

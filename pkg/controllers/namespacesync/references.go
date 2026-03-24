@@ -25,15 +25,18 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // getReference gets the object referenced in ref.
 func getReference(
 	ctx context.Context,
 	cli client.Reader,
+	scheme *runtime.Scheme,
 	ref *corev1.ObjectReference,
 ) (
 	*unstructured.Unstructured,
@@ -47,6 +50,13 @@ func getReference(
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get %s %s/%s", ref.Kind, ref.Name, ref.Namespace)
 	}
+
+	gvk, err := apiutil.GVKForObject(obj, scheme)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get GVK for %s %s/%s", ref.Kind, ref.Name, ref.Namespace)
+	}
+	obj.SetGroupVersionKind(gvk)
+
 	return obj, nil
 }
 
@@ -60,33 +70,34 @@ func walkReferences(
 	if cc == nil {
 		return nil
 	}
-	if cc.Spec.Infrastructure.Ref != nil {
-		if err := fn(ctx, cc.Spec.Infrastructure.Ref); err != nil {
+	if ref := cc.Spec.Infrastructure.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+		if err := fn(ctx, ref); err != nil {
 			return err
 		}
 	}
 
-	if cc.Spec.ControlPlane.Ref != nil {
-		if err := fn(ctx, cc.Spec.ControlPlane.Ref); err != nil {
+	if ref := cc.Spec.ControlPlane.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+		if err := fn(ctx, ref); err != nil {
 			return err
 		}
 	}
 
-	if cpInfra := cc.Spec.ControlPlane.MachineInfrastructure; cpInfra != nil && cpInfra.Ref != nil {
-		if err := fn(ctx, cpInfra.Ref); err != nil {
+	cpInfra := cc.Spec.ControlPlane.MachineInfrastructure
+	if ref := cpInfra.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+		if err := fn(ctx, ref); err != nil {
 			return err
 		}
 	}
 
 	for mdIdx := range cc.Spec.Workers.MachineDeployments {
 		md := &cc.Spec.Workers.MachineDeployments[mdIdx]
-		if md.Template.Infrastructure.Ref != nil {
-			if err := fn(ctx, md.Template.Infrastructure.Ref); err != nil {
+		if ref := md.Infrastructure.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+			if err := fn(ctx, ref); err != nil {
 				return err
 			}
 		}
-		if md.Template.Bootstrap.Ref != nil {
-			if err := fn(ctx, md.Template.Bootstrap.Ref); err != nil {
+		if ref := md.Bootstrap.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+			if err := fn(ctx, ref); err != nil {
 				return err
 			}
 		}

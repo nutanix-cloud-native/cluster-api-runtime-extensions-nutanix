@@ -20,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
@@ -268,7 +268,7 @@ func generateCertificateData(
 	if keyBlock == nil {
 		return nil, nil, nil, fmt.Errorf("failed to decode CA private key PEM")
 	}
-	var caPriv interface{}
+	var caPriv any
 	switch keyBlock.Type {
 	case "RSA PRIVATE KEY":
 		caPriv, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)

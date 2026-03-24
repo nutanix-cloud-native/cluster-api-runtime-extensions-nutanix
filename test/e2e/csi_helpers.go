@@ -18,8 +18,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -144,7 +144,7 @@ func waitForLocalPathCSIToBeReadyInWorkloadCluster(
 ) {
 	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		crs := &addonsv1.ClusterResourceSet{}
+		crs := &crsv1.ClusterResourceSet{}
 		Expect(input.clusterProxy.GetClient().Get(
 			ctx,
 			types.NamespacedName{
@@ -213,7 +213,7 @@ func waitForAWSEBSCSIToBeReadyInWorkloadCluster(
 ) {
 	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		crs := &addonsv1.ClusterResourceSet{}
+		crs := &crsv1.ClusterResourceSet{}
 		Expect(input.clusterProxy.GetClient().Get(
 			ctx,
 			types.NamespacedName{
@@ -451,7 +451,7 @@ func waitForSnapshotControllerToBeReadyInWorkloadCluster(
 ) {
 	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		crs := &addonsv1.ClusterResourceSet{}
+		crs := &crsv1.ClusterResourceSet{}
 		Expect(input.clusterProxy.GetClient().Get(
 			ctx,
 			types.NamespacedName{

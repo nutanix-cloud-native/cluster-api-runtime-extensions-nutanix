@@ -11,10 +11,10 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
@@ -56,12 +56,17 @@ func WaitForHelmReleaseProxyReadyForCluster(
 	Eventually(func() bool {
 		err := input.GetLister.Get(ctx, hrpKey, hrp)
 
-		return err == nil && conditions.IsTrue(hrp, clusterv1.ReadyCondition)
+		return err == nil && apimeta.IsStatusConditionTrue(hrp.GetConditions(), clusterv1.ReadyCondition)
 	}, intervals...).Should(
 		BeTrue(),
-		fmt.Sprintf("HelmReleaseProxy %s failed to become ready and have up to date revision: ready condition = %+v, "+
-			"revision = %v, full object is:\n%+v\n`",
-			hrpKey, conditions.Get(hrp, clusterv1.ReadyCondition), hrp.Status.Revision, hrp),
+		fmt.Sprintf(
+			"HelmReleaseProxy %s failed to become ready and have up to date revision: ready condition = %+v, "+
+				"revision = %v, full object is:\n%+v\n`",
+			hrpKey,
+			apimeta.FindStatusCondition(hrp.GetConditions(), clusterv1.ReadyCondition),
+			hrp.Status.Revision,
+			hrp,
+		),
 	)
 	Logf("HelmReleaseProxy %s is now ready, took %v", hrpKey, time.Since(start))
 }

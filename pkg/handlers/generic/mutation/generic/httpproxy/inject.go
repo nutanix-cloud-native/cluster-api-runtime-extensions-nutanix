@@ -8,9 +8,9 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -96,7 +96,7 @@ func (h *httpProxyPatchHandler) Mutate(
 			).Info("adding files to control plane kubeadm config spec")
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				generateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
+				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxyNormalized(cluster))...,
 			)
 			return nil
 		}); err != nil {
@@ -112,7 +112,7 @@ func (h *httpProxyPatchHandler) Mutate(
 			).Info("adding files to worker node kubeadm config template")
 			obj.Spec.Template.Spec.Files = append(
 				obj.Spec.Template.Spec.Files,
-				generateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
+				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxyNormalized(cluster))...,
 			)
 			return nil
 		}); err != nil {

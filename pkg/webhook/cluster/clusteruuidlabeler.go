@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	v1 "k8s.io/api/admission/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -50,7 +50,7 @@ func (a *clusterUUIDLabeler) defaulter(
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if cluster.Spec.Topology == nil {
+	if !cluster.Spec.Topology.IsDefined() {
 		return admission.Allowed("")
 	}
 
@@ -112,7 +112,7 @@ func (a *clusterUUIDLabeler) validate(
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if cluster.Spec.Topology == nil {
+	if !cluster.Spec.Topology.IsDefined() {
 		return admission.Allowed("")
 	}
 

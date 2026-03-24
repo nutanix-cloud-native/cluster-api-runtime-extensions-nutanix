@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	capav1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -50,7 +50,7 @@ var _ = Describe("Generate AWS Tags patches for Worker", func() {
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/additionalTags",
-				ValueMatcher: gomega.Equal(map[string]interface{}{
+				ValueMatcher: gomega.Equal(map[string]any{
 					"Environment": "production",
 					"Team":        "platform",
 					"CostCenter":  "12345",
@@ -101,7 +101,7 @@ var _ = Describe("Generate AWS Tags patches for Worker", func() {
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/additionalTags",
-				ValueMatcher: gomega.Equal(map[string]interface{}{
+				ValueMatcher: gomega.Equal(map[string]any{
 					"kubernetes.io/cluster/test-cluster": "owned",
 					"Name":                               "test-cluster-worker",
 					"Environment":                        "dev",

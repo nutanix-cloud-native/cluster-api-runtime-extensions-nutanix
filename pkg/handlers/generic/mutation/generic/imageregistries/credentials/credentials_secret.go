@@ -13,7 +13,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	cabpkv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
@@ -31,14 +31,14 @@ var (
 	)
 )
 
-func generateCredentialsSecretFile(configs []providerConfig, clusterName string) *cabpkv1.File {
+func generateCredentialsSecretFile(configs []providerConfig, clusterName string) *bootstrapv1.File {
 	if !configsRequireStaticCredentials(configs) {
 		return nil
 	}
-	return &cabpkv1.File{
+	return &bootstrapv1.File{
 		Path: kubeletStaticCredentialProviderCredentialsOnRemote,
-		ContentFrom: &cabpkv1.FileSource{
-			Secret: cabpkv1.SecretFileSource{
+		ContentFrom: bootstrapv1.FileSource{
+			Secret: bootstrapv1.SecretFileSource{
 				Name: credentialSecretName(clusterName),
 				Key:  secretKeyForStaticCredentialProviderConfig,
 			},
@@ -85,10 +85,10 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 	type templateInput struct {
 		RegistryHost string
 		Username     string
-		Password     string
+		Password     string //nolint:gosec // Does not contain hard coded credentials.
 	}
 
-	var inputs []templateInput //nolint:prealloc // We don't know the size of the slice yet.
+	var inputs []templateInput
 	for _, config := range configs {
 		requiresStaticCredentials, err := config.requiresStaticCredentials()
 		if err != nil {

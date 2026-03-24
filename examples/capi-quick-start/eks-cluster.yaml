@@ -8,7 +8,8 @@ metadata:
   name: ${CLUSTER_NAME}
 spec:
   topology:
-    class: eks-quick-start
+    classRef:
+      name: eks-quick-start
     controlPlane: {}
     variables:
     - name: clusterConfig

@@ -14,7 +14,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -133,12 +134,12 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	}
 
 	// Checks run only for ClusterClass-based clusters.
-	if cluster.Spec.Topology == nil {
+	if !cluster.Spec.Topology.IsDefined() {
 		log.V(5).Info("Skipping preflight checks for non-topology cluster")
 		return admission.Allowed("")
 	}
 
-	if cluster.Spec.Paused {
+	if ptr.Deref(cluster.Spec.Paused, false) {
 		// If the cluster is paused, skip all checks.
 		// This allows the cluster to be moved to another API server without running checks.
 		log.V(5).Info("Skipping preflight checks for paused cluster")
@@ -160,11 +161,11 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 			cmpopts.IgnoreFields(clusterv1.ClusterSpec{}, "Paused"),
 		) {
 			msg := "Skipping preflight checks because spec has not changed"
-			if cluster.Spec.Paused != oldCluster.Spec.Paused {
+			if ptr.Deref(cluster.Spec.Paused, false) != ptr.Deref(oldCluster.Spec.Paused, false) {
 				msg += fmt.Sprintf(
 					" (ignoring paused state, which changed from %t to %t)",
-					oldCluster.Spec.Paused,
-					cluster.Spec.Paused,
+					ptr.Deref(oldCluster.Spec.Paused, false),
+					ptr.Deref(cluster.Spec.Paused, false),
 				)
 			}
 			log.V(5).Info(msg)

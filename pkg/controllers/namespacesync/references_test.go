@@ -9,15 +9,14 @@ import (
 
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/internal/test/builder"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/util/test/builder"
 )
 
 func TestWalkReferences(t *testing.T) {
 	tests := []struct {
 		name         string
-		clusterClass *clusterv1.ClusterClass
+		clusterClass *clusterv1beta2.ClusterClass
 	}{
 		{
 			name:         "nil ClusterClass should return nil without calling callback",
@@ -151,27 +150,28 @@ func TestWalkReferences(t *testing.T) {
 	}
 }
 
-func collectExpectedRefs(cc *clusterv1.ClusterClass) []*corev1.ObjectReference {
+func collectExpectedRefs(cc *clusterv1beta2.ClusterClass) []*corev1.ObjectReference {
 	var refs []*corev1.ObjectReference
 
-	if cc.Spec.Infrastructure.Ref != nil {
-		refs = append(refs, cc.Spec.Infrastructure.Ref)
+	if ref := cc.Spec.Infrastructure.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+		refs = append(refs, ref)
 	}
 
-	if cc.Spec.ControlPlane.Ref != nil {
-		refs = append(refs, cc.Spec.ControlPlane.Ref)
+	if ref := cc.Spec.ControlPlane.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+		refs = append(refs, ref)
 	}
 
-	if cpInfra := cc.Spec.ControlPlane.MachineInfrastructure; cpInfra != nil && cpInfra.Ref != nil {
-		refs = append(refs, cpInfra.Ref)
+	cpInfra := cc.Spec.ControlPlane.MachineInfrastructure
+	if ref := cpInfra.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+		refs = append(refs, ref)
 	}
 
 	for _, md := range cc.Spec.Workers.MachineDeployments {
-		if md.Template.Infrastructure.Ref != nil {
-			refs = append(refs, md.Template.Infrastructure.Ref)
+		if ref := md.Infrastructure.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+			refs = append(refs, ref)
 		}
-		if md.Template.Bootstrap.Ref != nil {
-			refs = append(refs, md.Template.Bootstrap.Ref)
+		if ref := md.Bootstrap.TemplateRef.ToObjectReference(cc.Namespace); ref != nil {
+			refs = append(refs, ref)
 		}
 	}
 

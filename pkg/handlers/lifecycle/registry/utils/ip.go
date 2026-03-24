@@ -8,14 +8,14 @@ import (
 	"fmt"
 
 	netutils "k8s.io/utils/net"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 const ipIndex = 20
 
 func ServiceIPForCluster(cluster *clusterv1.Cluster) (string, error) {
 	var serviceCIDRBlocks []string
-	if cluster.Spec.ClusterNetwork != nil && cluster.Spec.ClusterNetwork.Services != nil {
+	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) > 0 {
 		serviceCIDRBlocks = cluster.Spec.ClusterNetwork.Services.CIDRBlocks
 	}
 	serviceIP, err := getServiceIP(serviceCIDRBlocks)

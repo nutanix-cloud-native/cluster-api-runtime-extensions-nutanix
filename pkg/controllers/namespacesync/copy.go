@@ -7,32 +7,37 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 func copyClusterClassAndTemplates(
 	ctx context.Context,
 	w client.Writer,
 	templateReader client.Reader,
+	scheme *runtime.Scheme,
 	source *clusterv1.ClusterClass,
 	namespace string,
 ) error {
 	target := copyObjectForCreate(source, source.Name, namespace)
 
-	if err := walkReferences(ctx, target, func(ctx context.Context, ref *corev1.ObjectReference) error {
+	// Use source (not target) for walking references so we fetch templates from the source namespace.
+	if err := walkReferences(ctx, source, func(ctx context.Context, ref *corev1.ObjectReference) error {
 		// Get referenced Template
-		sourceTemplate, err := getReference(ctx, templateReader, ref)
+		sourceTemplate, err := getReference(ctx, templateReader, scheme, ref)
 		if err != nil {
 			return fmt.Errorf("failed to get reference: %w", err)
 		}
 
 		// Copy Template to target namespace, if it does not exist there.
 		targetTemplate := copyObjectForCreate(sourceTemplate, sourceTemplate.GetName(), namespace)
-		if err = createIfNotExists(ctx, templateReader, w, targetTemplate); err != nil {
+		if err = createIfNotExists(ctx, templateReader, w, scheme, targetTemplate); err != nil {
 			return fmt.Errorf("failed to create template: %w", err)
 		}
 
@@ -46,21 +51,30 @@ func copyClusterClassAndTemplates(
 	}
 
 	// Copy ClusterClass to target namespace, if it does not exist there.
-	if err := createIfNotExists(ctx, templateReader, w, target); err != nil {
+	if err := createIfNotExists(ctx, templateReader, w, scheme, target); err != nil {
 		return fmt.Errorf("failed to create cluster class: %w", err)
 	}
 	return nil
 }
 
-func createIfNotExists(ctx context.Context, r client.Reader, w client.Writer, obj client.Object) error {
+func createIfNotExists(
+	ctx context.Context,
+	r client.Reader,
+	w client.Writer,
+	scheme *runtime.Scheme,
+	obj client.Object,
+) error {
 	key := client.ObjectKeyFromObject(obj)
-	gvk := obj.GetObjectKind().GroupVersionKind().String()
+	gvk, err := apiutil.GVKForObject(obj, scheme)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get GVK for object %s/%s", obj.GetNamespace(), obj.GetName())
+	}
 
 	// Check if the resource exists.
 	// We do not need the object itself, just the metadata, so we use PartialObjectMetadata.
 	partial := &metav1.PartialObjectMetadata{}
-	partial.SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
-	err := r.Get(ctx, key, partial)
+	partial.SetGroupVersionKind(gvk)
+	err = r.Get(ctx, key, partial)
 
 	if apierrors.IsNotFound(err) {
 		// The resource does not exist, so create it.
@@ -82,12 +96,6 @@ func copyObjectForCreate[T client.Object](src T, name, namespace string) T {
 
 	dst.SetName(name)
 	dst.SetNamespace(namespace)
-
-	// Zero out ManagedFields (clients will set them)
-	dst.SetManagedFields(nil)
-	// Zero out OwnerReferences (object is garbage-collected if
-	// owners are not in the target namespace)
-	dst.SetOwnerReferences(nil)
 
 	// Zero out fields that are ignored by the API server on create
 	dst.SetCreationTimestamp(metav1.Time{})

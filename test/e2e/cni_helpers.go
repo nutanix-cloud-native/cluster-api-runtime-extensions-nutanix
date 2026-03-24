@@ -14,8 +14,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	addonsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -92,7 +92,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 ) {
 	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		crs := &addonsv1.ClusterResourceSet{}
+		crs := &crsv1.ClusterResourceSet{}
 		Expect(input.clusterProxy.GetClient().Get(
 			ctx,
 			types.NamespacedName{
@@ -213,7 +213,7 @@ func waitForCiliumToBeReadyInWorkloadCluster(
 
 	switch input.strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
-		crs := &addonsv1.ClusterResourceSet{}
+		crs := &crsv1.ClusterResourceSet{}
 		Expect(input.clusterProxy.GetClient().Get(
 			ctx,
 			types.NamespacedName{

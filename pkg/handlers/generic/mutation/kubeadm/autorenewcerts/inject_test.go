@@ -8,7 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -51,10 +51,10 @@ var _ = Describe("Generate auto renew patches", func() {
 				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 					Operation: "add",
-					Path:      "/spec/template/spec/rolloutBefore",
+					Path:      "/spec/template/spec/rollout",
 					ValueMatcher: gomega.HaveKeyWithValue(
-						"certificatesExpiryDays",
-						gomega.BeEquivalentTo(10),
+						"before",
+						gomega.HaveKeyWithValue("certificatesExpiryDays", gomega.BeEquivalentTo(10)),
 					),
 				}},
 			},
@@ -79,10 +79,10 @@ var _ = Describe("Generate auto renew patches", func() {
 				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 					Operation: "add",
-					Path:      "/spec/template/spec/rolloutBefore",
+					Path:      "/spec/template/spec/rollout",
 					ValueMatcher: gomega.HaveKeyWithValue(
-						"certificatesExpiryDays",
-						gomega.BeEquivalentTo(10),
+						"before",
+						gomega.HaveKeyWithValue("certificatesExpiryDays", gomega.BeEquivalentTo(10)),
 					),
 				}},
 			},
@@ -107,10 +107,10 @@ var _ = Describe("Generate auto renew patches", func() {
 				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 					Operation: "add",
-					Path:      "/spec/template/spec/rolloutBefore",
+					Path:      "/spec/template/spec/rollout",
 					ValueMatcher: gomega.HaveKeyWithValue(
-						"certificatesExpiryDays",
-						gomega.BeEquivalentTo(10),
+						"before",
+						gomega.HaveKeyWithValue("certificatesExpiryDays", gomega.BeEquivalentTo(10)),
 					),
 				}},
 			},
@@ -135,8 +135,8 @@ var _ = Describe("Generate auto renew patches", func() {
 				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 				UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 					Operation:    "add",
-					Path:         "/spec/template/spec",
-					ValueMatcher: gomega.HaveKey("rolloutBefore"),
+					Path:         "/spec/template/spec/rollout",
+					ValueMatcher: gomega.HaveKey("before"),
 				}},
 			},
 		},

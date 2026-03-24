@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -24,14 +24,14 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name            string
-		initialClusters []clusterv1.Cluster
+		initialClusters []clusterv1beta2.Cluster
 		nodes           []corev1.Node
-		wantCluster     *clusterv1.Cluster
+		wantCluster     *clusterv1beta2.Cluster
 		wantErr         error
 	}{
 		{
 			name: "management cluster from Node annotations",
-			initialClusters: []clusterv1.Cluster{
+			initialClusters: []clusterv1beta2.Cluster{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "management-cluster",
@@ -44,13 +44,13 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node1",
 						Annotations: map[string]string{
-							clusterv1.ClusterNameAnnotation:      "management-cluster",
-							clusterv1.ClusterNamespaceAnnotation: "default",
+							clusterv1beta2.ClusterNameAnnotation:      "management-cluster",
+							clusterv1beta2.ClusterNamespaceAnnotation: "default",
 						},
 					},
 				},
 			},
-			wantCluster: &clusterv1.Cluster{
+			wantCluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "management-cluster",
 					Namespace: "default",
@@ -59,7 +59,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 		},
 		{
 			name: "management cluster from Node annotations with multiple clusters",
-			initialClusters: []clusterv1.Cluster{
+			initialClusters: []clusterv1beta2.Cluster{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "management-cluster",
@@ -78,13 +78,13 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node1",
 						Annotations: map[string]string{
-							clusterv1.ClusterNameAnnotation:      "management-cluster",
-							clusterv1.ClusterNamespaceAnnotation: "default",
+							clusterv1beta2.ClusterNameAnnotation:      "management-cluster",
+							clusterv1beta2.ClusterNamespaceAnnotation: "default",
 						},
 					},
 				},
 			},
-			wantCluster: &clusterv1.Cluster{
+			wantCluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "management-cluster",
 					Namespace: "default",
@@ -93,7 +93,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 		},
 		{
 			name: "management cluster from bootstrap client with single cluster",
-			initialClusters: []clusterv1.Cluster{
+			initialClusters: []clusterv1beta2.Cluster{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "management-cluster",
@@ -108,7 +108,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 					},
 				},
 			},
-			wantCluster: &clusterv1.Cluster{
+			wantCluster: &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "management-cluster",
 					Namespace: "default",
@@ -118,7 +118,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 		{
 			name: "fail on missing cluster",
 			// Cluster is in the wrong namespace.
-			initialClusters: []clusterv1.Cluster{
+			initialClusters: []clusterv1beta2.Cluster{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "management-cluster",
@@ -131,8 +131,8 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node1",
 						Annotations: map[string]string{
-							clusterv1.ClusterNameAnnotation:      "management-cluster",
-							clusterv1.ClusterNamespaceAnnotation: "default",
+							clusterv1beta2.ClusterNameAnnotation:      "management-cluster",
+							clusterv1beta2.ClusterNamespaceAnnotation: "default",
 						},
 					},
 				},
@@ -143,7 +143,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 		},
 		{
 			name: "fail on missing cluster name annotation",
-			initialClusters: []clusterv1.Cluster{
+			initialClusters: []clusterv1beta2.Cluster{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "management-cluster",
@@ -156,7 +156,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node1",
 						Annotations: map[string]string{
-							clusterv1.ClusterNamespaceAnnotation: "default",
+							clusterv1beta2.ClusterNamespaceAnnotation: "default",
 						},
 					},
 				},
@@ -167,7 +167,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 		},
 		{
 			name: "fail on missing cluster namespace annotation",
-			initialClusters: []clusterv1.Cluster{
+			initialClusters: []clusterv1beta2.Cluster{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "management-cluster",
@@ -180,7 +180,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node1",
 						Annotations: map[string]string{
-							clusterv1.ClusterNameAnnotation: "management-cluster",
+							clusterv1beta2.ClusterNameAnnotation: "management-cluster",
 						},
 					},
 				},
@@ -191,7 +191,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 		},
 		{
 			name: "fail when multiple clusters exist in bootstrap client",
-			initialClusters: []clusterv1.Cluster{
+			initialClusters: []clusterv1beta2.Cluster{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "management-cluster",
@@ -237,7 +237,7 @@ func TestManagementOrFutureManagementCluster(t *testing.T) {
 	}
 }
 
-func buildFakeClientForTest(t *testing.T, clusters []clusterv1.Cluster, nodes []corev1.Node) client.Client {
+func buildFakeClientForTest(t *testing.T, clusters []clusterv1beta2.Cluster, nodes []corev1.Node) client.Client {
 	t.Helper()
 	objs := make([]client.Object, 0, len(clusters)+len(nodes))
 	for i := range clusters {
@@ -253,6 +253,6 @@ func buildFakeClient(t *testing.T, objs ...client.Object) client.Client {
 	t.Helper()
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
 	return fake.NewClientBuilder().WithScheme(clientScheme).WithObjects(objs...).Build()
 }

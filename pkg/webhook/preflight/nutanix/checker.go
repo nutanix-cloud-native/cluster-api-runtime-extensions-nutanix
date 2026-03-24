@@ -5,10 +5,11 @@ package nutanix
 
 import (
 	"context"
+	"slices"
 
 	"github.com/go-logr/logr"
-	k8stypes "k8s.io/apimachinery/pkg/types"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	types "k8s.io/apimachinery/pkg/types"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -36,7 +37,11 @@ type nutanixChecker struct {
 
 	credentialsCheckFactory func(
 		ctx context.Context,
-		nclientFactory func(prismgoclient.Credentials) (client, error),
+		nclientFactory func(
+			credentials prismgoclient.Credentials,
+			clusterNamespacedName types.NamespacedName,
+			additionalTrustBundlePEM string,
+		) (client, error),
 		cd *checkDependencies,
 	) preflight.Check
 
@@ -97,24 +102,20 @@ func (n *nutanixChecker) Init(
 		n.configurationCheckFactory(cd),
 		n.credentialsCheckFactory(
 			ctx,
-			func(creds prismgoclient.Credentials) (client, error) {
-				return newClient(creds, k8stypes.NamespacedName{
-					Name:      cluster.Name,
-					Namespace: cluster.Namespace,
-				})
-			},
+			newClient,
 			cd,
 		),
 		n.prismCentralVersionCheckFactory(ctx, cd),
 	}
 
-	checks = append(checks, n.failureDomainCheckFactory(cd)...)
-	checks = append(checks, n.vmImageChecksFactory(cd)...)
-	checks = append(checks, n.vmImageKubernetesVersionChecksFactory(cd)...)
-	checks = append(checks, n.cidrValidationChecksFactory(cd)...)
-	checks = append(checks, n.storageContainerChecksFactory(cd)...)
-
-	// Add more checks here as needed.
+	checks = slices.Concat(
+		checks,
+		n.failureDomainCheckFactory(cd),
+		n.vmImageChecksFactory(cd),
+		n.vmImageKubernetesVersionChecksFactory(cd),
+		n.cidrValidationChecksFactory(cd),
+		n.storageContainerChecksFactory(cd),
+	)
 
 	return checks
 }

@@ -10,7 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	types "k8s.io/apimachinery/pkg/types"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 
@@ -148,7 +149,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 
 			checker.credentialsCheckFactory = func(
 				ctx context.Context,
-				nclientFactory func(prismgoclient.Credentials) (client, error),
+				nclientFactory func(prismgoclient.Credentials, types.NamespacedName, string) (client, error),
 				cd *checkDependencies,
 			) preflight.Check {
 				credsCheckCalled = true
@@ -249,7 +250,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 
 			// Call Init
 			ctx := context.Background()
-			checks := checker.Init(ctx, nil, &clusterv1.Cluster{
+			checks := checker.Init(ctx, nil, &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cluster",
 					Namespace: "default",
@@ -329,7 +330,6 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 	}
 
 	for _, tt := range scenarios {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -345,7 +345,7 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 				},
 				credentialsCheckFactory: func(
 					ctx context.Context,
-					nclientFactory func(prismgoclient.Credentials) (client, error),
+					nclientFactory func(prismgoclient.Credentials, types.NamespacedName, string) (client, error),
 					cd *checkDependencies,
 				) preflight.Check {
 					cd.nclient = &clientWrapper{}
@@ -400,7 +400,7 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 				},
 			}
 
-			cluster := &clusterv1.Cluster{
+			cluster := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: tt.annotations,
 				},

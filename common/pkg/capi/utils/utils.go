@@ -10,7 +10,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -126,4 +127,22 @@ func GetProvider(cluster *clusterv1.Cluster) string {
 		return ""
 	}
 	return cluster.GetLabels()[clusterv1.ProviderNameLabel]
+}
+
+// ConvertV1Beta1ClusterToV1Beta2 converts a v1beta1 Cluster to v1beta2 Cluster using CAPI conversion.
+func ConvertV1Beta1ClusterToV1Beta2(src *clusterv1beta1.Cluster) (*clusterv1.Cluster, error) {
+	dst := &clusterv1.Cluster{}
+	if err := src.ConvertTo(dst); err != nil {
+		return nil, fmt.Errorf("failed to convert v1beta1 Cluster to v1beta2: %w", err)
+	}
+	return dst, nil
+}
+
+// ConvertV1Beta2ClusterToV1Beta1 converts a v1beta2 Cluster to v1beta1 Cluster using CAPI conversion.
+func ConvertV1Beta2ClusterToV1Beta1(src *clusterv1.Cluster) (*clusterv1beta1.Cluster, error) {
+	dst := &clusterv1beta1.Cluster{}
+	if err := dst.ConvertFrom(src); err != nil {
+		return nil, fmt.Errorf("failed to convert v1beta2 Cluster to v1beta1: %w", err)
+	}
+	return dst, nil
 }

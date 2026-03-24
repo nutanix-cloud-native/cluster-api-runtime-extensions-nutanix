@@ -61,12 +61,7 @@ func CompareVersions(v1, v2 string) int {
 	v1IntList := convertStringToIntList(v1)
 	v2IntList := convertStringToIntList(v2)
 
-	var maxLen int
-	if len(v1IntList) < len(v2IntList) {
-		maxLen = len(v2IntList)
-	} else {
-		maxLen = len(v1IntList)
-	}
+	maxLen := max(len(v1IntList), len(v2IntList))
 
 	v1NormIntList := make([]int, maxLen)
 	v2NormIntList := make([]int, maxLen)

@@ -14,6 +14,7 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPD clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		customimage.NewControlPlanePatch(),
 	}
@@ -21,7 +22,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"dockerClusterv5configpatch",
+		"dockerClusterv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -29,13 +30,14 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
 		customimage.NewWorkerPatch(),
 	}
 	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"dockerWorkerv5configpatch",
+		"dockerWorkerv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

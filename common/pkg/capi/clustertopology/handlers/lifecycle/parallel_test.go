@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
-	runtimehooksv1 "sigs.k8s.io/cluster-api/exp/runtime/hooks/api/v1alpha1"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 )
 
 func Test_runHooksInParallel(t *testing.T) {
@@ -262,7 +262,7 @@ func Test_runHooksInParallel(t *testing.T) {
 			// As we call funcs in parallel, response messages could be in any order so let's split the string and
 			// compare using regex.
 			gotResponseMessage := gotResponse.GetMessage()
-			for _, expectedMessagePart := range strings.Split(tt.expectedAggregatedResponse.GetMessage(), ", ") {
+			for expectedMessagePart := range strings.SplitSeq(tt.expectedAggregatedResponse.GetMessage(), ", ") {
 				g.Expect(gotResponseMessage).To(
 					gomega.MatchRegexp(
 						fmt.Sprintf("((^|, )%s(, |$))", expectedMessagePart),
