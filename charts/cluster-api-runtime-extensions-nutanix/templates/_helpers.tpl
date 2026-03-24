@@ -49,3 +49,20 @@ Certificate issuer name
 {{ required "A valid .Values.certificates.issuer.name is required!" .Values.certificates.issuer.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+  Resolve Helm addon repository URL: override (e.g. oci://harbor...) > internal OCI repo > default HTTPS.
+  Input: dict with "addonKey" (ConfigMap key, e.g. nutanix-storage-csi), "defaultURL" (default HTTPS URL), "context" (root .)
+*/}}
+{{- define "caren.helmAddonRepoURL" -}}
+{{- $ctx := .context }}
+{{- $overrides := default dict $ctx.Values.helmAddonsOverrides }}
+{{- $override := (and (hasKey $overrides .addonKey) (index $overrides .addonKey) (index (index $overrides .addonKey) "repositoryURL")) | default "" }}
+{{- if $override -}}
+{{ $override }}
+{{- else if $ctx.Values.helmRepository.enabled -}}
+oci://helm-repository.{{ $ctx.Release.Namespace }}.svc/charts
+{{- else -}}
+{{ .defaultURL }}
+{{- end -}}
+{{- end }}

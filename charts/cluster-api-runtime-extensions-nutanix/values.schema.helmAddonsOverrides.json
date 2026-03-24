@@ -1,0 +1,13 @@
+{
+  "description": "Optional per-addon overrides for Helm chart repository URL (e.g. OCI Harbor for nutanix-storage-csi). Keys match helm-config ConfigMap data keys.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "repositoryURL": {
+        "type": "string",
+        "description": "Override repository URL (e.g. oci://harbor.eng.nutanix.com/project/chart-name)"
+      }
+    }
+  }
+}

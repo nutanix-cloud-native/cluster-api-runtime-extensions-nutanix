@@ -88,13 +88,19 @@ generate-mindthegap-repofile: generate-helm-configmap ; $(info $(M) generating h
 	./hack/addons/generate-mindthegap-repofile.sh
 
 .PHONY: template-helm-repository
-template-helm-repository: generate-mindthegap-repofile ## this is used by gorealeaser to set the helm value to this.
-	yq -i '.data |= (to_entries | map(.value |= (. | fromjson | .RepositoryURL |= "{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}" + . + "{{ end }}" | to_yaml)) | from_entries)' ./charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml
+template-helm-repository: generate-mindthegap-repofile ## this is used by goreleaser to set the helm value to this.
+	./hack/addons/inject-helm-repo-url-template.sh
+
+# Rendered helm-config for list-images (templates use Helm include(), so we must render with helm template).
+LIST_IMAGES_HELM_CONFIG := $(shell mktemp)
 
 .PHONY: list-images
 list-images:
-	cd hack/tools/fetch-images && go run . \
+	helm template caren $(PWD)/charts/cluster-api-runtime-extensions-nutanix \
+	  --show-only templates/helm-config.yaml --set helmRepository.enabled=false > $(LIST_IMAGES_HELM_CONFIG) && \
+	(cd hack/tools/fetch-images && go run . \
 	  -chart-directory=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/ \
-	  -helm-chart-configmap=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml \
+	  -helm-chart-configmap=$(LIST_IMAGES_HELM_CONFIG) \
 	  -caren-version=$(CAREN_VERSION) \
-	  -additional-yaml-files=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/nutanix-cluster-class.yaml
+	  -additional-yaml-files=$(PWD)/charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/nutanix-cluster-class.yaml); \
+	rc=$$?; rm -f $(LIST_IMAGES_HELM_CONFIG); exit $$rc

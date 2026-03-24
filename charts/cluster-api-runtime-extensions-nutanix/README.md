@@ -36,6 +36,7 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | failureDomainRollout.concurrency | int | `10` | Concurrency of the failure domain rollout controller |
 | failureDomainRollout.enabled | bool | `true` | Enable the failure domain rollout controller |
 | helmAddonsConfigMap | string | `"default-helm-addons-config"` |  |
+| helmAddonsOverrides | object | `{}` |  |
 | helmRepository.enabled | bool | `true` |  |
 | helmRepository.images.bundleInitializer.pullPolicy | string | `"IfNotPresent"` |  |
 | helmRepository.images.bundleInitializer.repository | string | `"ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer"` |  |

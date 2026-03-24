@@ -135,6 +135,15 @@ hooks:
 
 helmAddonsConfigMap: default-helm-addons-config
 
+# Optional per-addon overrides for Helm chart repository URL (e.g. OCI Harbor for QA).
+# When set, the override is used instead of helmRepository.enabled or the default HTTPS URL.
+# Keys must match helm-config ConfigMap data keys (e.g. nutanix-storage-csi, aws-ccm).
+# Example for QA (nutanix-csi from Harbor OCI):
+#   helmAddonsOverrides:
+#     nutanix-storage-csi:
+#       repositoryURL: "oci://harbor.eng.nutanix.com/rachit-nutanix/nutanix-csi-storage"
+helmAddonsOverrides: {}
+
 deployDefaultClusterClasses: true
 
 # The ClusterClass and the Templates it references must be in the same namespace
