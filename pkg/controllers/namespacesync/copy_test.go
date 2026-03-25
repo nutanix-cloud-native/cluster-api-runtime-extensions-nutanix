@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/storage/names"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -29,6 +30,15 @@ var (
 	errFakeCreate = errors.New("fake create error")
 	errFakeGet    = errors.New("fake get error")
 )
+
+// copyTestScheme is an isolated scheme for copy_test.go to avoid data races
+// with the envtest manager's scheme running in the background.
+func newCopyTestScheme() *runtime.Scheme {
+	s := runtime.NewScheme()
+	_ = clusterv1beta2.AddToScheme(s)
+	_ = metav1.AddMetaToScheme(s)
+	return s
+}
 
 func TestCopyClusterClassAndTemplates(t *testing.T) {
 	g := NewWithT(t)
@@ -86,6 +96,7 @@ func TestCopyClusterClassAndTemplates(t *testing.T) {
 			createdObjs := []client.Object{}
 			fakeClient := fake.
 				NewClientBuilder().
+				WithScheme(newCopyTestScheme()).
 				WithInterceptorFuncs(
 					interceptors(
 						&createdObjs,
