@@ -11,13 +11,11 @@ export LOCAL_PATH_CSI_CHART_VERSION := 0.0.32
 export SNAPSHOT_CONTROLLER_CHART_VERSION := 4.1.0
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
 # be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
-export AWS_CCM_CHART_VERSION := 0.0.9
+export AWS_CCM_CHART_VERSION := 0.0.10
 # A map of AWS CCM versions.
-export AWS_CCM_VERSION_130 := v1.30.9
-export AWS_CCM_VERSION_131 := v1.31.7
-export AWS_CCM_VERSION_132 := v1.32.3
-export AWS_CCM_VERSION_133 := v1.33.0
+export AWS_CCM_VERSION_133 := v1.33.2
 export AWS_CCM_VERSION_134 := v1.34.0
+export AWS_CCM_VERSION_135 := v1.35.0
 
 export AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION := 1.13.4
 
@@ -33,7 +31,7 @@ export KONNECTOR_AGENT_VERSION := 1.3.0
 
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi kube-vip)
-addons.sync: $(addprefix update-addon.aws-ccm.,130 131 132 133 134)
+addons.sync: $(addprefix update-addon.aws-ccm.,133 134 135)
 addons.sync: template-helm-repository
 
 .PHONY: update-addon.calico

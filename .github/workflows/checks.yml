@@ -69,12 +69,12 @@ jobs:
     strategy:
       matrix:
         config:
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.31", "kubernetesVersion": "v1.31.9", "baseOS": "rocky-9.5"}
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.3", "baseOS": "rocky-9.5"}
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.2", "baseOS": "rocky-9.6"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.9"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.1"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5", "baseOS": "rocky-9.6"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.3", "baseOS": "rocky-9.7"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.2", "baseOS": "rocky-9.7"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.10"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.6"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
@@ -101,9 +101,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - {"provider": "Docker", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.9"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.1"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.10"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.6"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "Nutanix", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
           # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
