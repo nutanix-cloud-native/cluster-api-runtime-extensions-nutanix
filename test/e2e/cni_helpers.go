@@ -316,7 +316,7 @@ func waitForFlowToBeReadyInWorkloadCluster(
 			WaitForHelmReleaseProxyReadyForClusterInput{
 				GetLister:       input.clusterProxy.GetClient(),
 				Cluster:         input.workloadCluster,
-				HelmReleaseName: "nutanix-flow-cni",
+				HelmReleaseName: "flow-cni",
 			},
 			input.helmReleaseIntervals...,
 		)
