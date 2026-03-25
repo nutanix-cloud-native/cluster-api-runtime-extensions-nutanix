@@ -580,9 +580,7 @@ func createTestCluster(
 
 	if cni != nil {
 		clusterConfig.Addons = &variables.Addons{
-			GenericAddons: v1alpha1.GenericAddons{
-				CNI: cni,
-			},
+			CNI: cni,
 		}
 	}
 

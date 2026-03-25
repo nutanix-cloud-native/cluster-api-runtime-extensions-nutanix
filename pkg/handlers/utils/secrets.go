@@ -48,6 +48,7 @@ func CopySecretToRemoteCluster(
 		},
 		Data:       sourceSecret.Data,
 		StringData: sourceSecret.StringData,
+		Type:       sourceSecret.Type,
 	}
 
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)

@@ -9,6 +9,8 @@ toolchain go1.26.1
 
 require sigs.k8s.io/cluster-api-addon-provider-helm v0.6.1
 
+replace sigs.k8s.io/cluster-api-addon-provider-helm => github.com/mesosphere/cluster-api-addon-provider-helm v0.6.1-d2iq.2
+
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

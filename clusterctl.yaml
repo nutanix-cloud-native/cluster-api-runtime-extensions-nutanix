@@ -4,3 +4,6 @@ providers:
   - name: "aws"
     url: "https://github.com/nutanix-cloud-native/cluster-api-provider-aws/releases/${CAPA_VERSION}/infrastructure-components.yaml"
     type: "InfrastructureProvider"
+  - name: "helm"
+    url: "https://github.com/mesosphere/cluster-api-addon-provider-helm/releases/${CAAPH_VERSION}/addon-components.yaml"
+    type: "AddonProvider"

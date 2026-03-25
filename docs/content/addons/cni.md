@@ -10,7 +10,7 @@ phase.
 The hook uses either the [Cluster API Add-on Provider for Helm] or `ClusterResourceSet` to deploy the CNI resources
 depending on the selected deployment strategy.
 
-Currently the hook supports [Cilium](#cilium) and [Calico](#calico) CNI providers.
+Currently the hook supports [Cilium](#cilium), [Calico](#calico), and [Flow](#flow) (Nutanix only) CNI providers.
 
 ## Cilium
 
@@ -133,10 +133,118 @@ deploying cluster-api-runtime-extensions-nutanix chart:
 --set-file hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.content=<file>
 ```
 
+## Flow
+
+Flow CNI is available for Nutanix clusters only. It uses the `HelmAddon` strategy exclusively
+(`ClusterResourceSet` is not supported).
+
+Flow CNI images are hosted on a private Docker Hub registry (`docker.io/nutanix`). If your
+environment does not use a mirror or registry credentials configured via `imageRegistries`, you
+must provide an image pull secret so the workload cluster can pull the Flow CNI images.
+
+### Flow Example
+
+To enable deployment of Flow CNI on a Nutanix cluster:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          addons:
+            cni:
+              provider: Flow
+```
+
+### Flow Example With Image Pull Credentials
+
+Create a `kubernetes.io/dockerconfigjson` Secret in the same namespace as the Cluster on the
+management cluster:
+
+```yaml
+# You can create the Secret manifest manually:
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nutanix-docker-hub-credentials
+  namespace: <CLUSTER_NAMESPACE>
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: <BASE64_ENCODED_DOCKER_CONFIG>
+```
+
+Or create it directly with kubectl using your Docker Hub credentials:
+
+```shell
+kubectl create secret docker-registry nutanix-docker-hub-credentials \
+  --docker-username=<USERNAME> \
+  --docker-password=<PASSWORD> \
+  --namespace=<CLUSTER_NAMESPACE>
+```
+
+Then reference it in the cluster configuration:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          addons:
+            cni:
+              provider: Flow
+              imagePullCredentials:
+                secretRef:
+                  name: nutanix-docker-hub-credentials
+```
+
+The handler copies the Secret to the workload cluster and configures the Flow CNI Helm chart to
+use it for pulling images.
+
+### Flow Example With Custom Values
+
+To provide custom Helm values for Flow CNI, create a ConfigMap and reference it:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          addons:
+            cni:
+              provider: Flow
+              imagePullCredentials:
+                secretRef:
+                  name: nutanix-docker-hub-credentials
+              values:
+                sourceRef:
+                  name: <NAME> #name of ConfigMap present in same namespace
+                  kind: ConfigMap
+```
+
+### Default Flow Specification
+
+Please check the [default Flow CNI configuration].
+
 [Cluster API Add-on Provider for Helm]: https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm
 
 {{< mdl-disable "<!-- markdownlint-disable MD013 MD034 -->" >}}
 
 [default Cilium configuration]: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/blob/v{{< param "version" >}}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml
+[default Flow CNI configuration]: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/blob/v{{< param "version" >}}/charts/cluster-api-runtime-extensions-nutanix/addons/cni/nutanix-flow/values-template.yaml
 
 {{< mdl-disable "<!-- markdownlint-restore -->" >}}

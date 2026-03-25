@@ -18,6 +18,8 @@ func ReadinessSocketPath(provider string) (string, error) {
 		return "/run/cilium/cilium.sock", nil
 	case v1alpha1.CNIProviderCalico:
 		return "/var/run/calico/cni-server.sock", nil
+	case v1alpha1.CNIProviderFlow:
+		return "/var/run/ovn-kubernetes/cni/ovn-cni-server.sock", nil
 	default:
 		return "", fmt.Errorf("could not determine CNI socket, unsupported provider: %s", provider)
 	}

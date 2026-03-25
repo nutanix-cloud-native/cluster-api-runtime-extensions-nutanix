@@ -87,8 +87,29 @@ spec:
                           type: string
                       type: object
                     cni:
-                      description: CNI required for providing CNI configuration.
+                      description: CNI defines CNI provider configuration.
                       properties:
+                        imagePullCredentials:
+                          description: |-
+                            ImagePullCredentials is a reference to a Secret with image pull credentials
+                            for the CNI provider images. The Secret will be copied to the workload cluster.
+                          properties:
+                            secretRef:
+                              description: A reference to the Secret containing the image pull credentials.
+                              properties:
+                                name:
+                                  description: |-
+                                    Name of the referent.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  maxLength: 253
+                                  minLength: 1
+                                  type: string
+                              required:
+                                - name
+                              type: object
+                          required:
+                            - secretRef
+                          type: object
                         provider:
                           description: CNI provider to deploy.
                           enum:

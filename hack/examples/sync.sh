@@ -51,6 +51,11 @@ for provider in "nutanix"; do
       done
     done
   done
+
+  # Flow is only supported on Nutanix for now and only with the helm-addon strategy.
+  kustomize build --load-restrictor LoadRestrictionsNone \
+    ./hack/examples/overlays/clusters/"${provider}"/flow/helm-addon \
+    >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-flow-helm-addon.yaml"
 done
 unset provider cni strategy
 

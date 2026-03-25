@@ -1,0 +1,10 @@
+nutanix-core-flow-ovn-kubernetes:
+  k8sAPIServer: "https://{{ .ControlPlaneEndpoint.Host }}:{{ .ControlPlaneEndpoint.Port }}"
+  podNetwork: "{{ .PodCIDR }}"
+  serviceNetwork: "{{ .ServiceCIDR }}"
+{{- if .ImagePullSecretName }}
+global:
+  imagePullSecretName: "{{ .ImagePullSecretName }}"
+imagePullSecrets:
+  - name: "{{ .ImagePullSecretName }}"
+{{- end }}

@@ -20,11 +20,9 @@ var testDefs = []capitest.VariableTestDef{{
 	Name: "set with valid provider using ClusterResourceSet strategy",
 	Vals: apivariables.ClusterConfigSpec{
 		Addons: &apivariables.Addons{
-			GenericAddons: v1alpha1.GenericAddons{
-				CNI: &v1alpha1.CNI{
-					Provider: v1alpha1.CNIProviderCalico,
-					Strategy: v1alpha1.AddonStrategyClusterResourceSet,
-				},
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCalico,
+				Strategy: v1alpha1.AddonStrategyClusterResourceSet,
 			},
 		},
 	},
@@ -32,11 +30,9 @@ var testDefs = []capitest.VariableTestDef{{
 	Name: "set with valid provider using HelmAddon strategy",
 	Vals: apivariables.ClusterConfigSpec{
 		Addons: &apivariables.Addons{
-			GenericAddons: v1alpha1.GenericAddons{
-				CNI: &v1alpha1.CNI{
-					Provider: v1alpha1.CNIProviderCalico,
-					Strategy: v1alpha1.AddonStrategyHelmAddon,
-				},
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCalico,
+				Strategy: v1alpha1.AddonStrategyHelmAddon,
 			},
 		},
 	},
@@ -44,17 +40,30 @@ var testDefs = []capitest.VariableTestDef{{
 	Name: "set with valid provider using HelmAddon strategy and custom helm values",
 	Vals: apivariables.ClusterConfigSpec{
 		Addons: &apivariables.Addons{
-			GenericAddons: v1alpha1.GenericAddons{
-				CNI: &v1alpha1.CNI{
-					Provider: v1alpha1.CNIProviderCilium,
-					Strategy: v1alpha1.AddonStrategyHelmAddon,
-					AddonConfig: v1alpha1.AddonConfig{
-						Values: &v1alpha1.AddonValues{
-							SourceRef: &v1alpha1.ValuesReference{
-								Name: "custom-cilium-cni-helm-values",
-								Kind: "ConfigMap",
-							},
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCilium,
+				Strategy: v1alpha1.AddonStrategyHelmAddon,
+				AddonConfig: v1alpha1.AddonConfig{
+					Values: &v1alpha1.AddonValues{
+						SourceRef: &v1alpha1.ValuesReference{
+							Name: "custom-cilium-cni-helm-values",
+							Kind: "ConfigMap",
 						},
+					},
+				},
+			},
+		},
+	},
+}, {
+	Name: "set with valid provider using HelmAddon strategy and image pull credentials",
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCilium,
+				Strategy: v1alpha1.AddonStrategyHelmAddon,
+				ImagePullCredentials: &v1alpha1.ImagePullCredentials{
+					SecretRef: v1alpha1.LocalObjectReference{
+						Name: "my-image-pull-secret",
 					},
 				},
 			},
@@ -64,11 +73,9 @@ var testDefs = []capitest.VariableTestDef{{
 	Name: "set with invalid provider",
 	Vals: apivariables.ClusterConfigSpec{
 		Addons: &apivariables.Addons{
-			GenericAddons: v1alpha1.GenericAddons{
-				CNI: &v1alpha1.CNI{
-					Provider: "invalid-provider",
-					Strategy: v1alpha1.AddonStrategyClusterResourceSet,
-				},
+			CNI: &v1alpha1.CNI{
+				Provider: "invalid-provider",
+				Strategy: v1alpha1.AddonStrategyClusterResourceSet,
 			},
 		},
 	},
@@ -77,15 +84,58 @@ var testDefs = []capitest.VariableTestDef{{
 	Name: "set with invalid strategy",
 	Vals: apivariables.ClusterConfigSpec{
 		Addons: &apivariables.Addons{
-			GenericAddons: v1alpha1.GenericAddons{
-				CNI: &v1alpha1.CNI{
-					Provider: v1alpha1.CNIProviderCalico,
-					Strategy: v1alpha1.AddonStrategy("invalid-strategy"),
-				},
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderCalico,
+				Strategy: v1alpha1.AddonStrategy("invalid-strategy"),
 			},
 		},
 	},
 	ExpectError: true,
+}}
+
+var nutanixFlowTestDefs = []capitest.VariableTestDef{{
+	Name: "set with Flow provider using HelmAddon strategy",
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderFlow,
+				Strategy: v1alpha1.AddonStrategyHelmAddon,
+			},
+		},
+	},
+}, {
+	Name: "set with Flow provider using HelmAddon strategy and custom helm values",
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderFlow,
+				Strategy: v1alpha1.AddonStrategyHelmAddon,
+				AddonConfig: v1alpha1.AddonConfig{
+					Values: &v1alpha1.AddonValues{
+						SourceRef: &v1alpha1.ValuesReference{
+							Name: "custom-flow-cni-helm-values",
+							Kind: "ConfigMap",
+						},
+					},
+				},
+			},
+		},
+	},
+}, {
+	Name: "set with Flow provider using HelmAddon strategy and image pull credentials",
+	Vals: apivariables.ClusterConfigSpec{
+		Addons: &apivariables.Addons{
+			CNI: &v1alpha1.CNI{
+				Provider: v1alpha1.CNIProviderFlow,
+				Strategy: v1alpha1.AddonStrategyHelmAddon,
+				ImagePullCredentials: &v1alpha1.ImagePullCredentials{
+					SecretRef: v1alpha1.LocalObjectReference{
+						Name: "flow-docker-hub-secret",
+					},
+				},
+			},
+		},
+	},
 }}
 
 func TestVariableValidation_AWS(t *testing.T) {
@@ -117,6 +167,6 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		nutanixclusterconfig.NewVariable,
-		testDefs...,
+		append(testDefs, nutanixFlowTestDefs...)...,
 	)
 }
