@@ -28,7 +28,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/kubeletconfiguration"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/kubernetesimagerepository"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/noderegistration"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/parallelimagepulls"
 )
 
 // MetaMutators returns all generic patch handlers.
@@ -50,7 +49,6 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		autorenewcerts.NewPatch(),
 		kubeproxymode.NewPatch(),
 		ntp.NewPatch(),
-		parallelimagepulls.NewPatch(),
 
 		// Some patches may have changed containerd configuration.
 		// We write the configuration changes to disk, and must run a command

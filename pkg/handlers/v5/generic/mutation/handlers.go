@@ -26,8 +26,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/extraapiservercertsans"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/kubernetesimagerepository"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/noderegistration"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/parallelimagepulls"
 	httpproxy "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v5/generic/mutation/httpproxy"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v5/generic/mutation/parallelimagepulls"
 )
 
 // MetaMutators returns all generic patch handlers.
