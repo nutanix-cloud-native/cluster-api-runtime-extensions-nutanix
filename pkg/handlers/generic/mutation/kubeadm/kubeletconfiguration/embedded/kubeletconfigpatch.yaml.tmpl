@@ -1,0 +1,73 @@
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+{{- with .MaxPods }}
+maxPods: {{ . }}
+{{- end }}
+{{- with .SystemReserved }}
+systemReserved:
+  {{- range $k, $v := . }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- with .KubeReserved }}
+kubeReserved:
+  {{- range $k, $v := . }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- with .EvictionHard }}
+evictionHard:
+  {{- range $k, $v := . }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- with .EvictionSoft }}
+evictionSoft:
+  {{- range $k, $v := . }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- with .EvictionSoftGracePeriod }}
+evictionSoftGracePeriod:
+  {{- range $k, $v := . }}
+  {{ $k }}: "{{ $v }}"
+  {{- end }}
+{{- end }}
+{{- with .ProtectKernelDefaults }}
+protectKernelDefaults: {{ . }}
+{{- end }}
+{{- with .TopologyManagerPolicy }}
+topologyManagerPolicy: {{ . }}
+{{- end }}
+{{- with .CPUManagerPolicy }}
+cpuManagerPolicy: {{ . }}
+{{- end }}
+{{- with .MemoryManagerPolicy }}
+memoryManagerPolicy: {{ . }}
+{{- end }}
+{{- with .PodPidsLimit }}
+podPidsLimit: {{ . }}
+{{- end }}
+{{- with .ContainerLogMaxSize }}
+containerLogMaxSize: {{ . }}
+{{- end }}
+{{- with .ContainerLogMaxFiles }}
+containerLogMaxFiles: {{ . }}
+{{- end }}
+{{- with .ImageGCHighThresholdPercent }}
+imageGCHighThresholdPercent: {{ . }}
+{{- end }}
+{{- with .ImageGCLowThresholdPercent }}
+imageGCLowThresholdPercent: {{ . }}
+{{- end }}
+{{- with .MaxParallelImagePulls }}
+serializeImagePulls: false
+maxParallelImagePulls: {{ . }}
+{{- end }}
+{{- with .ShutdownGracePeriod }}
+shutdownGracePeriod: {{ . }}
+{{- end }}
+{{- with .ShutdownGracePeriodCriticalPods }}
+shutdownGracePeriodCriticalPods: {{ . }}
+{{- end }}

@@ -16,117 +16,115 @@ spec:
     singular: kubeadmclusterconfig
   scope: Namespaced
   versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: KubeadmClusterConfig is the Schema for the kubeadmconfigs API.
-        properties:
-          apiVersion:
-            description: |-
-              APIVersion defines the versioned schema of this representation of an object.
-              Servers should convert recognized schemas to the latest internal value, and
-              may reject unrecognized values.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-            type: string
-          kind:
-            description: |-
-              Kind is a string value representing the REST resource this object represents.
-              Servers may infer this from the endpoint the client submits requests to.
-              Cannot be updated.
-              In CamelCase.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: KubeadmConfigSpec defines configuration that can be set when
-              using kubeadm to bootstrap the cluster.
-            properties:
-              dns:
-                description: DNS defines the DNS configuration for the cluster.
-                properties:
-                  coreDNS:
-                    description: CoreDNS defines the CoreDNS configuration for the
-                      cluster.
-                    properties:
-                      image:
-                        description: |-
-                          Image required for overriding Kubernetes DNS image details.
-                          If the image version is not specified,
-                          the default version based on the cluster's Kubernetes version will be used.
-                        properties:
-                          repository:
-                            description: Repository is used to override the image
-                              repository to pull from.
-                            maxLength: 2048
-                            minLength: 1
-                            pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
-                            type: string
-                          tag:
-                            description: Tag is used to override the default image
-                              tag.
-                            maxLength: 128
-                            minLength: 1
-                            pattern: ^[\w][\w.-]{0,127}$
-                            type: string
-                        type: object
-                    type: object
-                type: object
-              encryptionAtRest:
-                description: |-
-                  EncryptionAtRest defines the configuration to enable encryption at REST
-                  This configuration is used by API server to encrypt data before storing it in ETCD.
-                  Currently the encryption only enabled for secrets and configmaps.
-                properties:
-                  providers:
-                    default:
-                    - aescbc: {}
-                    description: Encryption providers
-                    items:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: KubeadmClusterConfig is the Schema for the kubeadmconfigs API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: KubeadmConfigSpec defines configuration that can be set when using kubeadm to bootstrap the cluster.
+              properties:
+                dns:
+                  description: DNS defines the DNS configuration for the cluster.
+                  properties:
+                    coreDNS:
+                      description: CoreDNS defines the CoreDNS configuration for the cluster.
                       properties:
-                        aescbc:
-                          type: object
-                        secretbox:
+                        image:
+                          description: |-
+                            Image required for overriding Kubernetes DNS image details.
+                            If the image version is not specified,
+                            the default version based on the cluster's Kubernetes version will be used.
+                          properties:
+                            repository:
+                              description: Repository is used to override the image repository to pull from.
+                              maxLength: 2048
+                              minLength: 1
+                              pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                              type: string
+                            tag:
+                              description: Tag is used to override the default image tag.
+                              maxLength: 128
+                              minLength: 1
+                              pattern: ^[\w][\w.-]{0,127}$
+                              type: string
                           type: object
                       type: object
-                    maxItems: 1
-                    type: array
-                type: object
-              etcd:
-                properties:
-                  image:
-                    description: Image required for overriding etcd image details.
-                    properties:
-                      repository:
-                        description: Repository is used to override the image repository
-                          to pull from.
-                        maxLength: 2048
-                        minLength: 1
-                        pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
-                        type: string
-                      tag:
-                        description: Tag is used to override the default image tag.
-                        maxLength: 128
-                        minLength: 1
-                        pattern: ^[\w][\w.-]{0,127}$
-                        type: string
-                    type: object
-                type: object
-              kubernetesImageRepository:
-                description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
-                maxLength: 2048
-                minLength: 1
-                pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
-                type: string
-              maxParallelImagePullsPerNode:
-                description: |-
-                  MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
-                  If not set, the default value of 1 will be used.
-                  If set to 0, the maximum number of parallel image pulls will be unlimited.
-                format: int32
-                minimum: 0
-                type: integer
-            type: object
-        type: object
-    served: true
-    storage: true
+                  type: object
+                encryptionAtRest:
+                  description: |-
+                    EncryptionAtRest defines the configuration to enable encryption at REST
+                    This configuration is used by API server to encrypt data before storing it in ETCD.
+                    Currently the encryption only enabled for secrets and configmaps.
+                  properties:
+                    providers:
+                      default:
+                        - aescbc: {}
+                      description: Encryption providers
+                      items:
+                        properties:
+                          aescbc:
+                            type: object
+                          secretbox:
+                            type: object
+                        type: object
+                      maxItems: 1
+                      type: array
+                  type: object
+                etcd:
+                  properties:
+                    image:
+                      description: Image required for overriding etcd image details.
+                      properties:
+                        repository:
+                          description: Repository is used to override the image repository to pull from.
+                          maxLength: 2048
+                          minLength: 1
+                          pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                          type: string
+                        tag:
+                          description: Tag is used to override the default image tag.
+                          maxLength: 128
+                          minLength: 1
+                          pattern: ^[\w][\w.-]{0,127}$
+                          type: string
+                      type: object
+                  type: object
+                kubernetesImageRepository:
+                  description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
+                  maxLength: 2048
+                  minLength: 1
+                  pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                  type: string
+                maxParallelImagePullsPerNode:
+                  description: |-
+                    Deprecated: Use controlPlane/worker kubeletConfiguration.maxParallelImagePulls instead.
+                    MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
+                    If not set, the default value of 1 will be used.
+                    If set to 0, the maximum number of parallel image pulls will be unlimited.
+                    When both this field and controlPlane/worker kubeletConfiguration.maxParallelImagePulls
+                    are set, the latter takes precedence.
+                  format: int32
+                  minimum: 0
+                  type: integer
+              type: object
+          type: object
+      served: true
+      storage: true

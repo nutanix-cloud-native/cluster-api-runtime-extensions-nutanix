@@ -141,6 +141,11 @@ type KubeadmNodeSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default={}
 	NodeRegistration *NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
+
+	// KubeletConfiguration defines kubelet settings for this node group.
+	// These values apply only to the nodes in this group.
+	// +kubebuilder:validation:Optional
+	KubeletConfiguration *KubeletConfiguration `json:"kubeletConfiguration,omitempty"`
 }
 
 type GenericNodeSpec struct {
