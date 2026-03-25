@@ -5,3 +5,6 @@
   path: "/spec/topology/variables/0/value/addons/cni"
   value:
     provider: Flow
+    imagePullCredentials:
+      secretRef:
+        name: "${CLUSTER_NAME}-flow-image-pull-secret"
