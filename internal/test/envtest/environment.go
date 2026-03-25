@@ -44,7 +44,7 @@ import (
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta1"
-	runtimev1 "sigs.k8s.io/cluster-api/api/runtime/v1alpha1"
+	runtimev1 "sigs.k8s.io/cluster-api/api/runtime/v1beta2"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/log"
 	"sigs.k8s.io/cluster-api/util/kubeconfig"
 	"sigs.k8s.io/cluster-api/util/test/builder"
