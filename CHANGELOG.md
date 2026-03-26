@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.45.0 (2026-03-26)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat(STIG): set tls-min-version for scheduler and controllerManager by @Vedansh074 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1503
+* feat: Support additional trust bundle in Nutanix preflight checks by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1527
+* feat: update Nutanix CIS version to 3.6.0 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1531
+* feat: normalize no_proxy to both CIDR and IP range by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1495
+* feat: [NCN-112929] Add KubeletConfiguration variable and mutation handler by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1514
+* feat: add Nutanix Flow CNI provider by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1519
+* feat: update addons to latest versions by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1526
+### Fixes 🔧
+* fix: update Go toolchain to 1.26.1 in all go.mod files by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1513
+* fix: Skip Konnector Agent BCD workload API when phase is Pending/Provisioning or control plane not initialized by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1515
+* fix: Remove Konnector Agent legacy deployment validation webhook by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1512
+* fix: update kubectl betterwait image by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1474
+* fix(fetch-images): template CCM values for addon image collection by @Vedansh074 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1524
+* fix: Use apiutils.GVKForObject in namespacesync controller by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1517
+* fix: Improve error message in CIDR validation by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1532
+### Other Changes
+* refactor: Enforce consistent CAPI package aliases via golangci-lint by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1516
+* build: update kube-api-linter and resolve golangci-lint findings by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1525
+* refactor: update namespace sync configuration to use label selector by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1408
+* refactor: Stricter EKS kube-proxy mode in Go API by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1323
+* refactor: Consistent calls and imports in nutanix preflight checks by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1528
+* test: update kubernetes versions to include 1.35 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1533
+* build: move ExtensionConfig from v1alpha1 to v1beta2 by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1545
+* build(deps): Bump sigs.k8s.io/cluster-api from 1.12.3 to 1.12.4 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1544
+
+## New Contributors
+* @Vedansh074 made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1503
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.44.1...v0.45.0
+
 ## 0.44.1 (2026-03-09)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
