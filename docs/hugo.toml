@@ -121,6 +121,8 @@ sidebar_menu_foldable = true
 
 sidebar_cache_limit = 1000
 
+sidebar_root_enabled = true
+
 showLightDarkModeMenu = true
 
 # Adds a H2 section titled "Feedback" to the bottom of each doc. The responses are sent to Google Analytics as events.
