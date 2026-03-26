@@ -4,10 +4,11 @@
 # Addon metadata (Chart name, Chart repo, Chart version, App version, Repo, Release) above each version.
 # Source repos are assumed fixed. To refresh release URLs when versions change, use a prompt like:
 #
-#   For each addon in this file, update the chart version and app version from the comment block to the latest version
+#   For each addon in addons.mk, update the chart version and app version from the comment block to the latest version
 #   available from the Helm chart repo.
 #   Update the metadata for each addon (Chart name, Chart repo, App version, Repo, Release) to the latest version.
 #   Verify that the metadata is consistent with the corresponding addon kustomization in hack/addons/kustomize.
+#   Run 'make addons.sync' to update the addons.
 
 # Calico (tigera-operator)
 #   Chart name: tigera-operator
@@ -55,7 +56,7 @@ export CLUSTER_AUTOSCALER_CHART_VERSION := 9.56.0
 export AWS_EBS_CSI_CHART_VERSION := 2.57.1
 
 # Nutanix Storage CSI
-#   Chart name: nutanix-storage-csi
+#   Chart name: nutanix-csi-storage
 #   Chart repo: https://nutanix.github.io/helm-releases/index.yaml
 #   Chart version:   3.6.0
 #   App version:     3.6.0
@@ -81,10 +82,10 @@ export LOCAL_PATH_CSI_CHART_VERSION := 0.0.36
 #   Release:         https://github.com/kubernetes-csi/external-snapshotter/releases/tag/v8.5.0
 export SNAPSHOT_CONTROLLER_CHART_VERSION := 5.0.3
 
-# AWS CCM (chart version same for all K8s; app image version per K8s minor)
+# AWS CCM (chart version same for all K8s; app image version per K8s minor - check image exists via crane ls registry.k8s.io/provider-aws/cloud-controller-manager)
 #   Chart name: aws-cloud-controller-manager
 #   Chart repo: https://kubernetes.github.io/cloud-provider-aws/index.yaml
-#   Chart version:   0.0.10
+#   Chart version:   0.0.11
 #   App versions:     per K8s minor (see AWS_CCM_VERSION_* below)
 #   Repo:            https://github.com/kubernetes/cloud-provider-aws
 #   Releases:        v1.33.2 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.33.2
@@ -92,7 +93,7 @@ export SNAPSHOT_CONTROLLER_CHART_VERSION := 5.0.3
 #                    v1.35.0 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.35.0
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
 # be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
-export AWS_CCM_CHART_VERSION := 0.0.10
+export AWS_CCM_CHART_VERSION := 0.0.11
 # A map of AWS CCM versions.
 export AWS_CCM_VERSION_133 := v1.33.2
 export AWS_CCM_VERSION_134 := v1.34.0
@@ -101,44 +102,46 @@ export AWS_CCM_VERSION_135 := v1.35.0
 # AWS Load Balancer Controller
 #   Chart name: aws-load-balancer-controller
 #   Chart repo: https://aws.github.io/eks-charts/index.yaml
-#   Chart version:   1.17.1
-#   App version:     v2.17.1
+#   Chart version:   3.1.0
+#   App version:     v3.1.0
 #   Repo:            https://github.com/kubernetes-sigs/aws-load-balancer-controller (app; chart from aws/eks-charts)
-#   Release:         https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/tag/v2.17.1
-export AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION := 1.17.1
+#   Release:         https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/tag/v3.1.0
+export AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION := 3.1.0
 
 # Nutanix CCM
-#   Chart name: nutanix-cloud-provider
-#   Chart repo: https://nutanix.github.io/helm/index.yaml
-#   App version:     v0.6.1
-#   Repo:            https://github.com/nutanix-cloud-native/cloud-provider-nutanix
-#   Release:         https://github.com/nutanix-cloud-native/cloud-provider-nutanix/releases/tag/v0.6.1
+#   Chart name:    nutanix-cloud-provider
+#   Chart repo:    https://nutanix.github.io/helm/index.yaml
+#   Chart version: 0.6.2
+#   App version:   v0.6.1
+#   Repo:          https://github.com/nutanix-cloud-native/cloud-provider-nutanix
+#   Release:       https://github.com/nutanix-cloud-native/cloud-provider-nutanix/releases/tag/v0.6.1
 export NUTANIX_CCM_CHART_VERSION := 0.6.2
 
 # MetalLB
-#   Chart name: metallb
-#   Chart repo: https://metallb.github.io/metallb/index.yaml
-#   Chart version:   0.15.3
-#   App version:     v0.15.3
-#   Repo:            https://github.com/metallb/metallb
-#   Release:         https://github.com/metallb/metallb/releases/tag/v0.15.3
+#   Chart name:    metallb
+#   Chart repo:    https://metallb.github.io/metallb/index.yaml
+#   Chart version: 0.15.3
+#   App version:   v0.15.3
+#   Repo:          https://github.com/metallb/metallb
+#   Release:       https://github.com/metallb/metallb/releases/tag/v0.15.3
 export METALLB_CHART_VERSION := 0.15.3
 
 # COSI Controller
-#   Chart name: cosi
-#   Chart repo: https://mesosphere.github.io/charts/stable/index.yaml
-#   Chart version:   0.2.2
-#   App version:     0.2.2
-#   Repo:            https://github.com/kubernetes-sigs/container-object-storage-interface
-#   Release:         https://github.com/kubernetes-sigs/container-object-storage-interface/releases/tag/v0.2.2
+#   Chart name:    cosi-controller
+#   Chart repo: 	 https://mesosphere.github.io/charts/stable/index.yaml
+#   Chart version: 0.2.2
+#   App version:   v0.2.2
+#   Repo:          https://github.com/kubernetes-sigs/container-object-storage-interface
+#   Release:       https://github.com/kubernetes-sigs/container-object-storage-interface/releases/tag/v0.2.2
 export COSI_CONTROLLER_VERSION := 0.2.2
 
 # Konnector Agent
-#   Chart name: konnector-agent
-#   Chart repo: https://nutanix.github.io/helm-releases/index.yaml
-#   App version:     1.3.0
-#   Repo:            https://github.com/nutanix-core/k8s-agent
-#   Release:         https://github.com/nutanix-core/k8s-agent/releases/tag/1.3.0
+#   Chart name:    konnector-agent
+#   Chart repo: 	 https://nutanix.github.io/helm-releases/index.yaml
+#   Chart version: 1.3.0
+#   App version:   v1.3.0
+#   Repo:          https://github.com/nutanix-core/k8s-agent
+#   Release:       https://github.com/nutanix-core/k8s-agent/releases/tag/1.3.0
 export KONNECTOR_AGENT_VERSION := 1.3.0
 
 # Nutanix Flow CNI
@@ -150,10 +153,10 @@ export KONNECTOR_AGENT_VERSION := 1.3.0
 #   Release:         https://github.com/nutanix-core/flow-k8s-cni/releases/tag/1.0.0
 export NUTANIX_FLOW_CNI_VERSION := 1.0.0
 
-# Kube-vip (container image, not Helm)
-#   Repo:            https://github.com/kube-vip/kube-vip
-#   Chart version:   v1.1.1
-#   Release:         https://github.com/kube-vip/kube-vip/releases/tag/v1.1.1
+# Kube-vip (container image, not Helm - latest version can be checked via crane ls ghcr.io/kube-vip/kube-vip)
+#   Repo:        https://github.com/kube-vip/kube-vip
+#   App version: v1.1.1
+#   Release:     https://github.com/kube-vip/kube-vip/releases/tag/v1.1.1
 export KUBE_VIP_VERSION := v1.1.1
 
 .PHONY: addons.sync
