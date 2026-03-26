@@ -20,6 +20,8 @@
                   value: "32"
                 - name: dns_mode
                   value: first
+                - name: dhcp_mode
+                  value: ipv4
                 - name: cp_enable
                   value: "true"
                 - name: cp_namespace
@@ -37,7 +39,7 @@
                 - name: address
                   value: '{{ .Address }}'
                 - name: prometheus_server
-              image: ghcr.io/kube-vip/kube-vip:v0.9.2
+              image: ghcr.io/kube-vip/kube-vip:v1.1.1
               imagePullPolicy: IfNotPresent
               name: kube-vip
               resources: {}

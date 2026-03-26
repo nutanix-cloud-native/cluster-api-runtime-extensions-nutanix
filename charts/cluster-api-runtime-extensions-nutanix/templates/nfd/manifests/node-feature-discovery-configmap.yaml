@@ -811,8 +811,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery
       namespace: node-feature-discovery
     ---
@@ -823,8 +823,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery-gc
       namespace: node-feature-discovery
     ---
@@ -835,8 +835,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery-worker
       namespace: node-feature-discovery
     ---
@@ -849,8 +849,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery-master-conf
       namespace: node-feature-discovery
     ---
@@ -868,8 +868,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery-worker-conf
       namespace: node-feature-discovery
     ---
@@ -880,8 +880,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery
     rules:
     - apiGroups:
@@ -941,8 +941,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery-gc
     rules:
     - apiGroups:
@@ -980,8 +980,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery
     roleRef:
       apiGroup: rbac.authorization.k8s.io
@@ -999,8 +999,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery-gc
     roleRef:
       apiGroup: rbac.authorization.k8s.io
@@ -1018,8 +1018,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery-worker
       namespace: node-feature-discovery
     rules:
@@ -1046,8 +1046,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
       name: node-feature-discovery-worker
       namespace: node-feature-discovery
     roleRef:
@@ -1066,8 +1066,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
         role: worker
       name: node-feature-discovery-worker
       namespace: node-feature-discovery
@@ -1081,7 +1081,7 @@ data:
       template:
         metadata:
           annotations:
-            checksum/config: 993d29829216f74905fca696996a8a551f611a678a0de8db519aa3a48df9982a
+            checksum/config: aafc2737af2ac147b0bac55e3b6f713f0192a6049ad430dec99e4d79e52fe38d
           labels:
             app.kubernetes.io/instance: node-feature-discovery
             app.kubernetes.io/name: node-feature-discovery
@@ -1106,7 +1106,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.uid
-            image: registry.k8s.io/nfd/node-feature-discovery:v0.18.1
+            image: registry.k8s.io/nfd/node-feature-discovery:v0.18.3
             imagePullPolicy: IfNotPresent
             livenessProbe:
               httpGet:
@@ -1205,8 +1205,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
         role: master
       name: node-feature-discovery-master
       namespace: node-feature-discovery
@@ -1221,7 +1221,7 @@ data:
       template:
         metadata:
           annotations:
-            checksum/config: 924ac50c81b9fed45507b5951a2d9e04c9570b1b12abd717ffe70fdef8e57601
+            checksum/config: b0be1066d37d3a4f8bb03f39cdd2b6a637625f710dfec507062ad559ec43a4dc
           labels:
             app.kubernetes.io/instance: node-feature-discovery
             app.kubernetes.io/name: node-feature-discovery
@@ -1250,7 +1250,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: registry.k8s.io/nfd/node-feature-discovery:v0.18.1
+            image: registry.k8s.io/nfd/node-feature-discovery:v0.18.3
             imagePullPolicy: IfNotPresent
             livenessProbe:
               httpGet:
@@ -1313,8 +1313,8 @@ data:
         app.kubernetes.io/instance: node-feature-discovery
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: node-feature-discovery
-        app.kubernetes.io/version: v0.18.1
-        helm.sh/chart: node-feature-discovery-0.18.1
+        app.kubernetes.io/version: v0.18.3
+        helm.sh/chart: node-feature-discovery-0.18.3
         role: gc
       name: node-feature-discovery-gc
       namespace: node-feature-discovery
@@ -1343,7 +1343,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            image: registry.k8s.io/nfd/node-feature-discovery:v0.18.1
+            image: registry.k8s.io/nfd/node-feature-discovery:v0.18.3
             imagePullPolicy: IfNotPresent
             livenessProbe:
               httpGet:

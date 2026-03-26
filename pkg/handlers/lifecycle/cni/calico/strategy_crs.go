@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
@@ -14,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructuredscheme"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -25,6 +27,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
+const tigeraOperatorConfigMapLabel = "caren.nutanix.com/tigera-operator-manifests"
+
 type crsConfig struct {
 	defaultTigeraOperatorConfigMapName        string
 	defaultProviderInstallationConfigMapNames map[string]string
@@ -35,7 +39,7 @@ func (c *crsConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 		&c.defaultTigeraOperatorConfigMapName,
 		prefix+".default-tigera-operator-configmap-name",
 		"tigera-operator",
-		"name of the ConfigMap used to deploy Tigera Operator",
+		"base name used to discover Tigera Operator manifests ConfigMaps via label selector",
 	)
 	flags.StringToStringVar(
 		&c.defaultProviderInstallationConfigMapNames,
@@ -73,15 +77,15 @@ func (s crsStrategy) apply(
 		return nil
 	}
 
-	log.Info("Ensuring Tigera manifests ConfigMap exist in cluster namespace")
-	tigeraCM, err := s.ensureTigeraOperatorConfigMap(ctx, cluster, defaultsNamespace)
+	log.Info("Ensuring Tigera manifests ConfigMaps exist in cluster namespace")
+	tigeraCMs, err := s.ensureTigeraOperatorConfigMaps(ctx, cluster, defaultsNamespace)
 	if err != nil {
 		log.Error(
 			err,
-			"failed to ensure Tigera Operator manifests ConfigMap exists in cluster namespace",
+			"failed to ensure Tigera Operator manifests ConfigMaps exist in cluster namespace",
 		)
 		return fmt.Errorf(
-			"failed to ensure Tigera Operator manifests ConfigMap exists in cluster namespace: %w",
+			"failed to ensure Tigera Operator manifests ConfigMaps exist in cluster namespace: %w",
 			err,
 		)
 	}
@@ -92,7 +96,7 @@ func (s crsStrategy) apply(
 		cluster,
 		defaultsNamespace,
 		defaultInstallationConfigMapName,
-		tigeraCM,
+		tigeraCMs,
 	); err != nil {
 		log.Error(
 			err,
@@ -112,7 +116,7 @@ func (s crsStrategy) ensureCNICRSForCluster(
 	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
 	defaultInstallationConfigMapName string,
-	tigeraConfigMap *corev1.ConfigMap,
+	tigeraConfigMaps []*corev1.ConfigMap,
 ) error {
 	defaultInstallationConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -150,14 +154,19 @@ func (s crsStrategy) ensureCNICRSForCluster(
 		)
 	}
 
+	crsObjects := make([]runtime.Object, 0, len(tigeraConfigMaps)+1)
+	for _, tcm := range tigeraConfigMaps {
+		crsObjects = append(crsObjects, tcm)
+	}
+	crsObjects = append(crsObjects, cm)
+
 	if err := utils.EnsureCRSForClusterFromObjects(
 		ctx,
 		cm.Name,
 		s.client,
 		cluster,
 		utils.DefaultEnsureCRSForClusterFromObjectsOptions(),
-		tigeraConfigMap,
-		cm,
+		crsObjects...,
 	); err != nil {
 		return fmt.Errorf(
 			"failed to apply Calico CNI installation ClusterResourceSet: %w",
@@ -168,38 +177,53 @@ func (s crsStrategy) ensureCNICRSForCluster(
 	return nil
 }
 
-func (s crsStrategy) ensureTigeraOperatorConfigMap(
+func (s crsStrategy) ensureTigeraOperatorConfigMaps(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
 	defaultsNamespace string,
-) (*corev1.ConfigMap, error) {
-	defaultTigeraOperatorConfigMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: defaultsNamespace,
-			Name:      s.config.defaultTigeraOperatorConfigMapName,
-		},
-	}
-	defaultTigeraOperatorConfigMapObjName := ctrlclient.ObjectKeyFromObject(
-		defaultTigeraOperatorConfigMap,
-	)
-	err := s.client.Get(ctx, defaultTigeraOperatorConfigMapObjName, defaultTigeraOperatorConfigMap)
-	if err != nil {
+) ([]*corev1.ConfigMap, error) {
+	defaultConfigMaps := &corev1.ConfigMapList{}
+	if err := s.client.List(ctx, defaultConfigMaps,
+		ctrlclient.InNamespace(defaultsNamespace),
+		ctrlclient.MatchingLabels{tigeraOperatorConfigMapLabel: s.config.defaultTigeraOperatorConfigMapName},
+	); err != nil {
 		return nil, fmt.Errorf(
-			"failed to retrieve default Tigera Operator manifests ConfigMap %q: %w",
-			defaultTigeraOperatorConfigMapObjName,
+			"failed to list default Tigera Operator manifests ConfigMaps with label %s=%s in namespace %s: %w",
+			tigeraOperatorConfigMapLabel,
+			s.config.defaultTigeraOperatorConfigMapName,
+			defaultsNamespace,
 			err,
 		)
 	}
 
-	tigeraConfigMap := generateTigeraOperatorConfigMap(defaultTigeraOperatorConfigMap, cluster)
-	if err := client.ServerSideApply(ctx, s.client, tigeraConfigMap, client.ForceOwnership); err != nil {
+	if len(defaultConfigMaps.Items) == 0 {
 		return nil, fmt.Errorf(
-			"failed to apply Tigera Operator manifests ConfigMap: %w",
-			err,
+			"no default Tigera Operator manifests ConfigMaps found with label %s=%s in namespace %s",
+			tigeraOperatorConfigMapLabel,
+			s.config.defaultTigeraOperatorConfigMapName,
+			defaultsNamespace,
 		)
 	}
 
-	return tigeraConfigMap, nil
+	sort.Slice(defaultConfigMaps.Items, func(i, j int) bool {
+		return defaultConfigMaps.Items[i].Name < defaultConfigMaps.Items[j].Name
+	})
+
+	result := make([]*corev1.ConfigMap, 0, len(defaultConfigMaps.Items))
+	for i := range defaultConfigMaps.Items {
+		defaultCM := &defaultConfigMaps.Items[i]
+		namespacedCM := generateTigeraOperatorConfigMap(defaultCM, cluster)
+		if err := client.ServerSideApply(ctx, s.client, namespacedCM, client.ForceOwnership); err != nil {
+			return nil, fmt.Errorf(
+				"failed to apply Tigera Operator manifests ConfigMap %q: %w",
+				namespacedCM.Name,
+				err,
+			)
+		}
+		result = append(result, namespacedCM)
+	}
+
+	return result, nil
 }
 
 func generateTigeraOperatorConfigMap(

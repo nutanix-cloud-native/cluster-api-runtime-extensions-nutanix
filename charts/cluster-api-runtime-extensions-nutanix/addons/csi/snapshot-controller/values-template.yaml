@@ -11,3 +11,5 @@ controller:
       operator: Exists
 webhook:
   enabled: false
+  tls:
+    autogenerate: false

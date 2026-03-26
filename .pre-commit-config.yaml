@@ -96,7 +96,7 @@ repos:
     stages: [pre-commit]
   - id: check-added-large-files
     stages: [pre-commit]
-    exclude: ^pkg/handlers/cni/calico/manifests/tigera-operator-configmap.yaml$
+    exclude: ^charts/cluster-api-runtime-extensions-nutanix/templates/cni/calico/manifests/tigera-operator-.*-configmap\.yaml$
   - id: check-case-conflict
     stages: [pre-commit]
   - id: check-merge-conflict
