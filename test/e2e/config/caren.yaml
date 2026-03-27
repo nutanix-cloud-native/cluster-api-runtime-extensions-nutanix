@@ -18,7 +18,7 @@ providers:
     type: url
     contract: v1beta1
     files:
-    - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+    - sourcePath: "../data/shared/capi/metadata.yaml"
     replacements:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
@@ -31,7 +31,7 @@ providers:
     type: url
     contract: v1beta1
     files:
-    - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+    - sourcePath: "../data/shared/capi/metadata.yaml"
     replacements:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
@@ -44,7 +44,7 @@ providers:
     type: url
     contract: v1beta1
     files:
-    - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+    - sourcePath: "../data/shared/capi/metadata.yaml"
     replacements:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
@@ -57,7 +57,7 @@ providers:
     type: "url"
     contract: v1beta1
     files:
-    - sourcePath: "../data/shared/v1beta1-capa/metadata.yaml"
+    - sourcePath: "../data/shared/capa/metadata.yaml"
     - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/aws-cluster-class.yaml"
       targetName: clusterclass-aws-quick-start.yaml
     - sourcePath: "../../../examples/capi-quick-start/aws-cluster-cilium-helm-addon.yaml"
@@ -80,7 +80,7 @@ providers:
     type: "url"
     contract: v1beta1
     files:
-    - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+    - sourcePath: "../data/shared/capi/metadata.yaml"
     - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/docker-cluster-class.yaml"
       targetName: clusterclass-docker-quick-start.yaml
     - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml"
@@ -103,7 +103,7 @@ providers:
     type: "url"
     contract: v1beta1
     files:
-    - sourcePath: "../data/shared/v1beta1-capx/metadata.yaml"
+    - sourcePath: "../data/shared/capx/metadata.yaml"
     - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/nutanix-cluster-class.yaml"
       targetName: clusterclass-nutanix-quick-start.yaml
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-helm-addon.yaml"
@@ -132,7 +132,7 @@ providers:
     type: "url"
     contract: v1beta1
     files:
-    - sourcePath: "../data/shared/v1beta1-caaph/metadata.yaml"
+    - sourcePath: "../data/shared/caaph/metadata.yaml"
     replacements:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
@@ -158,7 +158,7 @@ providers:
     type: "url"
     contract: v1beta2
     files:
-    - sourcePath: "../data/shared/v1beta1-caren/metadata.yaml"
+    - sourcePath: "../data/shared/caren/metadata.yaml"
     replacements:
     - old: "--v=0"
       new: "--v=8"
