@@ -42,7 +42,7 @@ If you are releasing a new minor release, then update the `metadata.yaml`s so th
 for e.g. local development and e2e tests:
 
 1. Add the new release to the root level `metadata.yaml` release series.
-1. Add the next release to the e2e configuration `test/e2e/data/shared/v1beta1-caren/metadata.yaml` (e.g. if release
+1. Add the next release to the e2e configuration `test/e2e/data/shared/caren/metadata.yaml` (e.g. if release
    `v0.6.0` then add release series for `v0.7`).
 1. Update the `caren` provider configuration in `test/e2e/config/caren.yaml`:
    - The first reference should be the most recent successful patch release of the previous minor version. For example,
@@ -52,7 +52,7 @@ for e.g. local development and e2e tests:
 1. Commit the changed files:
 
    ```shell
-   git add metadata.yaml test/e2e/data/shared/v1beta1-caren/metadata.yaml test/e2e/config/caren.yaml
+   git add metadata.yaml test/e2e/data/shared/caren/metadata.yaml test/e2e/config/caren.yaml
    git commit --gpg-sign -m 'fixup! release: Update metadata for release'
    ```
 
