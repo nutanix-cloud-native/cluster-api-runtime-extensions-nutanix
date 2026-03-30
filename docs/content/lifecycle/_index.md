@@ -2,4 +2,5 @@
 title = "Lifecycle handlers"
 weight = 4
 icon = "fa-solid fa-seedling"
+sidebar_root_for = "self"
 +++
