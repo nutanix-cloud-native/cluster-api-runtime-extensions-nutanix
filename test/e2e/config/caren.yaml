@@ -156,7 +156,7 @@ providers:
   - name: v0.46.99 # "vNext"; use manifests from local source files
     value: "file://../../../runtime-extensions-components.yaml"
     type: "url"
-    contract: v1beta1
+    contract: v1beta2
     files:
     - sourcePath: "../data/shared/v1beta1-caren/metadata.yaml"
     replacements:
