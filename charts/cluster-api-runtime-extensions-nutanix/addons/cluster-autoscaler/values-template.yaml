@@ -2,6 +2,10 @@ fullnameOverride: "cluster-autoscaler-{{ index .Cluster.Annotations "caren.nutan
 
 cloudProvider: clusterapi
 
+image:
+  # TODO: Remove once https://github.com/kubernetes/autoscaler/issues/9439 is resolved.
+  tag: v1.34.3
+
 # Always trigger a scale-out if replicas are less than the min.
 extraArgs:
   enforce-node-group-min-size: true

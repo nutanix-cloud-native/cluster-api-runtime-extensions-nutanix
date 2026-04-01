@@ -44,6 +44,7 @@ export NODE_FEATURE_DISCOVERY_VERSION := 0.18.3
 #   App version:     1.35.0
 #   Repo:            https://github.com/kubernetes/autoscaler
 #   Release:         https://github.com/kubernetes/autoscaler/releases/tag/cluster-autoscaler-1.35.0
+# TODO: Remove tag override once https://github.com/kubernetes/autoscaler/issues/9439 is resolved.
 export CLUSTER_AUTOSCALER_CHART_VERSION := 9.56.0
 
 # AWS EBS CSI
