@@ -185,7 +185,7 @@ data:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.serviceAccountName
-            image: registry.k8s.io/autoscaling/cluster-autoscaler:v1.35.0
+            image: registry.k8s.io/autoscaling/cluster-autoscaler:v1.34.3
             imagePullPolicy: IfNotPresent
             livenessProbe:
               httpGet:
