@@ -6,13 +6,20 @@ package nutanix
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
+)
+
+const (
+	metroFailureDomainPrefix     = "NutanixMetro/"
+	metroSiteFailureDomainPrefix = "NutanixMetroSite/"
 )
 
 type failureDomainCheck struct {
@@ -21,6 +28,9 @@ type failureDomainCheck struct {
 	field             string
 	kclient           ctrlclient.Client
 	nclient           client
+
+	// The error message set if error hit when adding the check
+	errMessage *string
 }
 
 func (fdc *failureDomainCheck) Name() string {
@@ -38,15 +48,34 @@ func newFailureDomainChecks(cd *checkDependencies) []preflight.Check {
 	if cd.nutanixClusterConfigSpec != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
-		for _, fdName := range cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.FailureDomains {
-			if fdName != "" {
-				checks = append(checks, &failureDomainCheck{
-					failureDomainName: fdName,
-					namespace:         cd.cluster.Namespace,
-					field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // field is long.
-					kclient:           cd.kclient,
-					nclient:           cd.nclient,
-				})
+		for _, fd := range cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.FailureDomains {
+			if fd != "" {
+				fdNames, err := getFailureDomainNames(cd, fd)
+				if err != nil {
+					// log the error and continue
+					cd.log.Error(err, fmt.Sprintf("set the errMessage for failureDomain %s due to error", fd))
+					check := &failureDomainCheck{
+						failureDomainName: fd,
+						namespace:         cd.cluster.Namespace,
+						field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // field is long.
+						kclient:           cd.kclient,
+						nclient:           cd.nclient,
+					}
+					check.errMessage = ptr.To(err.Error())
+
+					checks = append(checks, check)
+					continue
+				}
+
+				for _, fdName := range fdNames {
+					checks = append(checks, &failureDomainCheck{
+						failureDomainName: fdName,
+						namespace:         cd.cluster.Namespace,
+						field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // field is long.
+						kclient:           cd.kclient,
+						nclient:           cd.nclient,
+					})
+				}
 			}
 		}
 	}
@@ -57,9 +86,29 @@ func newFailureDomainChecks(cd *checkDependencies) []preflight.Check {
 		len(cd.cluster.Spec.Topology.Workers.MachineDeployments) > 0 {
 		for i := range cd.cluster.Spec.Topology.Workers.MachineDeployments {
 			md := &cd.cluster.Spec.Topology.Workers.MachineDeployments[i]
-			if md.FailureDomain != "" {
-				checks = append(checks, &failureDomainCheck{
+			fdNames, err := getFailureDomainNames(cd, md.FailureDomain)
+			if err != nil {
+				// log the error and continue
+				cd.log.Error(
+					err,
+					fmt.Sprintf("set the checkResult for failureDomain %s due to error", md.FailureDomain),
+				)
+				check := &failureDomainCheck{
 					failureDomainName: md.FailureDomain,
+					namespace:         cd.cluster.Namespace,
+					field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // field is long.
+					kclient:           cd.kclient,
+					nclient:           cd.nclient,
+				}
+				check.errMessage = ptr.To(err.Error())
+
+				checks = append(checks, check)
+				continue
+			}
+
+			for _, fdName := range fdNames {
+				checks = append(checks, &failureDomainCheck{
+					failureDomainName: fdName,
 					namespace:         cd.cluster.Namespace,
 					field: fmt.Sprintf(
 						"$.spec.topology.workers.machineDeployments[?@.name==%q].failureDomain",
@@ -78,6 +127,20 @@ func newFailureDomainChecks(cd *checkDependencies) []preflight.Check {
 func (fdc *failureDomainCheck) Run(ctx context.Context) preflight.CheckResult {
 	result := preflight.CheckResult{
 		Allowed: true,
+	}
+
+	if fdc.errMessage != nil {
+		// return the check result with errMessage as Cause
+		result.Allowed = false
+		result.Causes = append(result.Causes, preflight.Cause{
+			Message: fmt.Sprintf(
+				"Failed to check failureDomain %q: %s",
+				fdc.failureDomainName,
+				*fdc.errMessage,
+			),
+			Field: fdc.field,
+		})
+		return result
 	}
 
 	// Fetch the referent failure domain object
@@ -227,4 +290,94 @@ func getSubnets(
 	default:
 		return nil, fmt.Errorf("subnet identifier is missing both name and uuid, identifier type: %s", subnetId.Type)
 	}
+}
+
+func isNutanixMetroFailureDomain(fdName string) bool {
+	return strings.HasPrefix(fdName, metroFailureDomainPrefix)
+}
+
+func isNutanixMetroSiteFailureDomain(fdName string) bool {
+	return strings.HasPrefix(fdName, metroSiteFailureDomainPrefix)
+}
+
+func getFailureDomainNames(cd *checkDependencies, fd string) ([]string, error) {
+	fdNames := []string{}
+	namespace := cd.cluster.Namespace
+	ctx := context.TODO()
+
+	switch {
+	case isNutanixMetroFailureDomain(fd):
+		// for NutanixMetro
+		metroName := fd[len(metroFailureDomainPrefix):]
+		cd.log.Info("handling NutanixMetro", "metroName", metroName)
+		metroObj := &capxv1.NutanixMetro{}
+		metroKey := ctrlclient.ObjectKey{Name: metroName, Namespace: namespace}
+		if err := cd.kclient.Get(ctx, metroKey, metroObj); err != nil {
+			return nil, fmt.Errorf(
+				"failed to fetch the NutanixMetro %s referenced by failureDomain %s: %w",
+				metroName,
+				fd,
+				err,
+			)
+		}
+		for _, fdRef := range metroObj.Spec.FailureDomains {
+			if fdRef.Name != "" {
+				fdNames = append(fdNames, fdRef.Name)
+			}
+		}
+
+	case isNutanixMetroSiteFailureDomain(fd):
+		// for NutanixMetroSite
+		metroSiteName := fd[len(metroSiteFailureDomainPrefix):]
+		cd.log.Info("handling NutanixMetroSite", "metroSiteName", metroSiteName)
+		metroSiteObj := &capxv1.NutanixMetroSite{}
+		metroSiteKey := ctrlclient.ObjectKey{Name: metroSiteName, Namespace: namespace}
+		if err := cd.kclient.Get(ctx, metroSiteKey, metroSiteObj); err != nil {
+			return nil, fmt.Errorf(
+				"failed to fetch the NutanixMetroSite %s referenced by failureDomain %s: %w",
+				metroSiteName,
+				fd,
+				err,
+			)
+		}
+
+		// fetch NutanixMetro referenced by the NutanixMetroSite
+		metroName := metroSiteObj.Spec.MetroRef.Name
+		metroObj := &capxv1.NutanixMetro{}
+		metroKey := ctrlclient.ObjectKey{Name: metroName, Namespace: namespace}
+		if err := cd.kclient.Get(ctx, metroKey, metroObj); err != nil {
+			return nil, fmt.Errorf(
+				"failed to fetch the NutanixMetro %s referenced by NutanixMetroSite %s, failureDomain %s: %w",
+				metroName,
+				metroSiteName,
+				fd,
+				err,
+			)
+		}
+
+		foundPreferredFD := false
+		for _, fdRef := range metroObj.Spec.FailureDomains {
+			if fdRef.Name != "" {
+				fdNames = append(fdNames, fdRef.Name)
+				if fdRef.Name == metroSiteObj.Spec.PreferredFailureDomain.Name {
+					foundPreferredFD = true
+				}
+			}
+		}
+		if !foundPreferredFD {
+			return nil, fmt.Errorf(
+				"the NutanixMetroSite %s preferredFailureDomain %s is not from the referenced NutanixMetro %s failureDomains %v",
+				metroSiteName,
+				metroSiteObj.Spec.PreferredFailureDomain.Name,
+				metroName,
+				fdNames,
+			)
+		}
+
+	default:
+		// should be NuanixFailureDomain name
+		fdNames = append(fdNames, fd)
+	}
+
+	return fdNames, nil
 }

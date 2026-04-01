@@ -588,9 +588,11 @@ spec:
                               items:
                                 properties:
                                   key:
+                                    default: ""
                                     description: key is the Key of category in PC.
                                     type: string
                                   value:
+                                    default: ""
                                     description: value is the category value linked to the category key in PC
                                     type: string
                                 type: object
@@ -1085,6 +1087,13 @@ spec:
                         - host
                         - port
                       type: object
+                    metros:
+                      description: metros are a list of NutanixMetros (by names) that the cluster uses to provision its machine vms.
+                      items:
+                        maxLength: 64
+                        type: string
+                      maxItems: 10
+                      type: array
                     prismCentralEndpoint:
                       description: Nutanix Prism Central endpoint configuration.
                       properties:
