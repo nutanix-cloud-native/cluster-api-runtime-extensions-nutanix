@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.45.1 (2026-04-01)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: update contract to v1beta2 for v0.45+ release series by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1547
+* fix: downgrade cluster-autoscaler to work with v1beta2 by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1555
+### Other Changes
+* refactor: drop contract version from e2e shared metadata directory names by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1548
+* docs: upgrade docsy, hugo, and enable sidebar root navigation by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1546
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.45.0...v0.45.1
+
 ## 0.45.0 (2026-03-26)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
