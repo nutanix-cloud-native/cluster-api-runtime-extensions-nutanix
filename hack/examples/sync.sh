@@ -29,7 +29,7 @@ readonly REPO_ROOT
 for provider in "aws" "docker" "nutanix"; do
   kustomize build --load-restrictor LoadRestrictionsNone \
     ./hack/examples/overlays/clusterclasses/"${provider}" >"${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml
-  (cd "${REPO_ROOT}" && go run ./hack/tools/clusterclass-v1beta2/main.go) <"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml" >"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" && mv "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml"
+  (cd "${REPO_ROOT}" && CGO_ENABLED=0 go run ./hack/tools/clusterclass-v1beta2/main.go) <"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml" >"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" && mv "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml"
 
   for cni in "calico" "cilium"; do
     for strategy in "helm-addon" "crs"; do
@@ -69,7 +69,7 @@ done
 
 kustomize build --load-restrictor LoadRestrictionsNone \
   ./hack/examples/overlays/clusterclasses/eks >"${EXAMPLE_CLUSTERCLASSES_DIR}"/eks-cluster-class.yaml
-(cd "${REPO_ROOT}" && go run ./hack/tools/clusterclass-v1beta2/main.go) <"${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml" >"${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml.tmp" && mv "${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml.tmp" "${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml"
+(cd "${REPO_ROOT}" && CGO_ENABLED=0 go run ./hack/tools/clusterclass-v1beta2/main.go) <"${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml" >"${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml.tmp" && mv "${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml.tmp" "${EXAMPLE_CLUSTERCLASSES_DIR}/eks-cluster-class.yaml"
 sed -i'' 's/ name: eks-eks-/ name: eks-/' "${EXAMPLE_CLUSTERCLASSES_DIR}"/eks-cluster-class.yaml
 
 kustomize build --load-restrictor LoadRestrictionsNone \

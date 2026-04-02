@@ -222,8 +222,8 @@ func ensureClusterClassDesiredState(obj map[string]interface{}) {
 			continue
 		}
 		// Derive generatePatchesExtension from discoverVariablesExtension name.
-		// e.g. awsclusterconfigvars-dv... -> awsclusterv5configpatch-gp...
-		//      awsworkerconfigvars-dv... -> awsworkerv5configpatch-gp...
+		// e.g. awsclusterconfigvars-dv... -> awsclusterv6configpatch-gp...
+		//      awsworkerconfigvars-dv... -> awsworkerv6configpatch-gp...
 		gp := deriveGeneratePatchesExtension(dv)
 		if gp != "" {
 			ext["generatePatchesExtension"] = gp
@@ -240,9 +240,9 @@ func deriveGeneratePatchesExtension(discoverVariablesExtension string) string {
 	base := discoverVariablesExtension[:len(discoverVariablesExtension)-len(suffix)]
 	switch {
 	case strings.HasSuffix(base, "clusterconfigvars-dv"):
-		return strings.TrimSuffix(base, "clusterconfigvars-dv") + "clusterv5configpatch-gp" + suffix
+		return strings.TrimSuffix(base, "clusterconfigvars-dv") + "clusterv6configpatch-gp" + suffix
 	case strings.HasSuffix(base, "workerconfigvars-dv"):
-		return strings.TrimSuffix(base, "workerconfigvars-dv") + "workerv5configpatch-gp" + suffix
+		return strings.TrimSuffix(base, "workerconfigvars-dv") + "workerv6configpatch-gp" + suffix
 	default:
 		return ""
 	}
