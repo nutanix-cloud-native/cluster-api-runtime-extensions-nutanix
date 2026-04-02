@@ -5,6 +5,7 @@ package request
 
 import (
 	"encoding/json"
+	"maps"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -13,7 +14,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/utils/ptr"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -192,10 +195,116 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 	return requestItem
 }
 
+type KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder struct {
+	files              []bootstrapv1beta1.File
+	version            *string
+	apiServerExtraArgs map[string]string
+}
+
+func (b *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder) WithFiles(
+	files ...bootstrapv1beta1.File,
+) *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder {
+	b.files = files
+	return b
+}
+
+func (b *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder) WithKubernetesVersion(
+	version string,
+) *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder {
+	b.version = ptr.To(version)
+	return b
+}
+
+func (b *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder) WithAPIServerExtraArgs(
+	extraArgs map[string]string,
+) *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder {
+	b.apiServerExtraArgs = extraArgs
+	return b
+}
+
+func (b *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder) NewRequest(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	cpTemplate := &controlplanev1beta1.KubeadmControlPlaneTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: controlplanev1beta1.GroupVersion.String(),
+			Kind:       "KubeadmControlPlaneTemplate",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      kubeadmControlPlaneTemplateRequestObjectName,
+			Namespace: Namespace,
+		},
+		Spec: controlplanev1beta1.KubeadmControlPlaneTemplateSpec{
+			Template: controlplanev1beta1.KubeadmControlPlaneTemplateResource{
+				Spec: controlplanev1beta1.KubeadmControlPlaneTemplateResourceSpec{
+					KubeadmConfigSpec: bootstrapv1beta1.KubeadmConfigSpec{
+						InitConfiguration: &bootstrapv1beta1.InitConfiguration{
+							NodeRegistration: bootstrapv1beta1.NodeRegistrationOptions{
+								KubeletExtraArgs: map[string]string{
+									"cloud-provider": "external",
+								},
+							},
+						},
+						JoinConfiguration: &bootstrapv1beta1.JoinConfiguration{
+							NodeRegistration: bootstrapv1beta1.NodeRegistrationOptions{
+								KubeletExtraArgs: map[string]string{
+									"cloud-provider": "external",
+								},
+							},
+						},
+						Files: b.files,
+					},
+				},
+			},
+		},
+	}
+
+	if b.apiServerExtraArgs != nil {
+		args := make(map[string]string, len(b.apiServerExtraArgs))
+		maps.Copy(args, b.apiServerExtraArgs)
+		cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs = args
+	}
+
+	requestItem := NewRequestItem(
+		cpTemplate,
+		&runtimehooksv1.HolderReference{
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       "Cluster",
+			FieldPath:  "spec.controlPlaneRef",
+			Name:       ClusterName,
+			Namespace:  Namespace,
+		},
+		uid,
+	)
+
+	if b.version != nil {
+		marshaledBuiltin, _ := json.Marshal( //nolint:errchkjson // Marshalling is guaranteed to succeed.
+			map[string]any{
+				"controlPlane": map[string]any{
+					"version": *b.version,
+				},
+			},
+		)
+		requestItem.Variables = append(requestItem.Variables, runtimehooksv1.Variable{
+			Name:  runtimehooksv1.BuiltinsName,
+			Value: apiextensionsv1.JSON{Raw: marshaledBuiltin},
+		})
+	}
+
+	return requestItem
+}
+
 func NewKubeadmControlPlaneTemplateRequestItem(
 	uid types.UID,
 ) runtimehooksv1.GeneratePatchesRequestItem {
-	builder := &KubeadmControlPlaneTemplateRequestItemBuilder{}
+	builder := &KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}
+	return builder.NewRequest(uid)
+}
+
+func NewKubeadmControlPlaneTemplateV1Beta1RequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	builder := &KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}
 	return builder.NewRequest(uid)
 }
 
