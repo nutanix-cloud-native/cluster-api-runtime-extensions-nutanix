@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.45.2 (2026-04-02)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: add TakeOwnership to snapshot-controller HelmChartProxy by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1556
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.45.1...v0.45.2
+
 ## 0.45.1 (2026-04-01)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
