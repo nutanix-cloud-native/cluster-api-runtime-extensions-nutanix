@@ -19,10 +19,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/securitygroups"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/tags"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/mutation/volumes"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/kubeproxymode"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/ntp"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/taints"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/users"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
@@ -32,9 +28,6 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 		network.NewPatch(),
 		identityref.NewPatch(),
 		tags.NewClusterPatch(),
-		users.NewPatch(),
-		kubeproxymode.NewPatch(),
-		ntp.NewPatch(),
 	}
 
 	return mutation.NewMetaGeneratePatchesHandler(
@@ -55,7 +48,6 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 		placementgroup.NewWorkerPatch(),
 		placementgroupnfd.NewWorkerPatch(),
 		tags.NewWorkerPatch(),
-		taints.NewWorkerPatch(),
 	}
 
 	return mutation.NewMetaGeneratePatchesHandler(
