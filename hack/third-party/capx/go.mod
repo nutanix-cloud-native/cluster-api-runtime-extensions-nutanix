@@ -7,7 +7,7 @@ go 1.24.0
 
 toolchain go1.26.1
 
-require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.9.0
+require github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.9.3-alpha.1
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -74,5 +74,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
-
-replace github.com/nutanix-cloud-native/cluster-api-provider-nutanix => github.com/nutanix-cloud-native/cluster-api-provider-nutanix v1.9.2-0.20260401033904-307c8e5ddf2a
