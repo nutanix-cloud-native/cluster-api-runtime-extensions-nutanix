@@ -41,6 +41,165 @@ spec:
             spec:
               description: GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
               properties:
+                auditLog:
+                  description: AuditLog defines the audit log configuration for the cluster.
+                  properties:
+                    log:
+                      description: Log defines the audit log configuration.
+                      properties:
+                        compress:
+                          description: Compress defines if the audit log file should be compressed.
+                          type: boolean
+                        eventBatching:
+                          description: EventBatching defines the event batching configuration.
+                          properties:
+                            bufferSize:
+                              description: BufferSize defines the number of events to buffer before batching.
+                              format: int32
+                              type: integer
+                            maxSize:
+                              description: MaxSize defines the maximum number of events in one batch.
+                              format: int32
+                              type: integer
+                            maxWait:
+                              description: |-
+                                MaxWait defines the maximum amount of time to wait before unconditionally batching
+                                events in the queue.
+                              format: int32
+                              type: integer
+                            throttleBurst:
+                              description: |-
+                                ThrottleBurst defines the maximum number of batches generated at the same moment
+                                if the allowed QPS was underutilized previously.
+                              format: int32
+                              type: integer
+                            throttleEnable:
+                              description: ThrottleEnable defines whether batching throttling is enabled.
+                              type: boolean
+                            throttleQPS:
+                              description: ThrottleQPS defines the maximum average number of batches generated per second.
+                              format: int32
+                              type: integer
+                          type: object
+                          x-kubernetes-validations:
+                            - message: EventBatching can be set only if Mode is set to batch
+                              rule: self.mode == 'batch' || self.eventBatching == nil
+                        maxAge:
+                          description: MaxAge defines the maximum age of the audit log in days.
+                          format: int32
+                          type: integer
+                        maxBackup:
+                          description: MaxBackup defines the maximum number of audit log files to retain.
+                          format: int32
+                          type: integer
+                        maxSize:
+                          description: MaxSize defines the maximum size of the audit log file in MB.
+                          format: int32
+                          type: integer
+                        mode:
+                          default: blocking
+                          description: Mode defines the mode of the audit log.
+                          enum:
+                            - batch
+                            - blocking
+                            - blocking-strict
+                          type: string
+                        path:
+                          description: Path defines the path to the audit log file.
+                          type: string
+                      type: object
+                    policy:
+                      default:
+                        - configMap:
+                            name: default-audit-policy
+                      description: Policy defines the audit policy for the cluster.
+                      properties:
+                        configMap:
+                          description: |-
+                            ConfigMap holds the audit policy configmap.
+                            The data key "policy.yaml" must contain the audit policy in YAML or JSON format.
+                          properties:
+                            name:
+                              description: |-
+                                Name of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              maxLength: 253
+                              minLength: 1
+                              type: string
+                          required:
+                            - name
+                          type: object
+                      required:
+                        - configMap
+                      type: object
+                    webhook:
+                      description: Webhook defines the audit log webhook configuration.
+                      properties:
+                        eventBatching:
+                          description: EventBatching defines the event batching configuration.
+                          properties:
+                            bufferSize:
+                              description: BufferSize defines the number of events to buffer before batching.
+                              format: int32
+                              type: integer
+                            maxSize:
+                              description: MaxSize defines the maximum number of events in one batch.
+                              format: int32
+                              type: integer
+                            maxWait:
+                              description: |-
+                                MaxWait defines the maximum amount of time to wait before unconditionally batching
+                                events in the queue.
+                              format: int32
+                              type: integer
+                            throttleBurst:
+                              description: |-
+                                ThrottleBurst defines the maximum number of batches generated at the same moment
+                                if the allowed QPS was underutilized previously.
+                              format: int32
+                              type: integer
+                            throttleEnable:
+                              description: ThrottleEnable defines whether batching throttling is enabled.
+                              type: boolean
+                            throttleQPS:
+                              description: ThrottleQPS defines the maximum average number of batches generated per second.
+                              format: int32
+                              type: integer
+                          type: object
+                          x-kubernetes-validations:
+                            - message: EventBatching can be set only if Mode is set to batch
+                              rule: self.mode == 'batch' || self.eventBatching == nil
+                        initialBackoff:
+                          description: InitialBackoff defines the initial backoff duration for the audit log webhook.
+                          type: string
+                        mode:
+                          default: batch
+                          description: Mode defines the mode of the audit log event batching.
+                          enum:
+                            - batch
+                            - blocking
+                            - blocking-strict
+                          type: string
+                        secret:
+                          description: Secret holds the kubeconfig for the audit log webhook.
+                          properties:
+                            name:
+                              description: |-
+                                Name of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              maxLength: 253
+                              minLength: 1
+                              type: string
+                          required:
+                            - name
+                          type: object
+                      required:
+                        - secret
+                      type: object
+                  type: object
+                  x-kubernetes-validations:
+                    - message: Only one of 'webhook' or 'log' can be set
+                      rule: '!(has(self.webhook) && has(self.log))'
                 globalImageRegistryMirror:
                   description: GlobalImageRegistryMirror sets default mirror configuration for all the image registries.
                   properties:
