@@ -6,14 +6,12 @@ package etcd
 import (
 	"context"
 	"crypto/tls"
-	"sort"
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,31 +97,29 @@ func (h *etcdPatchHandler) Mutate(
 	)
 
 	return patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting etcd configuration in kubeadm config spec")
 
-			localEtcd := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local
-
-			extraArgsMap := make(map[string]bool)
-			for _, arg := range localEtcd.ExtraArgs {
-				extraArgsMap[arg.Name] = true
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1beta1.ClusterConfiguration{}
+			}
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local == nil {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local = &bootstrapv1beta1.LocalEtcd{}
 			}
 
-			// Iterate in deterministic order so KubeadmConfigSpec is stable across reconciles.
-			keys := make([]string, 0, len(defaultEtcdExtraArgs))
-			for k := range defaultEtcdExtraArgs {
-				keys = append(keys, k)
+			localEtcd := obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local
+
+			if localEtcd.ExtraArgs == nil {
+				localEtcd.ExtraArgs = make(map[string]string, len(defaultEtcdExtraArgs))
 			}
-			sort.Strings(keys)
-			for _, k := range keys {
-				v := defaultEtcdExtraArgs[k]
-				if !extraArgsMap[k] {
-					localEtcd.ExtraArgs = append(localEtcd.ExtraArgs, bootstrapv1.Arg{Name: k, Value: ptr.To(v)})
-					extraArgsMap[k] = true
+
+			for k, v := range defaultEtcdExtraArgs {
+				if _, ok := localEtcd.ExtraArgs[k]; !ok {
+					localEtcd.ExtraArgs[k] = v
 				}
 			}
 

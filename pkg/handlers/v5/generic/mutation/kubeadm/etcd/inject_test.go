@@ -45,7 +45,7 @@ var _ = Describe("Generate etcd patches", func() {
 					VariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -57,11 +57,11 @@ var _ = Describe("Generate etcd patches", func() {
 							gomega.And(
 								gomega.HaveKeyWithValue("imageRepository", "my-registry.io/my-org/my-repo"),
 								gomega.HaveKeyWithValue("imageTag", "v3.5.99_custom.0"),
-								gomega.HaveKeyWithValue("extraArgs", gomega.ContainElements(
-									gomega.HaveKeyWithValue("name", "auto-tls"),
-									gomega.HaveKeyWithValue("name", "peer-auto-tls"),
-									gomega.HaveKeyWithValue("name", "cipher-suites"),
-									gomega.HaveKeyWithValue("name", "tls-min-version"),
+								gomega.HaveKeyWithValue("extraArgs", gomega.SatisfyAll(
+									gomega.HaveKey("auto-tls"),
+									gomega.HaveKey("peer-auto-tls"),
+									gomega.HaveKey("cipher-suites"),
+									gomega.HaveKey("tls-min-version"),
 								)),
 							),
 						),
@@ -82,7 +82,7 @@ var _ = Describe("Generate etcd patches", func() {
 					VariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -93,11 +93,11 @@ var _ = Describe("Generate etcd patches", func() {
 							"local",
 							gomega.And(
 								gomega.HaveKeyWithValue("imageRepository", "my-registry.io/my-org/my-repo"),
-								gomega.HaveKeyWithValue("extraArgs", gomega.ContainElements(
-									gomega.HaveKeyWithValue("name", "auto-tls"),
-									gomega.HaveKeyWithValue("name", "peer-auto-tls"),
-									gomega.HaveKeyWithValue("name", "cipher-suites"),
-									gomega.HaveKeyWithValue("name", "tls-min-version"),
+								gomega.HaveKeyWithValue("extraArgs", gomega.SatisfyAll(
+									gomega.HaveKey("auto-tls"),
+									gomega.HaveKey("peer-auto-tls"),
+									gomega.HaveKey("cipher-suites"),
+									gomega.HaveKey("tls-min-version"),
 								)),
 							),
 						),
@@ -118,7 +118,7 @@ var _ = Describe("Generate etcd patches", func() {
 					VariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -129,11 +129,11 @@ var _ = Describe("Generate etcd patches", func() {
 							"local",
 							gomega.And(
 								gomega.HaveKeyWithValue("imageTag", "v3.5.99_custom.0"),
-								gomega.HaveKeyWithValue("extraArgs", gomega.ContainElements(
-									gomega.HaveKeyWithValue("name", "auto-tls"),
-									gomega.HaveKeyWithValue("name", "peer-auto-tls"),
-									gomega.HaveKeyWithValue("name", "cipher-suites"),
-									gomega.HaveKeyWithValue("name", "tls-min-version"),
+								gomega.HaveKeyWithValue("extraArgs", gomega.SatisfyAll(
+									gomega.HaveKey("auto-tls"),
+									gomega.HaveKey("peer-auto-tls"),
+									gomega.HaveKey("cipher-suites"),
+									gomega.HaveKey("tls-min-version"),
 								)),
 							),
 						),

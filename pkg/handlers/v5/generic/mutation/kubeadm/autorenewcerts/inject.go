@@ -9,7 +9,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	"k8s.io/utils/ptr"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -87,9 +88,9 @@ func (h *autoRenewCerts) Mutate(
 		obj,
 		vars,
 		&holderRef,
-		selectors.ControlPlane(),
+		selectors.V1Beta1ControlPlane(),
 		log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log = log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
@@ -97,7 +98,7 @@ func (h *autoRenewCerts) Mutate(
 
 			if autoRenewCertsVar.DaysBeforeExpiry == 0 {
 				log.Info("removing auto renew certs config from control plane kubeadm config spec")
-				obj.Spec.Template.Spec.Rollout.Before = controlplanev1.KubeadmControlPlaneRolloutBeforeSpec{}
+				obj.Spec.Template.Spec.RolloutBefore = nil
 				return nil
 			}
 
@@ -105,7 +106,12 @@ func (h *autoRenewCerts) Mutate(
 				"adding auto renew certs config for %d days before expiry to control plane kubeadm config spec",
 				autoRenewCertsVar.DaysBeforeExpiry,
 			))
-			obj.Spec.Template.Spec.Rollout.Before.CertificatesExpiryDays = autoRenewCertsVar.DaysBeforeExpiry
+			if obj.Spec.Template.Spec.RolloutBefore == nil {
+				obj.Spec.Template.Spec.RolloutBefore = &controlplanev1beta1.RolloutBefore{}
+			}
+			obj.Spec.Template.Spec.RolloutBefore.CertificatesExpiryDays = ptr.To(
+				autoRenewCertsVar.DaysBeforeExpiry,
+			)
 
 			return nil
 		},

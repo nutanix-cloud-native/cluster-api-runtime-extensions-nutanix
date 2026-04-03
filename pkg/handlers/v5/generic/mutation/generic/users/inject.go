@@ -9,8 +9,8 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/ptr"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -81,14 +81,14 @@ func (h *usersPatchHandler) Mutate(
 		usersVariable,
 	)
 
-	bootstrapUsers := []bootstrapv1.User{}
+	bootstrapUsers := []bootstrapv1beta1.User{}
 	for _, userFromVariable := range usersVariable {
 		bootstrapUsers = append(bootstrapUsers, generateBootstrapUser(userFromVariable))
 	}
 
 	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -101,8 +101,8 @@ func (h *usersPatchHandler) Mutate(
 	}
 
 	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
-		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1WorkersKubeadmConfigTemplateSelector(), log,
+		func(obj *bootstrapv1beta1.KubeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -122,10 +122,9 @@ func (h *usersPatchHandler) Mutate(
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("setting users in worker node NodeadmConfig template")
 			eksBootstrapUsers := make([]eksbootstrapv1.User, 0, len(bootstrapUsers))
-			for i := range bootstrapUsers {
-				user := &bootstrapUsers[i]
+			for _, user := range bootstrapUsers {
 				var passwdFrom *eksbootstrapv1.PasswdSource
-				if user.PasswdFrom.Secret.Name != "" {
+				if user.PasswdFrom != nil {
 					passwdFrom = &eksbootstrapv1.PasswdSource{
 						Secret: eksbootstrapv1.SecretPasswdSource{
 							Name: user.PasswdFrom.Secret.Name,
@@ -135,16 +134,16 @@ func (h *usersPatchHandler) Mutate(
 				}
 				eksBootstrapUsers = append(eksBootstrapUsers, eksbootstrapv1.User{
 					Name:              user.Name,
-					Gecos:             ptr.To(user.Gecos),
-					Groups:            ptr.To(user.Groups),
-					HomeDir:           ptr.To(user.HomeDir),
+					Gecos:             user.Gecos,
+					Groups:            user.Groups,
+					HomeDir:           user.HomeDir,
 					Inactive:          user.Inactive,
-					Shell:             ptr.To(user.Shell),
-					Passwd:            ptr.To(user.Passwd),
+					Shell:             user.Shell,
+					Passwd:            user.Passwd,
 					PasswdFrom:        passwdFrom,
-					PrimaryGroup:      ptr.To(user.PrimaryGroup),
+					PrimaryGroup:      user.PrimaryGroup,
 					LockPassword:      user.LockPassword,
-					Sudo:              ptr.To(user.Sudo),
+					Sudo:              user.Sudo,
 					SSHAuthorizedKeys: user.SSHAuthorizedKeys,
 				})
 			}
@@ -158,8 +157,8 @@ func (h *usersPatchHandler) Mutate(
 	return nil
 }
 
-func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1.User {
-	bootstrapUser := bootstrapv1.User{
+func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1beta1.User {
+	bootstrapUser := bootstrapv1beta1.User{
 		Name:              userFromVariable.Name,
 		SSHAuthorizedKeys: userFromVariable.SSHAuthorizedKeys,
 	}
@@ -177,11 +176,12 @@ func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1.User {
 	if userFromVariable.HashedPassword != "" {
 		// We enable password authentication only if a hashed password is defined.
 		bootstrapUser.LockPassword = ptr.To(false)
-		bootstrapUser.Passwd = userFromVariable.HashedPassword
+
+		bootstrapUser.Passwd = ptr.To(userFromVariable.HashedPassword)
 	}
 
 	if userFromVariable.Sudo != "" {
-		bootstrapUser.Sudo = userFromVariable.Sudo
+		bootstrapUser.Sudo = ptr.To(userFromVariable.Sudo)
 	}
 
 	return bootstrapUser

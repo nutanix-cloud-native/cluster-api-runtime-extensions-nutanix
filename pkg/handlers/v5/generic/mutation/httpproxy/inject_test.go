@@ -70,7 +70,7 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/files",
@@ -97,7 +97,7 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 					VariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/files",

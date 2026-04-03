@@ -5,7 +5,7 @@ package containerdapplypatchesandrestart
 import (
 	_ "embed"
 
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
@@ -19,8 +19,8 @@ var (
 var containerdRestartScript []byte
 
 //nolint:gocritic // no need for named return values
-func generateContainerdRestartScript() (bootstrapv1.File, string) {
-	return bootstrapv1.File{
+func generateContainerdRestartScript() (bootstrapv1beta1.File, string) {
+	return bootstrapv1beta1.File{
 			Path:        containerdRestartScriptOnRemote,
 			Content:     string(containerdRestartScript),
 			Permissions: "0700",

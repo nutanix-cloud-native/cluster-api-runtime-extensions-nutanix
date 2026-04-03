@@ -15,9 +15,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
-	"k8s.io/utils/ptr"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -92,8 +91,8 @@ func (h *encryptionPatchHandler) Mutate(
 	)
 
 	return patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			cluster, err := clusterGetter(ctx)
 			if err != nil {
 				log.Error(err, "failed to get cluster from encryption mutation handler")
@@ -132,31 +131,25 @@ func (h *encryptionPatchHandler) Mutate(
 				generateEncryptionCredentialsFile(cluster))
 
 			// set APIServer args for encryption config
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration == nil {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration = &bootstrapv1beta1.ClusterConfiguration{}
+			}
 			apiServer := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer
-			hasEncryptionConfig := false
-			for _, arg := range apiServer.ExtraArgs {
-				if arg.Name == apiServerEncryptionConfigArg {
-					hasEncryptionConfig = true
-					break
-				}
+			if apiServer.ExtraArgs == nil {
+				apiServer.ExtraArgs = make(map[string]string, 1)
 			}
-			if !hasEncryptionConfig {
-				apiServer.ExtraArgs = append(apiServer.ExtraArgs, bootstrapv1.Arg{
-					Name:  apiServerEncryptionConfigArg,
-					Value: ptr.To(encryptionConfigurationOnRemote),
-				})
-			}
+			apiServer.ExtraArgs[apiServerEncryptionConfigArg] = encryptionConfigurationOnRemote
 
 			return nil
 		})
 }
 
-func generateEncryptionCredentialsFile(cluster *clusterv1.Cluster) bootstrapv1.File {
+func generateEncryptionCredentialsFile(cluster *clusterv1.Cluster) bootstrapv1beta1.File {
 	secretName := defaultEncryptionSecretName(cluster.Name)
-	return bootstrapv1.File{
+	return bootstrapv1beta1.File{
 		Path: encryptionConfigurationOnRemote,
-		ContentFrom: bootstrapv1.FileSource{
-			Secret: bootstrapv1.SecretFileSource{
+		ContentFrom: &bootstrapv1beta1.FileSource{
+			Secret: bootstrapv1beta1.SecretFileSource{
 				Name: secretName,
 				Key:  SecretKeyForEtcdEncryption,
 			},

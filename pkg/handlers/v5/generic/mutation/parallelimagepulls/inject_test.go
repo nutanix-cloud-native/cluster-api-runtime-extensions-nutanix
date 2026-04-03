@@ -43,7 +43,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				v1alpha1.AWSClusterConfigSpec{},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -64,7 +64,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				v1alpha1.NutanixClusterConfigSpec{},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -85,7 +85,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				v1alpha1.DockerClusterConfigSpec{},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -112,7 +112,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -139,7 +139,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -166,7 +166,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -191,7 +191,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -216,7 +216,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -241,7 +241,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -272,7 +272,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -303,7 +303,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -334,7 +334,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		UnexpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -359,7 +359,7 @@ var _ = DescribeTable("Generate max parallel image pulls patches",
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -394,7 +394,7 @@ serializeImagePulls: false
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -429,7 +429,7 @@ serializeImagePulls: false
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -470,7 +470,7 @@ serializeImagePulls: false
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -511,7 +511,7 @@ serializeImagePulls: false
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -552,7 +552,7 @@ serializeImagePulls: false
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -587,7 +587,7 @@ serializeImagePulls: false
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -623,7 +623,7 @@ maxParallelImagePulls: 10
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -659,7 +659,7 @@ maxParallelImagePulls: 10
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -701,7 +701,7 @@ maxParallelImagePulls: 10
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -743,7 +743,7 @@ maxParallelImagePulls: 10
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",
@@ -785,7 +785,7 @@ maxParallelImagePulls: 10
 				},
 			),
 		},
-		RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+		RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 			{
 				Operation: "add",

@@ -11,9 +11,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -50,9 +49,6 @@ func newGlobalMirrorPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *globalMirrorPatchHandler {
-	scheme := runtime.NewScheme()
-	_ = bootstrapv1.AddToScheme(scheme)
-	_ = controlplanev1.AddToScheme(scheme)
 	return &globalMirrorPatchHandler{
 		client:            cl,
 		variableName:      variableName,
@@ -169,8 +165,8 @@ func (h *globalMirrorPatchHandler) Mutate(
 	}
 
 	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -186,8 +182,8 @@ func (h *globalMirrorPatchHandler) Mutate(
 	}
 
 	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
-		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1WorkersKubeadmConfigTemplateSelector(), log,
+		func(obj *bootstrapv1beta1.KubeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -295,8 +291,8 @@ func containerdConfigFromRegistryAddon(
 
 func generateFiles(
 	registriesWithOptionalCA []containerdConfig,
-) ([]bootstrapv1.File, error) {
-	var files []bootstrapv1.File
+) ([]bootstrapv1beta1.File, error) {
+	var files []bootstrapv1beta1.File
 	// generate default registry mirror file
 	containerdHostsFile, err := generateContainerdDefaultHostsFile(registriesWithOptionalCA)
 	if err != nil {

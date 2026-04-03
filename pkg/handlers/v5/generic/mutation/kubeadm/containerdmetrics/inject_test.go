@@ -30,7 +30,7 @@ var _ = Describe("Generate containerd metrics patches", func() {
 	testDefs := []capitest.PatchTestDef{
 		{
 			Name:        "containerd metrics config added to control plane kubeadm config spec",
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -55,7 +55,7 @@ var _ = Describe("Generate containerd metrics patches", func() {
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",

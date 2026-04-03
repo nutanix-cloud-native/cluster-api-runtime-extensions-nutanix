@@ -6,11 +6,10 @@ package taints
 import (
 	"context"
 
-	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -80,25 +79,25 @@ func (h *taintsControlPlanePatchHandler) Mutate(
 	)
 
 	return patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding taints to worker node kubeadm config template")
-			initTaints := ptr.Deref(
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1beta1.InitConfiguration{}
+			}
+			if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration == nil {
+				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = &bootstrapv1beta1.JoinConfiguration{}
+			}
+			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints = toCoreTaints(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints,
-				[]corev1.Taint{},
+				taintsVar,
 			)
-			joinTaints := ptr.Deref(
+			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints = toCoreTaints(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints,
-				[]corev1.Taint{},
-			)
-			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints = ptr.To(
-				toCoreTaints(initTaints, taintsVar),
-			)
-			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints = ptr.To(
-				toCoreTaints(joinTaints, taintsVar),
+				taintsVar,
 			)
 
 			return nil

@@ -31,7 +31,7 @@ var _ = Describe("Generate Audit Policy patches", func() {
 		},
 		{
 			Name:        "auditpolicy set for KubeadmControlPlaneTemplate",
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
@@ -48,21 +48,32 @@ var _ = Describe("Generate Audit Policy patches", func() {
 					gomega.SatisfyAll(
 						gomega.HaveKeyWithValue(
 							"extraArgs",
-							gomega.ContainElements(
-								gomega.HaveKeyWithValue("name", "audit-log-maxbackup"),
-								gomega.HaveKeyWithValue("name", "audit-log-maxsize"),
-								gomega.HaveKeyWithValue("name", "audit-log-path"),
-								gomega.HaveKeyWithValue("name", "audit-policy-file"),
-								gomega.HaveKeyWithValue("name", "audit-log-maxage"),
-								gomega.HaveKeyWithValue("name", "audit-log-compress"),
+							gomega.SatisfyAll(
+								gomega.HaveKey("audit-log-maxbackup"),
+								gomega.HaveKey("audit-log-maxsize"),
+								gomega.HaveKey("audit-log-path"),
+								gomega.HaveKey("audit-policy-file"),
+								gomega.HaveKey("audit-log-maxage"),
+								gomega.HaveKey("audit-log-compress"),
 							),
 						),
 						gomega.HaveKeyWithValue(
 							"extraVolumes",
-							gomega.ContainElements(
-								gomega.HaveKeyWithValue("name", "audit-policy"),
-								gomega.HaveKeyWithValue("name", "audit-logs"),
-							),
+							[]any{
+								map[string]any{
+									"hostPath":  "/etc/kubernetes/audit-policy.yaml",
+									"mountPath": "/etc/kubernetes/audit-policy.yaml",
+									"name":      "audit-policy",
+									"readOnly":  true,
+									"pathType":  "File",
+								},
+								map[string]any{
+									"name":      "audit-logs",
+									"hostPath":  "/var/log/kubernetes/audit",
+									"mountPath": "/var/log/audit/",
+									"pathType":  "DirectoryOrCreate",
+								},
+							},
 						),
 					),
 				),

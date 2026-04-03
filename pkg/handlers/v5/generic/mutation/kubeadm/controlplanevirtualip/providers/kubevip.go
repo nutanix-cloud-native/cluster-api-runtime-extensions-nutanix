@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	"github.com/blang/semver/v4"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -39,11 +39,11 @@ var (
 var configureForKubeVIPScript []byte
 
 type kubeVIPFromKCPTemplateProvider struct {
-	template *controlplanev1.KubeadmControlPlaneTemplate
+	template *controlplanev1beta1.KubeadmControlPlaneTemplate
 }
 
 func NewKubeVIPFromKCPTemplateProvider(
-	template *controlplanev1.KubeadmControlPlaneTemplate,
+	template *controlplanev1beta1.KubeadmControlPlaneTemplate,
 ) *kubeVIPFromKCPTemplateProvider {
 	return &kubeVIPFromKCPTemplateProvider{
 		template: template,
@@ -62,7 +62,7 @@ func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
 	_ context.Context,
 	spec v1alpha1.ControlPlaneEndpointSpec,
 	cluster *clusterv1.Cluster,
-) (files []bootstrapv1.File, preKubeadmCommands, postKubeadmCommands []string, err error) {
+) (files []bootstrapv1beta1.File, preKubeadmCommands, postKubeadmCommands []string, err error) {
 	data, err := getTemplate(p.template)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed getting template data: %w", err)
@@ -74,7 +74,7 @@ func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
 	}
 
 	//nolint:prealloc // Only has a maximum size of 2, prealloc is unnecessary.
-	files = []bootstrapv1.File{
+	files = []bootstrapv1beta1.File{
 		{
 			Content:     kubeVIPStaticPod,
 			Owner:       kubeVIPFileOwner,
@@ -116,7 +116,7 @@ func (p *kubeVIPFromKCPTemplateProvider) GenerateFilesAndCommands(
 
 	files = append(
 		files,
-		bootstrapv1.File{
+		bootstrapv1beta1.File{
 			Content:     string(configureForKubeVIPScript),
 			Path:        configureForKubeVIPScriptOnRemote,
 			Permissions: configureForKubeVIPScriptPermissions,
@@ -140,7 +140,7 @@ func (e missingTemplateError) Error() string {
 	)
 }
 
-func getTemplate(kcp *controlplanev1.KubeadmControlPlaneTemplate) (string, error) {
+func getTemplate(kcp *controlplanev1beta1.KubeadmControlPlaneTemplate) (string, error) {
 	for _, file := range kcp.Spec.Template.Spec.KubeadmConfigSpec.Files {
 		if file.Path == kubeVIPFilePath && file.Content != "" {
 			return file.Content, nil

@@ -29,23 +29,23 @@ var _ = Describe("Generate external cloud provider patches", func() {
 	testDefs := []capitest.PatchTestDef{
 		{
 			Name:            "no kubernetes version available",
-			RequestItem:     request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem:     request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedFailure: true,
 		},
 		{
 			Name:            "explicit empty kubernetes version specified",
-			RequestItem:     (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithKubernetesVersion("").NewRequest(""),
+			RequestItem:     (&request.KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}).WithKubernetesVersion("").NewRequest(""),
 			ExpectedFailure: true,
 		},
 		{
 			Name: "non-semver kubernetes version specified",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}).
 				WithKubernetesVersion("this is not semver").NewRequest(""),
 			ExpectedFailure: true,
 		},
 		{
 			Name: "add API server flag for pre-1.33.0 control plane",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}).
 				WithKubernetesVersion("1.32.29").NewRequest(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
@@ -55,9 +55,7 @@ var _ = Describe("Generate external cloud provider patches", func() {
 						"apiServer",
 						gomega.HaveKeyWithValue(
 							"extraArgs",
-							gomega.ContainElement(
-								gomega.HaveKeyWithValue("name", "cloud-provider"),
-							),
+							gomega.HaveKeyWithValue("cloud-provider", "external"),
 						),
 					),
 				},
@@ -65,35 +63,35 @@ var _ = Describe("Generate external cloud provider patches", func() {
 		},
 		{
 			Name: "add API server flag for pre-1.33.0 control plane with pre-existing extra args",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}).
 				WithKubernetesVersion("1.32.29").
 				WithAPIServerExtraArgs(map[string]string{"foo": "bar"}).
 				NewRequest(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/1",
-					ValueMatcher: gomega.HaveKeyWithValue("name", "cloud-provider"),
+					Operation:    "add",
+					Path:         "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/cloud-provider",
+					ValueMatcher: gomega.Equal("external"),
 				},
 			},
 		},
 		{
 			Name: "no patches added for >= 1.33.0 control plane",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}).
 				WithKubernetesVersion("1.33.0").
 				WithAPIServerExtraArgs(map[string]string{"foo": "bar"}).
 				NewRequest(""),
 		},
 		{
 			Name: "no patches added for >= 1.33.0 control plane take 2",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}).
 				WithKubernetesVersion("2.72.0").
 				WithAPIServerExtraArgs(map[string]string{"foo": "bar"}).
 				NewRequest(""),
 		},
 		{
 			Name: "no patches added for 1.33.0 pre-release control plane",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}).
 				WithKubernetesVersion("1.33.0-alpha.1").
 				WithAPIServerExtraArgs(map[string]string{"foo": "bar"}).
 				NewRequest(""),

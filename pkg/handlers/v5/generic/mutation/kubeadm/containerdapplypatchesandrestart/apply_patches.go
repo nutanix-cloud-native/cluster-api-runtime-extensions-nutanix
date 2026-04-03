@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"text/template"
 
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/common"
 )
@@ -27,10 +27,10 @@ var (
 //go:embed templates/containerd-apply-patches.sh.gotmpl
 var containerdApplyConfigPatchesScript []byte
 
-func generateContainerdApplyPatchesScript() (bootstrapv1.File, string, error) {
+func generateContainerdApplyPatchesScript() (bootstrapv1beta1.File, string, error) {
 	t, err := template.New("").Parse(string(containerdApplyConfigPatchesScript))
 	if err != nil {
-		return bootstrapv1.File{}, "", fmt.Errorf("failed to parse go template: %w", err)
+		return bootstrapv1beta1.File{}, "", fmt.Errorf("failed to parse go template: %w", err)
 	}
 
 	templateInput := struct {
@@ -44,10 +44,10 @@ func generateContainerdApplyPatchesScript() (bootstrapv1.File, string, error) {
 	var b bytes.Buffer
 	err = t.Execute(&b, templateInput)
 	if err != nil {
-		return bootstrapv1.File{}, "", fmt.Errorf("failed executing template: %w", err)
+		return bootstrapv1beta1.File{}, "", fmt.Errorf("failed executing template: %w", err)
 	}
 
-	return bootstrapv1.File{
+	return bootstrapv1beta1.File{
 		Path:        containerdApplyPatchesScriptOnRemote,
 		Content:     b.String(),
 		Permissions: "0700",

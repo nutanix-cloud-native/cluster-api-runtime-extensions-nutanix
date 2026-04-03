@@ -40,7 +40,7 @@ var _ = Describe("Generate taints patches for Control Plane", func() {
 					VariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/taints",
@@ -65,7 +65,7 @@ var _ = Describe("Generate taints patches for Control Plane", func() {
 					VariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/initConfiguration/nodeRegistration/taints",
