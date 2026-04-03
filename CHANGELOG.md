@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.45.3 (2026-04-03)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: remove incorrect handlers from v5/eks by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1561
+* fix: use v1beta1 selectors for v5 handlers by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1560
+### Other Changes
+* build: fix versions in ClusterClass sync script by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1559
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.45.2...v0.45.3
+
 ## 0.45.2 (2026-04-02)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
