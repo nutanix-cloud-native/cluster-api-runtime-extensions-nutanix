@@ -1,10 +1,10 @@
-// Copyright 2026 Nutanix. All rights reserved.
+// Copyright 2023 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
-
-package httpproxy
+package containerdapplypatchesandrestart
 
 import (
 	"context"
+	_ "embed"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -14,71 +14,35 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	currenthttpproxy "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v5/generic/mutation/generic/httpproxy"
 )
 
-const (
-	// VariableName is the external patch variable name.
-	VariableName = "proxy"
-)
+type containerdApplyPatchesAndRestartPatchHandler struct{}
 
-type httpProxyPatchHandler struct {
-	client ctrlclient.Reader
-
-	variableName      string
-	variableFieldPath []string
+func NewPatch() *containerdApplyPatchesAndRestartPatchHandler {
+	return &containerdApplyPatchesAndRestartPatchHandler{}
 }
 
-func NewPatch(
-	cl ctrlclient.Reader,
-) *httpProxyPatchHandler {
-	return &httpProxyPatchHandler{
-		client:            cl,
-		variableName:      v1alpha1.ClusterConfigVariableName,
-		variableFieldPath: []string{currenthttpproxy.VariableName},
-	}
-}
-
-func (h *httpProxyPatchHandler) Mutate(
+func (h *containerdApplyPatchesAndRestartPatchHandler) Mutate(
 	ctx context.Context,
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
-	_ ctrlclient.ObjectKey,
-	clusterGetter mutation.ClusterGetter,
+	clusterKey ctrlclient.ObjectKey,
+	_ mutation.ClusterGetter,
 ) error {
-	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
-	cluster, err := clusterGetter(ctx)
-	if err != nil {
-		log.Error(err, "failed to fetch cluster")
-		return err
-	}
-	httpProxyVariable, err := variables.Get[v1alpha1.HTTPProxy](
-		vars,
-		h.variableName,
-		h.variableFieldPath...,
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"holderRef", holderRef,
 	)
-	if err != nil {
-		if variables.IsNotFoundError(err) {
-			log.V(5).Info("http proxy variable not defined")
-			return nil
-		}
-		return err
-	}
 
-	log = log.WithValues(
-		"variableName",
-		h.variableName,
-		"variableFieldPath",
-		h.variableFieldPath,
-		"variableValue",
-		httpProxyVariable,
-	)
+	restartFile, restartCommand := generateContainerdRestartScript()
+
+	applyPatchesFile, applyPatchesCommand, err := generateContainerdApplyPatchesScript()
+	if err != nil {
+		return err
+	}
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
@@ -86,11 +50,23 @@ func (h *httpProxyPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding files to control plane kubeadm config spec")
+			).Info("adding containerd apply patches and restart scripts to control plane kubeadm config spec")
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				currenthttpproxy.GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
+				applyPatchesFile,
+				restartFile,
 			)
+
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("adding containerd apply patches and restart commands to control plane kubeadm config spec")
+			obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands = append(
+				obj.Spec.Template.Spec.KubeadmConfigSpec.PreKubeadmCommands,
+				applyPatchesCommand,
+				restartCommand,
+			)
+
 			return nil
 		}); err != nil {
 		return err
@@ -102,11 +78,23 @@ func (h *httpProxyPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding files to worker node kubeadm config template")
+			).Info("adding containerd apply patches and restart scripts to worker node kubeadm config template")
 			obj.Spec.Template.Spec.Files = append(
 				obj.Spec.Template.Spec.Files,
-				currenthttpproxy.GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
+				applyPatchesFile,
+				restartFile,
 			)
+
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("adding containerd apply patches and restart commands to worker node kubeadm config template")
+			obj.Spec.Template.Spec.PreKubeadmCommands = append(
+				obj.Spec.Template.Spec.PreKubeadmCommands,
+				applyPatchesCommand,
+				restartCommand,
+			)
+
 			return nil
 		}); err != nil {
 		return err

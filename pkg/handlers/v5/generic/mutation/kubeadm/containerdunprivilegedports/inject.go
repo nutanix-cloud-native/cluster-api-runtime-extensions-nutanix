@@ -1,7 +1,6 @@
-// Copyright 2026 Nutanix. All rights reserved.
+// Copyright 2024 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
-
-package httpproxy
+package containerdunprivilegedports
 
 import (
 	"context"
@@ -14,71 +13,30 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	currenthttpproxy "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v5/generic/mutation/generic/httpproxy"
 )
 
-const (
-	// VariableName is the external patch variable name.
-	VariableName = "proxy"
-)
+type containerdUnprivilegedPortsPatchHandler struct{}
 
-type httpProxyPatchHandler struct {
-	client ctrlclient.Reader
-
-	variableName      string
-	variableFieldPath []string
+func NewPatch() *containerdUnprivilegedPortsPatchHandler {
+	return &containerdUnprivilegedPortsPatchHandler{}
 }
 
-func NewPatch(
-	cl ctrlclient.Reader,
-) *httpProxyPatchHandler {
-	return &httpProxyPatchHandler{
-		client:            cl,
-		variableName:      v1alpha1.ClusterConfigVariableName,
-		variableFieldPath: []string{currenthttpproxy.VariableName},
-	}
-}
-
-func (h *httpProxyPatchHandler) Mutate(
+func (h *containerdUnprivilegedPortsPatchHandler) Mutate(
 	ctx context.Context,
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
 	_ ctrlclient.ObjectKey,
-	clusterGetter mutation.ClusterGetter,
+	_ mutation.ClusterGetter,
 ) error {
-	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
-	cluster, err := clusterGetter(ctx)
-	if err != nil {
-		log.Error(err, "failed to fetch cluster")
-		return err
-	}
-	httpProxyVariable, err := variables.Get[v1alpha1.HTTPProxy](
-		vars,
-		h.variableName,
-		h.variableFieldPath...,
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"holderRef", holderRef,
 	)
-	if err != nil {
-		if variables.IsNotFoundError(err) {
-			log.V(5).Info("http proxy variable not defined")
-			return nil
-		}
-		return err
-	}
 
-	log = log.WithValues(
-		"variableName",
-		h.variableName,
-		"variableFieldPath",
-		h.variableFieldPath,
-		"variableValue",
-		httpProxyVariable,
-	)
+	unprivilegedPortsConfigDropIn := generateUnprivilegedPortsConfigDropIn()
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
@@ -86,11 +44,12 @@ func (h *httpProxyPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding files to control plane kubeadm config spec")
+			).Info("adding containerd unprivileged ports config to control plane kubeadm config spec")
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				currenthttpproxy.GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
+				unprivilegedPortsConfigDropIn,
 			)
+
 			return nil
 		}); err != nil {
 		return err
@@ -102,11 +61,11 @@ func (h *httpProxyPatchHandler) Mutate(
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding files to worker node kubeadm config template")
+			).Info("adding containerd unprivileged ports config to worker node kubeadm config template")
 			obj.Spec.Template.Spec.Files = append(
 				obj.Spec.Template.Spec.Files,
-				currenthttpproxy.GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
-			)
+				unprivilegedPortsConfigDropIn)
+
 			return nil
 		}); err != nil {
 		return err

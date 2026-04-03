@@ -1,0 +1,188 @@
+// Copyright 2023 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package users
+
+import (
+	"context"
+
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+)
+
+const (
+	// VariableName is the external patch variable name.
+	VariableName = "users"
+)
+
+type usersPatchHandler struct {
+	variableName      string
+	variableFieldPath []string
+}
+
+func NewPatch() *usersPatchHandler {
+	return newUsersPatchHandler(
+		v1alpha1.ClusterConfigVariableName,
+		VariableName)
+}
+
+func newUsersPatchHandler(
+	variableName string,
+	variableFieldPath ...string,
+) *usersPatchHandler {
+	return &usersPatchHandler{
+		variableName:      variableName,
+		variableFieldPath: variableFieldPath,
+	}
+}
+
+func (h *usersPatchHandler) Mutate(
+	ctx context.Context,
+	obj *unstructured.Unstructured,
+	vars map[string]apiextensionsv1.JSON,
+	holderRef runtimehooksv1.HolderReference,
+	_ ctrlclient.ObjectKey,
+	_ mutation.ClusterGetter,
+) error {
+	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
+
+	usersVariable, err := variables.Get[[]v1alpha1.User](
+		vars,
+		h.variableName,
+		h.variableFieldPath...,
+	)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("users variable not defined")
+			return nil
+		}
+		return err
+	}
+
+	log = log.WithValues(
+		"variableName",
+		h.variableName,
+		"variableFieldPath",
+		h.variableFieldPath,
+		"variableValue",
+		usersVariable,
+	)
+
+	bootstrapUsers := []bootstrapv1beta1.User{}
+	for _, userFromVariable := range usersVariable {
+		bootstrapUsers = append(bootstrapUsers, generateBootstrapUser(userFromVariable))
+	}
+
+	if err := patches.MutateIfApplicable(
+		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("setting users in control plane kubeadm config template")
+
+			obj.Spec.Template.Spec.KubeadmConfigSpec.Users = bootstrapUsers
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	if err := patches.MutateIfApplicable(
+		obj, vars, &holderRef, selectors.V1Beta1WorkersKubeadmConfigTemplateSelector(), log,
+		func(obj *bootstrapv1beta1.KubeadmConfigTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("setting users in worker node kubeadm config template")
+			obj.Spec.Template.Spec.Users = bootstrapUsers
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	if err := patches.MutateIfApplicable(
+		obj, vars, &holderRef,
+		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "NodeadmConfigTemplate"), log,
+		func(obj *eksbootstrapv1.NodeadmConfigTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
+			).Info("setting users in worker node NodeadmConfig template")
+			eksBootstrapUsers := make([]eksbootstrapv1.User, 0, len(bootstrapUsers))
+			for _, user := range bootstrapUsers {
+				var passwdFrom *eksbootstrapv1.PasswdSource
+				if user.PasswdFrom != nil {
+					passwdFrom = &eksbootstrapv1.PasswdSource{
+						Secret: eksbootstrapv1.SecretPasswdSource{
+							Name: user.PasswdFrom.Secret.Name,
+							Key:  user.PasswdFrom.Secret.Key,
+						},
+					}
+				}
+				eksBootstrapUsers = append(eksBootstrapUsers, eksbootstrapv1.User{
+					Name:              user.Name,
+					Gecos:             user.Gecos,
+					Groups:            user.Groups,
+					HomeDir:           user.HomeDir,
+					Inactive:          user.Inactive,
+					Shell:             user.Shell,
+					Passwd:            user.Passwd,
+					PasswdFrom:        passwdFrom,
+					PrimaryGroup:      user.PrimaryGroup,
+					LockPassword:      user.LockPassword,
+					Sudo:              user.Sudo,
+					SSHAuthorizedKeys: user.SSHAuthorizedKeys,
+				})
+			}
+
+			obj.Spec.Template.Spec.Users = eksBootstrapUsers
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1beta1.User {
+	bootstrapUser := bootstrapv1beta1.User{
+		Name:              userFromVariable.Name,
+		SSHAuthorizedKeys: userFromVariable.SSHAuthorizedKeys,
+	}
+
+	// LockPassword is not part of our API, because we can derive its value
+	// for the use cases our API supports.
+	//
+	// We do not support these edge cases:
+	// (a) Hashed password is defined, password authentication is not enabled.
+	// (b) Hashed password is not defined, password authentication is enabled.
+	//
+	// We disable password authentication by default.
+	bootstrapUser.LockPassword = ptr.To(true)
+
+	if userFromVariable.HashedPassword != "" {
+		// We enable password authentication only if a hashed password is defined.
+		bootstrapUser.LockPassword = ptr.To(false)
+
+		bootstrapUser.Passwd = ptr.To(userFromVariable.HashedPassword)
+	}
+
+	if userFromVariable.Sudo != "" {
+		bootstrapUser.Sudo = ptr.To(userFromVariable.Sudo)
+	}
+
+	return bootstrapUser
+}

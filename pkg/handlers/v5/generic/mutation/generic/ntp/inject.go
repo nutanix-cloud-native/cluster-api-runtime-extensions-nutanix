@@ -1,71 +1,72 @@
-// Copyright 2026 Nutanix. All rights reserved.
+// Copyright 2023 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package httpproxy
+package ntp
 
 import (
 	"context"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	eksbootstrapv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/bootstrap/eks/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	currenthttpproxy "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v5/generic/mutation/generic/httpproxy"
 )
 
 const (
 	// VariableName is the external patch variable name.
-	VariableName = "proxy"
+	VariableName = "ntp"
 )
 
-type httpProxyPatchHandler struct {
-	client ctrlclient.Reader
-
+type ntpPatchHandler struct {
 	variableName      string
 	variableFieldPath []string
 }
 
-func NewPatch(
-	cl ctrlclient.Reader,
-) *httpProxyPatchHandler {
-	return &httpProxyPatchHandler{
-		client:            cl,
-		variableName:      v1alpha1.ClusterConfigVariableName,
-		variableFieldPath: []string{currenthttpproxy.VariableName},
+func NewPatch() *ntpPatchHandler {
+	return newNTPPatchHandler(v1alpha1.ClusterConfigVariableName, VariableName)
+}
+
+func newNTPPatchHandler(
+	variableName string,
+	variableFieldPath ...string,
+) *ntpPatchHandler {
+	return &ntpPatchHandler{
+		variableName:      variableName,
+		variableFieldPath: variableFieldPath,
 	}
 }
 
-func (h *httpProxyPatchHandler) Mutate(
+func (h *ntpPatchHandler) Mutate(
 	ctx context.Context,
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
-	_ ctrlclient.ObjectKey,
-	clusterGetter mutation.ClusterGetter,
+	_ client.ObjectKey,
+	_ mutation.ClusterGetter,
 ) error {
-	log := ctrl.LoggerFrom(ctx, "holderRef", holderRef)
-	cluster, err := clusterGetter(ctx)
-	if err != nil {
-		log.Error(err, "failed to fetch cluster")
-		return err
-	}
-	httpProxyVariable, err := variables.Get[v1alpha1.HTTPProxy](
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"holderRef", holderRef,
+	)
+
+	ntp, err := variables.Get[*v1alpha1.NTP](
 		vars,
 		h.variableName,
 		h.variableFieldPath...,
 	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			log.V(5).Info("http proxy variable not defined")
+			log.V(5).Info("NTP variable not defined")
 			return nil
 		}
 		return err
@@ -77,20 +78,27 @@ func (h *httpProxyPatchHandler) Mutate(
 		"variableFieldPath",
 		h.variableFieldPath,
 		"variableValue",
-		httpProxyVariable,
+		ntp,
 	)
+
+	if ntp == nil || len(ntp.Servers) == 0 {
+		log.V(5).Info("NTP servers not specified, skipping mutation")
+		return nil
+	}
 
 	if err := patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
 		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding files to control plane kubeadm config spec")
-			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				currenthttpproxy.GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
-			)
+				"patchedObjectName", client.ObjectKeyFromObject(obj),
+			).Info("setting NTP configuration in control plane kubeadm config spec")
+
+			obj.Spec.Template.Spec.KubeadmConfigSpec.NTP = &bootstrapv1beta1.NTP{
+				Enabled: ptr.To(true),
+				Servers: ntp.Servers,
+			}
+
 			return nil
 		}); err != nil {
 		return err
@@ -101,12 +109,31 @@ func (h *httpProxyPatchHandler) Mutate(
 		func(obj *bootstrapv1beta1.KubeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
-				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
-			).Info("adding files to worker node kubeadm config template")
-			obj.Spec.Template.Spec.Files = append(
-				obj.Spec.Template.Spec.Files,
-				currenthttpproxy.GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
-			)
+				"patchedObjectName", client.ObjectKeyFromObject(obj),
+			).Info("setting NTP configuration in worker kubeadm config spec")
+
+			obj.Spec.Template.Spec.NTP = &bootstrapv1beta1.NTP{
+				Enabled: ptr.To(true),
+				Servers: ntp.Servers,
+			}
+
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	if err := patches.MutateIfApplicable(
+		obj, vars, &holderRef,
+		selectors.WorkersConfigTemplateSelector(eksbootstrapv1.GroupVersion.String(), "NodeadmConfigTemplate"), log,
+		func(obj *eksbootstrapv1.NodeadmConfigTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", client.ObjectKeyFromObject(obj),
+			).Info("setting users in worker node NodeadmConfig template")
+			obj.Spec.Template.Spec.NTP = &eksbootstrapv1.NTP{
+				Enabled: ptr.To(true),
+				Servers: ntp.Servers,
+			}
 			return nil
 		}); err != nil {
 		return err
