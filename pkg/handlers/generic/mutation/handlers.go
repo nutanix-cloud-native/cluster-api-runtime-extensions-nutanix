@@ -15,7 +15,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/ntp"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/taints"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/users"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/auditpolicy"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/autorenewcerts"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/containerdapplypatchesandrestart"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/containerdmetrics"
@@ -34,7 +33,6 @@ import (
 // MetaMutators returns all generic patch handlers.
 func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 	return []mutation.MetaMutator{
-		auditpolicy.NewPatch(),
 		etcd.NewPatch(),
 		coredns.NewPatch(),
 		extraapiservercertsans.NewPatch(),
