@@ -8,6 +8,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"k8s.io/utils/ptr"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
@@ -67,7 +69,7 @@ var _ = Describe("Generate external cloud provider patches", func() {
 			Name: "add API server flag for pre-1.33.0 control plane with pre-existing extra args",
 			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
 				WithKubernetesVersion("1.32.29").
-				WithAPIServerExtraArgs(map[string]string{"foo": "bar"}).
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "foo", Value: ptr.To("bar")}}).
 				NewRequest(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
@@ -81,21 +83,21 @@ var _ = Describe("Generate external cloud provider patches", func() {
 			Name: "no patches added for >= 1.33.0 control plane",
 			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
 				WithKubernetesVersion("1.33.0").
-				WithAPIServerExtraArgs(map[string]string{"foo": "bar"}).
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "foo", Value: ptr.To("bar")}}).
 				NewRequest(""),
 		},
 		{
 			Name: "no patches added for >= 1.33.0 control plane take 2",
 			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
 				WithKubernetesVersion("2.72.0").
-				WithAPIServerExtraArgs(map[string]string{"foo": "bar"}).
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "foo", Value: ptr.To("bar")}}).
 				NewRequest(""),
 		},
 		{
 			Name: "no patches added for 1.33.0 pre-release control plane",
 			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
 				WithKubernetesVersion("1.33.0-alpha.1").
-				WithAPIServerExtraArgs(map[string]string{"foo": "bar"}).
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "foo", Value: ptr.To("bar")}}).
 				NewRequest(""),
 		},
 	}

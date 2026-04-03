@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -163,4 +164,14 @@ func NewKubeadmControlPlaneTemplateV1Beta1RequestItem(
 ) runtimehooksv1.GeneratePatchesRequestItem {
 	builder := &KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}
 	return builder.NewRequest(uid)
+}
+
+func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithAPIServerExtraV1Beta1Args(
+	extraArgs map[string]string,
+) *KubeadmControlPlaneTemplateRequestItemBuilder {
+	args := make([]bootstrapv1.Arg, 0, len(extraArgs))
+	for k, v := range extraArgs {
+		args = append(args, bootstrapv1.Arg{Name: k, Value: ptr.To(v)})
+	}
+	return b.WithAPIServerExtraArgs(args)
 }
