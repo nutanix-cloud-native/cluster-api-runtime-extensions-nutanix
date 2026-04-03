@@ -41,7 +41,7 @@ var _ = Describe("Generate AWS Placement Group NFD patches for ControlPlane", fu
 					"placementGroup",
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem("1234"),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",

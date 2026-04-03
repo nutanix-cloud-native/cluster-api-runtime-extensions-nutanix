@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
@@ -28,7 +28,7 @@ var (
 	}
 )
 
-func GenerateSystemdFiles(vars v1alpha1.HTTPProxy, noProxy []string) []bootstrapv1.File {
+func GenerateSystemdFiles(vars v1alpha1.HTTPProxy, noProxy []string) []bootstrapv1beta1.File {
 	if vars.HTTP == "" && vars.HTTPS == "" && len(vars.AdditionalNo) == 0 {
 		return nil
 	}
@@ -49,10 +49,10 @@ func GenerateSystemdFiles(vars v1alpha1.HTTPProxy, noProxy []string) []bootstrap
 		panic(err) // This should be impossible with the simple template we have.
 	}
 
-	files := make([]bootstrapv1.File, 0, len(systemdUnitPaths))
+	files := make([]bootstrapv1beta1.File, 0, len(systemdUnitPaths))
 
 	for _, path := range systemdUnitPaths {
-		files = append(files, bootstrapv1.File{
+		files = append(files, bootstrapv1beta1.File{
 			Path:        path,
 			Permissions: "0640",
 			Content:     buf.String(),

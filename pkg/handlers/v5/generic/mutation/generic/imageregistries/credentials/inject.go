@@ -11,9 +11,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,9 +52,6 @@ func newImageRegistriesPatchHandler(
 	variableName string,
 	variableFieldPath ...string,
 ) *imageRegistriesPatchHandler {
-	scheme := runtime.NewScheme()
-	_ = bootstrapv1.AddToScheme(scheme)
-	_ = controlplanev1.AddToScheme(scheme)
 	return &imageRegistriesPatchHandler{
 		client:            cl,
 		variableName:      variableName,
@@ -152,8 +148,8 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	}
 
 	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -191,20 +187,33 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				return err
 			}
 
-			addImageCredentialProviderArgs(
-				&obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.KubeletExtraArgs,
-			)
-			addImageCredentialProviderArgs(
-				&obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.KubeletExtraArgs,
-			)
+			initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
+			if initConfiguration == nil {
+				initConfiguration = &bootstrapv1beta1.InitConfiguration{}
+			}
+			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = initConfiguration
+			if initConfiguration.NodeRegistration.KubeletExtraArgs == nil {
+				initConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
+			}
+			addImageCredentialProviderArgs(initConfiguration.NodeRegistration.KubeletExtraArgs)
+
+			joinConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration
+			if joinConfiguration == nil {
+				joinConfiguration = &bootstrapv1beta1.JoinConfiguration{}
+			}
+			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = joinConfiguration
+			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
+				joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
+			}
+			addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
 			return nil
 		}); err != nil {
 		return err
 	}
 
 	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
-		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1WorkersKubeadmConfigTemplateSelector(), log,
+		func(obj *bootstrapv1beta1.KubeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -236,7 +245,15 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				return err
 			}
 
-			addImageCredentialProviderArgs(&obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.KubeletExtraArgs)
+			joinConfiguration := obj.Spec.Template.Spec.JoinConfiguration
+			if joinConfiguration == nil {
+				joinConfiguration = &bootstrapv1beta1.JoinConfiguration{}
+			}
+			obj.Spec.Template.Spec.JoinConfiguration = joinConfiguration
+			if joinConfiguration.NodeRegistration.KubeletExtraArgs == nil {
+				joinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{}
+			}
+			addImageCredentialProviderArgs(joinConfiguration.NodeRegistration.KubeletExtraArgs)
 
 			return nil
 		}); err != nil {
@@ -358,7 +375,7 @@ func mirrorWithOptionalCredentialsFromGlobalImageRegistryMirror(
 func generateFilesAndCommands(
 	registriesWithOptionalCredentials []providerConfig,
 	clusterName string,
-) ([]bootstrapv1.File, []string, error) {
+) ([]bootstrapv1beta1.File, []string, error) {
 	files, commands, err := templateFilesAndCommandsForInstallKubeletCredentialProviders()
 	if err != nil {
 		return nil, nil, fmt.Errorf(

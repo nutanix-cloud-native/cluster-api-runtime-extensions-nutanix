@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
@@ -32,7 +32,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 	testDefs := []capitest.PatchTestDef{
 		{
 			Name:        "restart script and command added to control plane kubeadm config spec",
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -68,7 +68,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -107,7 +107,7 @@ var _ = Describe("Generate Containerd apply patches and restart patches", func()
 })
 
 func Test_generateContainerdApplyPatchesScript(t *testing.T) {
-	wantFile := bootstrapv1.File{
+	wantFile := bootstrapv1beta1.File{
 		Path:        "/etc/caren/containerd/apply-patches.sh",
 		Permissions: "0700",
 		//nolint:lll // just a long string

@@ -40,7 +40,7 @@ var _ = Describe("Generate Kubernetes Image Repository patches", func() {
 					VariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",

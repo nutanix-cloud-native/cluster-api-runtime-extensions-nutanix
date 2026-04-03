@@ -38,7 +38,7 @@ var _ = Describe("Generate NodeRegistration patches for Control Plane", func() {
 					VariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",

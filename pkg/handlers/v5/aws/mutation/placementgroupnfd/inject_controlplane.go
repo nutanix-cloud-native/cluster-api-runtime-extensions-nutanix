@@ -8,8 +8,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,15 +76,15 @@ func (h *controlPlanePatchHandler) Mutate(
 		obj,
 		vars,
 		&holderRef,
-		selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting placement group for local node feature discovery in AWS controlplane KubeadmControlPlaneTemplate")
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				bootstrapv1.File{
+				bootstrapv1beta1.File{
 					Path:        PlacementGroupDiscoveryScriptFileOnRemote,
 					Content:     string(PlacementgroupDiscoveryScript),
 					Permissions: "0700",

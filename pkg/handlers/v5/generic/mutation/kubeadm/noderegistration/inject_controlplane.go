@@ -8,7 +8,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,8 +79,8 @@ func (h *nodeRegistrationControlPlanePatchHandler) Mutate(
 	)
 
 	return patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -92,13 +93,19 @@ func (h *nodeRegistrationControlPlanePatchHandler) Mutate(
 }
 
 func setIgnorePreflightErrorsForControlPlane(
-	obj *controlplanev1.KubeadmControlPlaneTemplate,
+	obj *controlplanev1beta1.KubeadmControlPlaneTemplate,
 	ignorePreflightErrors []string,
 ) {
 	if len(ignorePreflightErrors) == 0 {
 		return
 	}
 
+	if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
+		obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1beta1.InitConfiguration{}
+	}
+	if obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration == nil {
+		obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration = &bootstrapv1beta1.JoinConfiguration{}
+	}
 	obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.IgnorePreflightErrors = append(
 		obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.IgnorePreflightErrors,
 		ignorePreflightErrors...,

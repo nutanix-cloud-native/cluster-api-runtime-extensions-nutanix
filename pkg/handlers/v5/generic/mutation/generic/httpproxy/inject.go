@@ -8,8 +8,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,15 +88,15 @@ func (h *httpProxyPatchHandler) Mutate(
 	)
 
 	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.ControlPlane(), log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1ControlPlane(), log,
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding files to control plane kubeadm config spec")
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxyNormalized(cluster))...,
+				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
 			)
 			return nil
 		}); err != nil {
@@ -104,15 +104,15 @@ func (h *httpProxyPatchHandler) Mutate(
 	}
 
 	if err := patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
-		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1WorkersKubeadmConfigTemplateSelector(), log,
+		func(obj *bootstrapv1beta1.KubeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding files to worker node kubeadm config template")
 			obj.Spec.Template.Spec.Files = append(
 				obj.Spec.Template.Spec.Files,
-				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxyNormalized(cluster))...,
+				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxy(cluster))...,
 			)
 			return nil
 		}); err != nil {

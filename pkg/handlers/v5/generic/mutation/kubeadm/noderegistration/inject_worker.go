@@ -8,7 +8,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -79,8 +79,8 @@ func (h *nodeRegistrationWorkerPatchHandler) Mutate(
 	)
 
 	return patches.MutateIfApplicable(
-		obj, vars, &holderRef, selectors.WorkersKubeadmConfigTemplateSelector(), log,
-		func(obj *bootstrapv1.KubeadmConfigTemplate) error {
+		obj, vars, &holderRef, selectors.V1Beta1WorkersKubeadmConfigTemplateSelector(), log,
+		func(obj *bootstrapv1beta1.KubeadmConfigTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
@@ -93,13 +93,16 @@ func (h *nodeRegistrationWorkerPatchHandler) Mutate(
 }
 
 func setIgnorePreflightErrorsForWorkers(
-	obj *bootstrapv1.KubeadmConfigTemplate,
+	obj *bootstrapv1beta1.KubeadmConfigTemplate,
 	ignorePreflightErrors []string,
 ) {
 	if len(ignorePreflightErrors) == 0 {
 		return
 	}
 
+	if obj.Spec.Template.Spec.JoinConfiguration == nil {
+		obj.Spec.Template.Spec.JoinConfiguration = &bootstrapv1beta1.JoinConfiguration{}
+	}
 	obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors = append(
 		obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.IgnorePreflightErrors,
 		ignorePreflightErrors...,

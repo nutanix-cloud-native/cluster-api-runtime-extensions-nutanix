@@ -44,7 +44,7 @@ var _ = Describe("Generate AWS Placement Group NFD patches for Worker", func() {
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem("1234"),
+			RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem("1234"),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",

@@ -10,8 +10,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,9 +99,9 @@ func (h *ControlPlaneVirtualIP) Mutate(
 		obj,
 		vars,
 		&holderRef,
-		selectors.ControlPlane(),
+		selectors.V1Beta1ControlPlane(),
 		log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			if controlPlaneEndpointVar.VirtualIPSpec == nil {
 				log.V(5).Info("ControlPlane VirtualIP not set")
 				// if VirtualIPSpec is not set, delete all VirtualIP providers' template files
@@ -174,7 +174,7 @@ func (h *ControlPlaneVirtualIP) Mutate(
 	)
 }
 
-func deleteFiles(files []bootstrapv1.File, filePathsToDelete ...string) []bootstrapv1.File {
+func deleteFiles(files []bootstrapv1beta1.File, filePathsToDelete ...string) []bootstrapv1beta1.File {
 	for i := len(files) - 1; i >= 0; i-- {
 		if slices.Contains(filePathsToDelete, files[i].Path) {
 			files = slices.Delete(files, i, i+1)
@@ -186,7 +186,7 @@ func deleteFiles(files []bootstrapv1.File, filePathsToDelete ...string) []bootst
 
 // mergeFiles will merge the files into the KubeadmControlPlaneTemplate,
 // overriding any file with the same path and appending the rest.
-func mergeFiles(files []bootstrapv1.File, filesToMerge ...bootstrapv1.File) []bootstrapv1.File {
+func mergeFiles(files []bootstrapv1beta1.File, filesToMerge ...bootstrapv1beta1.File) []bootstrapv1beta1.File {
 	// replace any existing files with the same path
 	for i := len(filesToMerge) - 1; i >= 0; i-- {
 		for j := range files {

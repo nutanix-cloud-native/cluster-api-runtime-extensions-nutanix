@@ -15,7 +15,7 @@ import (
 	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	credentialproviderv1 "k8s.io/kubelet/pkg/apis/credentialprovider/v1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v5/generic/mutation/generic/imageregistries/credentials/credentialprovider"
 )
@@ -103,8 +103,8 @@ func (c providerConfig) registryHostWithPath() (string, error) {
 
 func templateFilesForImageCredentialProviderConfigs(
 	configs []providerConfig,
-) ([]bootstrapv1.File, error) {
-	var files []bootstrapv1.File
+) ([]bootstrapv1beta1.File, error) {
+	var files []bootstrapv1beta1.File
 
 	kubeletCredentialProviderConfigFile, err := templateKubeletCredentialProviderConfig(configs)
 	if err != nil {
@@ -129,7 +129,7 @@ func templateFilesForImageCredentialProviderConfigs(
 
 func templateKubeletCredentialProviderConfig(
 	configs []providerConfig,
-) (*bootstrapv1.File, error) {
+) (*bootstrapv1beta1.File, error) {
 	providerBinary, providerArgs, providerAPIVersion := kubeletCredentialProvider()
 
 	// In addition to the globs already defined in the template, also include the user provided registries.
@@ -166,7 +166,7 @@ func templateKubeletCredentialProviderConfig(
 
 func templateDynamicCredentialProviderConfig(
 	configs []providerConfig,
-) (*bootstrapv1.File, error) {
+) (*bootstrapv1beta1.File, error) {
 	type providerConfig struct {
 		RegistryHosts      []string
 		ProviderBinary     string
@@ -266,14 +266,14 @@ func fileFromTemplate(
 	t *template.Template,
 	templateInput any,
 	fPath string,
-) (*bootstrapv1.File, error) {
+) (*bootstrapv1beta1.File, error) {
 	var b bytes.Buffer
 	err := t.Execute(&b, templateInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed executing template: %w", err)
 	}
 
-	return &bootstrapv1.File{
+	return &bootstrapv1beta1.File{
 		Path:        fPath,
 		Content:     b.String(),
 		Permissions: "0600",

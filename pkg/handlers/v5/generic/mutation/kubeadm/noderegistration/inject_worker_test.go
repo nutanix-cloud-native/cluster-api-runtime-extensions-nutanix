@@ -42,7 +42,7 @@ var _ = Describe("Generate NodeRegistration patches for Worker", func() {
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation: "add",
 				Path:      "/spec/template/spec/joinConfiguration/nodeRegistration/ignorePreflightErrors",

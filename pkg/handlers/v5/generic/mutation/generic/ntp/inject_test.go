@@ -31,7 +31,7 @@ var _ = Describe("Generate NTP patches", func() {
 	testDefs := []capitest.PatchTestDef{
 		{
 			Name:        "NTP configuration is set for control plane nodes with multiple servers",
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -54,7 +54,7 @@ var _ = Describe("Generate NTP patches", func() {
 		},
 		{
 			Name:        "NTP configuration is set for control plane nodes with single server",
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -77,7 +77,7 @@ var _ = Describe("Generate NTP patches", func() {
 		},
 		{
 			Name:        "NTP configuration is set for worker nodes with multiple servers",
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -111,7 +111,7 @@ var _ = Describe("Generate NTP patches", func() {
 		},
 		{
 			Name:        "NTP configuration is set for worker nodes with single server",
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
 					Operation: "add",
@@ -142,12 +142,12 @@ var _ = Describe("Generate NTP patches", func() {
 		},
 		{
 			Name:                  "NTP variable not set results in no patches",
-			RequestItem:           request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem:           request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{},
 		},
 		{
 			Name:                  "NTP servers empty results in no patches",
-			RequestItem:           request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem:           request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{},
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(

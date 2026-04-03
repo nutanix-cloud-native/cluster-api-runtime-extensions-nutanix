@@ -11,7 +11,7 @@ import (
 	"github.com/onsi/gomega"
 	"k8s.io/apiserver/pkg/storage/names"
 	"k8s.io/utils/ptr"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -29,7 +29,7 @@ func Test_generateBootstrapUser(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want bootstrapv1.User
+		want bootstrapv1beta1.User
 	}{
 		{
 			name: "if user sets hashed password, enable password auth and set passwd",
@@ -39,9 +39,9 @@ func Test_generateBootstrapUser(t *testing.T) {
 					HashedPassword: "example",
 				},
 			},
-			want: bootstrapv1.User{
+			want: bootstrapv1beta1.User{
 				Name:         "example",
-				Passwd:       "example",
+				Passwd:       ptr.To("example"),
 				LockPassword: ptr.To(false),
 			},
 		},
@@ -52,8 +52,9 @@ func Test_generateBootstrapUser(t *testing.T) {
 					Name: "example",
 				},
 			},
-			want: bootstrapv1.User{
+			want: bootstrapv1beta1.User{
 				Name:         "example",
+				Passwd:       nil,
 				LockPassword: ptr.To(true),
 			},
 		},
@@ -65,8 +66,9 @@ func Test_generateBootstrapUser(t *testing.T) {
 					HashedPassword: "",
 				},
 			},
-			want: bootstrapv1.User{
+			want: bootstrapv1beta1.User{
 				Name:         "example",
+				Passwd:       nil,
 				LockPassword: ptr.To(true),
 			},
 		},
@@ -78,9 +80,9 @@ func Test_generateBootstrapUser(t *testing.T) {
 					Sudo: "example",
 				},
 			},
-			want: bootstrapv1.User{
+			want: bootstrapv1beta1.User{
 				Name:         "example",
-				Sudo:         "example",
+				Sudo:         ptr.To("example"),
 				LockPassword: ptr.To(true),
 			},
 		},
@@ -91,8 +93,9 @@ func Test_generateBootstrapUser(t *testing.T) {
 					Name: "example",
 				},
 			},
-			want: bootstrapv1.User{
+			want: bootstrapv1beta1.User{
 				Name:         "example",
+				Sudo:         nil,
 				LockPassword: ptr.To(true),
 			},
 		},
@@ -104,8 +107,9 @@ func Test_generateBootstrapUser(t *testing.T) {
 					Sudo: "",
 				},
 			},
-			want: bootstrapv1.User{
+			want: bootstrapv1beta1.User{
 				Name:         "example",
+				Sudo:         nil,
 				LockPassword: ptr.To(true),
 			},
 		},
@@ -158,7 +162,7 @@ var _ = Describe("Generate Users patches", func() {
 					VariableName,
 				),
 			},
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/kubeadmConfigSpec/users",
@@ -182,7 +186,7 @@ var _ = Describe("Generate Users patches", func() {
 					},
 				),
 			},
-			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			RequestItem: request.NewKubeadmConfigTemplateV1Beta1RequestItem(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/users",

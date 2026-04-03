@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -54,7 +54,7 @@ func TestEncryptionConfigurationPatch(t *testing.T) {
 var _ = Describe("Generate Encryption configuration patches", func() {
 	clientScheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-	utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
+	utilruntime.Must(clusterv1.AddToScheme(clientScheme))
 	patchGenerator := func() mutation.GeneratePatches {
 		client, err := helpers.TestEnv.GetK8sClientWithScheme(clientScheme)
 		Expect(err).To(BeNil())
@@ -108,12 +108,9 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 				"apiServer",
 				HaveKeyWithValue(
 					"extraArgs",
-					ContainElement(
-						SatisfyAll(
-							HaveKeyWithValue("name", "encryption-provider-config"),
-							HaveKeyWithValue("value", "/etc/kubernetes/pki/encryptionconfig.yaml"),
-						),
-					),
+					map[string]any{
+						"encryption-provider-config": "/etc/kubernetes/pki/encryptionconfig.yaml",
+					},
 				),
 			),
 		},
@@ -126,14 +123,14 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 
 		Expect(client.Create(
 			ctx,
-			&clusterv1beta2.Cluster{
+			&clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: metav1.NamespaceDefault,
 				},
-				Spec: clusterv1beta2.ClusterSpec{
-					Topology: clusterv1beta2.Topology{
-						ClassRef: clusterv1beta2.ClusterClassRef{Name: "test"},
+				Spec: clusterv1.ClusterSpec{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "test"},
 						Version:  "v1.30.0",
 					},
 				},
@@ -148,7 +145,7 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 
 		Expect(client.Delete(
 			ctx,
-			&clusterv1beta2.Cluster{
+			&clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: metav1.NamespaceDefault,
@@ -162,7 +159,7 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 	noOpEncryptionConfigDef := capitest.PatchTestDef{
 		Name:                  "skip creating default encryption config secret if it already exists",
 		Vars:                  encryptionVar,
-		RequestItem:           request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem:           request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: encryptionMatchers,
 	}
 
@@ -196,7 +193,7 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 	patchEncryptionConfigDef := capitest.PatchTestDef{
 		Name:                  "files added in KubeadmControlPlaneTemplate for Encryption Configuration",
 		Vars:                  encryptionVar,
-		RequestItem:           request.NewKubeadmControlPlaneTemplateRequestItem(""),
+		RequestItem:           request.NewKubeadmControlPlaneTemplateV1Beta1RequestItem(""),
 		ExpectedPatchMatchers: encryptionMatchers,
 	}
 

@@ -14,8 +14,8 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/ptr"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -111,9 +111,9 @@ func (h *kubeProxyMode) Mutate(
 		obj,
 		vars,
 		&holderRef,
-		selectors.ControlPlane(),
+		selectors.V1Beta1ControlPlane(),
 		log,
-		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+		func(obj *controlplanev1beta1.KubeadmControlPlaneTemplate) error {
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
@@ -123,7 +123,10 @@ func (h *kubeProxyMode) Mutate(
 			case v1alpha1.KubeProxyModeDisabled:
 				log.Info("disabling kube-proxy addon")
 
-				initConfiguration := &obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
+				if obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration == nil {
+					obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration = &bootstrapv1beta1.InitConfiguration{}
+				}
+				initConfiguration := obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration
 				if !slices.Contains(initConfiguration.SkipPhases, "addon/kube-proxy") {
 					initConfiguration.SkipPhases = append(
 						initConfiguration.SkipPhases,
@@ -186,7 +189,7 @@ func (h *kubeProxyMode) Mutate(
 // TODO: KubeProxyConfiguration should be exposed upstream in CAPI to be able to configure kube-proxy mode directly
 // without the need for the messy commands in this implementation.
 func addKubeProxyConfigFileAndCommand(
-	obj *controlplanev1.KubeadmControlPlaneTemplate, kubeProxyMode v1alpha1.KubeProxyMode,
+	obj *controlplanev1beta1.KubeadmControlPlaneTemplate, kubeProxyMode v1alpha1.KubeProxyMode,
 ) error {
 	templateInput := struct {
 		Mode string
@@ -199,7 +202,7 @@ func addKubeProxyConfigFileAndCommand(
 		return fmt.Errorf("failed executing kube-proxy config template: %w", err)
 	}
 
-	kubeProxyConfig := bootstrapv1.File{
+	kubeProxyConfig := bootstrapv1beta1.File{
 		Path:        "/etc/kubernetes/kubeproxy-config.yaml",
 		Owner:       "root:root",
 		Permissions: "0644",

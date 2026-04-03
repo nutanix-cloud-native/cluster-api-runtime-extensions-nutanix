@@ -15,9 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
-	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -33,8 +33,8 @@ func TestControlPlaneEndpointPatch(t *testing.T) {
 }
 
 var _ = Describe("Generate ControlPlane virtual IP patches", func() {
-	requestItemBuilder := request.KubeadmControlPlaneTemplateRequestItemBuilder{}
-	requestItem := requestItemBuilder.WithFiles(bootstrapv1.File{
+	requestItemBuilder := request.KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder{}
+	requestItem := requestItemBuilder.WithFiles(bootstrapv1beta1.File{
 		Path:    "/etc/kubernetes/manifests/kube-vip.yaml",
 		Content: validKubeVIPTemplate,
 	}).NewRequest("")
@@ -42,7 +42,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 	testDefs := []struct {
 		capitest.PatchTestDef
 		virtualIPTemplate string
-		cluster           *clusterv1beta2.Cluster
+		cluster           *clusterv1.Cluster
 	}{
 		{
 			PatchTestDef: capitest.PatchTestDef{
@@ -99,14 +99,14 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				},
 			},
 			virtualIPTemplate: validKubeVIPTemplate,
-			cluster: &clusterv1beta2.Cluster{
+			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
 				},
-				Spec: clusterv1beta2.ClusterSpec{
-					Topology: clusterv1beta2.Topology{
-						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+				Spec: clusterv1.ClusterSpec{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Version:  "v1.28.100",
 					},
 				},
@@ -151,14 +151,14 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				},
 			},
 			virtualIPTemplate: validKubeVIPTemplate,
-			cluster: &clusterv1beta2.Cluster{
+			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
 				},
-				Spec: clusterv1beta2.ClusterSpec{
-					Topology: clusterv1beta2.Topology{
-						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+				Spec: clusterv1.ClusterSpec{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Version:  "v1.29.0",
 					},
 				},
@@ -187,14 +187,14 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				},
 			},
 			virtualIPTemplate: validKubeVIPTemplate,
-			cluster: &clusterv1beta2.Cluster{
+			cluster: &clusterv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      request.ClusterName,
 					Namespace: request.Namespace,
 				},
-				Spec: clusterv1beta2.ClusterSpec{
-					Topology: clusterv1beta2.Topology{
-						ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+				Spec: clusterv1.ClusterSpec{
+					Topology: clusterv1.Topology{
+						ClassRef: clusterv1.ClusterClassRef{Name: "dummy-class"},
 						Version:  "v1.28.100",
 					},
 				},
@@ -207,7 +207,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 		It(tt.Name, func() {
 			clientScheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(clientScheme))
-			utilruntime.Must(clusterv1beta2.AddToScheme(clientScheme))
+			utilruntime.Must(clusterv1.AddToScheme(clientScheme))
 			// Always initialize the testEnv variable in the closure.
 			// This will allow ginkgo to initialize testEnv variable during test execution time.
 			testEnv := helpers.TestEnv
@@ -282,18 +282,18 @@ func Test_deleteFiles(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name          string
-		obj           *controlplanev1.KubeadmControlPlaneTemplate
+		obj           *controlplanev1beta1.KubeadmControlPlaneTemplate
 		filesToDelete []string
-		expectedFiles []bootstrapv1.File
+		expectedFiles []bootstrapv1beta1.File
 	}{
 		{
 			name: "should delete files from the template",
-			obj: &controlplanev1.KubeadmControlPlaneTemplate{
-				Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
-					Template: controlplanev1.KubeadmControlPlaneTemplateResource{
-						Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
-							KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
-								Files: []bootstrapv1.File{
+			obj: &controlplanev1beta1.KubeadmControlPlaneTemplate{
+				Spec: controlplanev1beta1.KubeadmControlPlaneTemplateSpec{
+					Template: controlplanev1beta1.KubeadmControlPlaneTemplateResource{
+						Spec: controlplanev1beta1.KubeadmControlPlaneTemplateResourceSpec{
+							KubeadmConfigSpec: bootstrapv1beta1.KubeadmConfigSpec{
+								Files: []bootstrapv1beta1.File{
 									{
 										Path: "file-1",
 									},
@@ -313,7 +313,7 @@ func Test_deleteFiles(t *testing.T) {
 				},
 			},
 			filesToDelete: []string{"file-2", "file-3", "file-5"},
-			expectedFiles: []bootstrapv1.File{
+			expectedFiles: []bootstrapv1beta1.File{
 				{
 					Path: "file-1",
 				},
@@ -324,12 +324,12 @@ func Test_deleteFiles(t *testing.T) {
 		},
 		{
 			name: "should keep all files",
-			obj: &controlplanev1.KubeadmControlPlaneTemplate{
-				Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
-					Template: controlplanev1.KubeadmControlPlaneTemplateResource{
-						Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
-							KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
-								Files: []bootstrapv1.File{
+			obj: &controlplanev1beta1.KubeadmControlPlaneTemplate{
+				Spec: controlplanev1beta1.KubeadmControlPlaneTemplateSpec{
+					Template: controlplanev1beta1.KubeadmControlPlaneTemplateResource{
+						Spec: controlplanev1beta1.KubeadmControlPlaneTemplateResourceSpec{
+							KubeadmConfigSpec: bootstrapv1beta1.KubeadmConfigSpec{
+								Files: []bootstrapv1beta1.File{
 									{
 										Path: "file-1",
 									},
@@ -349,7 +349,7 @@ func Test_deleteFiles(t *testing.T) {
 				},
 			},
 			filesToDelete: []string{"file-5"},
-			expectedFiles: []bootstrapv1.File{
+			expectedFiles: []bootstrapv1beta1.File{
 				{
 					Path: "file-1",
 				},
@@ -383,18 +383,18 @@ func Test_mergeFiles(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name          string
-		obj           *controlplanev1.KubeadmControlPlaneTemplate
-		files         []bootstrapv1.File
-		expectedFiles []bootstrapv1.File
+		obj           *controlplanev1beta1.KubeadmControlPlaneTemplate
+		files         []bootstrapv1beta1.File
+		expectedFiles []bootstrapv1beta1.File
 	}{
 		{
 			name: "should merge files",
-			obj: &controlplanev1.KubeadmControlPlaneTemplate{
-				Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
-					Template: controlplanev1.KubeadmControlPlaneTemplateResource{
-						Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
-							KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
-								Files: []bootstrapv1.File{
+			obj: &controlplanev1beta1.KubeadmControlPlaneTemplate{
+				Spec: controlplanev1beta1.KubeadmControlPlaneTemplateSpec{
+					Template: controlplanev1beta1.KubeadmControlPlaneTemplateResource{
+						Spec: controlplanev1beta1.KubeadmControlPlaneTemplateResourceSpec{
+							KubeadmConfigSpec: bootstrapv1beta1.KubeadmConfigSpec{
+								Files: []bootstrapv1beta1.File{
 									{
 										Path:    "file-1",
 										Content: "old",
@@ -417,7 +417,7 @@ func Test_mergeFiles(t *testing.T) {
 					},
 				},
 			},
-			files: []bootstrapv1.File{
+			files: []bootstrapv1beta1.File{
 				{
 					Path:    "file-1",
 					Content: "new",
@@ -431,7 +431,7 @@ func Test_mergeFiles(t *testing.T) {
 					Content: "new",
 				},
 			},
-			expectedFiles: []bootstrapv1.File{
+			expectedFiles: []bootstrapv1beta1.File{
 				{
 					Path:    "file-1",
 					Content: "new",
@@ -456,12 +456,12 @@ func Test_mergeFiles(t *testing.T) {
 		},
 		{
 			name: "should add a new file",
-			obj: &controlplanev1.KubeadmControlPlaneTemplate{
-				Spec: controlplanev1.KubeadmControlPlaneTemplateSpec{
-					Template: controlplanev1.KubeadmControlPlaneTemplateResource{
-						Spec: controlplanev1.KubeadmControlPlaneTemplateResourceSpec{
-							KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
-								Files: []bootstrapv1.File{
+			obj: &controlplanev1beta1.KubeadmControlPlaneTemplate{
+				Spec: controlplanev1beta1.KubeadmControlPlaneTemplateSpec{
+					Template: controlplanev1beta1.KubeadmControlPlaneTemplateResource{
+						Spec: controlplanev1beta1.KubeadmControlPlaneTemplateResourceSpec{
+							KubeadmConfigSpec: bootstrapv1beta1.KubeadmConfigSpec{
+								Files: []bootstrapv1beta1.File{
 									{
 										Path:    "file-1",
 										Content: "old",
@@ -484,13 +484,13 @@ func Test_mergeFiles(t *testing.T) {
 					},
 				},
 			},
-			files: []bootstrapv1.File{
+			files: []bootstrapv1beta1.File{
 				{
 					Path:    "file-5",
 					Content: "new",
 				},
 			},
-			expectedFiles: []bootstrapv1.File{
+			expectedFiles: []bootstrapv1beta1.File{
 				{
 					Path:    "file-1",
 					Content: "old",

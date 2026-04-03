@@ -13,7 +13,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
@@ -31,14 +31,14 @@ var (
 	)
 )
 
-func generateCredentialsSecretFile(configs []providerConfig, clusterName string) *bootstrapv1.File {
+func generateCredentialsSecretFile(configs []providerConfig, clusterName string) *bootstrapv1beta1.File {
 	if !configsRequireStaticCredentials(configs) {
 		return nil
 	}
-	return &bootstrapv1.File{
+	return &bootstrapv1beta1.File{
 		Path: kubeletStaticCredentialProviderCredentialsOnRemote,
-		ContentFrom: bootstrapv1.FileSource{
-			Secret: bootstrapv1.SecretFileSource{
+		ContentFrom: &bootstrapv1beta1.FileSource{
+			Secret: bootstrapv1beta1.SecretFileSource{
 				Name: credentialSecretName(clusterName),
 				Key:  secretKeyForStaticCredentialProviderConfig,
 			},
