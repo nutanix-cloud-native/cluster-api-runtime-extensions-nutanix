@@ -28,6 +28,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/kubeletconfiguration"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/kubernetesimagerepository"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/noderegistration"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/sortextraargs"
 )
 
 // MetaMutators returns all generic patch handlers.
@@ -69,6 +70,7 @@ func ControlPlaneMetaMutators() []mutation.MetaMutator {
 		noderegistration.NewControlPlanePatch(),
 		externalcloudprovider.NewControlPlanePatch(),
 		kubeletconfiguration.NewControlPlanePatch(),
+		sortextraargs.NewPatch(),
 	}
 }
 
@@ -77,5 +79,6 @@ func WorkerMetaMutators() []mutation.MetaMutator {
 		taints.NewWorkerPatch(),
 		noderegistration.NewWorkerPatch(),
 		kubeletconfiguration.NewWorkerPatch(),
+		sortextraargs.NewPatch(),
 	}
 }

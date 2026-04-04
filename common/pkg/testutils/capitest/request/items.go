@@ -54,6 +54,40 @@ func NewKubeadmConfigTemplateRequestItem(
 	return NewKubeadmConfigTemplateRequest(uid, kubeadmConfigTemplateRequestObjectName)
 }
 
+func NewKubeadmConfigTemplateRequestItemWithKubeletExtraArgs(
+	kubeletExtraArgs []bootstrapv1.Arg,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		&bootstrapv1.KubeadmConfigTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: bootstrapv1.GroupVersion.String(),
+				Kind:       "KubeadmConfigTemplate",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kubeadmConfigTemplateRequestObjectName,
+				Namespace: Namespace,
+			},
+			Spec: bootstrapv1.KubeadmConfigTemplateSpec{
+				Template: bootstrapv1.KubeadmConfigTemplateResource{
+					Spec: bootstrapv1.KubeadmConfigSpec{
+						PostKubeadmCommands: []string{"initial-post-kubeadm"},
+						JoinConfiguration: bootstrapv1.JoinConfiguration{
+							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
+								KubeletExtraArgs: kubeletExtraArgs,
+							},
+						},
+					},
+				},
+			},
+		},
+		&runtimehooksv1.HolderReference{
+			Kind:      "MachineDeployment",
+			FieldPath: "spec.template.spec.infrastructureRef",
+		},
+		"",
+	)
+}
+
 func NewKubeadmConfigTemplateRequest(
 	uid types.UID,
 	name string,
@@ -94,7 +128,7 @@ func NewKubeadmConfigTemplateRequest(
 type KubeadmControlPlaneTemplateRequestItemBuilder struct {
 	files              []bootstrapv1.File
 	version            *string
-	apiServerExtraArgs map[string]string
+	apiServerExtraArgs []bootstrapv1.Arg
 }
 
 func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithFiles(
@@ -112,7 +146,7 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithKubernetesVersion(
 }
 
 func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithAPIServerExtraArgs(
-	extraArgs map[string]string,
+	extraArgs []bootstrapv1.Arg,
 ) *KubeadmControlPlaneTemplateRequestItemBuilder {
 	b.apiServerExtraArgs = extraArgs
 	return b
@@ -156,11 +190,7 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 	}
 
 	if b.apiServerExtraArgs != nil {
-		args := make([]bootstrapv1.Arg, 0, len(b.apiServerExtraArgs))
-		for k, v := range b.apiServerExtraArgs {
-			args = append(args, bootstrapv1.Arg{Name: k, Value: ptr.To(v)})
-		}
-		cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs = args
+		cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs = b.apiServerExtraArgs
 	}
 
 	requestItem := NewRequestItem(
