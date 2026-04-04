@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.45.4 (2026-04-04)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: preserve extraAgs alphabetic sorting by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1563
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.45.3...v0.45.4
+
 ## 0.45.3 (2026-04-03)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
