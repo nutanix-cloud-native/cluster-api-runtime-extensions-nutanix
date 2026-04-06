@@ -11,7 +11,7 @@ replace github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/c
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.5
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.296.1
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.296.2
 	github.com/aws/aws-sdk-go-v2/service/eks v1.81.2
 	github.com/blang/semver/v4 v4.0.0
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
