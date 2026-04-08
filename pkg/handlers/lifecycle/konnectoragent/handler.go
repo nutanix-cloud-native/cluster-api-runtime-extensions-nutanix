@@ -191,8 +191,9 @@ func (n *DefaultKonnectorAgent) apply(
 
 	// Ensure pc credentials are provided
 	if k8sAgentVar.Credentials == nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage("name of the Secret containing PC credentials must be set")
+		log.Info("Skipping konnector-agent: credentials not provided yet")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetMessage("Skipping konnector-agent setup: credentials not available yet")
 		return
 	}
 
@@ -229,12 +230,9 @@ func (n *DefaultKonnectorAgent) apply(
 		cluster,
 	)
 	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("error creating Nutanix k8s agent Credentials Secret on the remote cluster: %v",
-				err,
-			),
-		)
+		log.Info("Skipping konnector-agent: remote cluster not ready yet", "error", err)
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetMessage("Skipping konnector-agent setup: remote cluster not ready")
 		return
 	}
 
