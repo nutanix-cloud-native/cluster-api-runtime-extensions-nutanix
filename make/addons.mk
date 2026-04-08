@@ -145,6 +145,15 @@ export COSI_CONTROLLER_VERSION := 0.2.2
 #   Release:       https://github.com/nutanix-core/k8s-agent/releases/tag/1.3.0
 export KONNECTOR_AGENT_VERSION := 1.3.0
 
+# Multus
+#   Chart name: multus
+#   Chart repo: https://mesosphere.github.io/charts/stable/index.yaml
+#   Chart version:   0.1.1
+#   App version:     4.2.4
+#   Repo:            https://github.com/k8snetworkplumbingwg/multus-cni
+#   Release:         https://github.com/k8snetworkplumbingwg/multus-cni/releases/tag/v4.2.4
+export MULTUS_CHART_VERSION := 0.1.1
+
 # Nutanix Flow CNI
 #   Chart name: nutanix-flow-cni
 #   Chart repo: https://nutanix.github.io/helm-releases/index.yaml

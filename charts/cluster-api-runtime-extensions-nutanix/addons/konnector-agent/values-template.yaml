@@ -12,8 +12,8 @@ createSecret: false
 {{- if .CategoryMappings }}
 categoryMappings: {{ .CategoryMappings }}
 {{- end }}
+{{- if ne .EnableKubeconfigUpload false }}
 kubeconfigUpload:
-  enabled: {{ .EnableKubeconfigUpload }}
-  {{- if .EnableKubeconfigUpload }}
+  enabled: true
   controlPlaneEndpoint: {{ .ControlPlaneEndpoint }}
-  {{- end }}
+{{- end }}
