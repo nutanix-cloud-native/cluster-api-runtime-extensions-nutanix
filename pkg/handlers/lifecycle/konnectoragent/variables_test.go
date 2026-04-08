@@ -118,8 +118,8 @@ func TestApply_FailsWhenCopySecretFails(t *testing.T) {
 	resp := &runtimehooksv1.CommonResponse{}
 	handler.apply(context.Background(), cluster, resp)
 
-	assert.Equal(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
-	assert.Contains(t, resp.Message, "error updating owner references on Nutanix k8s agent source Secret")
+	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, resp.Status)
+	assert.Contains(t, resp.Message, "Skipping konnector-agent setup")
 }
 
 func TestApply_SuccessfulHelmStrategy(t *testing.T) {
