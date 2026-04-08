@@ -274,7 +274,7 @@ func (n *DefaultKonnectorAgent) apply(
 		n.config.helmAddonConfig,
 		n.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster))
+	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster, k8sAgentVar))
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		log.Error(err, "Helm strategy Apply failed")
@@ -287,7 +287,9 @@ func (n *DefaultKonnectorAgent) apply(
 }
 
 func templateValuesFunc(
-	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1.Cluster,
+	nutanixConfig *v1alpha1.NutanixSpec,
+	cluster *clusterv1.Cluster,
+	k8sAgentVar apivariables.NutanixKonnectorAgent,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
@@ -304,12 +306,14 @@ func templateValuesFunc(
 		}
 
 		type input struct {
-			AgentName            string
-			PrismCentralHost     string
-			PrismCentralPort     uint16
-			PrismCentralInsecure bool
-			ClusterName          string
-			CategoryMappings     string
+			AgentName                            string
+			PrismCentralHost                     string
+			PrismCentralPort                     uint16
+			PrismCentralInsecure                 bool
+			ClusterName                          string
+			CategoryMappings                     string
+			KubeconfigUploadEnabled              bool
+			KubeconfigUploadControlPlaneEndpoint string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -327,15 +331,25 @@ func templateValuesFunc(
 		// Extract categoryMappings from worker config additionalCategories
 		categoryMappings := extractCategoryMappings(cluster)
 
+		// Default is enabled when not explicitly set.
+		kubeconfigUploadEnabled := k8sAgentVar.EnableKubeconfigUpload == nil || *k8sAgentVar.EnableKubeconfigUpload
+
 		templateInput := input{
 			AgentName:        defaultK8sAgentName,
 			PrismCentralHost: address,
 			PrismCentralPort: port,
 			// TODO: remove this once we have a way to set this.
 			// need to add support to accept PC's trust bundle in agent(it's not implemented currently)
-			PrismCentralInsecure: true,
-			ClusterName:          clusterName,
-			CategoryMappings:     categoryMappings,
+			PrismCentralInsecure:    true,
+			ClusterName:             clusterName,
+			CategoryMappings:        categoryMappings,
+			KubeconfigUploadEnabled: kubeconfigUploadEnabled,
+		}
+
+		if kubeconfigUploadEnabled {
+			cpEndpoint := nutanixConfig.ControlPlaneEndpoint
+			templateInput.KubeconfigUploadControlPlaneEndpoint = fmt.Sprintf("https://%s:%d",
+				cpEndpoint.Host, cpEndpoint.Port)
 		}
 
 		var b bytes.Buffer

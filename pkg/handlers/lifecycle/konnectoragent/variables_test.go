@@ -5,6 +5,7 @@ package konnectoragent
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -21,6 +22,7 @@ import (
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -335,13 +337,22 @@ func TestTemplateValuesFunc(t *testing.T) {
 	}
 
 	nutanixConfig := &v1alpha1.NutanixSpec{
+		ControlPlaneEndpoint: v1alpha1.ControlPlaneEndpointSpec{
+			Host: "10.0.0.1",
+			Port: 6443,
+		},
 		PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 			URL:      "https://prism-central.example.com:9440",
 			Insecure: true,
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	var defaultAgentVar v1alpha1.NutanixKonnectorAgent
+	require.NoError(t, json.Unmarshal([]byte(`{}`), &defaultAgentVar))
+	k8sAgentVar := apivariables.NutanixKonnectorAgent{
+		NutanixKonnectorAgent: defaultAgentVar,
+	}
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
 
 	t.Run("successful template execution", func(t *testing.T) {
 		valuesTemplate := `
@@ -350,6 +361,11 @@ prismCentralHost: {{ .PrismCentralHost }}
 prismCentralPort: {{ .PrismCentralPort }}
 prismCentralInsecure: {{ .PrismCentralInsecure }}
 clusterName: {{ .ClusterName }}
+kubeconfigUpload:
+  enabled: {{ .KubeconfigUploadEnabled }}
+  {{- if .KubeconfigUploadEnabled }}
+  controlPlaneEndpoint: {{ .KubeconfigUploadControlPlaneEndpoint }}
+  {{- end }}
 `
 
 		result, err := templateFunc(cluster, valuesTemplate)
@@ -360,6 +376,56 @@ clusterName: {{ .ClusterName }}
 		assert.Contains(t, result, "prismCentralPort: 9440")
 		assert.Contains(t, result, "prismCentralInsecure: true")
 		assert.Contains(t, result, "clusterName: test-cluster")
+		assert.Contains(t, result, "enabled: true")
+		assert.Contains(t, result, "controlPlaneEndpoint: https://10.0.0.1:6443")
+	})
+
+	t.Run("controlPlaneEndpoint not rendered when upload disabled", func(t *testing.T) {
+		disabled := false
+		k8sAgentVar := apivariables.NutanixKonnectorAgent{
+			NutanixKonnectorAgent: v1alpha1.NutanixKonnectorAgent{
+				EnableKubeconfigUpload: &disabled,
+			},
+		}
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+
+		valuesTemplate := `
+kubeconfigUpload:
+  enabled: {{ .KubeconfigUploadEnabled }}
+  {{- if .KubeconfigUploadEnabled }}
+  controlPlaneEndpoint: {{ .KubeconfigUploadControlPlaneEndpoint }}
+  {{- end }}
+`
+
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+
+		assert.Contains(t, result, "enabled: false")
+		assert.NotContains(t, result, "controlPlaneEndpoint:")
+	})
+
+	t.Run("controlPlaneEndpoint rendered when upload enabled", func(t *testing.T) {
+		enabled := true
+		k8sAgentVar := apivariables.NutanixKonnectorAgent{
+			NutanixKonnectorAgent: v1alpha1.NutanixKonnectorAgent{
+				EnableKubeconfigUpload: &enabled,
+			},
+		}
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+
+		valuesTemplate := `
+kubeconfigUpload:
+  enabled: {{ .KubeconfigUploadEnabled }}
+  {{- if .KubeconfigUploadEnabled }}
+  controlPlaneEndpoint: {{ .KubeconfigUploadControlPlaneEndpoint }}
+  {{- end }}
+`
+
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+
+		assert.Contains(t, result, "enabled: true")
+		assert.Contains(t, result, "controlPlaneEndpoint: https://10.0.0.1:6443")
 	})
 
 	t.Run("template with joinQuoted function", func(t *testing.T) {
@@ -406,7 +472,8 @@ func TestTemplateValuesFunc_ParseURLError(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	k8sAgentVar := apivariables.NutanixKonnectorAgent{}
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
 
 	_, err := templateFunc(cluster, "template: {{ .PrismCentralHost }}")
 	assert.Error(t, err, "ParseURL should fail with invalid URL")
@@ -427,7 +494,8 @@ func TestTemplateValuesFunc_TruncatesLongClusterName(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	k8sAgentVar := apivariables.NutanixKonnectorAgent{}
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
 
 	valuesTemplate := `clusterName: {{ .ClusterName }}`
 	result, err := templateFunc(cluster, valuesTemplate)
@@ -452,8 +520,10 @@ func TestTemplateValuesFunc_CategoryMappings(t *testing.T) {
 		},
 	}
 
+	k8sAgentVar := apivariables.NutanixKonnectorAgent{}
+
 	t.Run("with empty categoryMappings", func(t *testing.T) {
-		templateFunc := templateValuesFunc(nutanixConfig, cluster)
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}
@@ -498,7 +568,7 @@ categoryMappings: {{ .CategoryMappings }}
 				},
 			},
 		}
-		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories)
+		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories, k8sAgentVar)
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}

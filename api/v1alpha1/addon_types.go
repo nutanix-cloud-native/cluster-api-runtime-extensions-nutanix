@@ -420,6 +420,15 @@ type NutanixKonnectorAgent struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
 	// +kubebuilder:validation:Optional
 	Credentials *NutanixKonnectorAgentCredentials `json:"credentials,omitempty"`
+
+	// EnableKubeconfigUpload enables feature automatic upload of the kubeconfig to Prism Central
+	// via the konnector agent. When enabled, the control plane endpoint is also passed
+	// to the konnector agent so that it can register the cluster with Prism Central.
+	// Users need to create ConfigMap consisting of all required permissions in order to generate
+	// and upload the kubeconfig to Prism Central.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=true
+	EnableKubeconfigUpload *bool `json:"EnableKubeconfigUpload,omitempty"`
 }
 
 type NutanixKonnectorAgentCredentials struct {
