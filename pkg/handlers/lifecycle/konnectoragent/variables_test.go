@@ -70,7 +70,7 @@ func TestApply_SkipsIfVariableMissing(t *testing.T) {
 		"missing variable should skip silently without failure")
 }
 
-func TestApply_FailsWhenCredentialsMissing(t *testing.T) {
+func TestApply_SkipsWhenCredentialsMissing(t *testing.T) {
 	handler := newTestHandler(t)
 	cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
@@ -90,8 +90,8 @@ func TestApply_FailsWhenCredentialsMissing(t *testing.T) {
 	resp := &runtimehooksv1.CommonResponse{}
 	handler.apply(context.Background(), cluster, resp)
 
-	assert.Equal(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
-	assert.Contains(t, resp.Message, "Secret containing PC credentials")
+	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, resp.Status)
+	assert.Contains(t, resp.Message, "Skipping konnector-agent setup: credentials not available yet")
 }
 
 func TestApply_FailsWhenCopySecretFails(t *testing.T) {
@@ -171,7 +171,7 @@ func TestApply_SuccessfulHelmStrategy(t *testing.T) {
 	// Don't assert success because infrastructure dependencies aren't available in unit tests
 }
 
-func TestApply_HelmApplyFails(t *testing.T) {
+func TestApply_SkipsWhenRemoteClusterNotReady(t *testing.T) {
 	handler := newTestHandler(t)
 	cluster := &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
@@ -205,15 +205,12 @@ func TestApply_HelmApplyFails(t *testing.T) {
 	}
 	require.NoError(t, handler.client.Create(context.Background(), secret))
 
-	// This test case would require mocking the Helm applier strategy
-	// For now, we'll simulate the success path since we can't easily mock the strategy creation
-
 	resp := &runtimehooksv1.CommonResponse{}
 	handler.apply(context.Background(), cluster, resp)
 
-	// Since we can't easily mock the strategy failure, this test will pass for valid configuration
-	// but would need proper mocking infrastructure for complete failure testing
-	assert.NotEqual(t, runtimehooksv1.ResponseStatusSuccess, resp.Status)
+	// Without a real remote cluster (workload cluster kubeconfig), we should skip rather than fail.
+	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, resp.Status)
+	assert.Contains(t, resp.Message, "Skipping konnector-agent setup: remote cluster not ready")
 }
 
 // Test constructor functions
@@ -621,14 +618,12 @@ func TestApply_ClusterConfigVariableFailure(t *testing.T) {
 	}
 	require.NoError(t, handler.client.Create(context.Background(), secret))
 
-	// This test will fail due to missing nutanix config in the cluster variable
-
 	resp := &runtimehooksv1.CommonResponse{}
 	handler.apply(context.Background(), cluster, resp)
 
-	assert.Equal(t, runtimehooksv1.ResponseStatusFailure, resp.Status)
-	// The test may fail at different points depending on infrastructure, but should fail
-	assert.NotEqual(t, "", resp.Message, "error message should be set")
+	// In unit tests we don't have a ready remote/workload cluster, so the handler will skip.
+	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, resp.Status)
+	assert.Contains(t, resp.Message, "Skipping konnector-agent setup: remote cluster not ready")
 }
 
 func TestApply_SuccessfulWithFullNutanixConfig(t *testing.T) {
