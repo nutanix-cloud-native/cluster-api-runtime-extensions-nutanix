@@ -38,7 +38,7 @@ data:
   konnector-agent: |
     ChartName: konnector-agent
     ChartVersion: 1.4.0-rc.1
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://github.com/nutanix-scratch/helm/releases/{{ end }}'
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix-scratch.github.io/helm/{{ end }}'
   local-path-provisioner-csi: |
     ChartName: local-path-provisioner
     ChartVersion: 0.0.36
