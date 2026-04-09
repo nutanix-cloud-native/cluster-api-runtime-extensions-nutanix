@@ -1,7 +1,8 @@
 agent:
   name: {{ .AgentName }}
   image:
-    privateRegistry: quay.io/karbon
+    privateRegistry: false
+    repository: quay.io/karbon
     name: k8s-agent
 pc:
   port: {{ .PrismCentralPort }}
