@@ -106,7 +106,7 @@ func TestApply_FailsWhenCopySecretFails(t *testing.T) {
 					Value: apiextensionsv1.JSON{Raw: []byte(`{
 						"addons": {
 							"konnectorAgent": {
-								"credentials": { "secretRef": {"name":"missing-secret"} }
+								"credentials": { "secretRef": {"name":"test-secret"} }
 							}
 						}
 					}`)},
@@ -114,6 +114,20 @@ func TestApply_FailsWhenCopySecretFails(t *testing.T) {
 			},
 		},
 	}
+
+	// Create the secret so EnsureClusterOwnerReferenceForObject succeeds.
+	// CopySecretToRemoteCluster will still fail because no remote cluster is available.
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"username": []byte("user"),
+			"password": []byte("pass"),
+		},
+	}
+	require.NoError(t, handler.client.Create(context.Background(), secret))
 
 	resp := &runtimehooksv1.CommonResponse{}
 	handler.apply(context.Background(), cluster, resp)
