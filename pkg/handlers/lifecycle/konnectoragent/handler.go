@@ -196,10 +196,9 @@ func (n *DefaultKonnectorAgent) apply(
 		return
 	}
 
-	// Use the provided source Secret name so we don't require hardcoded names in the values template.
-	prismCredentialsSecretName := k8sAgentVar.Credentials.SecretRef.Name
-	if prismCredentialsSecretName == "" {
-		prismCredentialsSecretName = defaultCredentialsSecretName
+	prismCredentialsSecretName := defaultCredentialsSecretName
+	if k8sAgentVar.PrismCredentialsSecretName != "" {
+		prismCredentialsSecretName = k8sAgentVar.PrismCredentialsSecretName
 	}
 
 	// It's possible to have the credentials Secret be created by the Helm chart.

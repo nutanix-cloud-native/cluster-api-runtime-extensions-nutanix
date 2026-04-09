@@ -16,128 +16,158 @@ spec:
     singular: eksworkernodeconfig
   scope: Namespaced
   versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: EKSWorkerNodeConfig is the Schema for the eksnodeconfigs API.
-        properties:
-          apiVersion:
-            description: |-
-              APIVersion defines the versioned schema of this representation of an object.
-              Servers should convert recognized schemas to the latest internal value, and
-              may reject unrecognized values.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-            type: string
-          kind:
-            description: |-
-              Kind is a string value representing the REST resource this object represents.
-              Servers may infer this from the endpoint the client submits requests to.
-              Cannot be updated.
-              In CamelCase.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: |-
-              EKSWorkerNodeConfigSpec defines the desired state of EKSNodeConfig.
-              Place any configuration that can be applied to individual Nodes here.
-              Otherwise, it should go into the ClusterConfigSpec.
-            properties:
-              eks:
-                properties:
-                  additionalSecurityGroups:
-                    items:
-                      properties:
-                        id:
-                          description: ID is the id of the security group
-                          format: ^sg-[0-9a-f]{8}(?:[0-9a-f]{9})?$
-                          minLength: 1
-                          type: string
-                      type: object
-                    maxItems: 32
-                    type: array
-                  additionalTags:
-                    additionalProperties:
-                      type: string
-                    description: |-
-                      AdditionalTags is an optional set of tags to add to an instance,
-                      in addition to the ones added by default by the AWS provider.
-                    type: object
-                  ami:
-                    description: |-
-                      AMI or AMI Lookup arguments for machine image of a AWS machine.
-                      If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
-                    properties:
-                      id:
-                        description: AMI ID is the reference to the AMI from which
-                          to create the machine instance.
-                        format: ^ami-[0-9a-f]{8}(?:[0-9a-f]{9})?$
-                        minLength: 1
-                        type: string
-                      lookup:
-                        description: Lookup is the lookup arguments for the AMI.
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: EKSWorkerNodeConfig is the Schema for the eksnodeconfigs API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: |-
+                EKSWorkerNodeConfigSpec defines the desired state of EKSNodeConfig.
+                Place any configuration that can be applied to individual Nodes here.
+                Otherwise, it should go into the ClusterConfigSpec.
+              properties:
+                eks:
+                  properties:
+                    additionalSecurityGroups:
+                      items:
                         properties:
-                          baseOS:
-                            description: The name of the base os for image lookup
-                            maxLength: 32
+                          id:
+                            description: ID is the id of the security group
+                            format: ^sg-[0-9a-f]{8}(?:[0-9a-f]{9})?$
                             minLength: 1
-                            type: string
-                          format:
-                            description: |-
-                              AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
-                              base OS and kubernetes version.
-                            example: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
-                            maxLength: 128
-                            minLength: 1
-                            type: string
-                          org:
-                            description: The AWS Organization ID to use for image
-                              lookup.
-                            format: ^o-[0-9a-z]{10,32}$
-                            maxLength: 34
-                            minLength: 12
                             type: string
                         type: object
-                    type: object
-                  iamInstanceProfile:
-                    default: nodes.cluster-api-provider-aws.sigs.k8s.io
-                    description: The IAM instance profile to use for the cluster Machines.
-                    maxLength: 128
-                    minLength: 1
-                    type: string
-                  instanceType:
-                    default: m5.2xlarge
-                    description: The AWS instance type to use for the cluster Machines.
-                    maxLength: 32
-                    minLength: 1
-                    type: string
-                  placementGroup:
-                    description: PlacementGroup specifies the placement group in which
-                      to launch the instance.
-                    properties:
-                      name:
-                        description: Name is the name of the placement group.
-                        maxLength: 255
-                        minLength: 1
+                      maxItems: 32
+                      type: array
+                    additionalTags:
+                      additionalProperties:
                         type: string
-                    required:
-                    - name
-                    type: object
-                  volumes:
-                    description: Configuration options for the root and additional
-                      storage volume.
-                    properties:
-                      nonroot:
-                        description: Configuration options for non-root storage volumes.
-                        items:
+                      description: |-
+                        AdditionalTags is an optional set of tags to add to an instance,
+                        in addition to the ones added by default by the AWS provider.
+                      type: object
+                    ami:
+                      description: |-
+                        AMI or AMI Lookup arguments for machine image of a AWS machine.
+                        If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
+                      properties:
+                        id:
+                          description: AMI ID is the reference to the AMI from which to create the machine instance.
+                          format: ^ami-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                          minLength: 1
+                          type: string
+                        lookup:
+                          description: Lookup is the lookup arguments for the AMI.
+                          properties:
+                            baseOS:
+                              description: The name of the base os for image lookup
+                              maxLength: 32
+                              minLength: 1
+                              type: string
+                            format:
+                              description: |-
+                                AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
+                                base OS and kubernetes version.
+                              example: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
+                              maxLength: 128
+                              minLength: 1
+                              type: string
+                            org:
+                              description: The AWS Organization ID to use for image lookup.
+                              format: ^o-[0-9a-z]{10,32}$
+                              maxLength: 34
+                              minLength: 12
+                              type: string
+                          type: object
+                      type: object
+                    iamInstanceProfile:
+                      default: nodes.cluster-api-provider-aws.sigs.k8s.io
+                      description: The IAM instance profile to use for the cluster Machines.
+                      maxLength: 128
+                      minLength: 1
+                      type: string
+                    instanceType:
+                      default: m5.2xlarge
+                      description: The AWS instance type to use for the cluster Machines.
+                      maxLength: 32
+                      minLength: 1
+                      type: string
+                    placementGroup:
+                      description: PlacementGroup specifies the placement group in which to launch the instance.
+                      properties:
+                        name:
+                          description: Name is the name of the placement group.
+                          maxLength: 255
+                          minLength: 1
+                          type: string
+                      required:
+                        - name
+                      type: object
+                    volumes:
+                      description: Configuration options for the root and additional storage volume.
+                      properties:
+                        nonroot:
+                          description: Configuration options for non-root storage volumes.
+                          items:
+                            properties:
+                              deviceName:
+                                description: Device name
+                                type: string
+                              encrypted:
+                                description: Encrypted is whether the volume should be encrypted or not.
+                                type: boolean
+                              encryptionKey:
+                                description: |-
+                                  EncryptionKey is the KMS key to use to encrypt the volume. Can be either a KMS key ID or ARN.
+                                  If Encrypted is set and this is omitted, the default AWS key will be used.
+                                  The key must already exist and be accessible by the controller.
+                                type: string
+                              iops:
+                                description: IOPS is the number of IOPS requested for the disk. Not applicable to all types.
+                                format: int64
+                                type: integer
+                              size:
+                                description: |-
+                                  Size specifies size (in Gi) of the storage device.
+                                  Must be greater than the image snapshot size or 8 (whichever is greater).
+                                format: int64
+                                minimum: 8
+                                type: integer
+                              throughput:
+                                description: Throughput to provision in MiB/s supported for the volume type. Not applicable to all types.
+                                format: int64
+                                type: integer
+                              type:
+                                description: Type is the type of the volume (e.g. gp2, io1, etc...).
+                                type: string
+                            type: object
+                          type: array
+                        root:
+                          description: Configuration options for the root storage volume.
                           properties:
                             deviceName:
                               description: Device name
                               type: string
                             encrypted:
-                              description: Encrypted is whether the volume should
-                                be encrypted or not.
+                              description: Encrypted is whether the volume should be encrypted or not.
                               type: boolean
                             encryptionKey:
                               description: |-
@@ -146,8 +176,7 @@ spec:
                                 The key must already exist and be accessible by the controller.
                               type: string
                             iops:
-                              description: IOPS is the number of IOPS requested for
-                                the disk. Not applicable to all types.
+                              description: IOPS is the number of IOPS requested for the disk. Not applicable to all types.
                               format: int64
                               type: integer
                             size:
@@ -158,90 +187,48 @@ spec:
                               minimum: 8
                               type: integer
                             throughput:
-                              description: Throughput to provision in MiB/s supported
-                                for the volume type. Not applicable to all types.
+                              description: Throughput to provision in MiB/s supported for the volume type. Not applicable to all types.
                               format: int64
                               type: integer
                             type:
-                              description: Type is the type of the volume (e.g. gp2,
-                                io1, etc...).
+                              description: Type is the type of the volume (e.g. gp2, io1, etc...).
                               type: string
                           type: object
-                        type: array
-                      root:
-                        description: Configuration options for the root storage volume.
-                        properties:
-                          deviceName:
-                            description: Device name
-                            type: string
-                          encrypted:
-                            description: Encrypted is whether the volume should be
-                              encrypted or not.
-                            type: boolean
-                          encryptionKey:
-                            description: |-
-                              EncryptionKey is the KMS key to use to encrypt the volume. Can be either a KMS key ID or ARN.
-                              If Encrypted is set and this is omitted, the default AWS key will be used.
-                              The key must already exist and be accessible by the controller.
-                            type: string
-                          iops:
-                            description: IOPS is the number of IOPS requested for
-                              the disk. Not applicable to all types.
-                            format: int64
-                            type: integer
-                          size:
-                            description: |-
-                              Size specifies size (in Gi) of the storage device.
-                              Must be greater than the image snapshot size or 8 (whichever is greater).
-                            format: int64
-                            minimum: 8
-                            type: integer
-                          throughput:
-                            description: Throughput to provision in MiB/s supported
-                              for the volume type. Not applicable to all types.
-                            format: int64
-                            type: integer
-                          type:
-                            description: Type is the type of the volume (e.g. gp2,
-                              io1, etc...).
-                            type: string
-                        type: object
-                    type: object
-                type: object
-              taints:
-                description: Taints specifies the taints the Node API object should
-                  be registered with.
-                items:
-                  description: |-
-                    The node this Taint is attached to has the "effect" on
-                    any pod that does not tolerate the Taint.
-                  properties:
-                    effect:
-                      default: NoSchedule
-                      description: |-
-                        The effect of the taint on pods that do not tolerate the taint.
-                        Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
-                      enum:
-                      - NoSchedule
-                      - PreferNoSchedule
-                      - NoExecute
-                      type: string
-                    key:
-                      description: The taint key to be applied to a node.
-                      maxLength: 253
-                      type: string
-                    value:
-                      description: The taint value corresponding to the taint key.
-                      maxLength: 63
-                      minLength: 1
-                      type: string
-                  required:
-                  - effect
-                  - key
+                      type: object
                   type: object
-                maxItems: 32
-                type: array
-            type: object
-        type: object
-    served: true
-    storage: true
+                taints:
+                  description: Taints specifies the taints the Node API object should be registered with.
+                  items:
+                    description: |-
+                      The node this Taint is attached to has the "effect" on
+                      any pod that does not tolerate the Taint.
+                    properties:
+                      effect:
+                        default: NoSchedule
+                        description: |-
+                          The effect of the taint on pods that do not tolerate the taint.
+                          Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                        enum:
+                          - NoSchedule
+                          - PreferNoSchedule
+                          - NoExecute
+                        type: string
+                      key:
+                        description: The taint key to be applied to a node.
+                        maxLength: 253
+                        type: string
+                      value:
+                        description: The taint value corresponding to the taint key.
+                        maxLength: 63
+                        minLength: 1
+                        type: string
+                    required:
+                      - effect
+                      - key
+                    type: object
+                  maxItems: 32
+                  type: array
+              type: object
+          type: object
+      served: true
+      storage: true
