@@ -196,13 +196,6 @@ func (n *DefaultKonnectorAgent) apply(
 		return
 	}
 
-	// Pass the same Secret name into Helm values so the chart can reference a pre-created Secret.
-	// The Secret will be copied to the workload cluster under this name.
-	prismCredentialsSecretName := k8sAgentVar.Credentials.SecretRef.Name
-	if prismCredentialsSecretName == "" {
-		prismCredentialsSecretName = defaultCredentialsSecretName
-	}
-
 	// It's possible to have the credentials Secret be created by the Helm chart.
 	// However, that would leave the credentials visible in the HelmChartProxy.
 	// Instead, we'll create the Secret on the remote cluster and reference it in the Helm values.
@@ -225,7 +218,7 @@ func (n *DefaultKonnectorAgent) apply(
 		return
 	}
 	key := ctrlclient.ObjectKey{
-		Name:      prismCredentialsSecretName,
+		Name:      defaultCredentialsSecretName,
 		Namespace: defaultHelmReleaseNamespace,
 	}
 	err = handlersutils.CopySecretToRemoteCluster(
@@ -281,7 +274,7 @@ func (n *DefaultKonnectorAgent) apply(
 		n.config.helmAddonConfig,
 		n.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster, prismCredentialsSecretName))
+	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster, defaultCredentialsSecretName))
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		log.Error(err, "Helm strategy Apply failed")
