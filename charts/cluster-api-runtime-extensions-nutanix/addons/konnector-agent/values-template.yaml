@@ -9,10 +9,10 @@ pc:
   insecure: {{ .PrismCentralInsecure }}
   endpoint: {{ .PrismCentralHost }}
 
-prismCredentialsSecretName: dummy-secret
 k8sClusterName: {{ .ClusterName }}
 k8sDistribution: NKP
 createSecret: false
+prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"
 {{- if .CategoryMappings }}
 categoryMappings: {{ .CategoryMappings }}
 {{- end }}

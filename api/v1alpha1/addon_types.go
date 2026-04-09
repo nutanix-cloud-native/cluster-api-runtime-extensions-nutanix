@@ -420,6 +420,12 @@ type NutanixKonnectorAgent struct {
 	// A reference to the Secret for credential information for the target Prism Central instance
 	// +kubebuilder:validation:Optional
 	Credentials *NutanixKonnectorAgentCredentials `json:"credentials,omitempty"`
+
+	// prismCredentialsSecretName is the name of the Secret to be used by the konnector-agent Helm chart for Prism
+	// Central credentials. When set, the Secret must already exist in the workload cluster namespace where the
+	// konnector-agent is deployed.
+	// +kubebuilder:validation:Optional
+	PrismCredentialsSecretName string `json:"prismCredentialsSecretName,omitempty"`
 }
 
 type NutanixKonnectorAgentCredentials struct {

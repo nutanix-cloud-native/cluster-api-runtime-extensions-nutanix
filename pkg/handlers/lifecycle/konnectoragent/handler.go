@@ -196,6 +196,11 @@ func (n *DefaultKonnectorAgent) apply(
 		return
 	}
 
+	prismCredentialsSecretName := defaultCredentialsSecretName
+	if k8sAgentVar.PrismCredentialsSecretName != "" {
+		prismCredentialsSecretName = k8sAgentVar.PrismCredentialsSecretName
+	}
+
 	// It's possible to have the credentials Secret be created by the Helm chart.
 	// However, that would leave the credentials visible in the HelmChartProxy.
 	// Instead, we'll create the Secret on the remote cluster and reference it in the Helm values.
@@ -218,7 +223,7 @@ func (n *DefaultKonnectorAgent) apply(
 		return
 	}
 	key := ctrlclient.ObjectKey{
-		Name:      defaultCredentialsSecretName,
+		Name:      prismCredentialsSecretName,
 		Namespace: defaultHelmReleaseNamespace,
 	}
 	err = handlersutils.CopySecretToRemoteCluster(
@@ -274,7 +279,7 @@ func (n *DefaultKonnectorAgent) apply(
 		n.config.helmAddonConfig,
 		n.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster))
+	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster, prismCredentialsSecretName))
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		log.Error(err, "Helm strategy Apply failed")
@@ -287,7 +292,7 @@ func (n *DefaultKonnectorAgent) apply(
 }
 
 func templateValuesFunc(
-	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1.Cluster,
+	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1.Cluster, prismCredentialsSecretName string,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
@@ -304,12 +309,13 @@ func templateValuesFunc(
 		}
 
 		type input struct {
-			AgentName            string
-			PrismCentralHost     string
-			PrismCentralPort     uint16
-			PrismCentralInsecure bool
-			ClusterName          string
-			CategoryMappings     string
+			AgentName                  string
+			PrismCentralHost           string
+			PrismCentralPort           uint16
+			PrismCentralInsecure       bool
+			ClusterName                string
+			CategoryMappings           string
+			PrismCredentialsSecretName string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -333,9 +339,10 @@ func templateValuesFunc(
 			PrismCentralPort: port,
 			// TODO: remove this once we have a way to set this.
 			// need to add support to accept PC's trust bundle in agent(it's not implemented currently)
-			PrismCentralInsecure: true,
-			ClusterName:          clusterName,
-			CategoryMappings:     categoryMappings,
+			PrismCentralInsecure:       true,
+			ClusterName:                clusterName,
+			CategoryMappings:           categoryMappings,
+			PrismCredentialsSecretName: prismCredentialsSecretName,
 		}
 
 		var b bytes.Buffer

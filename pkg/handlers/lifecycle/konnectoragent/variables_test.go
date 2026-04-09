@@ -341,7 +341,7 @@ func TestTemplateValuesFunc(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, "dummy-prism-credentials")
 
 	t.Run("successful template execution", func(t *testing.T) {
 		valuesTemplate := `
@@ -406,7 +406,7 @@ func TestTemplateValuesFunc_ParseURLError(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, "dummy-prism-credentials")
 
 	_, err := templateFunc(cluster, "template: {{ .PrismCentralHost }}")
 	assert.Error(t, err, "ParseURL should fail with invalid URL")
@@ -427,7 +427,7 @@ func TestTemplateValuesFunc_TruncatesLongClusterName(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, "dummy-prism-credentials")
 
 	valuesTemplate := `clusterName: {{ .ClusterName }}`
 	result, err := templateFunc(cluster, valuesTemplate)
@@ -453,7 +453,7 @@ func TestTemplateValuesFunc_CategoryMappings(t *testing.T) {
 	}
 
 	t.Run("with empty categoryMappings", func(t *testing.T) {
-		templateFunc := templateValuesFunc(nutanixConfig, cluster)
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, "dummy-prism-credentials")
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}
@@ -498,7 +498,7 @@ categoryMappings: {{ .CategoryMappings }}
 				},
 			},
 		}
-		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories)
+		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories, "dummy-prism-credentials")
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}
@@ -514,6 +514,26 @@ categoryMappings: ""
 		expectedResult := "\ncategoryMappings: " + expectedCategoryMappings
 		assert.Equal(t, expectedResult, result, "categoryMappings should match exactly")
 	})
+}
+
+func TestTemplateValuesFunc_PrismCredentialsSecretName(t *testing.T) {
+	cluster := &clusterv1beta2.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+	}
+
+	nutanixConfig := &v1alpha1.NutanixSpec{
+		PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+			URL:      "https://prism-central.example.com:9440",
+			Insecure: true,
+		},
+	}
+
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, "konnector-agent")
+	valuesTemplate := `prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"`
+	result, err := templateFunc(cluster, valuesTemplate)
+
+	require.NoError(t, err)
+	assert.Equal(t, `prismCredentialsSecretName: "konnector-agent"`, result)
 }
 
 func TestApply_ClusterConfigVariableFailure(t *testing.T) {
