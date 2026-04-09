@@ -1,0 +1,48 @@
+---
+description: Enforces handler version bumps when mutation handler changes would cause Cluster rollouts.
+alwaysApply: true
+---
+
+# Handler Version Safety
+
+## The Invariant
+
+Upgrading CAREN MUST be a no-op for existing Clusters. Any change that alters the
+patch output of a registered topology mutation handler will cause Machine rollouts
+across all managed clusters. This MUST be prevented.
+
+## When You MUST Create a New Handler Version
+
+Before modifying any file under `pkg/handlers/*/mutation/`, ask yourself:
+
+1. Does this change alter the patches returned by `GeneratePatches` for any existing
+   input? (Including adding new patches, removing patches, or changing patch values.)
+2. Does this introduce a new handler that is enabled by default and produces patches?
+
+If the answer to EITHER question is **yes**, you MUST:
+
+1. Copy the current handler implementation to `pkg/handlers/v{current}/` (e.g. `v5/`).
+2. Bump the version in the handler name string (e.g. `awsClusterv5configpatch` ->
+   `awsClusterv6configpatch`) in the active handler under
+   `pkg/handlers/{provider}/mutation/`.
+3. Register both old and new handler versions in
+   `pkg/handlers/{provider}/handlers.go`.
+4. Update default ClusterClass definitions in
+   `charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/` to reference
+   the new version.
+5. Update `hack/examples/overlays/clusterclasses/` kustomization templates.
+
+## When a Version Bump Is NOT Required
+
+- Changes that do not alter patch output (e.g. refactoring internals, improving
+  logging, fixing a bug that doesn't change the generated patches).
+- Changes to lifecycle handlers (`pkg/handlers/lifecycle/`) that do not affect
+  topology mutation.
+- Changes to `DiscoverVariables` output only (variable discovery does not trigger
+  rollouts).
+
+## Verification
+
+When reviewing or implementing handler changes, compare the `GeneratePatches` output
+before and after the change for representative inputs. If the output differs, a
+version bump is mandatory.

@@ -1,0 +1,10 @@
+---
+description: Allows bypassing full spec workflow for chores and minor refactors, with safety guardrails.
+alwaysApply: true
+---
+
+# Fast Track Protocol (Chores & Minor Refactors)
+
+- **Definition:** A task is a "Minor Refactor" if it involves NO changes to user-facing behavior, business logic, or external APIs, and can be completed quickly (e.g., extracting components, renaming variables, cleaning up tech debt).
+- **The Escape Hatch:** If the user explicitly declares a task as a "Refactor" or "Chore", you MAY bypass the requirement to create a `.specify/features/` folder, `spec.md`, and `plan.md`.
+- **Mandatory Safety Measure:** Even on the Fast Track, you MUST still read the `constitution.md` to ensure architectural compliance, and you MUST use the **TDD Skill** to ensure existing tests pass or new unit tests are written before modifying the code.
