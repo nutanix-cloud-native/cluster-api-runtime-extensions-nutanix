@@ -1,0 +1,133 @@
+// Copyright 2026 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package podsecurityadmission
+
+import (
+	"bytes"
+	"context"
+	"text/template"
+
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/admissionconfiguration"
+)
+
+const (
+	// VariableName is the external patch variable name.
+	VariableName      = "podSecurityAdmission"
+	psaConfigFilePath = "/etc/kubernetes/pod-security-admission.yaml"
+	pluginName        = "PodSecurity"
+)
+
+var psaConfigTemplate = template.Must(template.New("psa").Parse(`apiVersion: pod-security.admission.config.k8s.io/v1
+kind: PodSecurityConfiguration
+defaults:
+  enforce: "{{ .Enforce }}"
+  enforce-version: "latest"
+  audit: "{{ .Audit }}"
+  audit-version: "latest"
+  warn: "{{ .Warn }}"
+  warn-version: "latest"
+exemptions:
+{{- if .Exemptions.Namespaces }}
+  namespaces:{{ range .Exemptions.Namespaces }}
+    - "{{ . }}"{{ end }}
+{{- end }}
+{{- if .Exemptions.Usernames }}
+  usernames:{{ range .Exemptions.Usernames }}
+    - "{{ . }}"{{ end }}
+{{- end }}
+{{- if .Exemptions.RuntimeClassNames }}
+  runtimeClassNames:{{ range .Exemptions.RuntimeClassNames }}
+    - "{{ . }}"{{ end }}
+{{- end }}
+`))
+
+type psaPatchHandler struct {
+	variableName      string
+	variableFieldPath []string
+}
+
+func NewPatch() *psaPatchHandler {
+	return &psaPatchHandler{
+		variableName:      v1alpha1.ClusterConfigVariableName,
+		variableFieldPath: []string{VariableName},
+	}
+}
+
+func (h *psaPatchHandler) Mutate(
+	ctx context.Context,
+	obj *unstructured.Unstructured,
+	vars map[string]apiextensionsv1.JSON,
+	holderRef runtimehooksv1.HolderReference,
+	_ client.ObjectKey,
+	_ mutation.ClusterGetter,
+) error {
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"holderRef", holderRef,
+	)
+
+	psa, err := variables.Get[*v1alpha1.PodSecurityAdmission](
+		vars,
+		h.variableName,
+		h.variableFieldPath...,
+	)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			log.V(5).Info("Pod Security Admission variable not defined")
+			return nil
+		}
+		return err
+	}
+
+	if psa == nil {
+		log.V(5).Info("Pod Security Admission not specified, skipping mutation")
+		return nil
+	}
+
+	log = log.WithValues(
+		"variableName", h.variableName,
+		"variableFieldPath", h.variableFieldPath,
+		"variableValue", psa,
+	)
+
+	configContent, err := generatePSAConfig(psa)
+	if err != nil {
+		return err
+	}
+
+	return patches.MutateIfApplicable(
+		obj, vars, &holderRef, selectors.ControlPlane(), log,
+		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", client.ObjectKeyFromObject(obj),
+			).Info("adding Pod Security Admission configuration")
+
+			return admissionconfiguration.AddPlugin(obj, admissionconfiguration.Plugin{
+				Name:              pluginName,
+				ConfigFilePath:    psaConfigFilePath,
+				ConfigFileContent: configContent,
+			})
+		},
+	)
+}
+
+func generatePSAConfig(psa *v1alpha1.PodSecurityAdmission) (string, error) {
+	var buf bytes.Buffer
+	if err := psaConfigTemplate.Execute(&buf, psa); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
