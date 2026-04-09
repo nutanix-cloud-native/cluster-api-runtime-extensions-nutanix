@@ -1132,6 +1132,88 @@ spec:
                     - controlPlaneEndpoint
                     - prismCentralEndpoint
                   type: object
+                podSecurityAdmission:
+                  description: |-
+                    PodSecurityAdmission configures the PodSecurity admission plugin
+                    with cluster-wide defaults.
+                    When not specified, no PodSecurity admission configuration is applied.
+                  properties:
+                    audit:
+                      allOf:
+                        - enum:
+                            - privileged
+                            - baseline
+                            - restricted
+                        - enum:
+                            - privileged
+                            - baseline
+                            - restricted
+                      default: privileged
+                      description: |-
+                        Audit sets the level for the audit mode.
+                        Violations are recorded in the API server audit log.
+                      type: string
+                    enforce:
+                      allOf:
+                        - enum:
+                            - privileged
+                            - baseline
+                            - restricted
+                        - enum:
+                            - privileged
+                            - baseline
+                            - restricted
+                      default: privileged
+                      description: |-
+                        Enforce sets the level for the enforce mode.
+                        Pods that violate this level will be rejected.
+                      type: string
+                    exemptions:
+                      description: Exemptions defines the exemptions from pod security enforcement.
+                      properties:
+                        namespaces:
+                          default:
+                            - kube-system
+                          description: Namespaces that are exempt from pod security enforcement.
+                          items:
+                            maxLength: 63
+                            minLength: 1
+                            type: string
+                          maxItems: 64
+                          type: array
+                        runtimeClassNames:
+                          description: RuntimeClassNames that are exempt from pod security enforcement.
+                          items:
+                            maxLength: 63
+                            minLength: 1
+                            type: string
+                          maxItems: 64
+                          type: array
+                        usernames:
+                          description: Usernames that are exempt from pod security enforcement.
+                          items:
+                            maxLength: 256
+                            minLength: 1
+                            type: string
+                          maxItems: 64
+                          type: array
+                      type: object
+                    warn:
+                      allOf:
+                        - enum:
+                            - privileged
+                            - baseline
+                            - restricted
+                        - enum:
+                            - privileged
+                            - baseline
+                            - restricted
+                      default: privileged
+                      description: |-
+                        Warn sets the level for the warn mode.
+                        Violations trigger a user-facing warning.
+                      type: string
+                  type: object
                 proxy:
                   description: HTTPProxy required for providing proxy configuration.
                   properties:

@@ -284,6 +284,12 @@ type KubeadmClusterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Minimum=0
 	MaxParallelImagePullsPerNode *int32 `json:"maxParallelImagePullsPerNode,omitempty"`
+
+	// PodSecurityAdmission configures the PodSecurity admission plugin
+	// with cluster-wide defaults.
+	// When not specified, no PodSecurity admission configuration is applied.
+	// +kubebuilder:validation:Optional
+	PodSecurityAdmission *PodSecurityAdmission `json:"podSecurityAdmission,omitempty"`
 }
 
 // +kubebuilder:object:root=true
