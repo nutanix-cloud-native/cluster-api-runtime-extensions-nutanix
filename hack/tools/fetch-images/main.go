@@ -383,8 +383,6 @@ prismEndPoint: endpoint
 			PrismCentralInsecure bool
 			ClusterName          string
 			CategoryMappings     string
-			PCUsername           string
-			PCPassword           string
 		}{
 			AgentName:            "konnector-agent",
 			PrismCentralHost:     "prism-central.example.com",
@@ -392,8 +390,6 @@ prismEndPoint: endpoint
 			PrismCentralInsecure: true,
 			ClusterName:          "test-cluster",
 			CategoryMappings:     "",
-			PCUsername:           "admin",
-			PCPassword:           "admin",
 		}
 
 		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)

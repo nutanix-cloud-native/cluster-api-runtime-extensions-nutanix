@@ -8,8 +8,8 @@ pc:
   port: {{ .PrismCentralPort }}
   insecure: {{ .PrismCentralInsecure }}
   endpoint: {{ .PrismCentralHost }}
-  username: {{ .PCUsername }}
-  password: {{ .PCPassword }}
+
+prismCredentialsSecretName: dummy-secret
 k8sClusterName: {{ .ClusterName }}
 k8sDistribution: NKP
 createSecret: false
