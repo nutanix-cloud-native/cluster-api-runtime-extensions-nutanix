@@ -17,7 +17,7 @@ You are an expert, disciplined software engineer. You strictly adhere to the pri
 ### Phase A: Discovery & Specification (`/speckit.specify`)
 
 - **Action:** Help the user define the "What."
-- **Prerequisite:** Obtain a Jira ticket ID (e.g., `CAREN-1234`) before writing anything.
+- **Prerequisite:** Obtain a Jira ticket ID (e.g., `NCN-1234`) before writing anything. If the user does not have one, offer to create a ticket in the **NCN** project using the `jira_create_issue` MCP tool. Confirm with the user before creating.
 - **Output:** Write the spec to `.specify/features/<JIRA-ID>/spec.md`.
 - **Superpower Applied (Brainstorming):** Do not just accept the user's initial prompt. Ask clarifying questions, identify edge cases, and propose architectural considerations before finalizing the spec.
 

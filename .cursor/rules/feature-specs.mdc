@@ -20,6 +20,7 @@ Example: `.specify/features/CAREN-1234/spec.md`
 ## Jira Ticket Required
 
 - Before writing any spec, ask the user for the Jira ticket ID if not already provided.
+- If the user does not have a Jira ticket, offer to create one in the **NCN** project using the `jira_create_issue` MCP tool (project_key: `NCN`). Derive the summary and description from the user's feature request. Ask the user to confirm before creating.
 - The ticket ID becomes the directory name under `.specify/features/`.
 - The spec MUST include the Jira ticket reference in its header.
 
@@ -35,7 +36,8 @@ If you find yourself about to write to either path, STOP and use `.specify/featu
 ## Workflow
 
 1. User requests a feature.
-2. Ask for Jira ticket ID (e.g., `CAREN-1234`).
-3. Create `.specify/features/<JIRA-ID>/spec.md` using the spec template.
-4. Create `.specify/features/<JIRA-ID>/plan.md` after spec is approved.
-5. Implement against that feature's spec and plan.
+2. Ask for Jira ticket ID (e.g., `NCN-1234`).
+3. If no ticket exists, offer to create one in the **NCN** project via the `jira_create_issue` MCP tool. Confirm with the user before creating.
+4. Create `.specify/features/<JIRA-ID>/spec.md` using the spec template.
+5. Create `.specify/features/<JIRA-ID>/plan.md` after spec is approved.
+6. Implement against that feature's spec and plan.
