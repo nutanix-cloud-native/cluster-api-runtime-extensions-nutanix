@@ -196,9 +196,11 @@ func (n *DefaultKonnectorAgent) apply(
 		return
 	}
 
-	prismCredentialsSecretName := defaultCredentialsSecretName
-	if k8sAgentVar.PrismCredentialsSecretName != "" {
-		prismCredentialsSecretName = k8sAgentVar.PrismCredentialsSecretName
+	// Pass the same Secret name into Helm values so the chart can reference a pre-created Secret.
+	// The Secret will be copied to the workload cluster under this name.
+	prismCredentialsSecretName := k8sAgentVar.Credentials.SecretRef.Name
+	if prismCredentialsSecretName == "" {
+		prismCredentialsSecretName = defaultCredentialsSecretName
 	}
 
 	// It's possible to have the credentials Secret be created by the Helm chart.
