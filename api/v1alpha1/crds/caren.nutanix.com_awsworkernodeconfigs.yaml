@@ -16,158 +16,128 @@ spec:
     singular: awsworkernodeconfig
   scope: Namespaced
   versions:
-    - name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: AWSWorkerNodeConfig is the Schema for the awsnodeconfigs API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: |-
-                AWSWorkerNodeConfigSpec defines the desired state of AWSNodeConfig.
-                Place any configuration that can be applied to individual Nodes here.
-                Otherwise, it should go into the ClusterConfigSpec.
-              properties:
-                aws:
-                  properties:
-                    additionalSecurityGroups:
-                      items:
-                        properties:
-                          id:
-                            description: ID is the id of the security group
-                            format: ^sg-[0-9a-f]{8}(?:[0-9a-f]{9})?$
-                            minLength: 1
-                            type: string
-                        type: object
-                      maxItems: 32
-                      type: array
-                    additionalTags:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        AdditionalTags is an optional set of tags to add to an instance,
-                        in addition to the ones added by default by the AWS provider.
-                      type: object
-                    ami:
-                      description: |-
-                        AMI or AMI Lookup arguments for machine image of a AWS machine.
-                        If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AWSWorkerNodeConfig is the Schema for the awsnodeconfigs API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              AWSWorkerNodeConfigSpec defines the desired state of AWSNodeConfig.
+              Place any configuration that can be applied to individual Nodes here.
+              Otherwise, it should go into the ClusterConfigSpec.
+            properties:
+              aws:
+                properties:
+                  additionalSecurityGroups:
+                    items:
                       properties:
                         id:
-                          description: AMI ID is the reference to the AMI from which to create the machine instance.
-                          format: ^ami-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                          description: ID is the id of the security group
+                          format: ^sg-[0-9a-f]{8}(?:[0-9a-f]{9})?$
                           minLength: 1
                           type: string
-                        lookup:
-                          description: Lookup is the lookup arguments for the AMI.
-                          properties:
-                            baseOS:
-                              description: The name of the base os for image lookup
-                              maxLength: 32
-                              minLength: 1
-                              type: string
-                            format:
-                              description: |-
-                                AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
-                                base OS and kubernetes version.
-                              example: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
-                              maxLength: 128
-                              minLength: 1
-                              type: string
-                            org:
-                              description: The AWS Organization ID to use for image lookup.
-                              format: ^o-[0-9a-z]{10,32}$
-                              maxLength: 34
-                              minLength: 12
-                              type: string
-                          type: object
                       type: object
-                    iamInstanceProfile:
-                      default: nodes.cluster-api-provider-aws.sigs.k8s.io
-                      description: The IAM instance profile to use for the cluster Machines.
-                      maxLength: 128
-                      minLength: 1
+                    maxItems: 32
+                    type: array
+                  additionalTags:
+                    additionalProperties:
                       type: string
-                    instanceType:
-                      default: m5.2xlarge
-                      description: The AWS instance type to use for the cluster Machines.
-                      maxLength: 32
-                      minLength: 1
-                      type: string
-                    placementGroup:
-                      description: PlacementGroup specifies the placement group in which to launch the instance.
-                      properties:
-                        name:
-                          description: Name is the name of the placement group.
-                          maxLength: 255
-                          minLength: 1
-                          type: string
-                      required:
-                        - name
-                      type: object
-                    volumes:
-                      description: Configuration options for the root and additional storage volume.
-                      properties:
-                        nonroot:
-                          description: Configuration options for non-root storage volumes.
-                          items:
-                            properties:
-                              deviceName:
-                                description: Device name
-                                type: string
-                              encrypted:
-                                description: Encrypted is whether the volume should be encrypted or not.
-                                type: boolean
-                              encryptionKey:
-                                description: |-
-                                  EncryptionKey is the KMS key to use to encrypt the volume. Can be either a KMS key ID or ARN.
-                                  If Encrypted is set and this is omitted, the default AWS key will be used.
-                                  The key must already exist and be accessible by the controller.
-                                type: string
-                              iops:
-                                description: IOPS is the number of IOPS requested for the disk. Not applicable to all types.
-                                format: int64
-                                type: integer
-                              size:
-                                description: |-
-                                  Size specifies size (in Gi) of the storage device.
-                                  Must be greater than the image snapshot size or 8 (whichever is greater).
-                                format: int64
-                                minimum: 8
-                                type: integer
-                              throughput:
-                                description: Throughput to provision in MiB/s supported for the volume type. Not applicable to all types.
-                                format: int64
-                                type: integer
-                              type:
-                                description: Type is the type of the volume (e.g. gp2, io1, etc...).
-                                type: string
-                            type: object
-                          type: array
-                        root:
-                          description: Configuration options for the root storage volume.
+                    description: |-
+                      AdditionalTags is an optional set of tags to add to an instance,
+                      in addition to the ones added by default by the AWS provider.
+                    type: object
+                  ami:
+                    description: |-
+                      AMI or AMI Lookup arguments for machine image of a AWS machine.
+                      If both AMI ID and AMI lookup arguments are provided then AMI ID takes precedence
+                    properties:
+                      id:
+                        description: AMI ID is the reference to the AMI from which
+                          to create the machine instance.
+                        format: ^ami-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                        minLength: 1
+                        type: string
+                      lookup:
+                        description: Lookup is the lookup arguments for the AMI.
+                        properties:
+                          baseOS:
+                            description: The name of the base os for image lookup
+                            maxLength: 32
+                            minLength: 1
+                            type: string
+                          format:
+                            description: |-
+                              AMI naming format. Supports substitutions for {{.BaseOS}} and {{.K8sVersion}} with the
+                              base OS and kubernetes version.
+                            example: capa-ami-{{.BaseOS}}-?{{.K8sVersion}}-*
+                            maxLength: 128
+                            minLength: 1
+                            type: string
+                          org:
+                            description: The AWS Organization ID to use for image
+                              lookup.
+                            format: ^o-[0-9a-z]{10,32}$
+                            maxLength: 34
+                            minLength: 12
+                            type: string
+                        type: object
+                    type: object
+                  iamInstanceProfile:
+                    default: nodes.cluster-api-provider-aws.sigs.k8s.io
+                    description: The IAM instance profile to use for the cluster Machines.
+                    maxLength: 128
+                    minLength: 1
+                    type: string
+                  instanceType:
+                    default: m5.2xlarge
+                    description: The AWS instance type to use for the cluster Machines.
+                    maxLength: 32
+                    minLength: 1
+                    type: string
+                  placementGroup:
+                    description: PlacementGroup specifies the placement group in which
+                      to launch the instance.
+                    properties:
+                      name:
+                        description: Name is the name of the placement group.
+                        maxLength: 255
+                        minLength: 1
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  volumes:
+                    description: Configuration options for the root and additional
+                      storage volume.
+                    properties:
+                      nonroot:
+                        description: Configuration options for non-root storage volumes.
+                        items:
                           properties:
                             deviceName:
                               description: Device name
                               type: string
                             encrypted:
-                              description: Encrypted is whether the volume should be encrypted or not.
+                              description: Encrypted is whether the volume should
+                                be encrypted or not.
                               type: boolean
                             encryptionKey:
                               description: |-
@@ -176,7 +146,8 @@ spec:
                                 The key must already exist and be accessible by the controller.
                               type: string
                             iops:
-                              description: IOPS is the number of IOPS requested for the disk. Not applicable to all types.
+                              description: IOPS is the number of IOPS requested for
+                                the disk. Not applicable to all types.
                               format: int64
                               type: integer
                             size:
@@ -187,254 +158,316 @@ spec:
                               minimum: 8
                               type: integer
                             throughput:
-                              description: Throughput to provision in MiB/s supported for the volume type. Not applicable to all types.
+                              description: Throughput to provision in MiB/s supported
+                                for the volume type. Not applicable to all types.
                               format: int64
                               type: integer
                             type:
-                              description: Type is the type of the volume (e.g. gp2, io1, etc...).
+                              description: Type is the type of the volume (e.g. gp2,
+                                io1, etc...).
                               type: string
                           type: object
-                      type: object
-                  type: object
-                kubeletConfiguration:
-                  description: |-
-                    KubeletConfiguration defines kubelet settings for this node group.
-                    These values apply only to the nodes in this group.
-                  properties:
-                    containerLogMaxFiles:
-                      description: |-
-                        ContainerLogMaxFiles specifies the maximum number of container log files
-                        that can be present for a container.
-                        Default kubelet value is 5.
-                      format: int32
-                      minimum: 2
-                      type: integer
-                    containerLogMaxSize:
-                      description: |-
-                        ContainerLogMaxSize defines the maximum size of the container log file
-                        before it is rotated. Value is a quantity (e.g. "10Mi", "256Ki").
-                        Default kubelet value is "10Mi".
+                        type: array
+                      root:
+                        description: Configuration options for the root storage volume.
+                        properties:
+                          deviceName:
+                            description: Device name
+                            type: string
+                          encrypted:
+                            description: Encrypted is whether the volume should be
+                              encrypted or not.
+                            type: boolean
+                          encryptionKey:
+                            description: |-
+                              EncryptionKey is the KMS key to use to encrypt the volume. Can be either a KMS key ID or ARN.
+                              If Encrypted is set and this is omitted, the default AWS key will be used.
+                              The key must already exist and be accessible by the controller.
+                            type: string
+                          iops:
+                            description: IOPS is the number of IOPS requested for
+                              the disk. Not applicable to all types.
+                            format: int64
+                            type: integer
+                          size:
+                            description: |-
+                              Size specifies size (in Gi) of the storage device.
+                              Must be greater than the image snapshot size or 8 (whichever is greater).
+                            format: int64
+                            minimum: 8
+                            type: integer
+                          throughput:
+                            description: Throughput to provision in MiB/s supported
+                              for the volume type. Not applicable to all types.
+                            format: int64
+                            type: integer
+                          type:
+                            description: Type is the type of the volume (e.g. gp2,
+                              io1, etc...).
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              kubeletConfiguration:
+                description: |-
+                  KubeletConfiguration defines kubelet settings for this node group.
+                  These values apply only to the nodes in this group.
+                properties:
+                  containerLogMaxFiles:
+                    description: |-
+                      ContainerLogMaxFiles specifies the maximum number of container log files
+                      that can be present for a container.
+                      Default kubelet value is 5.
+                    format: int32
+                    minimum: 2
+                    type: integer
+                  containerLogMaxSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: |-
+                      ContainerLogMaxSize defines the maximum size of the container log file
+                      before it is rotated. Value is a quantity (e.g. "10Mi", "256Ki").
+                      Default kubelet value is "10Mi".
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  cpuManagerPolicy:
+                    description: |-
+                      CPUManagerPolicy controls how cpusets are assigned to containers.
+                      "static" enables exclusive CPU pinning for Guaranteed QoS pods.
+                      Default kubelet value is "none".
+                    enum:
+                    - none
+                    - static
+                    type: string
+                  evictionHard:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      EvictionHard is a map of signal names to quantities that define hard eviction
+                      thresholds. When the node reaches these thresholds, pods are evicted immediately
+                      with no grace period. Values may be absolute quantities (e.g. "100Mi") or
+                      percentages (e.g. "10%").
+                    maxProperties: 6
+                    type: object
+                    x-kubernetes-validations:
+                    - message: only valid eviction signal names are allowed
+                      rule: self.all(k, k in ['memory.available', 'nodefs.available',
+                        'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree',
+                        'pid.available'])
+                  evictionSoft:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      EvictionSoft is a map of signal names to quantities that define soft eviction
+                      thresholds. Pods are evicted after the grace period specified in
+                      evictionSoftGracePeriod has elapsed. Values may be absolute quantities or
+                      percentages.
+                    maxProperties: 6
+                    type: object
+                    x-kubernetes-validations:
+                    - message: only valid eviction signal names are allowed
+                      rule: self.all(k, k in ['memory.available', 'nodefs.available',
+                        'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree',
+                        'pid.available'])
+                  evictionSoftGracePeriod:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      EvictionSoftGracePeriod is a map of signal names to durations that define
+                      grace periods for soft eviction signals. Each key must correspond to an entry
+                      in evictionSoft.
+                    maxProperties: 6
+                    type: object
+                    x-kubernetes-validations:
+                    - message: only valid eviction signal names are allowed
+                      rule: self.all(k, k in ['memory.available', 'nodefs.available',
+                        'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree',
+                        'pid.available'])
+                  imageGCHighThresholdPercent:
+                    description: |-
+                      ImageGCHighThresholdPercent is the percent of disk usage after which image
+                      garbage collection is always run. Must be greater than
+                      imageGCLowThresholdPercent when both are set.
+                      Default kubelet value is 85.
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  imageGCLowThresholdPercent:
+                    description: |-
+                      ImageGCLowThresholdPercent is the percent of disk usage before which image
+                      garbage collection is never run. Must be less than
+                      imageGCHighThresholdPercent when both are set.
+                      Default kubelet value is 80.
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  kubeReserved:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
-                      type: string
-                    cpuManagerPolicy:
-                      description: |-
-                        CPUManagerPolicy controls how cpusets are assigned to containers.
-                        "static" enables exclusive CPU pinning for Guaranteed QoS pods.
-                        Default kubelet value is "none".
-                      enum:
-                        - none
-                        - static
-                      type: string
-                    evictionHard:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        EvictionHard is a map of signal names to quantities that define hard eviction
-                        thresholds. When the node reaches these thresholds, pods are evicted immediately
-                        with no grace period. Values may be absolute quantities (e.g. "100Mi") or
-                        percentages (e.g. "10%").
-                      maxProperties: 6
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only valid eviction signal names are allowed
-                          rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
-                    evictionSoft:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        EvictionSoft is a map of signal names to quantities that define soft eviction
-                        thresholds. Pods are evicted after the grace period specified in
-                        evictionSoftGracePeriod has elapsed. Values may be absolute quantities or
-                        percentages.
-                      maxProperties: 6
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only valid eviction signal names are allowed
-                          rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
-                    evictionSoftGracePeriod:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        EvictionSoftGracePeriod is a map of signal names to durations that define
-                        grace periods for soft eviction signals. Each key must correspond to an entry
-                        in evictionSoft.
-                      maxProperties: 6
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only valid eviction signal names are allowed
-                          rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree', 'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
-                    imageGCHighThresholdPercent:
-                      description: |-
-                        ImageGCHighThresholdPercent is the percent of disk usage after which image
-                        garbage collection is always run. Must be greater than
-                        imageGCLowThresholdPercent when both are set.
-                        Default kubelet value is 85.
-                      format: int32
-                      maximum: 100
-                      minimum: 0
-                      type: integer
-                    imageGCLowThresholdPercent:
-                      description: |-
-                        ImageGCLowThresholdPercent is the percent of disk usage before which image
-                        garbage collection is never run. Must be less than
-                        imageGCHighThresholdPercent when both are set.
-                        Default kubelet value is 80.
-                      format: int32
-                      maximum: 100
-                      minimum: 0
-                      type: integer
-                    kubeReserved:
-                      additionalProperties:
-                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                        x-kubernetes-int-or-string: true
-                        type: string
-                      description: |-
-                        KubeReserved is a set of ResourceName=ResourceQuantity pairs that describe
-                        resources reserved for Kubernetes system components (the kubelet, container
-                        runtime, etc.).
-                        Valid keys: cpu, memory, ephemeral-storage, pid.
-                      maxProperties: 4
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only cpu, memory, ephemeral-storage, and pid are valid keys
-                          rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
-                    maxParallelImagePulls:
-                      description: |-
-                        MaxParallelImagePulls defines the maximum number of image pulls performed
-                        in parallel by the kubelet. A value of zero means unlimited. When set to a
-                        value > 0, serializeImagePulls is automatically set to false.
-                        Default kubelet value is nil (serial pulls).
-                      format: int32
-                      minimum: 0
-                      type: integer
-                    maxPods:
-                      description: |-
-                        MaxPods defines the maximum number of pods that can run on a node.
-                        Default kubelet value is 110.
-                      format: int32
-                      maximum: 256
-                      minimum: 50
-                      type: integer
-                    memoryManagerPolicy:
-                      description: |-
-                        MemoryManagerPolicy controls the memory management policy on the node.
-                        "Static" enables NUMA-aware memory allocation for Guaranteed QoS pods.
-                        Default kubelet value is "None".
-                      enum:
-                        - None
-                        - Static
-                      type: string
-                    podPidsLimit:
-                      description: |-
-                        PodPidsLimit is the maximum number of PIDs in any pod.
-                        Prevents fork bombs and enforces per-pod PID limits.
-                      format: int64
-                      maximum: 16384
-                      minimum: 1024
-                      type: integer
-                    protectKernelDefaults:
-                      description: |-
-                        ProtectKernelDefaults when enabled causes the kubelet to error if kernel flags
-                        are not as it expects. Typically required by CIS benchmarks and DISA STIG.
-                      type: boolean
-                    shutdownGracePeriod:
-                      description: |-
-                        ShutdownGracePeriod specifies the total duration that the node should delay
-                        the shutdown by for pod termination during a node shutdown.
-                        Default kubelet value is "0s" (disabled).
-                      type: string
-                    shutdownGracePeriodCriticalPods:
-                      description: |-
-                        ShutdownGracePeriodCriticalPods specifies the duration used to terminate
-                        critical pods during a node shutdown. This should be less than
-                        shutdownGracePeriod.
-                        Default kubelet value is "0s".
-                      type: string
-                    systemReserved:
-                      additionalProperties:
-                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                        x-kubernetes-int-or-string: true
-                        type: string
-                      description: |-
-                        SystemReserved is a set of ResourceName=ResourceQuantity pairs that describe
-                        resources reserved for OS system daemons. Kubernetes components such as the
-                        kubelet are excluded from this reservation.
-                        Valid keys: cpu, memory, ephemeral-storage, pid.
-                      maxProperties: 4
-                      type: object
-                      x-kubernetes-validations:
-                        - message: only cpu, memory, ephemeral-storage, and pid are valid keys
-                          rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
-                    topologyManagerPolicy:
-                      description: |-
-                        TopologyManagerPolicy controls the NUMA-aware resource alignment policy.
-                        Relevant for workloads sensitive to hardware topology (GPU, HPC, telco).
-                        Default kubelet value is "none".
-                      enum:
-                        - none
-                        - best-effort
-                        - restricted
-                        - single-numa-node
-                      type: string
-                  type: object
-                  x-kubernetes-validations:
-                    - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
-                      rule: '!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent) || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent'
-                    - message: evictionSoft must be set when evictionSoftGracePeriod is set
-                      rule: '!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)'
-                    - message: evictionSoftGracePeriod keys must match evictionSoft keys
-                      rule: '!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft) || self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)'
-                nodeRegistration:
-                  default: {}
-                  description: NodeRegistration holds fields that relate to registering the new node to the cluster.
-                  properties:
-                    ignorePreflightErrors:
-                      default:
-                        - SystemVerification
-                      description: |-
-                        IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
-                        when the current node is registered.
-                      items:
-                        maxLength: 512
-                        minLength: 1
-                        type: string
-                      maxItems: 50
-                      type: array
-                  type: object
-                taints:
-                  description: Taints specifies the taints the Node API object should be registered with.
-                  items:
                     description: |-
-                      The node this Taint is attached to has the "effect" on
-                      any pod that does not tolerate the Taint.
-                    properties:
-                      effect:
-                        default: NoSchedule
-                        description: |-
-                          The effect of the taint on pods that do not tolerate the taint.
-                          Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
-                        enum:
-                          - NoSchedule
-                          - PreferNoSchedule
-                          - NoExecute
-                        type: string
-                      key:
-                        description: The taint key to be applied to a node.
-                        maxLength: 253
-                        type: string
-                      value:
-                        description: The taint value corresponding to the taint key.
-                        maxLength: 63
-                        minLength: 1
-                        type: string
-                    required:
-                      - effect
-                      - key
+                      KubeReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                      resources reserved for Kubernetes system components (the kubelet, container
+                      runtime, etc.).
+                      Valid keys: cpu, memory, ephemeral-storage, pid.
+                    maxProperties: 4
                     type: object
-                  maxItems: 32
-                  type: array
-              type: object
-          type: object
-      served: true
-      storage: true
+                    x-kubernetes-validations:
+                    - message: only cpu, memory, ephemeral-storage, and pid are valid
+                        keys
+                      rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage',
+                        'pid'])
+                  maxParallelImagePulls:
+                    description: |-
+                      MaxParallelImagePulls defines the maximum number of image pulls performed
+                      in parallel by the kubelet. A value of zero means unlimited. When set to a
+                      value > 0, serializeImagePulls is automatically set to false.
+                      Default kubelet value is nil (serial pulls).
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  maxPods:
+                    description: |-
+                      MaxPods defines the maximum number of pods that can run on a node.
+                      Default kubelet value is 110.
+                    format: int32
+                    maximum: 256
+                    minimum: 50
+                    type: integer
+                  memoryManagerPolicy:
+                    description: |-
+                      MemoryManagerPolicy controls the memory management policy on the node.
+                      "Static" enables NUMA-aware memory allocation for Guaranteed QoS pods.
+                      Default kubelet value is "None".
+                    enum:
+                    - None
+                    - Static
+                    type: string
+                  podPidsLimit:
+                    description: |-
+                      PodPidsLimit is the maximum number of PIDs in any pod.
+                      Prevents fork bombs and enforces per-pod PID limits.
+                    format: int64
+                    maximum: 16384
+                    minimum: 1024
+                    type: integer
+                  protectKernelDefaults:
+                    description: |-
+                      ProtectKernelDefaults when enabled causes the kubelet to error if kernel flags
+                      are not as it expects. Typically required by CIS benchmarks and DISA STIG.
+                    type: boolean
+                  shutdownGracePeriod:
+                    description: |-
+                      ShutdownGracePeriod specifies the total duration that the node should delay
+                      the shutdown by for pod termination during a node shutdown.
+                      Default kubelet value is "0s" (disabled).
+                    type: string
+                  shutdownGracePeriodCriticalPods:
+                    description: |-
+                      ShutdownGracePeriodCriticalPods specifies the duration used to terminate
+                      critical pods during a node shutdown. This should be less than
+                      shutdownGracePeriod.
+                      Default kubelet value is "0s".
+                    type: string
+                  systemReserved:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      SystemReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                      resources reserved for OS system daemons. Kubernetes components such as the
+                      kubelet are excluded from this reservation.
+                      Valid keys: cpu, memory, ephemeral-storage, pid.
+                    maxProperties: 4
+                    type: object
+                    x-kubernetes-validations:
+                    - message: only cpu, memory, ephemeral-storage, and pid are valid
+                        keys
+                      rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage',
+                        'pid'])
+                  topologyManagerPolicy:
+                    description: |-
+                      TopologyManagerPolicy controls the NUMA-aware resource alignment policy.
+                      Relevant for workloads sensitive to hardware topology (GPU, HPC, telco).
+                      Default kubelet value is "none".
+                    enum:
+                    - none
+                    - best-effort
+                    - restricted
+                    - single-numa-node
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
+                  rule: '!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent)
+                    || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent'
+                - message: evictionSoft must be set when evictionSoftGracePeriod is
+                    set
+                  rule: '!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)'
+                - message: evictionSoftGracePeriod keys must match evictionSoft keys
+                  rule: '!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft)
+                    || self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)'
+              nodeRegistration:
+                default: {}
+                description: NodeRegistration holds fields that relate to registering
+                  the new node to the cluster.
+                properties:
+                  ignorePreflightErrors:
+                    default:
+                    - SystemVerification
+                    description: |-
+                      IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
+                      when the current node is registered.
+                    items:
+                      maxLength: 512
+                      minLength: 1
+                      type: string
+                    maxItems: 50
+                    type: array
+                type: object
+              taints:
+                description: Taints specifies the taints the Node API object should
+                  be registered with.
+                items:
+                  description: |-
+                    The node this Taint is attached to has the "effect" on
+                    any pod that does not tolerate the Taint.
+                  properties:
+                    effect:
+                      default: NoSchedule
+                      description: |-
+                        The effect of the taint on pods that do not tolerate the taint.
+                        Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                      enum:
+                      - NoSchedule
+                      - PreferNoSchedule
+                      - NoExecute
+                      type: string
+                    key:
+                      description: The taint key to be applied to a node.
+                      maxLength: 253
+                      type: string
+                    value:
+                      description: The taint value corresponding to the taint key.
+                      maxLength: 63
+                      minLength: 1
+                      type: string
+                  required:
+                  - effect
+                  - key
+                  type: object
+                maxItems: 32
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
