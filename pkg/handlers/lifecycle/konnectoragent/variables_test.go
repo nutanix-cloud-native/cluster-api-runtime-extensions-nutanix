@@ -115,11 +115,25 @@ func TestApply_FailsWhenCopySecretFails(t *testing.T) {
 		},
 	}
 
+	// Create the source secret so EnsureClusterOwnerReferenceForObject succeeds.
+	// Copy to the remote cluster will still fail in unit tests (no remote cluster), and the handler should skip.
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "missing-secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"username": []byte("user"),
+			"password": []byte("pass"),
+		},
+	}
+	require.NoError(t, handler.client.Create(context.Background(), secret))
+
 	resp := &runtimehooksv1.CommonResponse{}
 	handler.apply(context.Background(), cluster, resp)
 
 	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, resp.Status)
-	assert.Contains(t, resp.Message, "Skipping konnector-agent setup")
+	assert.Contains(t, resp.Message, "Skipping konnector-agent setup: remote cluster not ready")
 }
 
 func TestApply_SuccessfulHelmStrategy(t *testing.T) {
