@@ -14,14 +14,14 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /mutate-v1beta1-addons
+        path: /mutate-v1beta2-addons
     failurePolicy: Fail
     name: addons-defaulter.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
         apiVersions:
-          - '*'
+          - v1beta2
         operations:
           - CREATE
         resources:
@@ -36,14 +36,14 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /mutate-v1beta1-cluster
+        path: /mutate-v1beta2-cluster
     failurePolicy: Fail
     name: cluster-defaulter.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
         apiVersions:
-          - '*'
+          - v1beta2
         operations:
           - CREATE
           - UPDATE
@@ -67,14 +67,14 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /validate-v1beta1-cluster
+        path: /validate-v1beta2-cluster
     failurePolicy: Fail
     name: cluster-validator.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
         apiVersions:
-          - '*'
+          - v1beta2
         operations:
           - CREATE
           - UPDATE
@@ -90,14 +90,14 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /preflight-v1beta1-cluster
+        path: /preflight-v1beta2-cluster
     failurePolicy: Fail
     name: preflight.cluster.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
         apiVersions:
-          - '*'
+          - v1beta2
         operations:
           - CREATE
           - UPDATE

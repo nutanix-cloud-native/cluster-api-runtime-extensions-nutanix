@@ -288,18 +288,18 @@ func main() {
 		}
 	}
 
-	mgr.GetWebhookServer().Register("/mutate-v1beta1-cluster", &webhook.Admission{
+	mgr.GetWebhookServer().Register("/mutate-v1beta2-cluster", &webhook.Admission{
 		Handler: cluster.NewDefaulter(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme())),
 	})
-	mgr.GetWebhookServer().Register("/validate-v1beta1-cluster", &webhook.Admission{
+	mgr.GetWebhookServer().Register("/validate-v1beta2-cluster", &webhook.Admission{
 		Handler: cluster.NewValidator(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme())),
 	})
 
-	mgr.GetWebhookServer().Register("/mutate-v1beta1-addons", &webhook.Admission{
+	mgr.GetWebhookServer().Register("/mutate-v1beta2-addons", &webhook.Admission{
 		Handler: addons.NewDefaulter(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme())),
 	})
 
-	mgr.GetWebhookServer().Register("/preflight-v1beta1-cluster", &webhook.Admission{
+	mgr.GetWebhookServer().Register("/preflight-v1beta2-cluster", &webhook.Admission{
 		Handler: preflight.New(mgr.GetClient(), admission.NewDecoder(mgr.GetScheme()),
 			[]preflight.Checker{
 				// Add your preflight checkers here.
