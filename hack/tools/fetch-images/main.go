@@ -394,7 +394,7 @@ prismEndPoint: endpoint
 			ClusterName:                "test-cluster",
 			CategoryMappings:           "",
 			PrismCredentialsSecretName: "konnector-agent",
-			EnableKubeconfigUpload:     true,
+			EnableKubeconfigUpload:     false,
 		}
 
 		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)

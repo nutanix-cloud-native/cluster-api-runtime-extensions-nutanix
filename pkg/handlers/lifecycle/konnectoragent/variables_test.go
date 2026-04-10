@@ -531,7 +531,7 @@ func TestTemplateValuesFunc_PrismCredentialsSecretName(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
 	valuesTemplate := `prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"`
 	result, err := templateFunc(cluster, valuesTemplate)
 
