@@ -360,7 +360,7 @@ func TestTemplateValuesFunc(t *testing.T) {
 	k8sAgentVar := apivariables.NutanixKonnectorAgent{
 		NutanixKonnectorAgent: v1alpha1.NutanixKonnectorAgent{},
 	}
-	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar, logr.Discard())
 
 	t.Run("successful template execution", func(t *testing.T) {
 		valuesTemplate := `
@@ -395,7 +395,7 @@ kubeconfigUpload:
 				EnableKubeconfigUpload: &disabled,
 			},
 		}
-		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar, logr.Discard())
 
 		valuesTemplate := `
 kubeconfigUpload:
@@ -419,7 +419,7 @@ kubeconfigUpload:
 				EnableKubeconfigUpload: &enabled,
 			},
 		}
-		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar, logr.Discard())
 
 		valuesTemplate := `
 kubeconfigUpload:
@@ -481,7 +481,7 @@ func TestTemplateValuesFunc_ParseURLError(t *testing.T) {
 	}
 
 	k8sAgentVar := apivariables.NutanixKonnectorAgent{}
-	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar, logr.Discard())
 
 	_, err := templateFunc(cluster, "template: {{ .PrismCentralHost }}")
 	assert.Error(t, err, "ParseURL should fail with invalid URL")
@@ -503,7 +503,7 @@ func TestTemplateValuesFunc_TruncatesLongClusterName(t *testing.T) {
 	}
 
 	k8sAgentVar := apivariables.NutanixKonnectorAgent{}
-	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar, logr.Discard())
 
 	valuesTemplate := `clusterName: {{ .ClusterName }}`
 	result, err := templateFunc(cluster, valuesTemplate)
@@ -531,7 +531,7 @@ func TestTemplateValuesFunc_CategoryMappings(t *testing.T) {
 	k8sAgentVar := apivariables.NutanixKonnectorAgent{}
 
 	t.Run("with empty categoryMappings", func(t *testing.T) {
-		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar, logr.Discard())
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}
@@ -576,7 +576,7 @@ categoryMappings: {{ .CategoryMappings }}
 				},
 			},
 		}
-		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories, k8sAgentVar)
+		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories, k8sAgentVar, logr.Discard())
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}

@@ -272,7 +272,7 @@ func (n *DefaultKonnectorAgent) apply(
 		n.config.helmAddonConfig,
 		n.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster, k8sAgentVar))
+	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster, k8sAgentVar, log))
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		log.Error(err, "Helm strategy Apply failed")
@@ -288,6 +288,7 @@ func templateValuesFunc(
 	nutanixConfig *v1alpha1.NutanixSpec,
 	cluster *clusterv1.Cluster,
 	k8sAgentVar apivariables.NutanixKonnectorAgent,
+	log logr.Logger,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
@@ -332,22 +333,37 @@ func templateValuesFunc(
 		// Default is enabled when not explicitly set.
 		kubeconfigUploadEnabled := k8sAgentVar.EnableKubeconfigUpload == nil || *k8sAgentVar.EnableKubeconfigUpload
 
+		var kubeconfigUploadControlPlaneEndpoint string
+		if kubeconfigUploadEnabled {
+			cpEndpoint := nutanixConfig.ControlPlaneEndpoint
+			if cpEndpoint.Host == "" || cpEndpoint.Port == 0 {
+				log.Info(
+					"ControlPlaneEndpoint not ready yet, skipping kubeconfig upload for now",
+					"host", cpEndpoint.Host,
+					"port", cpEndpoint.Port,
+				)
+				// IMPORTANT: do NOT fail. We'll retry on the next reconciliation.
+				kubeconfigUploadEnabled = false
+			} else {
+				kubeconfigUploadControlPlaneEndpoint = fmt.Sprintf(
+					"https://%s:%d",
+					cpEndpoint.Host,
+					cpEndpoint.Port,
+				)
+			}
+		}
+
 		templateInput := input{
 			AgentName:        defaultK8sAgentName,
 			PrismCentralHost: address,
 			PrismCentralPort: port,
 			// TODO: remove this once we have a way to set this.
 			// need to add support to accept PC's trust bundle in agent(it's not implemented currently)
-			PrismCentralInsecure:    true,
-			ClusterName:             clusterName,
-			CategoryMappings:        categoryMappings,
-			KubeconfigUploadEnabled: kubeconfigUploadEnabled,
-		}
-
-		if kubeconfigUploadEnabled {
-			cpEndpoint := nutanixConfig.ControlPlaneEndpoint
-			templateInput.KubeconfigUploadControlPlaneEndpoint = fmt.Sprintf("https://%s:%d",
-				cpEndpoint.Host, cpEndpoint.Port)
+			PrismCentralInsecure:                 true,
+			ClusterName:                          clusterName,
+			CategoryMappings:                     categoryMappings,
+			KubeconfigUploadEnabled:              kubeconfigUploadEnabled,
+			KubeconfigUploadControlPlaneEndpoint: kubeconfigUploadControlPlaneEndpoint,
 		}
 
 		var b bytes.Buffer
