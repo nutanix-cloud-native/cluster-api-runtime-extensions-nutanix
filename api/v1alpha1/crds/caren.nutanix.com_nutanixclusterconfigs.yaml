@@ -278,12 +278,6 @@ spec:
                           required:
                             - secretRef
                           type: object
-                        prismCredentialsSecretName:
-                          description: |-
-                            prismCredentialsSecretName is the name of the Secret to be used by the konnector-agent Helm chart for Prism
-                            Central credentials. When set, the Secret must already exist in the workload cluster namespace where the
-                            konnector-agent is deployed.
-                          type: string
                       type: object
                     nfd:
                       description: NFD tells us to enable or disable the node feature discovery addon.
