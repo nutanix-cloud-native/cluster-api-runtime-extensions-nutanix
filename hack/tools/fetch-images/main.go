@@ -391,7 +391,7 @@ prismEndPoint: endpoint
 			PrismCentralInsecure:       true,
 			ClusterName:                "test-cluster",
 			CategoryMappings:           "",
-			PrismCredentialsSecretName: "dummy-prism-credentials",
+			PrismCredentialsSecretName: "konnector-agent",
 		}
 
 		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)

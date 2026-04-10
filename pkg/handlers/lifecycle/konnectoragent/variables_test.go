@@ -341,7 +341,7 @@ func TestTemplateValuesFunc(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster, "dummy-prism-credentials")
+	templateFunc := templateValuesFunc(nutanixConfig, cluster)
 
 	t.Run("successful template execution", func(t *testing.T) {
 		valuesTemplate := `
@@ -406,7 +406,7 @@ func TestTemplateValuesFunc_ParseURLError(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster, "dummy-prism-credentials")
+	templateFunc := templateValuesFunc(nutanixConfig, cluster)
 
 	_, err := templateFunc(cluster, "template: {{ .PrismCentralHost }}")
 	assert.Error(t, err, "ParseURL should fail with invalid URL")
@@ -427,7 +427,7 @@ func TestTemplateValuesFunc_TruncatesLongClusterName(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster, "dummy-prism-credentials")
+	templateFunc := templateValuesFunc(nutanixConfig, cluster)
 
 	valuesTemplate := `clusterName: {{ .ClusterName }}`
 	result, err := templateFunc(cluster, valuesTemplate)
@@ -453,7 +453,7 @@ func TestTemplateValuesFunc_CategoryMappings(t *testing.T) {
 	}
 
 	t.Run("with empty categoryMappings", func(t *testing.T) {
-		templateFunc := templateValuesFunc(nutanixConfig, cluster, "dummy-prism-credentials")
+		templateFunc := templateValuesFunc(nutanixConfig, cluster)
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}
@@ -498,7 +498,7 @@ categoryMappings: {{ .CategoryMappings }}
 				},
 			},
 		}
-		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories, "dummy-prism-credentials")
+		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories)
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}
@@ -528,7 +528,7 @@ func TestTemplateValuesFunc_PrismCredentialsSecretName(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster, "konnector-agent")
+	templateFunc := templateValuesFunc(nutanixConfig, cluster)
 	valuesTemplate := `prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"`
 	result, err := templateFunc(cluster, valuesTemplate)
 

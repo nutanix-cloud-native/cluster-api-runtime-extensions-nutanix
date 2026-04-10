@@ -274,7 +274,7 @@ func (n *DefaultKonnectorAgent) apply(
 		n.config.helmAddonConfig,
 		n.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster, defaultCredentialsSecretName))
+	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster))
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		log.Error(err, "Helm strategy Apply failed")
@@ -287,7 +287,7 @@ func (n *DefaultKonnectorAgent) apply(
 }
 
 func templateValuesFunc(
-	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1.Cluster, prismCredentialsSecretName string,
+	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1.Cluster,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
@@ -337,7 +337,7 @@ func templateValuesFunc(
 			PrismCentralInsecure:       true,
 			ClusterName:                clusterName,
 			CategoryMappings:           categoryMappings,
-			PrismCredentialsSecretName: prismCredentialsSecretName,
+			PrismCredentialsSecretName: defaultCredentialsSecretName,
 		}
 
 		var b bytes.Buffer
