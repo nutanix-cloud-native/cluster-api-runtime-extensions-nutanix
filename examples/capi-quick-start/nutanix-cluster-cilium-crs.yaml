@@ -102,6 +102,7 @@ spec:
             snapshotController:
               strategy: HelmAddon
           konnectorAgent:
+            EnableKubeconfigUpload: false
             credentials:
               secretRef:
                 name: ${CLUSTER_NAME}-pc-creds-for-konnector-agent
