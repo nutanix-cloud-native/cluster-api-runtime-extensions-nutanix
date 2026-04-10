@@ -30,6 +30,7 @@ webhooks:
     matchConditions:
       - name: has-topology
         expression: has(object.spec.topology)
+    matchPolicy: Equivalent
   - admissionReviewVersions:
       - v1
     clientConfig:
@@ -53,6 +54,7 @@ webhooks:
     matchConditions:
       - name: has-topology
         expression: has(object.spec.topology)
+    matchPolicy: Equivalent
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -84,6 +86,7 @@ webhooks:
     matchConditions:
       - name: has-topology
         expression: has(object.spec.topology)
+    matchPolicy: Equivalent
   - admissionReviewVersions:
       - v1
     clientConfig:
@@ -108,3 +111,4 @@ webhooks:
     matchConditions:
       - name: has-topology
         expression: has(object.spec.topology)
+    matchPolicy: Equivalent

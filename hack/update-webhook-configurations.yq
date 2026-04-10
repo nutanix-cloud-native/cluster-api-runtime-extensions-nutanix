@@ -18,5 +18,6 @@ with(.webhooks[];
       "name": "has-topology",
       "expression": "has(object.spec.topology)"
     }
-  ]
+  ],
+  .matchPolicy = "Equivalent"
 )
