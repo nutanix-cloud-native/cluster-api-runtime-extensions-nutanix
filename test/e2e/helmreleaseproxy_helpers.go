@@ -37,35 +37,85 @@ func WaitForHelmReleaseProxyReadyForCluster(
 ) {
 	start := time.Now()
 
-	hrp, err := getHelmReleaseProxy(
-		ctx,
-		input.GetLister,
-		input.Cluster.Name,
-		input.Cluster.Namespace,
-		fmt.Sprintf(
-			"%s-%s",
-			input.HelmReleaseName,
-			input.Cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey],
-		),
+	var (
+		hrp         *helmaddonsv1.HelmReleaseProxy
+		hrpKey      ctrlclient.ObjectKey
+		lastListErr error
 	)
-	Expect(err).ToNot(HaveOccurred())
-	hrpKey := ctrlclient.ObjectKeyFromObject(hrp)
 
-	capie2e.Byf("waiting for HelmReleaseProxy for %s to be ready", hrpKey)
-	Log("starting to wait for HelmReleaseProxy to become available")
+	capie2e.Byf(
+		"waiting for HelmReleaseProxy %q to be ready for cluster %s/%s",
+		input.HelmReleaseName,
+		input.Cluster.Namespace,
+		input.Cluster.Name,
+	)
+	Log("starting to wait for HelmReleaseProxy to be created and become ready")
 	Eventually(func() bool {
-		err := input.GetLister.Get(ctx, hrpKey, hrp)
+		// Re-read the Cluster each time to ensure we see webhook-assigned annotations.
+		currentCluster := &clusterv1.Cluster{}
+		if err := input.GetLister.Get(
+			ctx,
+			ctrlclient.ObjectKey{Namespace: input.Cluster.Namespace, Name: input.Cluster.Name},
+			currentCluster,
+		); err != nil {
+			lastListErr = err
+			return false
+		}
 
-		return err == nil && apimeta.IsStatusConditionTrue(hrp.GetConditions(), clusterv1.ReadyCondition)
+		clusterUUID := currentCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
+		if clusterUUID == "" {
+			// Cluster UUID is assigned by webhook; the HRP label depends on it.
+			return false
+		}
+
+		var err error
+		hrp, err = getHelmReleaseProxy(
+			ctx,
+			input.GetLister,
+			input.Cluster.Name,
+			input.Cluster.Namespace,
+			fmt.Sprintf("%s-%s", input.HelmReleaseName, clusterUUID),
+		)
+		if err != nil {
+			lastListErr = err
+			return false
+		}
+		hrpKey = ctrlclient.ObjectKeyFromObject(hrp)
+
+		err = input.GetLister.Get(ctx, hrpKey, hrp)
+		if err != nil {
+			lastListErr = err
+			return false
+		}
+
+		lastListErr = nil
+		return apimeta.IsStatusConditionTrue(hrp.GetConditions(), clusterv1.ReadyCondition)
 	}, intervals...).Should(
 		BeTrue(),
 		fmt.Sprintf(
-			"HelmReleaseProxy %s failed to become ready and have up to date revision: ready condition = %+v, "+
-				"revision = %v, full object is:\n%+v\n`",
-			hrpKey,
-			apimeta.FindStatusCondition(hrp.GetConditions(), clusterv1.ReadyCondition),
-			hrp.Status.Revision,
-			hrp,
+			"HelmReleaseProxy for %s/%s (%q) failed to become ready: last error = %v, last ready condition = %+v, revision = %v, object =\n%+v\n",
+			input.Cluster.Namespace,
+			input.Cluster.Name,
+			input.HelmReleaseName,
+			lastListErr,
+			func() any {
+				if hrp == nil {
+					return nil
+				}
+				return apimeta.FindStatusCondition(hrp.GetConditions(), clusterv1.ReadyCondition)
+			}(),
+			func() any {
+				if hrp == nil {
+					return nil
+				}
+				return hrp.Status.Revision
+			}(),
+			func() any {
+				if hrp == nil {
+					return nil
+				}
+				return hrp
+			}(),
 		),
 	)
 	Logf("HelmReleaseProxy %s is now ready, took %v", hrpKey, time.Since(start))
