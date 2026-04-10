@@ -304,12 +304,13 @@ func templateValuesFunc(
 		}
 
 		type input struct {
-			AgentName            string
-			PrismCentralHost     string
-			PrismCentralPort     uint16
-			PrismCentralInsecure bool
-			ClusterName          string
-			CategoryMappings     string
+			AgentName                  string
+			PrismCentralHost           string
+			PrismCentralPort           uint16
+			PrismCentralInsecure       bool
+			ClusterName                string
+			CategoryMappings           string
+			PrismCredentialsSecretName string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -333,9 +334,10 @@ func templateValuesFunc(
 			PrismCentralPort: port,
 			// TODO: remove this once we have a way to set this.
 			// need to add support to accept PC's trust bundle in agent(it's not implemented currently)
-			PrismCentralInsecure: true,
-			ClusterName:          clusterName,
-			CategoryMappings:     categoryMappings,
+			PrismCentralInsecure:       true,
+			ClusterName:                clusterName,
+			CategoryMappings:           categoryMappings,
+			PrismCredentialsSecretName: defaultCredentialsSecretName,
 		}
 
 		var b bytes.Buffer

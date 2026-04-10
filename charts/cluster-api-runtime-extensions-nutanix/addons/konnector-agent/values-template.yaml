@@ -2,13 +2,17 @@ agent:
   name: {{ .AgentName }}
   image:
     privateRegistry: false
+    repository: quay.io/karbon
+    name: k8s-agent
 pc:
   port: {{ .PrismCentralPort }}
   insecure: {{ .PrismCentralInsecure }}
   endpoint: {{ .PrismCentralHost }}
+
 k8sClusterName: {{ .ClusterName }}
 k8sDistribution: NKP
 createSecret: false
+prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"
 {{- if .CategoryMappings }}
 categoryMappings: {{ .CategoryMappings }}
 {{- end }}

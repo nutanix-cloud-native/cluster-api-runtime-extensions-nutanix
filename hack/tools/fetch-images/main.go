@@ -377,19 +377,21 @@ prismEndPoint: endpoint
 		}
 
 		templateInput := struct {
-			AgentName            string
-			PrismCentralHost     string
-			PrismCentralPort     uint16
-			PrismCentralInsecure bool
-			ClusterName          string
-			CategoryMappings     string
+			AgentName                  string
+			PrismCentralHost           string
+			PrismCentralPort           uint16
+			PrismCentralInsecure       bool
+			ClusterName                string
+			CategoryMappings           string
+			PrismCredentialsSecretName string
 		}{
-			AgentName:            "konnector-agent",
-			PrismCentralHost:     "prism-central.example.com",
-			PrismCentralPort:     9440,
-			PrismCentralInsecure: true,
-			ClusterName:          "test-cluster",
-			CategoryMappings:     "",
+			AgentName:                  "konnector-agent",
+			PrismCentralHost:           "prism-central.example.com",
+			PrismCentralPort:           9440,
+			PrismCentralInsecure:       true,
+			ClusterName:                "test-cluster",
+			CategoryMappings:           "",
+			PrismCredentialsSecretName: "konnector-agent",
 		}
 
 		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)

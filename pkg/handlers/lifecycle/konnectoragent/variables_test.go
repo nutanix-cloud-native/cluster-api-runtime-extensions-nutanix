@@ -516,6 +516,26 @@ categoryMappings: ""
 	})
 }
 
+func TestTemplateValuesFunc_PrismCredentialsSecretName(t *testing.T) {
+	cluster := &clusterv1beta2.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+	}
+
+	nutanixConfig := &v1alpha1.NutanixSpec{
+		PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+			URL:      "https://prism-central.example.com:9440",
+			Insecure: true,
+		},
+	}
+
+	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	valuesTemplate := `prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"`
+	result, err := templateFunc(cluster, valuesTemplate)
+
+	require.NoError(t, err)
+	assert.Equal(t, `prismCredentialsSecretName: "konnector-agent"`, result)
+}
+
 func TestApply_ClusterConfigVariableFailure(t *testing.T) {
 	handler := newTestHandler(t)
 	cluster := &clusterv1beta2.Cluster{
