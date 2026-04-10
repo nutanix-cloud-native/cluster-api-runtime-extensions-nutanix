@@ -93,7 +93,11 @@ func WaitForHelmReleaseProxyReadyForCluster(
 	}, intervals...).Should(
 		BeTrue(),
 		fmt.Sprintf(
-			"HelmReleaseProxy for %s/%s (%q) failed to become ready: last error = %v, last ready condition = %+v, revision = %v, object =\n%+v\n",
+			"HelmReleaseProxy for %s/%s (%q) failed to become ready.\n"+
+				"last error = %v\n"+
+				"last ready condition = %+v\n"+
+				"revision = %v\n"+
+				"object =\n%+v\n",
 			input.Cluster.Namespace,
 			input.Cluster.Name,
 			input.HelmReleaseName,
