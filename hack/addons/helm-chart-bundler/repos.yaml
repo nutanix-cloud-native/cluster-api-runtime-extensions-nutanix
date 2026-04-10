@@ -42,7 +42,7 @@ repositories:
       docker-registry:
       - 2.3.5
   konnector-agent:
-    repoURL: https://mesosphere.github.io/charts/stable
+    repoURL: https://mesosphere.github.io/charts/stable/
     charts:
       konnector-agent:
       - 1.4.0-rc.1
