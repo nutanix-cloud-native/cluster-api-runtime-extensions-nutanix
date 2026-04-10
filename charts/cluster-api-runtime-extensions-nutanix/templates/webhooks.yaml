@@ -14,7 +14,7 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /mutate-v1beta2-addons
+        path: /mutate-addons
     failurePolicy: Fail
     name: addons-defaulter.caren.nutanix.com
     rules:
@@ -36,7 +36,7 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /mutate-v1beta2-cluster
+        path: /mutate-cluster
     failurePolicy: Fail
     name: cluster-defaulter.caren.nutanix.com
     rules:
@@ -67,7 +67,7 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /validate-v1beta2-cluster
+        path: /validate-cluster
     failurePolicy: Fail
     name: cluster-validator.caren.nutanix.com
     rules:
@@ -90,7 +90,7 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /preflight-v1beta2-cluster
+        path: /preflight-cluster
     failurePolicy: Fail
     name: preflight.cluster.caren.nutanix.com
     rules:
