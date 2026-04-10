@@ -5,7 +5,6 @@ package konnectoragent
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -358,10 +357,8 @@ func TestTemplateValuesFunc(t *testing.T) {
 		},
 	}
 
-	var defaultAgentVar v1alpha1.NutanixKonnectorAgent
-	require.NoError(t, json.Unmarshal([]byte(`{}`), &defaultAgentVar))
 	k8sAgentVar := apivariables.NutanixKonnectorAgent{
-		NutanixKonnectorAgent: defaultAgentVar,
+		NutanixKonnectorAgent: v1alpha1.NutanixKonnectorAgent{},
 	}
 	templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
 
