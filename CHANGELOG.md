@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.46.0 (2026-04-10)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: bump up Konnector to 1.4.0-rc.1 by @priyadarshini7q in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1571
+### Fixes 🔧
+* fix: bump multus to v4.2.4 by @kshcore in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1569
+### Other Changes
+* build: Add Cursor IDE rules and Specify config by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1497
+
+## New Contributors
+* @priyadarshini7q made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1571
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.45.4...v0.46.0
+
 ## 0.45.4 (2026-04-04)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
