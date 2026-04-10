@@ -274,7 +274,7 @@ func (n *DefaultKonnectorAgent) apply(
 		n.config.helmAddonConfig,
 		n.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster))
+	).WithValueTemplater(templateValuesFunc(clusterConfigVar.Nutanix, cluster, k8sAgentVar))
 
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		log.Error(err, "Helm strategy Apply failed")
@@ -287,7 +287,9 @@ func (n *DefaultKonnectorAgent) apply(
 }
 
 func templateValuesFunc(
-	nutanixConfig *v1alpha1.NutanixSpec, cluster *clusterv1.Cluster,
+	nutanixConfig *v1alpha1.NutanixSpec,
+	cluster *clusterv1.Cluster,
+	k8sAgentVar apivariables.NutanixKonnectorAgent,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
@@ -311,6 +313,8 @@ func templateValuesFunc(
 			ClusterName                string
 			CategoryMappings           string
 			PrismCredentialsSecretName string
+			EnableKubeconfigUpload     bool
+			ControlPlaneEndpoint       string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -328,6 +332,20 @@ func templateValuesFunc(
 		// Extract categoryMappings from worker config additionalCategories
 		categoryMappings := extractCategoryMappings(cluster)
 
+		// Default EnableKubeconfigUpload to true when not explicitly set.
+		enableKubeconfigUpload := true
+		if k8sAgentVar.EnableKubeconfigUpload != nil {
+			enableKubeconfigUpload = *k8sAgentVar.EnableKubeconfigUpload
+		}
+
+		// Derive the control plane endpoint from the Cluster object.
+		var controlPlaneEndpoint string
+		cpHost := cluster.Spec.ControlPlaneEndpoint.Host
+		cpPort := cluster.Spec.ControlPlaneEndpoint.Port
+		if cpHost != "" && cpPort > 0 {
+			controlPlaneEndpoint = fmt.Sprintf("https://%s:%d", cpHost, cpPort)
+		}
+
 		templateInput := input{
 			AgentName:        defaultK8sAgentName,
 			PrismCentralHost: address,
@@ -338,6 +356,8 @@ func templateValuesFunc(
 			ClusterName:                clusterName,
 			CategoryMappings:           categoryMappings,
 			PrismCredentialsSecretName: defaultCredentialsSecretName,
+			EnableKubeconfigUpload:     enableKubeconfigUpload,
+			ControlPlaneEndpoint:       controlPlaneEndpoint,
 		}
 
 		var b bytes.Buffer

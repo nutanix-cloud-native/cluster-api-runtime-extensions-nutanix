@@ -21,6 +21,7 @@ import (
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -341,7 +342,7 @@ func TestTemplateValuesFunc(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
 
 	t.Run("successful template execution", func(t *testing.T) {
 		valuesTemplate := `
@@ -350,6 +351,7 @@ prismCentralHost: {{ .PrismCentralHost }}
 prismCentralPort: {{ .PrismCentralPort }}
 prismCentralInsecure: {{ .PrismCentralInsecure }}
 clusterName: {{ .ClusterName }}
+enableKubeconfigUpload: {{ .EnableKubeconfigUpload }}
 `
 
 		result, err := templateFunc(cluster, valuesTemplate)
@@ -360,6 +362,7 @@ clusterName: {{ .ClusterName }}
 		assert.Contains(t, result, "prismCentralPort: 9440")
 		assert.Contains(t, result, "prismCentralInsecure: true")
 		assert.Contains(t, result, "clusterName: test-cluster")
+		assert.Contains(t, result, "enableKubeconfigUpload: true")
 	})
 
 	t.Run("template with joinQuoted function", func(t *testing.T) {
@@ -406,7 +409,7 @@ func TestTemplateValuesFunc_ParseURLError(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
 
 	_, err := templateFunc(cluster, "template: {{ .PrismCentralHost }}")
 	assert.Error(t, err, "ParseURL should fail with invalid URL")
@@ -427,7 +430,7 @@ func TestTemplateValuesFunc_TruncatesLongClusterName(t *testing.T) {
 		},
 	}
 
-	templateFunc := templateValuesFunc(nutanixConfig, cluster)
+	templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
 
 	valuesTemplate := `clusterName: {{ .ClusterName }}`
 	result, err := templateFunc(cluster, valuesTemplate)
@@ -453,7 +456,7 @@ func TestTemplateValuesFunc_CategoryMappings(t *testing.T) {
 	}
 
 	t.Run("with empty categoryMappings", func(t *testing.T) {
-		templateFunc := templateValuesFunc(nutanixConfig, cluster)
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}
@@ -498,7 +501,7 @@ categoryMappings: {{ .CategoryMappings }}
 				},
 			},
 		}
-		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories)
+		templateFunc := templateValuesFunc(nutanixConfig, clusterWithCategories, apivariables.NutanixKonnectorAgent{})
 
 		// Use the actual template format from values-template.yaml
 		valuesTemplate := `{{- if .CategoryMappings }}
@@ -534,6 +537,83 @@ func TestTemplateValuesFunc_PrismCredentialsSecretName(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, `prismCredentialsSecretName: "konnector-agent"`, result)
+}
+
+func TestTemplateValuesFunc_EnableKubeconfigUpload(t *testing.T) {
+	nutanixConfig := &v1alpha1.NutanixSpec{
+		PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+			URL:      "https://prism-central.example.com:9440",
+			Insecure: true,
+		},
+	}
+
+	valuesTemplate := `enableKubeconfigUpload: {{ .EnableKubeconfigUpload }}
+{{- if .ControlPlaneEndpoint }}
+controlPlaneEndpoint: {{ .ControlPlaneEndpoint }}
+{{- end }}`
+
+	t.Run("defaults to true when not set", func(t *testing.T) {
+		cluster := &clusterv1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+		}
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		assert.Contains(t, result, "enableKubeconfigUpload: true")
+	})
+
+	t.Run("explicitly set to true", func(t *testing.T) {
+		cluster := &clusterv1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+		}
+		enabled := true
+		agentVar := apivariables.NutanixKonnectorAgent{}
+		agentVar.EnableKubeconfigUpload = &enabled
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, agentVar)
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		assert.Contains(t, result, "enableKubeconfigUpload: true")
+	})
+
+	t.Run("explicitly set to false", func(t *testing.T) {
+		cluster := &clusterv1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+		}
+		enabled := false
+		agentVar := apivariables.NutanixKonnectorAgent{}
+		agentVar.EnableKubeconfigUpload = &enabled
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, agentVar)
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		assert.Contains(t, result, "enableKubeconfigUpload: false")
+	})
+
+	t.Run("includes control plane endpoint when available", func(t *testing.T) {
+		cluster := &clusterv1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+			Spec: clusterv1beta2.ClusterSpec{
+				ControlPlaneEndpoint: clusterv1beta2.APIEndpoint{
+					Host: "10.0.0.1",
+					Port: 6443,
+				},
+			},
+		}
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		assert.Contains(t, result, "enableKubeconfigUpload: true")
+		assert.Contains(t, result, "controlPlaneEndpoint: https://10.0.0.1:6443")
+	})
+
+	t.Run("omits control plane endpoint when not set", func(t *testing.T) {
+		cluster := &clusterv1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+		}
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		assert.NotContains(t, result, "controlPlaneEndpoint")
+	})
 }
 
 func TestApply_ClusterConfigVariableFailure(t *testing.T) {

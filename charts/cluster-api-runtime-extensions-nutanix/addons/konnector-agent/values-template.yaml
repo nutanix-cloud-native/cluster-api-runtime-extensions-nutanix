@@ -17,3 +17,8 @@ prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"
 {{- if .CategoryMappings }}
 categoryMappings: {{ .CategoryMappings }}
 {{- end }}
+kubeconfigUpload:
+  enabled: {{ .EnableKubeconfigUpload }}
+{{- if .ControlPlaneEndpoint }}
+  controlPlaneEndpoint: "{{ .ControlPlaneEndpoint }}"
+{{- end }}
