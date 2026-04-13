@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.46.1 (2026-04-13)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Fixes 🔧
+* fix: properly handle v1beta1 types in webhooks by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1575
+* fix(caren): Change helm repo URL from nutanix-scratch to mesosphere repo by @priyadarshini7q in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1579
+### Other Changes
+* build: update Go toolchain to 1.26.2 to fix CVEs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1574
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.46.0...v0.46.1
+
 ## 0.46.0 (2026-04-10)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
