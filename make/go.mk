@@ -185,11 +185,15 @@ endif
 ifneq ($(words $(THIRD_PARTY_GO_SUBMODULES)),0)
 mod-tidy: $(addprefix mod-tidy.,$(THIRD_PARTY_GO_SUBMODULES:/go.mod=))
 endif
+ifneq ($(wildcard $(REPO_ROOT)/hack/tools/go.mod),)
+mod-tidy: mod-tidy.hack/tools
+endif
 
 .PHONY: mod-tidy.%
+.PHONY: mod-tidy.hack/%
 .PHONY: mod-tidy.hack/third-party/%
-mod-tidy.% mod-tidy.hack/third-party/%: ## Runs go mod tidy for a specific module
-mod-tidy.% mod-tidy.hack/third-party/%: ; $(info $(M) running go mod tidy for $* module)
+mod-tidy.% mod-tidy.hack/% mod-tidy.hack/third-party/%: ## Runs go mod tidy for a specific module
+mod-tidy.% mod-tidy.hack/% mod-tidy.hack/third-party/%: ; $(info $(M) running go mod tidy for $* module)
 	$(if $(filter-out root,$*),cd $(@:mod-tidy.%=%) && )go mod tidy -v
 	$(if $(filter-out root,$*),cd $(@:mod-tidy.%=%) && )go mod verify
 
