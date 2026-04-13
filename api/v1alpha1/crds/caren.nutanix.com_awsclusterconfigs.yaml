@@ -386,10 +386,9 @@ spec:
                           type: string
                       type: object
                     policy:
-                      default:
-                        - configMap:
-                            name: default-audit-policy
-                      description: Policy defines the audit policy for the cluster.
+                      description: |-
+                        Policy defines the audit policy for the cluster.
+                        If not set, an audit policy embedded in the controller is used.
                       properties:
                         configMap:
                           description: |-

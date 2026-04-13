@@ -5,6 +5,7 @@ package auditlog
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"strconv"
 
@@ -46,6 +47,9 @@ const (
 	auditPolicyPath       = "/etc/kubernetes/audit-policy.yaml"
 )
 
+//go:embed embedded/default-audit-policy.yaml
+var defaultAuditPolicy string
+
 type auditLogPatchHandler struct {
 	client            client.Client
 	variableName      string
@@ -85,21 +89,26 @@ func (h *auditLogPatchHandler) Mutate(
 		return nil
 	}
 
-	if auditCfg.Policy == nil || auditCfg.Policy.ConfigMap == nil {
-		return fmt.Errorf(
-			"audit log policy ConfigMap is required when webhook or log backend is configured",
-		)
-	}
+	policy := defaultAuditPolicy
 
-	cm := &corev1.ConfigMap{}
-	cmKey := client.ObjectKey{Namespace: clusterKey.Namespace, Name: auditCfg.Policy.ConfigMap.Name}
-	if err := h.client.Get(ctx, cmKey, cm); err != nil {
-		return fmt.Errorf("failed to get audit policy ConfigMap %q: %w", cmKey, err)
-	}
+	if auditCfg.Policy != nil {
+		if auditCfg.Policy.ConfigMap == nil {
+			// This case should be rejected by validation, but we handle it to be safe.
+			return fmt.Errorf(
+				"audit log policy ConfigMap is required when webhook or log backend is configured",
+			)
+		}
 
-	policy, err := policyFromConfigMap(cm)
-	if err != nil {
-		return err
+		cm := &corev1.ConfigMap{}
+		cmKey := client.ObjectKey{Namespace: clusterKey.Namespace, Name: auditCfg.Policy.ConfigMap.Name}
+		if err := h.client.Get(ctx, cmKey, cm); err != nil {
+			return fmt.Errorf("failed to get audit policy ConfigMap %q: %w", cmKey, err)
+		}
+
+		policy, err = policyFromConfigMap(cm)
+		if err != nil {
+			return err
+		}
 	}
 
 	files := []bootstrapv1.File{

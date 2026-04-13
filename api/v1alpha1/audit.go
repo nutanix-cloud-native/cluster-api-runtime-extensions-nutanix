@@ -17,8 +17,8 @@ type AuditLog struct {
 	Log *AuditLogBackendLog `json:"log,omitempty"`
 
 	// Policy defines the audit policy for the cluster.
+	// If not set, an audit policy embedded in the controller is used.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={{configMap:{name:default-audit-policy}}}
 	Policy *AuditLogPolicy `json:"policy,omitempty"`
 }
 
