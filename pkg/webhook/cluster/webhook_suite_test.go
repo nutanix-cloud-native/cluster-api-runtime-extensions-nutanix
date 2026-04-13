@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 				Name: "cluster-defaulter.caren.nutanix.com",
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
-						Path: ptr.To("/mutate-v1beta1-cluster"),
+						Path: ptr.To("/mutate-cluster"),
 					},
 				},
 				Rules: []admissionv1.RuleWithOperations{{
@@ -46,7 +46,7 @@ func TestMain(m *testing.M) {
 					},
 					Rule: admissionv1.Rule{
 						APIGroups:   []string{"cluster.x-k8s.io"},
-						APIVersions: []string{"*"},
+						APIVersions: []string{"v1beta2"},
 						Resources:   []string{"clusters"},
 					},
 				}},
@@ -66,7 +66,7 @@ func TestMain(m *testing.M) {
 				Name: "cluster-validator.caren.nutanix.com",
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
-						Path: ptr.To("/validate-v1beta1-cluster"),
+						Path: ptr.To("/validate-cluster"),
 					},
 				},
 				Rules: []admissionv1.RuleWithOperations{{
@@ -76,7 +76,7 @@ func TestMain(m *testing.M) {
 					},
 					Rule: admissionv1.Rule{
 						APIGroups:   []string{"cluster.x-k8s.io"},
-						APIVersions: []string{"*"},
+						APIVersions: []string{"v1beta2"},
 						Resources:   []string{"clusters"},
 					},
 				}},
@@ -130,10 +130,10 @@ func TestMain(m *testing.M) {
 			},
 		},
 		SetupEnv: func(e *envtest.Environment) {
-			e.GetWebhookServer().Register("/mutate-v1beta1-cluster", &webhook.Admission{
+			e.GetWebhookServer().Register("/mutate-cluster", &webhook.Admission{
 				Handler: NewDefaulter(e.GetClient(), admission.NewDecoder(e.GetScheme())),
 			})
-			e.GetWebhookServer().Register("/validate-v1beta1-cluster", &webhook.Admission{
+			e.GetWebhookServer().Register("/validate-cluster", &webhook.Admission{
 				Handler: NewValidator(e.GetClient(), admission.NewDecoder(e.GetScheme())),
 			})
 

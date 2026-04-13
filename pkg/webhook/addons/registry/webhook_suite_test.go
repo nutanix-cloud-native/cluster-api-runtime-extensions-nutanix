@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 				Name: "registry-defaulter.caren.nutanix.com",
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
-						Path: ptr.To("/mutate-v1beta1-registry-addon"),
+						Path: ptr.To("/mutate-v1beta2-registry-addon"),
 					},
 				},
 				Rules: []admissionv1.RuleWithOperations{{
@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 					},
 					Rule: admissionv1.Rule{
 						APIGroups:   []string{"cluster.x-k8s.io"},
-						APIVersions: []string{"*"},
+						APIVersions: []string{"v1beta2"},
 						Resources:   []string{"clusters"},
 					},
 				}},
@@ -61,7 +61,7 @@ func TestMain(m *testing.M) {
 			},
 		},
 		SetupEnv: func(e *envtest.Environment) {
-			e.GetWebhookServer().Register("/mutate-v1beta1-registry-addon", &webhook.Admission{
+			e.GetWebhookServer().Register("/mutate-v1beta2-registry-addon", &webhook.Admission{
 				Handler: NewWorkloadClusterAutoEnabler(e.GetClient(), admission.NewDecoder(e.GetScheme())).Defaulter(),
 			})
 

@@ -14,14 +14,14 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /mutate-v1beta1-addons
+        path: /mutate-addons
     failurePolicy: Fail
     name: addons-defaulter.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
         apiVersions:
-          - '*'
+          - v1beta2
         operations:
           - CREATE
         resources:
@@ -30,20 +30,21 @@ webhooks:
     matchConditions:
       - name: has-topology
         expression: has(object.spec.topology)
+    matchPolicy: Equivalent
   - admissionReviewVersions:
       - v1
     clientConfig:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /mutate-v1beta1-cluster
+        path: /mutate-cluster
     failurePolicy: Fail
     name: cluster-defaulter.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
         apiVersions:
-          - '*'
+          - v1beta2
         operations:
           - CREATE
           - UPDATE
@@ -53,6 +54,7 @@ webhooks:
     matchConditions:
       - name: has-topology
         expression: has(object.spec.topology)
+    matchPolicy: Equivalent
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -67,14 +69,14 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /validate-v1beta1-cluster
+        path: /validate-cluster
     failurePolicy: Fail
     name: cluster-validator.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
         apiVersions:
-          - '*'
+          - v1beta2
         operations:
           - CREATE
           - UPDATE
@@ -84,20 +86,21 @@ webhooks:
     matchConditions:
       - name: has-topology
         expression: has(object.spec.topology)
+    matchPolicy: Equivalent
   - admissionReviewVersions:
       - v1
     clientConfig:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /preflight-v1beta1-cluster
+        path: /preflight-cluster
     failurePolicy: Fail
     name: preflight.cluster.caren.nutanix.com
     rules:
       - apiGroups:
           - cluster.x-k8s.io
         apiVersions:
-          - '*'
+          - v1beta2
         operations:
           - CREATE
           - UPDATE
@@ -108,3 +111,4 @@ webhooks:
     matchConditions:
       - name: has-topology
         expression: has(object.spec.topology)
+    matchPolicy: Equivalent
