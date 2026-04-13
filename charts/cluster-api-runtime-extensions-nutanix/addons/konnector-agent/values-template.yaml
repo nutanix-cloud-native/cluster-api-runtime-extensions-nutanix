@@ -4,6 +4,7 @@ agent:
     privateRegistry: false
     repository: quay.io/karbon
     name: k8s-agent
+    tag: "1.4.0-rc.1"
 pc:
   port: {{ .PrismCentralPort }}
   insecure: {{ .PrismCentralInsecure }}

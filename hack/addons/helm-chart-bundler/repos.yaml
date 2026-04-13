@@ -42,10 +42,10 @@ repositories:
       docker-registry:
       - 2.3.5
   konnector-agent:
-    repoURL: https://nutanix-scratch.github.io/helm/
+    repoURL: https://mesosphere.github.io/charts/stable/
     charts:
       konnector-agent:
-      - 1.4.0-rc.1
+      - 1.4.0
   local-path-provisioner:
     repoURL: https://charts.containeroo.ch
     charts:
