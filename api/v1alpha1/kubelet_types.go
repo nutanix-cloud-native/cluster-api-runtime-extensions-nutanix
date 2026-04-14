@@ -35,6 +35,15 @@ const (
 	MemoryManagerPolicyStatic MemoryManagerPolicy = "Static"
 )
 
+// EnforceNodeAllocatableOption specifies a resource type for cgroup enforcement.
+type EnforceNodeAllocatableOption string
+
+const (
+	EnforceNodeAllocatablePods           EnforceNodeAllocatableOption = "pods"
+	EnforceNodeAllocatableSystemReserved EnforceNodeAllocatableOption = "system-reserved"
+	EnforceNodeAllocatableKubeReserved   EnforceNodeAllocatableOption = "kube-reserved"
+)
+
 // KubeletConfiguration defines configurable fields for the kubelet's KubeletConfiguration.
 // These fields are written as a strategic merge patch file applied during kubeadm init/join.
 // +kubebuilder:validation:XValidation:rule="!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent) || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent",message="imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent"
@@ -185,6 +194,18 @@ type KubeletConfiguration struct {
 	// Default kubelet value is false.
 	// +kubebuilder:validation:Optional
 	SeccompDefault *bool `json:"seccompDefault,omitempty"`
+
+	// EnforceNodeAllocatable specifies which resource types are enforced via
+	// cgroups. When "system-reserved" is included, the kubelet enforces
+	// systemReserved limits using the well-known systemd cgroup /system.slice.
+	// When "kube-reserved" is included, the kubelet enforces kubeReserved limits
+	// using /system.slice/kubelet.service. Default kubelet behaviour (when this
+	// field is not set) is to enforce only pods.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=3
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:items:Enum=pods;system-reserved;kube-reserved
+	EnforceNodeAllocatable []EnforceNodeAllocatableOption `json:"enforceNodeAllocatable,omitempty"`
 }
 
 // IsEmpty returns true if the KubeletConfiguration is nil or has no fields set.

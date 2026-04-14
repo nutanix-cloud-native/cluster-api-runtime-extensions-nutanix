@@ -594,6 +594,24 @@ spec:
                             - none
                             - static
                           type: string
+                        enforceNodeAllocatable:
+                          description: |-
+                            EnforceNodeAllocatable specifies which resource types are enforced via
+                            cgroups. When "system-reserved" is included, the kubelet enforces
+                            systemReserved limits using the well-known systemd cgroup /system.slice.
+                            When "kube-reserved" is included, the kubelet enforces kubeReserved limits
+                            using /system.slice/kubelet.service. Default kubelet behaviour (when this
+                            field is not set) is to enforce only pods.
+                          items:
+                            description: EnforceNodeAllocatableOption specifies a resource type for cgroup enforcement.
+                            enum:
+                              - pods
+                              - system-reserved
+                              - kube-reserved
+                            type: string
+                          maxItems: 3
+                          type: array
+                          uniqueItems: true
                         evictionHard:
                           additionalProperties:
                             type: string

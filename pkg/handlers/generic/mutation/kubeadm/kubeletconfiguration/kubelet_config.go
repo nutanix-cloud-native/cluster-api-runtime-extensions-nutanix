@@ -7,6 +7,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"slices"
 	"text/template"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -52,6 +53,9 @@ type kubeletConfigTemplateInput struct {
 	ShutdownGracePeriod             any
 	ShutdownGracePeriodCriticalPods any
 	SeccompDefault                  any
+	EnforceNodeAllocatable          []string
+	SystemReservedCgroup            string
+	KubeReservedCgroup              string
 }
 
 // toTemplateInput converts v1alpha1.KubeletConfiguration to template-friendly struct.
@@ -106,6 +110,21 @@ func toTemplateInput(cfg *v1alpha1.KubeletConfiguration) *kubeletConfigTemplateI
 		in.EvictionSoftGracePeriod = make(map[string]string, len(cfg.EvictionSoftGracePeriod))
 		for k, v := range cfg.EvictionSoftGracePeriod {
 			in.EvictionSoftGracePeriod[k] = v.Duration.String()
+		}
+	}
+
+	if len(cfg.EnforceNodeAllocatable) > 0 {
+		sorted := make([]string, len(cfg.EnforceNodeAllocatable))
+		for i, v := range cfg.EnforceNodeAllocatable {
+			sorted[i] = string(v)
+		}
+		slices.Sort(sorted)
+		in.EnforceNodeAllocatable = sorted
+		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableSystemReserved)) {
+			in.SystemReservedCgroup = "/system.slice"
+		}
+		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableKubeReserved)) {
+			in.KubeReservedCgroup = "/system.slice/kubelet.service"
 		}
 	}
 

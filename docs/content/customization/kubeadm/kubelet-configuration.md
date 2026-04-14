@@ -35,6 +35,7 @@ The following fields are supported under `kubeletConfiguration`:
 - `shutdownGracePeriod`
 - `shutdownGracePeriodCriticalPods`
 - `seccompDefault`
+- `enforceNodeAllocatable`
 
 ## Default seccomp profile
 
@@ -103,4 +104,42 @@ spec:
                 maxPods: 250
                 podPidsLimit: 4096
                 seccompDefault: true
+```
+
+## Enforce node allocatable
+
+The `enforceNodeAllocatable` field controls which resource reservations are enforced via
+cgroups. Accepted values are `pods`, `system-reserved`, and `kube-reserved`.
+
+When `system-reserved` is included, CAREN automatically configures the well-known systemd
+cgroup path `/system.slice` for enforcement. When `kube-reserved` is included, CAREN
+configures `/system.slice/kubelet.service`. You do not need to specify cgroup paths.
+
+This field is optional. When not set, the kubelet default behaviour (`pods` only) applies
+and no changes are made to existing clusters.
+
+### Example: enforce system and kube reservations
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          controlPlane:
+            kubeletConfiguration:
+              systemReserved:
+                cpu: "500m"
+                memory: "1Gi"
+              kubeReserved:
+                cpu: "200m"
+                memory: "512Mi"
+              enforceNodeAllocatable:
+                - pods
+                - system-reserved
+                - kube-reserved
 ```

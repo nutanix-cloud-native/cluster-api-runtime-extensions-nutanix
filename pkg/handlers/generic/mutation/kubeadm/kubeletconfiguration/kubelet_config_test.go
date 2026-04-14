@@ -225,6 +225,61 @@ func TestRenderKubeletConfigPatch_SeccompDefault(t *testing.T) {
 	})
 }
 
+func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_PodsOnly(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+			v1alpha1.EnforceNodeAllocatablePods,
+		},
+	})
+	assert.Equal(t, []string{"pods"}, kubeletCfg.EnforceNodeAllocatable)
+	assert.Empty(t, kubeletCfg.SystemReservedCgroup)
+	assert.Empty(t, kubeletCfg.KubeReservedCgroup)
+}
+
+func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_AllSorted(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+			v1alpha1.EnforceNodeAllocatableSystemReserved,
+			v1alpha1.EnforceNodeAllocatablePods,
+			v1alpha1.EnforceNodeAllocatableKubeReserved,
+		},
+	})
+	assert.Equal(t, []string{"kube-reserved", "pods", "system-reserved"}, kubeletCfg.EnforceNodeAllocatable)
+	assert.Equal(t, "/system.slice", kubeletCfg.SystemReservedCgroup)
+	assert.Equal(t, "/system.slice/kubelet.service", kubeletCfg.KubeReservedCgroup)
+}
+
+func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_SystemReservedCgroup(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+			v1alpha1.EnforceNodeAllocatableSystemReserved,
+		},
+	})
+	assert.Equal(t, []string{"system-reserved"}, kubeletCfg.EnforceNodeAllocatable)
+	assert.Equal(t, "/system.slice", kubeletCfg.SystemReservedCgroup)
+	assert.Empty(t, kubeletCfg.KubeReservedCgroup)
+}
+
+func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_KubeReservedCgroup(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+			v1alpha1.EnforceNodeAllocatableKubeReserved,
+		},
+	})
+	assert.Equal(t, []string{"kube-reserved"}, kubeletCfg.EnforceNodeAllocatable)
+	assert.Empty(t, kubeletCfg.SystemReservedCgroup)
+	assert.Equal(t, "/system.slice/kubelet.service", kubeletCfg.KubeReservedCgroup)
+}
+
+func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_Empty(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		MaxPods: ptr.To(int32(110)),
+	})
+	assert.Empty(t, kubeletCfg.EnforceNodeAllocatable)
+	assert.Empty(t, kubeletCfg.SystemReservedCgroup)
+	assert.Empty(t, kubeletCfg.KubeReservedCgroup)
+}
+
 func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
 	cfg := &v1alpha1.KubeletConfiguration{}
 	vars := map[string]apiextensionsv1.JSON{
