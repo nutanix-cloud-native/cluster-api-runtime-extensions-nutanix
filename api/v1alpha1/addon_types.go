@@ -422,7 +422,8 @@ type NutanixKonnectorAgent struct {
 	Credentials *NutanixKonnectorAgentCredentials `json:"credentials,omitempty"`
 
 	// EnableKubeconfigUpload controls whether the automatic kubeconfig upload feature is enabled.
-	// Enabling this field only configures the feature; the actual kubeconfig upload is conditional on the kubeconfig ConfigMap.
+	// Enabling this field only configures the feature; the actual kubeconfig upload is conditional on the
+	// kubeconfig ConfigMap.
 	// The control plane endpoint is derived from the Cluster object automatically.
 	// +kubebuilder:default=true
 	// +kubebuilder:validation:Optional
