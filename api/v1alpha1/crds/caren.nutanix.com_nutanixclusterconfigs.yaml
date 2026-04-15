@@ -278,6 +278,14 @@ spec:
                           required:
                             - secretRef
                           type: object
+                        enableKubeconfigUpload:
+                          default: true
+                          description: |-
+                            EnableKubeconfigUpload controls whether the automatic kubeconfig upload feature is enabled.
+                            Enabling this field only configures the feature; the actual kubeconfig upload is conditional on the
+                            kubeconfig ConfigMap.
+                            The control plane endpoint is derived from the Cluster object automatically.
+                          type: boolean
                       type: object
                     nfd:
                       description: NFD tells us to enable or disable the node feature discovery addon.

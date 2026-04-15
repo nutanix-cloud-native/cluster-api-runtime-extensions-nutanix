@@ -69,6 +69,7 @@ spec:
 |-------|------|----------|---------|-------------|
 | `strategy` | string | No | `HelmAddon` | Deployment strategy (`HelmAddon`) |
 | `credentials` | object | No | - | Prism Central credentials configuration |
+| `enableKubeconfigUpload` | bool | No | `true` | Enable the automatic kubeconfig upload feature. Enabling this field only configures the feature; the actual kubeconfig upload is conditional on the kubeconfig ConfigMap. The control plane endpoint is derived from the Cluster object. |
 
 ### NutanixKonnectorAgentCredentials
 
@@ -112,6 +113,7 @@ spec:
               credentials:
                 secretRef:
                   name: cluster-name-pc-credentials-for-konnector-agent
+              enableKubeconfigUpload: true
 ```
 
 ## Default Values
