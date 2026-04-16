@@ -8,9 +8,12 @@
 ## Problem
 
 CAREN exposes `systemReserved` and `kubeReserved` in the `KubeletConfiguration` API, but
-without `enforceNodeAllocatable` these reservations are advisory only. The kubelet does not
-create cgroups to enforce them, so a misbehaving system daemon or kubelet can still consume
-resources meant for pods. Users need the ability to enforce reservations via cgroups.
+without `enforceNodeAllocatable` these reservations only affect **scheduling**: the kubelet
+subtracts them from node capacity to calculate `Allocatable`, which the scheduler uses to
+decide how many pods fit on the node. However, nothing prevents system daemons or the
+kubelet itself from consuming more than the declared reservation at runtime. If a system
+process spikes beyond its reservation, it can starve pods of resources. Users need the
+ability to add **runtime enforcement** of reservations via cgroups.
 
 Enabling enforcement requires three kubelet settings:
 
