@@ -108,8 +108,15 @@ spec:
 
 ## Enforce node allocatable
 
-The `enforceNodeAllocatable` field controls which resource reservations are enforced via
-cgroups. Accepted values are `pods`, `system-reserved`, and `kube-reserved`.
+By default, `systemReserved` and `kubeReserved` only affect **scheduling**: the kubelet
+subtracts them from the node's capacity to calculate the `Allocatable` value that the
+scheduler sees. However, nothing prevents system daemons or the kubelet itself from
+consuming more than the declared reservation. If a system process spikes beyond its
+reservation, it can starve pods of resources.
+
+The `enforceNodeAllocatable` field adds **runtime enforcement** by creating cgroups that
+cap the reserved processes to their declared limits. Accepted values are `pods`,
+`system-reserved`, and `kube-reserved`.
 
 When `system-reserved` is included, CAREN automatically configures the well-known systemd
 cgroup path `/system.slice` for enforcement. When `kube-reserved` is included, CAREN
