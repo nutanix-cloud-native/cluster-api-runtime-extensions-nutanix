@@ -41,7 +41,7 @@ For full upstream documentation on each setting, see the
 | `shutdownGracePeriod` | duration (e.g. `"30s"`) | Total time the node delays shutdown for pod termination. |
 | `shutdownGracePeriodCriticalPods` | duration (e.g. `"10s"`) | Time reserved for terminating critical pods during shutdown. Must be ≤ `shutdownGracePeriod`. |
 | `seccompDefault` | boolean | Apply the runtime's default seccomp profile (`RuntimeDefault`) to pods that do not specify one. See [Default seccomp profile](#default-seccomp-profile). |
-| `enforceNodeAllocatable` | list of `pods`, `system-reserved`, `kube-reserved` | Which resource reservations are enforced via cgroups. See [Enforce node allocatable](#enforce-node-allocatable). |
+| `enforceNodeAllocatable` | list of `pods`, `system-reserved`, `kube-reserved`, `system-reserved-compressible`, `kube-reserved-compressible` | Which resource reservations are enforced via cgroups. See [Enforce node allocatable](#enforce-node-allocatable). |
 
 ## Default seccomp profile
 
