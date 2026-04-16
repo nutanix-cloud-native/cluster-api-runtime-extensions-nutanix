@@ -120,10 +120,12 @@ func toTemplateInput(cfg *v1alpha1.KubeletConfiguration) *kubeletConfigTemplateI
 		}
 		slices.Sort(sorted)
 		in.EnforceNodeAllocatable = sorted
-		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableSystemReserved)) {
+		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableSystemReserved)) ||
+			slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableSystemReservedCompressible)) {
 			in.SystemReservedCgroup = "/system.slice"
 		}
-		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableKubeReserved)) {
+		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableKubeReserved)) ||
+			slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableKubeReservedCompressible)) {
 			in.KubeReservedCgroup = "/system.slice/kubelet.service"
 		}
 	}

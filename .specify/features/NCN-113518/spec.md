@@ -43,9 +43,11 @@ knowledge is required from the user.
 type EnforceNodeAllocatableOption string
 
 const (
-    EnforceNodeAllocatablePods           EnforceNodeAllocatableOption = "pods"
-    EnforceNodeAllocatableSystemReserved EnforceNodeAllocatableOption = "system-reserved"
-    EnforceNodeAllocatableKubeReserved   EnforceNodeAllocatableOption = "kube-reserved"
+    EnforceNodeAllocatablePods                       EnforceNodeAllocatableOption = "pods"
+    EnforceNodeAllocatableSystemReserved             EnforceNodeAllocatableOption = "system-reserved"
+    EnforceNodeAllocatableKubeReserved               EnforceNodeAllocatableOption = "kube-reserved"
+    EnforceNodeAllocatableSystemReservedCompressible EnforceNodeAllocatableOption = "system-reserved-compressible"
+    EnforceNodeAllocatableKubeReservedCompressible   EnforceNodeAllocatableOption = "kube-reserved-compressible"
 )
 ```
 
@@ -61,7 +63,7 @@ const (
 // +kubebuilder:validation:Optional
 // +kubebuilder:validation:MaxItems=3
 // +kubebuilder:validation:UniqueItems=true
-// +kubebuilder:validation:items:Enum=pods;system-reserved;kube-reserved
+// +kubebuilder:validation:items:Enum=pods;system-reserved;kube-reserved;system-reserved-compressible;kube-reserved-compressible
 EnforceNodeAllocatable []EnforceNodeAllocatableOption `json:"enforceNodeAllocatable,omitempty"`
 ```
 
@@ -75,10 +77,27 @@ EnforceNodeAllocatable []EnforceNodeAllocatableOption `json:"enforceNodeAllocata
 | `["pods", "system-reserved"]`                  | `enforceNodeAllocatable: [...]` + `systemReservedCgroup: /system.slice`               |
 | `["pods", "kube-reserved"]`                    | `enforceNodeAllocatable: [...]` + `kubeReservedCgroup: /system.slice/kubelet.service` |
 | `["pods", "system-reserved", "kube-reserved"]` | All three fields                                                                      |
+| `["pods", "system-reserved-compressible"]`     | `enforceNodeAllocatable: [...]` + `systemReservedCgroup: /system.slice`               |
+| `["pods", "kube-reserved-compressible"]`       | `enforceNodeAllocatable: [...]` + `kubeReservedCgroup: /system.slice/kubelet.service` |
 
 
 Values in the rendered `enforceNodeAllocatable` list are sorted alphabetically for
 idempotent output.
+
+## Compressible variants (Kubernetes v1.32+)
+
+The `-compressible` variants (`system-reserved-compressible`, `kube-reserved-compressible`)
+enforce only compressible resources (CPU) via cgroups. This is the recommended starting
+point for enabling enforcement because CPU is throttlable, whereas memory enforcement
+requires OOM-killing.
+
+## Mutual exclusivity (CEL validation)
+
+`system-reserved` and `system-reserved-compressible` are mutually exclusive, as are
+`kube-reserved` and `kube-reserved-compressible`. This is enforced at the API level via CEL
+validation rules on the `KubeletConfiguration` struct, matching upstream kubelet validation.
+MaxItems remains 3 because mutual exclusivity prevents more than one system variant and one
+kube variant from coexisting.
 
 ## Scope
 

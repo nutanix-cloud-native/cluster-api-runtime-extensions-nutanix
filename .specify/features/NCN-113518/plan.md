@@ -7,7 +7,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add an opt-in `enforceNodeAllocatable` field to the CAREN `KubeletConfiguration` API that auto-injects well-known systemd cgroup paths.
+**Goal:** Add an opt-in `enforceNodeAllocatable` field to the CAREN `KubeletConfiguration` API that auto-injects well-known systemd cgroup paths, with support for compressible-only variants and CEL mutual exclusivity validation.
 
 **Architecture:** New enum type + field on `KubeletConfiguration` struct, extended template rendering with sorted output and conditional cgroup path injection, extended unit tests and docs.
 
@@ -46,9 +46,11 @@ Add after the `MemoryManagerPolicy` constants block in `api/v1alpha1/kubelet_typ
 type EnforceNodeAllocatableOption string
 
 const (
-	EnforceNodeAllocatablePods           EnforceNodeAllocatableOption = "pods"
-	EnforceNodeAllocatableSystemReserved EnforceNodeAllocatableOption = "system-reserved"
-	EnforceNodeAllocatableKubeReserved   EnforceNodeAllocatableOption = "kube-reserved"
+	EnforceNodeAllocatablePods                       EnforceNodeAllocatableOption = "pods"
+	EnforceNodeAllocatableSystemReserved             EnforceNodeAllocatableOption = "system-reserved"
+	EnforceNodeAllocatableKubeReserved               EnforceNodeAllocatableOption = "kube-reserved"
+	EnforceNodeAllocatableSystemReservedCompressible EnforceNodeAllocatableOption = "system-reserved-compressible"
+	EnforceNodeAllocatableKubeReservedCompressible   EnforceNodeAllocatableOption = "kube-reserved-compressible"
 )
 ```
 
@@ -64,8 +66,12 @@ Add the following field to the `KubeletConfiguration` struct, after `ShutdownGra
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems=3
 	// +kubebuilder:validation:UniqueItems=true
-	// +kubebuilder:validation:items:Enum=pods;system-reserved;kube-reserved
+	// +kubebuilder:validation:items:Enum=pods;system-reserved;kube-reserved;system-reserved-compressible;kube-reserved-compressible
 	EnforceNodeAllocatable []EnforceNodeAllocatableOption `json:"enforceNodeAllocatable,omitempty"`
+
+Two CEL rules on `KubeletConfiguration` struct enforce mutual exclusivity:
+- `system-reserved` and `system-reserved-compressible` cannot both appear
+- `kube-reserved` and `kube-reserved-compressible` cannot both appear
 ```
 
 - **Step 2: Run code generation**

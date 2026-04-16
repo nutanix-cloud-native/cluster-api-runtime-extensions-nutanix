@@ -271,6 +271,44 @@ func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_KubeReservedCgroup(t *t
 	assert.Equal(t, "/system.slice/kubelet.service", kubeletCfg.KubeReservedCgroup)
 }
 
+func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_SystemReservedCompressible(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+			v1alpha1.EnforceNodeAllocatableSystemReservedCompressible,
+		},
+	})
+	assert.Equal(t, []string{"system-reserved-compressible"}, kubeletCfg.EnforceNodeAllocatable)
+	assert.Equal(t, "/system.slice", kubeletCfg.SystemReservedCgroup)
+	assert.Empty(t, kubeletCfg.KubeReservedCgroup)
+}
+
+func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_KubeReservedCompressible(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+			v1alpha1.EnforceNodeAllocatableKubeReservedCompressible,
+		},
+	})
+	assert.Equal(t, []string{"kube-reserved-compressible"}, kubeletCfg.EnforceNodeAllocatable)
+	assert.Empty(t, kubeletCfg.SystemReservedCgroup)
+	assert.Equal(t, "/system.slice/kubelet.service", kubeletCfg.KubeReservedCgroup)
+}
+
+func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_CompressibleMix(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+			v1alpha1.EnforceNodeAllocatablePods,
+			v1alpha1.EnforceNodeAllocatableSystemReservedCompressible,
+			v1alpha1.EnforceNodeAllocatableKubeReserved,
+		},
+	})
+	assert.Equal(t,
+		[]string{"kube-reserved", "pods", "system-reserved-compressible"},
+		kubeletCfg.EnforceNodeAllocatable,
+	)
+	assert.Equal(t, "/system.slice", kubeletCfg.SystemReservedCgroup)
+	assert.Equal(t, "/system.slice/kubelet.service", kubeletCfg.KubeReservedCgroup)
+}
+
 func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_Empty(t *testing.T) {
 	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
 		MaxPods: ptr.To(int32(110)),
