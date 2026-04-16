@@ -67,11 +67,9 @@ Add the following field to the `KubeletConfiguration` struct, after `ShutdownGra
 	// +kubebuilder:validation:MaxItems=3
 	// +kubebuilder:validation:UniqueItems=true
 	// +kubebuilder:validation:items:Enum=pods;system-reserved;kube-reserved;system-reserved-compressible;kube-reserved-compressible
+	// +kubebuilder:validation:XValidation:rule="!('system-reserved' in self && 'system-reserved-compressible' in self)",message="system-reserved and system-reserved-compressible are mutually exclusive"
+	// +kubebuilder:validation:XValidation:rule="!('kube-reserved' in self && 'kube-reserved-compressible' in self)",message="kube-reserved and kube-reserved-compressible are mutually exclusive"
 	EnforceNodeAllocatable []EnforceNodeAllocatableOption `json:"enforceNodeAllocatable,omitempty"`
-
-Two CEL rules on `KubeletConfiguration` struct enforce mutual exclusivity:
-- `system-reserved` and `system-reserved-compressible` cannot both appear
-- `kube-reserved` and `kube-reserved-compressible` cannot both appear
 ```
 
 - **Step 2: Run code generation**
@@ -127,10 +125,12 @@ Add the following to `toTemplateInput` before the `return in` statement:
 		}
 		slices.Sort(sorted)
 		in.EnforceNodeAllocatable = sorted
-		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableSystemReserved)) {
+		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableSystemReserved)) ||
+			slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableSystemReservedCompressible)) {
 			in.SystemReservedCgroup = "/system.slice"
 		}
-		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableKubeReserved)) {
+		if slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableKubeReserved)) ||
+			slices.Contains(sorted, string(v1alpha1.EnforceNodeAllocatableKubeReservedCompressible)) {
 			in.KubeReservedCgroup = "/system.slice/kubelet.service"
 		}
 	}
@@ -364,46 +364,9 @@ Add `enforceNodeAllocatable` to the existing bullet list of supported options.
 
 Add a new section after the existing examples:
 
-```markdown
-## Enforce node allocatable
-
-The `enforceNodeAllocatable` field controls which resource reservations are enforced via
-cgroups. Accepted values are `pods`, `system-reserved`, and `kube-reserved`.
-
-When `system-reserved` is included, CAREN automatically configures the well-known systemd
-cgroup path `/system.slice` for enforcement. When `kube-reserved` is included, CAREN
-configures `/system.slice/kubelet.service`. You do not need to specify cgroup paths.
-
-This field is optional. When not set, the kubelet default behaviour (`pods` only) applies
-and no changes are made to existing clusters.
-
-### Example: enforce system and kube reservations
-
-```yaml
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: Cluster
-metadata:
-  name: <NAME>
-spec:
-  topology:
-    variables:
-      - name: clusterConfig
-        value:
-          controlPlane:
-            kubeletConfiguration:
-              systemReserved:
-                cpu: "500m"
-                memory: "1Gi"
-              kubeReserved:
-                cpu: "200m"
-                memory: "512Mi"
-              enforceNodeAllocatable:
-                - pods
-                - system-reserved
-                - kube-reserved
-```
-
-```
+Update the "Enforce node allocatable" section to document all five accepted values,
+the compressible-only recommendation, mutual exclusivity constraints, and add examples
+for both compressible-only and full enforcement.
 
 - [ ] **Step 2: Commit**
 

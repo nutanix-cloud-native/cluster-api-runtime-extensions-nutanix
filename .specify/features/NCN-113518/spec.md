@@ -54,16 +54,24 @@ const (
 ### New field on `KubeletConfiguration`
 
 ```go
-// EnforceNodeAllocatable specifies which resource types are enforced via cgroups.
-// When "system-reserved" is included, the kubelet enforces systemReserved limits
-// using the well-known systemd cgroup /system.slice. When "kube-reserved" is
-// included, the kubelet enforces kubeReserved limits using
-// /system.slice/kubelet.service. Default kubelet behaviour (when this field is
-// not set) is to enforce only pods.
+// EnforceNodeAllocatable specifies which resource types are enforced via
+// cgroups. When "system-reserved" or "system-reserved-compressible" is
+// included, the kubelet enforces systemReserved limits using the well-known
+// systemd cgroup /system.slice. When "kube-reserved" or
+// "kube-reserved-compressible" is included, the kubelet enforces
+// kubeReserved limits using /system.slice/kubelet.service.
+// The "-compressible" variants enforce only compressible resources (CPU),
+// which is the recommended starting point. "system-reserved" and
+// "system-reserved-compressible" are mutually exclusive, as are
+// "kube-reserved" and "kube-reserved-compressible".
+// Default kubelet behaviour (when this field is not set) is to enforce
+// only pods.
 // +kubebuilder:validation:Optional
 // +kubebuilder:validation:MaxItems=3
 // +kubebuilder:validation:UniqueItems=true
 // +kubebuilder:validation:items:Enum=pods;system-reserved;kube-reserved;system-reserved-compressible;kube-reserved-compressible
+// +kubebuilder:validation:XValidation:rule="!('system-reserved' in self && 'system-reserved-compressible' in self)",message="system-reserved and system-reserved-compressible are mutually exclusive"
+// +kubebuilder:validation:XValidation:rule="!('kube-reserved' in self && 'kube-reserved-compressible' in self)",message="kube-reserved and kube-reserved-compressible are mutually exclusive"
 EnforceNodeAllocatable []EnforceNodeAllocatableOption `json:"enforceNodeAllocatable,omitempty"`
 ```
 
@@ -95,7 +103,7 @@ requires OOM-killing.
 
 `system-reserved` and `system-reserved-compressible` are mutually exclusive, as are
 `kube-reserved` and `kube-reserved-compressible`. This is enforced at the API level via CEL
-validation rules on the `KubeletConfiguration` struct, matching upstream kubelet validation.
+validation rules on the `enforceNodeAllocatable` field, matching upstream kubelet validation.
 MaxItems remains 3 because mutual exclusivity prevents more than one system variant and one
 kube variant from coexisting.
 
