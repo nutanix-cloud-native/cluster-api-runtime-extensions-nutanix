@@ -43,10 +43,11 @@ import (
 )
 
 const (
-	defaultHelmReleaseName       = "konnector-agent"
-	defaultHelmReleaseNamespace  = "ntnx-system"
-	defaultK8sAgentName          = "konnector-agent"
-	defaultCredentialsSecretName = defaultK8sAgentName
+	defaultHelmReleaseName          = "konnector-agent"
+	defaultHelmReleaseNamespace     = "ntnx-system"
+	defaultK8sAgentName             = "konnector-agent"
+	defaultCredentialsSecretName    = defaultK8sAgentName
+	defaultTrustBundleConfigMapName = "ntnx-additional-trust-bundle-konnector-agent"
 
 	cleanupStatusCompleted  = "completed"
 	cleanupStatusInProgress = "in-progress"
@@ -306,15 +307,18 @@ func templateValuesFunc(
 		}
 
 		type input struct {
-			AgentName                  string
-			PrismCentralHost           string
-			PrismCentralPort           uint16
-			PrismCentralInsecure       bool
-			ClusterName                string
-			CategoryMappings           string
-			PrismCredentialsSecretName string
-			EnableKubeconfigUpload     bool
-			ControlPlaneEndpoint       string
+			AgentName                            string
+			PrismCentralHost                     string
+			PrismCentralPort                     uint16
+			PrismCentralInsecure                 bool
+			PrismCentralAdditionalTrustBundle    string
+			CreateAdditionalTrustBundleConfigMap bool
+			AdditionalTrustBundleConfigMapName   string
+			ClusterName                          string
+			CategoryMappings                     string
+			PrismCredentialsSecretName           string
+			EnableKubeconfigUpload               bool
+			ControlPlaneEndpoint                 string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -346,18 +350,32 @@ func templateValuesFunc(
 			controlPlaneEndpoint = fmt.Sprintf("https://%s:%d", cpHost, cpPort)
 		}
 
+		prismCentralInsecure := nutanixConfig.PrismCentralEndpoint.Insecure
+
+		// Handle additional trust bundle for Prism Central.
+		var additionalTrustBundle string
+		createTrustBundleConfigMap := false
+		trustBundleConfigMapName := ""
+
+		if !prismCentralInsecure && nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle != "" {
+			additionalTrustBundle = nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle
+			createTrustBundleConfigMap = true
+			trustBundleConfigMapName = defaultTrustBundleConfigMapName
+		}
+
 		templateInput := input{
-			AgentName:        defaultK8sAgentName,
-			PrismCentralHost: address,
-			PrismCentralPort: port,
-			// TODO: remove this once we have a way to set this.
-			// need to add support to accept PC's trust bundle in agent(it's not implemented currently)
-			PrismCentralInsecure:       true,
-			ClusterName:                clusterName,
-			CategoryMappings:           categoryMappings,
-			PrismCredentialsSecretName: defaultCredentialsSecretName,
-			EnableKubeconfigUpload:     enableKubeconfigUpload,
-			ControlPlaneEndpoint:       controlPlaneEndpoint,
+			AgentName:                            defaultK8sAgentName,
+			PrismCentralHost:                     address,
+			PrismCentralPort:                     port,
+			PrismCentralInsecure:                 prismCentralInsecure,
+			PrismCentralAdditionalTrustBundle:    additionalTrustBundle,
+			CreateAdditionalTrustBundleConfigMap: createTrustBundleConfigMap,
+			AdditionalTrustBundleConfigMapName:   trustBundleConfigMapName,
+			ClusterName:                          clusterName,
+			CategoryMappings:                     categoryMappings,
+			PrismCredentialsSecretName:           defaultCredentialsSecretName,
+			EnableKubeconfigUpload:               enableKubeconfigUpload,
+			ControlPlaneEndpoint:                 controlPlaneEndpoint,
 		}
 
 		var b bytes.Buffer
