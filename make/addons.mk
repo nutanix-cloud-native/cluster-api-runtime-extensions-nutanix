@@ -142,7 +142,7 @@ export COSI_CONTROLLER_VERSION := 0.2.2
 #   Chart version: 1.3.0
 #   App version:   v1.3.0
 #   Repo:          https://github.com/nutanix-core/k8s-agent
-#   Release:       https://github.com/nutanix-core/k8s-agent/releases/tag/1.3.0
+#   Release:       https://github.com/nutanix-core/k8s-agent/releases/tag/1.4.0
 export KONNECTOR_AGENT_VERSION := 1.4.0
 
 # Multus
