@@ -57,6 +57,86 @@ func Test_templateValues(t *testing.T) {
 	}
 }
 
+func Test_templateValues_ServiceLoadBalancerCiliumFlag(t *testing.T) {
+	tmpl := `{{- if .ServiceLoadBalancerProviderIsCilium }}
+l2announcements:
+  enabled: true
+{{- else }}
+l2announcements:
+  enabled: false
+{{- end }}
+`
+
+	tests := []struct {
+		name     string
+		slb      *carenv1.ServiceLoadBalancer
+		expected string
+	}{
+		{
+			name:     "no serviceLoadBalancer renders l2announcements disabled",
+			slb:      nil,
+			expected: "\nl2announcements:\n  enabled: false\n",
+		},
+		{
+			name:     "provider MetalLB renders l2announcements disabled",
+			slb:      &carenv1.ServiceLoadBalancer{Provider: carenv1.ServiceLoadBalancerProviderMetalLB},
+			expected: "\nl2announcements:\n  enabled: false\n",
+		},
+		{
+			name:     "provider Cilium renders l2announcements enabled",
+			slb:      &carenv1.ServiceLoadBalancer{Provider: carenv1.ServiceLoadBalancerProviderCilium},
+			expected: "\nl2announcements:\n  enabled: true\n",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cluster := createTestClusterWithSLB(t, "c", "ns", "nutanix", "10.0.0.1", 6443, tc.slb)
+			got, err := templateValues(cluster, tmpl)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, got)
+		})
+	}
+}
+
+// createTestClusterWithSLB extends createTestCluster to set a
+// ServiceLoadBalancer in the cluster config variable.
+func createTestClusterWithSLB(
+	t *testing.T,
+	name, namespace, provider, host string,
+	port int32,
+	slb *carenv1.ServiceLoadBalancer,
+) *clusterv1beta2.Cluster {
+	t.Helper()
+
+	clusterConfigSpec := &apivariables.ClusterConfigSpec{
+		KubeProxy: &carenv1.KubeProxy{Mode: carenv1.KubeProxyModeDisabled},
+		Addons: &apivariables.Addons{
+			GenericAddons: carenv1.GenericAddons{ServiceLoadBalancer: slb},
+		},
+	}
+
+	variable, err := apivariables.MarshalToClusterVariable(
+		carenv1.ClusterConfigVariableName,
+		clusterConfigSpec,
+	)
+	require.NoError(t, err)
+
+	topology := &clusterv1beta2.Topology{
+		ClassRef:  clusterv1beta2.ClusterClassRef{Name: "test-cluster-class"},
+		Version:   "v1.29.0",
+		Variables: []clusterv1beta2.ClusterVariable{*variable},
+	}
+
+	cluster := builder.Cluster(namespace, name).
+		WithLabels(map[string]string{clusterv1beta2.ProviderNameLabel: provider}).
+		WithTopology(topology).
+		Build()
+	cluster.Spec.ControlPlaneEndpoint = clusterv1beta2.APIEndpoint{Host: host, Port: port}
+
+	return cluster
+}
+
 func Test_templateValues_TrimPrefixFunction(t *testing.T) {
 	tests := []struct {
 		name           string

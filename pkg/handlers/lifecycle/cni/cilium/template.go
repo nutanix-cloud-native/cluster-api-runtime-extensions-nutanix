@@ -11,6 +11,7 @@ import (
 
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
@@ -21,6 +22,14 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		return "", fmt.Errorf("failed to check if kube-proxy is disabled: %w", err)
 	}
 
+	spec, err := apivariables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
+	if err != nil {
+		return "", fmt.Errorf("failed to unmarshal cluster config: %w", err)
+	}
+	slbIsCilium := spec != nil && spec.Addons != nil &&
+		spec.Addons.ServiceLoadBalancer != nil &&
+		spec.Addons.ServiceLoadBalancer.Provider == carenv1.ServiceLoadBalancerProviderCilium
+
 	funcMap := template.FuncMap{
 		"trimPrefix": strings.TrimPrefix,
 	}
@@ -30,16 +39,18 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	type input struct {
-		Provider                   string
-		ControlPlaneEndpoint       clusterv1.APIEndpoint
-		EnableKubeProxyReplacement bool
+		Provider                            string
+		ControlPlaneEndpoint                clusterv1.APIEndpoint
+		EnableKubeProxyReplacement          bool
+		ServiceLoadBalancerProviderIsCilium bool
 	}
 
 	// Assume when kube-proxy is disabled, we should enable Cilium's kube-proxy replacement feature.
 	templateInput := input{
-		EnableKubeProxyReplacement: kubeProxyIsDisabled,
-		Provider:                   capiutils.GetProvider(cluster),
-		ControlPlaneEndpoint:       cluster.Spec.ControlPlaneEndpoint,
+		EnableKubeProxyReplacement:          kubeProxyIsDisabled,
+		Provider:                            capiutils.GetProvider(cluster),
+		ControlPlaneEndpoint:                cluster.Spec.ControlPlaneEndpoint,
+		ServiceLoadBalancerProviderIsCilium: slbIsCilium,
 	}
 
 	var b bytes.Buffer
