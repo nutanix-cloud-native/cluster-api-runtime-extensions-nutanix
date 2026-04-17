@@ -27,7 +27,8 @@ Export the required variables and any optional variables that you may want to se
 export CONTROL_PLANE_ENDPOINT_IP=<value> \
        DOCKER_HUB_PASSWORD=<value> \
        DOCKER_HUB_USERNAME=<value> \
-       KUBERNETES_SERVICE_LOAD_BALANCER_IP=<value> \
+       SERVICE_LOAD_BALANCER_IP_START=<value> \
+       SERVICE_LOAD_BALANCER_IP_END=<value> \
        NUTANIX_ENDPOINT=<value> \
        NUTANIX_INSECURE=<value> \
        NUTANIX_MACHINE_TEMPLATE_BASE_OS=<value> \
@@ -40,8 +41,9 @@ export CONTROL_PLANE_ENDPOINT_IP=<value> \
        NUTANIX_USER=<value>
 ```
 
-`KUBERNETES_SERVICE_LOAD_BALANCER_IP` is the IP to assign to the built-in Cilium ServiceLoadBalancer
-address range. Reserve this IP from your Prism Element subnet before applying the cluster.
+`SERVICE_LOAD_BALANCER_IP_START` and `SERVICE_LOAD_BALANCER_IP_END` define the IP range assigned to the
+ServiceLoadBalancer provider. Reserve these addresses from your Prism Element subnet before applying the
+cluster. To allocate a single IP, set both variables to the same value.
 
 And create your cluster:
 

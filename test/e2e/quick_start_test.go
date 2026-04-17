@@ -203,18 +203,19 @@ var _ = Describe("Quick start", func() {
 												By(
 													"Reserving an IP address for the workload cluster kubernetes Service load balancer",
 												)
-												kubernetesServiceLoadBalancerIP, unreservekubernetesServiceLoadBalancerIP, err := nutanix.ReserveIP(
+												serviceLoadBalancerIP, unreserveServiceLoadBalancerIP, err := nutanix.ReserveIP(
 													context.Background(),
 													subnetName,
 													prismElementClusterName,
 													nutanixClient,
 												)
 												Expect(err).ToNot(HaveOccurred())
-												DeferCleanup(unreservekubernetesServiceLoadBalancerIP)
-												testE2EConfig.Variables["KUBERNETES_SERVICE_LOAD_BALANCER_IP"] = kubernetesServiceLoadBalancerIP
+												DeferCleanup(unreserveServiceLoadBalancerIP)
+												testE2EConfig.Variables["SERVICE_LOAD_BALANCER_IP_START"] = serviceLoadBalancerIP
+												testE2EConfig.Variables["SERVICE_LOAD_BALANCER_IP_END"] = serviceLoadBalancerIP
 												Logf(
 													"Reserved service load balancer IP: %s",
-													kubernetesServiceLoadBalancerIP,
+													serviceLoadBalancerIP,
 												)
 											}
 

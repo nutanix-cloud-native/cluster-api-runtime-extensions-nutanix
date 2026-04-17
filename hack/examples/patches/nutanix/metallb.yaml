@@ -7,5 +7,5 @@
     provider: MetalLB
     configuration:
       addressRanges:
-        - start: ${KUBERNETES_SERVICE_LOAD_BALANCER_IP}
-          end: ${KUBERNETES_SERVICE_LOAD_BALANCER_IP}
+        - start: ${SERVICE_LOAD_BALANCER_IP_START}
+          end: ${SERVICE_LOAD_BALANCER_IP_END}

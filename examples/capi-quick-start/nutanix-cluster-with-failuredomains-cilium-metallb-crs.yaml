@@ -146,8 +146,8 @@ spec:
           serviceLoadBalancer:
             configuration:
               addressRanges:
-              - end: ${KUBERNETES_SERVICE_LOAD_BALANCER_IP}
-                start: ${KUBERNETES_SERVICE_LOAD_BALANCER_IP}
+              - end: ${SERVICE_LOAD_BALANCER_IP_END}
+                start: ${SERVICE_LOAD_BALANCER_IP_START}
             provider: MetalLB
         controlPlane:
           nutanix:
