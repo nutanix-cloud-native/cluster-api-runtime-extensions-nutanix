@@ -131,18 +131,32 @@ checkpoint.
 
 ---
 
-## Task 1: Vendor Cilium API types (module + sync)
+## Task 1: Vendor Cilium API types (module + custom sync)
 
-**Why**: CAREN avoids importing the full Cilium Go module (dependency
-conflicts). We follow the existing `hack/third-party/metallb/` pattern to
-`rsync` only the API type files we need into `api/external/`. This task sets
-up the module skeleton and Makefile hook; Task 2 actually runs the sync.
+**Context revision (2026-04-17)**: The original plan assumed Cilium's API
+types could be synced the same way as MetalLB's (two or three lean files per
+version package). In practice Cilium's `pkg/k8s/apis/cilium.io/v2` is a
+kitchen-sink package containing every CRD (BGP, CNP, CCNP, CEP, CLRP,
+Envoy, LB IPPool, ...), and transitively imports ~30 Cilium-internal
+packages (`pkg/policy/api`, `pkg/loadbalancer`, `pkg/labels`,
+`pkg/comparator`, `pkg/iana`, `slim/k8s/...`, etc.). Syncing the whole
+package is infeasible; syncing just one file leaves the package unbuildable.
+
+**Hybrid strategy**: sync **only the specific type files we need**
+(`lbipam_types.go` from `v2`, `l2announcement_types.go` from `v2alpha1`),
+rewrite the one external import (`slimv1` → `metav1` — both provide
+structurally identical `LabelSelector`), hand-author trimmed `register.go`
+files, and regenerate `zz_generated.deepcopy.go` via `controller-gen`.
+
+This task sets up the module skeleton and a custom `api.sync.cilium`
+Makefile target that performs file-level sync with slim→apimachinery import
+rewriting.
 
 **Files**:
 
 - Create: `hack/third-party/cilium/go.mod`
 - Create: `hack/third-party/cilium/provider.go`
-- Modify: `make/apis.mk` — add `cilium` to `PROVIDER_MODULE_*`, `PROVIDER_API_PATHS_*`, and `apis.sync` target list.
+- Modify: `make/apis.mk` — add Cilium-specific sync target.
 
 - [ ] **Step 1: Create `hack/third-party/cilium/go.mod`**
 
@@ -161,17 +175,15 @@ require github.com/cilium/cilium v1.19.2
 
 - [ ] **Step 2: Create `hack/third-party/cilium/provider.go`**
 
-This is a placeholder file that references the module so `go mod tidy`
-resolves the transitive dependencies. Match `hack/third-party/metallb/provider.go`.
+Match `hack/third-party/metallb/provider.go` (`package main` + blank imports).
 
 ```go
 // Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package cilium
+package main
 
 import (
-	// Referenced to keep go mod tidy from pruning the module.
 	_ "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	_ "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2alpha1"
 )
@@ -179,15 +191,18 @@ import (
 
 - [ ] **Step 3: Patch `make/apis.mk`**
 
-Append two variable lines next to the existing `metallb` entries and add
-`cilium` to the sync list. Apply:
+Do **not** use the generic `api.sync.%` recipe (it would try to sync the
+whole package). Instead, define a bespoke `api.sync.cilium` target with
+file-level `rsync --include`/`--exclude` and post-sync sed to rewrite the
+slim import to apimachinery. Apply:
 
 ```diff
  PROVIDER_MODULE_metallb := go.universe.tf/metallb
  PROVIDER_API_PATHS_metallb := api/v1beta1 api/v1beta2
 
++# Cilium types live in a kitchen-sink package; we sync only the type files
++# we need and rewrite the one internal slim import to apimachinery.
 +PROVIDER_MODULE_cilium := github.com/cilium/cilium
-+PROVIDER_API_PATHS_cilium := pkg/k8s/apis/cilium.io/v2 pkg/k8s/apis/cilium.io/v2alpha1
 +
  # Add third-party CAPI provider types above
 
@@ -196,6 +211,44 @@ Append two variable lines next to the existing `metallb` entries and add
 -apis.sync: $(addprefix api.sync.,capa caaph capx metallb) mod-tidy.api go-fix.api
 +apis.sync: $(addprefix api.sync.,capa caaph capx metallb cilium) mod-tidy.api go-fix.api
 ```
+
+And append a new target after the existing `api.sync.%` block:
+
+```makefile
+.PHONY: api.sync.cilium
+api.sync.cilium: ## Syncs selected Cilium API type files only
+api.sync.cilium: PROVIDER_MODULE_DIR=$(REPO_ROOT)/hack/third-party/cilium
+api.sync.cilium:
+	cd $(PROVIDER_MODULE_DIR) && go mod tidy
+	$(eval CILIUM_SRC := $(shell cd $(PROVIDER_MODULE_DIR) && GOWORK=off go list -m -f '{{ .Dir }}' $(PROVIDER_MODULE_cilium)))
+	# Sync only the Load Balancer IP pool type file from v2.
+	@mkdir -p api/external/$(PROVIDER_MODULE_cilium)/pkg/k8s/apis/cilium.io/v2/
+	rsync --times --verbose \
+	  $(CILIUM_SRC)/pkg/k8s/apis/cilium.io/v2/lbipam_types.go \
+	  api/external/$(PROVIDER_MODULE_cilium)/pkg/k8s/apis/cilium.io/v2/
+	# Sync only the L2 announcement policy type file from v2alpha1.
+	@mkdir -p api/external/$(PROVIDER_MODULE_cilium)/pkg/k8s/apis/cilium.io/v2alpha1/
+	rsync --times --verbose \
+	  $(CILIUM_SRC)/pkg/k8s/apis/cilium.io/v2alpha1/l2announcement_types.go \
+	  api/external/$(PROVIDER_MODULE_cilium)/pkg/k8s/apis/cilium.io/v2alpha1/
+	# Fix permissions.
+	find api/external/$(PROVIDER_MODULE_cilium) -type d -exec chmod 0755 {} \;
+	find api/external/$(PROVIDER_MODULE_cilium) -type f -exec chmod 0644 {} \;
+	# Rewrite the one internal slim import to apimachinery's meta/v1.
+	# slimv1.LabelSelector is wire-compatible with metav1.LabelSelector;
+	# upstream's own zz_generated.deepcopy.go already assumes this.
+	sed -i '' -e '/slimv1 "github.com\/cilium\/cilium\/pkg\/k8s\/slim\/k8s\/apis\/meta\/v1"/d' \
+	  api/external/$(PROVIDER_MODULE_cilium)/pkg/k8s/apis/cilium.io/v2/lbipam_types.go \
+	  api/external/$(PROVIDER_MODULE_cilium)/pkg/k8s/apis/cilium.io/v2alpha1/l2announcement_types.go
+	sed -i '' -e 's|slimv1\.LabelSelector|metav1.LabelSelector|g' \
+	  api/external/$(PROVIDER_MODULE_cilium)/pkg/k8s/apis/cilium.io/v2/lbipam_types.go \
+	  api/external/$(PROVIDER_MODULE_cilium)/pkg/k8s/apis/cilium.io/v2alpha1/l2announcement_types.go
+```
+
+> **Note**: `sed -i ''` is BSD-sed (macOS). The project's pre-commit hooks
+> run on Linux runners too; if GNU sed is detected, the same command
+> without the empty-string argument works. Keep BSD syntax here (matches
+> macOS dev environment).
 
 - [ ] **Step 4: Commit**
 
@@ -206,47 +259,174 @@ git commit -m "build: [NCN-110043] vendor Cilium API module skeleton"
 
 ---
 
-## Task 2: Run `make apis.sync` and commit the generated Cilium types
+## Task 2: Sync Cilium types, hand-author register.go, generate deepcopy
 
-**Why**: Task 1 set up the plumbing; this task runs the sync so the actual
-Go type files land under `api/external/`.
+**Why**: Task 1 set up the plumbing; this task does three things:
+
+1. Runs `make api.sync.cilium` to drop in the two upstream type files.
+2. Hand-authors the minimal `doc.go`/`register.go` files so the package
+   compiles and registers only the 2 types we actually use.
+3. Adds a `group=cilium.io` `IPv4orIPv6CIDR` type alias (upstream puts it
+   in `types.go` which we don't sync).
+4. Runs `controller-gen object` to regenerate `zz_generated.deepcopy.go`.
 
 **Files**:
 
-- Create: `api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2/*.go` (generated)
-- Create: `api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2alpha1/*.go` (generated)
+- Create (synced): `api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2/lbipam_types.go`
+- Create (hand-authored): `api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2/{doc,register,types}.go`
+- Create (generated): `api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2/zz_generated.deepcopy.go`
+- Create (synced): `api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2alpha1/l2announcement_types.go`
+- Create (hand-authored): `api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2alpha1/{doc,register}.go`
+- Create (generated): `api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2alpha1/zz_generated.deepcopy.go`
 
-- [ ] **Step 1: Run the sync**
-
-```bash
-make apis.sync
-```
-
-Expected output includes a `syncing external API: github.com/cilium/cilium/...`
-line for both v2 and v2alpha1, followed by a clean `go mod tidy`.
-
-- [ ] **Step 2: Verify the CRD types we need are present**
+- [ ] **Step 1: Run the targeted sync**
 
 ```bash
-rg -l 'type CiliumLoadBalancerIPPool ' api/external/github.com/cilium/cilium/
-rg -l 'type CiliumL2AnnouncementPolicy ' api/external/github.com/cilium/cilium/
+make api.sync.cilium
 ```
 
-Expected: each prints one file path. If either is missing, the upstream Cilium
-tag may have restructured types; stop and reconcile with the spec owner
-before proceeding.
+Expected: copies the two type files and rewrites the slim import.
 
-- [ ] **Step 3: Verify import rewrite landed**
+- [ ] **Step 2: Verify the files landed and imports are clean**
 
 ```bash
-rg '"github.com/cilium/cilium/' api/external/github.com/cilium/cilium/ | head
+rg 'slimv1|cilium/pkg/k8s/slim' api/external/github.com/cilium/cilium/ || echo "OK: no slim refs"
 ```
 
-Expected: zero hits — the Makefile `sed` rule should have rewritten every
-self-import to
-`github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/cilium/cilium/...`.
+Expected: `OK: no slim refs`.
 
-- [ ] **Step 4: Build**
+- [ ] **Step 3: Hand-author `v2/doc.go`**
+
+```go
+// Copyright 2026 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+// +k8s:deepcopy-gen=package
+// +groupName=cilium.io
+
+// Package v2 is a vendored, minimal subset of Cilium's cilium.io/v2 API.
+// Only the types required by the CAREN Cilium ServiceLoadBalancer
+// integration are included (CiliumLoadBalancerIPPool + its List).
+package v2
+```
+
+- [ ] **Step 4: Hand-author `v2/types.go` (contains `IPv4orIPv6CIDR`)**
+
+```go
+// Copyright 2026 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package v2
+
+// IPv4orIPv6CIDR is a string in CIDR notation. Re-declared here (upstream
+// Cilium puts it in types.go alongside many unrelated types we do not
+// vendor).
+//
+// +kubebuilder:validation:Format=cidr
+type IPv4orIPv6CIDR string
+```
+
+- [ ] **Step 5: Hand-author `v2/register.go`**
+
+```go
+// Copyright 2026 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package v2
+
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+const (
+	GroupName = "cilium.io"
+	Version   = "v2"
+)
+
+// SchemeGroupVersion is the group-version tuple used to register the types
+// below into a runtime scheme.
+var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: Version}
+
+var (
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	AddToScheme   = SchemeBuilder.AddToScheme
+)
+
+func addKnownTypes(scheme *runtime.Scheme) error {
+	scheme.AddKnownTypes(SchemeGroupVersion,
+		&CiliumLoadBalancerIPPool{},
+		&CiliumLoadBalancerIPPoolList{},
+	)
+	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+	return nil
+}
+```
+
+- [ ] **Step 6: Hand-author `v2alpha1/doc.go` and `v2alpha1/register.go`**
+
+Symmetric to the v2 versions. Register only
+`CiliumL2AnnouncementPolicy` + `CiliumL2AnnouncementPolicyList`.
+
+```go
+// v2alpha1/doc.go
+// Copyright 2026 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+// +k8s:deepcopy-gen=package
+// +groupName=cilium.io
+package v2alpha1
+```
+
+```go
+// v2alpha1/register.go
+// Copyright 2026 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package v2alpha1
+
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+const (
+	GroupName = "cilium.io"
+	Version   = "v2alpha1"
+)
+
+var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: Version}
+
+var (
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	AddToScheme   = SchemeBuilder.AddToScheme
+)
+
+func addKnownTypes(scheme *runtime.Scheme) error {
+	scheme.AddKnownTypes(SchemeGroupVersion,
+		&CiliumL2AnnouncementPolicy{},
+		&CiliumL2AnnouncementPolicyList{},
+	)
+	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+	return nil
+}
+```
+
+- [ ] **Step 7: Generate deepcopy**
+
+```bash
+controller-gen paths="./api/external/github.com/cilium/cilium/..." \
+  object:headerFile="hack/license-header.go.txt" \
+  output:object:artifacts:config=/dev/null
+```
+
+Expected: creates `zz_generated.deepcopy.go` in each of `v2/` and
+`v2alpha1/`, containing `DeepCopyInto`/`DeepCopy`/`DeepCopyObject` for
+our four registered types.
+
+- [ ] **Step 8: Build**
 
 ```bash
 go build ./api/external/github.com/cilium/cilium/...
@@ -254,14 +434,12 @@ go build ./api/external/github.com/cilium/cilium/...
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add api/external/github.com/cilium/cilium/ api/api/go.mod api/api/go.sum
-git commit -m "build: [NCN-110043] sync Cilium v2 and v2alpha1 API types"
+git add api/external/github.com/cilium/cilium/ go.mod go.sum api/api/go.mod api/api/go.sum 2>/dev/null
+git commit -m "build: [NCN-110043] sync minimal Cilium v2 and v2alpha1 API types"
 ```
-
-(If `make apis.sync` modifies the root `go.mod`/`go.sum`, include those too.)
 
 ---
 
