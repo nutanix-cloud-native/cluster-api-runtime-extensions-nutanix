@@ -4,6 +4,7 @@
 package cilium
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -135,6 +136,53 @@ func createTestClusterWithSLB(
 	cluster.Spec.ControlPlaneEndpoint = clusterv1beta2.APIEndpoint{Host: host, Port: port}
 
 	return cluster
+}
+
+// Path to the real chart values template, relative to this test file.
+const ciliumChartValuesTemplatePath = "../../../../../charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml"
+
+func Test_templateValues_ChartValuesTemplate_L2AnnouncementsBlock(t *testing.T) {
+	raw, err := os.ReadFile(ciliumChartValuesTemplatePath)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name         string
+		slb          *carenv1.ServiceLoadBalancer
+		wantContains []string
+		notContains  []string
+	}{
+		{
+			name:         "no serviceLoadBalancer omits l2announcements block",
+			slb:          nil,
+			wantContains: []string{"ipam:", "hubble:"},
+			notContains:  []string{"l2announcements:", "k8sClientRateLimit:"},
+		},
+		{
+			name:         "provider MetalLB omits l2announcements block",
+			slb:          &carenv1.ServiceLoadBalancer{Provider: carenv1.ServiceLoadBalancerProviderMetalLB},
+			wantContains: []string{"ipam:", "hubble:"},
+			notContains:  []string{"l2announcements:", "k8sClientRateLimit:"},
+		},
+		{
+			name:         "provider Cilium emits l2announcements and k8sClientRateLimit",
+			slb:          &carenv1.ServiceLoadBalancer{Provider: carenv1.ServiceLoadBalancerProviderCilium},
+			wantContains: []string{"l2announcements:\n  enabled: true", "k8sClientRateLimit:\n  qps: 50\n  burst: 100"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cluster := createTestClusterWithSLB(t, "c", "ns", "nutanix", "10.0.0.1", 6443, tc.slb)
+			got, err := templateValues(cluster, string(raw))
+			require.NoError(t, err)
+			for _, want := range tc.wantContains {
+				assert.Contains(t, got, want)
+			}
+			for _, unwanted := range tc.notContains {
+				assert.NotContains(t, got, unwanted)
+			}
+		})
+	}
 }
 
 func Test_templateValues_TrimPrefixFunction(t *testing.T) {
