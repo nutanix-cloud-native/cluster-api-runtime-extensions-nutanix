@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.47.0 (2026-04-17)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: add EnableKubeconfigUpload API field to KonnectorAgent struct  by @priyadarshini7q in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1576
+* feat: Bump up konnector to 1.4.0-rc.2 by @priyadarshini7q in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1597
+### Fixes 🔧
+* fix: [OSS-711] Replace busybox cp with uutils coreutils by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1594
+### Other Changes
+* build: [NCN-113496] Upgrade CAAPH to v0.6.2, remove fork by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1591
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.46.1...v0.47.0
+
 ## 0.46.1 (2026-04-13)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
