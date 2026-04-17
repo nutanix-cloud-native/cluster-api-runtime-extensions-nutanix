@@ -61,6 +61,29 @@ func (v *ciliumLoadBalancerValidator) validate(
 			v1alpha1.ClusterConfigVariableName, err,
 		).Error())
 	}
+
+	if req.Operation == v1.Update && len(req.OldObject.Raw) > 0 {
+		oldCluster := &clusterv1.Cluster{}
+		if err := v.decoder.DecodeRaw(req.OldObject, oldCluster); err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		oldCfg, oldErr := variables.UnmarshalClusterConfigVariable(oldCluster.Spec.Topology.Variables)
+		if oldErr == nil && oldCfg != nil &&
+			oldCfg.Addons != nil && oldCfg.Addons.ServiceLoadBalancer != nil {
+			newProvider := ""
+			if cfg != nil && cfg.Addons != nil && cfg.Addons.ServiceLoadBalancer != nil {
+				newProvider = cfg.Addons.ServiceLoadBalancer.Provider
+			}
+			if oldCfg.Addons.ServiceLoadBalancer.Provider != newProvider {
+				return admission.Denied(fmt.Sprintf(
+					"ServiceLoadBalancer provider change from %q to %q is not supported; "+
+						"delete and recreate the cluster",
+					oldCfg.Addons.ServiceLoadBalancer.Provider, newProvider,
+				))
+			}
+		}
+	}
+
 	if cfg == nil || cfg.Addons == nil || cfg.Addons.ServiceLoadBalancer == nil {
 		return admission.Allowed("")
 	}

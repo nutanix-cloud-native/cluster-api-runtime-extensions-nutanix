@@ -146,6 +146,44 @@ func TestCiliumLoadBalancerValidator(t *testing.T) {
 	}
 }
 
+func TestCiliumLoadBalancerValidator_ProviderChangeOnUpdate(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, clusterv1beta2.AddToScheme(scheme))
+
+	newCluster := newCiliumSLBCluster(
+		t,
+		v1alpha1.CNIProviderCilium,
+		v1alpha1.KubeProxyModeDisabled,
+		v1alpha1.ServiceLoadBalancerProviderCilium,
+	)
+	oldCluster := newCiliumSLBCluster(
+		t,
+		v1alpha1.CNIProviderCilium,
+		v1alpha1.KubeProxyModeDisabled,
+		v1alpha1.ServiceLoadBalancerProviderMetalLB,
+	)
+
+	newRaw, err := json.Marshal(newCluster)
+	require.NoError(t, err)
+	oldRaw, err := json.Marshal(oldCluster)
+	require.NoError(t, err)
+
+	decoder := admission.NewDecoder(scheme)
+	v := NewCiliumLoadBalancerValidator(
+		fake.NewClientBuilder().WithScheme(scheme).Build(),
+		decoder,
+	)
+	req := admission.Request{AdmissionRequest: v1.AdmissionRequest{
+		Operation: v1.Update,
+		Object:    runtime.RawExtension{Raw: newRaw},
+		OldObject: runtime.RawExtension{Raw: oldRaw},
+	}}
+	resp := v.validate(context.Background(), req)
+	assert.False(t, resp.Allowed)
+	require.NotNil(t, resp.Result)
+	assert.Contains(t, resp.Result.Message, "provider change")
+}
+
 func TestCiliumLoadBalancerValidator_DeleteIsAllowed(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clusterv1beta2.AddToScheme(scheme))
