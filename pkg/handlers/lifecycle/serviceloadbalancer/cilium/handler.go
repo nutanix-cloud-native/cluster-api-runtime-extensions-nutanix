@@ -6,16 +6,29 @@ package cilium
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kwait "k8s.io/apimachinery/pkg/util/wait"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	ciliumv2 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
+	ciliumv2alpha1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	k8sclient "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+)
+
+const (
+	configurationName      = "caren"
+	configurationNamespace = "kube-system"
 )
 
 type Config struct {
@@ -43,7 +56,7 @@ func New(
 }
 
 func (c *Cilium) Apply(
-	_ context.Context,
+	ctx context.Context,
 	slb v1alpha1.ServiceLoadBalancer,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
@@ -56,6 +69,87 @@ func (c *Cilium) Apply(
 
 	if slb.Configuration == nil {
 		return nil
+	}
+
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		c.client,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating remote cluster client: %w", err)
+	}
+
+	configInput := &ConfigurationInput{
+		Name:          configurationName,
+		Namespace:     configurationNamespace,
+		AddressRanges: slb.Configuration.AddressRanges,
+	}
+	objs, err := ConfigurationObjects(configInput)
+	if err != nil {
+		return fmt.Errorf("failed to generate Cilium LB configuration: %w", err)
+	}
+
+	var applyErr error
+	if waitErr := kwait.PollUntilContextTimeout(
+		ctx,
+		2*time.Second,
+		10*time.Second,
+		true,
+		func(ctx context.Context) (bool, error) {
+			for _, o := range objs {
+				err := k8sclient.ServerSideApply(
+					ctx,
+					remoteClient,
+					o,
+					&ctrlclient.PatchOptions{
+						Raw: &metav1.PatchOptions{
+							FieldValidation: metav1.FieldValidationStrict,
+						},
+					},
+				)
+
+				switch {
+				case err == nil:
+					continue
+				case apierrors.IsInternalError(err):
+					// CRD webhooks may not yet be registered; retry.
+					return false, nil
+				case apierrors.IsConflict(err):
+					switch o.(type) {
+					case *ciliumv2.CiliumLoadBalancerIPPool:
+						err = fmt.Errorf(
+							"%w. This resource has been modified in the workload cluster: it must contain exactly the blocks listed in the Cluster configuration", //nolint:lll // Long error message
+							err,
+						)
+					case *ciliumv2alpha1.CiliumL2AnnouncementPolicy:
+						err = fmt.Errorf(
+							"%w. This resource has been modified in the workload cluster: it must only announce LoadBalancer IPs", //nolint:lll // Long error message
+							err,
+						)
+					}
+
+					applyErr = fmt.Errorf(
+						"failed to apply Cilium LB configuration %s %s: %w",
+						o.GetObjectKind().GroupVersionKind().Kind,
+						ctrlclient.ObjectKeyFromObject(o),
+						err,
+					)
+
+					return false, nil
+				default:
+					return false, err
+				}
+			}
+
+			return true, nil
+		},
+	); waitErr != nil {
+		if applyErr != nil {
+			return fmt.Errorf("%w: last apply error: %w", waitErr, applyErr)
+		}
+		return fmt.Errorf("failed to apply Cilium LB configuration: %w", waitErr)
 	}
 
 	return nil
