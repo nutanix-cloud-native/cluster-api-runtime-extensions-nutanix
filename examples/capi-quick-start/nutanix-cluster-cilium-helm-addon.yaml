@@ -109,7 +109,7 @@ spec:
               addressRanges:
               - end: ${KUBERNETES_SERVICE_LOAD_BALANCER_IP}
                 start: ${KUBERNETES_SERVICE_LOAD_BALANCER_IP}
-            provider: MetalLB
+            provider: Cilium
         controlPlane:
           nutanix:
             machineDetails:

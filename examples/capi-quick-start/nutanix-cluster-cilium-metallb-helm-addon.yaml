@@ -1,39 +1,3 @@
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: NutanixFailureDomain
-metadata:
-  name: fd-1
-spec:
-  prismElementCluster:
-    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
-    type: name
-  subnets:
-  - name: ${NUTANIX_SUBNET_NAME}
-    type: name
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: NutanixFailureDomain
-metadata:
-  name: fd-2
-spec:
-  prismElementCluster:
-    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
-    type: name
-  subnets:
-  - name: ${NUTANIX_SUBNET_NAME}
-    type: name
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: NutanixFailureDomain
-metadata:
-  name: fd-3
-spec:
-  prismElementCluster:
-    name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
-    type: name
-  subnets:
-  - name: ${NUTANIX_SUBNET_NAME}
-    type: name
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -145,19 +109,21 @@ spec:
               addressRanges:
               - end: ${KUBERNETES_SERVICE_LOAD_BALANCER_IP}
                 start: ${KUBERNETES_SERVICE_LOAD_BALANCER_IP}
-            provider: Cilium
+            provider: MetalLB
         controlPlane:
           nutanix:
-            failureDomains:
-            - fd-1
-            - fd-2
-            - fd-3
             machineDetails:
               bootType: uefi
+              cluster:
+                name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+                type: name
               imageLookup:
                 baseOS: ${NUTANIX_MACHINE_TEMPLATE_BASE_OS}
                 format: ${NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT}
               memorySize: 4Gi
+              subnets:
+              - name: ${NUTANIX_SUBNET_NAME}
+                type: name
               systemDiskSize: 40Gi
               vcpuSockets: 2
               vcpusPerSocket: 1
@@ -212,24 +178,3 @@ spec:
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"
             cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
         name: md-0
-      - class: default-worker
-        failureDomain: fd-3
-        metadata:
-          annotations:
-            cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "${WORKER_MACHINE_COUNT}"
-            cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "${WORKER_MACHINE_COUNT}"
-        name: md-1
-        variables:
-          overrides:
-          - name: workerConfig
-            value:
-              nutanix:
-                machineDetails:
-                  bootType: uefi
-                  imageLookup:
-                    baseOS: ${NUTANIX_MACHINE_TEMPLATE_BASE_OS}
-                    format: ${NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT}
-                  memorySize: 4Gi
-                  systemDiskSize: 40Gi
-                  vcpuSockets: 2
-                  vcpusPerSocket: 1

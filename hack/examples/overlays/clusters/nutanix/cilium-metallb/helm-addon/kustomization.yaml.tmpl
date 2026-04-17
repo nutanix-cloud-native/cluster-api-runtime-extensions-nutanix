@@ -1,0 +1,23 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../../../../bases/nutanix/cluster
+
+sortOptions:
+  order: fifo
+
+components:
+- ../../../../../components/cni/cilium/nutanix
+- ../../../../../components/slb/metallb/nutanix
+
+# Nutanix Cilium + MetalLB + helm-addon historically disables kube-proxy; the
+# crs variant does not. Apply it here rather than in the CNI component so that
+# the CRS overlay keeps its original behaviour.
+patches:
+- target:
+    kind: Cluster
+  path: ../../../../../patches/skip-kube-proxy.yaml

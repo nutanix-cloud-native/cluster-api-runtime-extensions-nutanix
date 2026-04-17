@@ -83,14 +83,19 @@ providers:
     - sourcePath: "../data/shared/capi/metadata.yaml"
     - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/docker-cluster-class.yaml"
       targetName: clusterclass-docker-quick-start.yaml
+    # Cilium CNI + Cilium ServiceLoadBalancer.
     - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-cilium-helm-addon.yaml
-    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-crs.yaml"
-      targetName: cluster-template-topology-cilium-crs.yaml
-    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-calico-helm-addon.yaml"
-      targetName: cluster-template-topology-calico-helm-addon.yaml
-    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-calico-crs.yaml"
-      targetName: cluster-template-topology-calico-crs.yaml
+    # Cilium CNI + MetalLB ServiceLoadBalancer.
+    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-metallb-helm-addon.yaml"
+      targetName: cluster-template-topology-cilium-metallb-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-cilium-metallb-crs.yaml"
+      targetName: cluster-template-topology-cilium-metallb-crs.yaml
+    # Calico CNI + MetalLB ServiceLoadBalancer.
+    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-calico-metallb-helm-addon.yaml"
+      targetName: cluster-template-topology-calico-metallb-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/docker-cluster-calico-metallb-crs.yaml"
+      targetName: cluster-template-topology-calico-metallb-crs.yaml
     replacements:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
@@ -106,20 +111,30 @@ providers:
     - sourcePath: "../data/shared/capx/metadata.yaml"
     - sourcePath: "../../../charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/nutanix-cluster-class.yaml"
       targetName: clusterclass-nutanix-quick-start.yaml
+    # Cilium CNI + Cilium ServiceLoadBalancer.
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-cilium-helm-addon.yaml
-    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-crs.yaml"
-      targetName: cluster-template-topology-cilium-crs.yaml
+    # Cilium CNI + MetalLB ServiceLoadBalancer.
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-metallb-helm-addon.yaml"
+      targetName: cluster-template-topology-cilium-metallb-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-metallb-crs.yaml"
+      targetName: cluster-template-topology-cilium-metallb-crs.yaml
+    # Failure-domains + Cilium CNI + Cilium ServiceLoadBalancer.
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-with-failuredomains-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-with-failuredomains-cilium-helm-addon.yaml
-    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-with-failuredomains-cilium-crs.yaml"
-      targetName: cluster-template-topology-with-failuredomains-cilium-crs.yaml
-    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-helm-addon.yaml"
-      targetName: cluster-template-topology-calico-helm-addon.yaml
-    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-crs.yaml"
-      targetName: cluster-template-topology-calico-crs.yaml
-    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-flow-helm-addon.yaml"
-      targetName: cluster-template-topology-flow-helm-addon.yaml
+    # Failure-domains + Cilium CNI + MetalLB ServiceLoadBalancer.
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-with-failuredomains-cilium-metallb-helm-addon.yaml"
+      targetName: cluster-template-topology-with-failuredomains-cilium-metallb-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-with-failuredomains-cilium-metallb-crs.yaml"
+      targetName: cluster-template-topology-with-failuredomains-cilium-metallb-crs.yaml
+    # Calico CNI + MetalLB ServiceLoadBalancer.
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-metallb-helm-addon.yaml"
+      targetName: cluster-template-topology-calico-metallb-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-calico-metallb-crs.yaml"
+      targetName: cluster-template-topology-calico-metallb-crs.yaml
+    # Flow CNI + MetalLB ServiceLoadBalancer.
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-flow-metallb-helm-addon.yaml"
+      targetName: cluster-template-topology-flow-metallb-helm-addon.yaml
     replacements:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080

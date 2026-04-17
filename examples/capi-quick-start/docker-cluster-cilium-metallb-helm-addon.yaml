@@ -44,15 +44,13 @@ spec:
                 start: 198.18.1.1
               - end: 198.18.1.30
                 start: 198.18.1.21
-            provider: Cilium
+            provider: MetalLB
         controlPlane: {}
         dns:
           coreDNS: {}
         encryptionAtRest:
           providers:
           - aescbc: {}
-        kubeProxy:
-          mode: disabled
     - name: workerConfig
       value: {}
     version: ${KUBERNETES_VERSION}

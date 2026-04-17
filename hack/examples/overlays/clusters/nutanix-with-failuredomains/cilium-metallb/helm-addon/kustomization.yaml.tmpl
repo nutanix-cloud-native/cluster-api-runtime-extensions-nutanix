@@ -13,5 +13,13 @@ sortOptions:
 
 components:
 - ../../../../../components/cni/cilium/nutanix
-- ../../../../../components/slb/cilium/nutanix
+- ../../../../../components/slb/metallb/nutanix
 - ../../../../../components/failure-domains/nutanix
+
+# Nutanix Cilium + MetalLB + helm-addon historically disables kube-proxy; the
+# crs variant does not. Apply it here rather than in the CNI component so that
+# the CRS overlay keeps its original behaviour.
+patches:
+- target:
+    kind: Cluster
+  path: ../../../../../patches/skip-kube-proxy.yaml

@@ -5,11 +5,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- ../../../../../bases/nutanix/cluster
+- ../../../../../bases/docker/cluster
 
 sortOptions:
   order: fifo
 
 components:
-- ../../../../../components/cni/cilium/nutanix
-- ../../../../../components/slb/cilium/nutanix
+- ../../../../../components/cni/cilium/docker
+- ../../../../../components/slb/metallb/docker
