@@ -39,18 +39,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v22
-        if: inputs.runs-on != 'ubuntu-24.04'
-        with:
-          logger: pretty
-          extra-conf: experimental-features = ca-derivations fetch-closure
-
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.15.0
+        # Pin to main until a release includes the `installer-init-system` input
+        # (https://github.com/jetify-com/devbox-install-action/commit/1af623155b1203817421a7efe5574f59f4a055c6).
+        uses: jetify-com/devbox-install-action@1af623155b1203817421a7efe5574f59f4a055c6
         with:
           enable-cache: ${{ inputs.runs-on == 'ubuntu-24.04' }}
-          skip-nix-installation: ${{ inputs.runs-on != 'ubuntu-24.04' }}
+          installer-init-system: ${{ inputs.runs-on == 'ubuntu-24.04' && 'systemd' || 'none' }}
 
       - name: Export go version and mod cache path
         id: export-go-version-and-mod-cache-path
