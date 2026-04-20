@@ -1506,11 +1506,12 @@ additionalTrustBundleConfigMapName: "{{ .AdditionalTrustBundleConfigMapName }}"
 		)
 	})
 
-	t.Run("secure connection without trust bundle", func(t *testing.T) {
+	t.Run("secure connection without trust bundle falls back to insecure", func(t *testing.T) {
 		nutanixConfig := &v1alpha1.NutanixSpec{
 			PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 				URL:      "https://prism-central.example.com:9440",
 				Insecure: false,
+				// No trust bundle provided
 			},
 		}
 
@@ -1528,7 +1529,8 @@ additionalTrustBundleConfigMapName: "{{ .AdditionalTrustBundleConfigMapName }}"
 
 		result, err := templateFunc(cluster, valuesTemplate)
 		require.NoError(t, err)
-		assert.Contains(t, result, "insecure: false")
+		// Should fall back to insecure mode when no trust bundle is provided
+		assert.Contains(t, result, "insecure: true")
 		assert.NotContains(t, result, "additionalTrustBundle:")
 		assert.NotContains(t, result, "createAdditionalTrustBundleConfigMap:")
 	})

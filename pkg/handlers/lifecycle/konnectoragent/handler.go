@@ -350,14 +350,24 @@ func templateValuesFunc(
 			controlPlaneEndpoint = fmt.Sprintf("https://%s:%d", cpHost, cpPort)
 		}
 
+		// Determine if we should use insecure connection to Prism Central.
+		// If insecure is false but no trust bundle is provided, fall back to insecure mode
+		// to maintain backward compatibility and avoid connection failures.
 		prismCentralInsecure := nutanixConfig.PrismCentralEndpoint.Insecure
+		hasTrustBundle := nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle != ""
+
+		if !prismCentralInsecure && !hasTrustBundle {
+			// Fallback: insecure=false but no trust bundle -> use insecure mode
+			prismCentralInsecure = true
+		}
 
 		// Handle additional trust bundle for Prism Central.
+		// Only configure trust bundle if insecure is false and trust bundle is provided.
 		var additionalTrustBundle string
 		createTrustBundleConfigMap := false
 		trustBundleConfigMapName := ""
 
-		if !prismCentralInsecure && nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle != "" {
+		if !prismCentralInsecure && hasTrustBundle {
 			additionalTrustBundle = nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle
 			createTrustBundleConfigMap = true
 			trustBundleConfigMapName = defaultTrustBundleConfigMapName
