@@ -9,6 +9,9 @@ pc:
   port: {{ .PrismCentralPort }}
   insecure: {{ .PrismCentralInsecure }}
   endpoint: {{ .PrismCentralHost }}
+{{- if .PrismCentralAdditionalTrustBundle }}
+  additionalTrustBundle: {{ .PrismCentralAdditionalTrustBundle }}
+{{- end }}
 
 k8sClusterName: {{ .ClusterName }}
 k8sDistribution: NKP
@@ -16,6 +19,11 @@ createSecret: false
 prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"
 {{- if .CategoryMappings }}
 categoryMappings: {{ .CategoryMappings }}
+{{- end }}
+
+{{- if .CreateAdditionalTrustBundleConfigMap }}
+createAdditionalTrustBundleConfigMap: {{ .CreateAdditionalTrustBundleConfigMap }}
+additionalTrustBundleConfigMapName: "{{ .AdditionalTrustBundleConfigMapName }}"
 {{- end }}
 kubeconfigUpload:
   enabled: {{ .EnableKubeconfigUpload }}

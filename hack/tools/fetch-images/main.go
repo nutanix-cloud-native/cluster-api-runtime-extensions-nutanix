@@ -377,24 +377,30 @@ prismEndPoint: endpoint
 		}
 
 		templateInput := struct {
-			AgentName                  string
-			PrismCentralHost           string
-			PrismCentralPort           uint16
-			PrismCentralInsecure       bool
-			ClusterName                string
-			CategoryMappings           string
-			PrismCredentialsSecretName string
-			EnableKubeconfigUpload     bool
-			ControlPlaneEndpoint       string
+			AgentName                            string
+			PrismCentralHost                     string
+			PrismCentralPort                     uint16
+			PrismCentralInsecure                 bool
+			PrismCentralAdditionalTrustBundle    string
+			CreateAdditionalTrustBundleConfigMap bool
+			AdditionalTrustBundleConfigMapName   string
+			ClusterName                          string
+			CategoryMappings                     string
+			PrismCredentialsSecretName           string
+			EnableKubeconfigUpload               bool
+			ControlPlaneEndpoint                 string
 		}{
-			AgentName:                  "konnector-agent",
-			PrismCentralHost:           "prism-central.example.com",
-			PrismCentralPort:           9440,
-			PrismCentralInsecure:       true,
-			ClusterName:                "test-cluster",
-			CategoryMappings:           "",
-			PrismCredentialsSecretName: "konnector-agent",
-			EnableKubeconfigUpload:     false,
+			AgentName:                            "konnector-agent",
+			PrismCentralHost:                     "prism-central.example.com",
+			PrismCentralPort:                     9440,
+			PrismCentralInsecure:                 true,
+			PrismCentralAdditionalTrustBundle:    "",
+			CreateAdditionalTrustBundleConfigMap: false,
+			AdditionalTrustBundleConfigMapName:   "",
+			ClusterName:                          "test-cluster",
+			CategoryMappings:                     "",
+			PrismCredentialsSecretName:           "konnector-agent",
+			EnableKubeconfigUpload:               false,
 		}
 
 		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)

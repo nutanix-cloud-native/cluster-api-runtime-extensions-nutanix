@@ -5,6 +5,7 @@ package konnectoragent
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -1434,4 +1435,157 @@ func TestIsClusterRegisteredInPC_MissingPasswordInSecret(t *testing.T) {
 	assert.Error(t, err)
 	assert.False(t, registered)
 	assert.Contains(t, err.Error(), "credentials secret does not contain 'password' key")
+}
+
+func TestTemplateValuesFunc_TrustBundleConfiguration(t *testing.T) {
+	cluster := &clusterv1beta2.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+	}
+
+	k8sAgentVar := apivariables.NutanixKonnectorAgent{}
+
+	testTrustBundle := "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURBRENDQWVpZ0F3SUJBZ0lKQUtL"
+
+	t.Run("insecure connection with no trust bundle", func(t *testing.T) {
+		nutanixConfig := &v1alpha1.NutanixSpec{
+			PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL:      "https://prism-central.example.com:9440",
+				Insecure: true,
+			},
+		}
+
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+
+		valuesTemplate := `pc:
+  insecure: {{ .PrismCentralInsecure }}
+{{- if .PrismCentralAdditionalTrustBundle }}
+  additionalTrustBundle: {{ .PrismCentralAdditionalTrustBundle }}
+{{- end }}
+{{- if .CreateAdditionalTrustBundleConfigMap }}
+createAdditionalTrustBundleConfigMap: {{ .CreateAdditionalTrustBundleConfigMap }}
+additionalTrustBundleConfigMapName: "{{ .AdditionalTrustBundleConfigMapName }}"
+{{- end }}`
+
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		assert.Contains(t, result, "insecure: true")
+		assert.NotContains(t, result, "additionalTrustBundle:")
+		assert.NotContains(t, result, "createAdditionalTrustBundleConfigMap:")
+	})
+
+	t.Run("secure connection with trust bundle", func(t *testing.T) {
+		nutanixConfig := &v1alpha1.NutanixSpec{
+			PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL:                   "https://prism-central.example.com:9440",
+				Insecure:              false,
+				AdditionalTrustBundle: testTrustBundle,
+			},
+		}
+
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+
+		valuesTemplate := `pc:
+  insecure: {{ .PrismCentralInsecure }}
+{{- if .PrismCentralAdditionalTrustBundle }}
+  additionalTrustBundle: {{ .PrismCentralAdditionalTrustBundle }}
+{{- end }}
+{{- if .CreateAdditionalTrustBundleConfigMap }}
+createAdditionalTrustBundleConfigMap: {{ .CreateAdditionalTrustBundleConfigMap }}
+additionalTrustBundleConfigMapName: "{{ .AdditionalTrustBundleConfigMapName }}"
+{{- end }}`
+
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		assert.Contains(t, result, "insecure: false")
+		assert.Contains(t, result, fmt.Sprintf("additionalTrustBundle: %s", testTrustBundle))
+		assert.Contains(t, result, "createAdditionalTrustBundleConfigMap: true")
+		assert.Contains(
+			t,
+			result,
+			"additionalTrustBundleConfigMapName: \"ntnx-additional-trust-bundle-konnector-agent\"",
+		)
+	})
+
+	t.Run("secure connection without trust bundle falls back to insecure", func(t *testing.T) {
+		nutanixConfig := &v1alpha1.NutanixSpec{
+			PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL:      "https://prism-central.example.com:9440",
+				Insecure: false,
+				// No trust bundle provided
+			},
+		}
+
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+
+		valuesTemplate := `pc:
+  insecure: {{ .PrismCentralInsecure }}
+{{- if .PrismCentralAdditionalTrustBundle }}
+  additionalTrustBundle: {{ .PrismCentralAdditionalTrustBundle }}
+{{- end }}
+{{- if .CreateAdditionalTrustBundleConfigMap }}
+createAdditionalTrustBundleConfigMap: {{ .CreateAdditionalTrustBundleConfigMap }}
+additionalTrustBundleConfigMapName: "{{ .AdditionalTrustBundleConfigMapName }}"
+{{- end }}`
+
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		// Should fall back to insecure mode when no trust bundle is provided
+		assert.Contains(t, result, "insecure: true")
+		assert.NotContains(t, result, "additionalTrustBundle:")
+		assert.NotContains(t, result, "createAdditionalTrustBundleConfigMap:")
+	})
+
+	t.Run("insecure connection with trust bundle should not create configmap", func(t *testing.T) {
+		nutanixConfig := &v1alpha1.NutanixSpec{
+			PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL:                   "https://prism-central.example.com:9440",
+				Insecure:              true,
+				AdditionalTrustBundle: testTrustBundle,
+			},
+		}
+
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+
+		valuesTemplate := `pc:
+  insecure: {{ .PrismCentralInsecure }}
+{{- if .PrismCentralAdditionalTrustBundle }}
+  additionalTrustBundle: {{ .PrismCentralAdditionalTrustBundle }}
+{{- end }}
+{{- if .CreateAdditionalTrustBundleConfigMap }}
+createAdditionalTrustBundleConfigMap: {{ .CreateAdditionalTrustBundleConfigMap }}
+additionalTrustBundleConfigMapName: "{{ .AdditionalTrustBundleConfigMapName }}"
+{{- end }}`
+
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		assert.Contains(t, result, "insecure: true")
+		// When insecure is true, trust bundle should be ignored
+		assert.NotContains(t, result, "additionalTrustBundle:")
+		assert.NotContains(t, result, "createAdditionalTrustBundleConfigMap:")
+	})
+
+	t.Run("trust bundle configmap uses default name", func(t *testing.T) {
+		nutanixConfig := &v1alpha1.NutanixSpec{
+			PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL:                   "https://prism-central.example.com:9440",
+				Insecure:              false,
+				AdditionalTrustBundle: testTrustBundle,
+			},
+		}
+
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, k8sAgentVar)
+
+		valuesTemplate := `{{- if .AdditionalTrustBundleConfigMapName }}
+additionalTrustBundleConfigMapName: "{{ .AdditionalTrustBundleConfigMapName }}"
+{{- end }}`
+
+		result, err := templateFunc(cluster, valuesTemplate)
+		require.NoError(t, err)
+		// The ConfigMap name should use the default constant
+		assert.Contains(
+			t,
+			result,
+			"additionalTrustBundleConfigMapName: \"ntnx-additional-trust-bundle-konnector-agent\"",
+		)
+	})
 }
