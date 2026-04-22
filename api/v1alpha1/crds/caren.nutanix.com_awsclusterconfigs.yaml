@@ -358,9 +358,6 @@ spec:
                               format: int32
                               type: integer
                           type: object
-                          x-kubernetes-validations:
-                            - message: EventBatching can be set only if Mode is set to batch
-                              rule: self.mode == 'batch' || self.eventBatching == nil
                         maxAge:
                           description: MaxAge defines the maximum age of the audit log in days.
                           format: int32
@@ -385,6 +382,9 @@ spec:
                           description: Path defines the path to the audit log file.
                           type: string
                       type: object
+                      x-kubernetes-validations:
+                        - message: eventBatching can be set only if mode is set to batch
+                          rule: '!has(self.eventBatching) || (has(self.mode) && self.mode == ''batch'')'
                     policy:
                       description: |-
                         Policy defines the audit policy for the cluster.
@@ -442,9 +442,6 @@ spec:
                               format: int32
                               type: integer
                           type: object
-                          x-kubernetes-validations:
-                            - message: EventBatching can be set only if Mode is set to batch
-                              rule: self.mode == 'batch' || self.eventBatching == nil
                         initialBackoff:
                           description: InitialBackoff defines the initial backoff duration for the audit log webhook.
                           type: string
@@ -472,6 +469,9 @@ spec:
                       required:
                         - secret
                       type: object
+                      x-kubernetes-validations:
+                        - message: eventBatching can be set only if mode is set to batch
+                          rule: '!has(self.eventBatching) || (has(self.mode) && self.mode == ''batch'')'
                   type: object
                   x-kubernetes-validations:
                     - message: Only one of 'webhook' or 'log' can be set

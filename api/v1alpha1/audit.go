@@ -23,6 +23,7 @@ type AuditLog struct {
 }
 
 // AuditLogBackendWebhook defines the audit log webhook configuration.
+// +kubebuilder:validation:XValidation:rule="!has(self.eventBatching) || (has(self.mode) && self.mode == 'batch')",message="eventBatching can be set only if mode is set to batch"
 type AuditLogBackendWebhook struct {
 	// Mode defines the mode of the audit log event batching.
 	// +kubebuilder:validation:Optional
@@ -40,10 +41,11 @@ type AuditLogBackendWebhook struct {
 
 	// EventBatching defines the event batching configuration.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:XValidation:rule="self.mode == 'batch' || self.eventBatching == nil",message="EventBatching can be set only if Mode is set to batch"
 	EventBatching *AuditLogEventBatching `json:"eventBatching,omitempty"`
 }
 
+// AuditLogBackendLog defines the audit log file backend configuration.
+// +kubebuilder:validation:XValidation:rule="!has(self.eventBatching) || (has(self.mode) && self.mode == 'batch')",message="eventBatching can be set only if mode is set to batch"
 type AuditLogBackendLog struct {
 	// Mode defines the mode of the audit log.
 	// +kubebuilder:validation:Optional
@@ -73,7 +75,6 @@ type AuditLogBackendLog struct {
 
 	// EventBatching defines the event batching configuration.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:XValidation:rule="self.mode == 'batch' || self.eventBatching == nil",message="EventBatching can be set only if Mode is set to batch"
 	EventBatching *AuditLogEventBatching `json:"eventBatching,omitempty"`
 }
 
