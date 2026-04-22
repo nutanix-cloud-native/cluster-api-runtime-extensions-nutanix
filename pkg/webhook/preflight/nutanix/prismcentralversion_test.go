@@ -22,6 +22,12 @@ func TestPrismCentralVersionCheck_AllowsSupportedVersionsAndInternalBuilds(t *te
 		"pc.7.5",
 		"pc.7.5.3",
 		"pc.7.5.3.4",
+		"7.6",
+		"7.6.1",
+		"7.6.1.2",
+		"pc.7.6",
+		"pc.7.6.1",
+		"pc.7.6.1.2",
 		"master",
 		"pc.master",
 	}
