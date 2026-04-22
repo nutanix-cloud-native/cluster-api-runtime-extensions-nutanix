@@ -16,18 +16,18 @@ func TestPrismCentralVersionCheck_AllowsSupportedVersionsAndInternalBuilds(t *te
 	t.Parallel()
 
 	supportedVersions := []string{
-		"7.3",
-		"7.3.1",
-		"7.3.1.2",
-		"pc.7.3",
-		"pc.7.3.1",
-		"pc.7.3.1.2",
 		"7.5",
 		"7.5.3",
 		"7.5.3.4",
 		"pc.7.5",
 		"pc.7.5.3",
 		"pc.7.5.3.4",
+		"7.6",
+		"7.6.1",
+		"7.6.1.2",
+		"pc.7.6",
+		"pc.7.6.1",
+		"pc.7.6.1.2",
 		"master",
 		"pc.master",
 	}
@@ -61,6 +61,10 @@ func TestPrismCentralVersionCheck_FailsUnsupportedVersions(t *testing.T) {
 		name    string
 		version string
 	}{
+		{
+			name:    "Older supported minor release",
+			version: "pc.7.3.1.2",
+		},
 		{
 			name:    "Older 7.x release",
 			version: "pc.7.2.0.0",

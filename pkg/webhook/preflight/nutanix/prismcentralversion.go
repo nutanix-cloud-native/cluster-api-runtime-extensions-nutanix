@@ -17,7 +17,7 @@ import (
 
 const (
 	prismCentralEndpointFieldPath    = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint" ///nolint:lll // Field path is intentionally long.
-	minSupportedPrismCentralVersion  = "7.3"
+	minSupportedPrismCentralVersion  = "7.5"
 	internalPrismCentralVersionLabel = "master"
 )
 
