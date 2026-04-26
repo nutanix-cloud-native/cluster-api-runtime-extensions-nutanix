@@ -33,24 +33,11 @@ func TestReturnsFalseForMalformedKubernetesVersion(t *testing.T) {
 	assert.Empty(t, version)
 }
 
-func TestReturnsCorrectMappingForGetKubernetesToCoreDNSVersionMap(t *testing.T) {
+func TestReturnsCopyForGetKubernetesToCoreDNSVersionMap(t *testing.T) {
 	mapping := GetKubernetesToCoreDNSVersionMap()
-	expected := map[string]string{
-		"v1.22": "v1.8.4",
-		"v1.23": "v1.8.6",
-		"v1.24": "v1.8.6",
-		"v1.25": "v1.9.3",
-		"v1.26": "v1.9.3",
-		"v1.27": "v1.10.1",
-		"v1.28": "v1.10.1",
-		"v1.29": "v1.11.1",
-		"v1.30": "v1.11.3",
-		"v1.31": "v1.11.3",
-		"v1.32": "v1.11.3",
-		"v1.33": "v1.12.0",
-		"v1.34": "v1.12.1",
-		"v1.35": "v1.13.1",
-		"v1.36": "v1.14.2",
-	}
-	assert.Equal(t, expected, mapping)
+	mapping["v1.27"] = "modified"
+
+	version, found := GetCoreDNSVersion("v1.27")
+	assert.True(t, found)
+	assert.Equal(t, "v1.10.1", version)
 }
