@@ -75,7 +75,7 @@ repositories:
     repoURL: https://nutanix.github.io/helm-releases/
     charts:
       nutanix-csi-storage:
-      - 3.6.0
+      - 3.7.0-rc1
   nutanix-flow-cni:
     repoURL: https://nutanix.github.io/helm-releases
     charts:
