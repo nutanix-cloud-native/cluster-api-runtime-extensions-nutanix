@@ -255,6 +255,8 @@ func Test_generateContainerdRegistryConfigDropInFile(t *testing.T) {
 			Permissions: "0600",
 			Content: `[plugins."io.containerd.grpc.v1.cri".registry]
   config_path = "/etc/containerd/certs.d"
+[plugins."io.containerd.cri.v1.images".registry]
+  config_path = "/etc/containerd/certs.d"
 `,
 		},
 	}
