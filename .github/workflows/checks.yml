@@ -86,6 +86,7 @@ jobs:
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
       runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-nutanix-docker-medium' || 'ubuntu-24.04' }}
       base-os:  ${{ matrix.config.provider == 'Nutanix' && matrix.config.baseOS || '' }}
+      job-name: e2e-quick-start (${{ matrix.config.provider }} provider, Kubernetes ${{ matrix.config.kubernetesMinor }})
     secrets: inherit
     permissions:
       contents: read
@@ -115,6 +116,7 @@ jobs:
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
       runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-nutanix-docker-medium' || 'ubuntu-24.04' }}
+      job-name: e2e-self-hosted (${{ matrix.config.provider }} provider, Kubernetes ${{ matrix.config.kubernetesMinor }})
     secrets: inherit
     permissions:
       contents: read
