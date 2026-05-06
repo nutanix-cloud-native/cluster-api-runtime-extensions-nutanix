@@ -26,10 +26,6 @@ on:
         description: The OS image to use for the machine template
         type: string
         required: false
-      job-name:
-        description: Display name of the calling job, used to name the uploaded artifact
-        type: string
-        required: true
 
 jobs:
   e2e-test:
@@ -122,6 +118,6 @@ jobs:
         name: Upload test artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ github.workflow }} - ${{ inputs.job-name }}.zip"
+          name: "e2e-test-artifacts"
           path: ${{ env.ARTIFACTS }}
           retention-days: 7
