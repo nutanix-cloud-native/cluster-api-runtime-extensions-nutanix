@@ -71,3 +71,6 @@ shutdownGracePeriod: {{ . }}
 {{- with .ShutdownGracePeriodCriticalPods }}
 shutdownGracePeriodCriticalPods: {{ . }}
 {{- end }}
+{{- with .SeccompDefault }}
+seccompDefault: {{ . }}
+{{- end }}

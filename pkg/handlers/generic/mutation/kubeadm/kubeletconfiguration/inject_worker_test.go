@@ -84,6 +84,45 @@ maxPods: 110
 				),
 			}},
 		},
+		{
+			Name: "seccompDefault set at worker is rendered into patch",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.WorkerConfigVariableName,
+					v1alpha1.KubeletConfiguration{
+						SeccompDefault: ptr.To(true),
+					},
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					runtimehooksv1.BuiltinsName,
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.And(
+						gomega.HaveKeyWithValue(
+							"path",
+							kubeletConfigurationPatchFilePath,
+						),
+						gomega.HaveKeyWithValue(
+							"content",
+							`---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+seccompDefault: true
+`,
+						),
+					),
+				),
+			}},
+		},
 	}
 
 	for _, tt := range testDefs {

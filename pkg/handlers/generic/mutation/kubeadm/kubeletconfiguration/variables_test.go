@@ -81,6 +81,13 @@ var testDefs = []capitest.VariableTestDef{
 			ShutdownGracePeriodCriticalPods: &metav1.Duration{
 				Duration: 10 * time.Second,
 			},
+			SeccompDefault: ptr.To(true),
+		}),
+	},
+	{
+		Name: "seccompDefault set",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			SeccompDefault: ptr.To(true),
 		}),
 	},
 	{

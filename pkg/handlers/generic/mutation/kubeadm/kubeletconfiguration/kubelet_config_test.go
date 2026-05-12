@@ -201,6 +201,30 @@ func TestRenderKubeletConfigPatch_ShutdownGracePeriodCriticalPods(t *testing.T) 
 	)
 }
 
+func TestRenderKubeletConfigPatch_SeccompDefault(t *testing.T) {
+	t.Run("nil emits no seccompDefault key", func(t *testing.T) {
+		f, err := renderKubeletConfigPatch(&v1alpha1.KubeletConfiguration{})
+		require.NoError(t, err)
+		assert.NotContains(t, f.Content, "seccompDefault")
+	})
+
+	t.Run("true emits seccompDefault: true", func(t *testing.T) {
+		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+			SeccompDefault: ptr.To(true),
+		})
+		require.NotNil(t, kubeletCfg.SeccompDefault)
+		assert.True(t, *kubeletCfg.SeccompDefault)
+	})
+
+	t.Run("false emits seccompDefault: false", func(t *testing.T) {
+		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+			SeccompDefault: ptr.To(false),
+		})
+		require.NotNil(t, kubeletCfg.SeccompDefault)
+		assert.False(t, *kubeletCfg.SeccompDefault)
+	})
+}
+
 func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
 	cfg := &v1alpha1.KubeletConfiguration{}
 	vars := map[string]apiextensionsv1.JSON{
