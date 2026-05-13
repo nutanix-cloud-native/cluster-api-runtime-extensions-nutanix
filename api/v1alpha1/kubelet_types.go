@@ -176,6 +176,15 @@ type KubeletConfiguration struct {
 	// Default kubelet value is "0s".
 	// +kubebuilder:validation:Optional
 	ShutdownGracePeriodCriticalPods *metav1.Duration `json:"shutdownGracePeriodCriticalPods,omitempty"`
+
+	// SeccompDefault enables the kubelet to apply the runtime's default seccomp
+	// profile (RuntimeDefault) to all pods that do not explicitly specify a
+	// seccompProfile. Provides a baseline syscall filter for unhardened workloads;
+	// pods that set seccompProfile.type: Unconfined opt out, and pods running with
+	// privileged: true or CAP_SYS_ADMIN are not constrained.
+	// Default kubelet value is false.
+	// +kubebuilder:validation:Optional
+	SeccompDefault *bool `json:"seccompDefault,omitempty"`
 }
 
 // IsEmpty returns true if the KubeletConfiguration is nil or has no fields set.

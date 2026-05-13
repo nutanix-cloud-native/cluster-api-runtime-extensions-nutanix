@@ -34,6 +34,32 @@ The following fields are supported under `kubeletConfiguration`:
 - `maxParallelImagePulls`
 - `shutdownGracePeriod`
 - `shutdownGracePeriodCriticalPods`
+- `seccompDefault`
+
+## Default seccomp profile
+
+`seccompDefault` instructs the kubelet to apply the container runtime's
+`RuntimeDefault` seccomp profile to every pod that does not explicitly set
+`spec.securityContext.seccompProfile` (or the equivalent on a container).
+This provides a baseline syscall filter for unhardened workloads without
+requiring per-pod changes.
+
+Enabling `seccompDefault: true` on both control plane and worker
+`kubeletConfiguration` mitigates Linux kernel local-privilege-escalation
+issues that depend on syscalls excluded from `RuntimeDefault` (for example,
+the Dirty Frag exploit chain CVE-2026-43284 / CVE-2026-43500, which relies
+on `unshare`, `add_key`, and `keyctl`).
+
+Caveats:
+
+- Pods that opt out with `seccompProfile.type: Unconfined` are not constrained.
+- Pods running with `privileged: true` or `CAP_SYS_ADMIN` are not constrained
+  by seccomp.
+- Workloads that legitimately require syscalls outside `RuntimeDefault` (for
+  example, sandboxed runtimes, profiling agents, or some networking tools)
+  may need a custom seccomp profile or `Unconfined`.
+- Changing this value rolls the affected machines, since it is rendered into
+  the `KubeadmConfig` and triggers a node template change.
 
 ## Example
 
@@ -53,6 +79,7 @@ spec:
             kubeletConfiguration:
               maxPods: 200
               protectKernelDefaults: true
+              seccompDefault: true
 ```
 
 ### Worker nodes
@@ -75,4 +102,5 @@ spec:
               kubeletConfiguration:
                 maxPods: 250
                 podPidsLimit: 4096
+                seccompDefault: true
 ```

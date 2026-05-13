@@ -74,6 +74,40 @@ maxPods: 250
 				),
 			}},
 		},
+		{
+			Name: "seccompDefault set at control plane is rendered into patch",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.KubeletConfiguration{
+						SeccompDefault: ptr.To(true),
+					},
+					v1alpha1.ControlPlaneConfigVariableName,
+					VariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.And(
+						gomega.HaveKeyWithValue(
+							"path",
+							kubeletConfigurationPatchFilePath,
+						),
+						gomega.HaveKeyWithValue(
+							"content",
+							`---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+seccompDefault: true
+`,
+						),
+					),
+				),
+			}},
+		},
 	}
 
 	for _, tt := range testDefs {

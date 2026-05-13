@@ -706,6 +706,15 @@ spec:
                             ProtectKernelDefaults when enabled causes the kubelet to error if kernel flags
                             are not as it expects. Typically required by CIS benchmarks and DISA STIG.
                           type: boolean
+                        seccompDefault:
+                          description: |-
+                            SeccompDefault enables the kubelet to apply the runtime's default seccomp
+                            profile (RuntimeDefault) to all pods that do not explicitly specify a
+                            seccompProfile. Provides a baseline syscall filter for unhardened workloads;
+                            pods that set seccompProfile.type: Unconfined opt out, and pods running with
+                            privileged: true or CAP_SYS_ADMIN are not constrained.
+                            Default kubelet value is false.
+                          type: boolean
                         shutdownGracePeriod:
                           description: |-
                             ShutdownGracePeriod specifies the total duration that the node should delay

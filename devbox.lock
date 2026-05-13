@@ -49,31 +49,31 @@
         }
       }
     },
-    "apple-sdk_12@latest": {
-      "last_modified": "2025-09-18T16:33:27Z",
-      "resolved": "github:NixOS/nixpkgs/f4b140d5b253f5e2a1ff4e5506edbf8267724bde#apple-sdk_12",
+    "apple-sdk@latest": {
+      "last_modified": "2026-04-23T13:07:47Z",
+      "resolved": "github:NixOS/nixpkgs/01fbdeef22b76df85ea168fbfe1bfd9e63681b30#apple-sdk",
       "source": "devbox-search",
-      "version": "12.3",
+      "version": "14.4",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ywb67nwhda4n7lww0dyw394hd7gqw1sr-apple-sdk-12.3",
+              "path": "/nix/store/rcqgjj8hphkhqark1ibiwfaa7yrzniz3-apple-sdk-14.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ywb67nwhda4n7lww0dyw394hd7gqw1sr-apple-sdk-12.3"
+          "store_path": "/nix/store/rcqgjj8hphkhqark1ibiwfaa7yrzniz3-apple-sdk-14.4"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/4fpxjs3ivdxdvys66hh24jpyczi5cwig-apple-sdk-12.3",
+              "path": "/nix/store/mwxca44jqzkpw41r2kbl0j52v6llsp6i-apple-sdk-14.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/4fpxjs3ivdxdvys66hh24jpyczi5cwig-apple-sdk-12.3"
+          "store_path": "/nix/store/mwxca44jqzkpw41r2kbl0j52v6llsp6i-apple-sdk-14.4"
         }
       }
     },

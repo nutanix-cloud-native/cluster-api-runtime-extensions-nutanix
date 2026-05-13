@@ -51,6 +51,7 @@ type kubeletConfigTemplateInput struct {
 	MaxParallelImagePulls           any
 	ShutdownGracePeriod             any
 	ShutdownGracePeriodCriticalPods any
+	SeccompDefault                  any
 }
 
 // toTemplateInput converts v1alpha1.KubeletConfiguration to template-friendly struct.
@@ -70,6 +71,7 @@ func toTemplateInput(cfg *v1alpha1.KubeletConfiguration) *kubeletConfigTemplateI
 		ImageGCHighThresholdPercent: cfg.ImageGCHighThresholdPercent,
 		ImageGCLowThresholdPercent:  cfg.ImageGCLowThresholdPercent,
 		MaxParallelImagePulls:       cfg.MaxParallelImagePulls,
+		SeccompDefault:              cfg.SeccompDefault,
 	}
 
 	if cfg.ContainerLogMaxSize != nil {
