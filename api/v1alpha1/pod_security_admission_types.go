@@ -39,7 +39,10 @@ type PodSecurityAdmission struct {
 	Warn PodSecurityStandard `json:"warn,omitempty"`
 
 	// Exemptions defines the exemptions from pod security enforcement.
+	// Defaults to exempting only the kube-system namespace when the entire
+	// exemptions object is omitted from the cluster configuration.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={namespaces: {"kube-system"}}
 	Exemptions PodSecurityExemptions `json:"exemptions,omitempty"`
 }
 

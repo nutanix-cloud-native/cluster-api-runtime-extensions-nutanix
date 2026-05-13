@@ -823,7 +823,13 @@ spec:
                         Pods that violate this level will be rejected.
                       type: string
                     exemptions:
-                      description: Exemptions defines the exemptions from pod security enforcement.
+                      default:
+                        namespaces:
+                          - kube-system
+                      description: |-
+                        Exemptions defines the exemptions from pod security enforcement.
+                        Defaults to exempting only the kube-system namespace when the entire
+                        exemptions object is omitted from the cluster configuration.
                       properties:
                         namespaces:
                           default:
