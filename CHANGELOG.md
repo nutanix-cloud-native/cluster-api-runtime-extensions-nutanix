@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.48.0 (2026-05-14)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: update Nutanix CSI version to 3.7.0-rc1 by @atulv7 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1610
+* feat: update Nutanix CSI version to 3.7.0 by @atulv7 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1612
+* feat: [NCN-113989] Add seccompDefault kubelet configuration field by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1622
+* feat: [NCN-101538] Add Pod Security Admission configuration by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1573
+### Fixes 🔧
+* fix: Support Trust Bundle for Konnector Agent by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1595
+* fix: require Prism Central 7.5 in preflight by @thunderboltsid in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1605
+* fix: Update CoreDNS mapping file by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1606
+* fix: registry mirror configuration for containerd config version 3 by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1613
+* fix: remove memory limits for multus by @kshcore in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1623
+### Other Changes
+* ci: use rocky-9.7 for e2e tests for kubernetes 1.33.5 by @supershal in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1621
+* build: bump go toolchain to 1.26.3 and harden GO_TOOLCHAIN_VERSION handling by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1624
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.47.0...v0.48.0
+
 ## 0.47.0 (2026-04-17)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
