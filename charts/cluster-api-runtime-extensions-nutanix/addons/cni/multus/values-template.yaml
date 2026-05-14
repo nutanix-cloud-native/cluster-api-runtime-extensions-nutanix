@@ -2,6 +2,11 @@
 daemonConfig:
   readinessIndicatorFile: "{{ .ReadinessSocketPath }}"
 
+# Remove memory limits, requests come from upstream chart defaults
+resources:
+  limits:
+    memory: null
+
 {{- if .ReadinessSocketPath }}
 # Volumes for CNI readiness socket
 volumes:
