@@ -288,6 +288,20 @@ govulncheck.%: ## Runs govulncheck for a specific module
 govulncheck.%: ; $(info $(M) running govulncheck on $* module)
 	$(if $(filter-out root .,$*),cd $* && )govulncheck ./...
 
+# Normalize GO_TOOLCHAIN_VERSION by prepending the required 'go' prefix if missing
+# (e.g. "1.26.3" -> "go1.26.3").
+_GO_TOOLCHAIN_VERSION = $(if $(filter go%,$(GO_TOOLCHAIN_VERSION)),$(GO_TOOLCHAIN_VERSION),go$(GO_TOOLCHAIN_VERSION))
+
+.PHONY: _check-go-toolchain-version
+_check-go-toolchain-version:
+ifndef GO_TOOLCHAIN_VERSION
+	$(error GO_TOOLCHAIN_VERSION is not set: please set GO_TOOLCHAIN_VERSION to the desired version, e.g. go1.22.5)
+endif
+	@[ "$(GO_TOOLCHAIN_VERSION)" = "$(_GO_TOOLCHAIN_VERSION)" ] \
+		|| echo "Note: prepended 'go' prefix to GO_TOOLCHAIN_VERSION; using $(_GO_TOOLCHAIN_VERSION)"
+	@printf '%s' '$(_GO_TOOLCHAIN_VERSION)' | grep -qE '^go[0-9]+\.[0-9]+(\.[0-9]+)?((rc|beta)[0-9]+)?$$' \
+		|| { echo >&2 "GO_TOOLCHAIN_VERSION '$(GO_TOOLCHAIN_VERSION)' is not a valid go toolchain version, e.g. go1.22.5"; exit 1; }
+
 .PHONY: go-mod-edit-toolchain
 go-mod-edit-toolchain: ## Edits the go.mod file of all modules in repository to use the toolchain version
 ifneq ($(wildcard $(REPO_ROOT)/go.mod),)
@@ -297,13 +311,12 @@ ifneq ($(words $(GO_SUBMODULES_NO_DOCS)),0)
 go-mod-edit-toolchain: $(addprefix go-mod-edit-toolchain.,$(GO_SUBMODULES_NO_DOCS:/go.mod=))
 endif
 ifneq ($(wildcard $(REPO_ROOT)/hack/tools/go.mod),)
-	cd hack/tools && go mod edit -toolchain=$(GO_TOOLCHAIN_VERSION)
+go-mod-edit-toolchain: _check-go-toolchain-version
+	cd hack/tools && go mod edit -toolchain=$(_GO_TOOLCHAIN_VERSION)
 endif
 
 .PHONY: go-mod-edit-toolchain.%
+go-mod-edit-toolchain.%: _check-go-toolchain-version
 go-mod-edit-toolchain.%: ## Edits the go.mod file of a specifc module in repository to use the toolchain version
 go-mod-edit-toolchain.%: ; $(info $(M) setting go toolchain for $* module)
-ifndef GO_TOOLCHAIN_VERSION
-	$(error GO_TOOLCHAIN_VERSION is not set: please set GO_TOOLCHAIN_VERSION to the desired version, e.g. go1.22.5)
-endif
-	$(if $(filter-out root .,$*),cd $* && )go mod edit -toolchain=$(GO_TOOLCHAIN_VERSION)
+	$(if $(filter-out root .,$*),cd $* && )go mod edit -toolchain=$(_GO_TOOLCHAIN_VERSION)
