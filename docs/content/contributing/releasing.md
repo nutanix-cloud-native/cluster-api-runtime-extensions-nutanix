@@ -47,8 +47,8 @@ for e.g. local development and e2e tests:
 1. Update the `caren` provider configuration in `test/e2e/config/caren.yaml`:
    - The first reference should be the most recent successful patch release of the previous minor version. For example,
      if you releasing v0.22, reference the most recent successful patch release of v0.21.
-   - The second reference should be the 99th patch version of the minor version being released. For example, if you
-     are releasing v0.22, the reference should be v0.22.99.
+   - The second reference is the "vNext" placeholder and should be the 99th patch version of the minor version
+     *after* the one being released. For example, if you are releasing v0.22, the reference should be v0.23.99.
 1. Commit the changed files:
 
    ```shell
