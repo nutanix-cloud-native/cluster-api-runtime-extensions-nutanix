@@ -32,5 +32,14 @@ spec:
 
 To deploy the addon via `ClusterResourceSet` replace the value of `strategy` with `ClusterResourceSet`.
 
+## Pod Security Admission
+
+NFD's master and worker DaemonSets require privileged pod features (hostNetwork,
+host filesystem access, etc.) and would be rejected on clusters that enforce a
+`baseline` or stricter Pod Security Standard. CAREN therefore labels the
+`node-feature-discovery` namespace with `pod-security.kubernetes.io/enforce=privileged`
+on every reconcile. This applies to both deployment strategies and means NFD
+keeps working when an operator opts in to PSA enforcement.
+
 [Node Feature Discovery]: https://github.com/kubernetes-sigs/node-feature-discovery
 [Cluster API Add-on Provider for Helm]: https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm

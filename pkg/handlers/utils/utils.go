@@ -21,6 +21,20 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
+// PrivilegedPodSecurityEnforceLabels is the label set applied to addon
+// namespaces on workload clusters that contain workloads requiring privileged
+// Pod Security Standard features (hostPath volumes, hostNetwork, privileged
+// containers, etc.). Setting this label means those addons keep working when
+// operators enable cluster-wide PSA enforcement at baseline or stricter (see
+// docs/content/security/dirty-frag-mitigation.md).
+//
+// The PSA version label is intentionally omitted: PSA defaults the version
+// to "latest" when no enforce-version label is present, which is the value
+// we want.
+var PrivilegedPodSecurityEnforceLabels = map[string]string{
+	"pod-security.kubernetes.io/enforce": "privileged",
+}
+
 type EnsureCRSForClusterFromObjectsOptions struct {
 	// OwnerCluster holds the owning cluster for the ClusterResourceSet.
 	// This allows setting the owner to something other than the workload cluster, which is
