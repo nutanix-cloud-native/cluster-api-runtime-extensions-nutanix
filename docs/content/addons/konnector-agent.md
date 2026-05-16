@@ -127,6 +127,16 @@ The addon uses the following default values:
 - **Chart**: `konnector-agent`
 - **Version**: `1.3.2`
 
+## Pod Security Admission
+
+The Konnector Agent runs as a privileged workload (it reads cluster identity,
+manages kubeconfigs, etc.) and would be rejected on clusters that enforce a
+`baseline` or stricter Pod Security Standard. CAREN therefore labels the
+`ntnx-system` namespace with `pod-security.kubernetes.io/enforce=privileged`
+on every reconcile so the agent keeps working when an operator opts in to
+PSA enforcement. The same label is applied by the Nutanix CSI driver lifecycle
+handler, which also installs into `ntnx-system`.
+
 ## Troubleshooting
 
 ### Common Issues

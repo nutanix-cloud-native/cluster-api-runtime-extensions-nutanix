@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -142,11 +143,38 @@ func (n *NutanixCSI) Apply(
 		}
 	}
 
+	// The Nutanix CSI driver requires hostPath volumes and other privileged
+	// pod features that fail to admit under baseline or stricter Pod Security
+	// Admission, so the workload-cluster namespace it runs in must be labelled
+	// privileged.
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		n.client,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating remote cluster client: %w", err)
+	}
+	if err := handlersutils.EnsureNamespaceWithMetadata(
+		ctx,
+		remoteClient,
+		defaultHelmReleaseNamespace,
+		handlersutils.PrivilegedPodSecurityEnforceLabels,
+		nil,
+	); err != nil {
+		return fmt.Errorf(
+			"failed to ensure %q namespace on the remote cluster: %w",
+			defaultHelmReleaseNamespace,
+			err,
+		)
+	}
+
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply nutanix CSI addon: %w", err)
 	}
 
-	err := csiutils.CreateStorageClassesOnRemote(
+	err = csiutils.CreateStorageClassesOnRemote(
 		ctx,
 		n.client,
 		provider.StorageClassConfigs,

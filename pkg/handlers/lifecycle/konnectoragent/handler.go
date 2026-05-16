@@ -239,6 +239,35 @@ func (n *DefaultKonnectorAgent) apply(
 		return
 	}
 
+	// The Konnector Agent runs as a privileged workload (it reads kube-system
+	// UUID, manages kubeconfigs, etc.) and is rejected by baseline / restricted
+	// Pod Security Admission. Label its namespace so PSA does not block it.
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		n.client,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("error creating remote cluster client: %v", err))
+		return
+	}
+	if err := handlersutils.EnsureNamespaceWithMetadata(
+		ctx,
+		remoteClient,
+		defaultHelmReleaseNamespace,
+		handlersutils.PrivilegedPodSecurityEnforceLabels,
+		nil,
+	); err != nil {
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf(
+			"failed to ensure %q namespace on the remote cluster: %v",
+			defaultHelmReleaseNamespace, err,
+		))
+		return
+	}
+
 	var strategy addons.Applier
 	helmChart, err := n.helmChartInfoGetter.For(ctx, log, config.KonnectorAgent)
 	if err != nil {

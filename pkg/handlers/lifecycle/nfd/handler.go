@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -172,6 +174,36 @@ func (n *DefaultNFD) apply(
 					err,
 				),
 			)
+			return
+		}
+		// NFD's master / worker DaemonSets need hostNetwork and hostPath access
+		// and fail to admit under baseline / restricted PSA. The CRS strategy
+		// bakes the privileged label into the namespace manifest; the Helm
+		// strategy relies on CAAPH to create a bare namespace, so we label it
+		// explicitly here.
+		remoteClient, err := remote.NewClusterClient(
+			ctx,
+			"",
+			n.client,
+			ctrlclient.ObjectKeyFromObject(cluster),
+		)
+		if err != nil {
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(fmt.Sprintf("error creating remote cluster client: %v", err))
+			return
+		}
+		if err := handlersutils.EnsureNamespaceWithMetadata(
+			ctx,
+			remoteClient,
+			defaultHelmReleaseNamespace,
+			handlersutils.PrivilegedPodSecurityEnforceLabels,
+			nil,
+		); err != nil {
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(fmt.Sprintf(
+				"failed to ensure %q namespace on the remote cluster: %v",
+				defaultHelmReleaseNamespace, err,
+			))
 			return
 		}
 		strategy = addons.NewHelmAddonApplier(
