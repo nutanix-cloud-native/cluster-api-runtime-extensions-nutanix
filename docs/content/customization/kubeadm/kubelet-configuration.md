@@ -12,30 +12,36 @@ Kubelet configuration is supported for:
 
 There is no cluster-level default; control plane and worker settings are configured independently.
 
+All fields are optional. When a field is not set, the kubelet default applies and no
+patch is emitted for that field.
+
+For full upstream documentation on each setting, see the
+[KubeletConfiguration reference](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/).
+
 ## Supported options
 
-The following fields are supported under `kubeletConfiguration`:
-
-- `maxPods`
-- `systemReserved`
-- `kubeReserved`
-- `evictionHard`
-- `evictionSoft`
-- `evictionSoftGracePeriod`
-- `protectKernelDefaults`
-- `topologyManagerPolicy`
-- `cpuManagerPolicy`
-- `memoryManagerPolicy`
-- `podPidsLimit`
-- `containerLogMaxSize`
-- `containerLogMaxFiles`
-- `imageGCHighThresholdPercent`
-- `imageGCLowThresholdPercent`
-- `maxParallelImagePulls`
-- `shutdownGracePeriod`
-- `shutdownGracePeriodCriticalPods`
-- `seccompDefault`
-- `enforceNodeAllocatable`
+| Field | Type | Description |
+|-------|------|-------------|
+| `maxPods` | integer (50–256) | Maximum number of pods per node. |
+| `systemReserved` | map of `cpu`, `memory`, `ephemeral-storage`, `pid` to quantities | Resources reserved for OS system daemons. |
+| `kubeReserved` | map of `cpu`, `memory`, `ephemeral-storage`, `pid` to quantities | Resources reserved for Kubernetes components. |
+| `evictionHard` | map of signal names to thresholds | Hard eviction thresholds (immediate pod eviction). |
+| `evictionSoft` | map of signal names to thresholds | Soft eviction thresholds (eviction after grace period). |
+| `evictionSoftGracePeriod` | map of signal names to durations | Grace periods for soft eviction signals. Keys must match `evictionSoft`. |
+| `protectKernelDefaults` | boolean | Causes the kubelet to error if kernel flags differ from expected values. |
+| `topologyManagerPolicy` | `none`, `best-effort`, `restricted`, `single-numa-node` | NUMA-aware resource alignment policy. |
+| `cpuManagerPolicy` | `none`, `static` | Controls cpuset assignment. `static` enables exclusive CPU pinning for Guaranteed QoS pods. |
+| `memoryManagerPolicy` | `None`, `Static` | Controls memory management. `Static` enables NUMA-aware memory allocation for Guaranteed QoS pods. |
+| `podPidsLimit` | integer (1024–16384) | Maximum number of PIDs per pod. |
+| `containerLogMaxSize` | quantity (e.g. `"10Mi"`) | Maximum size of a container log file before rotation. |
+| `containerLogMaxFiles` | integer (≥2) | Maximum number of rotated log files per container. |
+| `imageGCHighThresholdPercent` | integer (0–100) | Disk usage percent above which image GC always runs. Must be > `imageGCLowThresholdPercent`. |
+| `imageGCLowThresholdPercent` | integer (0–100) | Disk usage percent below which image GC never runs. |
+| `maxParallelImagePulls` | integer (≥0) | Maximum concurrent image pulls. When > 0, `serializeImagePulls` is automatically set to `false`. |
+| `shutdownGracePeriod` | duration (e.g. `"30s"`) | Total time the node delays shutdown for pod termination. |
+| `shutdownGracePeriodCriticalPods` | duration (e.g. `"10s"`) | Time reserved for terminating critical pods during shutdown. Must be ≤ `shutdownGracePeriod`. |
+| `seccompDefault` | boolean | Apply the runtime's default seccomp profile (`RuntimeDefault`) to pods that do not specify one. See [Default seccomp profile](#default-seccomp-profile). |
+| `enforceNodeAllocatable` | list of `pods`, `system-reserved`, `kube-reserved`, `system-reserved-compressible`, `kube-reserved-compressible` | Which resource reservations are enforced via cgroups. See [Enforce node allocatable](#enforce-node-allocatable). |
 
 ## Default seccomp profile
 
@@ -62,7 +68,7 @@ Caveats:
 - Changing this value rolls the affected machines, since it is rendered into
   the `KubeadmConfig` and triggers a node template change.
 
-## Example
+## Examples
 
 ### Control plane
 
@@ -104,6 +110,88 @@ spec:
                 maxPods: 250
                 podPidsLimit: 4096
                 seccompDefault: true
+```
+
+### Resource reservations
+
+`systemReserved` and `kubeReserved` accept a map with keys `cpu`, `memory`,
+`ephemeral-storage`, and `pid`. Values are Kubernetes resource quantities.
+
+```yaml
+kubeletConfiguration:
+  systemReserved:
+    cpu: "500m"
+    memory: "1Gi"
+    ephemeral-storage: "10Gi"
+  kubeReserved:
+    cpu: "200m"
+    memory: "512Mi"
+```
+
+### Eviction thresholds
+
+`evictionHard` and `evictionSoft` accept a map with signal names as keys and thresholds
+(absolute quantities or percentages) as values. Valid signal names are `memory.available`,
+`nodefs.available`, `nodefs.inodesFree`, `imagefs.available`, `imagefs.inodesFree`, and
+`pid.available`.
+
+When using `evictionSoft`, you must also set `evictionSoftGracePeriod` with matching keys.
+
+```yaml
+kubeletConfiguration:
+  evictionHard:
+    memory.available: "100Mi"
+    nodefs.available: "10%"
+    imagefs.available: "15%"
+  evictionSoft:
+    memory.available: "200Mi"
+    nodefs.available: "15%"
+  evictionSoftGracePeriod:
+    memory.available: "30s"
+    nodefs.available: "1m0s"
+```
+
+### Graceful node shutdown
+
+`shutdownGracePeriod` sets the total time the node delays shutdown for pod termination.
+`shutdownGracePeriodCriticalPods` sets the portion of that time reserved for critical pods
+and must be less than or equal to `shutdownGracePeriod`.
+
+```yaml
+kubeletConfiguration:
+  shutdownGracePeriod: "60s"
+  shutdownGracePeriodCriticalPods: "15s"
+```
+
+### Image garbage collection
+
+`imageGCHighThresholdPercent` must be greater than `imageGCLowThresholdPercent` when both
+are set.
+
+```yaml
+kubeletConfiguration:
+  imageGCHighThresholdPercent: 85
+  imageGCLowThresholdPercent: 70
+```
+
+### Container log rotation
+
+```yaml
+kubeletConfiguration:
+  containerLogMaxSize: "50Mi"
+  containerLogMaxFiles: 10
+```
+
+### NUMA-aware topology management
+
+For workloads sensitive to hardware topology (GPU, HPC, telco), you can combine
+`topologyManagerPolicy`, `cpuManagerPolicy`, and `memoryManagerPolicy`.
+
+```yaml
+kubeletConfiguration:
+  topologyManagerPolicy: single-numa-node
+  cpuManagerPolicy: static
+  memoryManagerPolicy: Static
 ```
 
 ## Enforce node allocatable
