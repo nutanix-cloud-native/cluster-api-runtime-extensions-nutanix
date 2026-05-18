@@ -21,12 +21,13 @@ func TestMutateIfApplicable(t *testing.T) {
 	t.Parallel()
 
 	type testSpec[T runtime.Object] struct {
-		name          string
-		input         *unstructured.Unstructured
-		holderRef     *runtimehooksv1.HolderReference
-		patchSelector clusterv1beta2.PatchSelector
-		mutFn         func(T) error
-		expected      *unstructured.Unstructured
+		name            string
+		input           *unstructured.Unstructured
+		holderRef       *runtimehooksv1.HolderReference
+		patchSelector   clusterv1beta2.PatchSelector
+		mutFn           func(T) error
+		expected        *unstructured.Unstructured
+		wantErrContains string
 	}
 	tests := []testSpec[*v1.ConfigMap]{{
 		name: "empty input matches holder and selector",
@@ -74,7 +75,7 @@ func TestMutateIfApplicable(t *testing.T) {
 			Object: map[string]any{},
 		},
 	}, {
-		name: "invalid typed object - ignored",
+		name: "selector mismatch on missing GVK - skipped",
 		input: &unstructured.Unstructured{Object: map[string]any{
 			"unknownField": "foo",
 		}},
@@ -91,6 +92,29 @@ func TestMutateIfApplicable(t *testing.T) {
 				"unknownField": "foo",
 			},
 		},
+	}, {
+		// Regression guard: when the patch selector matches but the unstructured input carries a
+		// field unknown to the typed view (e.g. a newer provider API adding a status sub-resource),
+		// MutateIfApplicable must surface the strict decode error instead of silently skipping the
+		// mutation. Silent skips previously produced clusters with un-patched templates and no
+		// visible signal in controller logs.
+		name: "unknown field surfaces decode error when selector matches",
+		input: &unstructured.Unstructured{Object: map[string]any{
+			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
+			"kind":       "KubeadmControlPlaneTemplate",
+			"status": map[string]any{
+				"someProviderManagedField": "value-from-newer-api",
+			},
+		}},
+		holderRef: &runtimehooksv1.HolderReference{
+			Kind:      "Cluster",
+			FieldPath: "spec.controlPlaneRef",
+		},
+		patchSelector: selectors.ControlPlane(),
+		mutFn: func(obj *v1.ConfigMap) error {
+			return nil
+		},
+		wantErrContains: "failed to convert unstructured object to typed object",
 	}, {
 		name: "check deletion of elements in slice",
 		input: &unstructured.Unstructured{Object: map[string]any{
@@ -137,6 +161,11 @@ func TestMutateIfApplicable(t *testing.T) {
 				logr.Discard(),
 				tt.mutFn,
 			)
+			if tt.wantErrContains != "" {
+				g.Expect(err).To(gomega.HaveOccurred())
+				g.Expect(err.Error()).To(gomega.ContainSubstring(tt.wantErrContains))
+				return
+			}
 			g.Expect(err).ToNot(gomega.HaveOccurred())
 			g.Expect(tt.input).To(gomega.Equal(tt.expected))
 		})
