@@ -21,108 +21,138 @@ func TestMutateIfApplicable(t *testing.T) {
 	t.Parallel()
 
 	type testSpec[T runtime.Object] struct {
-		name          string
-		input         *unstructured.Unstructured
-		holderRef     *runtimehooksv1.HolderReference
-		patchSelector clusterv1beta2.PatchSelector
-		mutFn         func(T) error
-		expected      *unstructured.Unstructured
+		name            string
+		input           *unstructured.Unstructured
+		holderRef       *runtimehooksv1.HolderReference
+		patchSelector   clusterv1beta2.PatchSelector
+		mutFn           func(T) error
+		expected        *unstructured.Unstructured
+		wantErrContains string
 	}
-	tests := []testSpec[*v1.ConfigMap]{{
-		name: "empty input matches holder and selector",
-		input: &unstructured.Unstructured{Object: map[string]any{
-			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
-			"kind":       "KubeadmControlPlaneTemplate",
-		}},
-		holderRef: &runtimehooksv1.HolderReference{
-			Kind:      "Cluster",
-			FieldPath: "spec.controlPlaneRef",
-		},
-		patchSelector: selectors.ControlPlane(),
-		mutFn: func(obj *v1.ConfigMap) error {
-			if obj.Data == nil {
-				obj.Data = map[string]string{}
-			}
-			obj.Data["foo"] = "bar" //nolint:goconst // bar doesn't need to be a const.
-			return nil
-		},
-		expected: &unstructured.Unstructured{
-			Object: map[string]any{
+	tests := []testSpec[*v1.ConfigMap]{
+		{
+			name: "empty input matches holder and selector",
+			input: &unstructured.Unstructured{Object: map[string]any{
 				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
 				"kind":       "KubeadmControlPlaneTemplate",
-				"data": map[string]any{
-					"foo": "bar",
+			}},
+			holderRef: &runtimehooksv1.HolderReference{
+				Kind:      "Cluster",
+				FieldPath: "spec.controlPlaneRef",
+			},
+			patchSelector: selectors.ControlPlane(),
+			mutFn: func(obj *v1.ConfigMap) error {
+				if obj.Data == nil {
+					obj.Data = map[string]string{}
+				}
+				obj.Data["foo"] = "bar" //nolint:goconst // bar doesn't need to be a const.
+				return nil
+			},
+			expected: &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
+					"kind":       "KubeadmControlPlaneTemplate",
+					"data": map[string]any{
+						"foo": "bar",
+					},
 				},
 			},
 		},
-	}, {
-		name:  "empty input not matching holder and selector",
-		input: &unstructured.Unstructured{Object: map[string]any{}},
-		holderRef: &runtimehooksv1.HolderReference{
-			Kind:      "NotMatching",
-			FieldPath: "spec.controlPlaneRef",
+		{
+			name:  "empty input not matching holder and selector",
+			input: &unstructured.Unstructured{Object: map[string]any{}},
+			holderRef: &runtimehooksv1.HolderReference{
+				Kind:      "NotMatching",
+				FieldPath: "spec.controlPlaneRef",
+			},
+			patchSelector: selectors.ControlPlane(),
+			mutFn: func(obj *v1.ConfigMap) error {
+				if obj.Data == nil {
+					obj.Data = map[string]string{}
+				}
+				obj.Data["foo"] = "bar"
+				return nil
+			},
+			expected: &unstructured.Unstructured{
+				Object: map[string]any{},
+			},
 		},
-		patchSelector: selectors.ControlPlane(),
-		mutFn: func(obj *v1.ConfigMap) error {
-			if obj.Data == nil {
-				obj.Data = map[string]string{}
-			}
-			obj.Data["foo"] = "bar"
-			return nil
-		},
-		expected: &unstructured.Unstructured{
-			Object: map[string]any{},
-		},
-	}, {
-		name: "invalid typed object - ignored",
-		input: &unstructured.Unstructured{Object: map[string]any{
-			"unknownField": "foo",
-		}},
-		holderRef: &runtimehooksv1.HolderReference{
-			Kind:      "Cluster",
-			FieldPath: "spec.controlPlaneRef",
-		},
-		patchSelector: selectors.ControlPlane(),
-		mutFn: func(obj *v1.ConfigMap) error {
-			return nil
-		},
-		expected: &unstructured.Unstructured{
-			Object: map[string]any{
+		{
+			name: "selector mismatch on missing GVK - skipped",
+			input: &unstructured.Unstructured{Object: map[string]any{
 				"unknownField": "foo",
+			}},
+			holderRef: &runtimehooksv1.HolderReference{
+				Kind:      "Cluster",
+				FieldPath: "spec.controlPlaneRef",
 			},
-		},
-	}, {
-		name: "check deletion of elements in slice",
-		input: &unstructured.Unstructured{Object: map[string]any{
-			"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
-			"kind":       "KubeadmControlPlaneTemplate",
-			"data": map[string]any{
-				"existingFoo": "bar",
+			patchSelector: selectors.ControlPlane(),
+			mutFn: func(obj *v1.ConfigMap) error {
+				return nil
 			},
-		}},
-		holderRef: &runtimehooksv1.HolderReference{
-			Kind:      "Cluster",
-			FieldPath: "spec.controlPlaneRef",
-		},
-		patchSelector: selectors.ControlPlane(),
-		mutFn: func(obj *v1.ConfigMap) error {
-			if obj.Data == nil {
-				obj.Data = map[string]string{}
-			}
-			obj.Data["foo"] = "bar"
-			delete(obj.Data, "existingFoo")
-			return nil
-		},
-		expected: &unstructured.Unstructured{
-			Object: map[string]any{
-				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
-				"kind":       "KubeadmControlPlaneTemplate",
-				"data": map[string]any{
-					"foo": "bar",
+			expected: &unstructured.Unstructured{
+				Object: map[string]any{
+					"unknownField": "foo",
 				},
 			},
 		},
-	}}
+		{
+			// Regression guard: when the patch selector matches but the unstructured input carries a
+			// field unknown to the typed view (e.g. a newer provider API adding a status sub-resource),
+			// MutateIfApplicable must surface the strict decode error instead of silently skipping the
+			// mutation. Silent skips previously produced clusters with un-patched templates and no
+			// visible signal in controller logs.
+			name: "unknown field surfaces decode error when selector matches",
+			input: &unstructured.Unstructured{Object: map[string]any{
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
+				"kind":       "KubeadmControlPlaneTemplate",
+				"status": map[string]any{
+					"someProviderManagedField": "value-from-newer-api",
+				},
+			}},
+			holderRef: &runtimehooksv1.HolderReference{
+				Kind:      "Cluster",
+				FieldPath: "spec.controlPlaneRef",
+			},
+			patchSelector: selectors.ControlPlane(),
+			mutFn: func(obj *v1.ConfigMap) error {
+				return nil
+			},
+			wantErrContains: "controlplane.cluster.x-k8s.io/v1beta2, Kind=KubeadmControlPlaneTemplate) to typed object: strict decoding error: unknown field \"status\"",
+		},
+		{
+			name: "check deletion of elements in slice",
+			input: &unstructured.Unstructured{Object: map[string]any{
+				"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
+				"kind":       "KubeadmControlPlaneTemplate",
+				"data": map[string]any{
+					"existingFoo": "bar",
+				},
+			}},
+			holderRef: &runtimehooksv1.HolderReference{
+				Kind:      "Cluster",
+				FieldPath: "spec.controlPlaneRef",
+			},
+			patchSelector: selectors.ControlPlane(),
+			mutFn: func(obj *v1.ConfigMap) error {
+				if obj.Data == nil {
+					obj.Data = map[string]string{}
+				}
+				obj.Data["foo"] = "bar"
+				delete(obj.Data, "existingFoo")
+				return nil
+			},
+			expected: &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
+					"kind":       "KubeadmControlPlaneTemplate",
+					"data": map[string]any{
+						"foo": "bar",
+					},
+				},
+			},
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
@@ -137,6 +167,11 @@ func TestMutateIfApplicable(t *testing.T) {
 				logr.Discard(),
 				tt.mutFn,
 			)
+			if tt.wantErrContains != "" {
+				g.Expect(err).To(gomega.HaveOccurred())
+				g.Expect(err.Error()).To(gomega.ContainSubstring(tt.wantErrContains))
+				return
+			}
 			g.Expect(err).ToNot(gomega.HaveOccurred())
 			g.Expect(tt.input).To(gomega.Equal(tt.expected))
 		})

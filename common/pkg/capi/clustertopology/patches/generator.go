@@ -55,7 +55,11 @@ func MutateIfApplicable[T runtime.Object](
 			"objKind", obj.GetObjectKind().GroupVersionKind(),
 			"expectedType", fmt.Sprintf("%T", &typed),
 		).Info("not matching type")
-		return nil
+		return fmt.Errorf(
+			"failed to convert unstructured object (%s) to typed object: %w",
+			obj.GetObjectKind().GroupVersionKind().String(),
+			err,
+		)
 	}
 
 	// Create a deep clone of the typed object.
