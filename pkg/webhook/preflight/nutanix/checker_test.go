@@ -255,7 +255,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Name:      "test-cluster",
 					Namespace: "default",
 				},
-			})
+			}, nil)
 
 			// Verify correct number of checks
 			assert.Len(t, checks, tt.expectedCheckCount)
@@ -406,7 +406,7 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 				},
 			}
 
-			checks := checker.Init(ctx, nil, cluster)
+			checks := checker.Init(ctx, nil, cluster, nil)
 
 			dependentCount := 0
 			hasVersionCheck := false

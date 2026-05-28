@@ -32,6 +32,7 @@ type genericChecker struct {
 type checkDependencies struct {
 	kclient                  ctrlclient.Client
 	cluster                  *clusterv1.Cluster
+	oldCluster               *clusterv1.Cluster
 	genericClusterConfigSpec *carenv1.GenericClusterConfigSpec
 	log                      logr.Logger
 }
@@ -39,12 +40,13 @@ type checkDependencies struct {
 func (g *genericChecker) Init(
 	ctx context.Context,
 	kclient ctrlclient.Client,
-	cluster *clusterv1.Cluster,
+	cluster, oldCluster *clusterv1.Cluster,
 ) []preflight.Check {
 	cd := &checkDependencies{
-		kclient: kclient,
-		cluster: cluster,
-		log:     ctrl.LoggerFrom(ctx).WithName("preflight/generic"),
+		kclient:    kclient,
+		cluster:    cluster,
+		oldCluster: oldCluster,
+		log:        ctrl.LoggerFrom(ctx).WithName("preflight/generic"),
 	}
 	checks := slices.Concat(
 		[]preflight.Check{
