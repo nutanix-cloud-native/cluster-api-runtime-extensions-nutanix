@@ -16,6 +16,14 @@ kubeadmConfigPatches:
     apiVersion: kubelet.config.k8s.io/v1beta1
     kind: KubeletConfiguration
     nodeStatusMaxImages: -1
+  - |
+    kind: ClusterConfiguration
+    apiVersion: kubeadm.k8s.io/v1beta3
+    apiServer:
+      certSANs:
+        - "localhost"
+        - "127.0.0.1"
+        - "apiserver.kind.dev"
 nodes:
   - role: control-plane
     image: "${KINDEST_IMAGE}"
