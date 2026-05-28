@@ -308,7 +308,7 @@ func TestHandle(t *testing.T) {
 					Result: &metav1.Status{
 						Code:    http.StatusUnprocessableEntity,
 						Reason:  metav1.StatusReasonInvalid,
-						Message: "preflight checks failed",
+						Message: "preflight checks failed: Test1: test failed (field: spec.test)",
 						Details: &metav1.StatusDetails{
 							Causes: []metav1.StatusCause{
 								{
@@ -404,7 +404,7 @@ func TestHandle(t *testing.T) {
 					Result: &metav1.Status{
 						Code:    http.StatusInternalServerError,
 						Reason:  metav1.StatusReasonInternalError,
-						Message: "preflight checks failed due to an internal error",
+						Message: "preflight checks failed due to an internal error: Test1: internal error; Test2: check failed",
 						Details: &metav1.StatusDetails{
 							Causes: []metav1.StatusCause{
 								{
@@ -649,7 +649,7 @@ func TestHandleCancelledContext(t *testing.T) {
 			Result: &metav1.Status{
 				Code:    http.StatusInternalServerError,
 				Reason:  metav1.StatusReasonInternalError,
-				Message: "preflight checks failed due to an internal error",
+				Message: "preflight checks failed due to an internal error: Test1: context cancelled; Test2: context cancelled",
 				Details: &metav1.StatusDetails{
 					Causes: []metav1.StatusCause{
 						{
