@@ -515,7 +515,26 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name:      "update operation changes only the paused state, allowed",
+			name:      "update operation unpauses the cluster, without changing the spec, allowed response",
+			operation: admissionv1.Update,
+			oldCluster: func() *clusterv1beta2.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Paused = ptr.To(true)
+				return cluster
+			}(),
+			cluster: func() *clusterv1beta2.Cluster {
+				cluster := topologyCluster()
+				cluster.Spec.Paused = ptr.To(false)
+				return cluster
+			}(),
+			expectedResponse: admission.Response{
+				AdmissionResponse: admissionv1.AdmissionResponse{
+					Allowed: true,
+				},
+			},
+		},
+		{
+			name:      "update operation pauses the cluster, without changing the spec, allowed response",
 			operation: admissionv1.Update,
 			oldCluster: func() *clusterv1beta2.Cluster {
 				cluster := topologyCluster()
