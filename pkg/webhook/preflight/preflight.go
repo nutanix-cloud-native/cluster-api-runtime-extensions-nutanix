@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
@@ -222,16 +223,34 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		}
 	}
 
+	humanReadableCausesSummary := strings.Builder{}
+	for i, cause := range resp.Result.Details.Causes {
+		if i > 0 {
+			humanReadableCausesSummary.WriteString("; ")
+		}
+		causeSummary := fmt.Sprintf("%s: %s", cause.Type, cause.Message)
+		if cause.Field != "" {
+			causeSummary += fmt.Sprintf(" (field: %s)", cause.Field)
+		}
+		humanReadableCausesSummary.WriteString(causeSummary)
+	}
+
 	switch {
 	case internalError:
 		// Internal errors take precedence over check failures.
-		resp.Result.Message = "preflight checks failed due to an internal error"
+		resp.Result.Message = fmt.Sprintf(
+			"preflight checks failed due to an internal error: %s",
+			humanReadableCausesSummary.String(),
+		)
 		resp.Result.Code = http.StatusInternalServerError
 		resp.Result.Reason = metav1.StatusReasonInternalError
 		log.V(5).Error(nil, "Preflight checks failed due to an internal error", "response", resp)
 	case !resp.Allowed:
 		// Because the response is not allowed, preflights must have failed.
-		resp.Result.Message = "preflight checks failed"
+		resp.Result.Message = fmt.Sprintf(
+			"preflight checks failed: %s",
+			humanReadableCausesSummary.String(),
+		)
 		resp.Result.Code = http.StatusUnprocessableEntity
 		resp.Result.Reason = metav1.StatusReasonInvalid
 		log.V(5).Info("Preflight checks failed", "response", resp)
