@@ -1,4 +1,4 @@
-// Copyright 2024 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package nutanix
@@ -36,16 +36,22 @@ func (c *controlPlaneEndpointCheck) Name() string {
 }
 
 func (c *controlPlaneEndpointCheck) Run(ctx context.Context) preflight.CheckResult {
-	result := preflight.CheckResult{
-		Allowed: true,
+	if !c.cluster.Spec.ControlPlaneRef.IsDefined() {
+		// The control plane reference is defined, so the control plane has been initialized,
+		// and the endpoint may establish a TCP connection.
+		return preflight.CheckResult{
+			Allowed: true,
+		}
 	}
 
-	if !c.cluster.Spec.ControlPlaneRef.IsDefined() {
-		result.Allowed = true
-		return result
-	}
+	// The control plane reference is not defined, so the control plane has not been initialized,
+	// and if the endpoint establishes a TCP connection, then the most likely conclusion is that the
+	// endpoint is in use by another cluster. It is possible that the endpoint is a load balancer or
+	// proxy that accepts connections even if the control plane is not initialized, but in that
+	// case, the user can skip this check.
 
 	dialer := &net.Dialer{
+		// The default TCP timeout is 60 seconds, which is too long for this check.
 		Timeout: 3 * time.Second,
 	}
 	addr := net.JoinHostPort(
@@ -54,20 +60,22 @@ func (c *controlPlaneEndpointCheck) Run(ctx context.Context) preflight.CheckResu
 	)
 	conn, err := dialer.DialContext(ctx, "tcp", addr)
 	if err != nil {
-		result.Allowed = true
-		return result
-	}
-	if conn != nil {
-		conn.Close()
-		result.Allowed = false
-		result.Causes = append(result.Causes, preflight.Cause{
-			//nolint:lll // Message is long.
-			Message: fmt.Sprintf(
-				"The control plane endpoint %s established a TCP connection, before any control plane nodes have been created. The endpoint is in use, possibly by another cluster.",
-				addr,
-			),
-		})
+		return preflight.CheckResult{
+			Allowed: true,
+		}
 	}
 
-	return result
+	conn.Close()
+	return preflight.CheckResult{
+		Allowed: false,
+		Causes: []preflight.Cause{
+			{
+				//nolint:lll // Message is long.
+				Message: fmt.Sprintf(
+					"The control plane endpoint %s established a TCP connection, before any control plane nodes have been created. The endpoint is in use, possibly by another cluster.",
+					addr,
+				),
+			},
+		},
+	}
 }
