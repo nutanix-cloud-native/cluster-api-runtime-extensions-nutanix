@@ -65,7 +65,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases{{ end }}'
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
-    ChartVersion: 3.7.0
+    ChartVersion: 3.7.1
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm-releases/{{ end }}'
   registry-syncer: |
     ChartName: registry-syncer

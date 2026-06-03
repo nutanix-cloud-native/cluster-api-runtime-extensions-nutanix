@@ -59,11 +59,11 @@ export AWS_EBS_CSI_CHART_VERSION := 2.57.1
 # Nutanix Storage CSI
 #   Chart name: nutanix-csi-storage
 #   Chart repo: https://nutanix.github.io/helm-releases/index.yaml
-#   Chart version:   3.7.0
-#   App version:     3.7.0
+#   Chart version:   3.7.1
+#   App version:     3.7.1
 #   Repo:            https://portal.nutanix.com/page/documents/list?type=software&filterKey=product&filterVal=CSI
 #   Release:         https://portal.nutanix.com/page/documents/details?targetId=CSI-Volume-Driver-v3_7:CSI-Volume-Driver-v3_7
-export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.7.0
+export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.7.1
 
 # Local Path Provisioner CSI
 #   Chart name: local-path-provisioner
