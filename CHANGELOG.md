@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.49.0 (2026-06-03)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: [NCN-114349] Label addon namespaces with privileged PSA by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1625
+* feat: update Nutanix CSI version to 3.7.1 by @atulv7 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1635
+### Fixes 🔧
+* fix: Surface Cluster topology patch decode failures by @Vedansh074 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1627
+* fix: Summarize preflight failures in result message by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1633
+### Other Changes
+* ci: Add --ignore-scripts and isolate docs build workflow by @shubham2g in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1629
+
+## New Contributors
+* @shubham2g made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1629
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.48.0...v0.49.0
+
 ## 0.48.0 (2026-05-14)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
