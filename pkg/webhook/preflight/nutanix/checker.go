@@ -72,8 +72,9 @@ type nutanixChecker struct {
 }
 
 type checkDependencies struct {
-	kclient ctrlclient.Client
-	cluster *clusterv1.Cluster
+	kclient    ctrlclient.Client
+	cluster    *clusterv1.Cluster
+	oldCluster *clusterv1.Cluster
 
 	nutanixClusterConfigSpec                           *carenv1.NutanixClusterConfigSpec
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
@@ -88,12 +89,14 @@ func (n *nutanixChecker) Init(
 	ctx context.Context,
 	kclient ctrlclient.Client,
 	cluster *clusterv1.Cluster,
+	oldCluster *clusterv1.Cluster,
 ) []preflight.Check {
 	cd := &checkDependencies{
-		kclient:   kclient,
-		cluster:   cluster,
-		log:       ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
-		pcVersion: "",
+		kclient:    kclient,
+		cluster:    cluster,
+		oldCluster: oldCluster,
+		log:        ctrl.LoggerFrom(ctx).WithName("preflight/nutanix"),
+		pcVersion:  "",
 	}
 
 	checks := []preflight.Check{

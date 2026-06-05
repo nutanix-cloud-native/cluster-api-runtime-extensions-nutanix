@@ -35,7 +35,8 @@ type (
 	// such as an infrastructure API client.
 	Checker interface {
 		// Init returns the checks that should run for the cluster.
-		Init(ctx context.Context, client ctrlclient.Client, cluster *clusterv1.Cluster) []Check
+		// oldCluster is the cluster state before an Update operation and nil for Create operations.
+		Init(ctx context.Context, client ctrlclient.Client, cluster, oldCluster *clusterv1.Cluster) []Check
 	}
 
 	// Check represents a single preflight check that can be run against a cluster.
@@ -147,8 +148,9 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Allowed("")
 	}
 
+	var oldCluster *clusterv1.Cluster
 	if req.Operation == admissionv1.Update {
-		oldCluster := &clusterv1.Cluster{}
+		oldCluster = &clusterv1.Cluster{}
 		err := h.decoder.DecodeRaw(req.OldObject, oldCluster)
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -189,7 +191,7 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 	checkTimeout := Timeout - 2*time.Second
 	checkCtx, checkCtxCancel := context.WithTimeout(ctx, checkTimeout)
 	log.V(5).Info("Running preflight checks")
-	resultsOrderedByCheckerAndCheck := run(checkCtx, h.client, cluster, skipEvaluator, h.checkers)
+	resultsOrderedByCheckerAndCheck := run(checkCtx, h.client, cluster, oldCluster, skipEvaluator, h.checkers)
 	checkCtxCancel()
 
 	// Summarize the results.
@@ -263,9 +265,11 @@ func (h *WebhookHandler) Handle(ctx context.Context, req admission.Request) admi
 
 // run runs all checks for the cluster, concurrently, and returns the results ordered by checker and check.
 // Checker are initialized concurrently, and checks runs concurrently as well.
+// oldCluster is the cluster state before an Update operation and nil for Create operations.
 func run(ctx context.Context,
 	client ctrlclient.Client,
 	cluster *clusterv1.Cluster,
+	oldCluster *clusterv1.Cluster,
 	skipEvaluator *skip.Evaluator,
 	checkers []Checker,
 ) [][]namedResult {
@@ -278,13 +282,14 @@ func run(ctx context.Context,
 			ctx context.Context,
 			client ctrlclient.Client,
 			cluster *clusterv1.Cluster,
+			oldCluster *clusterv1.Cluster,
 			skipEvaluator *skip.Evaluator,
 			checker Checker,
 			i int,
 		) {
 			defer checkersWG.Done()
 
-			checks := checker.Init(ctx, client, cluster)
+			checks := checker.Init(ctx, client, cluster, oldCluster)
 			resultsOrderedByCheck := make([]namedResult, len(checks))
 
 			checksWG := sync.WaitGroup{}
@@ -356,6 +361,7 @@ func run(ctx context.Context,
 			ctx,
 			client,
 			cluster,
+			oldCluster,
 			skipEvaluator,
 			checker,
 			i,
