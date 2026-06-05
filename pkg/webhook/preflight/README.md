@@ -63,7 +63,8 @@ type checkDependencies struct {
 func (m *myChecker) Init(
     ctx context.Context,
     client ctrlclient.Client,
-    cluster, oldCluster *clusterv1beta2.Cluster,
+    cluster *clusterv1beta2.Cluster,
+    oldCluster *clusterv1beta2.Cluster,
 ) []preflight.Check {
     log := ctrl.LoggerFrom(ctx).WithName("preflight/myprovider")
 
