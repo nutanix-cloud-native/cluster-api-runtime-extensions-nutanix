@@ -88,7 +88,8 @@ type checkDependencies struct {
 func (n *nutanixChecker) Init(
 	ctx context.Context,
 	kclient ctrlclient.Client,
-	cluster, oldCluster *clusterv1.Cluster,
+	cluster *clusterv1.Cluster,
+	oldCluster *clusterv1.Cluster,
 ) []preflight.Check {
 	cd := &checkDependencies{
 		kclient:    kclient,

@@ -40,7 +40,8 @@ type checkDependencies struct {
 func (g *genericChecker) Init(
 	ctx context.Context,
 	kclient ctrlclient.Client,
-	cluster, oldCluster *clusterv1.Cluster,
+	cluster *clusterv1.Cluster,
+	oldCluster *clusterv1.Cluster,
 ) []preflight.Check {
 	cd := &checkDependencies{
 		kclient:    kclient,
