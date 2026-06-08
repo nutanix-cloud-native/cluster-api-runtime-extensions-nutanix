@@ -193,8 +193,8 @@ func (n *MetalLB) Apply(
 						err,
 					)
 
-					// Return false with no error to retry the apply.
-					return false, nil
+					// Conflicts won't resolve by retrying; return the error immediately.
+					return false, applyErr
 				default:
 					// Otherwise return the error early and do not retry.
 					return false, err
