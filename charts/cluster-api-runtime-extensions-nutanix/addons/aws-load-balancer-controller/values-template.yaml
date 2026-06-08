@@ -1,11 +1,21 @@
 # The clusterName refers the kubernetes.io/cluster/ tag on AWS resources.
 # For EKS clusters, the name will be based on the cluster's namespace + a random suffix.
 # For AWS clusters, the name will just be based on the cluster name.
+
+# The defaultTags holds tags that will be applied to all resources created by the AWS Load Balancer Controller.
+# The tag "kubernetes.io/cluster/clusterName: owned" tag is added to allow CAPA Garbage Collection to identify
+# orphaned resources created by the AWS Load Balancer Controller.
+
 {{- $capiProvider := index .Cluster.metadata.labels "cluster.x-k8s.io/provider" }}
 {{- if eq $capiProvider "eks" }}
 clusterName: "{{ .ControlPlane.spec.eksClusterName }}"
+defaultTags:
+  "kubernetes.io/cluster/{{ .ControlPlane.spec.eksClusterName }}": owned
 {{- else }}
 clusterName: "{{ .Cluster.metadata.name }}"
+defaultTags:
+  "kubernetes.io/cluster/{{ .Cluster.metadata.name }}": owned
 {{- end }}
+
 # Set this value to avoid stutter in the resource names.
 fullnameOverride: aws-load-balancer-controller
