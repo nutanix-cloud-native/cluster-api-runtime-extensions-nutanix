@@ -21,7 +21,8 @@ import (
 )
 
 type ServiceLoadBalancerGC struct {
-	client ctrlclient.Client
+	client              ctrlclient.Client
+	clusterClientGetter remote.ClusterClientGetter
 }
 
 var (
@@ -30,7 +31,10 @@ var (
 )
 
 func New(client ctrlclient.Client) *ServiceLoadBalancerGC {
-	return &ServiceLoadBalancerGC{client: client}
+	return &ServiceLoadBalancerGC{
+		client:              client,
+		clusterClientGetter: remote.NewClusterClient,
+	}
 }
 
 func (s *ServiceLoadBalancerGC) Name() string {
@@ -86,7 +90,7 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 	}
 
 	log.Info("Will attempt to delete Services with type LoadBalancer")
-	remoteClient, err := remote.NewClusterClient(
+	remoteClient, err := s.clusterClientGetter(
 		ctx,
 		"",
 		s.client,
