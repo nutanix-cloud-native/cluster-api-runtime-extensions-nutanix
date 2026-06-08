@@ -112,7 +112,7 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 		resp.SetMessage(err.Error())
 		resp.SetRetryAfterSeconds(5)
 	case errors.Is(err, ErrServicesStillExist):
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		resp.SetRetryAfterSeconds(5)
 	default:
