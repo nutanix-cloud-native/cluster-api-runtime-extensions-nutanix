@@ -171,8 +171,6 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.15.0
@@ -194,14 +192,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ steps.export-go-version-and-mod-cache-path.outputs.go-version }}-
 
-      - name: Set up pre-commit cache
+      - name: Set up prek cache
         uses: actions/cache@v5
         with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-3|${{ hashFiles('.pre-commit-config.yaml') }}
+          path: ~/.cache/prek
+          key: prek-1|${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Run pre-commit
-        run: devbox run -- make pre-commit
+      - name: Run prek
+        run: devbox run -- make prek
         env:
           SKIP: no-commit-to-branch,golangci-lint,actionlint-system
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
