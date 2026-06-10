@@ -159,8 +159,11 @@ Extend the existing "Package Helm chart and attach to release" step (which runs
 the flat OCI path using `oras` with Helm's OCI media types. Keep the
 `gh release upload` and do not change the gh-pages index flow.
 
+The job sets `defaults.run.shell: bash`, which GitHub runs as
+`bash --noprofile --norc -eo pipefail {0}` — so `errexit` and `pipefail` are
+already on; no explicit `set` is needed.
+
 ```bash
-set -euo pipefail
 VERSION=${{ github.ref_name }}
 tgz=cluster-api-runtime-extensions-nutanix-${VERSION}.tgz
 chart_repo=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix-chart
@@ -193,13 +196,20 @@ digest of each pushed reference with `crane` and exposes them as step outputs:
   env:
     VERSION: ${{ github.ref_name }}
   run: |
-    set -euo pipefail
     caren=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
     bundle=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer
     chart=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix-chart
-    echo "caren=$(devbox run -- crane digest "${caren}:${VERSION}")"   >>"${GITHUB_OUTPUT}"
-    echo "bundle=$(devbox run -- crane digest "${bundle}:${VERSION}")" >>"${GITHUB_OUTPUT}"
-    echo "chart=$(devbox run -- crane digest "${chart}:${VERSION}")"   >>"${GITHUB_OUTPUT}"
+    # Assign per-line so a crane failure aborts the step: the default
+    # `bash -eo pipefail` does not abort on a failure inside a command
+    # substitution embedded in a larger command (e.g. echo "x=$(...)").
+    caren_digest=$(devbox run -- crane digest "${caren}:${VERSION}")
+    bundle_digest=$(devbox run -- crane digest "${bundle}:${VERSION}")
+    chart_digest=$(devbox run -- crane digest "${chart}:${VERSION}")
+    {
+      echo "caren=${caren_digest}"
+      echo "bundle=${bundle_digest}"
+      echo "chart=${chart_digest}"
+    } >>"${GITHUB_OUTPUT}"
 ```
 
 **Acceptance**: on a dispatch run (T8) each output is a `sha256:` digest.
@@ -215,7 +225,6 @@ Add a step that signs all three by digest:
   env:
     VERSION: ${{ github.ref_name }}
   run: |
-    set -euo pipefail
     caren=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
     bundle=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer
     chart=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix-chart
@@ -224,7 +233,9 @@ Add a step that signs all three by digest:
     devbox run -- cosign sign --yes "${chart}@${{ steps.digests.outputs.chart }}"
 ```
 
-`set -euo pipefail` makes any signing failure fail the job (FR-009).
+The default `bash -eo pipefail` (from `defaults.run.shell: bash`) makes any
+signing failure fail the job (FR-009); each `cosign sign` is its own simple
+command, so `errexit` aborts on the first failure.
 
 **Acceptance**: on a dispatch run (T8), `cosign verify` succeeds for all three.
 

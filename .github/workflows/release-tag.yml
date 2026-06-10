@@ -66,7 +66,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.ref_name }}
         run: |
-          set -euo pipefail
           devbox run -- helm package ./charts/cluster-api-runtime-extensions-nutanix \
                           --destination . \
                           --version "${VERSION}" \
@@ -77,7 +76,6 @@ jobs:
         env:
           VERSION: ${{ github.ref_name }}
         run: |
-          set -euo pipefail
           tgz="cluster-api-runtime-extensions-nutanix-${VERSION}.tgz"
           # Helm's OCI config blob is the chart metadata as JSON. Pushing with
           # oras (rather than `helm push`, which forces the repository basename
@@ -94,21 +92,25 @@ jobs:
         env:
           VERSION: ${{ github.ref_name }}
         run: |
-          set -euo pipefail
           caren=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
           bundle=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer
           chart=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix-chart
+          # Assign on separate lines so a crane failure aborts the step (the
+          # default `bash -eo pipefail` does not abort on failures inside a
+          # command substitution embedded in a larger command such as echo).
+          caren_digest=$(devbox run -- crane digest "${caren}:${VERSION}")
+          bundle_digest=$(devbox run -- crane digest "${bundle}:${VERSION}")
+          chart_digest=$(devbox run -- crane digest "${chart}:${VERSION}")
           {
-            echo "caren=$(devbox run -- crane digest "${caren}:${VERSION}")"
-            echo "bundle=$(devbox run -- crane digest "${bundle}:${VERSION}")"
-            echo "chart=$(devbox run -- crane digest "${chart}:${VERSION}")"
+            echo "caren=${caren_digest}"
+            echo "bundle=${bundle_digest}"
+            echo "chart=${chart_digest}"
           } >>"${GITHUB_OUTPUT}"
 
       - name: Sign images and chart with cosign (keyless)
         env:
           VERSION: ${{ github.ref_name }}
         run: |
-          set -euo pipefail
           caren=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
           bundle=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer
           chart=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix-chart
