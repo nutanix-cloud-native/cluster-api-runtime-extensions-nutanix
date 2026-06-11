@@ -85,6 +85,41 @@ maxPods: 110
 			}},
 		},
 		{
+			Name: "automaticReservations at worker injects script and preKubeadmCommand",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.WorkerConfigVariableName,
+					v1alpha1.KubeletConfiguration{
+						AutomaticReservations: &v1alpha1.AutomaticReservations{
+							Profile: v1alpha1.ReservationProfileCapacityTiered,
+						},
+					},
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					runtimehooksv1.BuiltinsName,
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/files",
+					ValueMatcher: gomega.ContainElement(
+						gomega.HaveKeyWithValue("path", computeReservationsScriptPath),
+					),
+				},
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/preKubeadmCommands",
+					ValueMatcher: gomega.ContainElement(computeReservationsCommand),
+				},
+			},
+		},
+		{
 			Name: "seccompDefault set at worker is rendered into patch",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(

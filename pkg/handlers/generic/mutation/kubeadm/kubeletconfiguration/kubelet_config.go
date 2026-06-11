@@ -127,6 +127,18 @@ func renderKubeletConfigPatch(cfg *v1alpha1.KubeletConfiguration) (*bootstrapv1.
 	}, nil
 }
 
+// hasRenderableKubeletFields reports whether cfg has any kubelet fields to render
+// into a patch, ignoring the AutomaticReservations directive (which is not a
+// kubelet field and is handled by the boot-time script instead).
+func hasRenderableKubeletFields(cfg *v1alpha1.KubeletConfiguration) bool {
+	if cfg == nil {
+		return false
+	}
+	withoutAuto := *cfg
+	withoutAuto.AutomaticReservations = nil
+	return !withoutAuto.IsEmpty()
+}
+
 // applyDeprecatedMaxParallelImagePulls copies the deprecated maxParallelImagePullsPerNode
 // into cfg.MaxParallelImagePulls if the new field is not set. The new field takes
 // precedence; if both are set, the deprecated value is ignored.
