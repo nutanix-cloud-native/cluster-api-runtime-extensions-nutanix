@@ -831,6 +831,57 @@ Expected: exit 0 (no uncommitted generated drift).
   shows allocatable reduced by the reserved amount, with the larger node reserving a smaller
   fraction.
 
+### Task 10: End-to-end test (all providers, no rollout)
+
+**Files:**
+
+- Create: `test/e2e/kubelet_reservations_test.go`
+- Create: `test/e2e/kubelet_reservations_helpers.go`
+- Create: `test/e2e/kubelet_reservations_helpers_test.go`
+- Modify: `test/e2e/quick_start_test.go` (extract shared setup helpers)
+
+**Approach (no MachineDeployment rollout):** Patching `workerConfig` on a live cluster mutates the
+`KubeadmConfigTemplate` and forces a worker rollout. Instead, the test generates a dedicated flavor
+at runtime by reading the published quick-start example
+(`cluster-template-topology-cilium-helm-addon.yaml`), enabling
+`workerConfig.kubeletConfiguration.automaticReservations.profile: CapacityTiered` on it (merged
+into existing provider machine details, and into any per-MachineDeployment override), writing the
+patched template to a temp dir, and registering it as a new flavor in a deep-copied `E2EConfig`.
+The worker nodes therefore come up already configured — the reservation is applied on first boot
+with no rollout. The published examples are never modified. One combination (Cilium + HelmAddon)
+per provider exercises the boot-time mechanism end to end.
+
+- `enableAutomaticReservationsInClusterTemplate` does the YAML merge (unit-tested in
+  `kubelet_reservations_helpers_test.go`: preserves provider machine details, leaves `clusterConfig`
+  untouched, patches per-MD overrides, survives `${...}` envsubst placeholders, rejects non-Cluster
+  docs).
+- `registerAutomaticReservationsFlavor` resolves the base flavor's (now-absolute) `SourcePath` from
+  the deep-copied config, writes the patched temp template, and appends a `cluster-template-…-kubelet-reservations.yaml`
+  flavor entry.
+- `assertWorkerNodesHaveReservedResources` asserts every worker node reports allocatable CPU and
+  memory strictly below capacity. CPU is the decisive signal: default kubeadm reserves no CPU, so
+  allocatable CPU below capacity can only come from the injected `kubeReserved`.
+- Shared setup (`applyProviderKubernetesVersionOverride`, `reserveNutanixIPsForCluster`) is extracted
+  from `quick_start_test.go` and reused, avoiding duplication.
+
+**Rootless Docker (opt-in, default rootful):** Under rootless Docker the CAPD workload kubelet
+crash-loops with `failed to create kubelet: open /dev/kmsg: operation not permitted`, so the
+control plane never initializes and the worker assertion is never reached. Setting
+`CAREN_E2E_KUBELET_IN_USERNS=true` makes `maybeEnableKubeletInUserNamespace` patch the quick-start
+ClusterClass at runtime — injecting `feature-gates: KubeletInUserNamespace=true` into every
+`kubeletExtraArgs` list (CP init/join and worker join) of the `KubeadmControlPlaneTemplate` and
+`KubeadmConfigTemplate` — written to a temp copy with the `SourcePath` repointed before the
+clusterctl repository is built. The published ClusterClass is never modified, and the default
+(env unset) rootful CI path is unchanged. Unit-tested in `kubelet_reservations_helpers_test.go`
+(`TestEnableKubeletInUserNamespaceInClusterClass`, `TestEnableKubeletInUserNamespaceExtendsExistingFeatureGates`).
+Pair with the configurable bootstrap Docker socket (`CAREN_E2E_DOCKER_SOCKET` / `DOCKER_HOST`).
+
+- [ ] **Verify:** `devbox run -- go vet -tags e2e ./test/e2e/...`,
+  `devbox run -- go test -tags e2e ./test/e2e/ -run TestEnableAutomaticReservations`, and
+  `devbox run -- ./hack/tools/golangci-lint-kube-api-linter run --config=.golangci.yml ./test/e2e/...`
+  all pass. Full e2e (`make e2e-test`) runs the new spec per provider via the `kubelet-reservations`
+  label.
+
 ## Self-Review
 
 **Spec coverage:**
