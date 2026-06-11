@@ -6,7 +6,6 @@
 package e2e
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"slices"
@@ -26,7 +25,6 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework/nutanix"
 )
 
 type providerConfiguration struct {
@@ -130,59 +128,14 @@ var _ = Describe("Quick start", func() {
 											// This version can be specified in `test/e2e/config/caren.yaml` with a variable named
 											// `KUBERNETES_VERSION_<PROVIDER>`, where `<PROVIDER>` is the uppercase provider name, e.g.
 											// `KUBERNETES_VERSION_DOCKER: v1.29.5`.
-											varName := capie2e.KubernetesVersion + "_" + strings.ToUpper(
-												lowercaseProvider,
-											)
-											if testE2EConfig.HasVariable(varName) {
-												testE2EConfig.Variables[capie2e.KubernetesVersion] = testE2EConfig.MustGetVariable(
-													varName,
-												)
-											}
+											applyProviderKubernetesVersionOverride(testE2EConfig, lowercaseProvider)
 
 											// For Nutanix provider, reserve an IP address for the workload cluster:
 											// 1. control plane endpoint
 											// 2. service load balancer
 											// Remember to unreserve it after the test!
 											if provider == "Nutanix" {
-												nutanixClient, err := nutanix.NewConvergedV4Client(
-													nutanix.CredentialsFromCAPIE2EConfig(testE2EConfig),
-												)
-												Expect(err).ToNot(HaveOccurred())
-												subnetName := testE2EConfig.MustGetVariable("NUTANIX_SUBNET_NAME")
-												prismElementClusterName := testE2EConfig.MustGetVariable(
-													"NUTANIX_PRISM_ELEMENT_CLUSTER_NAME",
-												)
-
-												By(
-													"Reserving an IP address for the workload cluster control plane endpoint",
-												)
-												controlPlaneEndpointIP, unreserveControlPlaneEndpointIP, err := nutanix.ReserveIP(
-													context.Background(),
-													subnetName,
-													prismElementClusterName,
-													nutanixClient,
-												)
-												Expect(err).ToNot(HaveOccurred())
-												DeferCleanup(unreserveControlPlaneEndpointIP)
-												testE2EConfig.Variables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
-												Logf("Reserved control-plane endpoint IP: %s", controlPlaneEndpointIP)
-
-												By(
-													"Reserving an IP address for the workload cluster kubernetes Service load balancer",
-												)
-												kubernetesServiceLoadBalancerIP, unreservekubernetesServiceLoadBalancerIP, err := nutanix.ReserveIP(
-													context.Background(),
-													subnetName,
-													prismElementClusterName,
-													nutanixClient,
-												)
-												Expect(err).ToNot(HaveOccurred())
-												DeferCleanup(unreservekubernetesServiceLoadBalancerIP)
-												testE2EConfig.Variables["KUBERNETES_SERVICE_LOAD_BALANCER_IP"] = kubernetesServiceLoadBalancerIP
-												Logf(
-													"Reserved service load balancer IP: %s",
-													kubernetesServiceLoadBalancerIP,
-												)
+												reserveNutanixIPsForCluster(testE2EConfig)
 											}
 
 											clusterLocalTempDir, err := os.MkdirTemp("", "clusterctl-")
