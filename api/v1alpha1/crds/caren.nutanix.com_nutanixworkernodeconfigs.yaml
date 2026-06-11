@@ -46,6 +46,21 @@ spec:
                     KubeletConfiguration defines kubelet settings for this node group.
                     These values apply only to the nodes in this group.
                   properties:
+                    automaticReservations:
+                      description: |-
+                        AutomaticReservations, when set, makes each node compute its kubeReserved
+                        resources and a hard eviction threshold at boot from its actual CPU and
+                        memory capacity. Mutually exclusive with systemReserved, kubeReserved, and
+                        evictionHard.
+                      properties:
+                        profile:
+                          description: Profile selects the reservation strategy.
+                          enum:
+                            - CapacityTiered
+                          type: string
+                      required:
+                        - profile
+                      type: object
                     containerLogMaxFiles:
                       description: |-
                         ContainerLogMaxFiles specifies the maximum number of container log files
@@ -239,6 +254,8 @@ spec:
                       rule: '!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)'
                     - message: evictionSoftGracePeriod keys must match evictionSoft keys
                       rule: '!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft) || self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)'
+                    - message: automaticReservations cannot be combined with systemReserved, kubeReserved, or evictionHard
+                      rule: '!has(self.automaticReservations) || (!has(self.systemReserved) && !has(self.kubeReserved) && !has(self.evictionHard))'
                 nodeRegistration:
                   default: {}
                   description: NodeRegistration holds fields that relate to registering the new node to the cluster.

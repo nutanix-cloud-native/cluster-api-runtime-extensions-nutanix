@@ -35,11 +35,30 @@ const (
 	MemoryManagerPolicyStatic MemoryManagerPolicy = "Static"
 )
 
+// ReservationProfile selects an automatic resource reservation strategy.
+type ReservationProfile string
+
+const (
+	// ReservationProfileCapacityTiered reserves tiered percentages of the node's
+	// total CPU and memory capacity: smaller percentages as the node gets larger.
+	ReservationProfileCapacityTiered ReservationProfile = "CapacityTiered"
+)
+
+// AutomaticReservations enables computing node resource reservations at boot from
+// the node's actual CPU and memory capacity, instead of specifying explicit values.
+type AutomaticReservations struct {
+	// Profile selects the reservation strategy.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=CapacityTiered
+	Profile ReservationProfile `json:"profile"`
+}
+
 // KubeletConfiguration defines configurable fields for the kubelet's KubeletConfiguration.
 // These fields are written as a strategic merge patch file applied during kubeadm init/join.
 // +kubebuilder:validation:XValidation:rule="!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent) || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent",message="imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent"
 // +kubebuilder:validation:XValidation:rule="!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)",message="evictionSoft must be set when evictionSoftGracePeriod is set"
 // +kubebuilder:validation:XValidation:rule="!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft) || self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)",message="evictionSoftGracePeriod keys must match evictionSoft keys"
+// +kubebuilder:validation:XValidation:rule="!has(self.automaticReservations) || (!has(self.systemReserved) && !has(self.kubeReserved) && !has(self.evictionHard))",message="automaticReservations cannot be combined with systemReserved, kubeReserved, or evictionHard"
 type KubeletConfiguration struct {
 	// MaxPods defines the maximum number of pods that can run on a node.
 	// Default kubelet value is 110.
@@ -47,6 +66,13 @@ type KubeletConfiguration struct {
 	// +kubebuilder:validation:Minimum=50
 	// +kubebuilder:validation:Maximum=256
 	MaxPods *int32 `json:"maxPods,omitempty"`
+
+	// AutomaticReservations, when set, makes each node compute its kubeReserved
+	// resources and a hard eviction threshold at boot from its actual CPU and
+	// memory capacity. Mutually exclusive with systemReserved, kubeReserved, and
+	// evictionHard.
+	// +kubebuilder:validation:Optional
+	AutomaticReservations *AutomaticReservations `json:"automaticReservations,omitempty"`
 
 	// SystemReserved is a set of ResourceName=ResourceQuantity pairs that describe
 	// resources reserved for OS system daemons. Kubernetes components such as the
