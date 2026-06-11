@@ -16,12 +16,12 @@ cores="${CAREN_NODE_CPU_CORES:-$(grep -c '^processor' /proc/cpuinfo)}"
 mem_kib="${CAREN_NODE_MEMORY_KIB:-$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)}"
 
 if ! [ "${cores}" -ge 1 ] 2>/dev/null; then
-	echo "compute-reservations: could not determine CPU core count" >&2
-	exit 1
+  echo "compute-reservations: could not determine CPU core count" >&2
+  exit 1
 fi
 if ! [ "${mem_kib}" -ge 1 ] 2>/dev/null; then
-	echo "compute-reservations: could not determine total memory" >&2
-	exit 1
+  echo "compute-reservations: could not determine total memory" >&2
+  exit 1
 fi
 
 # CPU reservation in millicores. Tiered: 6% of the 1st core, 1% of the 2nd,
@@ -44,27 +44,27 @@ cpu_milli=$(((tenths + 5) / 10))
 # + 6% of next 112Gi + 2% above 128Gi. Per-tier floor (integer division).
 total_mib=$((mem_kib / 1024))
 if [ "${total_mib}" -lt 1024 ]; then
-	mem_mib=255
+  mem_mib=255
 else
-	mem_mib=0
-	t=${total_mib}
-	if [ "${t}" -gt 4096 ]; then t=4096; fi
-	mem_mib=$((mem_mib + t * 25 / 100))
-	t=$((total_mib - 4096))
-	if [ "${t}" -lt 0 ]; then t=0; fi
-	if [ "${t}" -gt 4096 ]; then t=4096; fi
-	mem_mib=$((mem_mib + t * 20 / 100))
-	t=$((total_mib - 8192))
-	if [ "${t}" -lt 0 ]; then t=0; fi
-	if [ "${t}" -gt 8192 ]; then t=8192; fi
-	mem_mib=$((mem_mib + t * 10 / 100))
-	t=$((total_mib - 16384))
-	if [ "${t}" -lt 0 ]; then t=0; fi
-	if [ "${t}" -gt 114688 ]; then t=114688; fi
-	mem_mib=$((mem_mib + t * 6 / 100))
-	t=$((total_mib - 131072))
-	if [ "${t}" -lt 0 ]; then t=0; fi
-	mem_mib=$((mem_mib + t * 2 / 100))
+  mem_mib=0
+  t=${total_mib}
+  if [ "${t}" -gt 4096 ]; then t=4096; fi
+  mem_mib=$((mem_mib + t * 25 / 100))
+  t=$((total_mib - 4096))
+  if [ "${t}" -lt 0 ]; then t=0; fi
+  if [ "${t}" -gt 4096 ]; then t=4096; fi
+  mem_mib=$((mem_mib + t * 20 / 100))
+  t=$((total_mib - 8192))
+  if [ "${t}" -lt 0 ]; then t=0; fi
+  if [ "${t}" -gt 8192 ]; then t=8192; fi
+  mem_mib=$((mem_mib + t * 10 / 100))
+  t=$((total_mib - 16384))
+  if [ "${t}" -lt 0 ]; then t=0; fi
+  if [ "${t}" -gt 114688 ]; then t=114688; fi
+  mem_mib=$((mem_mib + t * 6 / 100))
+  t=$((total_mib - 131072))
+  if [ "${t}" -lt 0 ]; then t=0; fi
+  mem_mib=$((mem_mib + t * 2 / 100))
 fi
 
 mkdir -p "${patch_dir}"
