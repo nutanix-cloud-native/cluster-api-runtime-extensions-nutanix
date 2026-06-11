@@ -2,6 +2,11 @@
 # Computes kubelet kubeReserved (CPU, memory) and a hard eviction threshold from
 # the node's actual capacity, then writes a strategic-merge kubelet patch that
 # kubeadm consumes. Inputs can be overridden via environment for testing.
+#
+# The tiered CPU and memory percentages mirror GKE's node-allocatable formula
+# (https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-architecture#node_allocatable):
+# reserve a larger fraction on small nodes and a progressively smaller fraction
+# as the node grows. EKS applies the same idea in its bootstrap scripts.
 set -eu
 
 patch_dir="${CAREN_KUBELET_PATCH_DIR:-/etc/kubernetes/patches}"

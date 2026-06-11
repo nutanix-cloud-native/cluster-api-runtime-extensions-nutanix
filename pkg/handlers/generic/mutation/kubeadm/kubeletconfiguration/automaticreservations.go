@@ -16,6 +16,12 @@ const (
 	computeReservationsCommand    = "/bin/sh " + computeReservationsScriptPath
 )
 
+// computeReservationsScript reserves resources for system and Kubernetes daemons
+// using a capacity-tiered formula modelled on GKE's node-allocatable behaviour
+// (smaller reserved fraction as the node grows); EKS uses the same approach. It
+// runs at boot via a preKubeadmCommand so the reservation reflects the node's
+// real capacity rather than a value computed at mutation time.
+//
 //go:embed embedded/compute-reservations.sh
 var computeReservationsScript string
 
