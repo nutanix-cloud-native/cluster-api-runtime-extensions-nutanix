@@ -90,6 +90,31 @@ func reserveNutanixIPsForCluster(testE2EConfig *clusterctl.E2EConfig) {
 	Logf("Reserved service load balancer IP: %s", kubernetesServiceLoadBalancerIP)
 }
 
+// isolateProviderVersions deep-copies the named provider's Versions and their Files slices on a
+// testE2EConfig obtained from E2EConfig.DeepCopy. clusterctl's DeepCopy only copies the top-level
+// Providers slice; the nested Versions and Files backing arrays remain shared with the original
+// config. Without this isolation, appending a flavor (registerAutomaticReservationsFlavor) or
+// repointing a file SourcePath (maybeEnableKubeletInUserNamespace) mutates the shared e2eConfig
+// and leaks into other specs - e.g. the quick-start spec then tries to read the (now cleaned-up)
+// reservations temp template and fails. Call this once after DeepCopy, before mutating Files.
+func isolateProviderVersions(testE2EConfig *clusterctl.E2EConfig, lowercaseProvider string) {
+	for i := range testE2EConfig.Providers {
+		p := &testE2EConfig.Providers[i]
+		if p.Name != lowercaseProvider {
+			continue
+		}
+		versions := make([]clusterctl.ProviderVersionSource, len(p.Versions))
+		copy(versions, p.Versions)
+		for j := range versions {
+			files := make([]clusterctl.Files, len(versions[j].Files))
+			copy(files, versions[j].Files)
+			versions[j].Files = files
+		}
+		p.Versions = versions
+		return
+	}
+}
+
 // registerAutomaticReservationsFlavor reads the published quick-start template for baseFlavor,
 // enables workerConfig.kubeletConfiguration.automaticReservations on it, writes the patched
 // template to tmpDir, and registers it as a new flavor in testE2EConfig. It returns the new

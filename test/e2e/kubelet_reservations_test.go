@@ -49,6 +49,10 @@ var _ = Describe("Quick start with automatic kubelet reservations", Label("kubel
 			BeforeEach(func() {
 				testE2EConfig = e2eConfig.DeepCopy()
 
+				// E2EConfig.DeepCopy is shallow for nested provider Versions/Files, so isolate the
+				// provider we mutate to avoid leaking appended flavors into the shared config.
+				isolateProviderVersions(testE2EConfig, lowercaseProvider)
+
 				applyProviderKubernetesVersionOverride(testE2EConfig, lowercaseProvider)
 
 				if provider == "Nutanix" {
