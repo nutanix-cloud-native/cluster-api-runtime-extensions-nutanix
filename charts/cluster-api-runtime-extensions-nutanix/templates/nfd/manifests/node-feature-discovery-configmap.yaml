@@ -1167,8 +1167,7 @@ data:
           securityContext: {}
           serviceAccountName: node-feature-discovery-worker
           tolerations:
-          - effect: NoSchedule
-            operator: Exists
+          - operator: Exists
           volumes:
           - hostPath:
               path: /boot
@@ -1296,8 +1295,6 @@ data:
           tolerations:
           - effect: NoSchedule
             key: node-role.kubernetes.io/control-plane
-            operator: Equal
-            value: ""
           volumes:
           - configMap:
               items:
@@ -1333,6 +1330,16 @@ data:
             app.kubernetes.io/name: node-feature-discovery
             role: gc
         spec:
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - preference:
+                  matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: In
+                    values:
+                    - ""
+                weight: 1
           containers:
           - args:
             - -gc-interval=1h
