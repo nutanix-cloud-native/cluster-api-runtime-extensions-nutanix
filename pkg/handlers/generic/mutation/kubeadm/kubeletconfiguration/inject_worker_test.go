@@ -85,6 +85,30 @@ maxPods: 110
 			}},
 		},
 		{
+			Name: "maxPods only does not inject reservation script",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.WorkerConfigVariableName,
+					v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(110))},
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					runtimehooksv1.BuiltinsName,
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+					},
+				),
+			},
+			RequestItem: request.NewKubeadmConfigTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/files",
+				ValueMatcher: gomega.Not(gomega.ContainElement(
+					gomega.HaveKeyWithValue("path", computeReservationsScriptPath),
+				)),
+			}},
+		},
+		{
 			Name: "automaticReservations at worker injects script and preKubeadmCommand",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
