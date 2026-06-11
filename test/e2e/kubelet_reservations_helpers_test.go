@@ -121,6 +121,73 @@ func TestEnableAutomaticReservationsRejectsNonCluster(t *testing.T) {
 	require.Error(t, err)
 }
 
+// TestEnableAutomaticReservationsMultiDocument covers provider templates that prepend other
+// documents (e.g. the Nutanix example's credential Secrets) before the Cluster document.
+func TestEnableAutomaticReservationsMultiDocument(t *testing.T) {
+	const template = `apiVersion: v1
+kind: Secret
+metadata:
+  name: ${CLUSTER_NAME}-pc-creds
+stringData:
+  credentials: "${NUTANIX_USER}:${NUTANIX_PASSWORD}"
+---
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  topology:
+    classRef:
+      name: nutanix-quick-start
+    variables:
+    - name: workerConfig
+      value:
+        nutanix:
+          machineDetails:
+            memorySize: 4Gi
+    version: ${KUBERNETES_VERSION}
+`
+
+	patched, err := enableAutomaticReservationsInClusterTemplate([]byte(template))
+	require.NoError(t, err)
+
+	// The Secret must be passed through unchanged, including its quoted envsubst placeholders.
+	assert.Contains(t, string(patched), "kind: Secret")
+	assert.Contains(t, string(patched), `"${NUTANIX_USER}:${NUTANIX_PASSWORD}"`)
+
+	dec := yaml.NewDecoder(bytes.NewReader(patched))
+	docCount := 0
+	for {
+		var n yaml.Node
+		err := dec.Decode(&n)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		require.NoError(t, err)
+		docCount++
+	}
+	assert.Equal(t, 2, docCount, "patched output must remain two YAML documents")
+
+	obj := map[string]interface{}{}
+	// Decode only the Cluster document (second) for assertions.
+	parts := strings.Split(string(patched), "\n---\n")
+	require.Len(t, parts, 2)
+	require.NoError(t, sigsyaml.Unmarshal([]byte(parts[1]), &obj))
+	u := unstructured.Unstructured{Object: obj}
+	clusterVars, found, err := unstructured.NestedSlice(u.Object, "spec", "topology", "variables")
+	require.NoError(t, err)
+	require.True(t, found)
+	workerConfig := findVariable(t, clusterVars, "workerConfig")
+	assert.Equal(t,
+		"CapacityTiered",
+		nestedString(t, workerConfig, "value", "kubeletConfiguration", "automaticReservations", "profile"),
+	)
+	assert.Equal(t,
+		"4Gi",
+		nestedString(t, workerConfig, "value", "nutanix", "machineDetails", "memorySize"),
+	)
+}
+
 func TestEnableKubeletInUserNamespaceInClusterClass(t *testing.T) {
 	const clusterClass = `apiVersion: controlplane.cluster.x-k8s.io/v1beta2
 kind: KubeadmControlPlaneTemplate
