@@ -310,36 +310,71 @@ func upsertFeatureGate(seq *yaml.Node) {
 // enableAutomaticReservationsInClusterTemplate sets
 // workerConfig.kubeletConfiguration.automaticReservations.profile=CapacityTiered on the
 // cluster-wide workerConfig variable and on any per-MachineDeployment workerConfig override,
-// preserving all other content (e.g. provider machine details). It expects a single Cluster
-// document, which is the shape of the quick-start examples.
+// preserving all other content (e.g. provider machine details). The template may contain
+// multiple YAML documents (e.g. the Nutanix example prepends credential Secrets); only the
+// Cluster document is modified and all other documents are passed through unchanged.
 //
 // The edit is performed at the YAML node level so that the scalar style of every untouched
 // node is preserved. This is essential because the templates contain envsubst placeholders:
 // e.g. quoted annotation values like "${WORKER_MACHINE_COUNT}" must stay quoted, otherwise
 // after substitution they would parse as integers and break conversion of string-typed fields.
 func enableAutomaticReservationsInClusterTemplate(raw []byte) ([]byte, error) {
-	var doc yaml.Node
-	if err := yaml.Unmarshal(raw, &doc); err != nil {
-		return nil, fmt.Errorf("unmarshalling cluster template: %w", err)
-	}
-	if doc.Kind != yaml.DocumentNode || len(doc.Content) == 0 {
-		return nil, fmt.Errorf("cluster template is not a single YAML document")
-	}
-	root := doc.Content[0]
-	if root.Kind != yaml.MappingNode {
-		return nil, fmt.Errorf("cluster template root is not a mapping")
-	}
-	if kind := mappingValue(root, "kind"); kind == nil || kind.Value != "Cluster" {
-		got := ""
-		if kind != nil {
-			got = kind.Value
+	dec := yaml.NewDecoder(bytes.NewReader(raw))
+	var docs []*yaml.Node
+	for {
+		var doc yaml.Node
+		err := dec.Decode(&doc)
+		if errors.Is(err, io.EOF) {
+			break
 		}
-		return nil, fmt.Errorf("expected a Cluster document, got %q", got)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshalling cluster template: %w", err)
+		}
+		docs = append(docs, &doc)
 	}
 
+	patched := false
+	for _, doc := range docs {
+		if doc.Kind != yaml.DocumentNode || len(doc.Content) == 0 {
+			continue
+		}
+		root := doc.Content[0]
+		if root.Kind != yaml.MappingNode {
+			continue
+		}
+		if kind := mappingValue(root, "kind"); kind == nil || kind.Value != "Cluster" {
+			continue
+		}
+		if err := enableReservationsInClusterDocument(root); err != nil {
+			return nil, err
+		}
+		patched = true
+	}
+	if !patched {
+		return nil, fmt.Errorf("cluster template contains no Cluster document")
+	}
+
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	for _, doc := range docs {
+		if err := enc.Encode(doc); err != nil {
+			return nil, fmt.Errorf("marshalling patched cluster template: %w", err)
+		}
+	}
+	if err := enc.Close(); err != nil {
+		return nil, fmt.Errorf("closing yaml encoder: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// enableReservationsInClusterDocument enables automatic reservations on the cluster-wide
+// workerConfig variable and on any per-MachineDeployment workerConfig override of a single
+// Cluster document's mapping root node.
+func enableReservationsInClusterDocument(root *yaml.Node) error {
 	topology := mappingValue(mappingValue(root, "spec"), "topology")
 	if topology == nil {
-		return nil, fmt.Errorf("cluster template has no spec.topology")
+		return fmt.Errorf("cluster template has no spec.topology")
 	}
 
 	if vars := mappingValue(topology, "variables"); vars != nil && vars.Kind == yaml.SequenceNode {
@@ -361,17 +396,7 @@ func enableAutomaticReservationsInClusterTemplate(raw []byte) ([]byte, error) {
 			}
 		}
 	}
-
-	var buf bytes.Buffer
-	enc := yaml.NewEncoder(&buf)
-	enc.SetIndent(2)
-	if err := enc.Encode(&doc); err != nil {
-		return nil, fmt.Errorf("marshalling patched cluster template: %w", err)
-	}
-	if err := enc.Close(); err != nil {
-		return nil, fmt.Errorf("closing yaml encoder: %w", err)
-	}
-	return buf.Bytes(), nil
+	return nil
 }
 
 // enableReservationsInWorkerConfigVariables mutates the workerConfig entry within a topology
