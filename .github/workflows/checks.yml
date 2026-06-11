@@ -120,6 +120,36 @@ jobs:
       contents: read
       checks: write
 
+  e2e-kubelet-reservations:
+    needs:
+      - "lint-gha"
+      - "lint-go"
+      - "lint-test-helm"
+      - "pre-commit"
+      - "unit-test"
+    strategy:
+      matrix:
+        # Automatic kubelet reservations are computed at node boot time and are independent of
+        # the Kubernetes version, so a single (latest) minor per provider is sufficient coverage.
+        config:
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.2", "baseOS": "rocky-9.7"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
+          # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
+          # - {"provider": "AWS", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
+      fail-fast: false
+    name: e2e-kubelet-reservations (${{ matrix.config.provider }} provider, Kubernetes ${{ matrix.config.kubernetesMinor }})
+    uses: ./.github/workflows/e2e.yml
+    with:
+      focus: Automatic kubelet reservations
+      provider: ${{ matrix.config.provider }}
+      kubernetes-version: ${{ matrix.config.kubernetesVersion }}
+      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-nutanix-docker-medium' || 'ubuntu-24.04' }}
+      base-os:  ${{ matrix.config.provider == 'Nutanix' && matrix.config.baseOS || '' }}
+    secrets: inherit
+    permissions:
+      contents: read
+      checks: write
+
   lint-go:
     runs-on: ubuntu-24.04
     strategy:
