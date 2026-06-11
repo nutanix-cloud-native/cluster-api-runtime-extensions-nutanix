@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	sigsyaml "sigs.k8s.io/yaml"
 )
 
@@ -271,6 +272,34 @@ spec:
 	assert.Contains(t, out, "KubeletInUserNamespace=true", "new gate must be appended")
 	assert.Equal(t, 1, strings.Count(out, "name: feature-gates"),
 		"feature gates must be merged into a single entry, not duplicated")
+}
+
+func TestIsolateProviderVersionsPreventsSharedMutation(t *testing.T) {
+	original := &clusterctl.E2EConfig{
+		Providers: []clusterctl.ProviderConfig{
+			{
+				Name: "docker",
+				Versions: []clusterctl.ProviderVersionSource{
+					{Files: []clusterctl.Files{{SourcePath: "a.yaml", TargetName: "a.yaml"}}},
+				},
+			},
+		},
+	}
+
+	copied := original.DeepCopy()
+	isolateProviderVersions(copied, "docker")
+
+	// Mutate the copy the way the helpers do.
+	copied.Providers[0].Versions[0].Files = append(
+		copied.Providers[0].Versions[0].Files,
+		clusterctl.Files{SourcePath: "b.yaml", TargetName: "b.yaml"},
+	)
+	copied.Providers[0].Versions[0].Files[0].SourcePath = "mutated.yaml"
+
+	assert.Len(t, original.Providers[0].Versions[0].Files, 1,
+		"appending to the isolated copy must not grow the original config")
+	assert.Equal(t, "a.yaml", original.Providers[0].Versions[0].Files[0].SourcePath,
+		"repointing SourcePath on the isolated copy must not mutate the original config")
 }
 
 func findVariable(t *testing.T, vars []interface{}, name string) map[string]interface{} {
