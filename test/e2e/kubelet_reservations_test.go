@@ -25,7 +25,11 @@ import (
 // reservation is applied on first boot with no MachineDeployment rollout. The published
 // examples are never modified. One combination (Cilium + HelmAddon) per provider is enough to
 // exercise the boot-time mechanism end to end.
-var _ = Describe("Automatic kubelet reservations", Label("kubelet-reservations"), func() {
+//
+// The spec name starts with "Quick start" so it runs under the existing e2e job's
+// --focus="Quick start" filter, avoiding a separate CI job. It can still be targeted in
+// isolation via the "kubelet-reservations" label.
+var _ = Describe("Quick start with automatic kubelet reservations", Label("kubelet-reservations"), func() {
 	for provider := range providerConfigurations {
 		var providerSpecificDecorators []interface{}
 		if provider == "Docker" {
