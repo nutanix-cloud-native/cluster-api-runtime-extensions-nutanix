@@ -48,7 +48,9 @@ use.
 `evictionHard`; setting it alongside any of them is rejected at admission. Other kubelet fields
 (such as `maxPods`) can still be set.
 
-The `CapacityTiered` profile reserves:
+The `CapacityTiered` profile mirrors
+[GKE's node-allocatable formula](https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-architecture#node_allocatable)
+(EKS uses the same approach) and reserves:
 
 - CPU: 6% of the first core, 1% of the second, 0.5% of cores three and four, and 0.25% of each
   core beyond four.
