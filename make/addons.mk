@@ -22,11 +22,11 @@ export CALICO_VERSION := v3.31.4
 # Cilium
 #   Chart name: cilium
 #   Chart repo: https://helm.cilium.io/index.yaml
-#   Chart version:   1.19.2
-#   App version:     1.19.2
+#   Chart version:   1.19.4
+#   App version:     1.19.4
 #   Repo:            https://github.com/cilium/cilium
-#   Release:         https://github.com/cilium/cilium/releases/tag/v1.19.2
-export CILIUM_VERSION := 1.19.2
+#   Release:         https://github.com/cilium/cilium/releases/tag/v1.19.4
+export CILIUM_VERSION := 1.19.4
 
 # Node Feature Discovery
 #   Chart name: node-feature-discovery
