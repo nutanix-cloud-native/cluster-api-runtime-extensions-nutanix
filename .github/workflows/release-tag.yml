@@ -16,9 +16,6 @@ permissions:
   id-token: write
   attestations: write
 
-env:
-  VERSION: ${{ github.ref_name }}
-
 defaults:
   run:
     shell: bash
@@ -26,6 +23,8 @@ defaults:
 jobs:
   release-tag:
     runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v6
         with:
