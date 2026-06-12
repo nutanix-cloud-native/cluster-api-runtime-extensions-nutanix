@@ -199,7 +199,7 @@ jobs:
           key: prek-1|${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Run prek
-        run: devbox run -- make prek
+        run: devbox run -- make pre-commit
         env:
           SKIP: no-commit-to-branch,golangci-lint,actionlint-system
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

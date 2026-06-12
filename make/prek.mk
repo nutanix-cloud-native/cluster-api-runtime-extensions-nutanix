@@ -7,7 +7,10 @@ else
 	PREK_CONFIG_FILE ?= $(REPO_ROOT)/repo-infra/.pre-commit-config.yaml
 endif
 
-.PHONY: prek
+.PHONY: pre-commit prek
+pre-commit: ## Runs pre-commit checks on all files
+pre-commit: prek
+
 prek: ## Runs prek on all files
 prek: ; $(info $(M) running prek)
 ifeq ($(wildcard $(PREK_CONFIG_FILE)),)
