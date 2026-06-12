@@ -1,5 +1,5 @@
-# `gitlint` is used to validate commit messages via `pre-commit` hook, enabled
-# via `pre-commit install -t commit-msg`.
+# `gitlint` is used to validate commit messages via `prek` hook, enabled
+# via `prek install -t commit-msg`.
 #
 # The format of this file is detailed at https://jorisroovers.com/gitlint/latest/configuration/gitlint_file/.
 
