@@ -6,10 +6,8 @@ master:
     - beta.amd.com
     - amd.com
   tolerations:
-    - key: "node-role.kubernetes.io/control-plane"
-      operator: "Equal"
-      value: ""
-      effect: "NoSchedule"
+    - key: node-role.kubernetes.io/control-plane
+      effect: NoSchedule
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -28,10 +26,18 @@ worker: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
           - "class"
           - "vendor"
   tolerations:
-    - effect: NoSchedule
-      operator: Exists
+    - operator: Exists
 
 gc:
   tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/control-plane
+    - key: node-role.kubernetes.io/control-plane
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: In
+                values: [""]
