@@ -25,7 +25,7 @@ repositories:
     repoURL: https://helm.cilium.io/
     charts:
       cilium:
-      - 1.19.2
+      - 1.19.4
   cluster-autoscaler:
     repoURL: https://kubernetes.github.io/autoscaler
     charts:
