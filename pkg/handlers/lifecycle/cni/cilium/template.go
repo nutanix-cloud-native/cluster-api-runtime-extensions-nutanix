@@ -26,7 +26,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to unmarshal cluster config: %w", err)
 	}
-	slbIsCilium := spec != nil && spec.Addons != nil &&
+	serviceLBIsCilium := spec != nil && spec.Addons != nil &&
 		spec.Addons.ServiceLoadBalancer != nil &&
 		spec.Addons.ServiceLoadBalancer.Provider == carenv1.ServiceLoadBalancerProviderCilium
 
@@ -50,7 +50,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		EnableKubeProxyReplacement:          kubeProxyIsDisabled,
 		Provider:                            capiutils.GetProvider(cluster),
 		ControlPlaneEndpoint:                cluster.Spec.ControlPlaneEndpoint,
-		ServiceLoadBalancerProviderIsCilium: slbIsCilium,
+		ServiceLoadBalancerProviderIsCilium: serviceLBIsCilium,
 	}
 
 	var b bytes.Buffer

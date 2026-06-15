@@ -49,11 +49,6 @@ func (v *ciliumLoadBalancerValidator) validate(
 		return admission.Allowed("")
 	}
 
-	if cluster.Annotations[v1alpha1.PreflightChecksSkipAnnotationKey] ==
-		v1alpha1.PreflightChecksSkipAllAnnotationValue {
-		return admission.Allowed("")
-	}
-
 	cfg, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
 		return admission.Denied(fmt.Errorf(

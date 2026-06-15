@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	slbcilium "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/cilium"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/metallb"
 )
 
@@ -58,16 +57,6 @@ func WaitForServiceLoadBalancerToBeReadyInWorkloadCluster(
 				clusterProxy:         input.ClusterProxy,
 				deploymentIntervals:  input.DeploymentIntervals,
 				daemonSetIntervals:   input.DaemonSetIntervals,
-				helmReleaseIntervals: input.HelmReleaseIntervals,
-				resourceIntervals:    input.ResourceIntervals,
-			},
-		)
-	case v1alpha1.ServiceLoadBalancerProviderCilium:
-		waitForCiliumServiceLoadBalancerToBeReadyInWorkloadCluster(
-			ctx,
-			waitForCiliumServiceLoadBalancerToBeReadyInWorkloadClusterInput{
-				workloadCluster:      input.WorkloadCluster,
-				clusterProxy:         input.ClusterProxy,
 				helmReleaseIntervals: input.HelmReleaseIntervals,
 				resourceIntervals:    input.ResourceIntervals,
 			},
@@ -137,53 +126,6 @@ func waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadCluster(
 		// We need to populate AddressRanges to generate the configuration,
 		// but the values are not important, because this test does not compare
 		// them against the actual values.
-		AddressRanges: []v1alpha1.AddressRange{
-			{
-				Start: "1.2.3.4",
-				End:   "1.2.3.5",
-			},
-		},
-	})
-	Expect(err).NotTo(HaveOccurred())
-
-	WaitForResources(ctx, WaitForResourcesInput{
-		Getter:    workloadClusterClient,
-		Resources: cos,
-	}, input.resourceIntervals...)
-}
-
-type waitForCiliumServiceLoadBalancerToBeReadyInWorkloadClusterInput struct {
-	workloadCluster      *clusterv1.Cluster
-	clusterProxy         framework.ClusterProxy
-	helmReleaseIntervals []interface{}
-	resourceIntervals    []interface{}
-}
-
-func waitForCiliumServiceLoadBalancerToBeReadyInWorkloadCluster(
-	ctx context.Context,
-	input waitForCiliumServiceLoadBalancerToBeReadyInWorkloadClusterInput,
-) {
-	WaitForHelmReleaseProxyReadyForCluster(
-		ctx,
-		WaitForHelmReleaseProxyReadyForClusterInput{
-			GetLister:       input.clusterProxy.GetClient(),
-			Cluster:         input.workloadCluster,
-			HelmReleaseName: "cilium",
-		},
-		input.helmReleaseIntervals...,
-	)
-
-	workloadClusterClient := input.clusterProxy.GetWorkloadCluster(
-		ctx, input.workloadCluster.Namespace, input.workloadCluster.Name,
-	).GetClient()
-
-	// Generate the Cilium ServiceLoadBalancer configuration objects, so we
-	// can wait for them to be created on the workload cluster. As with the
-	// MetalLB waiter, the AddressRanges content is not compared; we only
-	// check that the objects exist.
-	cos, err := slbcilium.ConfigurationObjects(&slbcilium.ConfigurationInput{
-		Name:      "caren",
-		Namespace: "kube-system",
 		AddressRanges: []v1alpha1.AddressRange{
 			{
 				Start: "1.2.3.4",

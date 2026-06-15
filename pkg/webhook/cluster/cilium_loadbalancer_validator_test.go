@@ -107,22 +107,6 @@ func TestCiliumLoadBalancerValidator(t *testing.T) {
 			allowed:     false,
 			errContains: "kube-proxy",
 		},
-		{
-			name: "skip-all annotation bypasses validation",
-			cluster: func() *clusterv1beta2.Cluster {
-				c := newCiliumSLBCluster(
-					t,
-					v1alpha1.CNIProviderCalico,
-					v1alpha1.KubeProxyModeIPTables,
-					v1alpha1.ServiceLoadBalancerProviderCilium,
-				)
-				c.Annotations = map[string]string{
-					v1alpha1.PreflightChecksSkipAnnotationKey: v1alpha1.PreflightChecksSkipAllAnnotationValue,
-				}
-				return c
-			}(),
-			allowed: true,
-		},
 	}
 
 	decoder := admission.NewDecoder(scheme)
