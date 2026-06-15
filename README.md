@@ -68,8 +68,8 @@ and apply the generated resource to actually create the cluster in the API.
 For example, the following command will create a Docker cluster with Cilium CNI applied via the Helm addon provider:
 
 ```shell
-export CLUSTER_NAME=docker-cluster-cilium-helm-addon
-export CLUSTER_FILE=examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml
+export CLUSTER_NAME=docker-cluster-cilium-metallb-helm-addon
+export CLUSTER_FILE=examples/capi-quick-start/docker-cluster-cilium-metallb-helm-addon.yaml
 export KUBERNETES_VERSION=v1.35.3
 ```
 

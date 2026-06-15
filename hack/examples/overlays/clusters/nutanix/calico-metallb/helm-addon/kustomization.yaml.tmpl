@@ -1,0 +1,15 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../../../../bases/nutanix/cluster
+
+sortOptions:
+  order: fifo
+
+components:
+- ../../../../../components/cni/calico
+- ../../../../../components/slb/metallb/nutanix

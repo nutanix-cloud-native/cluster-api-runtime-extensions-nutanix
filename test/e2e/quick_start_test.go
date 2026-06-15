@@ -33,6 +33,53 @@ type providerConfiguration struct {
 	cniProviders map[string][]string
 }
 
+// flavorsFor returns the list of cluster-template flavor names that should be
+// exercised for the given (provider, cniProvider, strategy) tuple.
+//
+// The cartesian product of CNI choice and ServiceLoadBalancer provider choice
+// expands here. AWS uses AWS ELB (no SLB variants), Docker and Nutanix expose
+// MetalLB for every CNI and additionally Cilium ServiceLoadBalancer for the
+// Cilium CNI + HelmAddon combination.
+func flavorsFor(provider, cniProvider, strategy string) []string {
+	cni := strings.ToLower(cniProvider)
+	switch provider {
+	case "AWS":
+		// AWS uses its own cloud LoadBalancer controller; no SLB suffix.
+		return []string{fmt.Sprintf("topology-%s-%s", cni, strategy)}
+	case "Docker":
+		flavors := []string{
+			fmt.Sprintf("topology-%s-metallb-%s", cni, strategy),
+		}
+		if cniProvider == "Cilium" && strategy == "helm-addon" {
+			// Cilium CNI + Cilium ServiceLoadBalancer (no MetalLB suffix: this
+			// is the "default" Cilium flavor for Docker).
+			flavors = append(flavors, fmt.Sprintf("topology-%s-%s", cni, strategy))
+		}
+		return flavors
+	case "Nutanix":
+		flavors := []string{
+			fmt.Sprintf("topology-%s-metallb-%s", cni, strategy),
+		}
+		if cniProvider == "Cilium" {
+			flavors = append(
+				flavors,
+				fmt.Sprintf("topology-with-failuredomains-%s-metallb-%s", cni, strategy),
+			)
+			if strategy == "helm-addon" {
+				// Cilium CNI + Cilium ServiceLoadBalancer variants.
+				flavors = append(
+					flavors,
+					fmt.Sprintf("topology-%s-%s", cni, strategy),
+					fmt.Sprintf("topology-with-failuredomains-%s-%s", cni, strategy),
+				)
+			}
+		}
+		return flavors
+	default:
+		return []string{fmt.Sprintf("topology-%s-%s", cni, strategy)}
+	}
+}
+
 var providerConfigurations = map[string]providerConfiguration{
 	"Docker": {
 		cniProviders: map[string][]string{
@@ -98,21 +145,7 @@ var _ = Describe("Quick start", func() {
 								Fail("unknown addon strategy: " + addonStrategy)
 							}
 
-							flavors := []string{}
-							flavors = append(
-								flavors,
-								fmt.Sprintf("topology-%s-%s", strings.ToLower(cniProvider), strategy),
-							)
-							if provider == "Nutanix" && cniProvider == "Cilium" {
-								flavors = append(
-									flavors,
-									fmt.Sprintf(
-										"topology-with-failuredomains-%s-%s",
-										strings.ToLower(cniProvider),
-										strategy),
-								)
-							}
-							for _, flavor := range flavors {
+							for _, flavor := range flavorsFor(provider, cniProvider, strategy) {
 								Context(
 									flavor,
 									func() {
@@ -170,18 +203,19 @@ var _ = Describe("Quick start", func() {
 												By(
 													"Reserving an IP address for the workload cluster kubernetes Service load balancer",
 												)
-												kubernetesServiceLoadBalancerIP, unreservekubernetesServiceLoadBalancerIP, err := nutanix.ReserveIP(
+												serviceLoadBalancerIP, unreserveServiceLoadBalancerIP, err := nutanix.ReserveIP(
 													context.Background(),
 													subnetName,
 													prismElementClusterName,
 													nutanixClient,
 												)
 												Expect(err).ToNot(HaveOccurred())
-												DeferCleanup(unreservekubernetesServiceLoadBalancerIP)
-												testE2EConfig.Variables["KUBERNETES_SERVICE_LOAD_BALANCER_IP"] = kubernetesServiceLoadBalancerIP
+												DeferCleanup(unreserveServiceLoadBalancerIP)
+												testE2EConfig.Variables["SERVICE_LOAD_BALANCER_IP_START"] = serviceLoadBalancerIP
+												testE2EConfig.Variables["SERVICE_LOAD_BALANCER_IP_END"] = serviceLoadBalancerIP
 												Logf(
 													"Reserved service load balancer IP: %s",
-													kubernetesServiceLoadBalancerIP,
+													serviceLoadBalancerIP,
 												)
 											}
 

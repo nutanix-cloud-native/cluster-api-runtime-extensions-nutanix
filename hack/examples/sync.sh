@@ -26,38 +26,65 @@ mkdir -p "${EXAMPLE_CLUSTERCLASSES_DIR}" "${EXAMPLE_CLUSTERS_DIR}"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 readonly REPO_ROOT
 
-for provider in "aws" "docker" "nutanix"; do
+build_clusterclass() {
+  local provider="${1}"
   kustomize build --load-restrictor LoadRestrictionsNone \
     ./hack/examples/overlays/clusterclasses/"${provider}" >"${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml
-  (cd "${REPO_ROOT}" && CGO_ENABLED=0 go run ./hack/tools/clusterclass-v1beta2/main.go) <"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml" >"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" && mv "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml"
+  (cd "${REPO_ROOT}" && CGO_ENABLED=0 go run ./hack/tools/clusterclass-v1beta2/main.go) \
+    <"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml" \
+    >"${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" &&
+    mv "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml.tmp" \
+      "${EXAMPLE_CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml"
+}
 
-  for cni in "calico" "cilium"; do
-    for strategy in "helm-addon" "crs"; do
-      kustomize build --load-restrictor LoadRestrictionsNone \
-        ./hack/examples/overlays/clusters/"${provider}"/"${cni}"/"${strategy}" \
-        >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${cni}-${strategy}.yaml"
-    done
-  done
-done
-
-# shellcheck disable=SC2043 # Keep the loop for future use.
-for provider in "nutanix"; do
-  for modifier in "failuredomains"; do
-    for cni in "cilium"; do
-      for strategy in "helm-addon" "crs"; do
-        kustomize build --load-restrictor LoadRestrictionsNone \
-          ./hack/examples/overlays/clusters/"${provider}"-with-"${modifier}"/"${cni}"/"${strategy}" \
-          >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-with-${modifier}-${cni}-${strategy}.yaml"
-      done
-    done
-  done
-
-  # Flow is only supported on Nutanix for now and only with the helm-addon strategy.
+# Build a cluster template from an overlay. Usage:
+#   build_cluster <overlay-subpath> <output-basename>
+# e.g. build_cluster docker/cilium/helm-addon docker-cluster-cilium-helm-addon
+build_cluster() {
+  local overlay="${1}"
+  local basename="${2}"
   kustomize build --load-restrictor LoadRestrictionsNone \
-    ./hack/examples/overlays/clusters/"${provider}"/flow/helm-addon \
-    >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-flow-helm-addon.yaml"
+    ./hack/examples/overlays/clusters/"${overlay}" \
+    >"${EXAMPLE_CLUSTERS_DIR}/${basename}.yaml"
+}
+
+# AWS keeps the historical naming (unqualified CNI, MetalLB is the only SLB).
+build_clusterclass aws
+for cni in "calico" "cilium"; do
+  for strategy in "helm-addon" "crs"; do
+    build_cluster "aws/${cni}/${strategy}" "aws-cluster-${cni}-${strategy}"
+  done
 done
-unset provider cni strategy
+
+# Docker supports Cilium (+Cilium-SLB helm-addon, +MetalLB helm-addon/crs) and
+# Calico (+MetalLB helm-addon/crs). The unqualified "cilium" name now means
+# Cilium CNI + Cilium ServiceLoadBalancer; MetalLB variants are explicit.
+build_clusterclass docker
+build_cluster "docker/cilium/helm-addon" "docker-cluster-cilium-helm-addon"
+for cni in "cilium" "calico"; do
+  for strategy in "helm-addon" "crs"; do
+    build_cluster "docker/${cni}-metallb/${strategy}" "docker-cluster-${cni}-metallb-${strategy}"
+  done
+done
+
+# Nutanix mirrors Docker's Cilium + Calico layout, and adds Flow (MetalLB only,
+# helm-addon only) plus the "with-failuredomains" variants.
+build_clusterclass nutanix
+build_cluster "nutanix/cilium/helm-addon" "nutanix-cluster-cilium-helm-addon"
+for cni in "cilium" "calico"; do
+  for strategy in "helm-addon" "crs"; do
+    build_cluster "nutanix/${cni}-metallb/${strategy}" "nutanix-cluster-${cni}-metallb-${strategy}"
+  done
+done
+build_cluster "nutanix/flow-metallb/helm-addon" "nutanix-cluster-flow-metallb-helm-addon"
+
+build_cluster "nutanix-with-failuredomains/cilium/helm-addon" \
+  "nutanix-cluster-with-failuredomains-cilium-helm-addon"
+for strategy in "helm-addon" "crs"; do
+  build_cluster "nutanix-with-failuredomains/cilium-metallb/${strategy}" \
+    "nutanix-cluster-with-failuredomains-cilium-metallb-${strategy}"
+done
+unset cni strategy
 
 # Nutanix templates use Cluster v1beta2 (patch cluster-apiversion-v1beta2.yaml) so only classRef
 # is used; v1beta1 would reject classRef at apply time. Strip any legacy class line from other providers.
