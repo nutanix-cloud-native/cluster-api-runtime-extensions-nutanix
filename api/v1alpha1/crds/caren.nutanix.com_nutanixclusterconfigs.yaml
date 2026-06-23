@@ -1102,6 +1102,13 @@ spec:
                         - host
                         - port
                       type: object
+                    metros:
+                      description: metros are a list of NutanixMetros (by names) that the cluster uses to provision its machine vms.
+                      items:
+                        type: string
+                      maxItems: 10
+                      type: array
+                      x-kubernetes-list-type: set
                     prismCentralEndpoint:
                       description: Nutanix Prism Central endpoint configuration.
                       properties:

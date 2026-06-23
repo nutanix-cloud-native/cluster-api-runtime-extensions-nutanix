@@ -24,6 +24,12 @@ type NutanixSpec struct {
 	// Nutanix Prism Central endpoint configuration.
 	// +kubebuilder:validation:Required
 	PrismCentralEndpoint NutanixPrismCentralEndpointSpec `json:"prismCentralEndpoint"`
+
+	// metros are a list of NutanixMetros (by names) that the cluster uses to provision its machine vms.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=10
+	// +listType=set
+	Metros []string `json:"metros,omitempty"`
 }
 
 type NutanixPrismCentralEndpointSpec struct {
