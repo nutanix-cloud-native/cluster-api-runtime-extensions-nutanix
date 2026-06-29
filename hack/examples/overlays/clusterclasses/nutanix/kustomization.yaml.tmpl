@@ -54,7 +54,7 @@ patches:
   # BEGIN CIS patches
   - target:
       kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/cis/kubeadmcontrolplanetemplate/control-plane-flags.yaml
+    path: ../../../patches/cis/kubeadmcontrolplanetemplate/control-plane-flags-nutanix.yaml
   - target:
       kind: KubeadmControlPlaneTemplate
     path: ../../../patches/cis/kubeadmcontrolplanetemplate/kubelet-configuration.yaml
@@ -63,7 +63,7 @@ patches:
     path: ../../../patches/cis/kubeadmcontrolplanetemplate/kubelet-file-permissions.yaml
   - target:
       kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/cis/admissionconfiguration.yaml
+    path: ../../../patches/cis/admissionconfiguration-nutanix.yaml
 
   - target:
       kind: KubeadmConfigTemplate
@@ -76,5 +76,5 @@ patches:
   # BEGIN STIG patches
   - target:
       kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/stig/kubeadmcontrolplanetemplate/control-plane-flags.yaml
+    path: ../../../patches/stig/kubeadmcontrolplanetemplate/control-plane-flags-nutanix.yaml
   # END STIG patches
