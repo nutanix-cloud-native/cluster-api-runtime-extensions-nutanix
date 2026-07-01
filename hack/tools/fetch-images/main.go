@@ -254,8 +254,24 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (strin
 	switch chartName {
 	case "nutanix-csi-storage":
 		// The Helm template expects the Secrets to already exist.
-		// Read the default value file and append override values to workaround this.
-		sourceValuesFile := filepath.Join(carenChartDirectory, "addons", "csi", "nutanix", defaultHelmAddonFilename)
+		// Read the default value file, render the Go template, and append override values to workaround this.
+		f := filepath.Join(carenChartDirectory, "addons", "csi", "nutanix", defaultHelmAddonFilename)
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+
+		templateInput := struct {
+			ApplyMpioConfigs bool
+		}{
+			ApplyMpioConfigs: false,
+		}
+
+		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)
+		if err != nil {
+			return "", fmt.Errorf("failed to execute helm values template %w", err)
+		}
+
 		overrideValues := `
 createPrismCentralSecret: true
 pcUsername: admin
@@ -266,12 +282,12 @@ username: admin
 password: admin
 prismEndPoint: endpoint
 `
-		updatedValuesFile, err := getUpdatedValuesFile(sourceValuesFile, overrideValues)
+		_, err = tempFile.WriteString(overrideValues)
 		if err != nil {
-			return "", fmt.Errorf("failed to modify values file: %w", err)
+			return "", fmt.Errorf("failed to write override values to temp file: %w", err)
 		}
 
-		return updatedValuesFile.Name(), nil
+		return tempFile.Name(), nil
 	case "node-feature-discovery":
 		return filepath.Join(carenChartDirectory, "addons", "nfd", defaultHelmAddonFilename), nil
 	case "snapshot-controller":
@@ -592,31 +608,4 @@ func getImagesFromYAMLFiles(files []string) ([]string, error) {
 		}
 	}
 	return images, nil
-}
-
-// getUpdatedValuesFile reads the default values file and returns a new file with the override values appended.
-func getUpdatedValuesFile(valuesFilePath, overrideValues string) (*os.File, error) {
-	defaultValuesFile, err := os.Open(valuesFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open default values file: %w", err)
-	}
-	defer defaultValuesFile.Close()
-
-	tempFile, err := os.CreateTemp("", "")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer tempFile.Close()
-
-	_, err = io.Copy(tempFile, defaultValuesFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to copy default values file to temp file: %w", err)
-	}
-
-	_, err = tempFile.WriteString(overrideValues)
-	if err != nil {
-		return nil, fmt.Errorf("failed to write to temp file: %w", err)
-	}
-
-	return tempFile, nil
 }

@@ -3,6 +3,7 @@ createPrismCentralSecret: false
 # Disable creating the Prism Element credentials Secret, it won't be used the CSI driver as configured here.
 createSecret: false
 pcSecretName: nutanix-csi-credentials
+applyMpioConfigs: {{ .ApplyMpioConfigs }}
 
 tolerations:
   - key: CriticalAddonsOnly
