@@ -4,8 +4,11 @@
 package nutanix
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"strings"
+	"text/template"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
@@ -15,11 +18,18 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
+)
+
+const (
+	metroFailureDomainPrefix     = "NutanixMetro/"
+	metroSiteFailureDomainPrefix = "NutanixMetroSite/"
 )
 
 const (
@@ -101,7 +111,7 @@ func (n *NutanixCSI) Apply(
 			n.config.helmAddonConfig,
 			n.client,
 			helmChart,
-		)
+		).WithValueTemplater(templateValuesFunc(cluster))
 	case "":
 		return fmt.Errorf("strategy not provided for Nutanix CSI driver")
 	default:
@@ -188,4 +198,65 @@ func (n *NutanixCSI) Apply(
 		return fmt.Errorf("error creating StorageClasses for the Nutanix CSI driver: %w", err)
 	}
 	return nil
+}
+
+func templateValuesFunc(
+	cluster *clusterv1.Cluster,
+) func(*clusterv1.Cluster, string) (string, error) {
+	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
+		helmValuesTemplate, err := template.New("").Parse(valuesTemplate)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse Helm values template: %w", err)
+		}
+
+		type input struct {
+			ApplyMpioConfigs bool
+		}
+
+		templateInput := input{
+			ApplyMpioConfigs: isMetroCluster(cluster),
+		}
+
+		var b bytes.Buffer
+		if err = helmValuesTemplate.Execute(&b, templateInput); err != nil {
+			return "", fmt.Errorf("failed to template Nutanix CSI Helm values: %w", err)
+		}
+
+		return b.String(), nil
+	}
+}
+
+// isMetroCluster returns true when the cluster uses metro-aware failure domains,
+// i.e. any control-plane or worker failure domain references a NutanixMetro or
+// NutanixMetroSite object (identified by the respective name prefix).
+func isMetroCluster(cluster *clusterv1.Cluster) bool {
+	if !cluster.Spec.Topology.IsDefined() {
+		return false
+	}
+
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+	)
+	if err == nil &&
+		clusterConfigVar.ControlPlane != nil &&
+		clusterConfigVar.ControlPlane.Nutanix != nil {
+		for _, fd := range clusterConfigVar.ControlPlane.Nutanix.FailureDomains {
+			if strings.HasPrefix(fd, metroFailureDomainPrefix) ||
+				strings.HasPrefix(fd, metroSiteFailureDomainPrefix) {
+				return true
+			}
+		}
+	}
+
+	for i := range cluster.Spec.Topology.Workers.MachineDeployments {
+		fd := cluster.Spec.Topology.Workers.MachineDeployments[i].FailureDomain
+		if strings.HasPrefix(fd, metroFailureDomainPrefix) ||
+			strings.HasPrefix(fd, metroSiteFailureDomainPrefix) {
+			return true
+		}
+	}
+
+	return false
 }
