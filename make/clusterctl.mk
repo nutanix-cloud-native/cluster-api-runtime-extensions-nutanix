@@ -7,17 +7,9 @@ export CAPA_VERSION := $(shell cd hack/third-party/capa && GOWORK=off go list -m
 export CAPX_VERSION := $(shell cd hack/third-party/capx && GOWORK=off go list -m -f '{{ .Version }}' github.com/nutanix-cloud-native/cluster-api-provider-nutanix)
 export CAAPH_VERSION := $(shell cd hack/third-party/caaph && GOWORK=off go list -m -f '{{ .Version }}' sigs.k8s.io/cluster-api-addon-provider-helm)
 
-# Copy local CAPX metadata.yaml override so clusterctl accepts v1.10+ series,
-# which is missing from the public CAPX release's metadata.yaml.
-.PHONY: clusterctl.setup-capx-override
-clusterctl.setup-capx-override:
-	mkdir -p $(HOME)/.config/cluster-api/overrides/infrastructure-nutanix/$(CAPX_VERSION)
-	cp test/e2e/data/shared/capx/metadata.yaml \
-	   $(HOME)/.config/cluster-api/overrides/infrastructure-nutanix/$(CAPX_VERSION)/metadata.yaml
-
 # Leave Nutanix credentials empty here and set it when creating the clusters
 .PHONY: clusterctl.init
-clusterctl.init: clusterctl.setup-capx-override
+clusterctl.init:
 	env CLUSTER_TOPOLOGY=true \
 	    EXP_RUNTIME_SDK=true \
 	    EXP_MACHINE_POOL=true \
