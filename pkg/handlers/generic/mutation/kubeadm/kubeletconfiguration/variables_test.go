@@ -82,6 +82,11 @@ var testDefs = []capitest.VariableTestDef{
 				Duration: 10 * time.Second,
 			},
 			SeccompDefault: ptr.To(true),
+			EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+				v1alpha1.EnforceNodeAllocatablePods,
+				v1alpha1.EnforceNodeAllocatableSystemReservedCompressible,
+				v1alpha1.EnforceNodeAllocatableKubeReservedCompressible,
+			},
 		}),
 	},
 	{
@@ -181,6 +186,26 @@ var testDefs = []capitest.VariableTestDef{
 		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
 			ImageGCHighThresholdPercent: ptr.To(int32(70)),
 			ImageGCLowThresholdPercent:  ptr.To(int32(80)),
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "system-reserved and system-reserved-compressible mutually exclusive",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+				v1alpha1.EnforceNodeAllocatableSystemReserved,
+				v1alpha1.EnforceNodeAllocatableSystemReservedCompressible,
+			},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "kube-reserved and kube-reserved-compressible mutually exclusive",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+				v1alpha1.EnforceNodeAllocatableKubeReserved,
+				v1alpha1.EnforceNodeAllocatableKubeReservedCompressible,
+			},
 		}),
 		ExpectError: true,
 	},
