@@ -106,6 +106,18 @@ func (k *kubeletConfigurationValidator) validate(
 			continue
 		}
 
+		if entry.cfg.AutomaticReservations != nil {
+			if len(entry.cfg.SystemReserved) > 0 ||
+				len(entry.cfg.KubeReserved) > 0 ||
+				len(entry.cfg.EvictionHard) > 0 {
+				return admission.Denied(fmt.Sprintf(
+					"%s: automaticReservations cannot be combined with "+
+						"systemReserved, kubeReserved, or evictionHard",
+					entry.path,
+				))
+			}
+		}
+
 		if entry.cfg.CPUManagerPolicy != nil &&
 			*entry.cfg.CPUManagerPolicy == v1alpha1.CPUManagerPolicyStatic {
 			hasCPU := hasCPUReservation(entry.cfg.SystemReserved) ||

@@ -75,6 +75,36 @@ maxPods: 250
 			}},
 		},
 		{
+			Name: "automaticReservations at control plane injects script and preKubeadmCommand",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.KubeletConfiguration{
+						AutomaticReservations: &v1alpha1.AutomaticReservations{
+							Profile: v1alpha1.ReservationProfileCapacityTiered,
+						},
+					},
+					v1alpha1.ControlPlaneConfigVariableName,
+					VariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+					ValueMatcher: gomega.ContainElement(
+						gomega.HaveKeyWithValue("path", computeReservationsScriptPath),
+					),
+				},
+				{
+					Operation:    "add",
+					Path:         "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+					ValueMatcher: gomega.ContainElement(computeReservationsCommand),
+				},
+			},
+		},
+		{
 			Name: "seccompDefault set at control plane is rendered into patch",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(

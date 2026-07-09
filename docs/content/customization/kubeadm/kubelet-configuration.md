@@ -17,6 +17,7 @@ There is no cluster-level default; control plane and worker settings are configu
 The following fields are supported under `kubeletConfiguration`:
 
 - `maxPods`
+- `automaticReservations`
 - `systemReserved`
 - `kubeReserved`
 - `evictionHard`
@@ -35,6 +36,47 @@ The following fields are supported under `kubeletConfiguration`:
 - `shutdownGracePeriod`
 - `shutdownGracePeriodCriticalPods`
 - `seccompDefault`
+
+## Automatic resource reservations
+
+Instead of hand-picking `systemReserved`/`kubeReserved` per node size, you can opt in to
+automatic, node-size-aware reservations. Each node computes its `kubeReserved` (CPU and memory)
+and a hard eviction threshold at boot from its actual capacity — the same approach GKE and EKS
+use.
+
+`automaticReservations` is mutually exclusive with `systemReserved`, `kubeReserved`, and
+`evictionHard`; setting it alongside any of them is rejected at admission. Other kubelet fields
+(such as `maxPods`) can still be set.
+
+The `CapacityTiered` profile mirrors
+[GKE's node-allocatable formula](https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-architecture#node_allocatable)
+(EKS uses the same approach) and reserves:
+
+- CPU: 6% of the first core, 1% of the second, 0.5% of cores three and four, and 0.25% of each
+  core beyond four.
+- Memory: 255Mi below 1Gi total; otherwise 25% of the first 4Gi, 20% of the next 4Gi, 10% of the
+  next 8Gi, 6% of the next 112Gi, and 2% of memory above 128Gi.
+- A hard eviction threshold of `memory.available: 100Mi`.
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    workers:
+      machineDeployments:
+      - class: default-worker
+        name: md-0
+        variables:
+          overrides:
+          - name: workerConfig
+            value:
+              kubeletConfiguration:
+                automaticReservations:
+                  profile: CapacityTiered
+```
 
 ## Default seccomp profile
 

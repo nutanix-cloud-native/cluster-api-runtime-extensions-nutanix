@@ -84,9 +84,12 @@ func (h *kubeletConfigurationWorkerPatchHandler) Mutate(
 		"workerVariableFieldPath", h.workerVariableFieldPath,
 	)
 
-	kubeletConfigPatch, err := renderKubeletConfigPatch(finalCfg)
-	if err != nil {
-		return err
+	var kubeletConfigPatch *bootstrapv1.File
+	if hasRenderableKubeletFields(finalCfg) {
+		kubeletConfigPatch, err = renderKubeletConfigPatch(finalCfg)
+		if err != nil {
+			return err
+		}
 	}
 
 	return patches.MutateIfApplicable(
@@ -101,10 +104,17 @@ func (h *kubeletConfigurationWorkerPatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("adding KubeletConfiguration patch to worker node kubeadm config template")
 
-			obj.Spec.Template.Spec.Files = append(
-				obj.Spec.Template.Spec.Files,
-				*kubeletConfigPatch,
-			)
+			spec := &obj.Spec.Template.Spec
+			if kubeletConfigPatch != nil {
+				spec.Files = append(spec.Files, *kubeletConfigPatch)
+			}
+			if automaticReservationsEnabled(finalCfg) {
+				spec.Files = append(spec.Files, computeReservationsScriptFile())
+				spec.PreKubeadmCommands = append(
+					spec.PreKubeadmCommands,
+					computeReservationsCommand,
+				)
+			}
 
 			return nil
 		},
