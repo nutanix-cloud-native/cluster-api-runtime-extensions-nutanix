@@ -46,6 +46,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 		cidrValidationCheckCount           int
 		storageContainerCheckCount         int
 		failureDomainCheckCount            int
+		metroCheckCount                    int
 	}{
 		{
 			name:                               "basic initialization with no configs",
@@ -138,6 +139,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			vmImageKubernetesVersionCheckCount := 0
 			cidrValidationCheckCount := 0
 			failureDomainCheckCount := 0
+			metroCheckCount := 0
 
 			checker.configurationCheckFactory = func(cd *checkDependencies) preflight.Check {
 				configCheckCalled = true
@@ -248,6 +250,22 @@ func TestNutanixChecker_Init(t *testing.T) {
 				return checks
 			}
 
+			checker.metroChecksFactory = func(cd *checkDependencies) []preflight.Check {
+				checks := []preflight.Check{}
+				for i := 0; i < tt.metroCheckCount; i++ {
+					metroCheckCount++
+					checks = append(checks,
+						&mockCheck{
+							name: fmt.Sprintf("NutanixMetro-%d", i),
+							result: preflight.CheckResult{
+								Allowed: true,
+							},
+						},
+					)
+				}
+				return checks
+			}
+
 			// Call Init
 			ctx := context.Background()
 			checks := checker.Init(ctx, nil, &clusterv1beta2.Cluster{
@@ -282,6 +300,12 @@ func TestNutanixChecker_Init(t *testing.T) {
 				tt.failureDomainCheckCount,
 				failureDomainCheckCount,
 				"Wrong number of failure domain checks",
+			)
+			assert.Equal(
+				t,
+				tt.metroCheckCount,
+				metroCheckCount,
+				"Wrong number of metro checks",
 			)
 
 			// Verify the first three checks when we have results
@@ -396,6 +420,9 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 					return nil
 				},
 				storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				metroChecksFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
 			}
