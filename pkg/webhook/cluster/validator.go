@@ -13,6 +13,7 @@ func NewValidator(client ctrlclient.Client, decoder admission.Decoder) admission
 		NewClusterUUIDLabeler(client, decoder).Validator(),
 		NewNutanixValidator(client, decoder).Validator(),
 		NewAdvancedCiliumConfigurationValidator(client, decoder).Validator(),
+		NewCiliumLoadBalancerValidator(client, decoder).Validator(),
 		NewKubeletConfigurationValidator(client, decoder).Validator(),
 	)
 }
