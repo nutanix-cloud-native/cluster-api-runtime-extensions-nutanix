@@ -386,8 +386,8 @@ func (mc *metroCheck) Run(ctx context.Context) preflight.CheckResult {
 	// distinct network attributes (layer, VLAN ID/VNI and CIDR) observed across
 	// all failure-domain subnets.
 	subnetAttrs := newMetroSubnetAttributes()
-	peUUIDs, ok := mc.evaluateFailureDomains(ctx, metroObj, subnetAttrs, &result)
-	if !ok {
+	peUUIDs := mc.evaluateFailureDomains(ctx, metroObj, subnetAttrs, &result)
+	if !result.Allowed {
 		return result
 	}
 
@@ -436,7 +436,7 @@ func (mc *metroCheck) evaluateFailureDomains(
 	metroObj *capxv1.NutanixMetro,
 	subnetAttrs *metroSubnetAttributes,
 	result *preflight.CheckResult,
-) (map[string]struct{}, bool) {
+) map[string]struct{} {
 	peUUIDs := map[string]struct{}{}
 	for _, fdRef := range metroObj.Spec.FailureDomains {
 		if fdRef.Name == "" {
@@ -445,22 +445,22 @@ func (mc *metroCheck) evaluateFailureDomains(
 
 		fdObj, ok := mc.getFailureDomain(ctx, fdRef.Name, result)
 		if !ok {
-			return nil, false
+			continue
 		}
 
 		peCluster, ok := mc.resolvePrismElement(ctx, fdObj, fdRef.Name, result)
 		if !ok {
-			return nil, false
+			continue
 		}
 		peUUID := *peCluster.ExtId
 		peUUIDs[peUUID] = struct{}{}
 
 		if !mc.collectSubnetAttributes(ctx, fdObj, fdRef.Name, peUUID, subnetAttrs, result) {
-			return nil, false
+			continue
 		}
 	}
 
-	return peUUIDs, true
+	return peUUIDs
 }
 
 func (mc *metroCheck) getFailureDomain(

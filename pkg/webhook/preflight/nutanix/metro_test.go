@@ -266,6 +266,7 @@ func TestMetroCheck(t *testing.T) {
 		expectedAllowed       bool
 		expectedInternalError bool
 		expectedCauseMessage  string
+		expectedCauseCount    int
 	}{
 		{
 			name:                 "metro not found",
@@ -273,6 +274,7 @@ func TestMetroCheck(t *testing.T) {
 			nclient:              &clientWrapper{},
 			expectedAllowed:      false,
 			expectedCauseMessage: "was not found",
+			expectedCauseCount:   1,
 		},
 		{
 			name: "valid metro spanning two PEs with consistent VLAN subnets",
@@ -300,6 +302,7 @@ func TestMetroCheck(t *testing.T) {
 			}),
 			expectedAllowed:      false,
 			expectedCauseMessage: "must span exactly 2 distinct Prism Elements",
+			expectedCauseCount:   1,
 		},
 		{
 			name: "subnets reside on different network layers",
@@ -314,6 +317,7 @@ func TestMetroCheck(t *testing.T) {
 			}),
 			expectedAllowed:      false,
 			expectedCauseMessage: "reside on multiple network layers",
+			expectedCauseCount:   1,
 		},
 		{
 			name: "multiple subnets per FD with matching subnet sets are allowed",
@@ -345,6 +349,7 @@ func TestMetroCheck(t *testing.T) {
 			}),
 			expectedAllowed:      false,
 			expectedCauseMessage: "do not match",
+			expectedCauseCount:   1,
 		},
 		{
 			name: "prism element returned without ExtId",
@@ -374,6 +379,7 @@ func TestMetroCheck(t *testing.T) {
 			expectedAllowed:       false,
 			expectedInternalError: true,
 			expectedCauseMessage:  "without an ExtId",
+			expectedCauseCount:    2,
 		},
 		{
 			name: "referenced failure domain not found",
@@ -386,6 +392,17 @@ func TestMetroCheck(t *testing.T) {
 			}),
 			expectedAllowed:      false,
 			expectedCauseMessage: "was not found",
+			expectedCauseCount:   1,
+		},
+		{
+			name: "accumulates errors across all metro failure domains",
+			objects: []ctrlclient.Object{
+				newMetroObject(metroName, metroFD1, metroFD2),
+			},
+			nclient:              &clientWrapper{},
+			expectedAllowed:      false,
+			expectedCauseMessage: "was not found",
+			expectedCauseCount:   2,
 		},
 	}
 
@@ -414,6 +431,9 @@ func TestMetroCheck(t *testing.T) {
 				require.NotEmpty(t, result.Causes)
 				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
 				assert.Equal(t, field, result.Causes[0].Field)
+				if tc.expectedCauseCount > 0 {
+					assert.Len(t, result.Causes, tc.expectedCauseCount)
+				}
 			} else {
 				assert.Empty(t, result.Causes)
 			}
