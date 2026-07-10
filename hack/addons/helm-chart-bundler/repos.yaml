@@ -67,10 +67,10 @@ repositories:
       node-feature-discovery:
       - 0.18.1
   nutanix-cloud-provider:
-    repoURL: https://nutanix.github.io/helm/
+    repoURL: ghcr.io/nutanix-cloud-native/chart
     charts:
       nutanix-cloud-provider:
-      - 0.6.2
+      - 0.6.3
   nutanix-csi-storage:
     repoURL: https://nutanix.github.io/helm-releases/
     charts:
