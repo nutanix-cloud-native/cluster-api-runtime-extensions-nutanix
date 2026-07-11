@@ -66,11 +66,6 @@ repositories:
     charts:
       node-feature-discovery:
       - 0.18.1
-  nutanix-cloud-provider:
-    repoURL: ghcr.io/nutanix-cloud-native/chart
-    charts:
-      nutanix-cloud-provider:
-      - 0.6.3
   nutanix-csi-storage:
     repoURL: https://nutanix.github.io/helm-releases/
     charts:
@@ -91,3 +86,5 @@ repositories:
     charts:
       tigera-operator:
       - v3.29.6
+chartURLs:
+- oci://ghcr.io/nutanix-cloud-native/chart/nutanix-cloud-provider:0.6.3
