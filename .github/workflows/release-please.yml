@@ -22,7 +22,7 @@ jobs:
   release-please:
     runs-on: ubuntu-24.04
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: release-please
         with:
           target-branch: ${{ github.ref_name }}

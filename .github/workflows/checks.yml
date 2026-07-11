@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.14.0
+        uses: jetify-com/devbox-install-action@v0.15.0
         with:
           enable-cache: true
 
@@ -42,7 +42,7 @@ jobs:
           echo mod-cache-path="$(devbox run -- go env GOMODCACHE)" >>"${GITHUB_OUTPUT}"
 
       - name: Go cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ steps.export-go-version-and-mod-cache-path.outputs.mod-cache-path }}
@@ -55,7 +55,7 @@ jobs:
 
       - name: Annotate tests
         if: always()
-        uses: guyarb/golang-test-annotations@v0.8.0
+        uses: guyarb/golang-test-annotations@v0.9.0
         with:
           test-results: test.json
 
@@ -69,12 +69,12 @@ jobs:
     strategy:
       matrix:
         config:
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.31", "kubernetesVersion": "v1.31.9", "baseOS": "rocky-9.5"}
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.3", "baseOS": "rocky-9.5"}
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.2", "baseOS": "rocky-9.6"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.9"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.1"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5", "baseOS": "rocky-9.7"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.3", "baseOS": "rocky-9.7"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.2", "baseOS": "rocky-9.7"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.10"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.6"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
@@ -84,7 +84,7 @@ jobs:
       focus: Quick start
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
-      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-24.04' }}
+      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-nutanix-docker-medium' || 'ubuntu-24.04' }}
       base-os:  ${{ matrix.config.provider == 'Nutanix' && matrix.config.baseOS || '' }}
     secrets: inherit
     permissions:
@@ -101,9 +101,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - {"provider": "Docker", "kubernetesMinor": "v1.32", "kubernetesVersion": "v1.32.9"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.1"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.10"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.6"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "Nutanix", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
           # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
@@ -114,7 +114,7 @@ jobs:
       focus: Self-hosted
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
-      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-ncn-dind' || 'ubuntu-24.04' }}
+      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-nutanix-docker-medium' || 'ubuntu-24.04' }}
     secrets: inherit
     permissions:
       contents: read
@@ -127,13 +127,15 @@ jobs:
         module: [api, common, .]
       fail-fast: false
     permissions:
+      checks: write
+      contents: read
       pull-requests: write
     steps:
       - name: Check out code
         uses: actions/checkout@v6
 
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.14.0
+        uses: jetify-com/devbox-install-action@v0.15.0
         with:
           enable-cache: true
 
@@ -151,6 +153,8 @@ jobs:
   lint-gha:
     runs-on: ubuntu-24.04
     permissions:
+      checks: write
+      contents: read
       pull-requests: write
     steps:
       - name: Check out code
@@ -167,11 +171,9 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.14.0
+        uses: jetify-com/devbox-install-action@v0.15.0
         with:
           enable-cache: true
 
@@ -182,7 +184,7 @@ jobs:
           echo mod-cache-path="$(devbox run -- go env GOMODCACHE)" >>"${GITHUB_OUTPUT}"
 
       - name: Go cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ steps.export-go-version-and-mod-cache-path.outputs.mod-cache-path }}
@@ -190,13 +192,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ steps.export-go-version-and-mod-cache-path.outputs.go-version }}-
 
-      - name: Set up pre-commit cache
-        uses: actions/cache@v4
+      - name: Set up prek cache
+        uses: actions/cache@v5
         with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-3|${{ hashFiles('.pre-commit-config.yaml') }}
+          path: ~/.cache/prek
+          key: prek-1|${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Run pre-commit
+      - name: Run prek
         run: devbox run -- make pre-commit
         env:
           SKIP: no-commit-to-branch,golangci-lint,actionlint-system
@@ -214,7 +216,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.14.0
+        uses: jetify-com/devbox-install-action@v0.15.0
         with:
           enable-cache: true
 
