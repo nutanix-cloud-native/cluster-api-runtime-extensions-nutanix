@@ -35,26 +35,25 @@ jobs:
       checks: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      # Install nix using cachix/install-nix-action if running on ARC runners
-      # See: https://github.com/DeterminateSystems/nix-installer-action/issues/68
-      - name: Install Nix on self-hosted ARC runners
-        uses: cachix/install-nix-action@v31
-        if: inputs.runs-on == 'self-hosted-ncn-dind'
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v22
+        if: inputs.runs-on != 'ubuntu-24.04'
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          logger: pretty
+          extra-conf: experimental-features = ca-derivations fetch-closure
 
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.13.0
+        uses: jetify-com/devbox-install-action@v0.15.0
         with:
-          enable-cache: ${{ inputs.runs-on != 'self-hosted-ncn-dind' }}
-          skip-nix-installation: ${{ inputs.runs-on == 'self-hosted-ncn-dind' }}
+          enable-cache: ${{ inputs.runs-on == 'ubuntu-24.04' }}
+          skip-nix-installation: ${{ inputs.runs-on != 'ubuntu-24.04' }}
 
       - name: Go cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -66,7 +65,7 @@ jobs:
       # The default disk size of Github hosted runners is ~14GB, this is not enough to run the e2e tests.
       # Cleanup the disk, see upstream discussion https://github.com/actions/runner-images/issues/2840.
       - name: Cleanup Disk Space
-        if: inputs.runs-on != 'self-hosted-ncn-dind'
+        if: inputs.runs-on == 'ubuntu-24.04'
         run: |
           echo "Before removing files:"
           df -h
@@ -98,7 +97,7 @@ jobs:
 
       - if: success() || failure() # always run even if the previous step fails
         name: Publish e2e test report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         with:
           report_paths: 'junit-e2e.xml'
           check_name: 'e2e test report'

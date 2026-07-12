@@ -169,6 +169,15 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 		}
 
 		switch settings.ChartName {
+		case "nutanix-cloud-provider":
+			// The helm-list-images library doesn't support OCI registries, so we manually
+			// specify the image for nutanix-cloud-provider. The image tag matches the chart's
+			// appVersion which equals the chart version prefixed with 'v'.
+			images = append(images, fmt.Sprintf(
+				"ghcr.io/nutanix-cloud-native/cloud-provider-nutanix/controller:v%s",
+				settings.Version,
+			))
+			continue
 		case "aws-cloud-controller-manager":
 			values, err := getHelmValues(carenChartDirectory)
 			if err != nil {
