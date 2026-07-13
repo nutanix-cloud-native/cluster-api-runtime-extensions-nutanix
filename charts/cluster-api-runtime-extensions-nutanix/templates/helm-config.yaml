@@ -57,8 +57,8 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://kubernetes-sigs.github.io/node-feature-discovery/charts{{ end }}'
   nutanix-ccm: |
     ChartName: nutanix-cloud-provider
-    ChartVersion: 0.6.2
-    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://nutanix.github.io/helm/{{ end }}'
+    ChartVersion: 0.6.3
+    RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}oci://ghcr.io/nutanix-cloud-native/chart{{ end }}'
   nutanix-storage-csi: |
     ChartName: nutanix-csi-storage
     ChartVersion: 3.3.8
