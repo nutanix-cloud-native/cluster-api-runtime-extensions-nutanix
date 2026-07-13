@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.41.8 (2026-07-13)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.41.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: Update CoreDNS mapping file (#1606)  [release v0.41.x] by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1653
+### Other Changes
+* build(chore): bump prism-go-client to v0.6.5 and ccm to v0.6.3 by @Vedansh074 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1664
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.41.7...v0.41.8
+
 ## 0.41.7 (2026-02-09)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.41.x -->
