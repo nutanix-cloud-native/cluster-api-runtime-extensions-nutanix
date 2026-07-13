@@ -326,6 +326,10 @@ type GenericClusterConfigSpec struct {
 	// NTP defines the NTP configuration for the cluster.
 	// +kubebuilder:validation:Optional
 	NTP *NTP `json:"ntp,omitempty"`
+
+	// AuditLog defines the audit log configuration for the cluster.
+	// +kubebuilder:validation:Optional
+	AuditLog *AuditLog `json:"auditLog,omitempty"`
 }
 
 type Image struct {
