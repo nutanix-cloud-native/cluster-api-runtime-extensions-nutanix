@@ -1,13 +1,5 @@
 CLUSTERCTL_DISABLE_VERSIONCHECK: "true"
 
-# Point to repo-local overrides so clusterctl picks up corrected metadata.yaml
-# files for providers whose upstream releases have incomplete release series entries
-# (e.g. CAPX v1.10.x is missing the "1.10" series in its published metadata.yaml).
-# The directory layout mirrors the default override structure:
-#   hack/third-party/<provider>/clusterctl-overrides/<provider-name>/<version>/<file>
-# When a provider version is bumped, add a new version sub-directory there.
-overridesFolder: "hack/third-party/capx/clusterctl-overrides"
-
 providers:
   - name: "aws"
     url: "https://github.com/nutanix-cloud-native/cluster-api-provider-aws/releases/${CAPA_VERSION}/infrastructure-components.yaml"
