@@ -24,6 +24,10 @@ const (
 	metroPrismElementCount = 2
 	nutanixMetroName       = "NutanixMetro"
 	cpFailureDomainsField  = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains" //nolint:lll // Message is long.
+	// metroMaxRTTMillis is the maximum network round-trip time, in
+	// milliseconds, supported between the two Prism Elements of a metro
+	// configuration for safe synchronous replication.
+	metroMaxRTTMillis = 5.0
 )
 
 type metroCheck struct {
@@ -100,14 +104,38 @@ func newMetroChecks(cd *checkDependencies) []preflight.Check {
 	// standalone failure domain whose Prism Element is a third PE.
 	if len(metroNames) > 0 {
 		fdNames, errMessage := clusterFailureDomainNames(cd)
-		checks = append(checks, &clusterPrismElementScaleCheck{
-			failureDomainNames: fdNames,
-			namespace:          cd.cluster.Namespace,
-			field:              firstField,
-			kclient:            cd.kclient,
-			nclient:            cd.nclient,
-			errMessage:         errMessage,
-		})
+		checks = append(checks,
+			&clusterPrismElementScaleCheck{
+				failureDomainNames: fdNames,
+				namespace:          cd.cluster.Namespace,
+				field:              firstField,
+				kclient:            cd.kclient,
+				nclient:            cd.nclient,
+				errMessage:         errMessage,
+			},
+			// Prism Central must not reside on either of the metro's Prism
+			// Elements: otherwise a single Prism Element failure would take down
+			// Prism Central together with half of the metro.
+			&prismCentralMetroHostingCheck{
+				failureDomainNames: fdNames,
+				namespace:          cd.cluster.Namespace,
+				field:              firstField,
+				kclient:            cd.kclient,
+				nclient:            cd.nclient,
+				errMessage:         errMessage,
+			},
+			// The network round-trip time between the two metro Prism Elements
+			// must be within the supported bound for safe synchronous
+			// replication.
+			&metroReplicationLatencyCheck{
+				failureDomainNames: fdNames,
+				namespace:          cd.cluster.Namespace,
+				field:              firstField,
+				kclient:            cd.kclient,
+				nclient:            cd.nclient,
+				errMessage:         errMessage,
+			},
+		)
 	}
 
 	return checks
@@ -265,6 +293,164 @@ func failureDomainPrismElementUUID(
 		return "", fmt.Errorf("no ExtId returned for Prism Element cluster %q", peIdentifier)
 	}
 	return *peClusters[0].ExtId, nil
+}
+
+// prismCentralMetroHostingCheck enforces that Prism Central does not reside on
+// any Prism Element used by the metro Cluster. If Prism Central were hosted on
+// one of the two metro Prism Elements, a failure of that Prism Element would
+// take Prism Central down together with half of the metro.
+type prismCentralMetroHostingCheck struct {
+	failureDomainNames []string
+	namespace          string
+	field              string
+	kclient            ctrlclient.Client
+	nclient            client
+	errMessage         *string
+}
+
+func (c *prismCentralMetroHostingCheck) Name() string {
+	return nutanixMetroName
+}
+
+func (c *prismCentralMetroHostingCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{Allowed: true}
+
+	if c.errMessage != nil {
+		failCheck(&result, c.field, fmt.Sprintf(
+			"Failed to determine the Prism Elements used for metro: %s",
+			*c.errMessage,
+		))
+		return result
+	}
+
+	hostingPEUUID, err := c.nclient.GetPrismCentralHostingClusterExtID(ctx)
+	if err != nil {
+		failCheckInternal(&result, c.field, fmt.Sprintf(
+			"Failed to determine the Prism Element hosting Prism Central: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+			err,
+		))
+		return result
+	}
+	// If the hosting Prism Element cannot be determined, do not block the
+	// Cluster: we have no evidence of a violation.
+	if hostingPEUUID == "" {
+		return result
+	}
+
+	for _, fdName := range c.failureDomainNames {
+		peUUID, err := failureDomainPrismElementUUID(ctx, c.kclient, c.nclient, c.namespace, fdName)
+		if err != nil {
+			failCheckInternal(&result, c.field, fmt.Sprintf(
+				"Failed to determine the Prism Element of Failure Domain %q used for metro: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+				fdName,
+				err,
+			))
+			return result
+		}
+		if peUUID == hostingPEUUID {
+			failCheck(&result, c.field, fmt.Sprintf(
+				"Prism Central resides on Prism Element %q, which is used for metro by Failure Domain %q. Prism Central must not reside on either of the two Prism Elements used for metro, so that a Prism Element failure does not take down Prism Central together with half of the metro. Move Prism Central to a different Prism Element and retry.", //nolint:lll // Message is long.
+				hostingPEUUID,
+				fdName,
+			))
+			return result
+		}
+	}
+
+	return result
+}
+
+// metroReplicationLatencyCheck enforces that the network round-trip time
+// between the two Prism Elements used for metro is within the supported bound
+// for safe synchronous replication.
+type metroReplicationLatencyCheck struct {
+	failureDomainNames []string
+	namespace          string
+	field              string
+	kclient            ctrlclient.Client
+	nclient            client
+	errMessage         *string
+}
+
+func (c *metroReplicationLatencyCheck) Name() string {
+	return nutanixMetroName
+}
+
+func (c *metroReplicationLatencyCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{Allowed: true}
+
+	if c.errMessage != nil {
+		failCheck(&result, c.field, fmt.Sprintf(
+			"Failed to determine the Prism Elements used for metro: %s",
+			*c.errMessage,
+		))
+		return result
+	}
+
+	peUUIDs := c.distinctPrismElementUUIDs(ctx, &result)
+	if !result.Allowed {
+		return result
+	}
+
+	// The round-trip time is only defined between exactly two Prism Elements.
+	// A different count is a separate violation reported by the PE-scale check,
+	// so there is nothing to validate here.
+	if len(peUUIDs) != metroPrismElementCount {
+		return result
+	}
+
+	rttMillis, found, err := c.nclient.GetInterClusterRTTMillis(ctx, peUUIDs[0], peUUIDs[1])
+	if err != nil {
+		failCheckInternal(&result, c.field, fmt.Sprintf(
+			"Failed to determine the network round-trip time between the Prism Elements used for metro: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+			err,
+		))
+		return result
+	}
+	// If the round-trip time cannot be determined, do not block the Cluster: we
+	// have no evidence of a violation.
+	if !found {
+		return result
+	}
+
+	if rttMillis > metroMaxRTTMillis {
+		failCheck(&result, c.field, fmt.Sprintf(
+			"The network round-trip time between the two Prism Elements used for metro is %.2fms, which exceeds the supported maximum of %.0fms. Synchronous metro replication requires a round-trip time within %.0fms. Use Prism Elements with lower network latency between them and retry.", //nolint:lll // Message is long.
+			rttMillis,
+			metroMaxRTTMillis,
+			metroMaxRTTMillis,
+		))
+	}
+
+	return result
+}
+
+// distinctPrismElementUUIDs resolves the distinct Prism Element UUIDs of the
+// Cluster's failure domains, preserving order. It appends a cause and marks the
+// result on resolution failure.
+func (c *metroReplicationLatencyCheck) distinctPrismElementUUIDs(
+	ctx context.Context,
+	result *preflight.CheckResult,
+) []string {
+	seen := map[string]struct{}{}
+	peUUIDs := []string{}
+	for _, fdName := range c.failureDomainNames {
+		peUUID, err := failureDomainPrismElementUUID(ctx, c.kclient, c.nclient, c.namespace, fdName)
+		if err != nil {
+			failCheckInternal(result, c.field, fmt.Sprintf(
+				"Failed to determine the Prism Element of Failure Domain %q used for metro: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+				fdName,
+				err,
+			))
+			return nil
+		}
+		if _, ok := seen[peUUID]; ok {
+			continue
+		}
+		seen[peUUID] = struct{}{}
+		peUUIDs = append(peUUIDs, peUUID)
+	}
+	return peUUIDs
 }
 
 // singleMetroCheck enforces that a Cluster references at most one NutanixMetro.
