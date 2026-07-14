@@ -135,10 +135,113 @@ func newMetroChecks(cd *checkDependencies) []preflight.Check {
 				nclient:            cd.nclient,
 				errMessage:         errMessage,
 			},
+			// Every Control Plane and Worker node pool must be placed on a
+			// metro failure domain: otherwise only some node pools would be
+			// protected by synchronous replication and the Cluster would be
+			// only partially HA at the infrastructure level.
+			&allNodePoolsMetroCheck{
+				nodePools: clusterNodePools(cd),
+				field:     firstField,
+			},
 		)
 	}
 
 	return checks
+}
+
+// nodePool describes a single Control Plane or Worker node pool and the failure
+// domains it is configured with. failureDomains is empty when the node pool has
+// no failure domain configured.
+type nodePool struct {
+	description    string
+	failureDomains []string
+	field          string
+}
+
+// clusterNodePools enumerates every Control Plane and Worker node pool of the
+// Cluster, preserving node pools that have no failure domain configured (which
+// forEachClusterFailureDomain intentionally skips).
+func clusterNodePools(cd *checkDependencies) []nodePool {
+	pools := []nodePool{}
+	if cd == nil {
+		return pools
+	}
+
+	if cd.nutanixClusterConfigSpec != nil &&
+		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
+		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
+		fds := []string{}
+		for _, fd := range cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.FailureDomains {
+			if fd != "" {
+				fds = append(fds, fd)
+			}
+		}
+		pools = append(pools, nodePool{
+			description:    "The Control Plane",
+			failureDomains: fds,
+			field:          cpFailureDomainsField,
+		})
+	}
+
+	if cd.cluster != nil && cd.cluster.Spec.Topology.IsDefined() {
+		for i := range cd.cluster.Spec.Topology.Workers.MachineDeployments {
+			md := &cd.cluster.Spec.Topology.Workers.MachineDeployments[i]
+			fds := []string{}
+			if md.FailureDomain != "" {
+				fds = append(fds, md.FailureDomain)
+			}
+			pools = append(pools, nodePool{
+				description:    fmt.Sprintf("Worker MachineDeployment %q", md.Name),
+				failureDomains: fds,
+				field: fmt.Sprintf(
+					"$.spec.topology.workers.machineDeployments[?@.name==%q].failureDomain",
+					md.Name,
+				),
+			})
+		}
+	}
+
+	return pools
+}
+
+// allNodePoolsMetroCheck enforces that, when the Cluster uses metro, every
+// Control Plane and Worker node pool is configured with a NutanixMetro or
+// NutanixMetroSite failure domain. This prevents a partially-protected Cluster
+// where only some node pools benefit from synchronous replication.
+type allNodePoolsMetroCheck struct {
+	nodePools []nodePool
+	field     string
+}
+
+func (c *allNodePoolsMetroCheck) Name() string {
+	return nutanixMetroName
+}
+
+func (c *allNodePoolsMetroCheck) Run(_ context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{Allowed: true}
+
+	for _, np := range c.nodePools {
+		if len(np.failureDomains) == 0 {
+			failCheck(&result, np.field, fmt.Sprintf(
+				"%s is not configured with a failure domain. In a metro configuration, every Control Plane and Worker node pool must be placed on a NutanixMetro or NutanixMetroSite failure domain so that all nodes are protected by synchronous replication. Configure it with a NutanixMetro or NutanixMetroSite failure domain and retry.", //nolint:lll // Message is long.
+				np.description,
+			))
+			continue
+		}
+
+		for _, fd := range np.failureDomains {
+			if isNutanixMetroFailureDomain(fd) || isNutanixMetroSiteFailureDomain(fd) {
+				continue
+			}
+			failCheck(&result, np.field, fmt.Sprintf(
+				"%s uses failure domain %q, which is not a NutanixMetro or NutanixMetroSite failure domain. In a metro configuration, every Control Plane and Worker node pool must be placed on a NutanixMetro or NutanixMetroSite failure domain so that all nodes are protected by synchronous replication. Use a NutanixMetro or NutanixMetroSite failure domain and retry.", //nolint:lll // Message is long.
+				np.description,
+				fd,
+			))
+		}
+	}
+
+	return result
 }
 
 // clusterFailureDomainNames returns the distinct NutanixFailureDomain names used
