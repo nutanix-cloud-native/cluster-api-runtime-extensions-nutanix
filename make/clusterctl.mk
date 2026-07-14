@@ -23,7 +23,7 @@ clusterctl.init: clusterctl.setup-capx-override
 	    EXP_MACHINE_POOL=true \
 	    CAPA_EKS=true \
 	    AWS_B64ENCODED_CREDENTIALS=$$(clusterctl-aws bootstrap credentials encode-as-profile) \
-	    NUTANIX_ENDPOINT="" NUTANIX_PASSWORD="" NUTANIX_USER="" \
+	    NUTANIX_ENDPOINT="" NUTANIX_PASSWORD="" NUTANIX_USER="" NUTANIX_API_KEY="" \
 	    clusterctl init -v=10 \
 	      --kubeconfig=$(KIND_KUBECONFIG) \
 	      --core cluster-api:$(CAPI_VERSION) \

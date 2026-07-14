@@ -18,3 +18,8 @@ extraEnv:
   - name: KUBERNETES_SERVICE_PORT
     value: "{{ .Port }}"
 {{- end }}
+
+image:
+  repository: ghcr.io/nutanix-cloud-native/dkp-container-images/nkp-cloud-provider-nutanix
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "v0.8.0"

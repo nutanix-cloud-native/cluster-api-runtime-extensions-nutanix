@@ -22,7 +22,7 @@ configuration values blank as we will specify these when creating clusters:
 ```shell
 env CLUSTER_TOPOLOGY=true \
     EXP_RUNTIME_SDK=true  \
-    NUTANIX_ENDPOINT= NUTANIX_PASSWORD= NUTANIX_USER=  \
+    NUTANIX_ENDPOINT= NUTANIX_PASSWORD= NUTANIX_USER= NUTANIX_API_KEY= \
     AWS_B64ENCODED_CREDENTIALS=  \
     clusterctl init \
       --infrastructure docker,nutanix:v1.4.0,aws \
@@ -30,5 +30,8 @@ env CLUSTER_TOPOLOGY=true \
       --runtime-extension caren:v{{< param "version" >}} \
       --wait-providers
 ```
+
+For Prism Central auth, set either `NUTANIX_API_KEY` or
+`NUTANIX_USER`/`NUTANIX_PASSWORD`. If both are set, basic auth is used.
 
 [clusterctl configuration file]: https://cluster-api.sigs.k8s.io/clusterctl/configuration.html?highlight=clusterctl%20config#variables

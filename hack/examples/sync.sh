@@ -26,6 +26,25 @@ mkdir -p "${EXAMPLE_CLUSTERCLASSES_DIR}" "${EXAMPLE_CLUSTERS_DIR}"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 readonly REPO_ROOT
 
+# Determine Nutanix credentials overlay once for all Nutanix examples.
+# Precedence:
+# 1) Explicit credentials type if set
+# 2) API key when provided
+# 3) Basic auth when both username and password are provided
+# 4) Fall back to basic-auth overlay for backward-compatible templates
+NUTANIX_CREDENTIALS_OVERLAY="basic-auth"
+if [[ "${NUTANIX_CREDENTIALS_TYPE:-}" == "api_key" ]]; then
+  NUTANIX_CREDENTIALS_OVERLAY="api-key"
+elif [[ -n "${NUTANIX_CREDENTIALS_TYPE:-}" && "${NUTANIX_CREDENTIALS_TYPE}" != "basic_auth" ]]; then
+  echo "Unsupported NUTANIX_CREDENTIALS_TYPE=${NUTANIX_CREDENTIALS_TYPE}; expected basic_auth or api_key" >&2
+  exit 1
+elif [[ -n "${NUTANIX_API_KEY:-}" ]]; then
+  NUTANIX_CREDENTIALS_OVERLAY="api-key"
+fi
+readonly NUTANIX_CREDENTIALS_OVERLAY
+
+echo "Setting Nutanix auth method to ${NUTANIX_CREDENTIALS_OVERLAY} for all Nutanix examples"
+
 for provider in "aws" "docker" "nutanix"; do
   kustomize build --load-restrictor LoadRestrictionsNone \
     ./hack/examples/overlays/clusterclasses/"${provider}" >"${EXAMPLE_CLUSTERCLASSES_DIR}"/"${provider}"-cluster-class.yaml
@@ -33,8 +52,12 @@ for provider in "aws" "docker" "nutanix"; do
 
   for cni in "calico" "cilium"; do
     for strategy in "helm-addon" "crs"; do
+      cluster_overlay="./hack/examples/overlays/clusters/${provider}/${cni}/${strategy}"
+      if [[ "${provider}" == "nutanix" ]]; then
+        cluster_overlay="./hack/examples/overlays/clusters/nutanix-auth/${NUTANIX_CREDENTIALS_OVERLAY}/${cni}/${strategy}"
+      fi
       kustomize build --load-restrictor LoadRestrictionsNone \
-        ./hack/examples/overlays/clusters/"${provider}"/"${cni}"/"${strategy}" \
+        "${cluster_overlay}" \
         >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-${cni}-${strategy}.yaml"
     done
   done
@@ -46,7 +69,7 @@ for provider in "nutanix"; do
     for cni in "cilium"; do
       for strategy in "helm-addon" "crs"; do
         kustomize build --load-restrictor LoadRestrictionsNone \
-          ./hack/examples/overlays/clusters/"${provider}"-with-"${modifier}"/"${cni}"/"${strategy}" \
+          ./hack/examples/overlays/clusters/nutanix-auth/"${NUTANIX_CREDENTIALS_OVERLAY}"/with-"${modifier}"/"${cni}"/"${strategy}" \
           >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-with-${modifier}-${cni}-${strategy}.yaml"
       done
     done
@@ -54,7 +77,7 @@ for provider in "nutanix"; do
 
   # Flow is only supported on Nutanix for now and only with the helm-addon strategy.
   kustomize build --load-restrictor LoadRestrictionsNone \
-    ./hack/examples/overlays/clusters/"${provider}"/flow/helm-addon \
+    ./hack/examples/overlays/clusters/nutanix-auth/"${NUTANIX_CREDENTIALS_OVERLAY}"/flow/helm-addon \
     >"${EXAMPLE_CLUSTERS_DIR}/${provider}-cluster-flow-helm-addon.yaml"
 done
 unset provider cni strategy

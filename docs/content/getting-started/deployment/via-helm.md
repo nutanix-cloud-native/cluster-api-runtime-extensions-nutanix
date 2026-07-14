@@ -10,13 +10,16 @@ providers to our management cluster via `clusterctl`:
 ```shell
 env CLUSTER_TOPOLOGY=true \
     EXP_RUNTIME_SDK=true  \
-    NUTANIX_ENDPOINT= NUTANIX_PASSWORD= NUTANIX_USER=  \
+    NUTANIX_ENDPOINT= NUTANIX_PASSWORD= NUTANIX_USER= NUTANIX_API_KEY= \
     AWS_B64ENCODED_CREDENTIALS=  \
     clusterctl init \
       --infrastructure docker,nutanix:v1.4.0,aws \
       --addon helm \
       --wait-providers
 ```
+
+For Prism Central auth, set either `NUTANIX_API_KEY` or
+`NUTANIX_USER`/`NUTANIX_PASSWORD`. If both are set, basic auth is used.
 
 We can then deploy CAREN via Helm by adding the Helm repo and installing in the usual way via Helm:
 Add the CAREN Helm repo:

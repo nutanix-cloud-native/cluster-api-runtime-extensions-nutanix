@@ -1389,7 +1389,11 @@ func TestIsClusterRegisteredInPC_MissingUsernameInSecret(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.False(t, registered)
-	assert.Contains(t, err.Error(), "credentials secret does not contain 'username' key")
+	assert.Contains(
+		t,
+		err.Error(),
+		"invalid credentials secret data: either username and password, or an API key must be set in provider configuration",
+	)
 }
 
 func TestIsClusterRegisteredInPC_MissingPasswordInSecret(t *testing.T) {
@@ -1434,7 +1438,38 @@ func TestIsClusterRegisteredInPC_MissingPasswordInSecret(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.False(t, registered)
-	assert.Contains(t, err.Error(), "credentials secret does not contain 'password' key")
+	assert.Contains(
+		t,
+		err.Error(),
+		"invalid credentials secret data: either username and password, or an API key must be set in provider configuration",
+	)
+}
+
+func TestCredentialsFromSecretData_APIKey(t *testing.T) {
+	credentials, err := credentialsFromSecretData(map[string][]byte{
+		"apiKey": []byte("test-api-key"),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "test-api-key", credentials.APIKey)
+	assert.Empty(t, credentials.Username)
+	assert.Empty(t, credentials.Password)
+}
+
+func TestCredentialsFromSecretData_BasicAuthPrecedenceOverAPIKey(t *testing.T) {
+	credentials, err := credentialsFromSecretData(map[string][]byte{
+		"username": []byte("test-user"),
+		"password": []byte("test-pass"),
+		"apiKey":   []byte("test-api-key"),
+	})
+	require.Error(t, err)
+	assert.Nil(t, credentials)
+	assert.Contains(t, err.Error(), "basic auth (username/password) and API key cannot be set simultaneously")
+}
+
+func TestCredentialsFromSecretData_MissingAllCredentials(t *testing.T) {
+	credentials, err := credentialsFromSecretData(map[string][]byte{})
+	require.Error(t, err)
+	assert.Nil(t, credentials)
 }
 
 func TestTemplateValuesFunc_TrustBundleConfiguration(t *testing.T) {

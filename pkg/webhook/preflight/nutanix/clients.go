@@ -260,6 +260,7 @@ func buildManagementEndpoint(
 		ApiCredentials: prismtypes.ApiCredentials{
 			Username: credentials.Username,
 			Password: credentials.Password,
+			APIKey:   credentials.APIKey,
 		},
 	}, nil
 }

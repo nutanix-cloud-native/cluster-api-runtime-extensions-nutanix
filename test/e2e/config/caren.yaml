@@ -203,6 +203,8 @@ variables:
   NUTANIX_USER: ""
   # # Prism Central password
   NUTANIX_PASSWORD: ""
+  # # Prism Central API key (used when username/password are not provided)
+  NUTANIX_API_KEY: ""
   # # Port of the CAPX Kubernetes cluster. Default: 6443
   # CONTROL_PLANE_ENDPOINT_PORT: 6443
   # # Name of the Prism Element cluster.

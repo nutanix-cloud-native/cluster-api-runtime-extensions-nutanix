@@ -27,6 +27,7 @@ Export the required variables and any optional variables that you may want to se
 export CONTROL_PLANE_ENDPOINT_IP=<value> \
        DOCKER_HUB_PASSWORD=<value> \
        DOCKER_HUB_USERNAME=<value> \
+       NUTANIX_API_KEY=<value> \
        NUTANIX_ENDPOINT=<value> \
        NUTANIX_INSECURE=<value> \
        NUTANIX_MACHINE_TEMPLATE_BASE_OS=<value> \
@@ -38,6 +39,9 @@ export CONTROL_PLANE_ENDPOINT_IP=<value> \
        NUTANIX_SUBNET_NAME=<value> \
        NUTANIX_USER=<value>
 ```
+
+If both `NUTANIX_USER`/`NUTANIX_PASSWORD` and `NUTANIX_API_KEY` are set, the
+generated Prism Central credentials secret uses basic authentication.
 
 And create your cluster:
 

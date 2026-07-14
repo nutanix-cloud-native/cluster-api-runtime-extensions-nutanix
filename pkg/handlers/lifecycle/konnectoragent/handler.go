@@ -26,6 +26,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
+	prismtypes "github.com/nutanix-cloud-native/prism-go-client/environment/types"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
@@ -869,21 +870,18 @@ func isClusterRegisteredInPC(
 		return false, fmt.Errorf("failed to get credentials secret: %w", err)
 	}
 
-	usernameData, ok := credentialsSecret.Data["username"]
-	if !ok {
-		return false, fmt.Errorf("credentials secret does not contain 'username' key")
-	}
-	passwordData, ok := credentialsSecret.Data["password"]
-	if !ok {
-		return false, fmt.Errorf("credentials secret does not contain 'password' key")
+	credentials, err := credentialsFromSecretData(credentialsSecret.Data)
+	if err != nil {
+		return false, err
 	}
 
 	// Create credentials struct
-	credentials := prismgoclient.Credentials{
+	prismCredentials := prismgoclient.Credentials{
 		Endpoint: fmt.Sprintf("%s:%d", host, port),
 		URL:      fmt.Sprintf("https://%s:%d", host, port),
-		Username: string(usernameData),
-		Password: string(passwordData),
+		Username: credentials.Username,
+		Password: credentials.Password,
+		APIKey:   credentials.APIKey,
 		Insecure: prismCentralEndpointSpec.Insecure,
 		Port:     fmt.Sprintf("%d", port),
 	}
@@ -910,7 +908,7 @@ func isClusterRegisteredInPC(
 	}
 
 	// Create Prism Central Konnector client
-	prismCentralKonnectorClient, err := lifecycleutils.NewPrismCentralKonnectorClient(&credentials, trustBundle)
+	prismCentralKonnectorClient, err := lifecycleutils.NewPrismCentralKonnectorClient(&prismCredentials, trustBundle)
 	if err != nil {
 		return false, fmt.Errorf("failed to create prism central konnector client: %w", err)
 	}
@@ -924,4 +922,21 @@ func isClusterRegisteredInPC(
 	// If we got here, the cluster is registered
 	log.Info("Cluster is registered in Prism Central", "clusterUUID", clusterUUID)
 	return true, nil
+}
+
+func credentialsFromSecretData(data map[string][]byte) (*prismtypes.ApiCredentials, error) {
+	username := strings.TrimSpace(string(data["username"]))
+	password := strings.TrimSpace(string(data["password"]))
+	apiKey := strings.TrimSpace(string(data["apiKey"]))
+
+	credentials := &prismtypes.ApiCredentials{
+		Username: username,
+		Password: password,
+		APIKey:   apiKey,
+	}
+	if err := credentials.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid credentials secret data: %w", err)
+	}
+
+	return credentials, nil
 }

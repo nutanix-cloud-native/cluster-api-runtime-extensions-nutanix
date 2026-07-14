@@ -156,7 +156,7 @@ func newCredentialsCheck(
 		return credentialsCheck
 	}
 
-	usernamePassword, err := prismcredentials.ParseCredentials(data)
+	parsedCredentials, err := prismcredentials.ParseCredentials(data)
 	if err != nil {
 		credentialsCheck.result.Allowed = false
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
@@ -195,11 +195,11 @@ func newCredentialsCheck(
 	credentials := prismgoclient.Credentials{
 		Endpoint: fmt.Sprintf("%s:%d", host, port),
 		URL:      fmt.Sprintf("https://%s:%d", host, port),
-		Username: usernamePassword.Username,
-		Password: usernamePassword.Password,
+		Username: parsedCredentials.Username,
+		Password: parsedCredentials.Password,
+		APIKey:   parsedCredentials.APIKey,
 		Insecure: prismCentralEndpointSpec.Insecure,
 	}
-
 	// Initialize the Nutanix client (with optional additional trust bundle).
 	nclient, err := nclientFactory(
 		credentials,
@@ -239,7 +239,7 @@ func newCredentialsCheck(
 		credentialsCheck.result.Causes = append(credentialsCheck.result.Causes,
 			preflight.Cause{
 				Message: fmt.Sprintf(
-					"Failed to validate credentials: %s. Please check the username and/or password.", ///nolint:lll // Message is long.
+					"Failed to validate credentials: %s. Please check the Prism Central credentials Secret.", ///nolint:lll // Message is long.
 					err,
 				),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
