@@ -167,8 +167,8 @@ func TestNewMetroChecks(t *testing.T) {
 			},
 			nclient: &clientWrapper{},
 			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
-			// + 1 latency check.
-			expectedChecksCount: 4,
+			// + 1 latency check + 1 all-node-pools check.
+			expectedChecksCount: 5,
 		},
 		{
 			name: "same metro referenced by control plane and worker is de-duplicated",
@@ -185,8 +185,8 @@ func TestNewMetroChecks(t *testing.T) {
 			}},
 			nclient: &clientWrapper{},
 			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
-			// + 1 latency check.
-			expectedChecksCount: 4,
+			// + 1 latency check + 1 all-node-pools check.
+			expectedChecksCount: 5,
 		},
 		{
 			name: "two distinct metros add a single-metro check",
@@ -203,8 +203,8 @@ func TestNewMetroChecks(t *testing.T) {
 			}},
 			nclient: &clientWrapper{},
 			// 2 per-metro checks + 1 single-metro check + 1 cluster PE-scale check
-			// + 1 PC-hosting check + 1 latency check.
-			expectedChecksCount: 6,
+			// + 1 PC-hosting check + 1 latency check + 1 all-node-pools check.
+			expectedChecksCount: 7,
 		},
 		{
 			name: "metro site failure domain resolves to its metro",
@@ -223,8 +223,8 @@ func TestNewMetroChecks(t *testing.T) {
 			},
 			nclient: &clientWrapper{},
 			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
-			// + 1 latency check.
-			expectedChecksCount: 4,
+			// + 1 latency check + 1 all-node-pools check.
+			expectedChecksCount: 5,
 		},
 	}
 
@@ -476,6 +476,85 @@ func TestSingleMetroCheck(t *testing.T) {
 			} else {
 				assert.Empty(t, result.Causes)
 			}
+		})
+	}
+}
+
+func TestAllNodePoolsMetroCheck(t *testing.T) {
+	metroFD := metroFailureDomainPrefix + metroName
+	metroSiteFD := metroSiteFailureDomainPrefix + "site-1"
+
+	testCases := []struct {
+		name                 string
+		nodePools            []nodePool
+		expectedAllowed      bool
+		expectedCauseCount   int
+		expectedCauseMessage string
+	}{
+		{
+			name: "all node pools on metro failure domains are allowed",
+			nodePools: []nodePool{
+				{description: "The Control Plane", failureDomains: []string{metroFD}, field: field},
+				{description: `Worker MachineDeployment "md-1"`, failureDomains: []string{metroSiteFD}, field: field},
+			},
+			expectedAllowed: true,
+		},
+		{
+			name: "worker on a plain failure domain is rejected",
+			nodePools: []nodePool{
+				{description: "The Control Plane", failureDomains: []string{metroFD}, field: field},
+				{description: `Worker MachineDeployment "md-1"`, failureDomains: []string{"plain-fd"}, field: field},
+			},
+			expectedAllowed:      false,
+			expectedCauseCount:   1,
+			expectedCauseMessage: "is not a NutanixMetro or NutanixMetroSite failure domain",
+		},
+		{
+			name: "worker with no failure domain is rejected",
+			nodePools: []nodePool{
+				{description: "The Control Plane", failureDomains: []string{metroFD}, field: field},
+				{description: `Worker MachineDeployment "md-1"`, failureDomains: []string{}, field: field},
+			},
+			expectedAllowed:      false,
+			expectedCauseCount:   1,
+			expectedCauseMessage: "is not configured with a failure domain",
+		},
+		{
+			name: "control plane with no failure domain is rejected",
+			nodePools: []nodePool{
+				{description: "The Control Plane", failureDomains: []string{}, field: field},
+				{description: `Worker MachineDeployment "md-1"`, failureDomains: []string{metroFD}, field: field},
+			},
+			expectedAllowed:      false,
+			expectedCauseCount:   1,
+			expectedCauseMessage: "is not configured with a failure domain",
+		},
+		{
+			name: "multiple violations are all reported",
+			nodePools: []nodePool{
+				{description: "The Control Plane", failureDomains: []string{}, field: field},
+				{description: `Worker MachineDeployment "md-1"`, failureDomains: []string{"plain-fd"}, field: field},
+			},
+			expectedAllowed:    false,
+			expectedCauseCount: 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			check := &allNodePoolsMetroCheck{nodePools: tc.nodePools, field: field}
+			result := check.Run(context.TODO())
+
+			assert.Equal(t, tc.expectedAllowed, result.Allowed)
+			if tc.expectedAllowed {
+				assert.Empty(t, result.Causes)
+				return
+			}
+			require.Len(t, result.Causes, tc.expectedCauseCount)
+			if tc.expectedCauseMessage != "" {
+				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
+			}
+			assert.Equal(t, field, result.Causes[0].Field)
 		})
 	}
 }
