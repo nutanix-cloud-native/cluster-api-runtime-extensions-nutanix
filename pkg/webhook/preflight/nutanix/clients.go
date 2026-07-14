@@ -14,11 +14,17 @@ import (
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 	"github.com/nutanix-cloud-native/prism-go-client/converged"
 	prismtypes "github.com/nutanix-cloud-native/prism-go-client/environment/types"
+	v3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 )
+
+// localAvailabilityZoneManagementPlaneType is the management plane type that
+// identifies the Availability Zone local to the connected Prism Central.
+const localAvailabilityZoneManagementPlaneType = "Local"
 
 // client contains methods to interact with Nutanix Prism converged v4 client.
 type client interface {
@@ -32,6 +38,32 @@ type client interface {
 		ctx context.Context,
 	) (
 		string,
+		error,
+	)
+
+	// GetPrismCentralHostingClusterExtID returns the ExtId of the Prism Element
+	// cluster that hosts Prism Central. It returns an empty string when the
+	// hosting cluster cannot be determined.
+	GetPrismCentralHostingClusterExtID(
+		ctx context.Context,
+	) (
+		string,
+		error,
+	)
+
+	// GetInterClusterRTTMillis returns the network round-trip time, in
+	// milliseconds, between two Prism Element clusters managed by this Prism
+	// Central, as reported by the synchronous-replication-capable API. The
+	// returned boolean is false when the round-trip time could not be
+	// determined (for example, when the two clusters are not synchronous
+	// replication capable).
+	GetInterClusterRTTMillis(
+		ctx context.Context,
+		sourceClusterUUID string,
+		remoteClusterUUID string,
+	) (
+		float64,
+		bool,
 		error,
 	)
 
@@ -123,6 +155,20 @@ type clientWrapper struct {
 		ctx context.Context,
 	) (
 		string, error,
+	)
+
+	GetPrismCentralHostingClusterExtIDFunc func(
+		ctx context.Context,
+	) (
+		string, error,
+	)
+
+	GetInterClusterRTTMillisFunc func(
+		ctx context.Context,
+		sourceClusterUUID string,
+		remoteClusterUUID string,
+	) (
+		float64, bool, error,
 	)
 
 	GetImageByIdFunc func(
@@ -297,6 +343,25 @@ func newClient(
 			// Use DomainManager.GetPrismCentralVersion() as V4 equivalent to V3's GetPrismCentral().
 			return convergedc.DomainManager.GetPrismCentralVersion(ctx)
 		},
+		GetPrismCentralHostingClusterExtIDFunc: func(ctx context.Context) (string, error) {
+			domainManagers, err := convergedc.DomainManager.List(ctx)
+			if err != nil {
+				return "", err
+			}
+			for i := range domainManagers {
+				if domainManagers[i].HostingClusterExtId != nil && *domainManagers[i].HostingClusterExtId != "" {
+					return *domainManagers[i].HostingClusterExtId, nil
+				}
+			}
+			return "", nil
+		},
+		GetInterClusterRTTMillisFunc: func(
+			ctx context.Context,
+			sourceClusterUUID string,
+			remoteClusterUUID string,
+		) (float64, bool, error) {
+			return interClusterRTTMillis(ctx, cacheParams, sourceClusterUUID, remoteClusterUUID)
+		},
 		GetImageByIdFunc: func(
 			ctx context.Context,
 			uuid *string,
@@ -458,6 +523,107 @@ func (c *clientWrapper) GetPrismCentralVersion(
 	error,
 ) {
 	return c.GetPrismCentralVersionFunc(ctx)
+}
+
+func (c *clientWrapper) GetPrismCentralHostingClusterExtID(
+	ctx context.Context,
+) (
+	string,
+	error,
+) {
+	return callWithContext(ctx, func() (string, error) {
+		return c.GetPrismCentralHostingClusterExtIDFunc(ctx)
+	})
+}
+
+func (c *clientWrapper) GetInterClusterRTTMillis(
+	ctx context.Context,
+	sourceClusterUUID string,
+	remoteClusterUUID string,
+) (
+	rttMillis float64,
+	ok bool,
+	err error,
+) {
+	return c.GetInterClusterRTTMillisFunc(ctx, sourceClusterUUID, remoteClusterUUID)
+}
+
+// interClusterRTTMillis returns the network round-trip time, in milliseconds,
+// between two Prism Element clusters, as reported by the V3
+// synchronous-replication-capable API. The returned boolean is false when the
+// round-trip time could not be determined.
+func interClusterRTTMillis(
+	ctx context.Context,
+	cacheParams *CacheParams,
+	sourceClusterUUID string,
+	remoteClusterUUID string,
+) (rttMillis float64, ok bool, err error) {
+	// The synchronous-replication-capable API is only available on the V3 API,
+	// so use a V3 client that shares the same endpoint and credentials as the
+	// V4 client.
+	v3client, err := NutanixClientCache.GetOrCreate(cacheParams)
+	if err != nil {
+		return 0, false, fmt.Errorf("failed to create Prism Central V3 API client: %w", err)
+	}
+
+	azResp, err := v3client.V3.ListAllAvailabilityZones(ctx, "")
+	if err != nil {
+		return 0, false, fmt.Errorf("failed to list availability zones: %w", err)
+	}
+	localAZUUID := localAvailabilityZoneUUID(azResp)
+	if localAZUUID == "" {
+		return 0, false, nil
+	}
+
+	input := &v3.ClusterSyncReplicationCapableInput{
+		SourceClusterReferenceList: []*v3.Reference{
+			{Kind: ptr.To("cluster"), UUID: ptr.To(sourceClusterUUID)},
+		},
+		RemoteClusterReference: &v3.Reference{
+			Kind: ptr.To("cluster"),
+			UUID: ptr.To(remoteClusterUUID),
+		},
+		RemoteAvailabilityZoneReference: &v3.Reference{
+			Kind: ptr.To("availability_zone"),
+			UUID: ptr.To(localAZUUID),
+		},
+	}
+	resp, err := v3client.V3.GetSyncReplicationCapableClusters(ctx, input)
+	if err != nil {
+		return 0, false, fmt.Errorf("failed to check synchronous replication capability: %w", err)
+	}
+	if resp == nil {
+		return 0, false, nil
+	}
+	for _, entry := range *resp {
+		if entry == nil || entry.RttMsecs == nil {
+			continue
+		}
+		rtt, err := entry.RttMsecs.Float64()
+		if err != nil {
+			return 0, false, fmt.Errorf("failed to parse round-trip time %q: %w", entry.RttMsecs.String(), err)
+		}
+		return rtt, true, nil
+	}
+	return 0, false, nil
+}
+
+// localAvailabilityZoneUUID returns the UUID of the Availability Zone local to
+// the connected Prism Central, or an empty string when it cannot be found.
+func localAvailabilityZoneUUID(resp *v3.AvailabilityZoneListResponse) string {
+	if resp == nil {
+		return ""
+	}
+	for _, az := range resp.Entities {
+		if az == nil || az.Metadata == nil || az.Status == nil {
+			continue
+		}
+		if az.Status.Resources != nil &&
+			ptr.Deref(az.Status.Resources.ManagementPlaneType, "") == localAvailabilityZoneManagementPlaneType {
+			return ptr.Deref(az.Metadata.UUID, "")
+		}
+	}
+	return ""
 }
 
 func (c *clientWrapper) GetImageById(

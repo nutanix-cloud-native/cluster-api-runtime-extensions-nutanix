@@ -166,8 +166,9 @@ func TestNewMetroChecks(t *testing.T) {
 				},
 			},
 			nclient: &clientWrapper{},
-			// 1 per-metro check + 1 cluster PE-scale check.
-			expectedChecksCount: 2,
+			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
+			// + 1 latency check.
+			expectedChecksCount: 4,
 		},
 		{
 			name: "same metro referenced by control plane and worker is de-duplicated",
@@ -183,8 +184,9 @@ func TestNewMetroChecks(t *testing.T) {
 				FailureDomain: metroFailureDomainPrefix + metroName,
 			}},
 			nclient: &clientWrapper{},
-			// 1 per-metro check + 1 cluster PE-scale check.
-			expectedChecksCount: 2,
+			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
+			// + 1 latency check.
+			expectedChecksCount: 4,
 		},
 		{
 			name: "two distinct metros add a single-metro check",
@@ -200,8 +202,9 @@ func TestNewMetroChecks(t *testing.T) {
 				FailureDomain: metroFailureDomainPrefix + "metro-2",
 			}},
 			nclient: &clientWrapper{},
-			// 2 per-metro checks + 1 single-metro check + 1 cluster PE-scale check.
-			expectedChecksCount: 4,
+			// 2 per-metro checks + 1 single-metro check + 1 cluster PE-scale check
+			// + 1 PC-hosting check + 1 latency check.
+			expectedChecksCount: 6,
 		},
 		{
 			name: "metro site failure domain resolves to its metro",
@@ -219,8 +222,9 @@ func TestNewMetroChecks(t *testing.T) {
 				},
 			},
 			nclient: &clientWrapper{},
-			// 1 per-metro check + 1 cluster PE-scale check.
-			expectedChecksCount: 2,
+			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
+			// + 1 latency check.
+			expectedChecksCount: 4,
 		},
 	}
 
@@ -489,6 +493,269 @@ func TestMetroCheckErrMessage(t *testing.T) {
 	assert.False(t, result.Allowed)
 	require.NotEmpty(t, result.Causes)
 	assert.Contains(t, result.Causes[0].Message, "boom")
+}
+
+// metroHostingNClient builds a mock Nutanix client that resolves each PE UUID
+// to a cluster and reports the given hosting Prism Element for Prism Central.
+// A non-empty hostingErr makes the hosting lookup fail.
+func metroHostingNClient(hostingPEUUID string, hostingErr error) *clientWrapper {
+	return &clientWrapper{
+		GetClusterByIdFunc: func(
+			ctx context.Context,
+			uuid *string,
+			args ...map[string]any,
+		) (*clustermgmtv4.GetClusterApiResponse, error) {
+			cluster := clustermgmtv4.NewCluster()
+			cluster.ExtId = uuid
+			cluster.Name = uuid
+			resp := &clustermgmtv4.GetClusterApiResponse{
+				ObjectType_: ptr.To("clustermgmt.v4.config.GetClusterApiResponse"),
+			}
+			if err := resp.SetData(*cluster); err != nil {
+				return nil, err
+			}
+			return resp, nil
+		},
+		GetPrismCentralHostingClusterExtIDFunc: func(ctx context.Context) (string, error) {
+			if hostingErr != nil {
+				return "", hostingErr
+			}
+			return hostingPEUUID, nil
+		},
+	}
+}
+
+func TestPrismCentralMetroHostingCheck(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		failureDomainNames    []string
+		objects               []ctrlclient.Object
+		hostingPEUUID         string
+		hostingErr            error
+		errMessage            *string
+		expectedAllowed       bool
+		expectedInternalError bool
+		expectedCauseMessage  string
+	}{
+		{
+			name:                 "resolution error message is surfaced",
+			errMessage:           ptr.To("boom"),
+			expectedAllowed:      false,
+			expectedCauseMessage: "boom",
+		},
+		{
+			name:               "prism central not on a metro prism element is allowed",
+			failureDomainNames: []string{metroFD1, metroFD2},
+			objects: []ctrlclient.Object{
+				newMetroFailureDomain(metroFD1, metroPE1UUID, metroSubnet1),
+				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
+			},
+			hostingPEUUID:   "some-other-pe-uuid",
+			expectedAllowed: true,
+		},
+		{
+			name:               "prism central hosted on a metro prism element is rejected",
+			failureDomainNames: []string{metroFD1, metroFD2},
+			objects: []ctrlclient.Object{
+				newMetroFailureDomain(metroFD1, metroPE1UUID, metroSubnet1),
+				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
+			},
+			hostingPEUUID:        metroPE1UUID,
+			expectedAllowed:      false,
+			expectedCauseMessage: "Prism Central resides on Prism Element",
+		},
+		{
+			name:               "hosting prism element unknown is allowed",
+			failureDomainNames: []string{metroFD1, metroFD2},
+			objects: []ctrlclient.Object{
+				newMetroFailureDomain(metroFD1, metroPE1UUID, metroSubnet1),
+				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
+			},
+			hostingPEUUID:   "",
+			expectedAllowed: true,
+		},
+		{
+			name:                  "hosting lookup error is an internal error",
+			failureDomainNames:    []string{metroFD1, metroFD2},
+			hostingErr:            assert.AnError,
+			expectedAllowed:       false,
+			expectedInternalError: true,
+			expectedCauseMessage:  "Failed to determine the Prism Element hosting Prism Central",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			builder := fake.NewClientBuilder().WithScheme(metroScheme())
+			if len(tc.objects) > 0 {
+				builder = builder.WithObjects(tc.objects...)
+			}
+			kclient := builder.Build()
+
+			check := &prismCentralMetroHostingCheck{
+				failureDomainNames: tc.failureDomainNames,
+				namespace:          namespace,
+				field:              field,
+				kclient:            kclient,
+				nclient:            metroHostingNClient(tc.hostingPEUUID, tc.hostingErr),
+				errMessage:         tc.errMessage,
+			}
+
+			result := check.Run(context.TODO())
+
+			assert.Equal(t, tc.expectedAllowed, result.Allowed)
+			assert.Equal(t, tc.expectedInternalError, result.InternalError)
+			if !tc.expectedAllowed {
+				require.NotEmpty(t, result.Causes)
+				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
+				assert.Equal(t, field, result.Causes[0].Field)
+			} else {
+				assert.Empty(t, result.Causes)
+			}
+		})
+	}
+}
+
+// metroLatencyNClient builds a mock Nutanix client that resolves each PE UUID
+// to a cluster and reports the given inter-cluster round-trip time.
+func metroLatencyNClient(rttMillis float64, found bool, rttErr error) *clientWrapper {
+	return &clientWrapper{
+		GetClusterByIdFunc: func(
+			ctx context.Context,
+			uuid *string,
+			args ...map[string]any,
+		) (*clustermgmtv4.GetClusterApiResponse, error) {
+			cluster := clustermgmtv4.NewCluster()
+			cluster.ExtId = uuid
+			cluster.Name = uuid
+			resp := &clustermgmtv4.GetClusterApiResponse{
+				ObjectType_: ptr.To("clustermgmt.v4.config.GetClusterApiResponse"),
+			}
+			if err := resp.SetData(*cluster); err != nil {
+				return nil, err
+			}
+			return resp, nil
+		},
+		GetInterClusterRTTMillisFunc: func(
+			ctx context.Context,
+			sourceClusterUUID string,
+			remoteClusterUUID string,
+		) (float64, bool, error) {
+			if rttErr != nil {
+				return 0, false, rttErr
+			}
+			return rttMillis, found, nil
+		},
+	}
+}
+
+func TestMetroReplicationLatencyCheck(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		failureDomainNames    []string
+		objects               []ctrlclient.Object
+		rttMillis             float64
+		rttFound              bool
+		rttErr                error
+		errMessage            *string
+		expectedAllowed       bool
+		expectedInternalError bool
+		expectedCauseMessage  string
+	}{
+		{
+			name:                 "resolution error message is surfaced",
+			errMessage:           ptr.To("boom"),
+			expectedAllowed:      false,
+			expectedCauseMessage: "boom",
+		},
+		{
+			name:               "round-trip time within the bound is allowed",
+			failureDomainNames: []string{metroFD1, metroFD2},
+			objects: []ctrlclient.Object{
+				newMetroFailureDomain(metroFD1, metroPE1UUID, metroSubnet1),
+				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
+			},
+			rttMillis:       3.5,
+			rttFound:        true,
+			expectedAllowed: true,
+		},
+		{
+			name:               "round-trip time exceeding the bound is rejected",
+			failureDomainNames: []string{metroFD1, metroFD2},
+			objects: []ctrlclient.Object{
+				newMetroFailureDomain(metroFD1, metroPE1UUID, metroSubnet1),
+				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
+			},
+			rttMillis:            7.25,
+			rttFound:             true,
+			expectedAllowed:      false,
+			expectedCauseMessage: "exceeds the supported maximum",
+		},
+		{
+			name:               "round-trip time unavailable is allowed",
+			failureDomainNames: []string{metroFD1, metroFD2},
+			objects: []ctrlclient.Object{
+				newMetroFailureDomain(metroFD1, metroPE1UUID, metroSubnet1),
+				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
+			},
+			rttFound:        false,
+			expectedAllowed: true,
+		},
+		{
+			name:               "fewer than two prism elements is not evaluated",
+			failureDomainNames: []string{metroFD1, metroFD2},
+			objects: []ctrlclient.Object{
+				newMetroFailureDomain(metroFD1, metroPE1UUID, metroSubnet1),
+				newMetroFailureDomain(metroFD2, metroPE1UUID, metroSubnet2),
+			},
+			rttMillis:       99,
+			rttFound:        true,
+			expectedAllowed: true,
+		},
+		{
+			name:               "round-trip time lookup error is an internal error",
+			failureDomainNames: []string{metroFD1, metroFD2},
+			objects: []ctrlclient.Object{
+				newMetroFailureDomain(metroFD1, metroPE1UUID, metroSubnet1),
+				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
+			},
+			rttErr:                assert.AnError,
+			expectedAllowed:       false,
+			expectedInternalError: true,
+			expectedCauseMessage:  "Failed to determine the network round-trip time",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			builder := fake.NewClientBuilder().WithScheme(metroScheme())
+			if len(tc.objects) > 0 {
+				builder = builder.WithObjects(tc.objects...)
+			}
+			kclient := builder.Build()
+
+			check := &metroReplicationLatencyCheck{
+				failureDomainNames: tc.failureDomainNames,
+				namespace:          namespace,
+				field:              field,
+				kclient:            kclient,
+				nclient:            metroLatencyNClient(tc.rttMillis, tc.rttFound, tc.rttErr),
+				errMessage:         tc.errMessage,
+			}
+
+			result := check.Run(context.TODO())
+
+			assert.Equal(t, tc.expectedAllowed, result.Allowed)
+			assert.Equal(t, tc.expectedInternalError, result.InternalError)
+			if !tc.expectedAllowed {
+				require.NotEmpty(t, result.Causes)
+				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
+				assert.Equal(t, field, result.Causes[0].Field)
+			} else {
+				assert.Empty(t, result.Causes)
+			}
+		})
+	}
 }
 
 func TestClusterPrismElementScaleCheck(t *testing.T) {
