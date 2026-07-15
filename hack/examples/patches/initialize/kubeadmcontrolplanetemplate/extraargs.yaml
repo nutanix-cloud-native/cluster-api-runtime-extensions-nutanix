@@ -4,7 +4,7 @@
 # Initialize apiServer/extraArgs as an empty array.
 # Required because kubeadm v1beta4 (CAPX v1.10+) uses []Arg (a list) rather than
 # map[string]string for extraArgs, so JSON patch op:add with path /- must find an
-# existing array. The extravolumes.yaml initialize patch replaces apiServer with {}
+# existing array. The api-server.yaml initialize patch replaces apiServer with {}
 # before adding extraVolumes, so apiServer/extraArgs does not exist at that point.
 # controllerManager and scheduler already carry their extraArgs arrays from the
 # CAPX base template (including cloud-provider: external) and must not be wiped.
