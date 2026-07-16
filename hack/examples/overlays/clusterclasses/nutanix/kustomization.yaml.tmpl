@@ -33,9 +33,15 @@ patches:
   - target:
       kind: KubeadmControlPlaneTemplate
     path: ../../../patches/initialize/kubeadmcontrolplanetemplate/postkubeadmcommands.yaml
+  # api-server.yaml must come before extraargs.yaml: it initializes apiServer:{} and
+  # apiServer/extraVolumes:[], which also creates the apiServer object that extraargs.yaml
+  # needs when it initializes apiServer/extraArgs:[].
   - target:
       kind: KubeadmControlPlaneTemplate
-    path: ../../../patches/initialize/kubeadmcontrolplanetemplate/extravolumes.yaml
+    path: ../../../patches/initialize/kubeadmcontrolplanetemplate/api-server.yaml
+  - target:
+      kind: KubeadmControlPlaneTemplate
+    path: ../../../patches/initialize/kubeadmcontrolplanetemplate/extraargs.yaml
   - target:
       kind: KubeadmControlPlaneTemplate
     path: ../../../patches/initialize/kubeadmcontrolplanetemplate/patches.yaml

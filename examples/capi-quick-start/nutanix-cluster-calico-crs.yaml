@@ -35,7 +35,7 @@ metadata:
     cluster.x-k8s.io/provider: nutanix
   name: ${CLUSTER_NAME}-pc-creds
 stringData:
-  credentials: |
+  credentials: |-
     [
       {
         "type": "basic_auth",
@@ -43,7 +43,8 @@ stringData:
           "prismCentral":{
             "username": "${NUTANIX_USER}",
             "password": "${NUTANIX_PASSWORD}"
-          }
+          },
+          "prismElements": null
         }
       }
     ]

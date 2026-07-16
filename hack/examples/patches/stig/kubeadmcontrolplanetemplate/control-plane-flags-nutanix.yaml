@@ -1,25 +1,23 @@
 # Copyright 2026 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Nutanix-specific version using sequence format for extraArgs (kubeadm v1beta4 / CAPX v1.10+).
-apiVersion: controlplane.cluster.x-k8s.io/v1beta1
-kind: KubeadmControlPlaneTemplate
-metadata:
-  name: not-used
-spec:
-  template:
-    spec:
-      kubeadmConfigSpec:
-        clusterConfiguration:
-          apiServer:
-            extraArgs:
-              - name: tls-cipher-suites
-                value: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
-          controllerManager:
-            extraArgs:
-              - name: tls-min-version
-                value: "VersionTLS12"
-          scheduler:
-            extraArgs:
-              - name: tls-min-version
-                value: "VersionTLS12"
+# Nutanix-specific version using JSON patch to append to extraArgs sequence (kubeadm v1beta4 / CAPX v1.10+).
+# Strategic merge patch replaces arrays; JSON patch op: add with path /- appends individual entries.
+
+- op: add
+  path: /spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/-
+  value:
+    name: tls-cipher-suites
+    value: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+
+- op: add
+  path: /spec/template/spec/kubeadmConfigSpec/clusterConfiguration/controllerManager/extraArgs/-
+  value:
+    name: tls-min-version
+    value: VersionTLS12
+
+- op: add
+  path: /spec/template/spec/kubeadmConfigSpec/clusterConfiguration/scheduler/extraArgs/-
+  value:
+    name: tls-min-version
+    value: VersionTLS12
