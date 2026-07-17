@@ -27,6 +27,10 @@ func newControlPlaneEndpointChecks(
 	}
 }
 
+// controlPlaneEndpointCheck is a check that verifies that the control plane
+// endpoint is not in use, before any control plane nodes have been created. If
+// the endpoint is in use, the check should fail, to prevent the cluster from
+// being created.
 type controlPlaneEndpointCheck struct {
 	cluster *clusterv1.Cluster
 }
@@ -36,22 +40,30 @@ func (c *controlPlaneEndpointCheck) Name() string {
 }
 
 func (c *controlPlaneEndpointCheck) Run(ctx context.Context) preflight.CheckResult {
-	if !c.cluster.Spec.ControlPlaneRef.IsDefined() {
-		// The control plane reference is defined, so the control plane has been initialized,
-		// and the endpoint may establish a TCP connection.
+	if c.cluster.Spec.ControlPlaneRef.IsDefined() {
+		// If the control plane reference is defined, then control plane nodes
+		// are already being created, and it is too late to prevent the cluster
+		// from being created, so this check is not relevant.
 		return preflight.CheckResult{
 			Allowed: true,
 		}
 	}
 
-	// The control plane reference is not defined, so the control plane has not been initialized,
-	// and if the endpoint establishes a TCP connection, then the most likely conclusion is that the
-	// endpoint is in use by another cluster. It is possible that the endpoint is a load balancer or
-	// proxy that accepts connections even if the control plane is not initialized, but in that
-	// case, the user can skip this check.
+	// If the control plane reference is not defined, then no control plane
+	// nodes have been created.
+	//
+	// We need to check if the endpoint establishes a TCP connection. If it
+	// does, then the most likely conclusion is that the endpoint is in use by
+	// another cluster.
+	//
+	// If the endpoint is a load balancer or proxy that accepts connections even
+	// before any control plane nodes have been created, then the user should
+	// skip this check.
 
 	dialer := &net.Dialer{
-		// The default TCP timeout is 60 seconds, which is too long for this check.
+		// The default TCP timeout is 60 seconds. We use a shorter timeout
+		// because we want checks to return quickly. Most checks complete in
+		// less than a few seconds. All checks run in parallel.
 		Timeout: 3 * time.Second,
 	}
 	addr := net.JoinHostPort(

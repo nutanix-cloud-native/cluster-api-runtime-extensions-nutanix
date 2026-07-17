@@ -28,11 +28,6 @@ func listenTCP(t *testing.T) *net.TCPListener {
 func clusterWithControlPlaneEndpoint(host string, port int32) *clusterv1beta2.Cluster {
 	return &clusterv1beta2.Cluster{
 		Spec: clusterv1beta2.ClusterSpec{
-			ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
-				Name:     "test-kcp",
-				Kind:     "KubeadmControlPlane",
-				APIGroup: "controlplane.cluster.x-k8s.io",
-			},
 			ControlPlaneEndpoint: clusterv1beta2.APIEndpoint{
 				Host: host,
 				Port: port,
@@ -41,19 +36,15 @@ func clusterWithControlPlaneEndpoint(host string, port int32) *clusterv1beta2.Cl
 	}
 }
 
-func TestControlPlaneEndpointCheck_ControlPlaneRefNotDefined(t *testing.T) {
+func TestControlPlaneEndpointCheck_ControlPlaneRefDefined(t *testing.T) {
 	t.Parallel()
 
-	// ControlPlaneRef with all zero-value fields is not considered defined.
-	cluster := &clusterv1beta2.Cluster{
-		Spec: clusterv1beta2.ClusterSpec{
-			ControlPlaneEndpoint: clusterv1beta2.APIEndpoint{
-				Host: "127.0.0.1",
-				Port: 6443,
-			},
-		},
+	cluster := clusterWithControlPlaneEndpoint("127.0.0.1", 6443)
+	cluster.Spec.ControlPlaneRef = clusterv1beta2.ContractVersionedObjectReference{
+		Name:     "test-kcp",
+		Kind:     "KubeadmControlPlane",
+		APIGroup: "controlplane.cluster.x-k8s.io",
 	}
-
 	check := &controlPlaneEndpointCheck{cluster: cluster}
 	result := check.Run(context.Background())
 
@@ -93,6 +84,19 @@ func TestControlPlaneEndpointCheck_EndpointRefusesConnection(t *testing.T) {
 
 	check := &controlPlaneEndpointCheck{cluster: cluster}
 	result := check.Run(context.Background())
+
+	assert.Equal(t, preflight.CheckResult{Allowed: true}, result)
+}
+
+func TestControlPlaneEndpointCheck_EndpointTimeout(t *testing.T) {
+	t.Parallel()
+
+	cluster := clusterWithControlPlaneEndpoint("127.0.0.1", 6443)
+
+	check := &controlPlaneEndpointCheck{cluster: cluster}
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel the context immediately to simulate a timeout.
+	result := check.Run(cancelledCtx)
 
 	assert.Equal(t, preflight.CheckResult{Allowed: true}, result)
 }
