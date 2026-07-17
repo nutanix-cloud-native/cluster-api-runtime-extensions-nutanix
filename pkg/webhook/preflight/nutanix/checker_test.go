@@ -46,6 +46,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 		cidrValidationCheckCount           int
 		storageContainerCheckCount         int
 		failureDomainCheckCount            int
+		controlPlaneEndpointCheckCount     int
 		metroCheckCount                    int
 	}{
 		{
@@ -61,16 +62,23 @@ func TestNutanixChecker_Init(t *testing.T) {
 			cidrValidationCheckCount:           0,
 			storageContainerCheckCount:         0,
 			failureDomainCheckCount:            0,
+			controlPlaneEndpointCheckCount:     0,
 		},
 		{
 			name: "initialization with control plane config",
 			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
+				Nutanix: &carenv1.NutanixSpec{
+					ControlPlaneEndpoint: carenv1.ControlPlaneEndpointSpec{
+						Host: "192.168.1.1",
+						Port: 6443,
+					},
+				},
 				ControlPlane: &carenv1.NutanixControlPlaneSpec{
 					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{},
 				},
 			},
 			workerNodeConfigs:                  nil,
-			expectedCheckCount:                 8, //nolint:lll // config check, credentials check, Prism Central version check, 1 VM image check, 1 VM image Kubernetes version check, 1 CIDR validation check, 1 storage container check, 1 failure domain check
+			expectedCheckCount:                 9, //nolint:lll // config check, credentials check, Prism Central version check, 1 VM image check, 1 VM image Kubernetes version check, 1 CIDR validation check, 1 storage container check, 1 failure domain check, 1 control plane endpoint check
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			expectedThirdCheckName:             "NutanixPrismCentralVersion",
@@ -79,10 +87,18 @@ func TestNutanixChecker_Init(t *testing.T) {
 			cidrValidationCheckCount:           1,
 			storageContainerCheckCount:         1,
 			failureDomainCheckCount:            1,
+			controlPlaneEndpointCheckCount:     1,
 		},
 		{
-			name:          "initialization with worker node configs",
-			nutanixConfig: nil,
+			name: "initialization with worker node configs",
+			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
+				Nutanix: &carenv1.NutanixSpec{
+					ControlPlaneEndpoint: carenv1.ControlPlaneEndpointSpec{
+						Host: "192.168.1.1",
+						Port: 6443,
+					},
+				},
+			},
 			workerNodeConfigs: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
 				"worker-1": {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
@@ -91,7 +107,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
-			expectedCheckCount:                 13, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks, 2 VM image Kubernetes version checks, 2 CIDR validation checks, 2 storage container checks, 2 failure domain checks
+			expectedCheckCount:                 14, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks, 2 VM image Kubernetes version checks, 2 CIDR validation checks, 2 storage container checks, 2 failure domain checks, 1 control plane endpoint check
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			expectedThirdCheckName:             "NutanixPrismCentralVersion",
@@ -100,12 +116,16 @@ func TestNutanixChecker_Init(t *testing.T) {
 			cidrValidationCheckCount:           2,
 			storageContainerCheckCount:         2,
 			failureDomainCheckCount:            2,
+			controlPlaneEndpointCheckCount:     1,
 		},
 		{
 			name: "initialization with both control plane and worker node configs",
 			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
-				ControlPlane: &carenv1.NutanixControlPlaneSpec{
-					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{},
+				Nutanix: &carenv1.NutanixSpec{
+					ControlPlaneEndpoint: carenv1.ControlPlaneEndpointSpec{
+						Host: "192.168.1.1",
+						Port: 6443,
+					},
 				},
 			},
 			workerNodeConfigs: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
@@ -113,7 +133,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
 				},
 			},
-			expectedCheckCount:                 13, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks (1 CP + 1 worker), 2 VM image Kubernetes version checks, 2 CIDR validation checks, 2 storage container checks (1 CP + 1 worker), 2 failure domain checks
+			expectedCheckCount:                 14, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks (1 CP + 1 worker), 2 VM image Kubernetes version checks, 2 CIDR validation checks, 2 storage container checks (1 CP + 1 worker), 2 failure domain checks, 1 control plane endpoint check
 			expectedFirstCheckName:             "NutanixConfiguration",
 			expectedSecondCheckName:            "NutanixCredentials",
 			expectedThirdCheckName:             "NutanixPrismCentralVersion",
@@ -122,6 +142,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			cidrValidationCheckCount:           2,
 			storageContainerCheckCount:         2,
 			failureDomainCheckCount:            2,
+			controlPlaneEndpointCheckCount:     1,
 		},
 	}
 
@@ -139,6 +160,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			vmImageKubernetesVersionCheckCount := 0
 			cidrValidationCheckCount := 0
 			failureDomainCheckCount := 0
+			controlPlaneEndpointCheckCount := 0
 			metroCheckCount := 0
 
 			checker.configurationCheckFactory = func(cd *checkDependencies) preflight.Check {
@@ -241,6 +263,22 @@ func TestNutanixChecker_Init(t *testing.T) {
 					checks = append(checks,
 						&mockCheck{
 							name: fmt.Sprintf("NutanixFailureDomain-%d", i),
+							result: preflight.CheckResult{
+								Allowed: true,
+							},
+						},
+					)
+				}
+				return checks
+			}
+
+			checker.controlPlaneEndpointChecksFactory = func(cd *checkDependencies) []preflight.Check {
+				checks := []preflight.Check{}
+				for i := 0; i < tt.controlPlaneEndpointCheckCount; i++ {
+					controlPlaneEndpointCheckCount++
+					checks = append(checks,
+						&mockCheck{
+							name: fmt.Sprintf("NutanixControlPlaneEndpoint-%d", i),
 							result: preflight.CheckResult{
 								Allowed: true,
 							},
@@ -420,6 +458,9 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 					return nil
 				},
 				storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				controlPlaneEndpointChecksFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
 				metroChecksFactory: func(cd *checkDependencies) []preflight.Check {
