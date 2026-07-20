@@ -89,9 +89,6 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	)
 
 	switch {
-	case variables.IsNotFoundError(imageRegistriesErr) && variables.IsNotFoundError(globalMirrorErr):
-		log.V(5).Info("Image Registry Credentials and Global Registry Mirror variable not defined")
-		return nil
 	case imageRegistriesErr != nil && !variables.IsNotFoundError(imageRegistriesErr):
 		return imageRegistriesErr
 	case globalMirrorErr != nil && !variables.IsNotFoundError(globalMirrorErr):
@@ -139,8 +136,23 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		return err
 	}
 	if len(registriesThatNeedConfiguration) == 0 {
-		log.V(5).Info("Image registry credentials are not needed")
-		return nil
+		// Nothing the user configured needs a credential provider. Unless the
+		// cluster opts out, still wire the kubelet dynamic credential provider for
+		// Docker Hub with an empty on-node credential file, so that Day-2 credential
+		// delivery (e.g. rotating the on-node file) needs no node roll.
+		wireByDefault, wireErr := wireCredentialProviderByDefault(vars)
+		if wireErr != nil {
+			return wireErr
+		}
+		if !wireByDefault {
+			log.V(5).Info("Image registry credentials are not needed")
+			return nil
+		}
+		log.V(5).Info("Wiring kubelet dynamic credential provider for Docker Hub with empty credentials")
+		registriesThatNeedConfiguration = append(
+			registriesThatNeedConfiguration,
+			providerConfig{URL: v1alpha1.DefaultKubeletCredentialProviderRegistryURL},
+		)
 	}
 
 	files, commands, generateErr := generateFilesAndCommands(
@@ -244,6 +256,24 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	}
 
 	return nil
+}
+
+// wireCredentialProviderByDefault reports whether the kubelet dynamic credential
+// provider should be wired even when no image registry or mirror is configured.
+// It defaults to true when the variable is unset so the behavior is on-by-default
+func wireCredentialProviderByDefault(vars map[string]apiextensionsv1.JSON) (bool, error) {
+	wire, err := variables.Get[bool](
+		vars,
+		v1alpha1.ClusterConfigVariableName,
+		v1alpha1.WireImageCredentialProviderByDefaultVariableName,
+	)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			return true, nil
+		}
+		return false, err
+	}
+	return wire, nil
 }
 
 func ensureOwnerReferenceOnCredentialsSecrets(

@@ -192,8 +192,17 @@ var _ = Describe("Generate Image registry patches", func() {
 		expectOwnerReferenceOnSecrets bool
 	}{
 		{
+			// With no registry/mirror configured and the wire-by-default knob
+			// explicitly disabled, the handler is a no-op (legacy behavior).
 			PatchTestDef: capitest.PatchTestDef{
-				Name: "unset variable",
+				Name: "no registries and wiring opted out",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						false,
+						v1alpha1.WireImageCredentialProviderByDefaultVariableName,
+					),
+				},
 			},
 		},
 		{
