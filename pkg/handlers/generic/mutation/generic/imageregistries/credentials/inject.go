@@ -260,7 +260,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 
 // wireCredentialProviderByDefault reports whether the kubelet dynamic credential
 // provider should be wired even when no image registry or mirror is configured.
-// It defaults to true when the variable is unset so the behavior is on-by-default
+// It defaults to true when the variable is unset so the behavior is on-by-default.
 func wireCredentialProviderByDefault(vars map[string]apiextensionsv1.JSON) (bool, error) {
 	wire, err := variables.Get[bool](
 		vars,
