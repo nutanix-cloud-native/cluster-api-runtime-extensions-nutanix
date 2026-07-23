@@ -39,6 +39,14 @@ const (
 	GlobalMirrorVariableName = "globalImageRegistryMirror"
 	// ImageRegistriesVariableName is the image registries patch variable name.
 	ImageRegistriesVariableName = "imageRegistries"
+	// WireImageCredentialProviderByDefaultVariableName is the patch variable name for the flag that
+	// wires the kubelet dynamic credential provider on every node even when no registry/mirror is configured.
+	//nolint:gosec // Does not contain hard coded credentials.
+	WireImageCredentialProviderByDefaultVariableName = "wireImageCredentialProviderByDefault"
+
+	// DefaultKubeletCredentialProviderRegistryURL is the registry the credential
+	// provider is wired for by default (Docker Hub) when no registry/mirror is set.
+	DefaultKubeletCredentialProviderRegistryURL = "https://registry-1.docker.io" //nolint:gosec // Not a credential.
 
 	// DNSVariableName is the DNS external patch variable name.
 	DNSVariableName = "dns"

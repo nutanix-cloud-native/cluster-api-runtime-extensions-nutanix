@@ -951,6 +951,9 @@ spec:
                     type: object
                   maxItems: 32
                   type: array
+                wireImageCredentialProviderByDefault:
+                  default: true
+                  type: boolean
               type: object
           type: object
       served: true
