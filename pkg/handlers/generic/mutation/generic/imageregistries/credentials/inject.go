@@ -89,9 +89,6 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	)
 
 	switch {
-	case variables.IsNotFoundError(imageRegistriesErr) && variables.IsNotFoundError(globalMirrorErr):
-		log.V(5).Info("Image Registry Credentials and Global Registry Mirror variable not defined")
-		return nil
 	case imageRegistriesErr != nil && !variables.IsNotFoundError(imageRegistriesErr):
 		return imageRegistriesErr
 	case globalMirrorErr != nil && !variables.IsNotFoundError(globalMirrorErr):
@@ -139,8 +136,15 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		return err
 	}
 	if len(registriesThatNeedConfiguration) == 0 {
-		log.V(5).Info("Image registry credentials are not needed")
-		return nil
+		// No user-configured registry needs a credential provider. Always wire the
+		// kubelet dynamic credential provider for Docker Hub with an empty on-node
+		// credential file, so that Day-2 credential delivery (e.g. rotating the
+		// on-node file) needs no node roll.
+		log.V(5).Info("Wiring kubelet dynamic credential provider for Docker Hub with empty credentials")
+		registriesThatNeedConfiguration = append(
+			registriesThatNeedConfiguration,
+			providerConfig{URL: v1alpha1.DefaultKubeletCredentialProviderRegistryURL},
+		)
 	}
 
 	files, commands, generateErr := generateFilesAndCommands(

@@ -40,6 +40,11 @@ const (
 	// ImageRegistriesVariableName is the image registries patch variable name.
 	ImageRegistriesVariableName = "imageRegistries"
 
+	// DefaultKubeletCredentialProviderRegistryURL is the registry the kubelet
+	// dynamic credential provider is always wired for (Docker Hub) when no
+	// registry/mirror is configured.
+	DefaultKubeletCredentialProviderRegistryURL = "https://registry-1.docker.io" //nolint:gosec // Not a credential.
+
 	// DNSVariableName is the DNS external patch variable name.
 	DNSVariableName = "dns"
 
