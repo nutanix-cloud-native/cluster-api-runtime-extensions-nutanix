@@ -182,6 +182,72 @@ func Test_kubeletStaticCredentialProviderSecretContents(t *testing.T) {
 }`,
 		},
 		{
+			name: "org-scoped 'registry-1.docker.io/nutanix', expect host+path keys plus docker.io alias",
+			configs: []providerConfig{
+				{
+					URL:      "https://registry-1.docker.io/nutanix",
+					Username: "myuser",
+					Password: "mypassword",
+				},
+			},
+			wantContents: `{
+  "kind":"CredentialProviderResponse",
+  "apiVersion":"credentialprovider.kubelet.k8s.io/v1",
+  "cacheKeyType":"Image",
+  "cacheDuration":"0s",
+  "auth":{
+    "registry-1.docker.io/nutanix": {"username": "myuser", "password": "mypassword"},
+    "docker.io/nutanix": {"username": "myuser", "password": "mypassword"}
+  }
+}`,
+		},
+		{
+			name: "org-scoped nutanix coexists with a customer host-only docker.io entry",
+			configs: []providerConfig{
+				{
+					URL:      "https://registry-1.docker.io",
+					Username: "customer",
+					Password: "customerpass",
+				},
+				{
+					URL:      "https://registry-1.docker.io/nutanix",
+					Username: "nutanix",
+					Password: "nutanixpass",
+				},
+			},
+			wantContents: `{
+  "kind":"CredentialProviderResponse",
+  "apiVersion":"credentialprovider.kubelet.k8s.io/v1",
+  "cacheKeyType":"Image",
+  "cacheDuration":"0s",
+  "auth":{
+    "registry-1.docker.io": {"username": "customer", "password": "customerpass"},
+    "docker.io": {"username": "customer", "password": "customerpass"},
+    "registry-1.docker.io/nutanix": {"username": "nutanix", "password": "nutanixpass"},
+    "docker.io/nutanix": {"username": "nutanix", "password": "nutanixpass"}
+  }
+}`,
+		},
+		{
+			name: "non-nutanix registry with a path stays host-only",
+			configs: []providerConfig{
+				{
+					URL:      "https://myregistry.com/myorg",
+					Username: "myuser",
+					Password: "mypassword",
+				},
+			},
+			wantContents: `{
+  "kind":"CredentialProviderResponse",
+  "apiVersion":"credentialprovider.kubelet.k8s.io/v1",
+  "cacheKeyType":"Image",
+  "cacheDuration":"0s",
+  "auth":{
+    "myregistry.com": {"username": "myuser", "password": "mypassword"}
+  }
+}`,
+		},
+		{
 			name: "multiple configs with some static credentials, expect a string with multiple entries",
 			configs: []providerConfig{
 				{
