@@ -192,16 +192,42 @@ var _ = Describe("Generate Image registry patches", func() {
 		expectOwnerReferenceOnSecrets bool
 	}{
 		{
-			// With no registry/mirror configured and the wire-by-default knob
-			// explicitly disabled, the handler is a no-op (legacy behavior).
+			// With no registry or mirror configured, the kubelet dynamic credential
+			// provider is always wired for Docker Hub (with an empty on-node
+			// credential file) so Day-2 credential delivery needs no node roll.
 			PatchTestDef: capitest.PatchTestDef{
-				Name: "no registries and wiring opted out",
+				Name: "no registries still wires Docker Hub credential provider",
 				Vars: []runtimehooksv1.Variable{
 					capitest.VariableWithValue(
 						v1alpha1.ClusterConfigVariableName,
-						false,
-						v1alpha1.WireImageCredentialProviderByDefaultVariableName,
+						[]v1alpha1.ImageRegistry{},
+						v1alpha1.ImageRegistriesVariableName,
 					),
+				},
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+						ValueMatcher: gomega.ContainElements(
+							gomega.HaveKeyWithValue(
+								"path", "/etc/caren/install-kubelet-credential-providers.sh",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+							),
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+						ValueMatcher: gomega.ContainElement(
+							"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
+						),
+					},
 				},
 			},
 		},

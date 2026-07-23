@@ -1415,11 +1415,6 @@ func (in *GenericClusterConfigSpec) DeepCopyInto(out *GenericClusterConfigSpec) 
 		*out = new(GlobalImageRegistryMirror)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.WireImageCredentialProviderByDefault != nil {
-		in, out := &in.WireImageCredentialProviderByDefault, &out.WireImageCredentialProviderByDefault
-		*out = new(bool)
-		**out = **in
-	}
 	if in.Users != nil {
 		in, out := &in.Users, &out.Users
 		*out = make([]User, len(*in))

@@ -136,18 +136,10 @@ func (h *imageRegistriesPatchHandler) Mutate(
 		return err
 	}
 	if len(registriesThatNeedConfiguration) == 0 {
-		// Nothing the user configured needs a credential provider. Unless the
-		// cluster opts out, still wire the kubelet dynamic credential provider for
-		// Docker Hub with an empty on-node credential file, so that Day-2 credential
-		// delivery (e.g. rotating the on-node file) needs no node roll.
-		wireByDefault, wireErr := wireCredentialProviderByDefault(vars)
-		if wireErr != nil {
-			return wireErr
-		}
-		if !wireByDefault {
-			log.V(5).Info("Image registry credentials are not needed")
-			return nil
-		}
+		// No user-configured registry needs a credential provider. Always wire the
+		// kubelet dynamic credential provider for Docker Hub with an empty on-node
+		// credential file, so that Day-2 credential delivery (e.g. rotating the
+		// on-node file) needs no node roll.
 		log.V(5).Info("Wiring kubelet dynamic credential provider for Docker Hub with empty credentials")
 		registriesThatNeedConfiguration = append(
 			registriesThatNeedConfiguration,
@@ -256,24 +248,6 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	}
 
 	return nil
-}
-
-// wireCredentialProviderByDefault reports whether the kubelet dynamic credential
-// provider should be wired even when no image registry or mirror is configured.
-// It defaults to true when the variable is unset so the behavior is on-by-default.
-func wireCredentialProviderByDefault(vars map[string]apiextensionsv1.JSON) (bool, error) {
-	wire, err := variables.Get[bool](
-		vars,
-		v1alpha1.ClusterConfigVariableName,
-		v1alpha1.WireImageCredentialProviderByDefaultVariableName,
-	)
-	if err != nil {
-		if variables.IsNotFoundError(err) {
-			return true, nil
-		}
-		return false, err
-	}
-	return wire, nil
 }
 
 func ensureOwnerReferenceOnCredentialsSecrets(

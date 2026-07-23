@@ -320,10 +320,6 @@ type GenericClusterConfigSpec struct {
 	GlobalImageRegistryMirror *GlobalImageRegistryMirror `json:"globalImageRegistryMirror,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=true
-	WireImageCredentialProviderByDefault *bool `json:"wireImageCredentialProviderByDefault,omitempty"`
-
-	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems=32
 	Users []User `json:"users,omitempty"`
 
