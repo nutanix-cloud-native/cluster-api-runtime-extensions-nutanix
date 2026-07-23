@@ -106,16 +106,26 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 			return "", fmt.Errorf("failed parsing registry URL: %w", err)
 		}
 
+		// Org-scoped keying (host + path, e.g. registry-1.docker.io/nutanix) is
+		// applied ONLY to NKP's own docker.io/nutanix org; every other registry
+		// keeps the original host-only key to limit blast radius.
+		trimmedPath := strings.TrimRight(registryURL.Path, "/")
+		pathPrefix := ""
+		if isDockerHubNutanixOrgURL(registryURL.Host, trimmedPath) {
+			pathPrefix = trimmedPath
+		}
+
 		inputs = append(inputs, templateInput{
-			RegistryHost: registryURL.Host,
+			RegistryHost: registryURL.Host + pathPrefix,
 			Username:     config.Username,
 			Password:     config.Password,
 		})
 
-		// Preserve special handling of "registry-1.docker.io" and add "docker.io" as an alias.
+		// Preserve special handling of "registry-1.docker.io" and add "docker.io"
+		// as an alias, carrying the same org/path prefix.
 		if registryURL.Host == "registry-1.docker.io" {
 			inputs = append(inputs, templateInput{
-				RegistryHost: "docker.io",
+				RegistryHost: "docker.io" + pathPrefix,
 				Username:     config.Username,
 				Password:     config.Password,
 			})
@@ -133,6 +143,10 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 	}
 
 	return strings.TrimSpace(b.String()), nil
+}
+
+func isDockerHubNutanixOrgURL(host, pathPrefix string) bool {
+	return (host == "registry-1.docker.io" || host == "docker.io") && pathPrefix == "/nutanix"
 }
 
 func configsRequireStaticCredentials(configs []providerConfig) bool {
