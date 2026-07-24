@@ -66,10 +66,6 @@ func main() {
 	utilruntime.Must(capxv1.AddToScheme(clientScheme))
 	utilruntime.Must(metallbv1.AddToScheme(clientScheme))
 
-	webhookOptions := webhook.Options{
-		Port:    9444,
-		CertDir: "/admission-certs",
-	}
 	mgrOptions := &ctrl.Options{
 		Scheme: clientScheme,
 		Metrics: metricsserver.Options{
@@ -77,7 +73,6 @@ func main() {
 		},
 		HealthProbeBindAddress: ":8081",
 		LeaderElection:         false,
-		WebhookServer:          webhook.NewServer(webhookOptions),
 	}
 
 	pflag.CommandLine.StringVar(
@@ -96,13 +91,6 @@ func main() {
 
 	pflag.CommandLine.StringVar(&mgrOptions.PprofBindAddress, "profiler-address", "",
 		"Bind address to expose the pprof profiler (e.g. localhost:6060)")
-
-	pflag.CommandLine.StringVar(
-		&webhookOptions.CertDir,
-		"admission-webhook-cert-dir",
-		webhookOptions.CertDir,
-		"Admission webhooks server cert dir.",
-	)
 
 	logOptions := logs.NewOptions()
 
@@ -169,6 +157,13 @@ func main() {
 
 	signalCtx := ctrl.SetupSignalHandler()
 
+	webhookServer, err := server.NewWebhookServer(runtimeWebhookServerOpts)
+	if err != nil {
+		setupLog.Error(err, "failed to create webhook server")
+		os.Exit(1)
+	}
+	mgrOptions.WebhookServer = webhookServer
+
 	mgr, err := newManager(mgrOptions)
 	if err != nil {
 		setupLog.Error(err, "failed to create a new controller manager")
@@ -184,10 +179,8 @@ func main() {
 		genericMetaHandlers.AllHandlers(mgr),
 	)
 
-	runtimeWebhookServer := server.NewServer(runtimeWebhookServerOpts, allHandlers...)
-
-	if err := mgr.Add(runtimeWebhookServer); err != nil {
-		setupLog.Error(err, "unable to add runtime webhook server runnable to controller manager")
+	if err := server.AddHandlers(mgr.GetWebhookServer(), allHandlers...); err != nil {
+		setupLog.Error(err, "unable to register runtime extension handlers")
 		os.Exit(1)
 	}
 

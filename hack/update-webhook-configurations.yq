@@ -6,7 +6,7 @@
 
 with(.metadata;
   .name = "{{ include \"chart.name\" . }}-" + .name,
-  .annotations["cert-manager.io/inject-ca-from"] = "{{ .Release.Namespace}}/{{ template \"chart.name\" . }}-admission-tls"
+  .annotations["cert-manager.io/inject-ca-from"] = "{{ .Release.Namespace}}/{{ template \"chart.name\" . }}-runtimehooks-tls"
 ) |
 with(.webhooks[].clientConfig.service;
   .name = "{{ include \"chart.name\" . }}-admission",

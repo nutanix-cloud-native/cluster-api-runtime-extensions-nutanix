@@ -6,7 +6,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: '{{ include "chart.name" . }}-mutating-webhook-configuration'
   annotations:
-    cert-manager.io/inject-ca-from: '{{ .Release.Namespace}}/{{ template "chart.name" . }}-admission-tls'
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace}}/{{ template "chart.name" . }}-runtimehooks-tls'
 webhooks:
   - admissionReviewVersions:
       - v1
@@ -61,7 +61,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: '{{ include "chart.name" . }}-validating-webhook-configuration'
   annotations:
-    cert-manager.io/inject-ca-from: '{{ .Release.Namespace}}/{{ template "chart.name" . }}-admission-tls'
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace}}/{{ template "chart.name" . }}-runtimehooks-tls'
 webhooks:
   - admissionReviewVersions:
       - v1
