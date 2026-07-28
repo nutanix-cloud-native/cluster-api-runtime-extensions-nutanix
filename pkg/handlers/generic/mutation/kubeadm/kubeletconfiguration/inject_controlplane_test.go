@@ -108,6 +108,47 @@ seccompDefault: true
 				),
 			}},
 		},
+		{
+			Name: "kubeletConfiguration with enforceNodeAllocatable set at control plane",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.KubeletConfiguration{
+						EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
+							v1alpha1.EnforceNodeAllocatableSystemReserved,
+							v1alpha1.EnforceNodeAllocatablePods,
+							v1alpha1.EnforceNodeAllocatableKubeReserved,
+						},
+					},
+					v1alpha1.ControlPlaneConfigVariableName,
+					VariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.And(
+						gomega.HaveKeyWithValue(
+							"path",
+							kubeletConfigurationPatchFilePath,
+						),
+						gomega.HaveKeyWithValue(
+							"content",
+							gomega.And(
+								gomega.ContainSubstring("enforceNodeAllocatable:"),
+								gomega.ContainSubstring("- kube-reserved"),
+								gomega.ContainSubstring("- pods"),
+								gomega.ContainSubstring("- system-reserved"),
+								gomega.ContainSubstring("systemReservedCgroup: /system.slice"),
+								gomega.ContainSubstring("kubeReservedCgroup: /system.slice/kubelet.service"),
+							),
+						),
+					),
+				),
+			}},
+		},
 	}
 
 	for _, tt := range testDefs {

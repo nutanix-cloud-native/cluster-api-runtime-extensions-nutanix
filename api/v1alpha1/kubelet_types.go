@@ -35,6 +35,17 @@ const (
 	MemoryManagerPolicyStatic MemoryManagerPolicy = "Static"
 )
 
+// EnforceNodeAllocatableOption specifies a resource type for cgroup enforcement.
+type EnforceNodeAllocatableOption string
+
+const (
+	EnforceNodeAllocatablePods                       EnforceNodeAllocatableOption = "pods"
+	EnforceNodeAllocatableSystemReserved             EnforceNodeAllocatableOption = "system-reserved"
+	EnforceNodeAllocatableKubeReserved               EnforceNodeAllocatableOption = "kube-reserved"
+	EnforceNodeAllocatableSystemReservedCompressible EnforceNodeAllocatableOption = "system-reserved-compressible"
+	EnforceNodeAllocatableKubeReservedCompressible   EnforceNodeAllocatableOption = "kube-reserved-compressible"
+)
+
 // KubeletConfiguration defines configurable fields for the kubelet's KubeletConfiguration.
 // These fields are written as a strategic merge patch file applied during kubeadm init/join.
 // +kubebuilder:validation:XValidation:rule="!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent) || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent",message="imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent"
@@ -185,6 +196,26 @@ type KubeletConfiguration struct {
 	// Default kubelet value is false.
 	// +kubebuilder:validation:Optional
 	SeccompDefault *bool `json:"seccompDefault,omitempty"`
+
+	// EnforceNodeAllocatable specifies which resource types are enforced via
+	// cgroups. When "system-reserved" or "system-reserved-compressible" is
+	// included, the kubelet enforces systemReserved limits using the well-known
+	// systemd cgroup /system.slice. When "kube-reserved" or
+	// "kube-reserved-compressible" is included, the kubelet enforces
+	// kubeReserved limits using /system.slice/kubelet.service.
+	// The "-compressible" variants enforce only compressible resources (CPU),
+	// which is the recommended starting point. "system-reserved" and
+	// "system-reserved-compressible" are mutually exclusive, as are
+	// "kube-reserved" and "kube-reserved-compressible".
+	// Default kubelet behaviour (when this field is not set) is to enforce
+	// only pods.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=3
+	// +kubebuilder:validation:UniqueItems=true
+	// +kubebuilder:validation:items:Enum=pods;system-reserved;kube-reserved;system-reserved-compressible;kube-reserved-compressible
+	// +kubebuilder:validation:XValidation:rule="!('system-reserved' in self && 'system-reserved-compressible' in self)",message="system-reserved and system-reserved-compressible are mutually exclusive"
+	// +kubebuilder:validation:XValidation:rule="!('kube-reserved' in self && 'kube-reserved-compressible' in self)",message="kube-reserved and kube-reserved-compressible are mutually exclusive"
+	EnforceNodeAllocatable []EnforceNodeAllocatableOption `json:"enforceNodeAllocatable,omitempty"`
 }
 
 // IsEmpty returns true if the KubeletConfiguration is nil or has no fields set.

@@ -399,6 +399,37 @@ spec:
                             - none
                             - static
                           type: string
+                        enforceNodeAllocatable:
+                          description: |-
+                            EnforceNodeAllocatable specifies which resource types are enforced via
+                            cgroups. When "system-reserved" or "system-reserved-compressible" is
+                            included, the kubelet enforces systemReserved limits using the well-known
+                            systemd cgroup /system.slice. When "kube-reserved" or
+                            "kube-reserved-compressible" is included, the kubelet enforces
+                            kubeReserved limits using /system.slice/kubelet.service.
+                            The "-compressible" variants enforce only compressible resources (CPU),
+                            which is the recommended starting point. "system-reserved" and
+                            "system-reserved-compressible" are mutually exclusive, as are
+                            "kube-reserved" and "kube-reserved-compressible".
+                            Default kubelet behaviour (when this field is not set) is to enforce
+                            only pods.
+                          items:
+                            description: EnforceNodeAllocatableOption specifies a resource type for cgroup enforcement.
+                            enum:
+                              - pods
+                              - system-reserved
+                              - kube-reserved
+                              - system-reserved-compressible
+                              - kube-reserved-compressible
+                            type: string
+                          maxItems: 3
+                          type: array
+                          uniqueItems: true
+                          x-kubernetes-validations:
+                            - message: system-reserved and system-reserved-compressible are mutually exclusive
+                              rule: '!(''system-reserved'' in self && ''system-reserved-compressible'' in self)'
+                            - message: kube-reserved and kube-reserved-compressible are mutually exclusive
+                              rule: '!(''kube-reserved'' in self && ''kube-reserved-compressible'' in self)'
                         evictionHard:
                           additionalProperties:
                             type: string

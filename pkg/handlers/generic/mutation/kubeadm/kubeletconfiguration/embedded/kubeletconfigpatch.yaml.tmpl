@@ -74,3 +74,15 @@ shutdownGracePeriodCriticalPods: {{ . }}
 {{- with .SeccompDefault }}
 seccompDefault: {{ . }}
 {{- end }}
+{{- with .EnforceNodeAllocatable }}
+enforceNodeAllocatable:
+  {{- range . }}
+  - {{ . }}
+  {{- end }}
+{{- end }}
+{{- with .SystemReservedCgroup }}
+systemReservedCgroup: {{ . }}
+{{- end }}
+{{- with .KubeReservedCgroup }}
+kubeReservedCgroup: {{ . }}
+{{- end }}
