@@ -33,7 +33,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, metaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"eksClusterv6configpatch",
+		"eksClusterv7configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -55,7 +55,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, workerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"eksWorkerv6configpatch",
+		"eksWorkerv7configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

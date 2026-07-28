@@ -1,0 +1,16 @@
+// Copyright 2023 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package securitygroups
+
+import (
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+func TestSecurityGroupsPatch(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "EKS security groups patches for Workers suite")
+}
