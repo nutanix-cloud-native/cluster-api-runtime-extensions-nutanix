@@ -4,39 +4,19 @@
 package server
 
 import (
-	"context"
+	"fmt"
 	"strings"
 
 	"github.com/spf13/pflag"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
 	runtimeserver "sigs.k8s.io/cluster-api/exp/runtime/server"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 )
-
-type Server struct {
-	catalog *runtimecatalog.Catalog
-	hooks   []handlers.Named
-
-	opts *ServerOptions
-}
-
-func NewServer(opts *ServerOptions, hooks ...handlers.Named) *Server {
-	// catalog contains all information about RuntimeHooks.
-	catalog := runtimecatalog.New()
-
-	_ = runtimehooksv1.AddToCatalog(catalog)
-
-	return &Server{
-		catalog: catalog,
-		opts:    opts,
-		hooks:   hooks,
-	}
-}
 
 type ServerOptions struct {
 	webhookPort    int
@@ -44,7 +24,9 @@ type ServerOptions struct {
 }
 
 func NewServerOptions() *ServerOptions {
-	return &ServerOptions{}
+	return &ServerOptions{
+		webhookPort: 9443,
+	}
 }
 
 func (s *ServerOptions) AddFlags(fs *pflag.FlagSet) {
@@ -54,126 +36,114 @@ func (s *ServerOptions) AddFlags(fs *pflag.FlagSet) {
 		&s.webhookCertDir,
 		"webhook-cert-dir",
 		s.webhookCertDir,
-		"Runtime hooks server cert dir.",
+		"Webhook server cert dir.",
 	)
 }
 
-// NeedLeaderElection implements the LeaderElectionRunnable interface, which indicates
-// the webhook server doesn't need leader election.
-func (*Server) NeedLeaderElection() bool {
-	return false
+// NewWebhookServer creates a CAPI runtime extension server that implements
+// controller-runtime's webhook.Server. Use it as manager.Options.WebhookServer so
+// admission and runtime hooks share one HTTPS listener. Call AddHandlers before
+// manager.Start; do not Start the server separately.
+func NewWebhookServer(opts *ServerOptions) (webhook.Server, error) {
+	catalog := runtimecatalog.New()
+	_ = runtimehooksv1.AddToCatalog(catalog)
+
+	return runtimeserver.New(runtimeserver.Options{
+		Catalog: catalog,
+		Port:    opts.webhookPort,
+		CertDir: opts.webhookCertDir,
+	})
 }
 
-func (s *Server) Start(ctx context.Context) error {
-	// Creates a logger to be used during the main func.
-	setupLog := ctrl.Log.WithName("runtimehooks")
-
-	// Create a http server for serving runtime extensions
-	webhookServer, err := runtimeserver.New(runtimeserver.Options{
-		Catalog: s.catalog,
-		Port:    s.opts.webhookPort,
-		CertDir: s.opts.webhookCertDir,
-	})
-	if err != nil {
-		setupLog.Error(err, "error creating webhook server")
-		return err
+// AddHandlers registers runtime extension handlers on a server returned by
+// NewWebhookServer. Path registration and listening happen in the server's Start,
+// which the manager invokes.
+func AddHandlers(s webhook.Server, hooks ...handlers.Named) error {
+	rs, ok := s.(*runtimeserver.Server)
+	if !ok {
+		return fmt.Errorf("webhook server is %T, want *runtimeserver.Server", s)
 	}
 
-	for _, h := range s.hooks {
+	for _, h := range hooks {
 		if t, ok := h.(lifecycle.BeforeClusterCreate); ok {
-			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterCreate,
 				Name:        strings.ToLower(h.Name()) + "-bcc",
 				HandlerFunc: t.BeforeClusterCreate,
 			}); err != nil {
-				setupLog.Error(err, "error adding handler")
 				return err
 			}
 		}
 
 		if t, ok := h.(lifecycle.AfterControlPlaneInitialized); ok {
-			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.AfterControlPlaneInitialized,
 				Name:        strings.ToLower(h.Name()) + "-acpi",
 				HandlerFunc: t.AfterControlPlaneInitialized,
 			}); err != nil {
-				setupLog.Error(err, "error adding handler")
 				return err
 			}
 		}
 
 		if t, ok := h.(lifecycle.BeforeClusterUpgrade); ok {
-			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterUpgrade,
 				Name:        strings.ToLower(h.Name()) + "-bcu",
 				HandlerFunc: t.BeforeClusterUpgrade,
 			}); err != nil {
-				setupLog.Error(err, "error adding handler")
 				return err
 			}
 		}
 
 		if t, ok := h.(lifecycle.AfterControlPlaneUpgrade); ok {
-			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.AfterControlPlaneUpgrade,
 				Name:        h.Name() + "-acpu",
 				HandlerFunc: t.AfterControlPlaneUpgrade,
 			}); err != nil {
-				setupLog.Error(err, "error adding handler")
 				return err
 			}
 		}
 
 		if t, ok := h.(lifecycle.BeforeClusterDelete); ok {
-			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.BeforeClusterDelete,
 				Name:        strings.ToLower(h.Name()) + "-bcd",
 				HandlerFunc: t.BeforeClusterDelete,
 			}); err != nil {
-				setupLog.Error(err, "error adding handler")
 				return err
 			}
 		}
 
 		if t, ok := h.(mutation.DiscoverVariables); ok {
-			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.DiscoverVariables,
 				Name:        strings.ToLower(h.Name()) + "-dv",
 				HandlerFunc: t.DiscoverVariables,
 			}); err != nil {
-				setupLog.Error(err, "error adding handler")
 				return err
 			}
 		}
 
 		if t, ok := h.(mutation.GeneratePatches); ok {
-			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.GeneratePatches,
 				Name:        strings.ToLower(h.Name()) + "-gp",
 				HandlerFunc: t.GeneratePatches,
 			}); err != nil {
-				setupLog.Error(err, "error adding handler")
 				return err
 			}
 		}
 
 		if t, ok := h.(mutation.ValidateTopology); ok {
-			if err := webhookServer.AddExtensionHandler(runtimeserver.ExtensionHandler{
+			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
 				Hook:        runtimehooksv1.ValidateTopology,
 				Name:        strings.ToLower(h.Name()) + "-vt",
 				HandlerFunc: t.ValidateTopology,
 			}); err != nil {
-				setupLog.Error(err, "error adding handler")
 				return err
 			}
 		}
-	}
-
-	// Start the https server.
-	setupLog.Info("Starting Runtime Extension server")
-	if err := webhookServer.Start(ctx); err != nil {
-		setupLog.Error(err, "error running webhook server")
-		return err
 	}
 
 	return nil
