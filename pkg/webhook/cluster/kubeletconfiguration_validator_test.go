@@ -150,6 +150,48 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 		})
 	})
 
+	Context("automaticReservations combined with kubeReserved", func() {
+		It("should reject", func() {
+			cfg := &v1alpha1.KubeletConfiguration{
+				AutomaticReservations: &v1alpha1.AutomaticReservations{
+					Profile: v1alpha1.ReservationProfileCapacityTiered,
+				},
+				KubeReserved: map[string]resource.Quantity{
+					"cpu": resource.MustParse("500m"),
+				},
+			}
+			cluster := createClusterWithKubeletConfig(cfg)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				"automaticReservations cannot be combined with",
+			))
+		})
+	})
+
+	Context("automaticReservations alone", func() {
+		It("should accept", func() {
+			cfg := &v1alpha1.KubeletConfiguration{
+				AutomaticReservations: &v1alpha1.AutomaticReservations{
+					Profile: v1alpha1.ReservationProfileCapacityTiered,
+				},
+			}
+			cluster := createClusterWithKubeletConfig(cfg)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+		})
+	})
+
 	Context("both maxParallelImagePullsPerNode and kubeletConfiguration.maxParallelImagePulls set", func() {
 		It("should allow with warning", func() {
 			clusterConfig := &variables.ClusterConfigSpec{

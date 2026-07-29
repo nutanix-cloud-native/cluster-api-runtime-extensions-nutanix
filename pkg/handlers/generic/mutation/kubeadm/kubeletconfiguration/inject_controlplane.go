@@ -8,6 +8,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -84,9 +85,12 @@ func (h *kubeletConfigurationControlPlanePatchHandler) Mutate(
 		"variableFieldPath", h.cpVariableFieldPath,
 	)
 
-	kubeletConfigPatch, err := renderKubeletConfigPatch(finalCfg)
-	if err != nil {
-		return err
+	var kubeletConfigPatch *bootstrapv1.File
+	if hasRenderableKubeletFields(finalCfg) {
+		kubeletConfigPatch, err = renderKubeletConfigPatch(finalCfg)
+		if err != nil {
+			return err
+		}
 	}
 
 	return patches.MutateIfApplicable(
@@ -101,10 +105,17 @@ func (h *kubeletConfigurationControlPlanePatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("adding KubeletConfiguration patch to control plane kubeadm config spec")
 
-			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
-				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				*kubeletConfigPatch,
-			)
+			spec := &obj.Spec.Template.Spec.KubeadmConfigSpec
+			if kubeletConfigPatch != nil {
+				spec.Files = append(spec.Files, *kubeletConfigPatch)
+			}
+			if automaticReservationsEnabled(finalCfg) {
+				spec.Files = append(spec.Files, computeReservationsScriptFile())
+				spec.PreKubeadmCommands = append(
+					spec.PreKubeadmCommands,
+					computeReservationsCommand,
+				)
+			}
 
 			return nil
 		},

@@ -19,3 +19,12 @@ func TestKubeletConfiguration_IsEmpty(t *testing.T) {
 	withField := &KubeletConfiguration{MaxPods: ptr.To(int32(110))}
 	assert.False(t, withField.IsEmpty())
 }
+
+func TestKubeletConfiguration_IsEmpty_AutomaticReservations(t *testing.T) {
+	cfg := &KubeletConfiguration{
+		AutomaticReservations: &AutomaticReservations{
+			Profile: ReservationProfileCapacityTiered,
+		},
+	}
+	assert.False(t, cfg.IsEmpty())
+}
