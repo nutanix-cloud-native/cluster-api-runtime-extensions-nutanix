@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.50.0 (2026-07-29)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: stretched cluster changes by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1661
+* feat: preflight checks for metro by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1667
+* feat: add Rtt and witness guardrails by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1673
+* feat: Enforce all node pools use metro failure domains by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1675
+* feat: [NCN-113518] Add enforceNodeAllocatable field by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1592
+* feat: [NCN-115115] Add opt-in automatic kubelet resource reservations by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1650
+### Fixes 🔧
+* fix: return metalLB config apply conflict errors by @Vedansh074 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1643
+* fix: remediate CVEs by upgrading golang.org/x/crypto and x/net  by @shubham2g in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1644
+* fix: Allow CAPA Garbage Collection to find orphaned AWS LBC resources by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1646
+* fix: Fail servicelbgc handler when internal function returns an error by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1645
+* fix: node feature discovery addon: update node affinity and tolerations by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1651
+* fix: Update Cilium to 1.19.4 by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1652
+* fix: Adding mpio flag for metro clusters - csi by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1665
+* fix: restore CIS/STIG extraArgs lost in CAPX v1.10 upgrade by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1671
+### Other Changes
+* build: add a extra SAN in Kind cluster by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1631
+* refactor: pass oldCluster to preflight checker by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1630
+* build: Bump Go toolchain to go1.26.4 to address stdlib CVEs by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1637
+* build: migrate from pre-commit to prek by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1647
+* revert: remove clusterctl CAPX metadata override setup by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1666
+* build: Clear govulncheck CVEs in Go, x/text, and regclient by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1681
+* refactor: [NCN-116148] Share HTTPS server for hooks and admission by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1680
+* docs: Improve kubelet configuration documentation by @jimmidyson in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1593
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.49.0...v0.50.0
+
 ## 0.49.0 (2026-06-03)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
