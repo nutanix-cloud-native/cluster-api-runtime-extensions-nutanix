@@ -22,7 +22,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"dockerClusterv6configpatch",
+		"dockerClusterv7configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -37,7 +37,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"dockerWorkerv6configpatch",
+		"dockerWorkerv7configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
