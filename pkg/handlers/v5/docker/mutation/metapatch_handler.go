@@ -4,8 +4,6 @@
 package mutation
 
 import (
-	"slices"
-
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
@@ -16,13 +14,12 @@ import (
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPD clusters.
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := slices.Concat(
-		[]mutation.MetaMutator{
-			customimage.NewControlPlanePatch(),
-		},
-		genericmutationvprev.MetaMutators(mgr),
-		genericmutationvprev.ControlPlaneMetaMutators(),
-	)
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
+	patchHandlers := []mutation.MetaMutator{
+		customimage.NewControlPlanePatch(),
+	}
+	patchHandlers = append(patchHandlers, genericmutationvprev.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, genericmutationvprev.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"dockerClusterv5configpatch",
@@ -33,12 +30,11 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 
 // MetaWorkerPatchHandler returns a meta patch handler for mutating CAPD workers.
 func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
-	patchHandlers := slices.Concat(
-		[]mutation.MetaMutator{
-			customimage.NewWorkerPatch(),
-		},
-		genericmutationvprev.WorkerMetaMutators(),
-	)
+	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
+	patchHandlers := []mutation.MetaMutator{
+		customimage.NewWorkerPatch(),
+	}
+	patchHandlers = append(patchHandlers, genericmutationvprev.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
 		"dockerWorkerv5configpatch",
