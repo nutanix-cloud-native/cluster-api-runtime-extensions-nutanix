@@ -85,6 +85,7 @@ type metroSubnetSpec struct {
 	subnetType netv4.SubnetType
 	networkID  *int
 	cidr       *string
+	vpcRef     *string
 }
 
 // metroNClient builds a mock Nutanix client that returns a PE cluster for each
@@ -119,6 +120,7 @@ func metroNClient(subnets map[string]metroSubnetSpec) *clientWrapper {
 			subnet.SubnetType = spec.subnetType.Ref()
 			subnet.NetworkId = spec.networkID
 			subnet.IpPrefix = spec.cidr
+			subnet.VpcReference = spec.vpcRef
 			resp := &netv4.GetSubnetApiResponse{
 				ObjectType_: ptr.To("networking.v4.config.GetSubnetApiResponse"),
 			}
@@ -321,6 +323,21 @@ func TestMetroCheck(t *testing.T) {
 			}),
 			expectedAllowed:      false,
 			expectedCauseMessage: "reside on multiple network layers",
+			expectedCauseCount:   1,
+		},
+		{
+			name: "vpc-backed subnets are rejected for metro",
+			objects: []ctrlclient.Object{
+				newMetroObject(metroName, metroFD1, metroFD2),
+				newMetroFailureDomain(metroFD1, metroPE1UUID, metroSubnet1),
+				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
+			},
+			nclient: metroNClient(map[string]metroSubnetSpec{
+				metroSubnet1: {subnetType: netv4.SUBNETTYPE_OVERLAY, vpcRef: ptr.To("vpc-1")},
+				metroSubnet2: {subnetType: netv4.SUBNETTYPE_OVERLAY, vpcRef: ptr.To("vpc-1")},
+			}),
+			expectedAllowed:      false,
+			expectedCauseMessage: "VPC-backed subnets are not supported",
 			expectedCauseCount:   1,
 		},
 		{
