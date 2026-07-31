@@ -28,6 +28,7 @@ var Checker = &nutanixChecker{
 	vmImageKubernetesVersionChecksFactory: newVMImageKubernetesVersionChecks,
 	cidrValidationChecksFactory:           newCIDRValidationChecks,
 	storageContainerChecksFactory:         newStorageContainerChecks,
+	controlPlaneEndpointChecksFactory:     newControlPlaneEndpointChecks,
 	metroChecksFactory:                    newMetroChecks,
 }
 
@@ -68,6 +69,10 @@ type nutanixChecker struct {
 	) []preflight.Check
 
 	storageContainerChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	controlPlaneEndpointChecksFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
 
@@ -123,6 +128,7 @@ func (n *nutanixChecker) Init(
 		n.vmImageKubernetesVersionChecksFactory(cd),
 		n.cidrValidationChecksFactory(cd),
 		n.storageContainerChecksFactory(cd),
+		n.controlPlaneEndpointChecksFactory(cd),
 		n.metroChecksFactory(cd),
 	)
 
