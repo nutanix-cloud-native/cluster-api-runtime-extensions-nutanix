@@ -300,9 +300,10 @@ prismEndPoint: endpoint
 		}
 
 		type input struct {
-			Provider                   string
-			ControlPlaneEndpoint       clusterv1beta2.APIEndpoint
-			EnableKubeProxyReplacement bool
+			Provider                            string
+			ControlPlaneEndpoint                clusterv1beta2.APIEndpoint
+			EnableKubeProxyReplacement          bool
+			ServiceLoadBalancerProviderIsCilium bool
 		}
 		templateInput := input{
 			Provider: "test",
@@ -310,7 +311,8 @@ prismEndPoint: endpoint
 				Host: "https://test.dummy.com",
 				Port: 443,
 			},
-			EnableKubeProxyReplacement: true,
+			EnableKubeProxyReplacement:          true,
+			ServiceLoadBalancerProviderIsCilium: true,
 		}
 
 		funcMap := template.FuncMap{
