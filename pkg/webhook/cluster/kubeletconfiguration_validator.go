@@ -156,40 +156,7 @@ func (k *kubeletConfigurationValidator) validate(
 		if entry.cfg == nil {
 			continue
 		}
-
-		if entry.cfg.AutomaticReservations != nil {
-			if len(entry.cfg.SystemReserved) > 0 ||
-				len(entry.cfg.KubeReserved) > 0 ||
-				len(entry.cfg.EvictionHard) > 0 {
-				return admission.Denied(fmt.Sprintf(
-					"%s: automaticReservations cannot be combined with "+
-						"systemReserved, kubeReserved, or evictionHard",
-					entry.path,
-				))
-			}
-		}
-
-		if entry.cfg.CPUManagerPolicy != nil &&
-			*entry.cfg.CPUManagerPolicy == v1alpha1.CPUManagerPolicyStatic {
-			hasCPU := hasCPUReservation(entry.cfg.SystemReserved) ||
-				hasCPUReservation(entry.cfg.KubeReserved)
-			if !hasCPU {
-				return admission.Denied(fmt.Sprintf(
-					"%s: cpuManagerPolicy 'static' requires CPU "+
-						"reservation in systemReserved or kubeReserved",
-					entry.path,
-				))
-			}
-		}
-
-		if err := validateEvictionThresholds(
-			entry.cfg.EvictionHard, entry.path+".evictionHard",
-		); err != nil {
-			return admission.Denied(err.Error())
-		}
-		if err := validateEvictionThresholds(
-			entry.cfg.EvictionSoft, entry.path+".evictionSoft",
-		); err != nil {
+		if err := validateKubeletConfig(entry.cfg, entry.path); err != nil {
 			return admission.Denied(err.Error())
 		}
 	}
@@ -229,6 +196,44 @@ func hasCPUReservation(reserved map[string]resource.Quantity) bool {
 	}
 	_, ok := reserved["cpu"]
 	return ok
+}
+
+func validateKubeletConfig(cfg *v1alpha1.KubeletConfiguration, path string) error {
+	if cfg.AutomaticReservations != nil {
+		if len(cfg.SystemReserved) > 0 ||
+			len(cfg.KubeReserved) > 0 ||
+			len(cfg.EvictionHard) > 0 {
+			return fmt.Errorf(
+				"%s: automaticReservations cannot be combined with systemReserved, kubeReserved, or evictionHard",
+				path,
+			)
+		}
+	}
+
+	if cfg.CPUManagerPolicy != nil &&
+		*cfg.CPUManagerPolicy == v1alpha1.CPUManagerPolicyStatic {
+		hasCPU := hasCPUReservation(cfg.SystemReserved) ||
+			hasCPUReservation(cfg.KubeReserved)
+		if !hasCPU {
+			return fmt.Errorf(
+				"%s: cpuManagerPolicy 'static' requires CPU reservation in systemReserved or kubeReserved",
+				path,
+			)
+		}
+	}
+
+	if err := validateEvictionThresholds(
+		cfg.EvictionHard, path+".evictionHard",
+	); err != nil {
+		return err
+	}
+	if err := validateEvictionThresholds(
+		cfg.EvictionSoft, path+".evictionSoft",
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func validateEvictionThresholds(thresholds map[string]string, fieldPath string) error {
