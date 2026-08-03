@@ -88,16 +88,67 @@ func (k *kubeletConfigurationValidator) validate(
 		})
 	}
 
-	workerConfig, err := variables.UnmarshalWorkerConfigVariable(
+	defaultWorkerConfig, err := variables.UnmarshalWorkerConfigVariable(
 		cluster.Spec.Topology.Variables,
 	)
-	if err == nil && workerConfig != nil {
+	if err != nil {
+		return admission.Denied(
+			fmt.Errorf(
+				"failed to unmarshal cluster topology variable %q: %w",
+				v1alpha1.WorkerConfigVariableName,
+				err,
+			).Error(),
+		)
+	}
+	if defaultWorkerConfig != nil {
+		cfgsToValidate = append(cfgsToValidate, struct {
+			cfg  *v1alpha1.KubeletConfiguration
+			path string
+		}{
+			defaultWorkerConfig.KubeletConfiguration,
+			"workerConfig.kubeletConfiguration",
+		})
+	}
+
+	for i := range cluster.Spec.Topology.Workers.MachineDeployments {
+		md := cluster.Spec.Topology.Workers.MachineDeployments[i]
+		mdWorkerConfigPath := fmt.Sprintf(
+			"workers.machineDeployments[%q].variables.overrides[workerConfig].kubeletConfiguration",
+			md.Name,
+		)
+
+		var workerConfig *variables.WorkerNodeConfigSpec
+		if len(md.Variables.Overrides) > 0 {
+			workerConfig, err = variables.UnmarshalWorkerConfigVariable(md.Variables.Overrides)
+			if err != nil {
+				return admission.Denied(
+					fmt.Errorf(
+						"failed to unmarshal worker overrides variable %q for machineDeployment %q: %w",
+						v1alpha1.WorkerConfigVariableName,
+						md.Name,
+						err,
+					).Error(),
+				)
+			}
+		}
+
+		cfgPath := mdWorkerConfigPath
+		if workerConfig == nil {
+			workerConfig = defaultWorkerConfig
+			cfgPath = "workerConfig.kubeletConfiguration"
+		}
+
+		// skip validation, if no config on MachineDeployment or global worker config
+		if workerConfig == nil {
+			continue
+		}
+
 		cfgsToValidate = append(cfgsToValidate, struct {
 			cfg  *v1alpha1.KubeletConfiguration
 			path string
 		}{
 			workerConfig.KubeletConfiguration,
-			"workerConfig.kubeletConfiguration",
+			cfgPath,
 		})
 	}
 
@@ -146,9 +197,16 @@ func (k *kubeletConfigurationValidator) validate(
 	hasControlPlaneMaxParallel := clusterConfig.ControlPlane != nil &&
 		clusterConfig.ControlPlane.KubeletConfiguration != nil &&
 		clusterConfig.ControlPlane.KubeletConfiguration.MaxParallelImagePulls != nil
-	hasWorkerMaxParallel := workerConfig != nil &&
-		workerConfig.KubeletConfiguration != nil &&
-		workerConfig.KubeletConfiguration.MaxParallelImagePulls != nil
+	hasWorkerMaxParallel := false
+	for _, entry := range cfgsToValidate {
+		if entry.path == "clusterConfig.controlPlane.kubeletConfiguration" || entry.cfg == nil {
+			continue
+		}
+		if entry.cfg.MaxParallelImagePulls != nil {
+			hasWorkerMaxParallel = true
+			break
+		}
+	}
 	if clusterConfig.MaxParallelImagePullsPerNode != nil &&
 		(hasControlPlaneMaxParallel || hasWorkerMaxParallel) {
 		warnings = append(
