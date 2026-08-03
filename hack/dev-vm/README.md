@@ -65,13 +65,15 @@ when a run came from a dirty tree.
 
 ### Suites
 
-Default set is `precommit unit lint` — the fast blocking jobs in
-`.github/workflows/checks.yml` (~25 min). The heavier suites are opt-in:
+The default set is **every blocking job** in `.github/workflows/checks.yml`, so
+a green run here means CI should be green too (~40 min). `helm` costs about a
+minute unless you touched a chart — it runs the same `ct list-changed` check CI
+does — and `e2e-docker` runs one focus rather than CI's full matrix.
 
 ```bash
-./hack/dev-vm/caren-pc-test.sh run --suites "precommit unit lint helm"
-./hack/dev-vm/caren-pc-test.sh run --suites "e2e-docker"          # Quick start focus
+./hack/dev-vm/caren-pc-test.sh run --suites "precommit unit lint"  # fast loop, ~25 min
 E2E_FOCUS='Self-hosted' ./hack/dev-vm/caren-pc-test.sh run --suites "e2e-docker"
+CT_FORCE=true ./hack/dev-vm/caren-pc-test.sh run --suites "helm"   # force the chart install
 ./hack/dev-vm/caren-pc-test.sh run --keep                          # keep the VM afterwards
 ./hack/dev-vm/caren-pc-test.sh list                                # your test VMs on PC
 ./hack/dev-vm/caren-pc-test.sh destroy <vm-uuid>                   # manual cleanup
@@ -82,8 +84,8 @@ E2E_FOCUS='Self-hosted' ./hack/dev-vm/caren-pc-test.sh run --suites "e2e-docker"
 | `precommit` | `pre-commit` | `make pre-commit` with CI's `SKIP` list | ~5 min |
 | `unit` | `unit-test` | `make test` — root, `api` and `common` modules | ~15 min |
 | `lint` | `lint-go` | `make lint` — custom `golangci-lint-kube-api-linter`, all modules | ~5 min |
-| `helm` | `lint-test-helm` | `ct lint`, kind cluster, `release-snapshot`, `clusterctl.init`, `ct install` | ~15 min |
-| `e2e-docker` | `e2e-quick-start` / `e2e-self-hosted` | `make e2e-test E2E_LABEL='provider:Docker'` | ~20 min per focus |
+| `helm` | `lint-test-helm` | `ct lint`, kind cluster, `release-snapshot`, `clusterctl.init`, `ct install` | ~1 min, ~15 min if charts changed |
+| `e2e-docker` | `e2e-quick-start` / `e2e-self-hosted` | `make e2e-test E2E_LABEL='provider:Docker'` | ~13 min per focus |
 
 The Nutanix-provider e2e suites are not wired up here: they need a full CAPX
 environment (PC endpoint, subnet, machine image) beyond the credentials this
@@ -113,7 +115,9 @@ table) or screenshot it.
 | `NUTANIX_USER` | **yes** | — | Prism Central username (VM create/delete) |
 | `NUTANIX_PASSWORD` | **yes** | — | Prism Central password (never logged) |
 | `VM_CPU` / `VM_MEM_GIB` / `VM_DISK_GIB` | no | `16` / `32` / `200` | VM sizing |
-| `CAREN_TEST_SUITES` | no | `precommit unit lint` | Change your default suite list |
+| `CAREN_TEST_SUITES` | no | all five suites | Change your default suite list |
+| `E2E_FOCUS` | no | `Quick start` | Which e2e focus `e2e-docker` runs |
+| `CT_FORCE` | no | `false` | Run the chart install even when no charts changed |
 | `CAREN_REPO_URL` | no | the public repo | Point at the `internal-` fork if that is what you work in |
 | `PC_URL` | no | `https://pc.dev.nkp.sh:9440` | Prism Central endpoint |
 | `IMAGE_UUID` | no | Ubuntu 24.04 cloud image | Boot image (cloud-init-enabled DISK_IMAGE) |

@@ -41,9 +41,11 @@ VM_CPU="${VM_CPU:-16}"
 VM_MEM_GIB="${VM_MEM_GIB:-32}"
 VM_DISK_GIB="${VM_DISK_GIB:-200}"
 VM_USER="nkp"
-# The blocking jobs from .github/workflows/checks.yml. The heavier `helm` and
-# `e2e-docker` suites are available but opt-in (see --suites).
-DEFAULT_SUITES="${CAREN_TEST_SUITES:-precommit unit lint}"
+# Every blocking job in .github/workflows/checks.yml, so a green run here means
+# CI should be green too. `helm` short-circuits to about a minute when no charts
+# changed (same check CI does), and `e2e-docker` runs one focus rather than CI's
+# full matrix. For a quick loop use: --suites "precommit unit lint".
+DEFAULT_SUITES="${CAREN_TEST_SUITES:-precommit unit lint helm e2e-docker}"
 
 STATE_DIR="$HOME/.caren-pc-test"
 SSH_KEY="$STATE_DIR/id_ed25519"
@@ -254,9 +256,18 @@ cmd_run() {
   ts=$(date +%Y%m%d-%H%M%S)
   results_dir="$repo_root/test-results/$ts"
   mkdir -p "$results_dir"
+  # Forward the handful of knobs the suites honour, so `E2E_FOCUS=... run` and
+  # `CT_FORCE=true run` behave the way the README says they do.
+  local fwd="" v
+  for v in E2E_FOCUS E2E_SKIP CT_FORCE KIND_CLUSTER_NAME; do
+    [ -n "${!v:-}" ] && fwd="${fwd}export $v=$(printf '%q' "${!v}")
+"
+  done
+
   ssh "${SSH_OPTS[@]}" "$VM_USER@$VM_IP" "cat > ~/run-suites.sh <<'EOF'
 #!/usr/bin/env bash
 set -u
+$fwd
 : > ~/results.txt
 rm -rf ~/artifacts && mkdir -p ~/artifacts
 for s in $suites; do

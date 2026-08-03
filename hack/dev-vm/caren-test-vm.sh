@@ -28,8 +28,10 @@ set -euo pipefail
 REPO_DIR="${CAREN_REPO_DIR:-$HOME/caren}"
 REPO_URL="${CAREN_REPO_URL:-https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix.git}"
 NIX_PROFILE_SH="/etc/profile.d/nix.sh"
-# Matches .github/workflows/checks.yml lint-test-helm.
+# Match .github/workflows/checks.yml lint-test-helm: kind.create writes the
+# kubeconfig to KIND_KUBECONFIG, and ct install reads it from there.
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-chart-testing}"
+KIND_KUBECONFIG="${KIND_KUBECONFIG:-ct-kind-kubeconfig}"
 
 log() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 die() {
@@ -243,20 +245,41 @@ cmd_helm() { # lint-test-helm job
   load_nix
   load_devbox
   github_token
+  # CI only does the expensive half when a chart actually changed; mirror that so
+  # this suite costs ~a minute on the majority of PRs. CT_FORCE=true overrides.
+  if [ "${CT_FORCE:-false}" != true ] &&
+    [ -z "$(devbox run -- ct list-changed --config charts/ct-config.yaml 2>/dev/null)" ]; then
+    log "No chart changes - skipping chart lint/install (same as CI)"
+    return 0
+  fi
+
   log "chart-testing: lint, then install onto a kind cluster"
-  devbox run -- bash -euxo pipefail -c '
-    ct lint --config charts/ct-config.yaml
-    make kind.create
-    make release-snapshot
-    tag="$(gojq -r .version dist/metadata.json)-$(go env GOARCH)"
-    kind load docker-image --name '"$KIND_CLUSTER_NAME"' \
-      "ko.local/cluster-api-runtime-extensions-nutanix:${tag}" \
-      "ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:${tag}"
-    make clusterctl.init
-    KUBECONFIG=ct-kind-kubeconfig ct install --config charts/ct-config.yaml \
-      --helm-extra-set-args "--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix --set-string image.tag=${tag} --set-string helmRepository.images.bundleInitializer.tag=${tag}"
-  '
-  devbox run -- make kind.delete || true
+  # Quoted heredoc: nothing expands here, it all runs inside devbox on the VM.
+  # KIND_CLUSTER_NAME is passed through the environment rather than interpolated,
+  # which keeps the quoting intact.
+  cat >/tmp/caren-helm.sh <<'INNER'
+set -euxo pipefail
+ct lint --config charts/ct-config.yaml
+# kind.create is a no-op when a cluster of this name already exists, and then no
+# kubeconfig is written and clusterctl/ct fail. CI always starts from a fresh
+# runner; on a reused VM, start from a known state.
+kind delete cluster --name "${KIND_CLUSTER_NAME}" >/dev/null 2>&1 || true
+make kind.create
+make release-snapshot
+tag="$(gojq -r .version dist/metadata.json)-$(go env GOARCH)"
+kind load docker-image --name "${KIND_CLUSTER_NAME}" \
+  "ko.local/cluster-api-runtime-extensions-nutanix:${tag}" \
+  "ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:${tag}"
+make clusterctl.init
+KUBECONFIG="${KIND_KUBECONFIG}" ct install --config charts/ct-config.yaml \
+  --helm-extra-set-args "--set-string image.repository=ko.local/cluster-api-runtime-extensions-nutanix --set-string image.tag=${tag} --set-string helmRepository.images.bundleInitializer.tag=${tag}"
+INNER
+  KIND_CLUSTER_NAME="$KIND_CLUSTER_NAME" KIND_KUBECONFIG="$KIND_KUBECONFIG" \
+    devbox run -- bash /tmp/caren-helm.sh
+  # kind.delete reads KIND_CLUSTER_NAME too - without it the chart-testing
+  # cluster would be left running.
+  KIND_CLUSTER_NAME="$KIND_CLUSTER_NAME" KIND_KUBECONFIG="$KIND_KUBECONFIG" \
+    devbox run -- make kind.delete || true
 }
 
 cmd_e2e_docker() { # e2e-quick-start / e2e-self-hosted, Docker provider
