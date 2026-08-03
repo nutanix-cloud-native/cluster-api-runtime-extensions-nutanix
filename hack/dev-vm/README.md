@@ -1,3 +1,8 @@
+<!--
+ Copyright 2023 Nutanix. All rights reserved.
+ SPDX-License-Identifier: Apache-2.0
+ -->
+
 # Run the CAREN checks on a dev VM (pre-PR gate)
 
 Run the same checks CI runs — on a Prism Central VM created on demand —
@@ -88,7 +93,7 @@ script uses to create the VM.
 
 Everything lands in `test-results/<timestamp>/` on your laptop:
 
-```
+```text
 test-results/20260803-102619/
 ├── RESULTS.md          # pass/fail table + branch, commit sha, runner — attach to your PR
 ├── results.txt         # raw per-suite verdicts
