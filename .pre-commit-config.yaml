@@ -4,6 +4,19 @@
 repos:
 - repo: local
   hooks:
+  # Manual-stage only: runs the CI checks on a dynamic Prism Central VM against
+  # your local working tree and writes test-results/<ts>/RESULTS.md for the PR.
+  # Requires NUTANIX_USER/NUTANIX_PASSWORD - see hack/dev-vm/README.md.
+  # Invoke with: pre-commit run caren-pc-test --hook-stage manual
+  - id: caren-pc-test
+    name: Run the CI checks on a dynamic PC VM (pre-PR gate)
+    entry: hack/dev-vm/caren-pc-test.sh run
+    language: script
+    pass_filenames: false
+    always_run: true
+    require_serial: true
+    verbose: true
+    stages: [manual]
   - id: schema-chart
     name: schema-chart
     entry: make schema-chart
