@@ -80,7 +80,7 @@ repositories:
     repoURL: https://nutanix.github.io/helm-releases
     charts:
       nutanix-flow-cni:
-      - 1.0.0
+      - 1.1.0
   registry-syncer:
     repoURL: https://mesosphere.github.io/charts/staging/
     charts:
