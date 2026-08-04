@@ -1,4 +1,4 @@
-// Copyright 2023 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package mutation
@@ -21,7 +21,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/securitygroups"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/tags"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/volumes"
-	genericmutation "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation"
+	genericmutationvprev "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v6/generic/mutation"
 )
 
 // MetaPatchHandler returns a meta patch handler for mutating CAPA clusters.
@@ -43,11 +43,11 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 		placementgroup.NewControlPlanePatch(),
 		placementgroupnfd.NewControlPlanePatch(),
 	}
-	patchHandlers = append(patchHandlers, genericmutation.MetaMutators(mgr)...)
-	patchHandlers = append(patchHandlers, genericmutation.ControlPlaneMetaMutators()...)
+	patchHandlers = append(patchHandlers, genericmutationvprev.MetaMutators(mgr)...)
+	patchHandlers = append(patchHandlers, genericmutationvprev.ControlPlaneMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsClusterv7configpatch",
+		"awsClusterv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -66,10 +66,10 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 		placementgroup.NewWorkerPatch(),
 		placementgroupnfd.NewWorkerPatch(),
 	}
-	patchHandlers = append(patchHandlers, genericmutation.WorkerMetaMutators()...)
+	patchHandlers = append(patchHandlers, genericmutationvprev.WorkerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"awsWorkerv7configpatch",
+		"awsWorkerv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)

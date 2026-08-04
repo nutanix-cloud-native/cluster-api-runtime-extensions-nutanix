@@ -1,4 +1,4 @@
-// Copyright 2023 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package mutation
@@ -33,7 +33,7 @@ func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, metaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"eksClusterv7configpatch",
+		"eksClusterv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
@@ -55,7 +55,7 @@ func MetaWorkerPatchHandler(mgr manager.Manager) handlers.Named {
 	patchHandlers = append(patchHandlers, workerMetaMutators()...)
 
 	return mutation.NewMetaGeneratePatchesHandler(
-		"eksWorkerv7configpatch",
+		"eksWorkerv6configpatch",
 		mgr.GetClient(),
 		patchHandlers...,
 	)
