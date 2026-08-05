@@ -232,6 +232,39 @@ var _ = Describe("Generate Image registry patches", func() {
 			},
 		},
 		{
+			// A non-Docker Hub registry must not prevent the default Docker Hub
+			// credential provider from being configured.
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "non-Docker Hub registry still wires Docker Hub credential provider",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						[]v1alpha1.ImageRegistry{{
+							URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
+						}},
+						v1alpha1.ImageRegistriesVariableName,
+					),
+				},
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+						ValueMatcher: gomega.ContainElement(
+							gomega.SatisfyAll(
+								gomega.HaveKeyWithValue(
+									"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+								),
+								gomega.HaveKeyWithValue(
+									"content", gomega.ContainSubstring("registry-1.docker.io"),
+								),
+							),
+						),
+					},
+				},
+			},
+		},
+		{
 			PatchTestDef: capitest.PatchTestDef{
 				Name: "files added in KubeadmControlPlaneTemplate for ECR without a Secret",
 				Vars: []runtimehooksv1.Variable{
