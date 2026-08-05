@@ -8,6 +8,7 @@ import (
 	_ "embed"
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 	"text/template"
 
@@ -20,6 +21,10 @@ import (
 
 const (
 	secretKeyForStaticCredentialProviderConfig = "static-credential-provider" //nolint:gosec // Not a credential.
+
+	dockerHost          = "docker.io"
+	registry1DockerHost = "registry-1.docker.io"
+	nutanixOrgPath      = "/nutanix"
 )
 
 var (
@@ -106,24 +111,23 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 			return "", fmt.Errorf("failed parsing registry URL: %w", err)
 		}
 
-		// Org-scoped keying (host + path, e.g. registry-1.docker.io/nutanix) is
-		// applied ONLY to NKP's own docker.io/nutanix org.
-		pathPrefix := strings.TrimRight(registryURL.Path, "/")
-		if !isDockerHubNutanixOrgURL(registryURL.Host, pathPrefix) {
-			pathPrefix = ""
+		// To maintain existing behavior, include include the path for Nutanix's docker.io org.
+		var pathPrefix string
+		if isDockerHubNutanixOrgURL(registryURL) {
+			pathPrefix = registryURL.Path
 		}
 
 		inputs = append(inputs, templateInput{
-			RegistryHost: registryURL.Host + pathPrefix,
+			RegistryHost: path.Join(registryURL.Host, pathPrefix),
 			Username:     config.Username,
 			Password:     config.Password,
 		})
 
 		// Preserve special handling of "registry-1.docker.io" and add "docker.io"
 		// as an alias, carrying the same org/path prefix.
-		if registryURL.Host == "registry-1.docker.io" {
+		if registryURL.Host == registry1DockerHost {
 			inputs = append(inputs, templateInput{
-				RegistryHost: "docker.io" + pathPrefix,
+				RegistryHost: path.Join(dockerHost, pathPrefix),
 				Username:     config.Username,
 				Password:     config.Password,
 			})
@@ -143,8 +147,14 @@ func kubeletStaticCredentialProviderSecretContents(configs []providerConfig) (st
 	return strings.TrimSpace(b.String()), nil
 }
 
-func isDockerHubNutanixOrgURL(host, pathPrefix string) bool {
-	return (host == "registry-1.docker.io" || host == "docker.io") && pathPrefix == "/nutanix"
+func isDockerHubNutanixOrgURL(registryURL *url.URL) bool {
+	if registryURL == nil {
+		return false
+	}
+
+	matchesHost := registryURL.Host == dockerHost || registryURL.Host == registry1DockerHost
+	matchesPath := path.Clean(registryURL.Path) == nutanixOrgPath
+	return matchesHost && matchesPath
 }
 
 func configsRequireStaticCredentials(configs []providerConfig) bool {
