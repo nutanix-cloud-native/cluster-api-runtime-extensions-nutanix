@@ -288,6 +288,162 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 			))
 		})
 	})
+
+	Context("workerConfig in machineDeployment override", func() {
+		clusterConfig := &variables.ClusterConfigSpec{}
+
+		It("should reject when cpuManagerPolicy=static has no CPU reservation", func() {
+			workerConfig := &variables.WorkerNodeConfigSpec{
+				KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+					KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+						CPUManagerPolicy: ptrOf(v1alpha1.CPUManagerPolicyStatic),
+					},
+				},
+			}
+			cluster := createClusterWithWorkerConfigAndOverrides(
+				clusterConfig,
+				nil,
+				map[string]*variables.WorkerNodeConfigSpec{
+					"md-0": workerConfig,
+				},
+			)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				`workers.machineDeployments["md-0"].variables.overrides[workerConfig].kubeletConfiguration`,
+			))
+			Expect(resp.Result.Message).To(ContainSubstring(
+				"cpuManagerPolicy 'static' requires CPU reservation in systemReserved or kubeReserved",
+			))
+		})
+
+		It("should accept when cpuManagerPolicy=static has CPU in systemReserved", func() {
+			workerConfig := &variables.WorkerNodeConfigSpec{
+				KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+					KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+						CPUManagerPolicy: ptrOf(v1alpha1.CPUManagerPolicyStatic),
+						SystemReserved: map[string]resource.Quantity{
+							"cpu": resource.MustParse("200m"),
+						},
+					},
+				},
+			}
+			cluster := createClusterWithWorkerConfigAndOverrides(
+				clusterConfig,
+				nil,
+				map[string]*variables.WorkerNodeConfigSpec{
+					"md-0": workerConfig,
+				},
+			)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+		})
+
+		It("should reject invalid eviction threshold value", func() {
+			workerConfig := &variables.WorkerNodeConfigSpec{
+				KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+					KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+						EvictionHard: map[string]string{
+							"memory.available": "bad-threshold",
+						},
+					},
+				},
+			}
+			cluster := createClusterWithWorkerConfigAndOverrides(
+				clusterConfig,
+				nil,
+				map[string]*variables.WorkerNodeConfigSpec{
+					"md-0": workerConfig,
+				},
+			)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				`workers.machineDeployments["md-0"].variables.overrides[workerConfig].kubeletConfiguration.evictionHard`,
+			))
+			Expect(resp.Result.Message).To(ContainSubstring("invalid eviction threshold value"))
+		})
+
+		It("should reject automaticReservations with kubeReserved", func() {
+			workerConfig := &variables.WorkerNodeConfigSpec{
+				KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+					KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+						AutomaticReservations: &v1alpha1.AutomaticReservations{
+							Profile: v1alpha1.ReservationProfileCapacityTiered,
+						},
+						KubeReserved: map[string]resource.Quantity{
+							"cpu": resource.MustParse("300m"),
+						},
+					},
+				},
+			}
+			cluster := createClusterWithWorkerConfigAndOverrides(
+				clusterConfig,
+				nil,
+				map[string]*variables.WorkerNodeConfigSpec{
+					"md-0": workerConfig,
+				},
+			)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				`workers.machineDeployments["md-0"].variables.overrides[workerConfig].kubeletConfiguration`,
+			))
+			Expect(resp.Result.Message).To(ContainSubstring("automaticReservations cannot be combined with"))
+		})
+
+		It("should allow with warning when maxParallelImagePullsPerNode conflicts with worker override", func() {
+			clusterConfig := &variables.ClusterConfigSpec{
+				KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+					MaxParallelImagePullsPerNode: ptr.To(int32(4)), //nolint:staticcheck // testing deprecated field
+				},
+			}
+			workerConfig := &variables.WorkerNodeConfigSpec{
+				KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+					KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+						MaxParallelImagePulls: ptr.To(int32(8)),
+					},
+				},
+			}
+			cluster := createClusterWithWorkerConfigAndOverrides(
+				clusterConfig,
+				nil,
+				map[string]*variables.WorkerNodeConfigSpec{
+					"md-0": workerConfig,
+				},
+			)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+			Expect(resp.Warnings).To(ContainElement(
+				ContainSubstring("maxParallelImagePullsPerNode will be ignored"),
+			))
+		})
+	})
 })
 
 func ptrOf[T any](v T) *T {
@@ -333,7 +489,10 @@ func createClusterWithKubeletConfig(cfg *v1alpha1.KubeletConfiguration) *cluster
 func createKubeletAdmissionRequest(cluster *clusterv1beta2.Cluster) admission.Request {
 	objRaw, err := json.Marshal(cluster)
 	Expect(err).NotTo(HaveOccurred())
+	return createKubeletAdmissionRequestRaw(objRaw)
+}
 
+func createKubeletAdmissionRequestRaw(objRaw []byte) admission.Request {
 	return admission.Request{
 		AdmissionRequest: admissionv1.AdmissionRequest{
 			Operation: admissionv1.Create,
@@ -347,4 +506,93 @@ func createKubeletAdmissionRequest(cluster *clusterv1beta2.Cluster) admission.Re
 			},
 		},
 	}
+}
+
+func createClusterWithWorkerConfigAndOverrides(
+	clusterConfig *variables.ClusterConfigSpec,
+	topLevelWorkerConfig *variables.WorkerNodeConfigSpec,
+	workerOverrides map[string]*variables.WorkerNodeConfigSpec,
+) *clusterv1beta2.Cluster {
+	var clusterVars []clusterv1beta2.ClusterVariable
+
+	if topLevelWorkerConfig != nil {
+		workerConfigRaw, err := json.Marshal(topLevelWorkerConfig)
+		Expect(err).NotTo(HaveOccurred())
+		clusterVars = append(clusterVars, clusterv1beta2.ClusterVariable{
+			Name:  v1alpha1.WorkerConfigVariableName,
+			Value: apiextensionsv1.JSON{Raw: workerConfigRaw},
+		})
+	}
+
+	mdOverrides := map[string][]clusterv1beta2.ClusterVariable{}
+	for mdName, workerConfig := range workerOverrides {
+		raw, err := json.Marshal(workerConfig)
+		Expect(err).NotTo(HaveOccurred())
+		mdOverrides[mdName] = []clusterv1beta2.ClusterVariable{
+			{
+				Name:  v1alpha1.WorkerConfigVariableName,
+				Value: apiextensionsv1.JSON{Raw: raw},
+			},
+		}
+	}
+
+	return createClusterWithRawVariables(clusterConfig, clusterVars, mdOverrides)
+}
+
+func createClusterWithRawVariables(
+	clusterConfig *variables.ClusterConfigSpec,
+	topologyVariables []clusterv1beta2.ClusterVariable,
+	mdOverrides map[string][]clusterv1beta2.ClusterVariable,
+) *clusterv1beta2.Cluster {
+	cluster := &clusterv1beta2.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-cluster",
+			Namespace: "test-namespace",
+		},
+		Spec: clusterv1beta2.ClusterSpec{
+			Topology: clusterv1beta2.Topology{
+				ClassRef: clusterv1beta2.ClusterClassRef{
+					Name: "test-class",
+				},
+				Version: "v1.30.0",
+			},
+		},
+	}
+
+	var vars []clusterv1beta2.ClusterVariable
+	if clusterConfig != nil {
+		clusterConfigRaw, err := json.Marshal(clusterConfig)
+		Expect(err).NotTo(HaveOccurred())
+		vars = append(vars, clusterv1beta2.ClusterVariable{
+			Name:  v1alpha1.ClusterConfigVariableName,
+			Value: apiextensionsv1.JSON{Raw: clusterConfigRaw},
+		})
+	}
+	vars = append(vars, topologyVariables...)
+	cluster.Spec.Topology.Variables = vars
+
+	for mdName, overrides := range mdOverrides {
+		cluster.Spec.Topology.Workers.MachineDeployments = append(
+			cluster.Spec.Topology.Workers.MachineDeployments,
+			clusterv1beta2.MachineDeploymentTopology{
+				Name:  mdName,
+				Class: "default-worker",
+				Variables: clusterv1beta2.MachineDeploymentVariables{
+					Overrides: overrides,
+				},
+			},
+		)
+	}
+
+	if len(cluster.Spec.Topology.Workers.MachineDeployments) == 0 {
+		cluster.Spec.Topology.Workers.MachineDeployments = append(
+			cluster.Spec.Topology.Workers.MachineDeployments,
+			clusterv1beta2.MachineDeploymentTopology{
+				Name:  "md-0",
+				Class: "default-worker",
+			},
+		)
+	}
+
+	return cluster
 }
