@@ -135,12 +135,11 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	if err != nil {
 		return err
 	}
-	if len(registriesThatNeedConfiguration) == 0 {
-		// No user-configured registry needs a credential provider. Always wire the
-		// kubelet dynamic credential provider for Docker Hub with an empty on-node
-		// credential file, so that Day-2 credential delivery (e.g. rotating the
-		// on-node file) needs no node roll.
-		log.V(5).Info("Wiring kubelet dynamic credential provider for Docker Hub with empty credentials")
+	// Always configure kubelet credential-provider for DockerHub so Day-2
+	// credential delivery works (without node rollout) even when no registry
+	// or another registry was declared. If imageRegistries already declares the
+	// default entry, its existing configuration is preserved.
+	if !hasDefaultDockerHubRegistry(imageRegistries) {
 		registriesThatNeedConfiguration = append(
 			registriesThatNeedConfiguration,
 			providerConfig{URL: v1alpha1.DefaultKubeletCredentialProviderRegistryURL},
@@ -248,6 +247,15 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	}
 
 	return nil
+}
+
+func hasDefaultDockerHubRegistry(registries []v1alpha1.ImageRegistry) bool {
+	for _, registry := range registries {
+		if registry.URL == v1alpha1.DefaultKubeletCredentialProviderRegistryURL {
+			return true
+		}
+	}
+	return false
 }
 
 func ensureOwnerReferenceOnCredentialsSecrets(
