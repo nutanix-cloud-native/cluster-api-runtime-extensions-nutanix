@@ -31,6 +31,52 @@ import (
 
 const (
 	validSecretName = "myregistry-credentials"
+
+	expectedDockerHubAndECRKubeletConfig = `apiVersion: kubelet.config.k8s.io/v1
+kind: CredentialProviderConfig
+providers:
+- name: dynamic-credential-provider
+  args:
+  - get-credentials
+  - -c
+  - /etc/kubernetes/dynamic-credential-provider-config.yaml
+  matchImages:
+  - "o-0123456789.dkr.ecr.us-east-1.amazonaws.com"
+  - "registry-1.docker.io"
+  - "docker.io"
+  - "*"
+  - "*.*"
+  - "*.*.*"
+  - "*.*.*.*"
+  - "*.*.*.*.*"
+  - "*.*.*.*.*.*"
+  defaultCacheDuration: "0s"
+  apiVersion: credentialprovider.kubelet.k8s.io/v1
+`
+
+	expectedDockerHubAndECRDynamicConfig = `apiVersion: credentialprovider.d2iq.com/v1alpha1
+kind: DynamicCredentialProviderConfig
+credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
+credentialProviders:
+  apiVersion: kubelet.config.k8s.io/v1
+  kind: CredentialProviderConfig
+  providers:
+  - name: ecr-credential-provider
+    args:
+    - get-credentials
+    matchImages:
+    - "o-0123456789.dkr.ecr.us-east-1.amazonaws.com"
+    defaultCacheDuration: "0s"
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
+  - name: static-credential-provider
+    args:
+    - /etc/kubernetes/static-image-credentials.json
+    matchImages:
+    - "registry-1.docker.io"
+    - "docker.io"
+    defaultCacheDuration: "0s"
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
+`
 )
 
 func TestHasDockerHubRegistry(t *testing.T) {
@@ -274,26 +320,16 @@ var _ = Describe("Generate Image registry patches", func() {
 								gomega.HaveKeyWithValue(
 									"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
 								),
-								// The template adds docker.io as an explicit alias
-								// whenever registry-1.docker.io is configured.
 								gomega.HaveKeyWithValue(
-									"content", gomega.ContainSubstring("registry-1.docker.io"),
-								),
-								gomega.HaveKeyWithValue(
-									"content", gomega.ContainSubstring(`- "docker.io"`),
+									"content", expectedDockerHubAndECRDynamicConfig,
 								),
 							),
 							gomega.SatisfyAll(
 								gomega.HaveKeyWithValue(
 									"path", "/etc/kubernetes/image-credential-provider-config.yaml",
 								),
-								// Check both the canonical Docker Hub host and
-								// the alias emitted by the kubelet template.
 								gomega.HaveKeyWithValue(
-									"content", gomega.ContainSubstring("registry-1.docker.io"),
-								),
-								gomega.HaveKeyWithValue(
-									"content", gomega.ContainSubstring(`- "docker.io"`),
+									"content", expectedDockerHubAndECRKubeletConfig,
 								),
 							),
 						),
