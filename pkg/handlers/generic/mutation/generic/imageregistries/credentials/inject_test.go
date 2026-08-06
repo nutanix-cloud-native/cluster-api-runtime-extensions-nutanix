@@ -31,7 +31,72 @@ import (
 
 const (
 	validSecretName = "myregistry-credentials"
+
+	expectedDockerHubAndECRKubeletConfig = `apiVersion: kubelet.config.k8s.io/v1
+kind: CredentialProviderConfig
+providers:
+- name: dynamic-credential-provider
+  args:
+  - get-credentials
+  - -c
+  - /etc/kubernetes/dynamic-credential-provider-config.yaml
+  matchImages:
+  - "o-0123456789.dkr.ecr.us-east-1.amazonaws.com"
+  - "registry-1.docker.io"
+  - "docker.io"
+  - "*"
+  - "*.*"
+  - "*.*.*"
+  - "*.*.*.*"
+  - "*.*.*.*.*"
+  - "*.*.*.*.*.*"
+  defaultCacheDuration: "0s"
+  apiVersion: credentialprovider.kubelet.k8s.io/v1
+`
+
+	expectedDockerHubAndECRDynamicConfig = `apiVersion: credentialprovider.d2iq.com/v1alpha1
+kind: DynamicCredentialProviderConfig
+credentialProviderPluginBinDir: /etc/kubernetes/image-credential-provider/
+credentialProviders:
+  apiVersion: kubelet.config.k8s.io/v1
+  kind: CredentialProviderConfig
+  providers:
+  - name: ecr-credential-provider
+    args:
+    - get-credentials
+    matchImages:
+    - "o-0123456789.dkr.ecr.us-east-1.amazonaws.com"
+    defaultCacheDuration: "0s"
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
+  - name: static-credential-provider
+    args:
+    - /etc/kubernetes/static-image-credentials.json
+    matchImages:
+    - "registry-1.docker.io"
+    - "docker.io"
+    defaultCacheDuration: "0s"
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
+`
 )
+
+func TestHasDockerHubRegistry(t *testing.T) {
+	t.Parallel()
+
+	assert.False(t, hasDockerHubRegistry([]v1alpha1.ImageRegistry{
+		{URL: "https://example.com"},
+	}))
+
+	for _, dockerHubURL := range []string{
+		v1alpha1.DefaultKubeletCredentialProviderRegistryURL,
+		v1alpha1.DockerHubRegistryURL,
+	} {
+		t.Run(dockerHubURL, func(t *testing.T) {
+			assert.True(t, hasDockerHubRegistry([]v1alpha1.ImageRegistry{
+				{URL: dockerHubURL},
+			}))
+		})
+	}
+}
 
 func Test_providerConfigsThatNeedConfiguration(t *testing.T) {
 	t.Parallel()
@@ -192,8 +257,84 @@ var _ = Describe("Generate Image registry patches", func() {
 		expectOwnerReferenceOnSecrets bool
 	}{
 		{
+			// With no registry or mirror configured, the kubelet dynamic credential
+			// provider is always wired for Docker Hub (with an empty on-node
+			// credential file) so Day-2 credential delivery needs no node roll.
 			PatchTestDef: capitest.PatchTestDef{
-				Name: "unset variable",
+				Name: "no registries still wires Docker Hub credential provider",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						[]v1alpha1.ImageRegistry{},
+						v1alpha1.ImageRegistriesVariableName,
+					),
+				},
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+						ValueMatcher: gomega.ContainElements(
+							gomega.HaveKeyWithValue(
+								"path", "/etc/caren/install-kubelet-credential-providers.sh",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+							),
+							gomega.HaveKeyWithValue(
+								"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+							),
+						),
+					},
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/preKubeadmCommands",
+						ValueMatcher: gomega.ContainElement(
+							"/bin/bash /etc/caren/install-kubelet-credential-providers.sh",
+						),
+					},
+				},
+			},
+		},
+		{
+			// A non-Docker Hub registry must not prevent the default Docker Hub
+			// credential provider from being configured.
+			PatchTestDef: capitest.PatchTestDef{
+				Name: "non-Docker Hub registry still wires Docker Hub credential provider",
+				Vars: []runtimehooksv1.Variable{
+					capitest.VariableWithValue(
+						v1alpha1.ClusterConfigVariableName,
+						[]v1alpha1.ImageRegistry{{
+							URL: "https://o-0123456789.dkr.ecr.us-east-1.amazonaws.com",
+						}},
+						v1alpha1.ImageRegistriesVariableName,
+					),
+				},
+				RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+				ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+					{
+						Operation: "add",
+						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+						ValueMatcher: gomega.ContainElements(
+							gomega.SatisfyAll(
+								gomega.HaveKeyWithValue(
+									"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
+								),
+								gomega.HaveKeyWithValue(
+									"content", expectedDockerHubAndECRDynamicConfig,
+								),
+							),
+							gomega.SatisfyAll(
+								gomega.HaveKeyWithValue(
+									"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+								),
+								gomega.HaveKeyWithValue(
+									"content", expectedDockerHubAndECRKubeletConfig,
+								),
+							),
+						),
+					},
+				},
 			},
 		},
 		{

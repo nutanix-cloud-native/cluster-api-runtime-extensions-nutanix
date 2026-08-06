@@ -89,9 +89,6 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	)
 
 	switch {
-	case variables.IsNotFoundError(imageRegistriesErr) && variables.IsNotFoundError(globalMirrorErr):
-		log.V(5).Info("Image Registry Credentials and Global Registry Mirror variable not defined")
-		return nil
 	case imageRegistriesErr != nil && !variables.IsNotFoundError(imageRegistriesErr):
 		return imageRegistriesErr
 	case globalMirrorErr != nil && !variables.IsNotFoundError(globalMirrorErr):
@@ -138,9 +135,15 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	if err != nil {
 		return err
 	}
-	if len(registriesThatNeedConfiguration) == 0 {
-		log.V(5).Info("Image registry credentials are not needed")
-		return nil
+	// Always configure kubelet credential-provider for DockerHub so Day-2
+	// credential delivery works (without node rollout) even when no registry
+	// or another registry was declared. If imageRegistries already declares the
+	// default entry, its existing configuration is preserved.
+	if !hasDockerHubRegistry(imageRegistries) {
+		registriesThatNeedConfiguration = append(
+			registriesThatNeedConfiguration,
+			providerConfig{URL: v1alpha1.DefaultKubeletCredentialProviderRegistryURL},
+		)
 	}
 
 	files, commands, generateErr := generateFilesAndCommands(
@@ -244,6 +247,16 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	}
 
 	return nil
+}
+
+func hasDockerHubRegistry(registries []v1alpha1.ImageRegistry) bool {
+	for _, registry := range registries {
+		if registry.URL == v1alpha1.DefaultKubeletCredentialProviderRegistryURL ||
+			registry.URL == v1alpha1.DockerHubRegistryURL {
+			return true
+		}
+	}
+	return false
 }
 
 func ensureOwnerReferenceOnCredentialsSecrets(
