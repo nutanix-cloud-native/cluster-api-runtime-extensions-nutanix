@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.51.0 (2026-08-06)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Preflight check for control plane endpoint by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1615
+* feat: Dockerhub Integration - Don't trim org prefix for Dockerhub Nutanix registry by @nilay-ntnx in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1678
+### Fixes 🔧
+* fix: kubeletconfiguration webhook for md overrides by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1689
+### Other Changes
+* refactor: remove previous handlers by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1687
+
+## New Contributors
+* @nilay-ntnx made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1678
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.50.0...v0.51.0
+
 ## 0.50.0 (2026-07-29)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
