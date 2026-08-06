@@ -33,6 +33,25 @@ const (
 	validSecretName = "myregistry-credentials"
 )
 
+func TestHasDockerHubRegistry(t *testing.T) {
+	t.Parallel()
+
+	assert.False(t, hasDockerHubRegistry([]v1alpha1.ImageRegistry{
+		{URL: "https://example.com"},
+	}))
+
+	for _, dockerHubURL := range []string{
+		v1alpha1.DefaultKubeletCredentialProviderRegistryURL,
+		v1alpha1.DockerHubRegistryURL,
+	} {
+		t.Run(dockerHubURL, func(t *testing.T) {
+			assert.True(t, hasDockerHubRegistry([]v1alpha1.ImageRegistry{
+				{URL: dockerHubURL},
+			}))
+		})
+	}
+}
+
 func Test_providerConfigsThatNeedConfiguration(t *testing.T) {
 	t.Parallel()
 
@@ -250,13 +269,31 @@ var _ = Describe("Generate Image registry patches", func() {
 					{
 						Operation: "add",
 						Path:      "/spec/template/spec/kubeadmConfigSpec/files",
-						ValueMatcher: gomega.ContainElement(
+						ValueMatcher: gomega.ContainElements(
 							gomega.SatisfyAll(
 								gomega.HaveKeyWithValue(
 									"path", "/etc/kubernetes/dynamic-credential-provider-config.yaml",
 								),
+								// The template adds docker.io as an explicit alias
+								// whenever registry-1.docker.io is configured.
 								gomega.HaveKeyWithValue(
 									"content", gomega.ContainSubstring("registry-1.docker.io"),
+								),
+								gomega.HaveKeyWithValue(
+									"content", gomega.ContainSubstring(`- "docker.io"`),
+								),
+							),
+							gomega.SatisfyAll(
+								gomega.HaveKeyWithValue(
+									"path", "/etc/kubernetes/image-credential-provider-config.yaml",
+								),
+								// Check both the canonical Docker Hub host and
+								// the alias emitted by the kubelet template.
+								gomega.HaveKeyWithValue(
+									"content", gomega.ContainSubstring("registry-1.docker.io"),
+								),
+								gomega.HaveKeyWithValue(
+									"content", gomega.ContainSubstring(`- "docker.io"`),
 								),
 							),
 						),

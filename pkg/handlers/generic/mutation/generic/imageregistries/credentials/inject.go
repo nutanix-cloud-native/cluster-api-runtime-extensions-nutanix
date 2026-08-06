@@ -139,7 +139,7 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	// credential delivery works (without node rollout) even when no registry
 	// or another registry was declared. If imageRegistries already declares the
 	// default entry, its existing configuration is preserved.
-	if !hasDefaultDockerHubRegistry(imageRegistries) {
+	if !hasDockerHubRegistry(imageRegistries) {
 		registriesThatNeedConfiguration = append(
 			registriesThatNeedConfiguration,
 			providerConfig{URL: v1alpha1.DefaultKubeletCredentialProviderRegistryURL},
@@ -249,9 +249,10 @@ func (h *imageRegistriesPatchHandler) Mutate(
 	return nil
 }
 
-func hasDefaultDockerHubRegistry(registries []v1alpha1.ImageRegistry) bool {
+func hasDockerHubRegistry(registries []v1alpha1.ImageRegistry) bool {
 	for _, registry := range registries {
-		if registry.URL == v1alpha1.DefaultKubeletCredentialProviderRegistryURL {
+		if registry.URL == v1alpha1.DefaultKubeletCredentialProviderRegistryURL ||
+			registry.URL == v1alpha1.DockerHubRegistryURL {
 			return true
 		}
 	}
