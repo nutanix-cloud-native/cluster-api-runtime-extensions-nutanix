@@ -827,6 +827,8 @@ func (mc *metroCheck) resolvePrismElement(
 type metroSubnetAttributes struct {
 	// layers holds the distinct network layer names (VLAN, OVERLAY, ...).
 	layers map[string]struct{}
+	// vpcReferences holds distinct VPC references observed on subnets.
+	vpcReferences map[string]struct{}
 	// profilesByFailureDomain holds subnet profile sets keyed by failure domain.
 	profilesByFailureDomain map[string]map[string]struct{}
 }
@@ -834,6 +836,7 @@ type metroSubnetAttributes struct {
 func newMetroSubnetAttributes() *metroSubnetAttributes {
 	return &metroSubnetAttributes{
 		layers:                  map[string]struct{}{},
+		vpcReferences:           map[string]struct{}{},
 		profilesByFailureDomain: map[string]map[string]struct{}{},
 	}
 }
@@ -871,6 +874,9 @@ func (mc *metroCheck) collectSubnetAttributes(
 			}
 			profile := subnetProfileKey(s)
 			attrs.layers[subnetLayerName(s.SubnetType)] = struct{}{}
+			if s.VpcReference != nil && *s.VpcReference != "" {
+				attrs.vpcReferences[*s.VpcReference] = struct{}{}
+			}
 			if _, ok := attrs.profilesByFailureDomain[fdName]; !ok {
 				attrs.profilesByFailureDomain[fdName] = map[string]struct{}{}
 			}
@@ -885,6 +891,15 @@ func (mc *metroCheck) collectSubnetAttributes(
 // domain has the same set of subnet profiles (layer + VLAN/VNI + CIDR).
 func (mc *metroCheck) checkSubnetConsistency(attrs *metroSubnetAttributes, result *preflight.CheckResult) {
 	if len(attrs.layers) == 0 {
+		return
+	}
+
+	if len(attrs.vpcReferences) > 0 {
+		failCheck(result, mc.field, fmt.Sprintf(
+			"VPC-backed subnets are not supported for k8s-ha metro. NutanixMetro %q uses VPC reference(s): %s. Use non-VPC subnets and retry.", //nolint:lll // Message is long.
+			mc.metroName,
+			strings.Join(sortedKeys(attrs.vpcReferences), ", "),
+		))
 		return
 	}
 
