@@ -24,6 +24,29 @@ defaults:
     shell: bash
 
 jobs:
+  # Gate for self-hosted e2e jobs. External (fork) pull requests must be
+  # reviewed by a maintainer before their code runs on self-hosted runners:
+  # the action requires an approval on the PR's latest commit AND the
+  # 'integration-test' label. push / merge_group / same-repo PRs are trusted.
+  check_approvals:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      # Fail closed: 'true' only for trusted events, or when the approval
+      # step actually succeeded. Any other case (unapproved, unlabelled, or
+      # the action erroring) resolves to 'false'.
+      approved: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) || steps.check.outcome == 'success' }}
+    steps:
+      - name: Check approval status
+        id: check
+        # Only enforce for external forks; internal PRs short-circuit above.
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        # Do not fail the job on a rejected gate; the outcome drives `approved`.
+        continue-on-error: true
+        uses: nutanix-cloud-native/action-check-approvals@v1
+
   unit-test:
     runs-on: ubuntu-24.04
     steps:
@@ -60,12 +83,16 @@ jobs:
           test-results: test.json
 
   e2e-quick-start:
+    # External fork PRs run on self-hosted runners (Nutanix matrix entries),
+    # so require maintainer approval + label before executing their code.
     needs:
+      - "check_approvals"
       - "lint-gha"
       - "lint-go"
       - "lint-test-helm"
       - "pre-commit"
       - "unit-test"
+    if: ${{ needs.check_approvals.outputs.approved == 'true' }}
     strategy:
       matrix:
         config:
@@ -92,12 +119,16 @@ jobs:
       checks: write
 
   e2e-self-hosted:
+    # Runs on self-hosted runners for Nutanix matrix entries; gate external
+    # fork PRs behind maintainer approval + label.
     needs:
+      - "check_approvals"
       - "lint-gha"
       - "lint-go"
       - "lint-test-helm"
       - "pre-commit"
       - "unit-test"
+    if: ${{ needs.check_approvals.outputs.approved == 'true' }}
     strategy:
       matrix:
         config:
