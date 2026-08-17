@@ -98,7 +98,7 @@ require (
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
@@ -194,4 +194,9 @@ require (
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
 	sigs.k8s.io/kind v0.27.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
+)
+
+replace (
+	sigs.k8s.io/cluster-api => github.com/nutanix-cloud-native/cluster-api v1.10.10-ncn.4
+	sigs.k8s.io/cluster-api/test => github.com/nutanix-cloud-native/cluster-api/test v1.10.10-ncn.4
 )
