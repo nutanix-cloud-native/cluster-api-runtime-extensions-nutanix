@@ -10,7 +10,9 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/mutation/cni/calico"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/httpproxy"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/imageregistries/credentials"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/kubeproxymode"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/mirrors"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/ntp"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/taints"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/generic/users"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/autorenewcerts"
@@ -20,6 +22,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/coredns"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/encryptionatrest"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/etcd"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/externalcloudprovider"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/extraapiservercertsans"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/kubernetesimagerepository"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/noderegistration"
@@ -43,6 +46,8 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		containerdunprivilegedports.NewPatch(),
 		encryptionatrest.NewPatch(mgr.GetClient(), encryptionatrest.RandomTokenGenerator),
 		autorenewcerts.NewPatch(),
+		kubeproxymode.NewPatch(),
+		ntp.NewPatch(),
 
 		// Some patches may have changed containerd configuration.
 		// We write the configuration changes to disk, and must run a command
@@ -61,6 +66,7 @@ func ControlPlaneMetaMutators() []mutation.MetaMutator {
 	return []mutation.MetaMutator{
 		taints.NewControlPlanePatch(),
 		noderegistration.NewControlPlanePatch(),
+		externalcloudprovider.NewControlPlanePatch(),
 	}
 }
 
