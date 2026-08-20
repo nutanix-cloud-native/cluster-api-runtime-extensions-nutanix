@@ -132,7 +132,7 @@ func (p *provider) Apply(
 		),
 		p.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfig.Nutanix))
+	).WithValueTemplater(templateValuesFunc(clusterConfig))
 
 	if err = applier.Apply(ctx, cluster, p.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply nutanix-ccm installation HelmChartProxy: %w", err)
@@ -142,9 +142,14 @@ func (p *provider) Apply(
 }
 
 func templateValuesFunc(
-	nutanixConfig *v1alpha1.NutanixSpec,
+	clusterConfig *apivariables.ClusterConfigSpec,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
+		nutanixConfig := clusterConfig.Nutanix
+		var addonsConfig *v1alpha1.GenericAddons
+		if clusterConfig.Addons != nil {
+			addonsConfig = &clusterConfig.Addons.GenericAddons
+		}
 		joinQuoted := template.FuncMap{
 			"joinQuoted": func(items []string) string {
 				for i, item := range items {
@@ -178,7 +183,7 @@ func templateValuesFunc(
 			PrismCentralPort:                  port,
 			PrismCentralInsecure:              nutanixConfig.PrismCentralEndpoint.Insecure,
 			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
-			IPsToIgnore:                       ipsToIgnore(nutanixConfig),
+			IPsToIgnore:                       ipsToIgnore(nutanixConfig, addonsConfig),
 			ControlPlaneEndpoint:              nutanixConfig.ControlPlaneEndpoint,
 		}
 
@@ -192,16 +197,40 @@ func templateValuesFunc(
 	}
 }
 
-func ipsToIgnore(nutanixConfig *v1alpha1.NutanixSpec) []string {
-	toIgnore := []string{nutanixConfig.ControlPlaneEndpoint.Host}
+func ipsToIgnore(
+	nutanixConfig *v1alpha1.NutanixSpec,
+	addonsConfig *v1alpha1.GenericAddons,
+) []string {
+	toIgnore := make([]string, 0, 2)
+	seen := map[string]struct{}{}
+	appendIfUnique := func(ip string) {
+		if ip == "" {
+			return
+		}
+		if _, exists := seen[ip]; exists {
+			return
+		}
+		seen[ip] = struct{}{}
+		toIgnore = append(toIgnore, ip)
+	}
+
+	appendIfUnique(nutanixConfig.ControlPlaneEndpoint.Host)
+
 	// Also ignore the virtual IP if it is set.
 	if nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec != nil &&
 		nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration != nil &&
 		nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address != "" {
-		toIgnore = append(
-			toIgnore,
-			nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address,
-		)
+		appendIfUnique(nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address)
 	}
+
+	// If Service LB ranges are configured (e.g. MetalLB), ignore those ranges for CCM node IP detection.
+	if addonsConfig != nil &&
+		addonsConfig.ServiceLoadBalancer != nil &&
+		addonsConfig.ServiceLoadBalancer.Configuration != nil {
+		for _, ipRange := range addonsConfig.ServiceLoadBalancer.Configuration.AddressRanges {
+			appendIfUnique(fmt.Sprintf("%s-%s", ipRange.Start, ipRange.End))
+		}
+	}
+
 	return toIgnore
 }

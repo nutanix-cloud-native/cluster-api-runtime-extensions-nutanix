@@ -68,6 +68,21 @@ extraEnv:
   - name: KUBERNETES_SERVICE_PORT
     value: "6443"
 `
+
+	expectedWithServiceLoadBalancerRanges = `prismCentralEndPoint: prism-central.nutanix.com
+prismCentralPort: 9440
+prismCentralInsecure: true
+ignoredNodeIPs: [ "1.2.3.4", "10.176.64.10-10.176.64.30", "10.176.65.10-10.176.65.20" ]
+
+# The Secret containing the credentials will be created by the handler.
+createSecret: false
+secretName: nutanix-ccm-credentials
+extraEnv:
+  - name: KUBERNETES_SERVICE_HOST
+    value: "1.2.3.4"
+  - name: KUBERNETES_SERVICE_PORT
+    value: "6443"
+`
 )
 
 var valuesTemplateFile = func() string {
@@ -197,11 +212,51 @@ func Test_templateValues(t *testing.T) {
 			in:       valuesTemplate,
 			expected: expectedWithVirtualIPSet,
 		},
+		{
+			name: "With ServiceLoadBalancer ranges",
+			clusterConfig: &apivariables.ClusterConfigSpec{
+				Addons: &apivariables.Addons{
+					GenericAddons: v1alpha1.GenericAddons{
+						CCM: &v1alpha1.CCM{
+							Credentials: &v1alpha1.CCMCredentials{
+								SecretRef: v1alpha1.LocalObjectReference{
+									Name: "creds",
+								},
+							},
+						},
+						ServiceLoadBalancer: &v1alpha1.ServiceLoadBalancer{
+							Provider: "MetalLB",
+							Configuration: &v1alpha1.ServiceLoadBalancerConfiguration{
+								AddressRanges: []v1alpha1.AddressRange{
+									{Start: "10.176.64.10", End: "10.176.64.30"},
+									{Start: "10.176.65.10", End: "10.176.65.20"},
+								},
+							},
+						},
+					},
+				},
+				Nutanix: &v1alpha1.NutanixSpec{
+					PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+						URL: fmt.Sprintf(
+							"https://prism-central.nutanix.com:%d",
+							v1alpha1.DefaultPrismCentralPort,
+						),
+						Insecure: true,
+					},
+					ControlPlaneEndpoint: v1alpha1.ControlPlaneEndpointSpec{
+						Host: "1.2.3.4",
+						Port: 6443,
+					},
+				},
+			},
+			in:       valuesTemplate,
+			expected: expectedWithServiceLoadBalancerRanges,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			out, err := templateValuesFunc(tt.clusterConfig.Nutanix)(nil, tt.in)
+			out, err := templateValuesFunc(tt.clusterConfig)(nil, tt.in)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, out)
 		})
