@@ -35,6 +35,9 @@ const (
 const (
 	defaultHelmReleaseName      = "nutanix-csi"
 	defaultHelmReleaseNamespace = "ntnx-system"
+	computeAffinityParameterKey = "computeAffinity"
+	computeAffinityDisabled     = "DISABLED"
+	metroStorageClassSuffix     = "-site-affinity"
 
 	//nolint:gosec // Does not contain hard coded credentials.
 	defaultCredentialsSecretName = "nutanix-csi-credentials"
@@ -184,10 +187,18 @@ func (n *NutanixCSI) Apply(
 		return fmt.Errorf("failed to apply nutanix CSI addon: %w", err)
 	}
 
+	storageClassConfigs := provider.StorageClassConfigs
+	if isMetroCluster(cluster) && defaultStorage.Provider == v1alpha1.CSIProviderNutanix {
+		storageClassConfigs = metroStorageClassConfigs(
+			provider.StorageClassConfigs,
+			defaultStorage.StorageClassConfig,
+		)
+	}
+
 	err = csiutils.CreateStorageClassesOnRemote(
 		ctx,
 		n.client,
-		provider.StorageClassConfigs,
+		storageClassConfigs,
 		cluster,
 		defaultStorage,
 		v1alpha1.CSIProviderNutanix,
@@ -198,6 +209,38 @@ func (n *NutanixCSI) Apply(
 		return fmt.Errorf("error creating StorageClasses for the Nutanix CSI driver: %w", err)
 	}
 	return nil
+}
+
+func metroStorageClassName(baseName string) string {
+	return baseName + metroStorageClassSuffix
+}
+
+func metroStorageClassConfigs(
+	configs map[string]v1alpha1.StorageClassConfig,
+	defaultStorageClassName string,
+) map[string]v1alpha1.StorageClassConfig {
+	metroConfigs := make(map[string]v1alpha1.StorageClassConfig, len(configs)+1)
+	for name, config := range configs {
+		metroConfigs[name] = *config.DeepCopy()
+	}
+
+	defaultConfig, found := metroConfigs[defaultStorageClassName]
+	if !found {
+		return metroConfigs
+	}
+
+	availabilityOptimized := *defaultConfig.DeepCopy()
+	if availabilityOptimized.Parameters == nil {
+		availabilityOptimized.Parameters = map[string]string{}
+	}
+	availabilityOptimized.Parameters[computeAffinityParameterKey] = computeAffinityDisabled
+	metroConfigs[defaultStorageClassName] = availabilityOptimized
+
+	siteAffinityConfig := *defaultConfig.DeepCopy()
+	delete(siteAffinityConfig.Parameters, computeAffinityParameterKey)
+	metroConfigs[metroStorageClassName(defaultStorageClassName)] = siteAffinityConfig
+
+	return metroConfigs
 }
 
 func templateValuesFunc(
