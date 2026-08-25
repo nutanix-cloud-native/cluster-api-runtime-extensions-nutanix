@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/go-logr/logr"
@@ -18,18 +17,12 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
-)
-
-const (
-	metroFailureDomainPrefix     = "NutanixMetro/"
-	metroSiteFailureDomainPrefix = "NutanixMetroSite/"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/helpers"
 )
 
 const (
@@ -214,7 +207,7 @@ func templateValuesFunc(
 		}
 
 		templateInput := input{
-			ApplyMpioConfigs: isMetroCluster(cluster),
+			ApplyMpioConfigs: helpers.IsMetroCluster(cluster),
 		}
 
 		var b bytes.Buffer
@@ -224,39 +217,4 @@ func templateValuesFunc(
 
 		return b.String(), nil
 	}
-}
-
-// isMetroCluster returns true when the cluster uses metro-aware failure domains,
-// i.e. any control-plane or worker failure domain references a NutanixMetro or
-// NutanixMetroSite object (identified by the respective name prefix).
-func isMetroCluster(cluster *clusterv1.Cluster) bool {
-	if !cluster.Spec.Topology.IsDefined() {
-		return false
-	}
-
-	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
-		varMap,
-		v1alpha1.ClusterConfigVariableName,
-	)
-	if err == nil &&
-		clusterConfigVar.ControlPlane != nil &&
-		clusterConfigVar.ControlPlane.Nutanix != nil {
-		for _, fd := range clusterConfigVar.ControlPlane.Nutanix.FailureDomains {
-			if strings.HasPrefix(fd, metroFailureDomainPrefix) ||
-				strings.HasPrefix(fd, metroSiteFailureDomainPrefix) {
-				return true
-			}
-		}
-	}
-
-	for i := range cluster.Spec.Topology.Workers.MachineDeployments {
-		fd := cluster.Spec.Topology.Workers.MachineDeployments[i].FailureDomain
-		if strings.HasPrefix(fd, metroFailureDomainPrefix) ||
-			strings.HasPrefix(fd, metroSiteFailureDomainPrefix) {
-			return true
-		}
-	}
-
-	return false
 }
