@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.33.5 (2026-08-26)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.33.x -->
+
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.33.4...v0.33.5
+
 ## 0.33.4 (2026-07-14)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.33.x -->
