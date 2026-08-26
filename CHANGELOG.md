@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.41.10 (2026-08-26)
+
+<!-- Release notes generated using configuration in .github/release.yaml at release/v0.41.x -->
+
+## What's Changed
+### Fixes 🔧
+* fix: adds missing handlers by @faiq in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1700
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.41.9...v0.41.10
+
 ## 0.41.9 (2026-08-17)
 
 <!-- Release notes generated using configuration in .github/release.yaml at release/v0.41.x -->
