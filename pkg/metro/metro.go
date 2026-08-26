@@ -1,7 +1,7 @@
 // Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package helpers
+package metro
 
 import (
 	"errors"
@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	// MetroFailureDomainPrefix is the CAPI failure-domain name prefix for a NutanixMetro.
-	MetroFailureDomainPrefix = "NutanixMetro/"
-	// MetroSiteFailureDomainPrefix is the CAPI failure-domain name prefix for a NutanixMetroSite.
-	MetroSiteFailureDomainPrefix = "NutanixMetroSite/"
+	// FailureDomainPrefix is the CAPI failure-domain name prefix for a NutanixMetro.
+	FailureDomainPrefix = "NutanixMetro/"
+	// SiteFailureDomainPrefix is the CAPI failure-domain name prefix for a NutanixMetroSite.
+	SiteFailureDomainPrefix = "NutanixMetroSite/"
 
 	// ComputeAffinityParameter is the Nutanix CSI StorageClass parameter that pins
 	// a volume to the Prism Element hosting the consuming VM.
@@ -31,8 +31,8 @@ const (
 
 // IsMetroFailureDomain reports whether fd names a NutanixMetro or NutanixMetroSite.
 func IsMetroFailureDomain(fd string) bool {
-	return strings.HasPrefix(fd, MetroFailureDomainPrefix) ||
-		strings.HasPrefix(fd, MetroSiteFailureDomainPrefix)
+	return strings.HasPrefix(fd, FailureDomainPrefix) ||
+		strings.HasPrefix(fd, SiteFailureDomainPrefix)
 }
 
 // IsMetroCluster returns true when the cluster uses metro-aware failure domains,
@@ -62,17 +62,16 @@ func IsMetroCluster(cluster *clusterv1.Cluster) bool {
 	return false
 }
 
-// DefaultMetroCSIComputeAffinity sets computeAffinity=DISABLED on Nutanix CSI
-// StorageClassConfigs of a metro Cluster when the parameter is unset or empty.
-// It does not overwrite a non-empty user-provided value.
-func DefaultMetroCSIComputeAffinity(cluster *clusterv1.Cluster) (bool, error) {
-	if !IsMetroCluster(cluster) {
-		return false, nil
-	}
-
+// DefaultCSIComputeAffinity sets computeAffinity=DISABLED on Nutanix CSI
+// StorageClassConfigs when the parameter is unset or empty. It does not overwrite
+// a non-empty user-provided value.
+//
+// The caller is responsible for checking that the Cluster is a metro Cluster
+// (see IsMetroCluster) before calling this function.
+func DefaultCSIComputeAffinity(cluster *clusterv1.Cluster) error {
 	clusterConfig, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
-		return false, fmt.Errorf(
+		return fmt.Errorf(
 			"failed to unmarshal cluster topology variable %q: %w",
 			v1alpha1.ClusterConfigVariableName,
 			err,
@@ -81,10 +80,9 @@ func DefaultMetroCSIComputeAffinity(cluster *clusterv1.Cluster) (bool, error) {
 
 	provider, ok := nutanixCSIProvider(clusterConfig)
 	if !ok {
-		return false, nil
+		return nil
 	}
 
-	mutated := false
 	for name, sc := range provider.StorageClassConfigs {
 		if sc.Parameters == nil {
 			sc.Parameters = map[string]string{}
@@ -94,10 +92,6 @@ func DefaultMetroCSIComputeAffinity(cluster *clusterv1.Cluster) (bool, error) {
 		}
 		sc.Parameters[ComputeAffinityParameter] = ComputeAffinityDisabled
 		provider.StorageClassConfigs[name] = sc
-		mutated = true
-	}
-	if !mutated {
-		return false, nil
 	}
 
 	clusterConfig.Addons.CSI.Providers[v1alpha1.CSIProviderNutanix] = *provider
@@ -107,22 +101,21 @@ func DefaultMetroCSIComputeAffinity(cluster *clusterv1.Cluster) (bool, error) {
 		clusterConfig,
 	)
 	if err != nil {
-		return false, fmt.Errorf("failed to marshal cluster variable: %w", err)
+		return fmt.Errorf("failed to marshal cluster variable: %w", err)
 	}
 	cluster.Spec.Topology.Variables = variables.UpdateClusterVariable(
 		variable,
 		cluster.Spec.Topology.Variables,
 	)
-	return true, nil
+	return nil
 }
 
-// ValidateMetroCSIComputeAffinity rejects a metro Cluster that sets computeAffinity
-// to any value other than DISABLED.
-func ValidateMetroCSIComputeAffinity(cluster *clusterv1.Cluster) error {
-	if !IsMetroCluster(cluster) {
-		return nil
-	}
-
+// ValidateCSIComputeAffinity rejects a Cluster that sets computeAffinity to any
+// value other than DISABLED.
+//
+// The caller is responsible for checking that the Cluster is a metro Cluster
+// (see IsMetroCluster) before calling this function.
+func ValidateCSIComputeAffinity(cluster *clusterv1.Cluster) error {
 	clusterConfig, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
 		return fmt.Errorf(

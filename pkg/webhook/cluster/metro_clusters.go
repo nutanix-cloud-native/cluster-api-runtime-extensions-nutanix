@@ -13,32 +13,32 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/helpers"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/metro"
 )
 
-type metroCSIComputeAffinity struct {
+type metroClusters struct {
 	client  ctrlclient.Client
 	decoder admission.Decoder
 }
 
-func NewMetroCSIComputeAffinity(
+func NewMetroClustersDefaulter(
 	client ctrlclient.Client, decoder admission.Decoder,
-) *metroCSIComputeAffinity {
-	return &metroCSIComputeAffinity{
+) *metroClusters {
+	return &metroClusters{
 		client:  client,
 		decoder: decoder,
 	}
 }
 
-func (a *metroCSIComputeAffinity) Defaulter() admission.HandlerFunc {
+func (a *metroClusters) Defaulter() admission.HandlerFunc {
 	return a.defaulter
 }
 
-func (a *metroCSIComputeAffinity) Validator() admission.HandlerFunc {
+func (a *metroClusters) Validator() admission.HandlerFunc {
 	return a.validate
 }
 
-func (a *metroCSIComputeAffinity) defaulter(
+func (a *metroClusters) defaulter(
 	_ context.Context,
 	req admission.Request,
 ) admission.Response {
@@ -51,16 +51,12 @@ func (a *metroCSIComputeAffinity) defaulter(
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if !cluster.Spec.Topology.IsDefined() {
+	if !cluster.Spec.Topology.IsDefined() || !metro.IsMetroCluster(cluster) {
 		return admission.Allowed("")
 	}
 
-	mutated, err := helpers.DefaultMetroCSIComputeAffinity(cluster)
-	if err != nil {
+	if err := metro.DefaultCSIComputeAffinity(cluster); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
-	}
-	if !mutated {
-		return admission.Allowed("")
 	}
 
 	marshaledCluster, err := json.Marshal(cluster)
@@ -70,7 +66,7 @@ func (a *metroCSIComputeAffinity) defaulter(
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledCluster)
 }
 
-func (a *metroCSIComputeAffinity) validate(
+func (a *metroClusters) validate(
 	_ context.Context,
 	req admission.Request,
 ) admission.Response {
@@ -83,11 +79,11 @@ func (a *metroCSIComputeAffinity) validate(
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if !cluster.Spec.Topology.IsDefined() {
+	if !cluster.Spec.Topology.IsDefined() || !metro.IsMetroCluster(cluster) {
 		return admission.Allowed("")
 	}
 
-	if err := helpers.ValidateMetroCSIComputeAffinity(cluster); err != nil {
+	if err := metro.ValidateCSIComputeAffinity(cluster); err != nil {
 		return admission.Denied(err.Error())
 	}
 	return admission.Allowed("")

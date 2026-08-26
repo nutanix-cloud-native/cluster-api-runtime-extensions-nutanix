@@ -11,6 +11,6 @@ import (
 func NewDefaulter(client ctrlclient.Client, decoder admission.Decoder) admission.Handler {
 	return admission.MultiMutatingHandler(
 		NewClusterUUIDLabeler(client, decoder).Defaulter(),
-		NewMetroCSIComputeAffinity(client, decoder).Defaulter(),
+		NewMetroClustersDefaulter(client, decoder).Defaulter(),
 	)
 }

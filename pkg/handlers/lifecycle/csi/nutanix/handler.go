@@ -22,7 +22,7 @@ import (
 	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/helpers"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/metro"
 )
 
 const (
@@ -207,7 +207,7 @@ func templateValuesFunc(
 		}
 
 		templateInput := input{
-			ApplyMpioConfigs: helpers.IsMetroCluster(cluster),
+			ApplyMpioConfigs: metro.IsMetroCluster(cluster),
 		}
 
 		var b bytes.Buffer

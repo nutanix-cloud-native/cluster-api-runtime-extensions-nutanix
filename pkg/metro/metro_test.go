@@ -1,7 +1,7 @@
 // Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package helpers
+package metro
 
 import (
 	"encoding/json"
@@ -20,8 +20,8 @@ import (
 func TestIsMetroFailureDomain(t *testing.T) {
 	t.Parallel()
 
-	assert.True(t, IsMetroFailureDomain(MetroFailureDomainPrefix+"metro-1"))
-	assert.True(t, IsMetroFailureDomain(MetroSiteFailureDomainPrefix+"site-1"))
+	assert.True(t, IsMetroFailureDomain(FailureDomainPrefix+"metro-1"))
+	assert.True(t, IsMetroFailureDomain(SiteFailureDomainPrefix+"site-1"))
 	assert.False(t, IsMetroFailureDomain("fd-1"))
 	assert.False(t, IsMetroFailureDomain(""))
 }
@@ -52,7 +52,7 @@ func TestIsMetroCluster(t *testing.T) {
 				&variables.ClusterConfigSpec{
 					ControlPlane: &variables.ControlPlaneSpec{
 						Nutanix: &v1alpha1.NutanixControlPlaneNodeSpec{
-							FailureDomains: []string{MetroFailureDomainPrefix + "metro-1"},
+							FailureDomains: []string{FailureDomainPrefix + "metro-1"},
 						},
 					},
 				},
@@ -64,7 +64,7 @@ func TestIsMetroCluster(t *testing.T) {
 			name: "worker metro failure domain",
 			cluster: clusterWithConfigAndWorkers(
 				&variables.ClusterConfigSpec{},
-				MetroSiteFailureDomainPrefix+"site-1",
+				SiteFailureDomainPrefix+"site-1",
 			),
 			expected: true,
 		},
@@ -123,16 +123,14 @@ func clusterWithConfigAndWorkers(
 	return cluster
 }
 
-func TestDefaultMetroCSIComputeAffinity(t *testing.T) {
+func TestDefaultCSIComputeAffinity(t *testing.T) {
 	t.Parallel()
 
-	t.Run("adds DISABLED when metro and parameter omitted", func(t *testing.T) {
+	t.Run("adds DISABLED when parameter omitted", func(t *testing.T) {
 		t.Parallel()
-		cluster := clusterWithNutanixCSI(t, []string{MetroFailureDomainPrefix + "metro-1"}, "", nil)
+		cluster := clusterWithNutanixCSI(t, []string{FailureDomainPrefix + "metro-1"}, "", nil)
 
-		mutated, err := DefaultMetroCSIComputeAffinity(cluster)
-		require.NoError(t, err)
-		assert.True(t, mutated)
+		require.NoError(t, DefaultCSIComputeAffinity(cluster))
 		assert.Equal(t, ComputeAffinityDisabled, storageClassComputeAffinity(t, cluster, "volume"))
 	})
 
@@ -140,7 +138,7 @@ func TestDefaultMetroCSIComputeAffinity(t *testing.T) {
 		t.Parallel()
 		cluster := clusterWithNutanixCSI(
 			t,
-			[]string{MetroFailureDomainPrefix + "metro-1"},
+			[]string{FailureDomainPrefix + "metro-1"},
 			"",
 			map[string]map[string]string{
 				"volume": {"storageContainer": "default-ctr"},
@@ -148,9 +146,7 @@ func TestDefaultMetroCSIComputeAffinity(t *testing.T) {
 			},
 		)
 
-		mutated, err := DefaultMetroCSIComputeAffinity(cluster)
-		require.NoError(t, err)
-		assert.True(t, mutated)
+		require.NoError(t, DefaultCSIComputeAffinity(cluster))
 		assert.Equal(t, ComputeAffinityDisabled, storageClassComputeAffinity(t, cluster, "volume"))
 		assert.Equal(t, ComputeAffinityDisabled, storageClassComputeAffinity(t, cluster, "fast"))
 	})
@@ -159,16 +155,14 @@ func TestDefaultMetroCSIComputeAffinity(t *testing.T) {
 		t.Parallel()
 		cluster := clusterWithNutanixCSI(
 			t,
-			[]string{MetroFailureDomainPrefix + "metro-1"},
+			[]string{FailureDomainPrefix + "metro-1"},
 			"",
 			map[string]map[string]string{
 				"volume": {ComputeAffinityParameter: ComputeAffinityDisabled, "storageContainer": "ctr"},
 			},
 		)
 
-		mutated, err := DefaultMetroCSIComputeAffinity(cluster)
-		require.NoError(t, err)
-		assert.False(t, mutated)
+		require.NoError(t, DefaultCSIComputeAffinity(cluster))
 		assert.Equal(t, ComputeAffinityDisabled, storageClassComputeAffinity(t, cluster, "volume"))
 	})
 
@@ -176,16 +170,14 @@ func TestDefaultMetroCSIComputeAffinity(t *testing.T) {
 		t.Parallel()
 		cluster := clusterWithNutanixCSI(
 			t,
-			[]string{MetroFailureDomainPrefix + "metro-1"},
+			[]string{FailureDomainPrefix + "metro-1"},
 			"",
 			map[string]map[string]string{
 				"volume": {ComputeAffinityParameter: "ENABLED"},
 			},
 		)
 
-		mutated, err := DefaultMetroCSIComputeAffinity(cluster)
-		require.NoError(t, err)
-		assert.False(t, mutated)
+		require.NoError(t, DefaultCSIComputeAffinity(cluster))
 		assert.Equal(t, "ENABLED", storageClassComputeAffinity(t, cluster, "volume"))
 	})
 
@@ -193,104 +185,66 @@ func TestDefaultMetroCSIComputeAffinity(t *testing.T) {
 		t.Parallel()
 		cluster := clusterWithNutanixCSI(
 			t,
-			[]string{MetroFailureDomainPrefix + "metro-1"},
+			[]string{FailureDomainPrefix + "metro-1"},
 			"",
 			map[string]map[string]string{
 				"volume": {ComputeAffinityParameter: ""},
 			},
 		)
 
-		mutated, err := DefaultMetroCSIComputeAffinity(cluster)
-		require.NoError(t, err)
-		assert.True(t, mutated)
+		require.NoError(t, DefaultCSIComputeAffinity(cluster))
 		assert.Equal(t, ComputeAffinityDisabled, storageClassComputeAffinity(t, cluster, "volume"))
-	})
-
-	t.Run("no-op for non-metro cluster", func(t *testing.T) {
-		t.Parallel()
-		cluster := clusterWithNutanixCSI(t, []string{"pe-fd-1"}, "", nil)
-
-		mutated, err := DefaultMetroCSIComputeAffinity(cluster)
-		require.NoError(t, err)
-		assert.False(t, mutated)
-		assert.Empty(t, storageClassComputeAffinity(t, cluster, "volume"))
 	})
 
 	t.Run("no-op when CSI is not configured", func(t *testing.T) {
 		t.Parallel()
-		cluster := clusterWithNutanixCSI(t, []string{MetroSiteFailureDomainPrefix + "site-1"}, "", nil)
+		cluster := clusterWithNutanixCSI(t, []string{SiteFailureDomainPrefix + "site-1"}, "", nil)
 		cfg := mustUnmarshalClusterConfig(t, cluster)
 		cfg.Addons = nil
 		mustWriteClusterConfig(t, cluster, cfg)
 
-		mutated, err := DefaultMetroCSIComputeAffinity(cluster)
-		require.NoError(t, err)
-		assert.False(t, mutated)
-	})
-
-	t.Run("detects metro from worker failure domain", func(t *testing.T) {
-		t.Parallel()
-		cluster := clusterWithNutanixCSI(t, nil, MetroFailureDomainPrefix+"metro-1", nil)
-
-		mutated, err := DefaultMetroCSIComputeAffinity(cluster)
-		require.NoError(t, err)
-		assert.True(t, mutated)
-		assert.Equal(t, ComputeAffinityDisabled, storageClassComputeAffinity(t, cluster, "volume"))
+		require.NoError(t, DefaultCSIComputeAffinity(cluster))
 	})
 }
 
-func TestValidateMetroCSIComputeAffinity(t *testing.T) {
+func TestValidateCSIComputeAffinity(t *testing.T) {
 	t.Parallel()
 
-	t.Run("rejects non-DISABLED computeAffinity on metro", func(t *testing.T) {
+	t.Run("rejects non-DISABLED computeAffinity", func(t *testing.T) {
 		t.Parallel()
 		cluster := clusterWithNutanixCSI(
 			t,
-			[]string{MetroFailureDomainPrefix + "metro-1"},
+			[]string{FailureDomainPrefix + "metro-1"},
 			"",
 			map[string]map[string]string{
 				"volume": {ComputeAffinityParameter: "ENABLED"},
 			},
 		)
 
-		err := ValidateMetroCSIComputeAffinity(cluster)
+		err := ValidateCSIComputeAffinity(cluster)
 		require.ErrorContains(t, err, "not supported for the metro cluster")
 		require.ErrorContains(t, err, "ENABLED")
 	})
 
-	t.Run("allows DISABLED on metro", func(t *testing.T) {
+	t.Run("allows DISABLED", func(t *testing.T) {
 		t.Parallel()
 		cluster := clusterWithNutanixCSI(
 			t,
-			[]string{MetroFailureDomainPrefix + "metro-1"},
+			[]string{FailureDomainPrefix + "metro-1"},
 			"",
 			map[string]map[string]string{
 				"volume": {ComputeAffinityParameter: ComputeAffinityDisabled},
 			},
 		)
 
-		assert.NoError(t, ValidateMetroCSIComputeAffinity(cluster))
+		assert.NoError(t, ValidateCSIComputeAffinity(cluster))
 	})
 
-	t.Run("allows omitted computeAffinity on metro", func(t *testing.T) {
+	t.Run("allows omitted computeAffinity", func(t *testing.T) {
 		t.Parallel()
-		cluster := clusterWithNutanixCSI(t, []string{MetroFailureDomainPrefix + "metro-1"}, "", nil)
+		cluster := clusterWithNutanixCSI(t, []string{FailureDomainPrefix + "metro-1"}, "", nil)
 
-		assert.NoError(t, ValidateMetroCSIComputeAffinity(cluster))
-	})
-
-	t.Run("allows non-DISABLED on non-metro", func(t *testing.T) {
-		t.Parallel()
-		cluster := clusterWithNutanixCSI(
-			t,
-			[]string{"pe-fd-1"},
-			"",
-			map[string]map[string]string{
-				"volume": {ComputeAffinityParameter: "ENABLED"},
-			},
-		)
-
-		assert.NoError(t, ValidateMetroCSIComputeAffinity(cluster))
+		assert.NoError(t, ValidateCSIComputeAffinity(cluster))
 	})
 }
 
