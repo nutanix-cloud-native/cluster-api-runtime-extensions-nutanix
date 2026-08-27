@@ -6,6 +6,7 @@ package addons
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -89,7 +90,12 @@ func NewHelmAddonApplier(
 
 type valueTemplaterFunc func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error)
 
-type waiterFunc func(ctx context.Context, client ctrlclient.Client, hcp *caaphv1.HelmChartProxy) error
+type waiterFunc func(
+	ctx context.Context,
+	client ctrlclient.Client,
+	hcp *caaphv1.HelmChartProxy,
+	log logr.Logger,
+) error
 
 type hooksFuncs struct {
 	postApplyHookFuncs []postApplyHookFunc
@@ -264,9 +270,20 @@ func (a *helmAddonApplier) Apply(
 		)
 	}
 
+	log.Info(
+		"applying HelmChartProxy",
+		"name", chartProxy.Name,
+		"namespace", chartProxy.Namespace,
+		"chart", a.helmChart.Name,
+		"version", a.helmChart.Version,
+		"repo", a.helmChart.Repository,
+		"releaseName", helmReleaseName,
+		"releaseNamespace", a.config.defaultHelmReleaseNamespace,
+	)
 	if err = k8sclient.ServerSideApply(ctx, a.client, chartProxy, k8sclient.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply HelmChartProxy %q: %w", chartProxy.Name, err)
 	}
+	log.Info("applied HelmChartProxy", "name", chartProxy.Name, "namespace", chartProxy.Namespace)
 
 	// Run post apply hooks that need to run after the HelmChartProxy is applied.
 	// These hooks may be useful during upgrades to perform additional actions
@@ -284,7 +301,7 @@ func (a *helmAddonApplier) Apply(
 	}
 
 	if applyOpts.waiter != nil {
-		return applyOpts.waiter(ctx, a.client, chartProxy)
+		return applyOpts.waiter(ctx, a.client, chartProxy, log)
 	}
 
 	return nil
@@ -337,28 +354,76 @@ func waitToBeReady(
 	ctx context.Context,
 	client ctrlclient.Client,
 	hcp *caaphv1.HelmChartProxy,
+	log logr.Logger,
 ) error {
+	log = log.WithValues("helmChartProxy", ctrlclient.ObjectKeyFromObject(hcp))
+	start := time.Now()
+	log.Info("waiting for HelmChartProxy to become ready")
+
+	target := hcp.DeepCopy()
 	if err := wait.ForObject(
 		ctx,
 		wait.ForObjectInput[*caaphv1.HelmChartProxy]{
 			Reader: client,
-			Target: hcp.DeepCopy(),
+			Target: target,
 			Check: func(_ context.Context, obj *caaphv1.HelmChartProxy) (bool, error) {
 				if obj.Generation != obj.Status.ObservedGeneration {
+					log.Info(
+						"HelmChartProxy observed generation is stale",
+						"generation", obj.Generation,
+						"observedGeneration", obj.Status.ObservedGeneration,
+						"conditions", conditionSummaries(obj.GetConditions()),
+					)
 					return false, nil
 				}
-				return apimeta.IsStatusConditionTrue(obj.GetConditions(), clusterv1.ReadyCondition), nil
+				ready := apimeta.IsStatusConditionTrue(obj.GetConditions(), clusterv1.ReadyCondition)
+				if !ready {
+					log.Info(
+						"HelmChartProxy is not ready",
+						"conditions", conditionSummaries(obj.GetConditions()),
+					)
+				}
+				return ready, nil
 			},
 			Interval: 5 * time.Second,
 			Timeout:  30 * time.Second,
 		},
 	); err != nil {
+		kvs := []any{
+			"duration", time.Since(start).String(),
+			"generation", target.Generation,
+			"observedGeneration", target.Status.ObservedGeneration,
+			"conditions", conditionSummaries(target.GetConditions()),
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			kvs = append(kvs, "ctxErr", ctxErr)
+		}
+		log.Error(err, "HelmChartProxy did not become ready", kvs...)
 		return fmt.Errorf(
-			"failed to wait for addon %s to deploy: %w",
+			"failed to wait for addon %s to deploy: %w; conditions=%s",
 			ctrlclient.ObjectKeyFromObject(hcp),
 			err,
+			conditionSummaries(target.GetConditions()),
 		)
 	}
 
+	log.Info("HelmChartProxy is ready", "duration", time.Since(start).String())
 	return nil
+}
+
+func conditionSummaries(conditions []metav1.Condition) string {
+	if len(conditions) == 0 {
+		return "<none>"
+	}
+	parts := make([]string, 0, len(conditions))
+	for _, c := range conditions {
+		parts = append(parts, fmt.Sprintf(
+			"%s=%s reason=%s msg=%q",
+			c.Type,
+			c.Status,
+			c.Reason,
+			c.Message,
+		))
+	}
+	return strings.Join(parts, "; ")
 }

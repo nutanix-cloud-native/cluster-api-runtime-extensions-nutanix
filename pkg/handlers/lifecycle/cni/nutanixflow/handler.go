@@ -6,6 +6,7 @@ package nutanixflow
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
@@ -134,10 +135,28 @@ func (c *NutanixFlowCNI) apply(
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+	start := time.Now()
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		clusterKey,
+		"handler",
+		c.Name(),
 	)
+	log.Info("starting Nutanix Flow CNI apply")
+	if deadline, ok := ctx.Deadline(); ok {
+		log.Info("Nutanix Flow CNI apply context deadline", "remaining", time.Until(deadline).String())
+	}
+	defer func() {
+		kvs := []any{
+			"duration", time.Since(start).String(),
+			"status", resp.GetStatus(),
+			"message", resp.GetMessage(),
+		}
+		if err := ctx.Err(); err != nil {
+			kvs = append(kvs, "ctxErr", err)
+		}
+		log.Info("finished Nutanix Flow CNI apply", kvs...)
+	}()
 
 	if cluster.Spec.InfrastructureRef.Kind != "NutanixCluster" {
 		log.V(5).Info(
@@ -197,8 +216,21 @@ func (c *NutanixFlowCNI) apply(
 		return
 	}
 
+	log.Info(
+		"applying Nutanix Flow CNI",
+		"provider", cniVar.Provider,
+		"strategy", cniVar.Strategy,
+		"chart", helmChart.Name,
+		"version", helmChart.Version,
+		"hasImagePullCredentials", cniVar.ImagePullCredentials != nil,
+	)
+
 	var imagePullSecretName string
 	if cniVar.ImagePullCredentials != nil {
+		log.Info(
+			"setting Cluster owner reference on Flow CNI image pull Secret",
+			"name", cniVar.ImagePullCredentials.SecretRef.Name,
+		)
 		err := handlersutils.EnsureClusterOwnerReferenceForObject(
 			ctx,
 			c.client,
@@ -227,6 +259,12 @@ func (c *NutanixFlowCNI) apply(
 				Name:      defaultImagePullSecretName,
 				Namespace: ns,
 			}
+			copyStart := time.Now()
+			log.Info(
+				"copying Flow CNI image pull Secret to remote cluster",
+				"namespace", ns,
+				"name", defaultImagePullSecretName,
+			)
 			err = handlersutils.CopySecretToRemoteCluster(
 				ctx,
 				c.client,
@@ -248,6 +286,12 @@ func (c *NutanixFlowCNI) apply(
 				))
 				return
 			}
+			log.Info(
+				"copied Flow CNI image pull Secret to remote cluster",
+				"namespace", ns,
+				"name", defaultImagePullSecretName,
+				"duration", time.Since(copyStart).String(),
+			)
 		}
 
 		imagePullSecretName = defaultImagePullSecretName
@@ -300,11 +344,20 @@ func (c *NutanixFlowCNI) apply(
 		WithDefaultWaiter().
 		WithTakeOwnership()
 
+	log.Info(
+		"applying Flow CNI HelmChartProxy",
+		"releaseName", defaultNutanixFlowReleaseName,
+		"releaseNamespace", defaultNutanixFlowNamespace,
+		"valuesConfigMap", helmValuesSourceRefName,
+		"valuesNamespace", targetNamespace,
+	)
 	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
+		log.Error(err, "failed to apply Flow CNI HelmChartProxy")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
 	}
 
+	log.Info("successfully applied Flow CNI HelmChartProxy")
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

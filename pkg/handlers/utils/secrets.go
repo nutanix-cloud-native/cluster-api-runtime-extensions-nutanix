@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
+	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -52,21 +53,31 @@ func CopySecretToRemoteCluster(
 	}
 
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"cluster", clusterKey,
+		"srcSecret", srcSecretName,
+		"dstSecret", dstSecretKey,
+	)
+	log.Info("copying secret to remote cluster")
+
 	remoteClient, err := remote.NewClusterClient(ctx, "", cl, clusterKey)
 	if err != nil {
 		return fmt.Errorf("error creating client for remote cluster: %w", err)
 	}
 
+	log.Info("ensuring destination namespace exists on remote cluster", "namespace", dstSecretKey.Namespace)
 	err = EnsureNamespaceWithName(ctx, remoteClient, dstSecretKey.Namespace)
 	if err != nil {
 		return fmt.Errorf("error creating namespace on the remote cluster: %w", err)
 	}
 
+	log.Info("applying secret on remote cluster")
 	err = client.ServerSideApply(ctx, remoteClient, secretOnRemote, client.ForceOwnership)
 	if err != nil {
 		return fmt.Errorf("error creating Secret on the remote cluster: %w", err)
 	}
 
+	log.Info("copied secret to remote cluster")
 	return nil
 }
 

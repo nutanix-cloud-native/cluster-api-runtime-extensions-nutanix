@@ -8,18 +8,80 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/samber/lo"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/util"
+	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 )
+
+func namedHandler(h any) string {
+	if n, ok := h.(handlers.Named); ok {
+		return n.Name()
+	}
+	t := reflect.TypeOf(h)
+	if t == nil {
+		return "<unknown>"
+	}
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Name() == "" {
+		return t.String()
+	}
+	return t.Name()
+}
+
+func wrapHook[T runtimehooksv1.RequestObject, U runtimehooksv1.ResponseObject](
+	hookName, handlerName string,
+	fn func(context.Context, T, U),
+) func(context.Context, T, U) {
+	return func(ctx context.Context, req T, resp U) {
+		log := ctrl.LoggerFrom(ctx).WithValues("hook", hookName, "handler", handlerName)
+		start := time.Now()
+		kvs := []any{}
+		if deadline, ok := ctx.Deadline(); ok {
+			kvs = append(kvs, "deadlineRemaining", time.Until(deadline).String())
+		}
+		log.Info("starting handler", kvs...)
+		fn(ctx, req, resp)
+		kvs = []any{
+			"status", resp.GetStatus(),
+			"message", resp.GetMessage(),
+			"duration", time.Since(start).String(),
+		}
+		if err := ctx.Err(); err != nil {
+			kvs = append(kvs, "ctxErr", err)
+		}
+		log.Info("finished handler", kvs...)
+	}
+}
 
 // runHooksInParallel runs all the given hook functions in parallel and aggregates the responses.
 // Every hook is run regardless of whether other hooks fail or not, with results aggregated only
 // after every hook has returned.
 func runHooksInParallel[T runtimehooksv1.RequestObject, U runtimehooksv1.ResponseObject](
-	ctx context.Context, hookFuncs []func(context.Context, T, U), request T, response U,
+	ctx context.Context, hookName string, hookFuncs []func(context.Context, T, U), request T, response U,
 ) {
+	log := ctrl.LoggerFrom(ctx).WithValues("hook", hookName)
+	start := time.Now()
+	log.Info("running handlers in parallel", "count", len(hookFuncs))
+	defer func() {
+		kvs := []any{
+			"status", response.GetStatus(),
+			"message", response.GetMessage(),
+			"duration", time.Since(start).String(),
+			"count", len(hookFuncs),
+		}
+		if err := ctx.Err(); err != nil {
+			kvs = append(kvs, "ctxErr", err)
+		}
+		log.Info("completed handlers in parallel", kvs...)
+	}()
+
 	responseChan := make(chan U, len(hookFuncs))
 
 	responsePtrType := reflect.TypeFor[U]().Elem()
@@ -149,11 +211,11 @@ func (p *parallelBCC) BeforeClusterCreate(
 			*runtimehooksv1.BeforeClusterCreateRequest,
 			*runtimehooksv1.BeforeClusterCreateResponse,
 		) {
-			return h.BeforeClusterCreate
+			return wrapHook("BeforeClusterCreate", namedHandler(h), h.BeforeClusterCreate)
 		},
 	)
 
-	runHooksInParallel(ctx, hookFuncs, req, resp)
+	runHooksInParallel(ctx, "BeforeClusterCreate", hookFuncs, req, resp)
 }
 
 func (p *parallelBCC) Name() string {
@@ -187,11 +249,15 @@ func (p *parallelACPI) AfterControlPlaneInitialized(
 			*runtimehooksv1.AfterControlPlaneInitializedRequest,
 			*runtimehooksv1.AfterControlPlaneInitializedResponse,
 		) {
-			return h.AfterControlPlaneInitialized
+			return wrapHook(
+				"AfterControlPlaneInitialized",
+				namedHandler(h),
+				h.AfterControlPlaneInitialized,
+			)
 		},
 	)
 
-	runHooksInParallel(ctx, hookFuncs, req, resp)
+	runHooksInParallel(ctx, "AfterControlPlaneInitialized", hookFuncs, req, resp)
 }
 
 func (p *parallelACPI) Name() string {
@@ -225,11 +291,11 @@ func (p *parallelBCU) BeforeClusterUpgrade(
 			*runtimehooksv1.BeforeClusterUpgradeRequest,
 			*runtimehooksv1.BeforeClusterUpgradeResponse,
 		) {
-			return h.BeforeClusterUpgrade
+			return wrapHook("BeforeClusterUpgrade", namedHandler(h), h.BeforeClusterUpgrade)
 		},
 	)
 
-	runHooksInParallel(ctx, hookFuncs, req, resp)
+	runHooksInParallel(ctx, "BeforeClusterUpgrade", hookFuncs, req, resp)
 }
 
 func (p *parallelBCU) Name() string {
@@ -264,11 +330,11 @@ func (p *parallelACPU) AfterControlPlaneUpgrade(
 			*runtimehooksv1.AfterControlPlaneUpgradeRequest,
 			*runtimehooksv1.AfterControlPlaneUpgradeResponse,
 		) {
-			return h.AfterControlPlaneUpgrade
+			return wrapHook("AfterControlPlaneUpgrade", namedHandler(h), h.AfterControlPlaneUpgrade)
 		},
 	)
 
-	runHooksInParallel(ctx, hookFuncs, req, resp)
+	runHooksInParallel(ctx, "AfterControlPlaneUpgrade", hookFuncs, req, resp)
 }
 
 func (p *parallelACPU) Name() string {
@@ -303,11 +369,11 @@ func (p *parallelBCD) BeforeClusterDelete(
 			*runtimehooksv1.BeforeClusterDeleteRequest,
 			*runtimehooksv1.BeforeClusterDeleteResponse,
 		) {
-			return h.BeforeClusterDelete
+			return wrapHook("BeforeClusterDelete", namedHandler(h), h.BeforeClusterDelete)
 		},
 	)
 
-	runHooksInParallel(ctx, hookFuncs, req, resp)
+	runHooksInParallel(ctx, "BeforeClusterDelete", hookFuncs, req, resp)
 }
 
 func (p *parallelBCD) Name() string {

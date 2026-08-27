@@ -371,6 +371,13 @@ var _ = Describe("Quick start", func() {
 												},
 											}
 										})
+
+										AfterEach(func() {
+											if !CurrentSpecReport().Failed() {
+												return
+											}
+											dumpAddonDiagnostics(ctx, bootstrapClusterProxy)
+										})
 									},
 								)
 							}

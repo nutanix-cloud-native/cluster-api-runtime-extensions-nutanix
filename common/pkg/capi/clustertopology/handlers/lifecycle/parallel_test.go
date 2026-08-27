@@ -249,6 +249,7 @@ func Test_runHooksInParallel(t *testing.T) {
 			gotResponse := &runtimehooksv1.BeforeClusterUpgradeResponse{}
 			runHooksInParallel(
 				context.Background(),
+				"BeforeClusterUpgrade",
 				hookFuncs,
 				&runtimehooksv1.BeforeClusterUpgradeRequest{},
 				gotResponse,
@@ -271,4 +272,45 @@ func Test_runHooksInParallel(t *testing.T) {
 			}
 		})
 	}
+}
+
+type namedStub struct{}
+
+func (namedStub) Name() string { return "stub-handler" }
+
+type unnamedStub struct{}
+
+func Test_namedHandler(t *testing.T) {
+	t.Parallel()
+
+	g := gomega.NewWithT(t)
+	g.Expect(namedHandler(namedStub{})).To(gomega.Equal("stub-handler"))
+	g.Expect(namedHandler(&unnamedStub{})).To(gomega.Equal("unnamedStub"))
+}
+
+func Test_wrapHook(t *testing.T) {
+	t.Parallel()
+
+	g := gomega.NewWithT(t)
+	called := false
+	wrapped := wrapHook(
+		"BeforeClusterUpgrade",
+		"test-handler",
+		func(
+			_ context.Context,
+			_ *runtimehooksv1.BeforeClusterUpgradeRequest,
+			resp *runtimehooksv1.BeforeClusterUpgradeResponse,
+		) {
+			called = true
+			resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+			resp.SetMessage("ok")
+		},
+	)
+
+	resp := &runtimehooksv1.BeforeClusterUpgradeResponse{}
+	wrapped(context.Background(), &runtimehooksv1.BeforeClusterUpgradeRequest{}, resp)
+
+	g.Expect(called).To(gomega.BeTrue())
+	g.Expect(resp.GetStatus()).To(gomega.Equal(runtimehooksv1.ResponseStatusSuccess))
+	g.Expect(resp.GetMessage()).To(gomega.Equal("ok"))
 }
