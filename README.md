@@ -181,3 +181,74 @@ make kind.delete
 ```
 
 [topology mutation handlers]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/implement-topology-mutation-hook#implementing-topology-mutation-hook-runtime-extensions
+
+## Update Addons
+
+Addon and Helm chart versions are defined in [`make/addons.mk`](make/addons.mk). That file is the source of truth: each addon version is represented by an environment variable, e.g. `CILIUM_VERSION`.
+
+To update an addon, edit its version variable in `make/addons.mk`, then run:
+
+```shell
+make addons.sync
+```
+
+Then, commit the changes.
+
+### How Addons Sync Works
+
+`make addons.sync` runs two largely independent stages. Understanding both explains why some addons have
+`hack/addons/update-*.sh` scripts and others (like the Nutanix CSI driver) do not.
+
+#### 1. Vendoring scripts (CRS / static manifests)
+
+The first stage runs only the targets listed in [`make/addons.mk`](make/addons.mk) under `addons.sync`:
+
+- Calico (Tigera operator chart rendered into static YAML)
+- Cilium, Node Feature Discovery, cluster-autoscaler, snapshot-controller
+- AWS EBS CSI, local-path-provisioner CSI
+- kube-vip
+- AWS cloud-controller-manager (one run per supported Kubernetes minor, e.g. 1.30–1.34)
+
+Each of these invokes a script under `hack/addons/` that:
+
+- Reads version variables exported from `addons.mk` (e.g. `CILIUM_VERSION`, `AWS_EBS_CSI_CHART_VERSION`).
+- Often builds a temporary kustomization from `hack/addons/kustomize/<addon>/` templates.
+- Fetches or renders upstream manifests and writes checked-in files under
+  `charts/cluster-api-runtime-extensions-nutanix/…` (CRS-style addon payloads, kube-vip static YAML, etc.).
+
+Addons that are only installed via the Helm addon provider—chart pulled at cluster reconcile time with no
+pre-vendored manifest directory in the chart—do not need this step. Examples include Nutanix Storage CSI,
+Nutanix CCM, MetalLB, AWS Load Balancer Controller, COSI controller, and konnector-agent. For
+those, the kustomization template uses a variable such as `${NUTANIX_STORAGE_CSI_CHART_VERSION}`; bumping it in
+`addons.mk` and running sync refreshes `helm-config.yaml`. There is no `update-nutanix-storage-csi.sh` because nothing
+is vendored into the chart from that upstream chart. A few other Helm addons under `hack/addons/kustomize/` (e.g.
+multus, registry-syncer, CNCF distribution registry) still pin literal chart versions in their templates—see the
+caveat below.
+
+kube-vip is the opposite edge case: it has a vendoring script but no `helmCharts` entry under
+`hack/addons/kustomize/`, so it does not appear in the generated `helm-config.yaml`—it is static YAML only.
+
+#### 2. Helm addon ConfigMap (`helm-config.yaml`)
+
+After the scripts finish, `addons.sync` runs `template-helm-repository`, which (via `generate-mindthegap-repofile`)
+runs [`hack/tools/helm-cm`](hack/tools/helm-cm/main.go). That tool walks every
+`hack/addons/kustomize/**/kustomization.yaml.tmpl` that contains a `helmCharts` block. For each directory it records
+repository URL, chart name, and chart version into
+`charts/cluster-api-runtime-extensions-nutanix/templates/helm-config.yaml`. Version strings in the template can use
+shell-style expansion (e.g. `version: ${NUTANIX_STORAGE_CSI_CHART_VERSION}`), which Make resolves from `addons.mk`
+when the tool runs.
+
+So for Helm-only addons, the flow is: edit the variable in `addons.mk` → `make addons.sync` → commit the updated
+`helm-config.yaml` (and mindthegap repofile artifacts if present). No separate update script.
+
+Caveat: If a `kustomization.yaml.tmpl` uses a literal chart version (not `${…}`), changing the version requires
+editing that template file; `addons.mk` alone will not update that chart’s entry until the literal is changed.
+
+#### Summary
+
+| Kind of addon | Example | Vendoring script on `addons.sync` | Version in `helm-config` derived from |
+|---------------|---------|-----------------------------------|-------------------------------|
+| CRS + Helm metadata | Cilium, AWS EBS CSI | Yes | `addons.mk` + kustomization |
+| Helm only | Nutanix Storage CSI, MetalLB | No | `addons.mk` + kustomization (`${VAR}`) |
+| Static YAML only | kube-vip | Yes | N/A (not in `helm-config`) |
+| Literal version in tmpl | (e.g. multus chart) | No | Edit tmpl or add `addons.mk` var + tmpl reference |
