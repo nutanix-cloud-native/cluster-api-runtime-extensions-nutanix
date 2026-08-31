@@ -6,6 +6,10 @@
 // - The cluster is on either Nutanix or EKS cloud provider
 // - A supported CNI provider is configured (Cilium or Calico)
 //
+// Flow CNI is intentionally excluded: its Helm chart already installs Multus. Deploying
+// a second Multus DaemonSet races OVN for /etc/cni/net.d and leaves nodes
+// NetworkPluginNotReady.
+//
 // MultusHandler implements the cluster lifecycle hooks and:
 // - Detects the cloud provider from the cluster infrastructure
 // - Reads CNI configuration from cluster variables

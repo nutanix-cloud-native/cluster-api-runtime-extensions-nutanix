@@ -5,6 +5,10 @@ createSecret: false
 createPESecrets: false
 pcSecretName: nutanix-csi-credentials
 applyMpioConfigs: {{ .ApplyMpioConfigs }}
+# The CSI chart falls back to snapshot.storage.k8s.io/v1beta1 when v1 is not
+# served. snapshot-controller 5.x does not install v1beta1, so Helm install
+# fails. Only create the class once v1 exists on the workload cluster.
+createVolumeSnapshotClass: {{ .CreateVolumeSnapshotClass }}
 
 tolerations:
   - key: CriticalAddonsOnly
