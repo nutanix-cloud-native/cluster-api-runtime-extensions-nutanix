@@ -41,7 +41,10 @@ func Test_isRetriableConfigurationApplyError(t *testing.T) {
 		},
 		{
 			name: "not found",
-			err:  apierrors.NewNotFound(schema.GroupResource{Group: "metallb.io", Resource: "ipaddresspools"}, "metallb"),
+			err: apierrors.NewNotFound(
+				schema.GroupResource{Group: "metallb.io", Resource: "ipaddresspools"},
+				"metallb",
+			),
 			want: true,
 		},
 		{
@@ -71,12 +74,18 @@ func Test_isRetriableConfigurationApplyError(t *testing.T) {
 		},
 		{
 			name: "failed calling webhook",
-			err:  errors.New(`failed calling webhook "ipaddresspoolvalidationwebhook.metallb.io": context deadline exceeded`),
+			err: errors.New(
+				`failed calling webhook "ipaddresspoolvalidationwebhook.metallb.io": context deadline exceeded`,
+			),
 			want: true,
 		},
 		{
 			name: "conflict",
-			err:  apierrors.NewConflict(schema.GroupResource{Group: "metallb.io", Resource: "ipaddresspools"}, "metallb", errors.New("conflict")),
+			err: apierrors.NewConflict(
+				schema.GroupResource{Group: "metallb.io", Resource: "ipaddresspools"},
+				"metallb",
+				errors.New("conflict"),
+			),
 			want: false,
 		},
 		{

@@ -361,7 +361,7 @@ func waitToBeReady(
 	log = log.WithValues("helmChartProxy", ctrlclient.ObjectKeyFromObject(hcp))
 	start := time.Now()
 
-	if skip, remaining := remainingTooShortForWait(ctx, defaultHelmReadyWaitTimeout); skip {
+	if skip, remaining := remainingTooShortForWait(ctx); skip {
 		log.Info(
 			"skipping HelmChartProxy ready wait; hook deadline is shorter than wait timeout",
 			"remaining", remaining.String(),
@@ -424,13 +424,13 @@ func waitToBeReady(
 	return nil
 }
 
-func remainingTooShortForWait(ctx context.Context, timeout time.Duration) (bool, time.Duration) {
+func remainingTooShortForWait(ctx context.Context) (bool, time.Duration) {
 	deadline, ok := ctx.Deadline()
 	if !ok {
 		return false, 0
 	}
 	remaining := time.Until(deadline)
-	return remaining < timeout, remaining
+	return remaining < defaultHelmReadyWaitTimeout, remaining
 }
 
 func helmChartProxyIsReady(obj *caaphv1.HelmChartProxy) bool {

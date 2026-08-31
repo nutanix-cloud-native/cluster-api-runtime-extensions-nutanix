@@ -89,20 +89,20 @@ func Test_remainingTooShortForWait(t *testing.T) {
 	t.Parallel()
 	g := gomega.NewWithT(t)
 
-	skip, remaining := remainingTooShortForWait(context.Background(), 30*time.Second)
+	skip, remaining := remainingTooShortForWait(context.Background())
 	g.Expect(skip).To(gomega.BeFalse())
 	g.Expect(remaining).To(gomega.Equal(time.Duration(0)))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	skip, remaining = remainingTooShortForWait(ctx, 30*time.Second)
+	skip, remaining = remainingTooShortForWait(ctx)
 	g.Expect(skip).To(gomega.BeTrue())
 	g.Expect(remaining).To(gomega.BeNumerically(">", 0))
 	g.Expect(remaining).To(gomega.BeNumerically("<=", 10*time.Second))
 
 	longCtx, longCancel := context.WithTimeout(context.Background(), time.Minute)
 	defer longCancel()
-	skip, _ = remainingTooShortForWait(longCtx, 30*time.Second)
+	skip, _ = remainingTooShortForWait(longCtx)
 	g.Expect(skip).To(gomega.BeFalse())
 }
 
