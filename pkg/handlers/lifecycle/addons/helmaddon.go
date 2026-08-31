@@ -29,6 +29,8 @@ import (
 const (
 	defaultCiliumValuesTemplateKey          = "values.yaml"
 	defaultCiliumPreflightValuesTemplateKey = "preflight-values.yaml"
+	defaultHelmReadyWaitTimeout             = 30 * time.Second
+	defaultHelmReadyWaitInterval            = 5 * time.Second
 )
 
 var (
@@ -358,6 +360,16 @@ func waitToBeReady(
 ) error {
 	log = log.WithValues("helmChartProxy", ctrlclient.ObjectKeyFromObject(hcp))
 	start := time.Now()
+
+	if skip, remaining := remainingTooShortForWait(ctx, defaultHelmReadyWaitTimeout); skip {
+		log.Info(
+			"skipping HelmChartProxy ready wait; hook deadline is shorter than wait timeout",
+			"remaining", remaining.String(),
+			"waitTimeout", defaultHelmReadyWaitTimeout.String(),
+		)
+		return nil
+	}
+
 	log.Info("waiting for HelmChartProxy to become ready")
 
 	target := hcp.DeepCopy()
@@ -367,26 +379,27 @@ func waitToBeReady(
 			Reader: client,
 			Target: target,
 			Check: func(_ context.Context, obj *caaphv1.HelmChartProxy) (bool, error) {
-				if obj.Generation != obj.Status.ObservedGeneration {
-					log.Info(
-						"HelmChartProxy observed generation is stale",
-						"generation", obj.Generation,
-						"observedGeneration", obj.Status.ObservedGeneration,
-						"conditions", conditionSummaries(obj.GetConditions()),
-					)
-					return false, nil
-				}
-				ready := apimeta.IsStatusConditionTrue(obj.GetConditions(), clusterv1.ReadyCondition)
-				if !ready {
+				if !helmChartProxyIsReady(obj) {
+					if obj.Status.ObservedGeneration == 0 ||
+						obj.Generation != obj.Status.ObservedGeneration {
+						log.Info(
+							"HelmChartProxy observed generation is stale",
+							"generation", obj.Generation,
+							"observedGeneration", obj.Status.ObservedGeneration,
+							"conditions", conditionSummaries(obj.GetConditions()),
+						)
+						return false, nil
+					}
 					log.Info(
 						"HelmChartProxy is not ready",
 						"conditions", conditionSummaries(obj.GetConditions()),
 					)
+					return false, nil
 				}
-				return ready, nil
+				return true, nil
 			},
-			Interval: 5 * time.Second,
-			Timeout:  30 * time.Second,
+			Interval: defaultHelmReadyWaitInterval,
+			Timeout:  defaultHelmReadyWaitTimeout,
 		},
 	); err != nil {
 		kvs := []any{
@@ -409,6 +422,22 @@ func waitToBeReady(
 
 	log.Info("HelmChartProxy is ready", "duration", time.Since(start).String())
 	return nil
+}
+
+func remainingTooShortForWait(ctx context.Context, timeout time.Duration) (bool, time.Duration) {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return false, 0
+	}
+	remaining := time.Until(deadline)
+	return remaining < timeout, remaining
+}
+
+func helmChartProxyIsReady(obj *caaphv1.HelmChartProxy) bool {
+	if obj.Status.ObservedGeneration == 0 || obj.Generation != obj.Status.ObservedGeneration {
+		return false
+	}
+	return apimeta.IsStatusConditionTrue(obj.GetConditions(), clusterv1.ReadyCondition)
 }
 
 func conditionSummaries(conditions []metav1.Condition) string {

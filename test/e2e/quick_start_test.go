@@ -372,7 +372,7 @@ var _ = Describe("Quick start", func() {
 											}
 										})
 
-										AfterEach(func() {
+										JustAfterEach(func() {
 											if !CurrentSpecReport().Failed() {
 												return
 											}

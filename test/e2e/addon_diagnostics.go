@@ -37,7 +37,7 @@ var workloadDiagnosticNamespaces = []string{
 
 // dumpAddonDiagnostics writes HelmChartProxy/HelmReleaseProxy status, CAREN controller
 // logs, and workload-cluster CNI-related objects to the Ginkgo output. It is intended
-// to run from AfterEach on failure, before CAPI deletes the workload cluster.
+// to run from JustAfterEach on failure, before CAPI's AfterEach deletes the cluster.
 func dumpAddonDiagnostics(ctx context.Context, proxy framework.ClusterProxy) {
 	defer func() {
 		if r := recover(); r != nil {
