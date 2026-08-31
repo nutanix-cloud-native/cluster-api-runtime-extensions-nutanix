@@ -213,8 +213,9 @@ spec:
                   name: nutanix-docker-hub-credentials
 ```
 
-The handler copies the Secret to the workload cluster and configures the Flow CNI Helm chart to
-use it for pulling images.
+The handler copies the Secret to the `flow-cni-system`, `flow-cns-system`, and
+`ovn-kubernetes` namespaces on the workload cluster and configures the Flow CNI
+Helm chart to use it for pulling images.
 
 ### Flow Example With Custom Values
 
