@@ -96,7 +96,8 @@ func dumpHelmReleaseProxies(ctx context.Context, cl ctrlclient.Client) {
 	for i := range list.Items {
 		hrp := &list.Items[i]
 		Logf(
-			"HelmReleaseProxy %s/%s cluster=%s release=%s/%s status=%s revision=%d generation=%d observedGeneration=%d conditions=%s",
+			"HelmReleaseProxy %s/%s cluster=%s release=%s/%s status=%s "+
+				"revision=%d generation=%d observedGeneration=%d conditions=%s",
 			hrp.Namespace,
 			hrp.Name,
 			hrp.Spec.ClusterRef.Name,
