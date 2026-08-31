@@ -26,7 +26,7 @@ func namedHandler(h any) string {
 	if t == nil {
 		return "<unknown>"
 	}
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	if t.Name() == "" {
