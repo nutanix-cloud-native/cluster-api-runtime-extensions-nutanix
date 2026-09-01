@@ -1,0 +1,90 @@
+# Copyright 2024 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Nutanix (self-hosted) e2e tests.
+#
+# These run on self-hosted runners, so untrusted fork code must not execute
+# until a maintainer has reviewed it. This workflow is triggered by
+# pull_request_target, which means the workflow definition (including the
+# approval gate below) always comes from the base branch and cannot be
+# modified by a fork's pull request. The gate therefore cannot be bypassed by
+# editing a workflow file in the PR.
+#
+# Trust model:
+#   - push / merge_group / internal (same-repo) PRs are trusted and run directly.
+#   - external (fork) PRs run only after the check_approvals gate passes, which
+#     requires an approval on the PR's latest commit AND the 'integration-test'
+#     label. Fork code (head SHA) is checked out only inside the gated e2e job,
+#     never before the gate.
+name: e2e-nutanix
+
+on:
+  push:
+    branches:
+      - main
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+  merge_group:
+    types:
+      - checks_requested
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check_approvals:
+    # Only external fork PRs need the gate; the job is skipped for trusted
+    # events (push / merge_group / internal PRs), which are handled by the
+    # `if` on the e2e job below.
+    if: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      # Fail closed: approved only when the approval step actually succeeded.
+      # continue-on-error keeps the job green so this output is always readable.
+      approved: ${{ steps.check.outcome == 'success' }}
+    steps:
+      - name: Check approval status
+        id: check
+        continue-on-error: true
+        uses: nutanix-cloud-native/action-check-approvals@v1
+
+  e2e-quick-start:
+    needs: check_approvals
+    # Run for trusted events unconditionally; for external fork PRs run only
+    # once the approval gate has passed. always() is required because
+    # check_approvals is skipped for trusted events.
+    if: ${{ always() && (github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository || needs.check_approvals.outputs.approved == 'true') }}
+    strategy:
+      matrix:
+        config:
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5", "baseOS": "rocky-9.7"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.3", "baseOS": "rocky-9.7"}
+          - {"provider": "Nutanix", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.2", "baseOS": "rocky-9.7"}
+      fail-fast: false
+    name: e2e-quick-start (${{ matrix.config.provider }} provider, Kubernetes ${{ matrix.config.kubernetesMinor }})
+    uses: ./.github/workflows/e2e.yml
+    with:
+      focus: Quick start
+      provider: ${{ matrix.config.provider }}
+      kubernetes-version: ${{ matrix.config.kubernetesVersion }}
+      runs-on: self-hosted-nutanix-docker-medium
+      base-os: ${{ matrix.config.baseOS }}
+      # Under pull_request_target the default checkout is the base branch. The
+      # gate above has approved this exact commit, so test the PR head. For
+      # push / merge_group this resolves to the triggering SHA.
+      ref: ${{ github.event.pull_request.head.sha || github.sha }}
+    secrets: inherit
+    permissions:
+      contents: read
+      checks: write
