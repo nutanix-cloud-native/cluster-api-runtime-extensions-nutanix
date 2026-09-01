@@ -173,3 +173,18 @@ repos:
       - --comment-style
       - <!--|| -->
       - --allow-past-years
+
+# Dev pre-PR gate (NKP Dev Testing Infrastructure, Part 1). Manual-stage:
+# the suites take minutes to hours, so they run when the developer asks:
+#   pre-commit run dev-pre-pr --hook-stage manual                    # DevVM (needs NUTANIX_USER/PASSWORD)
+#   TEST_TARGET=local pre-commit run dev-pre-pr --hook-stage manual  # on this machine
+#   CAREN_TEST_SUITES="lint unit" pre-commit run dev-pre-pr --hook-stage manual
+- repo: local
+  hooks:
+  - id: dev-pre-pr
+    name: dev pre-PR tests (caren-pc-test.sh run)
+    entry: hack/dev-vm/caren-pc-test.sh run
+    language: script
+    stages: [manual]
+    pass_filenames: false
+    verbose: true
