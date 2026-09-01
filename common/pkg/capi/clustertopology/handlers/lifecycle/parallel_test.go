@@ -193,6 +193,62 @@ func Test_runHooksInParallel(t *testing.T) {
 			},
 		},
 	}, {
+		name: "Success with retry after",
+		individualResponses: []*runtimehooksv1.CommonRetryResponse{{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "still working",
+			},
+			RetryAfterSeconds: 10,
+		}},
+		expectedAggregatedResponse: &runtimehooksv1.CommonRetryResponse{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "still working",
+			},
+			RetryAfterSeconds: 10,
+		},
+	}, {
+		name: "Multiple successes with retry after uses lowest non-zero",
+		individualResponses: []*runtimehooksv1.CommonRetryResponse{{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status: runtimehooksv1.ResponseStatusSuccess,
+			},
+			RetryAfterSeconds: 10,
+		}, {
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status: runtimehooksv1.ResponseStatusSuccess,
+			},
+			RetryAfterSeconds: 5,
+		}},
+		expectedAggregatedResponse: &runtimehooksv1.CommonRetryResponse{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status: runtimehooksv1.ResponseStatusSuccess,
+			},
+			RetryAfterSeconds: 5,
+		},
+	}, {
+		name: "Success with retry after followed by success without retry",
+		individualResponses: []*runtimehooksv1.CommonRetryResponse{{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "waiting",
+			},
+			RetryAfterSeconds: 10,
+		}, {
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "done",
+			},
+		}},
+		expectedAggregatedResponse: &runtimehooksv1.CommonRetryResponse{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "waiting, done",
+			},
+			RetryAfterSeconds: 10,
+		},
+	}, {
 		name: "Success followed by failures with messages and single retry after",
 		individualResponses: []*runtimehooksv1.CommonRetryResponse{{
 			CommonResponse: runtimehooksv1.CommonResponse{

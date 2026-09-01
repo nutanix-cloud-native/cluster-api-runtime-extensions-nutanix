@@ -373,9 +373,9 @@ var _ = Describe("Quick start", func() {
 										})
 
 										JustAfterEach(func() {
-											if !CurrentSpecReport().Failed() {
-												return
-											}
+											// Dump before CAPI's AfterEach deletes the cluster.
+											// The create spec can pass and deletion can still fail
+											// later in AfterEach (BeforeClusterDelete).
 											dumpAddonDiagnostics(ctx, bootstrapClusterProxy)
 										})
 									},

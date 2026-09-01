@@ -84,6 +84,21 @@ func Test_shouldDeleteServicesWithLoadBalancer(t *testing.T) {
 		},
 		shouldDelete: false,
 	}, {
+		name: "should not delete: phase is Deleting",
+		cluster: &v1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster-should-not-delete",
+			},
+			Status: v1beta2.ClusterStatus{
+				Conditions: []metav1.Condition{{
+					Type:   v1beta2.ClusterControlPlaneInitializedCondition,
+					Status: metav1.ConditionTrue,
+				}},
+				Phase: string(v1beta2.ClusterPhaseDeleting),
+			},
+		},
+		shouldDelete: false,
+	}, {
 		name: "should not delete: ControlPlaneInitialized condition is False",
 		cluster: &v1beta2.Cluster{
 			ObjectMeta: metav1.ObjectMeta{

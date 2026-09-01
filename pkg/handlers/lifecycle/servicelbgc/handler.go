@@ -69,9 +69,7 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 			return
 		}
 		log.Error(err, "Failed to get cluster with status for Service LB GC decision, will retry")
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to get cluster with status: %v", err))
-		resp.SetRetryAfterSeconds(5)
+		setBlockingRetry(resp, fmt.Sprintf("failed to get cluster with status: %v", err))
 		return
 	}
 
@@ -86,6 +84,7 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 	}
 
 	if !shouldDelete {
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	}
 
@@ -107,15 +106,21 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 
 	err = deleteServicesWithLoadBalancer(ctx, remoteClient, log)
 	switch {
-	case errors.Is(err, ErrFailedToDeleteService):
+	case errors.Is(err, ErrFailedToDeleteService), errors.Is(err, ErrServicesStillExist):
+		// CAPI only retries BeforeClusterDelete when Status=Success and RetryAfterSeconds > 0.
+		setBlockingRetry(resp, err.Error())
+	case err != nil:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
-		resp.SetRetryAfterSeconds(5)
-	case errors.Is(err, ErrServicesStillExist):
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(err.Error())
-		resp.SetRetryAfterSeconds(5)
 	default:
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	}
+}
+
+const beforeClusterDeleteRetryAfterSeconds int32 = 5
+
+func setBlockingRetry(resp *runtimehooksv1.BeforeClusterDeleteResponse, message string) {
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+	resp.SetRetryAfterSeconds(beforeClusterDeleteRetryAfterSeconds)
+	resp.SetMessage(message)
 }
