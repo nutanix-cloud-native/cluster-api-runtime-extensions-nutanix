@@ -157,11 +157,11 @@ export MULTUS_CHART_VERSION := 0.1.1
 # Nutanix Flow CNI
 #   Chart name: nutanix-flow-cni
 #   Chart repo: https://nutanix.github.io/helm-releases/index.yaml
-#   Chart version:   1.0.0
-#   App version:     1.0.0
+#   Chart version:   1.1.0
+#   App version:     1.1.0
 #   Repo:            https://github.com/nutanix-core/flow-k8s-cni
-#   Release:         https://github.com/nutanix-core/flow-k8s-cni/releases/tag/1.0.0
-export NUTANIX_FLOW_CNI_VERSION := 1.0.0
+#   Release:         https://github.com/nutanix-core/flow-k8s-cni/releases/tag/1.1.0
+export NUTANIX_FLOW_CNI_VERSION := 1.1.0
 
 # Kube-vip (container image, not Helm - latest version can be checked via crane ls ghcr.io/kube-vip/kube-vip)
 #   Repo:        https://github.com/kube-vip/kube-vip

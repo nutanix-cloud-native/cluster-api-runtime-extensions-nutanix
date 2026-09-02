@@ -138,6 +138,9 @@ deploying cluster-api-runtime-extensions-nutanix chart:
 Flow CNI is available for Nutanix clusters only. It uses the `HelmAddon` strategy exclusively
 (`ClusterResourceSet` is not supported).
 
+Flow CNI and OVN-Kubernetes need more node CPU and memory than Cilium or Calico. The Nutanix
+Flow quick-start example uses 4 vCPU / 8Gi machines.
+
 Flow CNI images are hosted on a private Docker Hub registry (`docker.io/nutanix`). If your
 environment does not use a mirror or registry credentials configured via `imageRegistries`, you
 must provide an image pull secret so the workload cluster can pull the Flow CNI images.
@@ -207,8 +210,9 @@ spec:
                   name: nutanix-docker-hub-credentials
 ```
 
-The handler copies the Secret to the workload cluster and configures the Flow CNI Helm chart to
-use it for pulling images.
+The handler copies the Secret to the `flow-cni-system`, `flow-cns-system`, and
+`ovn-kubernetes` namespaces on the workload cluster and configures the Flow CNI
+Helm chart to use it for pulling images.
 
 ### Flow Example With Custom Values
 

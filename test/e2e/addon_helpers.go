@@ -39,6 +39,7 @@ func WaitForAddonsToBeReadyInWorkloadCluster(
 			ClusterProxy:                input.ClusterProxy,
 			DeploymentIntervals:         input.DeploymentIntervals,
 			DaemonSetIntervals:          input.DaemonSetIntervals,
+			StatefulSetIntervals:        input.StatefulSetIntervals,
 			HelmReleaseIntervals:        input.HelmReleaseIntervals,
 			ClusterResourceSetIntervals: input.ClusterResourceSetIntervals,
 		},
