@@ -6,6 +6,7 @@ package addons
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -28,6 +29,8 @@ import (
 const (
 	defaultCiliumValuesTemplateKey          = "values.yaml"
 	defaultCiliumPreflightValuesTemplateKey = "preflight-values.yaml"
+	defaultHelmReadyWaitTimeout             = 30 * time.Second
+	defaultHelmReadyWaitInterval            = 5 * time.Second
 )
 
 var (
@@ -89,7 +92,12 @@ func NewHelmAddonApplier(
 
 type valueTemplaterFunc func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error)
 
-type waiterFunc func(ctx context.Context, client ctrlclient.Client, hcp *caaphv1.HelmChartProxy) error
+type waiterFunc func(
+	ctx context.Context,
+	client ctrlclient.Client,
+	hcp *caaphv1.HelmChartProxy,
+	log logr.Logger,
+) error
 
 type hooksFuncs struct {
 	postApplyHookFuncs []postApplyHookFunc
@@ -264,9 +272,20 @@ func (a *helmAddonApplier) Apply(
 		)
 	}
 
+	log.Info(
+		"applying HelmChartProxy",
+		"name", chartProxy.Name,
+		"namespace", chartProxy.Namespace,
+		"chart", a.helmChart.Name,
+		"version", a.helmChart.Version,
+		"repo", a.helmChart.Repository,
+		"releaseName", helmReleaseName,
+		"releaseNamespace", a.config.defaultHelmReleaseNamespace,
+	)
 	if err = k8sclient.ServerSideApply(ctx, a.client, chartProxy, k8sclient.ForceOwnership); err != nil {
 		return fmt.Errorf("failed to apply HelmChartProxy %q: %w", chartProxy.Name, err)
 	}
+	log.Info("applied HelmChartProxy", "name", chartProxy.Name, "namespace", chartProxy.Namespace)
 
 	// Run post apply hooks that need to run after the HelmChartProxy is applied.
 	// These hooks may be useful during upgrades to perform additional actions
@@ -284,7 +303,7 @@ func (a *helmAddonApplier) Apply(
 	}
 
 	if applyOpts.waiter != nil {
-		return applyOpts.waiter(ctx, a.client, chartProxy)
+		return applyOpts.waiter(ctx, a.client, chartProxy, log)
 	}
 
 	return nil
@@ -337,28 +356,103 @@ func waitToBeReady(
 	ctx context.Context,
 	client ctrlclient.Client,
 	hcp *caaphv1.HelmChartProxy,
+	log logr.Logger,
 ) error {
+	log = log.WithValues("helmChartProxy", ctrlclient.ObjectKeyFromObject(hcp))
+	start := time.Now()
+
+	if skip, remaining := remainingTooShortForWait(ctx); skip {
+		log.Info(
+			"skipping HelmChartProxy ready wait; hook deadline is shorter than wait timeout",
+			"remaining", remaining.String(),
+			"waitTimeout", defaultHelmReadyWaitTimeout.String(),
+		)
+		return nil
+	}
+
+	log.Info("waiting for HelmChartProxy to become ready")
+
+	target := hcp.DeepCopy()
 	if err := wait.ForObject(
 		ctx,
 		wait.ForObjectInput[*caaphv1.HelmChartProxy]{
 			Reader: client,
-			Target: hcp.DeepCopy(),
+			Target: target,
 			Check: func(_ context.Context, obj *caaphv1.HelmChartProxy) (bool, error) {
-				if obj.Generation != obj.Status.ObservedGeneration {
+				if !helmChartProxyIsReady(obj) {
+					if obj.Status.ObservedGeneration == 0 ||
+						obj.Generation != obj.Status.ObservedGeneration {
+						log.Info(
+							"HelmChartProxy observed generation is stale",
+							"generation", obj.Generation,
+							"observedGeneration", obj.Status.ObservedGeneration,
+							"conditions", conditionSummaries(obj.GetConditions()),
+						)
+						return false, nil
+					}
+					log.Info(
+						"HelmChartProxy is not ready",
+						"conditions", conditionSummaries(obj.GetConditions()),
+					)
 					return false, nil
 				}
-				return apimeta.IsStatusConditionTrue(obj.GetConditions(), clusterv1.ReadyCondition), nil
+				return true, nil
 			},
-			Interval: 5 * time.Second,
-			Timeout:  30 * time.Second,
+			Interval: defaultHelmReadyWaitInterval,
+			Timeout:  defaultHelmReadyWaitTimeout,
 		},
 	); err != nil {
+		kvs := []any{
+			"duration", time.Since(start).String(),
+			"generation", target.Generation,
+			"observedGeneration", target.Status.ObservedGeneration,
+			"conditions", conditionSummaries(target.GetConditions()),
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			kvs = append(kvs, "ctxErr", ctxErr)
+		}
+		log.Error(err, "HelmChartProxy did not become ready", kvs...)
 		return fmt.Errorf(
-			"failed to wait for addon %s to deploy: %w",
+			"failed to wait for addon %s to deploy: %w; conditions=%s",
 			ctrlclient.ObjectKeyFromObject(hcp),
 			err,
+			conditionSummaries(target.GetConditions()),
 		)
 	}
 
+	log.Info("HelmChartProxy is ready", "duration", time.Since(start).String())
 	return nil
+}
+
+func remainingTooShortForWait(ctx context.Context) (bool, time.Duration) {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return false, 0
+	}
+	remaining := time.Until(deadline)
+	return remaining < defaultHelmReadyWaitTimeout, remaining
+}
+
+func helmChartProxyIsReady(obj *caaphv1.HelmChartProxy) bool {
+	if obj.Status.ObservedGeneration == 0 || obj.Generation != obj.Status.ObservedGeneration {
+		return false
+	}
+	return apimeta.IsStatusConditionTrue(obj.GetConditions(), clusterv1.ReadyCondition)
+}
+
+func conditionSummaries(conditions []metav1.Condition) string {
+	if len(conditions) == 0 {
+		return "<none>"
+	}
+	parts := make([]string, 0, len(conditions))
+	for _, c := range conditions {
+		parts = append(parts, fmt.Sprintf(
+			"%s=%s reason=%s msg=%q",
+			c.Type,
+			c.Status,
+			c.Reason,
+			c.Message,
+		))
+	}
+	return strings.Join(parts, "; ")
 }

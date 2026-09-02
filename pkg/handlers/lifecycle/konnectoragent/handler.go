@@ -58,6 +58,8 @@ const (
 	// before giving up and allowing cluster deletion to proceed.
 	helmUninstallTimeout = 5 * time.Minute
 
+	beforeClusterDeleteRetryAfterSeconds int32 = 5
+
 	// maxClusterNameLength is the maximum cluster name length supported by Prism Central.
 	maxClusterNameLength = 40
 )
@@ -82,6 +84,13 @@ func (c *Config) AddFlags(prefix string, flags *pflag.FlagSet) {
 	c.helmAddonConfig.AddFlags(prefix+".helm-addon", flags)
 }
 
+type clusterRegistrationChecker func(
+	ctx context.Context,
+	client ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) (bool, error)
+
 type DefaultKonnectorAgent struct {
 	client              ctrlclient.Client
 	config              *Config
@@ -89,6 +98,8 @@ type DefaultKonnectorAgent struct {
 
 	variableName string   // points to the global config variable
 	variablePath []string // path of this variable on the global config variable
+
+	clusterRegistrationChecker clusterRegistrationChecker
 }
 
 var (
@@ -104,11 +115,12 @@ func New(
 	helmChartInfoGetter *config.HelmChartGetter,
 ) *DefaultKonnectorAgent {
 	return &DefaultKonnectorAgent{
-		client:              c,
-		config:              cfg,
-		helmChartInfoGetter: helmChartInfoGetter,
-		variableName:        v1alpha1.ClusterConfigVariableName,
-		variablePath:        []string{"addons", v1alpha1.KonnectorAgentVariableName},
+		client:                     c,
+		config:                     cfg,
+		helmChartInfoGetter:        helmChartInfoGetter,
+		variableName:               v1alpha1.ClusterConfigVariableName,
+		variablePath:               []string{"addons", v1alpha1.KonnectorAgentVariableName},
+		clusterRegistrationChecker: isClusterRegisteredInPC,
 	}
 }
 
@@ -585,9 +597,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 			return
 		}
 		log.Error(err, "Failed to get cluster with status for cleanup decision, will retry")
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to get cluster with status: %v", err))
-		resp.SetRetryAfterSeconds(5)
+		setBlockingRetry(resp, fmt.Sprintf("failed to get cluster with status: %v", err))
 		return
 	}
 
@@ -617,7 +627,11 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	}
 
 	// Check cluster is registered in PC
-	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, clusterWithStatus, log)
+	checker := n.clusterRegistrationChecker
+	if checker == nil {
+		checker = isClusterRegisteredInPC
+	}
+	clusterRegistered, err := checker(ctx, n.client, clusterWithStatus, log)
 	if err != nil {
 		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
 		// setting response status to success to allow cluster deletion to proceed
@@ -633,9 +647,8 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	// Check if cleanup is already in progress or completed
 	cleanupStatus, statusMsg, err := n.checkCleanupStatus(ctx, clusterWithStatus, log)
 	if err != nil {
-		log.Error(err, "Failed to check cleanup status")
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(err.Error())
+		log.Error(err, "Failed to check cleanup status, will retry")
+		setBlockingRetry(resp, err.Error())
 		return
 	}
 
@@ -645,28 +658,24 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	case cleanupStatusTimedOut:
-		// Log the error prominently and block cluster deletion
+		// Fail open. CAPI treats Status=Failure as a hard hook error and never
+		// marks the Cluster ok-to-delete, which leaves deletion stuck forever.
 		log.Error(
 			fmt.Errorf("konnector Agent helm uninstallation timed out"),
-			"ERROR: Konnector Agent cleanup timed out - blocking cluster deletion",
+			"Konnector Agent cleanup timed out, allowing cluster deletion to proceed",
 			"details", statusMsg,
-			"action", "Manual intervention required - check HelmChartProxy status and remove finalizers if needed",
+			"action", "Check HelmChartProxy status; remove finalizers if the proxy is stuck",
 		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		resp.SetMessage(fmt.Sprintf(
-			"Konnector Agent helm uninstallation timed out after %v. "+
-				"The HelmChartProxy is stuck in deletion state. "+
-				"Manual intervention required: Check HelmChartProxy status and remove finalizers if needed. "+
-				"Details: %s",
+			"Konnector Agent helm uninstallation timed out after %v; allowing cluster deletion to proceed. %s",
 			helmUninstallTimeout,
 			statusMsg,
 		))
 		return
 	case cleanupStatusInProgress:
 		log.Info("Konnector Agent cleanup in progress, requesting retry", "details", statusMsg)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetRetryAfterSeconds(5) // Retry after 5 seconds
-		resp.SetMessage(fmt.Sprintf(
+		setBlockingRetry(resp, fmt.Sprintf(
 			"Konnector Agent cleanup in progress. Waiting for HelmChartProxy deletion to complete. %s",
 			statusMsg,
 		))
@@ -678,17 +687,20 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 
 	err = n.deleteHelmChartProxy(ctx, clusterWithStatus, log)
 	if err != nil {
-		log.Error(err, "Failed to delete HelmChartProxy")
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("Failed to delete Konnector Agent HelmChartProxy: %v", err))
+		log.Error(err, "Failed to delete HelmChartProxy, will retry")
+		setBlockingRetry(resp, fmt.Sprintf("Failed to delete Konnector Agent HelmChartProxy: %v", err))
 		return
 	}
 
 	// After initiating cleanup, request a retry to monitor completion
 	log.Info("Konnector Agent cleanup initiated, will monitor progress")
-	resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-	resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
-	resp.SetMessage("Konnector Agent cleanup initiated. Waiting for HelmChartProxy deletion to start.")
+	setBlockingRetry(resp, "Konnector Agent cleanup initiated. Waiting for HelmChartProxy deletion to start.")
+}
+
+func setBlockingRetry(resp *runtimehooksv1.BeforeClusterDeleteResponse, message string) {
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+	resp.SetRetryAfterSeconds(beforeClusterDeleteRetryAfterSeconds)
+	resp.SetMessage(message)
 }
 
 func (n *DefaultKonnectorAgent) deleteHelmChartProxy(

@@ -153,6 +153,17 @@ func (m *MultusHandler) apply(
 		return
 	}
 
+	if !shouldAutoDeployMultus(provider, cniVar.Provider) {
+		log.Info(
+			"Skipping Multus auto-deploy; the selected CNI already provides Multus or is unsupported",
+			"cloudProvider",
+			provider,
+			"cniProvider",
+			cniVar.Provider,
+		)
+		return
+	}
+
 	log.Info(fmt.Sprintf("Auto-deploying Multus for %s cluster with %s CNI", provider, cniVar.Provider))
 
 	// Get helm chart configuration
@@ -190,4 +201,19 @@ func (m *MultusHandler) apply(
 
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 	resp.SetMessage("Multus deployed successfully")
+}
+
+// shouldAutoDeployMultus reports whether CAREN should install Multus itself.
+// Flow CNI's Helm chart already deploys Multus; a second instance fights OVN
+// for /etc/cni/net.d and leaves nodes NetworkPluginNotReady.
+func shouldAutoDeployMultus(cloudProvider, cniProvider string) bool {
+	if cloudProvider != "eks" && cloudProvider != "nutanix" {
+		return false
+	}
+	switch cniProvider {
+	case v1alpha1.CNIProviderCilium, v1alpha1.CNIProviderCalico:
+		return true
+	default:
+		return false
+	}
 }

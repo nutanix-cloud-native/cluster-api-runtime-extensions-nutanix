@@ -81,6 +81,7 @@ func TestBeforeClusterDelete(t *testing.T) {
 
 	tests := []struct {
 		name             string
+		cluster          *clusterv1beta2.Cluster
 		services         []ctrlclient.Object
 		interceptorFuncs interceptor.Funcs
 		wantStatus       runtimehooksv1.ResponseStatus
@@ -92,17 +93,36 @@ func TestBeforeClusterDelete(t *testing.T) {
 		wantStatus:     runtimehooksv1.ResponseStatusSuccess,
 		wantRetryAfter: false,
 	}, {
+		name: "cluster already deleting: success with no retry",
+		cluster: &clusterv1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterName,
+				Namespace: clusterNamespace,
+			},
+			Status: clusterv1beta2.ClusterStatus{
+				Conditions: []metav1.Condition{{
+					Type:   clusterv1beta2.ClusterControlPlaneInitializedCondition,
+					Status: metav1.ConditionTrue,
+				}},
+				Phase: string(clusterv1beta2.ClusterPhaseDeleting),
+			},
+		},
+		services:       []ctrlclient.Object{testLBService(t, clusterNamespace)},
+		wantStatus:     runtimehooksv1.ResponseStatusSuccess,
+		wantRetryAfter: false,
+	}, {
 		// ErrServicesStillExist branch: delete succeeds but the service existed
 		// at list time, so the function reports it still needs to be confirmed
-		// gone. The handler MUST return Failure so CAPI retries the hook.
-		name:           "LB service still present: failure with retry",
+		// gone. CAPI only retries BeforeClusterDelete when Status=Success and
+		// RetryAfterSeconds > 0.
+		name:           "LB service still present: success with retry",
 		services:       []ctrlclient.Object{testLBService(t, clusterNamespace)},
-		wantStatus:     runtimehooksv1.ResponseStatusFailure,
+		wantStatus:     runtimehooksv1.ResponseStatusSuccess,
 		wantRetryAfter: true,
 	}, {
 		// ErrFailedToDeleteService branch: the Delete call fails with a
-		// non-NotFound error. The handler MUST return Failure so CAPI retries.
-		name:     "LB service delete error: failure with retry",
+		// non-NotFound error. Retry with Success so CAPI calls the hook again.
+		name:     "LB service delete error: success with retry",
 		services: []ctrlclient.Object{testLBService(t, clusterNamespace)},
 		interceptorFuncs: interceptor.Funcs{
 			Delete: func(
@@ -117,7 +137,7 @@ func TestBeforeClusterDelete(t *testing.T) {
 				return c.Delete(ctx, obj, opts...)
 			},
 		},
-		wantStatus:     runtimehooksv1.ResponseStatusFailure,
+		wantStatus:     runtimehooksv1.ResponseStatusSuccess,
 		wantRetryAfter: true,
 	}}
 
@@ -125,14 +145,12 @@ func TestBeforeClusterDelete(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			cluster := tt.cluster
+			if cluster == nil {
+				cluster = testProvisionedCluster(t, clusterName, clusterNamespace)
+			}
 			objects := append(
-				[]ctrlclient.Object{
-					testProvisionedCluster(
-						t,
-						clusterName,
-						clusterNamespace,
-					),
-				},
+				[]ctrlclient.Object{cluster},
 				tt.services...,
 			)
 			fakeClient := fake.NewClientBuilder().

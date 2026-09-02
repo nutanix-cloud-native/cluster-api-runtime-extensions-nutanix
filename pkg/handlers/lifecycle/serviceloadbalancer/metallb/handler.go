@@ -6,20 +6,14 @@ package metallb
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kwait "k8s.io/apimachinery/pkg/util/wait"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	metallbv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -144,71 +138,8 @@ func (n *MetalLB) Apply(
 		return fmt.Errorf("failed to generate MetalLB configuration: %w", err)
 	}
 
-	var applyErr error
-	if waitErr := kwait.PollUntilContextTimeout(
-		ctx,
-		2*time.Second,
-		10*time.Second,
-		true,
-		func(ctx context.Context) (bool, error) {
-			for _, o := range cos {
-				err := client.ServerSideApply(
-					ctx,
-					remoteClient,
-					o,
-					&ctrlclient.PatchOptions{
-						Raw: &metav1.PatchOptions{
-							FieldValidation: metav1.FieldValidationStrict,
-						},
-					},
-				)
-
-				switch {
-				case err == nil:
-					continue
-				case apierrors.IsInternalError(err):
-					// Retry on internal errors as these are generally seen when the necessary
-					// CRD webhooks are not yet registered.
-					return false, nil
-				case apierrors.IsConflict(err):
-					// Set the error message based on the type of the object.
-					switch o.(type) {
-					case *metallbv1.IPAddressPool:
-						err = fmt.Errorf(
-							"%w. This resource has been modified in the workload cluster: it must contain exactly the addresses listed in the Cluster configuration", //nolint:lll // Long error message,
-							err,
-						)
-					case *metallbv1.L2Advertisement:
-						err = fmt.Errorf(
-							"%w. This resource has been modified in the workload cluster, it must only contain the %q IP Address Pool", //nolint:lll // Long error message,
-							err,
-							configInput.Name,
-						)
-					}
-
-					applyErr = fmt.Errorf(
-						"failed to apply MetalLB configuration %s %s: %w",
-						o.GetObjectKind().GroupVersionKind().Kind,
-						ctrlclient.ObjectKeyFromObject(o),
-						err,
-					)
-
-					// Conflicts won't resolve by retrying; return the error immediately.
-					return false, applyErr
-				default:
-					// Otherwise return the error early and do not retry.
-					return false, err
-				}
-			}
-
-			return true, nil
-		},
-	); waitErr != nil {
-		if applyErr != nil {
-			return fmt.Errorf("%w: last apply error: %w", waitErr, applyErr)
-		}
-
-		return fmt.Errorf("failed to apply MetalLB configuration: %w", waitErr)
+	if err := applyConfiguration(ctx, remoteClient, cos, configInput.Name); err != nil {
+		return err
 	}
 
 	return nil

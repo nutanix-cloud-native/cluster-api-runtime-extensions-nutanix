@@ -40,6 +40,12 @@ The addon implements the following Cluster API lifecycle hooks:
   - Initiates graceful helm uninstall
   - Waits for cleanup completion
   - Ensures proper cleanup order
+- **Retry protocol**: While uninstall is in progress the hook returns `Status=Success`
+  with `RetryAfterSeconds` set so Cluster API retries instead of treating the hook
+  as a hard failure.
+- **Timeout**: If the HelmChartProxy stays in deletion for more than 5 minutes, the
+  hook logs the failure and **allows cluster deletion to proceed**. A stuck helm
+  uninstall must not block Cluster deletion indefinitely.
 
 ## Configuration
 

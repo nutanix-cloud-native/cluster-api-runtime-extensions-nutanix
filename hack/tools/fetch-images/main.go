@@ -262,9 +262,11 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (strin
 		}
 
 		templateInput := struct {
-			ApplyMpioConfigs bool
+			ApplyMpioConfigs          bool
+			CreateVolumeSnapshotClass bool
 		}{
-			ApplyMpioConfigs: false,
+			ApplyMpioConfigs:          false,
+			CreateVolumeSnapshotClass: false,
 		}
 
 		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &templateInput)

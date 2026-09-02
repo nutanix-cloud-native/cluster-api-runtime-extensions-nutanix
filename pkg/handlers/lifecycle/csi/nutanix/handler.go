@@ -12,11 +12,14 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/utils"
@@ -90,6 +93,10 @@ func (n *NutanixCSI) Apply(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
+	helmValues := &helmValuesInput{
+		ApplyMpioConfigs: metro.IsMetroCluster(cluster),
+	}
+
 	var strategy addons.Applier
 	switch provider.Strategy {
 	case v1alpha1.AddonStrategyHelmAddon:
@@ -104,7 +111,7 @@ func (n *NutanixCSI) Apply(
 			n.config.helmAddonConfig,
 			n.client,
 			helmChart,
-		).WithValueTemplater(templateValuesFunc(cluster))
+		).WithValueTemplater(templateValuesFunc(helmValues))
 	case "":
 		return fmt.Errorf("strategy not provided for Nutanix CSI driver")
 	default:
@@ -173,6 +180,18 @@ func (n *NutanixCSI) Apply(
 		)
 	}
 
+	// nutanix-csi-storage falls back to snapshot.storage.k8s.io/v1beta1 when v1
+	// is not served. snapshot-controller 5.x does not install v1beta1, so Helm
+	// install fails. Wait for v1 when snapshots are requested; otherwise omit
+	// the class so the CSI driver can install without the snapshot API.
+	helmValues.CreateVolumeSnapshotClass = volumeSnapshotV1Available(remoteClient)
+	if snapshotControllerEnabled(cluster) && !helmValues.CreateVolumeSnapshotClass {
+		return fmt.Errorf(
+			"snapshot.storage.k8s.io/v1 is not available yet; " +
+				"waiting for snapshot-controller CRDs before creating VolumeSnapshotClass",
+		)
+	}
+
 	if err := strategy.Apply(ctx, cluster, n.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply nutanix CSI addon: %w", err)
 	}
@@ -193,8 +212,13 @@ func (n *NutanixCSI) Apply(
 	return nil
 }
 
+type helmValuesInput struct {
+	ApplyMpioConfigs          bool
+	CreateVolumeSnapshotClass bool
+}
+
 func templateValuesFunc(
-	cluster *clusterv1.Cluster,
+	in *helmValuesInput,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		helmValuesTemplate, err := template.New("").Parse(valuesTemplate)
@@ -202,19 +226,33 @@ func templateValuesFunc(
 			return "", fmt.Errorf("failed to parse Helm values template: %w", err)
 		}
 
-		type input struct {
-			ApplyMpioConfigs bool
-		}
-
-		templateInput := input{
-			ApplyMpioConfigs: metro.IsMetroCluster(cluster),
-		}
-
 		var b bytes.Buffer
-		if err = helmValuesTemplate.Execute(&b, templateInput); err != nil {
+		if err = helmValuesTemplate.Execute(&b, in); err != nil {
 			return "", fmt.Errorf("failed to template Nutanix CSI Helm values: %w", err)
 		}
 
 		return b.String(), nil
 	}
+}
+
+func snapshotControllerEnabled(cluster *clusterv1.Cluster) bool {
+	if !cluster.Spec.Topology.IsDefined() {
+		return false
+	}
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	csi, err := variables.Get[apivariables.CSI](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+		"addons",
+		"csi",
+	)
+	return err == nil && csi.SnapshotController != nil
+}
+
+func volumeSnapshotV1Available(c ctrlclient.Client) bool {
+	_, err := c.RESTMapper().RESTMapping(
+		schema.GroupKind{Group: "snapshot.storage.k8s.io", Kind: "VolumeSnapshotClass"},
+		"v1",
+	)
+	return err == nil
 }
