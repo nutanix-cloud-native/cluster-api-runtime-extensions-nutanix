@@ -1,5 +1,8 @@
 # Copyright 2026 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
+#
+# Flow + OVN need more CPU/memory than Cilium/Calico. 2 vCPU / 4Gi leaves ovs-node
+# unschedulable (Insufficient cpu) and nodes stuck NetworkPluginNotReady.
 
 - op: "add"
   path: "/spec/topology/variables/0/value/addons/cni"
@@ -8,3 +11,15 @@
     imagePullCredentials:
       secretRef:
         name: "${CLUSTER_NAME}-flow-image-pull-secret"
+- op: "replace"
+  path: "/spec/topology/variables/0/value/controlPlane/nutanix/machineDetails/memorySize"
+  value: 8Gi
+- op: "replace"
+  path: "/spec/topology/variables/0/value/controlPlane/nutanix/machineDetails/vcpuSockets"
+  value: 4
+- op: "replace"
+  path: "/spec/topology/variables/1/value/nutanix/machineDetails/memorySize"
+  value: 8Gi
+- op: "replace"
+  path: "/spec/topology/variables/1/value/nutanix/machineDetails/vcpuSockets"
+  value: 4

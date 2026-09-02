@@ -27,6 +27,7 @@ type WaitForCNIToBeReadyInWorkloadClusterInput struct {
 	ClusterProxy                framework.ClusterProxy
 	DeploymentIntervals         []interface{}
 	DaemonSetIntervals          []interface{}
+	StatefulSetIntervals        []interface{}
 	HelmReleaseIntervals        []interface{}
 	ClusterResourceSetIntervals []interface{}
 }
@@ -75,6 +76,7 @@ func WaitForCNIToBeReadyInWorkloadCluster(
 				clusterProxy:                input.ClusterProxy,
 				deploymentIntervals:         input.DeploymentIntervals,
 				daemonSetIntervals:          input.DaemonSetIntervals,
+				statefulSetIntervals:        input.StatefulSetIntervals,
 				helmReleaseIntervals:        input.HelmReleaseIntervals,
 				clusterResourceSetIntervals: input.ClusterResourceSetIntervals,
 			},
@@ -301,6 +303,7 @@ type waitForFlowToBeReadyInWorkloadClusterInput struct {
 	clusterProxy                framework.ClusterProxy
 	deploymentIntervals         []interface{}
 	daemonSetIntervals          []interface{}
+	statefulSetIntervals        []interface{}
 	helmReleaseIntervals        []interface{}
 	clusterResourceSetIntervals []interface{}
 }
@@ -346,6 +349,15 @@ func waitForFlowToBeReadyInWorkloadCluster(
 		Getter: workloadClusterClient,
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
+				Name:      "flow-cni-flow-processor",
+				Namespace: "flow-cns-system",
+			},
+		},
+	}, input.deploymentIntervals...)
+	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
+		Getter: workloadClusterClient,
+		Deployment: &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ovnkube-db",
 				Namespace: "ovn-kubernetes",
 			},
@@ -360,6 +372,24 @@ func waitForFlowToBeReadyInWorkloadCluster(
 			},
 		},
 	}, input.deploymentIntervals...)
+	WaitForStatefulSetsAvailable(ctx, WaitForStatefulSetAvailableInput{
+		Getter: workloadClusterClient,
+		StatefulSet: &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "flow-cni-nats",
+				Namespace: "flow-cni-system",
+			},
+		},
+	}, input.statefulSetIntervals...)
+	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
+		Getter: workloadClusterClient,
+		DaemonSet: &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "flow-cni-conntrack-collector",
+				Namespace: "flow-cni-system",
+			},
+		},
+	}, input.daemonSetIntervals...)
 	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
 		Getter: workloadClusterClient,
 		DaemonSet: &appsv1.DaemonSet{
