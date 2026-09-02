@@ -25,6 +25,7 @@ const (
 	carenSystemNamespace  = "caren-system"
 	carenManagerContainer = "manager"
 	carenLogTailLines     = int64(400)
+	flowCNILogTailLines   = int64(200)
 )
 
 var workloadDiagnosticNamespaces = []string{
@@ -35,10 +36,19 @@ var workloadDiagnosticNamespaces = []string{
 	"ntnx-system",
 }
 
+// flowCNIPodLogNamespaces get container log dumps in addition to pod status.
+// These are the namespaces where Flow CNI / OVN workloads land.
+var flowCNIPodLogNamespaces = map[string]struct{}{
+	"flow-cni-system": {},
+	"flow-cns-system": {},
+	"ovn-kubernetes":  {},
+}
+
 // dumpAddonDiagnostics writes HelmChartProxy/HelmReleaseProxy status, CAREN controller
-// logs, and workload-cluster CNI-related objects to the Ginkgo output. It is intended
-// to run from JustAfterEach before CAPI's AfterEach deletes the cluster, including
-// when the spec itself passed and only cleanup fails.
+// logs, and workload-cluster CNI-related objects (including Flow CNI pod status and
+// container logs) to the Ginkgo output. It is intended to run from JustAfterEach
+// before CAPI's AfterEach deletes the cluster, including when the spec itself
+// passed and only cleanup fails.
 func dumpAddonDiagnostics(ctx context.Context, proxy framework.ClusterProxy) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -217,17 +227,18 @@ func dumpWorkloadNodesAndPods(
 	}
 
 	for _, ns := range workloadDiagnosticNamespaces {
-		dumpNamespacePodsAndSecrets(ctx, cl, cluster, ns)
+		dumpNamespacePodsAndSecrets(ctx, workload, cluster, ns)
 		dumpNamespaceWarningEvents(ctx, workload, cluster, ns)
 	}
 }
 
 func dumpNamespacePodsAndSecrets(
 	ctx context.Context,
-	cl ctrlclient.Client,
+	workload framework.ClusterProxy,
 	cluster *clusterv1.Cluster,
 	namespace string,
 ) {
+	cl := workload.GetClient()
 	pods := &corev1.PodList{}
 	if err := cl.List(ctx, pods, ctrlclient.InNamespace(namespace)); err != nil {
 		Logf(
@@ -238,6 +249,15 @@ func dumpNamespacePodsAndSecrets(
 			err,
 		)
 	} else {
+		if _, isFlowNS := flowCNIPodLogNamespaces[namespace]; isFlowNS {
+			capie2e.Byf(
+				"Flow CNI pods in %s on workload cluster %s/%s (%d)",
+				namespace,
+				cluster.Namespace,
+				cluster.Name,
+				len(pods.Items),
+			)
+		}
 		Logf(
 			"Workload cluster %s/%s namespace %s has %d Pod(s)",
 			cluster.Namespace,
@@ -247,6 +267,9 @@ func dumpNamespacePodsAndSecrets(
 		)
 		for i := range pods.Items {
 			Logf("Pod %s", formatPod(&pods.Items[i]))
+		}
+		if _, isFlowNS := flowCNIPodLogNamespaces[namespace]; isFlowNS {
+			dumpPodContainerLogs(ctx, workload, pods.Items)
 		}
 	}
 
@@ -272,6 +295,72 @@ func dumpNamespacePodsAndSecrets(
 		namespace,
 		names,
 	)
+}
+
+func dumpPodContainerLogs(
+	ctx context.Context,
+	workload framework.ClusterProxy,
+	pods []corev1.Pod,
+) {
+	clientset := workload.GetClientSet()
+	if clientset == nil {
+		Log("Skipping Flow CNI pod logs: clientset is nil")
+		return
+	}
+
+	for i := range pods {
+		pod := &pods[i]
+		containers := make([]string, 0, len(pod.Spec.Containers)+len(pod.Spec.InitContainers))
+		for _, c := range pod.Spec.InitContainers {
+			containers = append(containers, c.Name)
+		}
+		for _, c := range pod.Spec.Containers {
+			containers = append(containers, c.Name)
+		}
+		if len(containers) == 0 {
+			continue
+		}
+
+		for _, container := range containers {
+			logs, logErr := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+				Container: container,
+				TailLines: ptr.To(flowCNILogTailLines),
+			}).Do(ctx).Raw()
+			if logErr != nil {
+				Logf(
+					"Failed to get logs for Flow CNI pod %s/%s container %s: %v",
+					pod.Namespace,
+					pod.Name,
+					container,
+					logErr,
+				)
+				continue
+			}
+			trimmed := strings.TrimRight(string(logs), "\n")
+			if trimmed == "" {
+				Logf(
+					"----- empty Flow CNI logs %s/%s container=%s -----",
+					pod.Namespace,
+					pod.Name,
+					container,
+				)
+				continue
+			}
+			Logf(
+				"----- begin Flow CNI logs %s/%s container=%s -----",
+				pod.Namespace,
+				pod.Name,
+				container,
+			)
+			Log(trimmed)
+			Logf(
+				"----- end Flow CNI logs %s/%s container=%s -----",
+				pod.Namespace,
+				pod.Name,
+				container,
+			)
+		}
+	}
 }
 
 func dumpNamespaceWarningEvents(
