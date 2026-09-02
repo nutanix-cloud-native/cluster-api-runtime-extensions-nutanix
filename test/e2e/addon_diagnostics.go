@@ -311,11 +311,11 @@ func dumpPodContainerLogs(
 	for i := range pods {
 		pod := &pods[i]
 		containers := make([]string, 0, len(pod.Spec.Containers)+len(pod.Spec.InitContainers))
-		for _, c := range pod.Spec.InitContainers {
-			containers = append(containers, c.Name)
+		for j := range pod.Spec.InitContainers {
+			containers = append(containers, pod.Spec.InitContainers[j].Name)
 		}
-		for _, c := range pod.Spec.Containers {
-			containers = append(containers, c.Name)
+		for j := range pod.Spec.Containers {
+			containers = append(containers, pod.Spec.Containers[j].Name)
 		}
 		if len(containers) == 0 {
 			continue
