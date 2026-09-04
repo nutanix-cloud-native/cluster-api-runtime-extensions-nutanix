@@ -4,10 +4,8 @@
 package nutanix
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"text/template"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
@@ -22,7 +20,6 @@ import (
 	csiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/metro"
 )
 
 const (
@@ -104,7 +101,7 @@ func (n *NutanixCSI) Apply(
 			n.config.helmAddonConfig,
 			n.client,
 			helmChart,
-		).WithValueTemplater(templateValuesFunc(cluster))
+		)
 	case "":
 		return fmt.Errorf("strategy not provided for Nutanix CSI driver")
 	default:
@@ -191,30 +188,4 @@ func (n *NutanixCSI) Apply(
 		return fmt.Errorf("error creating StorageClasses for the Nutanix CSI driver: %w", err)
 	}
 	return nil
-}
-
-func templateValuesFunc(
-	cluster *clusterv1.Cluster,
-) func(*clusterv1.Cluster, string) (string, error) {
-	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
-		helmValuesTemplate, err := template.New("").Parse(valuesTemplate)
-		if err != nil {
-			return "", fmt.Errorf("failed to parse Helm values template: %w", err)
-		}
-
-		type input struct {
-			ApplyMpioConfigs bool
-		}
-
-		templateInput := input{
-			ApplyMpioConfigs: metro.IsMetroCluster(cluster),
-		}
-
-		var b bytes.Buffer
-		if err = helmValuesTemplate.Execute(&b, templateInput); err != nil {
-			return "", fmt.Errorf("failed to template Nutanix CSI Helm values: %w", err)
-		}
-
-		return b.String(), nil
-	}
 }

@@ -4,7 +4,6 @@ createPrismCentralSecret: false
 createSecret: false
 createPESecrets: false
 pcSecretName: nutanix-csi-credentials
-applyMpioConfigs: {{ .ApplyMpioConfigs }}
 
 tolerations:
   - key: CriticalAddonsOnly
