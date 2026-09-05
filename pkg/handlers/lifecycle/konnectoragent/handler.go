@@ -655,7 +655,8 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		log.Error(
 			fmt.Errorf("konnector Agent helm uninstallation timed out"),
 			"Konnector Agent cleanup timed out; removing stuck HelmChartProxy finalizers so cluster deletion can proceed",
-			"details", statusMsg,
+			"details",
+			statusMsg,
 		)
 		if err := n.removeStuckHelmChartProxyFinalizers(ctx, clusterWithStatus, log); err != nil {
 			log.Error(

@@ -101,9 +101,11 @@ func stuckHelmChartProxy(t *testing.T) *caaphv1.HelmChartProxy {
 			DeletionTimestamp: &deletionTS,
 		},
 		Spec: caaphv1.HelmChartProxySpec{
-			ChartName:       defaultHelmReleaseName,
-			RepoURL:         "https://example.invalid",
-			ClusterSelector: metav1.LabelSelector{MatchLabels: map[string]string{"cluster.x-k8s.io/cluster-name": "test"}},
+			ChartName: defaultHelmReleaseName,
+			RepoURL:   "https://example.invalid",
+			ClusterSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{"cluster.x-k8s.io/cluster-name": "test"},
+			},
 		},
 	}
 }
