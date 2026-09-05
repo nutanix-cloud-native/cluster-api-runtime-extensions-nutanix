@@ -38,8 +38,8 @@ The addon implements the following Cluster API lifecycle hooks:
 - **Timing**: Executes before cluster deletion begins
 - **Actions**:
   - Initiates graceful helm uninstall
-  - Waits for cleanup completion
-  - Ensures proper cleanup order
+  - Waits up to 5 minutes for HelmChartProxy deletion to complete
+  - If uninstall is stuck (for example CNI finalizers), removes the HelmChartProxy finalizers and allows cluster deletion to proceed so infrastructure is not leaked. A stale Prism Central registration may remain and should be cleaned up separately
 
 ## Configuration
 
@@ -154,6 +154,10 @@ handler, which also installs into `ntnx-system`.
    - Check the Helm repository is accessible
    - Verify the chart version exists
    - Review HelmChartProxy status
+
+4. **Cluster deletion proceeds after a 5-minute uninstall timeout**
+   - The `BeforeClusterDelete` hook no longer blocks forever if HelmChartProxy finalizers are stuck
+   - Check Prism Central for a leftover cluster registration and remove it if needed
 
 ### Monitoring
 
