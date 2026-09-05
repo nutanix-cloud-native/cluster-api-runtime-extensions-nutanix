@@ -62,6 +62,10 @@ const (
 	maxClusterNameLength = 40
 )
 
+// lookupClusterRegistration checks Prism Central registration during delete.
+// Tests replace this to avoid a live Prism Central call.
+var lookupClusterRegistration = isClusterRegisteredInPC
+
 type Config struct {
 	*options.GlobalOptions
 	helmAddonConfig *addons.HelmAddonConfig
@@ -617,7 +621,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	}
 
 	// Check cluster is registered in PC
-	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, clusterWithStatus, log)
+	clusterRegistered, err := lookupClusterRegistration(ctx, n.client, clusterWithStatus, log)
 	if err != nil {
 		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
 		// setting response status to success to allow cluster deletion to proceed
@@ -645,19 +649,25 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	case cleanupStatusTimedOut:
-		// Log the error prominently and block cluster deletion
+		// Helm uninstall did not finish in time (commonly stuck CNI/pod finalizers).
+		// Blocking forever leaks infrastructure VMs; strip HelmChartProxy finalizers and
+		// let cluster deletion proceed. A stale Prism Central registration may remain.
 		log.Error(
 			fmt.Errorf("konnector Agent helm uninstallation timed out"),
-			"ERROR: Konnector Agent cleanup timed out - blocking cluster deletion",
-			"details", statusMsg,
-			"action", "Manual intervention required - check HelmChartProxy status and remove finalizers if needed",
+			"Konnector Agent cleanup timed out; removing stuck HelmChartProxy finalizers so cluster deletion can proceed",
+			"details",
+			statusMsg,
 		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		if err := n.removeStuckHelmChartProxyFinalizers(ctx, clusterWithStatus, log); err != nil {
+			log.Error(
+				err,
+				"failed to remove stuck HelmChartProxy finalizers; allowing cluster deletion anyway",
+			)
+		}
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		resp.SetMessage(fmt.Sprintf(
-			"Konnector Agent helm uninstallation timed out after %v. "+
-				"The HelmChartProxy is stuck in deletion state. "+
-				"Manual intervention required: Check HelmChartProxy status and remove finalizers if needed. "+
-				"Details: %s",
+			"Konnector Agent helm uninstallation timed out after %v; "+
+				"removed stuck HelmChartProxy finalizers and allowing cluster deletion to proceed. %s",
 			helmUninstallTimeout,
 			statusMsg,
 		))
@@ -740,6 +750,41 @@ func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
 		)
 	}
 
+	return nil
+}
+
+func (n *DefaultKonnectorAgent) removeStuckHelmChartProxyFinalizers(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	clusterUUID, ok := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
+	if !ok {
+		return nil
+	}
+
+	hcp := &caaphv1.HelmChartProxy{}
+	key := ctrlclient.ObjectKey{
+		Name:      fmt.Sprintf("%s-%s", defaultHelmReleaseName, clusterUUID),
+		Namespace: cluster.Namespace,
+	}
+	if err := n.client.Get(ctx, key, hcp); err != nil {
+		return ctrlclient.IgnoreNotFound(err)
+	}
+	if len(hcp.Finalizers) == 0 {
+		return nil
+	}
+
+	log.Info(
+		"Removing stuck HelmChartProxy finalizers after helm uninstall timeout",
+		"name", hcp.Name,
+		"finalizers", hcp.Finalizers,
+	)
+	orig := hcp.DeepCopy()
+	hcp.Finalizers = nil
+	if err := n.client.Patch(ctx, hcp, ctrlclient.MergeFrom(orig)); err != nil {
+		return ctrlclient.IgnoreNotFound(err)
+	}
 	return nil
 }
 

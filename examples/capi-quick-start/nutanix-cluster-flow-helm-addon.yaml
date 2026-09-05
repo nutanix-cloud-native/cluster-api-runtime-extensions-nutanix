@@ -140,12 +140,12 @@ spec:
               imageLookup:
                 baseOS: ${NUTANIX_MACHINE_TEMPLATE_BASE_OS}
                 format: ${NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT}
-              memorySize: 4Gi
+              memorySize: 8Gi
               subnets:
               - name: ${NUTANIX_SUBNET_NAME}
                 type: name
               systemDiskSize: 40Gi
-              vcpuSockets: 2
+              vcpuSockets: 4
               vcpusPerSocket: 1
         dns:
           coreDNS: {}
@@ -182,12 +182,12 @@ spec:
             imageLookup:
               baseOS: ${NUTANIX_MACHINE_TEMPLATE_BASE_OS}
               format: ${NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT}
-            memorySize: 4Gi
+            memorySize: 8Gi
             subnets:
             - name: ${NUTANIX_SUBNET_NAME}
               type: name
             systemDiskSize: 40Gi
-            vcpuSockets: 2
+            vcpuSockets: 4
             vcpusPerSocket: 1
     version: ${KUBERNETES_VERSION}
     workers:
