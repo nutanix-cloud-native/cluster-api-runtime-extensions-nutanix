@@ -53,11 +53,46 @@ func TestValidatePrismCentralIPNotInLoadBalancerIPRange(t *testing.T) {
 				},
 			},
 			expectedErr: fmt.Errorf(
-				"Prism Central IP %q must not be part of MetalLB address range %q-%q",
+				"Prism Central IP %q must not be part of ServiceLoadBalancer address range %q-%q",
 				"192.168.1.15",
 				"192.168.1.10",
 				"192.168.1.20",
 			),
+		},
+		{
+			name: "PC IP in range with Cilium provider",
+			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL: "https://192.168.1.15:9440",
+			},
+			serviceLoadBalancerConfiguration: &v1alpha1.ServiceLoadBalancer{
+				Provider: v1alpha1.ServiceLoadBalancerProviderCilium,
+				Configuration: &v1alpha1.ServiceLoadBalancerConfiguration{
+					AddressRanges: []v1alpha1.AddressRange{
+						{Start: "192.168.1.10", End: "192.168.1.20"},
+					},
+				},
+			},
+			expectedErr: fmt.Errorf(
+				"Prism Central IP %q must not be part of ServiceLoadBalancer address range %q-%q",
+				"192.168.1.15",
+				"192.168.1.10",
+				"192.168.1.20",
+			),
+		},
+		{
+			name: "PC IP not in range with Cilium provider",
+			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+				URL: "https://192.168.1.1:9440",
+			},
+			serviceLoadBalancerConfiguration: &v1alpha1.ServiceLoadBalancer{
+				Provider: v1alpha1.ServiceLoadBalancerProviderCilium,
+				Configuration: &v1alpha1.ServiceLoadBalancerConfiguration{
+					AddressRanges: []v1alpha1.AddressRange{
+						{Start: "192.168.1.10", End: "192.168.1.20"},
+					},
+				},
+			},
+			expectedErr: nil,
 		},
 		{
 			name: "Invalid Prism Central URL",
@@ -83,7 +118,7 @@ func TestValidatePrismCentralIPNotInLoadBalancerIPRange(t *testing.T) {
 			expectedErr:                      nil,
 		},
 		{
-			name: "Provider is not MetalLB",
+			name: "Provider-agnostic: PC IP not in range for unknown provider",
 			pcEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
 				URL: "https://192.168.1.1:9440",
 			},

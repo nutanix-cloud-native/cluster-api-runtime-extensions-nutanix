@@ -33,6 +33,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry/cncfdistribution"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/servicelbgc"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer"
+	slbcilium "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/cilium"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/metallb"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
@@ -50,6 +51,7 @@ type Handlers struct {
 	awsccmConfig                    *awsccm.AWSCCMConfig
 	nutanixCCMConfig                *nutanixccm.Config
 	metalLBConfig                   *metallb.Config
+	ciliumSLBConfig                 *slbcilium.Config
 	localPathCSIConfig              *localpath.Config
 	snapshotControllerConfig        *snapshotcontroller.Config
 	cosiControllerConfig            *cosi.ControllerConfig
@@ -77,6 +79,7 @@ func New(
 		nutanixCSIConfig:                nutanixcsi.NewConfig(globalOptions),
 		nutanixCCMConfig:                &nutanixccm.Config{GlobalOptions: globalOptions},
 		metalLBConfig:                   &metallb.Config{GlobalOptions: globalOptions},
+		ciliumSLBConfig:                 &slbcilium.Config{GlobalOptions: globalOptions},
 		localPathCSIConfig:              localpath.NewConfig(globalOptions),
 		snapshotControllerConfig:        snapshotcontroller.NewConfig(globalOptions),
 		cosiControllerConfig:            cosi.NewControllerConfig(globalOptions),
@@ -127,6 +130,11 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		v1alpha1.ServiceLoadBalancerProviderMetalLB: metallb.New(
 			mgr.GetClient(),
 			h.metalLBConfig,
+			helmChartInfoGetter,
+		),
+		v1alpha1.ServiceLoadBalancerProviderCilium: slbcilium.New(
+			mgr.GetClient(),
+			h.ciliumSLBConfig,
 			helmChartInfoGetter,
 		),
 	}
@@ -246,6 +254,7 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.awsccmConfig.AddFlags("ccm.aws", pflag.CommandLine)
 	h.nutanixCCMConfig.AddFlags("ccm.nutanix", flagSet)
 	h.metalLBConfig.AddFlags("metallb", flagSet)
+	h.ciliumSLBConfig.AddFlags("serviceloadbalancer.cilium", flagSet)
 	h.cosiControllerConfig.AddFlags("cosi.controller", flagSet)
 	h.konnectorAgentConfig.AddFlags("konnector-agent", flagSet)
 	h.distributionConfig.AddFlags("registry.cncf-distribution", flagSet)

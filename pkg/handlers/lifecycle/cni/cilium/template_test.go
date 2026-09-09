@@ -4,6 +4,7 @@
 package cilium
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,6 +54,133 @@ func Test_templateValues(t *testing.T) {
 			got, err := templateValues(tt.cluster(t), ciliumTemplate)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedRenderedValuesTemplate, got)
+		})
+	}
+}
+
+func Test_templateValues_ServiceLoadBalancerCiliumFlag(t *testing.T) {
+	tmpl := `{{- if .ServiceLoadBalancerProviderIsCilium }}
+l2announcements:
+  enabled: true
+{{- else }}
+l2announcements:
+  enabled: false
+{{- end }}
+`
+
+	tests := []struct {
+		name     string
+		slb      *carenv1.ServiceLoadBalancer
+		expected string
+	}{
+		{
+			name:     "no serviceLoadBalancer renders l2announcements disabled",
+			slb:      nil,
+			expected: "\nl2announcements:\n  enabled: false\n",
+		},
+		{
+			name:     "provider MetalLB renders l2announcements disabled",
+			slb:      &carenv1.ServiceLoadBalancer{Provider: carenv1.ServiceLoadBalancerProviderMetalLB},
+			expected: "\nl2announcements:\n  enabled: false\n",
+		},
+		{
+			name:     "provider Cilium renders l2announcements enabled",
+			slb:      &carenv1.ServiceLoadBalancer{Provider: carenv1.ServiceLoadBalancerProviderCilium},
+			expected: "\nl2announcements:\n  enabled: true\n",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cluster := createTestClusterWithSLB(t, "c", "ns", "nutanix", "10.0.0.1", 6443, tc.slb)
+			got, err := templateValues(cluster, tmpl)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, got)
+		})
+	}
+}
+
+// createTestClusterWithSLB extends createTestCluster to set a
+// ServiceLoadBalancer in the cluster config variable.
+func createTestClusterWithSLB(
+	t *testing.T,
+	name, namespace, provider, host string,
+	port int32,
+	slb *carenv1.ServiceLoadBalancer,
+) *clusterv1beta2.Cluster {
+	t.Helper()
+
+	clusterConfigSpec := &apivariables.ClusterConfigSpec{
+		KubeProxy: &carenv1.KubeProxy{Mode: carenv1.KubeProxyModeDisabled},
+		Addons: &apivariables.Addons{
+			GenericAddons: carenv1.GenericAddons{ServiceLoadBalancer: slb},
+		},
+	}
+
+	variable, err := apivariables.MarshalToClusterVariable(
+		carenv1.ClusterConfigVariableName,
+		clusterConfigSpec,
+	)
+	require.NoError(t, err)
+
+	topology := &clusterv1beta2.Topology{
+		ClassRef:  clusterv1beta2.ClusterClassRef{Name: "test-cluster-class"},
+		Version:   "v1.29.0",
+		Variables: []clusterv1beta2.ClusterVariable{*variable},
+	}
+
+	cluster := builder.Cluster(namespace, name).
+		WithLabels(map[string]string{clusterv1beta2.ProviderNameLabel: provider}).
+		WithTopology(topology).
+		Build()
+	cluster.Spec.ControlPlaneEndpoint = clusterv1beta2.APIEndpoint{Host: host, Port: port}
+
+	return cluster
+}
+
+// Path to the real chart values template, relative to this test file.
+const ciliumChartValuesTemplatePath = "../../../../../charts/cluster-api-runtime-extensions-nutanix/addons/cni/cilium/values-template.yaml"
+
+func Test_templateValues_ChartValuesTemplate_L2AnnouncementsBlock(t *testing.T) {
+	raw, err := os.ReadFile(ciliumChartValuesTemplatePath)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name         string
+		slb          *carenv1.ServiceLoadBalancer
+		wantContains []string
+		notContains  []string
+	}{
+		{
+			name:         "no serviceLoadBalancer omits l2announcements block",
+			slb:          nil,
+			wantContains: []string{"ipam:", "hubble:"},
+			notContains:  []string{"l2announcements:", "k8sClientRateLimit:"},
+		},
+		{
+			name:         "provider MetalLB omits l2announcements block",
+			slb:          &carenv1.ServiceLoadBalancer{Provider: carenv1.ServiceLoadBalancerProviderMetalLB},
+			wantContains: []string{"ipam:", "hubble:"},
+			notContains:  []string{"l2announcements:", "k8sClientRateLimit:"},
+		},
+		{
+			name:         "provider Cilium emits l2announcements and k8sClientRateLimit",
+			slb:          &carenv1.ServiceLoadBalancer{Provider: carenv1.ServiceLoadBalancerProviderCilium},
+			wantContains: []string{"l2announcements:\n  enabled: true", "k8sClientRateLimit:\n  qps: 50\n  burst: 100"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cluster := createTestClusterWithSLB(t, "c", "ns", "nutanix", "10.0.0.1", 6443, tc.slb)
+			got, err := templateValues(cluster, string(raw))
+			require.NoError(t, err)
+			for _, want := range tc.wantContains {
+				assert.Contains(t, got, want)
+			}
+			for _, unwanted := range tc.notContains {
+				assert.NotContains(t, got, unwanted)
+			}
 		})
 	}
 }
