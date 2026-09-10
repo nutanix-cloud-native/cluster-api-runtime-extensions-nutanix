@@ -17,7 +17,6 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 type ServiceLoadBalancerGC struct {
@@ -46,12 +45,7 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 	req *runtimehooksv1.BeforeClusterDeleteRequest,
 	resp *runtimehooksv1.BeforeClusterDeleteResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(

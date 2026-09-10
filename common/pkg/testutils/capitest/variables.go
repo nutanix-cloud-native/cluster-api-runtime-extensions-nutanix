@@ -11,7 +11,7 @@ import (
 	"github.com/onsi/gomega"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
@@ -70,19 +70,10 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 	g.Expect(resp.Status).To(gomega.Equal(runtimehooksv1.ResponseStatusSuccess))
 	g.Expect(resp.Variables).To(gomega.HaveLen(1))
 
-	variableV1Beta1 := resp.Variables[0]
-	var variableV1Beta2 clusterv1.ClusterClassVariable
-	_ = clusterv1beta1.Convert_v1beta1_ClusterClassVariable_To_v1beta2_ClusterClassVariable(
-		&variableV1Beta1,
-		&variableV1Beta2,
-		nil,
-	)
-	g.Expect(variableV1Beta1.Name).To(gomega.Equal(variableName))
-	g.Expect(variableV1Beta1.Required).To(gomega.Equal(variableRequired))
-	// Sanity check schema type; skip full equality: v1beta2→v1beta1→v1beta2 round-trip
-	// loses semantic equivalence (e.g. nil vs ptr.To(false), XMetadata). VariableTestDef
-	// validation below exercises schema behavior.
-	g.Expect(variableV1Beta2.Schema.OpenAPIV3Schema.Type).To(gomega.Equal(variableSchema.OpenAPIV3Schema.Type))
+	variable := resp.Variables[0]
+	g.Expect(variable.Name).To(gomega.Equal(variableName))
+	g.Expect(variable.Required).To(gomega.Equal(ptr.To(variableRequired)))
+	g.Expect(variable.Schema.OpenAPIV3Schema.Type).To(gomega.Equal(variableSchema.OpenAPIV3Schema.Type))
 
 	for _, tt := range variableTestDefs {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -110,7 +101,7 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 						Name:  variableName,
 						Value: apiextensionsv1.JSON{Raw: encodedOldVals},
 					},
-					&variableV1Beta2,
+					&variable,
 					field.NewPath(variableName),
 				).ToAggregate()
 			default:
@@ -119,7 +110,7 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 						Name:  variableName,
 						Value: apiextensionsv1.JSON{Raw: encodedVals},
 					},
-					&variableV1Beta2,
+					&variable,
 					field.NewPath(variableName),
 				).ToAggregate()
 			}

@@ -16,7 +16,6 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 type fakeCSIProvider struct {
@@ -64,12 +63,8 @@ func testReq(csi *apivariables.CSI) (*runtimehooksv1.AfterControlPlaneInitialize
 			},
 		},
 	}
-	clusterV1beta1, convErr := capiutils.ConvertV1Beta2ClusterToV1Beta1(cluster)
-	if convErr != nil {
-		return nil, convErr
-	}
 	return &runtimehooksv1.AfterControlPlaneInitializedRequest{
-		Cluster: *clusterV1beta1,
+		Cluster: *cluster,
 	}, nil
 }
 

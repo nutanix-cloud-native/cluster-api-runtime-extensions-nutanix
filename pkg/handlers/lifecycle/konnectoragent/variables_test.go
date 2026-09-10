@@ -23,7 +23,6 @@ import (
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 )
@@ -270,10 +269,8 @@ func TestAfterControlPlaneInitialized(t *testing.T) {
 		},
 	}
 
-	clusterV1beta1, err := capiutils.ConvertV1Beta2ClusterToV1Beta1(cluster)
-	require.NoError(t, err)
 	req := &runtimehooksv1.AfterControlPlaneInitializedRequest{
-		Cluster: *clusterV1beta1,
+		Cluster: *cluster,
 	}
 	resp := &runtimehooksv1.AfterControlPlaneInitializedResponse{}
 
@@ -295,10 +292,8 @@ func TestBeforeClusterUpgrade(t *testing.T) {
 		},
 	}
 
-	clusterV1beta1, err := capiutils.ConvertV1Beta2ClusterToV1Beta1(cluster)
-	require.NoError(t, err)
 	req := &runtimehooksv1.BeforeClusterUpgradeRequest{
-		Cluster: *clusterV1beta1,
+		Cluster: *cluster,
 	}
 	resp := &runtimehooksv1.BeforeClusterUpgradeResponse{}
 

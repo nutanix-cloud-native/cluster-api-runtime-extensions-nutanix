@@ -11,14 +11,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 type fakeServiceLoadBalancerProvider struct {
@@ -141,26 +139,8 @@ func TestAfterControlPlaneInitialized(t *testing.T) {
 					},
 				},
 			}
-			clusterV1beta1, err := capiutils.ConvertV1Beta2ClusterToV1Beta1(cluster)
-			if err != nil {
-				// For malformed JSON, conversion may fail; build v1beta1 request directly.
-				clusterV1beta1 = &clusterv1beta1.Cluster{
-					Spec: clusterv1beta1.ClusterSpec{
-						Topology: &clusterv1beta1.Topology{
-							Class:   "dummy-class",
-							Version: "v1.28.0",
-							Variables: []clusterv1beta1.ClusterVariable{
-								{
-									Name:  tt.clusterVariable.Name,
-									Value: tt.clusterVariable.Value,
-								},
-							},
-						},
-					},
-				}
-			}
 			req := &runtimehooksv1.AfterControlPlaneInitializedRequest{
-				Cluster: *clusterV1beta1,
+				Cluster: *cluster,
 			}
 
 			handler.AfterControlPlaneInitialized(ctx, req, resp)
@@ -193,26 +173,8 @@ func TestBeforeClusterUpgrade(t *testing.T) {
 					},
 				},
 			}
-			clusterV1beta1, err := capiutils.ConvertV1Beta2ClusterToV1Beta1(cluster)
-			if err != nil {
-				// For malformed JSON, conversion may fail; build v1beta1 request directly.
-				clusterV1beta1 = &clusterv1beta1.Cluster{
-					Spec: clusterv1beta1.ClusterSpec{
-						Topology: &clusterv1beta1.Topology{
-							Class:   "dummy-class",
-							Version: "v1.28.0",
-							Variables: []clusterv1beta1.ClusterVariable{
-								{
-									Name:  tt.clusterVariable.Name,
-									Value: tt.clusterVariable.Value,
-								},
-							},
-						},
-					},
-				}
-			}
 			req := &runtimehooksv1.BeforeClusterUpgradeRequest{
-				Cluster: *clusterV1beta1,
+				Cluster: *cluster,
 			}
 
 			handler.BeforeClusterUpgrade(ctx, req, resp)
