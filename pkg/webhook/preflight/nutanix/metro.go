@@ -394,23 +394,22 @@ func (c *metroVHACategoryNameCheck) Run(_ context.Context) preflight.CheckResult
 	result := preflight.CheckResult{Allowed: true}
 
 	// CAPX synthesizes a single "default" movement group and one category per
-	// metro failure domain (index 0 and 1).
+	// metro failure domain. Indexes 0 and 1 are single-digit, so length is the
+	// same; check idx 0 only to avoid duplicate causes.
 	for _, metroName := range c.metroNames {
 		domainName := vhaDomainName(c.clusterName, metroName)
-		for idx := range metroPrismElementCount {
-			value := vhaCategoryValue(domainName, vhaDefaultMovementGroup, idx)
-			if len(value) <= prismCategoryValueMaxLen {
-				continue
-			}
-			failCheck(&result, c.field, fmt.Sprintf(
-				"Generated Prism Central category value %q is %d characters; Prism Central limits category values to %d. CAPX names metro categories k8s-vha-capx-{cluster}-{metro}-default-{idx} and does not hash or truncate them. Shorten the Cluster name %q or NutanixMetro name %q and retry.", //nolint:lll // Message is long.
-				value,
-				len(value),
-				prismCategoryValueMaxLen,
-				c.clusterName,
-				metroName,
-			))
+		value := vhaCategoryValue(domainName, vhaDefaultMovementGroup, 0)
+		if len(value) <= prismCategoryValueMaxLen {
+			continue
 		}
+		failCheck(&result, c.field, fmt.Sprintf(
+			"Generated Prism Central category value %q is %d characters; Prism Central limits category values to %d. CAPX names metro categories k8s-vha-capx-{cluster}-{metro}-default-{idx} and does not hash or truncate them. Shorten the Cluster name %q or NutanixMetro name %q and retry.", //nolint:lll // Message is long.
+			value,
+			len(value),
+			prismCategoryValueMaxLen,
+			c.clusterName,
+			metroName,
+		))
 	}
 
 	return result

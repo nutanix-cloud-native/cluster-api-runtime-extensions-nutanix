@@ -705,7 +705,7 @@ func TestMetroSitesIdentityCheck(t *testing.T) {
 }
 
 func TestMetroVHACategoryNameCheck(t *testing.T) {
-	// k8s-vha-capx-{cluster}-{metro}-default-1 is 24 + len(cluster) + len(metro).
+	// k8s-vha-capx-{cluster}-{metro}-default-0 is 24 + len(cluster) + len(metro).
 	// 24 + 20 + 20 = 64; 24 + 21 + 20 = 65.
 	shortCluster := "cluster-1"
 	atLimitCluster := strings.Repeat("a", 20)
@@ -754,7 +754,7 @@ func TestMetroVHACategoryNameCheck(t *testing.T) {
 				assert.Empty(t, result.Causes)
 				return
 			}
-			require.NotEmpty(t, result.Causes)
+			require.Len(t, result.Causes, 1)
 			assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
 			assert.Equal(t, field, result.Causes[0].Field)
 		})
