@@ -28,6 +28,13 @@ const (
 	// milliseconds, supported between the two Prism Elements of a metro
 	// configuration for safe synchronous replication.
 	metroMaxRTTMillis = 5.0
+
+	// vhaDefaultMovementGroup is the movement group CAPX synthesizes when a
+	// NutanixVirtualHADomain has none. See cluster-api-provider-nutanix
+	// controllers/nutanixvirtualhadomain_controller.go.
+	vhaDefaultMovementGroup = "default"
+	// prismCategoryValueMaxLen is Prism Central's maximum length for category values.
+	prismCategoryValueMaxLen = 64
 )
 
 type metroCheck struct {
@@ -143,6 +150,23 @@ func newMetroChecks(cd *checkDependencies) []preflight.Check {
 				nodePools: clusterNodePools(cd),
 				field:     firstField,
 			},
+			// Metro sites of the same NutanixMetro must prefer distinct failure
+			// domains and use distinct groupNameLabels. Otherwise both sites pin
+			// to the same Prism Element (or the same topology segment).
+			&metroSitesIdentityCheck{
+				metroNames: metroNames,
+				namespace:  cd.cluster.Namespace,
+				field:      firstField,
+				kclient:    cd.kclient,
+			},
+			// CAPX generates Prism Central category values as
+			// k8s-vha-capx-{cluster}-{metro}-{group}-{idx} and fails if the
+			// result exceeds 64 characters. Catch that before admission.
+			&metroVHACategoryNameCheck{
+				clusterName: cd.cluster.Name,
+				metroNames:  metroNames,
+				field:       firstField,
+			},
 		)
 	}
 
@@ -239,6 +263,153 @@ func (c *allNodePoolsMetroCheck) Run(_ context.Context) preflight.CheckResult {
 				fd,
 			))
 		}
+	}
+
+	return result
+}
+
+// metroSitesIdentityCheck enforces that NutanixMetroSite objects belonging to
+// the same NutanixMetro have distinct preferred failure domains and, when set,
+// distinct groupNameLabels. Sharing either value would pin both sites to the
+// same Prism Element or the same topology segment.
+type metroSitesIdentityCheck struct {
+	metroNames []string
+	namespace  string
+	field      string
+	kclient    ctrlclient.Client
+}
+
+func (c *metroSitesIdentityCheck) Name() string {
+	return nutanixMetroName
+}
+
+func (c *metroSitesIdentityCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{Allowed: true}
+
+	siteList := &capxv1.NutanixMetroSiteList{}
+	if err := c.kclient.List(ctx, siteList, ctrlclient.InNamespace(c.namespace)); err != nil {
+		failCheckInternal(&result, c.field, fmt.Sprintf(
+			"Failed to list NutanixMetroSite objects: %s. This is usually a temporary error. Please retry.",
+			err,
+		))
+		return result
+	}
+
+	metroNameSet := map[string]struct{}{}
+	for _, name := range c.metroNames {
+		metroNameSet[name] = struct{}{}
+	}
+
+	sitesByMetro := map[string][]metroSiteIdentity{}
+	for i := range siteList.Items {
+		site := &siteList.Items[i]
+		metro := site.Spec.MetroRef.Name
+		if _, ok := metroNameSet[metro]; !ok {
+			continue
+		}
+		groupLabel := ""
+		if site.Spec.GroupNameLabel != nil {
+			groupLabel = *site.Spec.GroupNameLabel
+		}
+		sitesByMetro[metro] = append(sitesByMetro[metro], metroSiteIdentity{
+			name:        site.Name,
+			preferredFD: site.Spec.PreferredFailureDomain.Name,
+			groupLabel:  groupLabel,
+		})
+	}
+
+	for _, metroName := range c.metroNames {
+		sites := sitesByMetro[metroName]
+		reportDuplicateSiteField(&result, c.field, metroName, sites, func(s metroSiteIdentity) string {
+			return s.preferredFD
+		}, "preferredFailureDomain")
+		reportDuplicateSiteField(&result, c.field, metroName, sites, func(s metroSiteIdentity) string {
+			return s.groupLabel
+		}, "groupNameLabel")
+	}
+
+	return result
+}
+
+type metroSiteIdentity struct {
+	name        string
+	preferredFD string
+	groupLabel  string
+}
+
+func reportDuplicateSiteField(
+	result *preflight.CheckResult,
+	field, metroName string,
+	sites []metroSiteIdentity,
+	value func(metroSiteIdentity) string,
+	fieldName string,
+) {
+	seen := map[string]string{}
+	for _, site := range sites {
+		v := value(site)
+		if v == "" {
+			continue
+		}
+		if other, ok := seen[v]; ok {
+			failCheck(result, field, fmt.Sprintf(
+				"NutanixMetroSite %q and %q of NutanixMetro %q share %s %q. Each metro site must have a distinct %s so that sites pin to different Prism Elements and topology segments. Use a unique %s per site and retry.", //nolint:lll // Message is long.
+				other,
+				site.name,
+				metroName,
+				fieldName,
+				v,
+				fieldName,
+				fieldName,
+			))
+			continue
+		}
+		seen[v] = site.name
+	}
+}
+
+// metroVHACategoryNameCheck enforces that the Prism Central category values CAPX
+// will generate for the default metro movement group stay within
+// prismCategoryValueMaxLen. CAPX names them
+// k8s-vha-capx-{cluster}-{metro}-default-{idx} and fails immediately if the
+// result is longer than 64 characters.
+type metroVHACategoryNameCheck struct {
+	clusterName string
+	metroNames  []string
+	field       string
+}
+
+func (c *metroVHACategoryNameCheck) Name() string {
+	return nutanixMetroName
+}
+
+func vhaDomainName(clusterName, metroName string) string {
+	return fmt.Sprintf("%s-%s", clusterName, metroName)
+}
+
+func vhaCategoryValue(vHADomainName, group string, idx int) string {
+	return fmt.Sprintf("k8s-vha-capx-%s-%s-%d", vHADomainName, group, idx)
+}
+
+func (c *metroVHACategoryNameCheck) Run(_ context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{Allowed: true}
+
+	// CAPX synthesizes a single "default" movement group and one category per
+	// metro failure domain. Indexes 0 and 1 are single-digit, so length is the
+	// same; check idx 0 only to avoid duplicate causes.
+	for _, metroName := range c.metroNames {
+		domainName := vhaDomainName(c.clusterName, metroName)
+		value := vhaCategoryValue(domainName, vhaDefaultMovementGroup, 0)
+		if len(value) <= prismCategoryValueMaxLen {
+			continue
+		}
+		failCheck(&result, c.field, fmt.Sprintf(
+			"Generated Prism Central category value %q is %d characters; Prism Central limits category values to %d. CAPX names metro categories k8s-vha-capx-{cluster}-{metro}-default-{idx} and does not hash or truncate them. Shorten the Cluster name %q or NutanixMetro name %q and retry.", //nolint:lll // Message is long.
+			value,
+			len(value),
+			prismCategoryValueMaxLen,
+			c.clusterName,
+			metroName,
+		))
 	}
 
 	return result

@@ -5,6 +5,7 @@ package nutanix
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -169,8 +170,9 @@ func TestNewMetroChecks(t *testing.T) {
 			},
 			nclient: &clientWrapper{},
 			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
-			// + 1 latency check + 1 all-node-pools check.
-			expectedChecksCount: 5,
+			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
+			// check + 1 vHA category name check.
+			expectedChecksCount: 7,
 		},
 		{
 			name: "same metro referenced by control plane and worker is de-duplicated",
@@ -187,8 +189,9 @@ func TestNewMetroChecks(t *testing.T) {
 			}},
 			nclient: &clientWrapper{},
 			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
-			// + 1 latency check + 1 all-node-pools check.
-			expectedChecksCount: 5,
+			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
+			// check + 1 vHA category name check.
+			expectedChecksCount: 7,
 		},
 		{
 			name: "two distinct metros add a single-metro check",
@@ -205,8 +208,9 @@ func TestNewMetroChecks(t *testing.T) {
 			}},
 			nclient: &clientWrapper{},
 			// 2 per-metro checks + 1 single-metro check + 1 cluster PE-scale check
-			// + 1 PC-hosting check + 1 latency check + 1 all-node-pools check.
-			expectedChecksCount: 7,
+			// + 1 PC-hosting check + 1 latency check + 1 all-node-pools check
+			// + 1 metro-sites identity check + 1 vHA category name check.
+			expectedChecksCount: 9,
 		},
 		{
 			name: "metro site failure domain resolves to its metro",
@@ -225,8 +229,9 @@ func TestNewMetroChecks(t *testing.T) {
 			},
 			nclient: &clientWrapper{},
 			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
-			// + 1 latency check + 1 all-node-pools check.
-			expectedChecksCount: 5,
+			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
+			// check + 1 vHA category name check.
+			expectedChecksCount: 7,
 		},
 	}
 
@@ -571,6 +576,186 @@ func TestAllNodePoolsMetroCheck(t *testing.T) {
 			if tc.expectedCauseMessage != "" {
 				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
 			}
+			assert.Equal(t, field, result.Causes[0].Field)
+		})
+	}
+}
+
+func newMetroSite(name, metro, preferredFD string, groupNameLabel *string) *capxv1.NutanixMetroSite {
+	return &capxv1.NutanixMetroSite{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec: capxv1.NutanixMetroSiteSpec{
+			MetroRef:               corev1.LocalObjectReference{Name: metro},
+			PreferredFailureDomain: corev1.LocalObjectReference{Name: preferredFD},
+			GroupNameLabel:         groupNameLabel,
+		},
+	}
+}
+
+func TestMetroSitesIdentityCheck(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		metroNames           []string
+		objects              []ctrlclient.Object
+		expectedAllowed      bool
+		expectedCauseCount   int
+		expectedCauseMessage string
+	}{
+		{
+			name:            "no metro sites is allowed",
+			metroNames:      []string{metroName},
+			expectedAllowed: true,
+		},
+		{
+			name:       "single metro site is allowed",
+			metroNames: []string{metroName},
+			objects: []ctrlclient.Object{
+				newMetroSite("site-1", metroName, metroFD1, ptr.To("dh1")),
+			},
+			expectedAllowed: true,
+		},
+		{
+			name:       "sites of the same metro with distinct preferred FDs and labels are allowed",
+			metroNames: []string{metroName},
+			objects: []ctrlclient.Object{
+				newMetroSite("site-1", metroName, metroFD1, ptr.To("dh1")),
+				newMetroSite("site-2", metroName, metroFD2, ptr.To("dh2")),
+			},
+			expectedAllowed: true,
+		},
+		{
+			name:       "sites of another metro are ignored",
+			metroNames: []string{metroName},
+			objects: []ctrlclient.Object{
+				newMetroSite("site-1", metroName, metroFD1, ptr.To("dh1")),
+				newMetroSite("other-1", "other-metro", metroFD1, ptr.To("dh1")),
+				newMetroSite("other-2", "other-metro", metroFD1, ptr.To("dh1")),
+			},
+			expectedAllowed: true,
+		},
+		{
+			name:       "duplicate preferred failure domain is rejected",
+			metroNames: []string{metroName},
+			objects: []ctrlclient.Object{
+				newMetroSite("metro0-s0", metroName, metroFD1, ptr.To("dh1")),
+				newMetroSite("metro0-s1", metroName, metroFD1, ptr.To("dh2")),
+			},
+			expectedAllowed:      false,
+			expectedCauseCount:   1,
+			expectedCauseMessage: "share preferredFailureDomain",
+		},
+		{
+			name:       "duplicate groupNameLabel is rejected",
+			metroNames: []string{metroName},
+			objects: []ctrlclient.Object{
+				newMetroSite("metro0-s0", metroName, metroFD1, ptr.To("dh1")),
+				newMetroSite("metro0-s1", metroName, metroFD2, ptr.To("dh1")),
+			},
+			expectedAllowed:      false,
+			expectedCauseCount:   1,
+			expectedCauseMessage: "share groupNameLabel",
+		},
+		{
+			name:       "duplicate preferred FD and groupNameLabel are both reported",
+			metroNames: []string{metroName},
+			objects: []ctrlclient.Object{
+				newMetroSite("metro0-s0", metroName, metroFD1, ptr.To("dh1")),
+				newMetroSite("metro0-s1", metroName, metroFD1, ptr.To("dh1")),
+			},
+			expectedAllowed:    false,
+			expectedCauseCount: 2,
+		},
+		{
+			name:       "unset groupNameLabel is not treated as a duplicate",
+			metroNames: []string{metroName},
+			objects: []ctrlclient.Object{
+				newMetroSite("site-1", metroName, metroFD1, nil),
+				newMetroSite("site-2", metroName, metroFD2, nil),
+			},
+			expectedAllowed: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			builder := fake.NewClientBuilder().WithScheme(metroScheme())
+			if len(tc.objects) > 0 {
+				builder = builder.WithObjects(tc.objects...)
+			}
+			check := &metroSitesIdentityCheck{
+				metroNames: tc.metroNames,
+				namespace:  namespace,
+				field:      field,
+				kclient:    builder.Build(),
+			}
+			result := check.Run(context.TODO())
+
+			assert.Equal(t, tc.expectedAllowed, result.Allowed)
+			if tc.expectedAllowed {
+				assert.Empty(t, result.Causes)
+				return
+			}
+			require.Len(t, result.Causes, tc.expectedCauseCount)
+			if tc.expectedCauseMessage != "" {
+				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
+			}
+			assert.Equal(t, field, result.Causes[0].Field)
+		})
+	}
+}
+
+func TestMetroVHACategoryNameCheck(t *testing.T) {
+	// k8s-vha-capx-{cluster}-{metro}-default-0 is 24 + len(cluster) + len(metro).
+	// 24 + 20 + 20 = 64; 24 + 21 + 20 = 65.
+	shortCluster := "cluster-1"
+	atLimitCluster := strings.Repeat("a", 20)
+	overLimitCluster := strings.Repeat("a", 21)
+	metroAtLimit := strings.Repeat("b", 20)
+
+	testCases := []struct {
+		name                 string
+		clusterName          string
+		metroNames           []string
+		expectedAllowed      bool
+		expectedCauseMessage string
+	}{
+		{
+			name:            "short cluster and metro names are allowed",
+			clusterName:     shortCluster,
+			metroNames:      []string{metroName},
+			expectedAllowed: true,
+		},
+		{
+			name:            "category value of exactly 64 characters is allowed",
+			clusterName:     atLimitCluster,
+			metroNames:      []string{metroAtLimit},
+			expectedAllowed: true,
+		},
+		{
+			name:                 "category value longer than 64 characters is rejected",
+			clusterName:          overLimitCluster,
+			metroNames:           []string{metroAtLimit},
+			expectedAllowed:      false,
+			expectedCauseMessage: "Prism Central limits category values to 64",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			check := &metroVHACategoryNameCheck{
+				clusterName: tc.clusterName,
+				metroNames:  tc.metroNames,
+				field:       field,
+			}
+			result := check.Run(context.TODO())
+
+			assert.Equal(t, tc.expectedAllowed, result.Allowed)
+			if tc.expectedAllowed {
+				assert.Empty(t, result.Causes)
+				return
+			}
+			require.Len(t, result.Causes, 1)
+			assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
 			assert.Equal(t, field, result.Causes[0].Field)
 		})
 	}
