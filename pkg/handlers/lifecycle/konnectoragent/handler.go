@@ -34,7 +34,6 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/utils"
@@ -121,12 +120,7 @@ func (n *DefaultKonnectorAgent) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	n.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -138,12 +132,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	n.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -167,7 +156,8 @@ func (n *DefaultKonnectorAgent) apply(
 	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
 		varMap,
 		n.variableName,
-		n.variablePath...)
+		n.variablePath...,
+	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.
@@ -477,7 +467,8 @@ func extractCategoriesFromVarMap(varMap map[string]apiextensionsv1.JSON) []strin
 		len(clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories) > 0 {
 		categories = append(
 			categories,
-			formatCategoriesFromSlice(clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories)...)
+			formatCategoriesFromSlice(clusterConfigVar.ControlPlane.Nutanix.MachineDetails.AdditionalCategories)...,
+		)
 	}
 
 	// Then, extract worker categories
@@ -490,7 +481,8 @@ func extractCategoriesFromVarMap(varMap map[string]apiextensionsv1.JSON) []strin
 		len(workerConfigVar.Nutanix.MachineDetails.AdditionalCategories) > 0 {
 		categories = append(
 			categories,
-			formatCategoriesFromSlice(workerConfigVar.Nutanix.MachineDetails.AdditionalCategories)...)
+			formatCategoriesFromSlice(workerConfigVar.Nutanix.MachineDetails.AdditionalCategories)...,
+		)
 	}
 	return categories
 }
@@ -529,12 +521,7 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	req *runtimehooksv1.BeforeClusterDeleteRequest,
 	resp *runtimehooksv1.BeforeClusterDeleteResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
 	log := ctrl.LoggerFrom(ctx).WithValues(
@@ -550,10 +537,11 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	_, err = variables.Get[apivariables.NutanixKonnectorAgent](
+	_, err := variables.Get[apivariables.NutanixKonnectorAgent](
 		varMap,
 		n.variableName,
-		n.variablePath...)
+		n.variablePath...,
+	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.Info(

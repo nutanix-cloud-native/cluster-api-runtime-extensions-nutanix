@@ -19,7 +19,6 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 const (
@@ -69,12 +68,7 @@ func (c *CCMHandler) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	c.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -86,12 +80,7 @@ func (c *CCMHandler) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	c.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()

@@ -83,12 +83,7 @@ func (m *MultusHandler) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	m.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -100,12 +95,7 @@ func (m *MultusHandler) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	m.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -141,7 +131,8 @@ func (m *MultusHandler) apply(
 	cniVar, err := variables.Get[v1alpha1.CNI](
 		varMap,
 		v1alpha1.ClusterConfigVariableName,
-		[]string{"addons", v1alpha1.CNIVariableName}...)
+		[]string{"addons", v1alpha1.CNIVariableName}...,
+	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).Info("No CNI specified in cluster config. Skipping Multus deployment.")

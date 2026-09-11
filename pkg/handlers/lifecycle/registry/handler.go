@@ -17,7 +17,6 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 )
 
 type RegistryProvider interface {
@@ -76,12 +75,7 @@ func (r *RegistryHandler) BeforeClusterCreate(
 	req *runtimehooksv1.BeforeClusterCreateRequest,
 	resp *runtimehooksv1.BeforeClusterCreateResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	r.setup(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -93,12 +87,7 @@ func (r *RegistryHandler) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	r.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -110,12 +99,7 @@ func (r *RegistryHandler) BeforeClusterUpgrade(
 	req *runtimehooksv1.BeforeClusterUpgradeRequest,
 	resp *runtimehooksv1.BeforeClusterUpgradeResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 	commonResponse := &runtimehooksv1.CommonResponse{}
 	r.apply(ctx, cluster, commonResponse)
 	resp.Status = commonResponse.GetStatus()
@@ -138,7 +122,8 @@ func (r *RegistryHandler) setup(
 	registryVar, err := variables.Get[v1alpha1.RegistryAddon](
 		varMap,
 		r.variableName,
-		r.variablePath...)
+		r.variablePath...,
+	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).
@@ -223,7 +208,8 @@ func (r *RegistryHandler) apply(
 	registryVar, err := variables.Get[v1alpha1.RegistryAddon](
 		varMap,
 		r.variableName,
-		r.variablePath...)
+		r.variablePath...,
+	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).
@@ -297,12 +283,7 @@ func (r *RegistryHandler) BeforeClusterDelete(
 	req *runtimehooksv1.BeforeClusterDeleteRequest,
 	resp *runtimehooksv1.BeforeClusterDeleteResponse,
 ) {
-	cluster, err := capiutils.ConvertV1Beta1ClusterToV1Beta2(&req.Cluster)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("failed to convert cluster: %v", err))
-		return
-	}
+	cluster := &req.Cluster
 
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 
@@ -315,7 +296,8 @@ func (r *RegistryHandler) BeforeClusterDelete(
 	registryVar, err := variables.Get[v1alpha1.RegistryAddon](
 		varMap,
 		r.variableName,
-		r.variablePath...)
+		r.variablePath...,
+	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
 			log.V(5).

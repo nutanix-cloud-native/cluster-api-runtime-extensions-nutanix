@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"k8s.io/utils/ptr"
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
@@ -46,12 +45,6 @@ func (h *awsClusterConfigVariableHandler) DiscoverVariables(
 		Required: ptr.To(true),
 		Schema:   v1alpha1.AWSClusterConfig{}.VariableSchema(),
 	}
-	var v1beta1Var clusterv1beta1.ClusterClassVariable
-	_ = clusterv1beta1.Convert_v1beta2_ClusterClassVariable_To_v1beta1_ClusterClassVariable(
-		&v1beta2Var,
-		&v1beta1Var,
-		nil,
-	)
-	resp.Variables = append(resp.Variables, v1beta1Var)
+	resp.Variables = append(resp.Variables, v1beta2Var)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }

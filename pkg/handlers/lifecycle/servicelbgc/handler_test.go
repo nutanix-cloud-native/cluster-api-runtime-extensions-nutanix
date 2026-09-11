@@ -13,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	remotefake "sigs.k8s.io/cluster-api/controllers/remote/fake"
@@ -147,7 +146,7 @@ func TestBeforeClusterDelete(t *testing.T) {
 			}
 
 			req := &runtimehooksv1.BeforeClusterDeleteRequest{
-				Cluster: clusterv1beta1.Cluster{
+				Cluster: clusterv1beta2.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      clusterName,
 						Namespace: clusterNamespace,
