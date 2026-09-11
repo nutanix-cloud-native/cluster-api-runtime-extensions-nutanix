@@ -13,6 +13,8 @@ permissions:
   contents: write
   packages: write
   actions: write
+  id-token: write
+  attestations: write
 
 defaults:
   run:
@@ -21,6 +23,8 @@ defaults:
 jobs:
   release-tag:
     runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -65,9 +69,70 @@ jobs:
         run: |
           devbox run -- helm package ./charts/cluster-api-runtime-extensions-nutanix \
                           --destination . \
-                          --version ${{ github.ref_name }} \
-                          --app-version ${{ github.ref_name }}
-          devbox run -- gh release upload ${{ github.ref_name }} cluster-api-runtime-extensions-nutanix-*.tgz
+                          --version "${VERSION}" \
+                          --app-version "${VERSION}"
+          devbox run -- gh release upload "${VERSION}" cluster-api-runtime-extensions-nutanix-*.tgz
+
+      - name: Push Helm chart to GHCR as OCI artifact
+        run: |
+          tgz="cluster-api-runtime-extensions-nutanix-${VERSION}.tgz"
+          # Helm's OCI config blob is the chart metadata as JSON. Pushing with
+          # oras (rather than `helm push`, which forces the repository basename
+          # to the Chart.yaml name) lets us publish to a flat, image-distinct
+          # path while keeping the chart `helm pull`-able.
+          devbox run -- helm show chart "${tgz}" | devbox run -- yq -o=json '.' >chart-config.json
+          devbox run -- oras push \
+            "ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix-chart:${VERSION}" \
+            --config chart-config.json:application/vnd.cncf.helm.config.v1+json \
+            "${tgz}:application/vnd.cncf.helm.chart.content.v1.tar+gzip"
+
+      - name: Resolve artifact digests
+        id: digests
+        run: |
+          caren=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
+          bundle=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer
+          chart=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix-chart
+          # Assign on separate lines so a crane failure aborts the step (the
+          # default `bash -eo pipefail` does not abort on failures inside a
+          # command substitution embedded in a larger command such as echo).
+          caren_digest=$(devbox run -- crane digest "${caren}:${VERSION}")
+          bundle_digest=$(devbox run -- crane digest "${bundle}:${VERSION}")
+          chart_digest=$(devbox run -- crane digest "${chart}:${VERSION}")
+          {
+            echo "caren=${caren_digest}"
+            echo "bundle=${bundle_digest}"
+            echo "chart=${chart_digest}"
+          } >>"${GITHUB_OUTPUT}"
+
+      - name: Sign images and chart with cosign (keyless)
+        run: |
+          caren=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
+          bundle=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer
+          chart=ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix-chart
+          devbox run -- cosign sign --yes "${caren}@${{ steps.digests.outputs.caren }}"
+          devbox run -- cosign sign --yes "${bundle}@${{ steps.digests.outputs.bundle }}"
+          devbox run -- cosign sign --yes "${chart}@${{ steps.digests.outputs.chart }}"
+
+      - name: Attest CAREN image provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
+          subject-digest: ${{ steps.digests.outputs.caren }}
+          push-to-registry: true
+
+      - name: Attest bundle-initializer image provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer
+          subject-digest: ${{ steps.digests.outputs.bundle }}
+          push-to-registry: true
+
+      - name: Attest Helm chart provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix-chart
+          subject-digest: ${{ steps.digests.outputs.chart }}
+          push-to-registry: true
 
       - name: Build GitHub pages
         uses: benc-uk/workflow-dispatch@v1
