@@ -34,6 +34,7 @@ const (
 
 var imagePullSecretNamespaces = []string{
 	"flow-cni-system",
+	"flow-cns-system",
 	"ovn-kubernetes",
 }
 
