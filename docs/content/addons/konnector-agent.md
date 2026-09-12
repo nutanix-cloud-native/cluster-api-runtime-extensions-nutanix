@@ -125,7 +125,7 @@ The addon uses the following default values:
 - **Agent Name**: `konnector-agent`
 - **Strategy**: `HelmAddon`
 - **Chart**: `konnector-agent`
-- **Version**: `1.4.1`
+- **Version**: `1.4.2`
 
 ## Pod Security Admission
 

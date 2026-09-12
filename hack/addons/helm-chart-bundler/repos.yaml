@@ -45,7 +45,7 @@ repositories:
     repoURL: https://nutanix.github.io/helm-releases/
     charts:
       konnector-agent:
-      - 1.4.1
+      - 1.4.2
   local-path-provisioner:
     repoURL: https://charts.containeroo.ch
     charts:
