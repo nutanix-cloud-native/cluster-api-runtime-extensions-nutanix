@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.51.0 (2026-09-12)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Exciting New Features 🎉
+* feat: Preflight check for control plane endpoint by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1615
+* feat: Dockerhub Integration - Don't trim org prefix for Dockerhub Nutanix registry by @nilay-ntnx in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1678
+* feat: Dockerhub Integration - always wire kubelet credential provider by default by @nilay-ntnx in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1679
+* feat: add guardrail to avoid vpc for metro by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1688
+* feat: add webhook for CSI flag for metro by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1703
+* feat: [NCN-115862] Upgrade Flow CNI to 1.1.0 by @SandhyaRavi2403 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1709
+### Fixes 🔧
+* fix: kubeletconfiguration webhook for md overrides by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1689
+* fix: also set createPESecrets for Nutanix CSI by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1699
+* fix: coredns mapping by @priyadarshini7q in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1707
+* fix: bump up konnector to 1.4.1 by @priyadarshini7q in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1706
+* fix: remove unused flag MPIO for CSI by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1710
+* fix: metro preflights by @abhay-nutanix in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1712
+* fix: bump up konnector to 1.4.2 by @vijayaraghavanr31 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1713
+### Other Changes
+* refactor: remove previous handlers by @dkoshkin in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1687
+* test: Verify preflight check when cluster is both paused and unpaused by @dlipovetsky in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1632
+* refactor(bumpup): CAPI bumps to v1.13.x by @suresh882710 in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1711
+
+## New Contributors
+* @nilay-ntnx made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1678
+* @SandhyaRavi2403 made their first contribution in https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pull/1709
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/compare/v0.50.0...v0.51.0
+
 ## 0.50.0 (2026-07-29)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
