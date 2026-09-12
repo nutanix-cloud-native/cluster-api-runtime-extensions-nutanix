@@ -139,11 +139,11 @@ export COSI_CONTROLLER_VERSION := 0.2.2
 # Konnector Agent
 #   Chart name:    konnector-agent
 #   Chart repo: 	 https://nutanix.github.io/helm-releases/index.yaml
-#   Chart version: 1.4.1
-#   App version:   v1.4.1
+#   Chart version: 1.4.2
+#   App version:   v1.4.2
 #   Repo:          https://github.com/nutanix-core/k8s-agent
-#   Release:       https://github.com/nutanix-core/k8s-agent/releases/tag/1.4.0
-export KONNECTOR_AGENT_VERSION := 1.4.1
+#   Release:       https://github.com/nutanix-core/k8s-agent/releases/tag/1.4.2
+export KONNECTOR_AGENT_VERSION := 1.4.2
 
 # Multus
 #   Chart name: multus
