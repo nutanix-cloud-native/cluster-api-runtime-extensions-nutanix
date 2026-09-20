@@ -27,6 +27,7 @@ const (
 	VirtualIPProviderKubeVIP = "KubeVIP"
 
 	ServiceLoadBalancerProviderMetalLB = "MetalLB"
+	ServiceLoadBalancerProviderCilium  = "Cilium"
 
 	RegistryProviderCNCFDistribution = "CNCF Distribution"
 
@@ -372,7 +373,7 @@ type CCMCredentials struct {
 type ServiceLoadBalancer struct {
 	// The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
 	// the CCM acts as the provider.
-	// +kubebuilder:validation:Enum=MetalLB
+	// +kubebuilder:validation:Enum=MetalLB;Cilium
 	// +kubebuilder:validation:Required
 	Provider string `json:"provider"`
 

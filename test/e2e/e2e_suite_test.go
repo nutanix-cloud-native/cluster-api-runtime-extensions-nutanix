@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	ciliumv2 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
+	ciliumv2alpha1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2alpha1"
 	metallbv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/go.universe.tf/metallb/api/v1beta1"
 	helmaddonsv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
@@ -210,6 +212,8 @@ func initScheme() *runtime.Scheme {
 	capie2eframework.TryAddDefaultSchemes(scheme)
 	Expect(helmaddonsv1.AddToScheme(scheme)).To(Succeed())
 	Expect(metallbv1.AddToScheme(scheme)).To(Succeed())
+	Expect(ciliumv2.AddToScheme(scheme)).To(Succeed())
+	Expect(ciliumv2alpha1.AddToScheme(scheme)).To(Succeed())
 	return scheme
 }
 

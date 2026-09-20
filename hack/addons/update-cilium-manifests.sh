@@ -29,6 +29,7 @@ Provider: tmpl-capiprovider-tmpl
 ControlPlaneEndpoint:
   Host: tmpl-controlplaneendpointhost-tmpl
   Port: 6443
+ServiceLoadBalancerProviderIsCilium: false
 EOF
 # Replace trimPrefix with strings.TrimPrefix to use the in built go function in gomplate.
 sed -e 's/trimPrefix/strings.TrimPrefix/g' \
