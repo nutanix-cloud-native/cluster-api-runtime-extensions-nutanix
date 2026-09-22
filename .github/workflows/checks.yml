@@ -59,6 +59,11 @@ jobs:
         with:
           test-results: test.json
 
+  # NOTE: Nutanix (self-hosted) e2e runs in e2e-nutanix.yaml, which triggers on
+  # pull_request_target so the approval gate is owned by the base branch and
+  # cannot be modified by a fork. This workflow (pull_request) only runs the
+  # Docker matrix on GitHub-hosted runners, so it must never target a
+  # self-hosted runner.
   e2e-quick-start:
     needs:
       - "lint-gha"
@@ -69,9 +74,6 @@ jobs:
     strategy:
       matrix:
         config:
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.5", "baseOS": "rocky-9.7"}
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.3", "baseOS": "rocky-9.7"}
-          - {"provider": "Nutanix", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.2", "baseOS": "rocky-9.7"}
           - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.10"}
           - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.6"}
           - {"provider": "Docker", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
@@ -84,13 +86,15 @@ jobs:
       focus: Quick start
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
-      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-nutanix-docker-medium' || 'ubuntu-24.04' }}
-      base-os:  ${{ matrix.config.provider == 'Nutanix' && matrix.config.baseOS || '' }}
+      runs-on: ubuntu-24.04
     secrets: inherit
     permissions:
       contents: read
       checks: write
 
+  # This workflow runs on the fork-controlled `pull_request` event, so it must
+  # only ever use GitHub-hosted runners. Any Nutanix (self-hosted) e2e must be
+  # added to e2e-nutanix.yaml (pull_request_target, approval-gated) instead.
   e2e-self-hosted:
     needs:
       - "lint-gha"
@@ -104,9 +108,6 @@ jobs:
           - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.10"}
           - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.6"}
           - {"provider": "Docker", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
-          # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
-          # - {"provider": "Nutanix", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
-          # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
       fail-fast: false
     name: e2e-self-hosted (${{ matrix.config.provider }} provider, Kubernetes ${{ matrix.config.kubernetesMinor }})
     uses: ./.github/workflows/e2e.yml
@@ -114,7 +115,7 @@ jobs:
       focus: Self-hosted
       provider: ${{ matrix.config.provider }}
       kubernetes-version: ${{ matrix.config.kubernetesVersion }}
-      runs-on: ${{ matrix.config.provider == 'Nutanix' && 'self-hosted-nutanix-docker-medium' || 'ubuntu-24.04' }}
+      runs-on: ubuntu-24.04
     secrets: inherit
     permissions:
       contents: read
