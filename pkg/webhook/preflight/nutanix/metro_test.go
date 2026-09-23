@@ -704,8 +704,22 @@ func TestMetroSitesIdentityCheck(t *testing.T) {
 	}
 }
 
+func TestNutanixClusterName(t *testing.T) {
+	t.Parallel()
+
+	withRef := &clusterv1beta2.Cluster{}
+	withRef.Name = "capi-cluster"
+	withRef.Spec.InfrastructureRef.Name = "ntnx-cluster"
+	assert.Equal(t, "ntnx-cluster", nutanixClusterName(withRef))
+
+	withoutRef := &clusterv1beta2.Cluster{}
+	withoutRef.Name = "capi-cluster"
+	assert.Equal(t, "capi-cluster", nutanixClusterName(withoutRef))
+	assert.Equal(t, "", nutanixClusterName(nil))
+}
+
 func TestMetroVHACategoryNameCheck(t *testing.T) {
-	// k8s-vha-capx-{cluster}-{metro}-default-0 is 24 + len(cluster) + len(metro).
+	// k8s-vha-capx-{nutanixCluster}-{metro}-default-0 is 24 + len(nutanixCluster) + len(metro).
 	// 24 + 20 + 20 = 64; 24 + 21 + 20 = 65.
 	shortCluster := "cluster-1"
 	atLimitCluster := strings.Repeat("a", 20)
@@ -714,26 +728,26 @@ func TestMetroVHACategoryNameCheck(t *testing.T) {
 
 	testCases := []struct {
 		name                 string
-		clusterName          string
+		nutanixClusterName   string
 		metroNames           []string
 		expectedAllowed      bool
 		expectedCauseMessage string
 	}{
 		{
-			name:            "short cluster and metro names are allowed",
-			clusterName:     shortCluster,
-			metroNames:      []string{metroName},
-			expectedAllowed: true,
+			name:               "short cluster and metro names are allowed",
+			nutanixClusterName: shortCluster,
+			metroNames:         []string{metroName},
+			expectedAllowed:    true,
 		},
 		{
-			name:            "category value of exactly 64 characters is allowed",
-			clusterName:     atLimitCluster,
-			metroNames:      []string{metroAtLimit},
-			expectedAllowed: true,
+			name:               "category value of exactly 64 characters is allowed",
+			nutanixClusterName: atLimitCluster,
+			metroNames:         []string{metroAtLimit},
+			expectedAllowed:    true,
 		},
 		{
 			name:                 "category value longer than 64 characters is rejected",
-			clusterName:          overLimitCluster,
+			nutanixClusterName:   overLimitCluster,
 			metroNames:           []string{metroAtLimit},
 			expectedAllowed:      false,
 			expectedCauseMessage: "Prism Central limits category values to 64",
@@ -743,9 +757,9 @@ func TestMetroVHACategoryNameCheck(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			check := &metroVHACategoryNameCheck{
-				clusterName: tc.clusterName,
-				metroNames:  tc.metroNames,
-				field:       field,
+				nutanixClusterName: tc.nutanixClusterName,
+				metroNames:         tc.metroNames,
+				field:              field,
 			}
 			result := check.Run(context.TODO())
 
