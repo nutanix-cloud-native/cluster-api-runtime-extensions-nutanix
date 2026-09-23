@@ -14,6 +14,7 @@ import (
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -160,12 +161,12 @@ func newMetroChecks(cd *checkDependencies) []preflight.Check {
 				kclient:    cd.kclient,
 			},
 			// CAPX generates Prism Central category values as
-			// k8s-vha-capx-{cluster}-{metro}-{group}-{idx} and fails if the
+			// k8s-vha-capx-{nutanixCluster}-{metro}-{group}-{idx} and fails if the
 			// result exceeds 64 characters. Catch that before admission.
 			&metroVHACategoryNameCheck{
-				clusterName: cd.cluster.Name,
-				metroNames:  metroNames,
-				field:       firstField,
+				nutanixClusterName: nutanixClusterName(cd.cluster),
+				metroNames:         metroNames,
+				field:              firstField,
 			},
 		)
 	}
@@ -367,23 +368,36 @@ func reportDuplicateSiteField(
 	}
 }
 
+// nutanixClusterName is the name CAPX uses for vHA categories, recovery plans, and
+// protection policies. That is the NutanixCluster object name. Before the topology
+// controller sets spec.infrastructureRef, CAPI names that object after the Cluster.
+func nutanixClusterName(cluster *clusterv1.Cluster) string {
+	if cluster == nil {
+		return ""
+	}
+	if name := cluster.Spec.InfrastructureRef.Name; name != "" {
+		return name
+	}
+	return cluster.Name
+}
+
 // metroVHACategoryNameCheck enforces that the Prism Central category values CAPX
 // will generate for the default metro movement group stay within
 // prismCategoryValueMaxLen. CAPX names them
-// k8s-vha-capx-{cluster}-{metro}-default-{idx} and fails immediately if the
+// k8s-vha-capx-{nutanixCluster}-{metro}-default-{idx} and fails immediately if the
 // result is longer than 64 characters.
 type metroVHACategoryNameCheck struct {
-	clusterName string
-	metroNames  []string
-	field       string
+	nutanixClusterName string
+	metroNames         []string
+	field              string
 }
 
 func (c *metroVHACategoryNameCheck) Name() string {
 	return nutanixMetroName
 }
 
-func vhaDomainName(clusterName, metroName string) string {
-	return fmt.Sprintf("%s-%s", clusterName, metroName)
+func vhaDomainName(nutanixClusterName, metroName string) string {
+	return fmt.Sprintf("%s-%s", nutanixClusterName, metroName)
 }
 
 func vhaCategoryValue(vHADomainName, group string, idx int) string {
@@ -397,17 +411,17 @@ func (c *metroVHACategoryNameCheck) Run(_ context.Context) preflight.CheckResult
 	// metro failure domain. Indexes 0 and 1 are single-digit, so length is the
 	// same; check idx 0 only to avoid duplicate causes.
 	for _, metroName := range c.metroNames {
-		domainName := vhaDomainName(c.clusterName, metroName)
+		domainName := vhaDomainName(c.nutanixClusterName, metroName)
 		value := vhaCategoryValue(domainName, vhaDefaultMovementGroup, 0)
 		if len(value) <= prismCategoryValueMaxLen {
 			continue
 		}
 		failCheck(&result, c.field, fmt.Sprintf(
-			"Generated Prism Central category value %q is %d characters; Prism Central limits category values to %d. CAPX names metro categories k8s-vha-capx-{cluster}-{metro}-default-{idx} and does not hash or truncate them. Shorten the Cluster name %q or NutanixMetro name %q and retry.", //nolint:lll // Message is long.
+			"Generated Prism Central category value %q is %d characters; Prism Central limits category values to %d. CAPX names metro categories k8s-vha-capx-{nutanixCluster}-{metro}-default-{idx} and does not hash or truncate them. Shorten the NutanixCluster name %q or NutanixMetro name %q and retry.", //nolint:lll // Message is long.
 			value,
 			len(value),
 			prismCategoryValueMaxLen,
-			c.clusterName,
+			c.nutanixClusterName,
 			metroName,
 		))
 	}
