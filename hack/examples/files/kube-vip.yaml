@@ -39,7 +39,7 @@
                 - name: address
                   value: '{{ .Address }}'
                 - name: prometheus_server
-              image: ghcr.io/kube-vip/kube-vip:v1.1.1
+              image: ghcr.io/kube-vip/kube-vip:v1.2.4
               imagePullPolicy: IfNotPresent
               name: kube-vip
               resources: {}
