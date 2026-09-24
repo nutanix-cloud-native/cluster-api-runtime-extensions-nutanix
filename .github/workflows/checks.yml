@@ -77,7 +77,7 @@ jobs:
           - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.10"}
           - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.6"}
           - {"provider": "Docker", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.36", "kubernetesVersion": "v1.36.1"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.36", "kubernetesVersion": "v1.36.2"}
           - {"provider": "Docker", "kubernetesMinor": "v1.37", "kubernetesVersion": "v1.37.0"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "AWS", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}
@@ -108,7 +108,7 @@ jobs:
           - {"provider": "Docker", "kubernetesMinor": "v1.33", "kubernetesVersion": "v1.33.10"}
           - {"provider": "Docker", "kubernetesMinor": "v1.34", "kubernetesVersion": "v1.34.6"}
           - {"provider": "Docker", "kubernetesMinor": "v1.35", "kubernetesVersion": "v1.35.3"}
-          - {"provider": "Docker", "kubernetesMinor": "v1.36", "kubernetesVersion": "v1.36.1"}
+          - {"provider": "Docker", "kubernetesMinor": "v1.36", "kubernetesVersion": "v1.36.2"}
           - {"provider": "Docker", "kubernetesMinor": "v1.37", "kubernetesVersion": "v1.37.0"}
           # Uncomment below once we have the ability to run e2e tests on other providers from GHA.
           # - {"provider": "Nutanix", "kubernetesMinor": "v1.29", "kubernetesVersion": "v1.29.6"}

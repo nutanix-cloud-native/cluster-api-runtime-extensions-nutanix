@@ -9,19 +9,19 @@ import (
 
 const (
 	mesosphereKinDImageRepository = "ghcr.io/mesosphere/kind-node"
-	kindestKinDImageRepository    = "kindest/node"
+	nutanixKinDImageRepository    = "ghcr.io/nutanix-cloud-native/kind-node"
 )
 
 // defaultKinDImageRepository returns the container image repository for default
-// DockerMachineTemplate custom images. mesosphere/kind-node currently mirrors
-// through 1.36.x; Kubernetes 1.37+ uses upstream kindest/node.
+// DockerMachineTemplate custom images. mesosphere/kind-node is used through
+// 1.35.x; Kubernetes 1.36+ uses ghcr.io/nutanix-cloud-native/kind-node.
 func defaultKinDImageRepository(kubernetesVersion string) string {
 	v, err := semver.ParseTolerant(kubernetesVersion)
 	if err != nil {
 		return mesosphereKinDImageRepository
 	}
-	if v.Major > 1 || (v.Major == 1 && v.Minor >= 37) {
-		return kindestKinDImageRepository
+	if v.Major > 1 || (v.Major == 1 && v.Minor >= 36) {
+		return nutanixKinDImageRepository
 	}
 	return mesosphereKinDImageRepository
 }

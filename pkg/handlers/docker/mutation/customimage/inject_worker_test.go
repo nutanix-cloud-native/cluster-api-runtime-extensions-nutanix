@@ -42,7 +42,7 @@ var _ = Describe("Docker CustomImage patches for workers", func() {
 			}},
 		},
 		{
-			Name: "image unset for workers uses kindest/node for 1.37+",
+			Name: "image unset for workers uses nutanix kind-node for 1.36+",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					runtimehooksv1.BuiltinsName,
@@ -57,7 +57,7 @@ var _ = Describe("Docker CustomImage patches for workers", func() {
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
 				Operation:    "add",
 				Path:         "/spec/template/spec/customImage",
-				ValueMatcher: gomega.Equal("kindest/node:v1.37.0"),
+				ValueMatcher: gomega.Equal("ghcr.io/nutanix-cloud-native/kind-node:v1.37.0"),
 			}},
 		},
 		{

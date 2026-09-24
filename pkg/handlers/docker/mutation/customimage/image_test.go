@@ -18,9 +18,9 @@ func TestDefaultKinDImageRepository(t *testing.T) {
 		want    string
 	}{
 		{name: "1.35", version: "v1.35.3", want: mesosphereKinDImageRepository},
-		{name: "1.36", version: "v1.36.1", want: mesosphereKinDImageRepository},
-		{name: "1.37", version: "v1.37.0", want: kindestKinDImageRepository},
-		{name: "1.37 without v", version: "1.37.0", want: kindestKinDImageRepository},
+		{name: "1.36", version: "v1.36.2", want: nutanixKinDImageRepository},
+		{name: "1.37", version: "v1.37.0", want: nutanixKinDImageRepository},
+		{name: "1.37 without v", version: "1.37.0", want: nutanixKinDImageRepository},
 		{name: "invalid", version: "not-a-version", want: mesosphereKinDImageRepository},
 	}
 
