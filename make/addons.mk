@@ -11,14 +11,14 @@
 #   Run 'make addons.sync' to update the addons.
 
 # Calico (tigera-operator)
-#   Chart name: tigera-operator
+#   Chart name: tigera-operator (+ crd.projectcalico.org.v1 from Calico v3.32+)
 #   Chart repo: https://docs.tigera.io/calico/charts/index.yaml
-#   Chart version:   3.31.7
-#   App version:     3.31.7
+#   Chart version:   3.32.2
+#   App version:     3.32.2
 #   Repo:            https://github.com/projectcalico/calico
 #   Release:         https://github.com/projectcalico/calico/releases/tag/v3.32.2
-# Stay on 3.31.x: Calico v3.32+ unbundles CRDs from the tigera-operator chart and requires a separate
-# crd.projectcalico.org.v1 chart (not yet wired into update-calico-manifests.sh).
+# From v3.32, CRDs are no longer bundled in tigera-operator; update-calico-manifests.sh
+# renders crd.projectcalico.org.v1 then tigera-operator into the CRS ConfigMaps.
 export CALICO_VERSION := v3.32.2
 
 # Cilium
