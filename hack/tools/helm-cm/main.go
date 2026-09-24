@@ -115,13 +115,13 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 		if !ok {
 			return fmt.Errorf("charts obj %v is not of type []interface", charts)
 		}
-		info, ok := parsedCharts[0].(map[string]interface{})
+		dirName := strings.Split(filepath, "/")[0]
+		info, ok := pickPrimaryHelmChart(parsedCharts, dirName)
 		if !ok {
-			return fmt.Errorf("info obj %v is not of type map[string]interface", parsedCharts)
+			return fmt.Errorf("no helmCharts entries found in %s", filepath)
 		}
 		repo := info["repo"].(string)
 		name := info["name"].(string)
-		dirName := strings.Split(filepath, "/")[0]
 		i := configMapInfo{
 			configMapFieldName: dirName,
 			RepositoryURL:      repo,
@@ -153,4 +153,31 @@ func createConfigMapFromDir(kustomizeDir string) (*corev1.ConfigMap, error) {
 		finalCM.Data[res.configMapFieldName] = string(d)
 	}
 	return &finalCM, err
+}
+
+// pickPrimaryHelmChart selects the chart used for HelmAddon / mindthegap metadata.
+// Prefer a chart whose name matches the kustomize directory (e.g. tigera-operator) so
+// auxiliary charts in the same kustomization (e.g. Calico CRDs) do not replace it.
+func pickPrimaryHelmChart(
+	parsedCharts []interface{},
+	dirName string,
+) (map[string]interface{}, bool) {
+	var fallback map[string]interface{}
+	for _, raw := range parsedCharts {
+		info, ok := raw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if fallback == nil {
+			fallback = info
+		}
+		name, _ := info["name"].(string)
+		if name == dirName {
+			return info, true
+		}
+	}
+	if fallback != nil {
+		return fallback, true
+	}
+	return nil, false
 }
