@@ -95,4 +95,4 @@ repositories:
     repoURL: https://docs.tigera.io/calico/charts
     charts:
       tigera-operator:
-      - v3.31.7
+      - v3.32.2

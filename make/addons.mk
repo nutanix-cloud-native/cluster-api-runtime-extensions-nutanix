@@ -16,10 +16,10 @@
 #   Chart version:   3.31.7
 #   App version:     3.31.7
 #   Repo:            https://github.com/projectcalico/calico
-#   Release:         https://github.com/projectcalico/calico/releases/tag/v3.31.7
+#   Release:         https://github.com/projectcalico/calico/releases/tag/v3.32.2
 # Stay on 3.31.x: Calico v3.32+ unbundles CRDs from the tigera-operator chart and requires a separate
 # crd.projectcalico.org.v1 chart (not yet wired into update-calico-manifests.sh).
-export CALICO_VERSION := v3.31.7
+export CALICO_VERSION := v3.32.2
 
 # Cilium
 #   Chart name: cilium
