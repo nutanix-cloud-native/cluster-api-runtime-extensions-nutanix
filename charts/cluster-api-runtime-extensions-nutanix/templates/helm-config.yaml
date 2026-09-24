@@ -77,7 +77,7 @@ data:
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://piraeus.io/helm-charts/{{ end }}'
   tigera-operator: |
     ChartName: tigera-operator
-    ChartVersion: v3.31.7
+    ChartVersion: v3.32.2
     RepositoryURL: '{{ if .Values.helmRepository.enabled }}oci://helm-repository.{{ .Release.Namespace }}.svc/charts{{ else }}https://docs.tigera.io/calico/charts{{ end }}'
 kind: ConfigMap
 metadata:
