@@ -41,6 +41,21 @@ var _ = Describe("Docker CustomImage patches for ControlPlane", func() {
 			}},
 		},
 		{
+			Name: "image unset for control plane uses kindest/node for 1.37+",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					runtimehooksv1.BuiltinsName,
+					apiextensionsv1.JSON{Raw: []byte(`{"controlPlane": {"version": "v1.37.0"}}`)},
+				),
+			},
+			RequestItem: request.NewCPDockerMachineTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/customImage",
+				ValueMatcher: gomega.Equal("kindest/node:v1.37.0"),
+			}},
+		},
+		{
 			Name: "image set for control plane",
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(

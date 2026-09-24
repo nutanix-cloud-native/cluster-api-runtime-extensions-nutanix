@@ -120,6 +120,7 @@ endif
 	      -e2e.artifacts-folder="$(ARTIFACTS)" \
 	      -e2e.config="$(E2E_CONF_FILE_ENVSUBST)" \
 	      $(if $(filter $(E2E_SKIP_CLEANUP),true),-e2e.skip-resource-cleanup) \
+	      -e2e.bootstrap-kind-image="$(KINDEST_NODE_IMAGE)" \
 	      -e2e.bootstrap-kind-version="$(KINDEST_IMAGE_TAG)"
 	go tool cover \
 	  -html=coverage-e2e.out \

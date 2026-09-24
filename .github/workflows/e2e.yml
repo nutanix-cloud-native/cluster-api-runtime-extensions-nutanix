@@ -100,6 +100,8 @@ jobs:
           NUTANIX_MACHINE_TEMPLATE_BASE_OS: ${{ inputs.base-os }}
           KUBERNETES_VERSION_NUTANIX: ${{ inputs.kubernetes-version }}
           KINDEST_IMAGE_TAG: ${{ inputs.kubernetes-version }}
+          # mesosphere/kind-node mirrors through 1.36.x; 1.37+ uses upstream kindest/node.
+          KINDEST_NODE_IMAGE: ${{ startsWith(inputs.kubernetes-version, 'v1.37') && 'kindest/node' || 'ghcr.io/mesosphere/kind-node' }}
           E2E_KUBERNETES_VERSION: ${{ inputs.kubernetes-version }}
 
       - if: success() || failure() # always run even if the previous step fails

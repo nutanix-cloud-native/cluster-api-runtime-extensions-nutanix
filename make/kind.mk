@@ -10,6 +10,8 @@ KINDEST_NODE_IMAGE ?= ghcr.io/mesosphere/kind-node
 KINDEST_NODE_VERSION_v1.33 ?= v1.33.10
 KINDEST_NODE_VERSION_v1.34 ?= v1.34.6
 KINDEST_NODE_VERSION_v1.35 ?= v1.35.3
+KINDEST_NODE_VERSION_v1.36 ?= v1.36.1
+KINDEST_NODE_VERSION_v1.37 ?= v1.37.0
 # Allow easy override of Kubernetes version to use via `make KIND_KUBERNETES_VERSION=v1.23` to use in CI
 KIND_KUBERNETES_VERSION ?= v1.35
 ifndef KINDEST_NODE_VERSION_$(KIND_KUBERNETES_VERSION)
@@ -17,6 +19,10 @@ ifndef KINDEST_NODE_VERSION_$(KIND_KUBERNETES_VERSION)
 endif
 
 export KINDEST_IMAGE_TAG ?= $(KINDEST_NODE_VERSION_$(KIND_KUBERNETES_VERSION))
+# mesosphere/kind-node currently mirrors through 1.36.x; use upstream kindest/node for 1.37+.
+ifeq ($(filter v1.37%,$(KINDEST_IMAGE_TAG)),$(KINDEST_IMAGE_TAG))
+  KINDEST_NODE_IMAGE = kindest/node
+endif
 KINDEST_IMAGE = $(KINDEST_NODE_IMAGE):$(KINDEST_IMAGE_TAG)
 
 .PHONY: kind.recreate
