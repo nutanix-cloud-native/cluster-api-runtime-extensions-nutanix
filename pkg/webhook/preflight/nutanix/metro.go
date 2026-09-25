@@ -6,6 +6,7 @@ package nutanix
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
@@ -36,7 +38,28 @@ const (
 	vhaDefaultMovementGroup = "default"
 	// prismCategoryValueMaxLen is Prism Central's maximum length for category values.
 	prismCategoryValueMaxLen = 64
+
+	// metroVMImageCheckName is the name of the metro unsupported-OS VM image preflight check.
+	metroVMImageCheckName = "NutanixMetroVMImage"
+
+	controlPlaneMachineDetailsField = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails" //nolint:lll // Field is long.
 )
+
+// metroUnsupportedOSVersions are guest OS identifiers rejected for metro clusters.
+// Each entry is matched as its own token in imageLookup.baseOS or a Prism Central image
+// name, so "rhel-8.10" matches "nkp-rhel-8.10-release-..." and does not match "rhel-8.1"
+// or "rhel-8.100". Append a version here to reject it; the matcher does not change.
+var metroUnsupportedOSVersions = []string{
+	"rhel-8.10",
+}
+
+// metroUnsupportedOS is one unsupported OS version and the token pattern compiled from it.
+type metroUnsupportedOS struct {
+	version string
+	pattern *regexp.Regexp
+}
+
+var metroUnsupportedOSPatterns = unsupportedOSPatterns(metroUnsupportedOSVersions)
 
 type metroCheck struct {
 	metroName  string
@@ -170,6 +193,10 @@ func newMetroChecks(cd *checkDependencies) []preflight.Check {
 			},
 		)
 	}
+
+	// Metro clusters reject VM images whose OS is in metroUnsupportedOSVersions.
+	// Non-metro clusters produce no checks here.
+	checks = append(checks, newMetroVMImageChecks(cd)...)
 
 	return checks
 }
@@ -1171,4 +1198,165 @@ func sortedKeys(m map[string]struct{}) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// unsupportedOSPatterns compiles one token pattern per unsupported OS version.
+func unsupportedOSPatterns(versions []string) []metroUnsupportedOS {
+	patterns := make([]metroUnsupportedOS, 0, len(versions))
+	for _, version := range versions {
+		patterns = append(patterns, metroUnsupportedOS{
+			version: version,
+			pattern: regexp.MustCompile(`(?i)(^|[^a-z0-9])` + regexp.QuoteMeta(version) + `([^a-z0-9]|$)`),
+		})
+	}
+	return patterns
+}
+
+// matchedUnsupportedOS returns the unsupported OS version found in name.
+// name may be an imageLookup.baseOS value or a Prism Central image name.
+func matchedUnsupportedOS(name string) (string, bool) {
+	return matchUnsupportedOS(name, metroUnsupportedOSPatterns)
+}
+
+func matchUnsupportedOS(name string, patterns []metroUnsupportedOS) (string, bool) {
+	trimmed := strings.TrimSpace(name)
+	for _, os := range patterns {
+		if os.pattern.MatchString(trimmed) {
+			return os.version, true
+		}
+	}
+	return "", false
+}
+
+func unsupportedOSVersionsText() string {
+	return strings.Join(metroUnsupportedOSVersions, ", ")
+}
+
+// metroVMImageCheck rejects a metro cluster node pool whose VM image matches an
+// unsupported OS version. Non-metro clusters never register this check.
+type metroVMImageCheck struct {
+	description    string
+	machineDetails *carenv1.NutanixMachineDetails
+	field          string
+	nclient        client
+}
+
+func (c *metroVMImageCheck) Name() string {
+	return metroVMImageCheckName
+}
+
+func (c *metroVMImageCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{Allowed: true}
+
+	if c.machineDetails == nil {
+		return result
+	}
+
+	if c.machineDetails.ImageLookup != nil {
+		baseOS := c.machineDetails.ImageLookup.BaseOS
+		if version, ok := matchedUnsupportedOS(baseOS); ok {
+			failCheck(&result, c.field+".imageLookup.baseOS", fmt.Sprintf(
+				"%s uses imageLookup.baseOS %q, which matches unsupported OS version %q. Metro clusters reject these OS versions: %s. Set imageLookup.baseOS to a supported operating system and retry.", //nolint:lll // Message is long.
+				c.description,
+				baseOS,
+				version,
+				unsupportedOSVersionsText(),
+			))
+		}
+		return result
+	}
+
+	if c.machineDetails.Image == nil {
+		return result
+	}
+
+	images, err := getVMImages(ctx, c.nclient, c.machineDetails.Image)
+	if err != nil {
+		failCheckInternal(&result, c.field+".image", fmt.Sprintf(
+			"Failed to get VM Image %q: %s. This is usually a temporary error. Please retry.",
+			c.machineDetails.Image,
+			err,
+		))
+		return result
+	}
+
+	for i := range images {
+		image := &images[i]
+		if image.Name == nil || strings.TrimSpace(*image.Name) == "" {
+			continue
+		}
+		version, ok := matchedUnsupportedOS(*image.Name)
+		if !ok {
+			continue
+		}
+		failCheck(&result, c.field+".image", fmt.Sprintf(
+			"%s uses VM Image %q named %q, which matches unsupported OS version %q. Metro clusters reject these OS versions: %s. Choose a VM image for a supported operating system and retry.", //nolint:lll // Message is long.
+			c.description,
+			c.machineDetails.Image,
+			*image.Name,
+			version,
+			unsupportedOSVersionsText(),
+		))
+	}
+
+	return result
+}
+
+// newMetroVMImageChecks adds an unsupported-OS rejection check for every Control Plane and
+// Worker node pool when the Cluster references a NutanixMetro or NutanixMetroSite failure domain.
+func newMetroVMImageChecks(cd *checkDependencies) []preflight.Check {
+	if cd == nil || cd.nclient == nil || cd.pcVersion == "" {
+		return nil
+	}
+	if !clusterReferencesMetro(cd) {
+		return nil
+	}
+
+	checks := []preflight.Check{}
+
+	if cd.nutanixClusterConfigSpec != nil &&
+		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
+		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
+		md := &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails
+		checks = append(checks, &metroVMImageCheck{
+			description:    "The Control Plane",
+			machineDetails: md,
+			field:          controlPlaneMachineDetailsField,
+			nclient:        cd.nclient,
+		})
+	}
+
+	for mdName, workerSpec := range cd.nutanixWorkerNodeConfigSpecByMachineDeploymentName {
+		if workerSpec == nil || workerSpec.Nutanix == nil {
+			continue
+		}
+		md := &workerSpec.Nutanix.MachineDetails
+		checks = append(checks, &metroVMImageCheck{
+			description:    fmt.Sprintf("Worker MachineDeployment %q", mdName),
+			machineDetails: md,
+			field: fmt.Sprintf(
+				"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=%s].value.nutanix.machineDetails", //nolint:lll // Field is long.
+				mdName,
+				carenv1.WorkerConfigVariableName,
+			),
+			nclient: cd.nclient,
+		})
+	}
+
+	return checks
+}
+
+// clusterReferencesMetro reports whether any control plane or worker failure domain is a
+// NutanixMetro or NutanixMetroSite reference.
+func clusterReferencesMetro(cd *checkDependencies) bool {
+	if cd == nil {
+		return false
+	}
+	found := false
+	forEachClusterFailureDomain(cd, func(fd, _ string) {
+		if isNutanixMetroFailureDomain(fd) || isNutanixMetroSiteFailureDomain(fd) {
+			found = true
+		}
+	})
+	return found
 }
