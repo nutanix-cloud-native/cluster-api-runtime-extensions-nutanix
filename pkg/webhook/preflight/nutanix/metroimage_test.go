@@ -127,7 +127,7 @@ func TestMetroVMImageCheck_Run(t *testing.T) {
 			machineDetails: imageDetails("test-uuid"),
 			nclient:        imageByIDClient(t, "nkp-rhel-8.10-release-1.33.1"),
 			expectAllowed:  false,
-			expectCause:    "unsupported OS version",
+			expectCause:    `Metro clusters do not support rhel-8.10. The Control Plane uses VM image "test-uuid", named "nkp-rhel-8.10-release-1.33.1" in Prism Central.`,
 		},
 		{
 			name:           "rocky image passes",
@@ -154,7 +154,7 @@ func TestMetroVMImageCheck_Run(t *testing.T) {
 			},
 			nclient:       &clientWrapper{},
 			expectAllowed: false,
-			expectCause:   "imageLookup.baseOS",
+			expectCause:   "Metro clusters do not support rhel-8.10. The Control Plane sets imageLookup.baseOS to \"rhel-8.10\".",
 		},
 		{
 			name: "imageLookup rocky passes",
@@ -207,6 +207,19 @@ func TestMetroVMImageCheck_Run(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMetroVMImageSubject(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t,
+		`The Control Plane uses VM image "nkp-rhel-8.10-release-1.36.2".`,
+		metroVMImageSubject("The Control Plane", "nkp-rhel-8.10-release-1.36.2", "nkp-rhel-8.10-release-1.36.2"),
+	)
+	assert.Equal(t,
+		`The Control Plane uses VM image "test-uuid", named "nkp-rhel-8.10-release-1.33.1" in Prism Central.`,
+		metroVMImageSubject("The Control Plane", "test-uuid", "nkp-rhel-8.10-release-1.33.1"),
+	)
 }
 
 func rockyImageLookup() carenv1.NutanixMachineDetails {

@@ -1232,6 +1232,37 @@ func unsupportedOSVersionsText() string {
 	return strings.Join(metroUnsupportedOSVersions, ", ")
 }
 
+// metroUnsupportedOSRejection is the admission message for a metro node pool on an unsupported OS.
+// subject names the node pool and the image or imageLookup value the user set.
+func metroUnsupportedOSRejection(subject, version string) string {
+	list := unsupportedOSVersionsText()
+	if list == version {
+		return fmt.Sprintf(
+			"Metro clusters do not support %s. %s Choose a VM image for a supported operating system.",
+			version,
+			subject,
+		)
+	}
+	return fmt.Sprintf(
+		"Metro clusters do not support %s. Unsupported OS versions: %s. "+
+			"%s Choose a VM image for a supported operating system.",
+		version,
+		list,
+		subject,
+	)
+}
+
+// metroVMImageSubject names the node pool and VM image. The Prism Central name is included when it
+// differs from the image the user configured, for example a UUID lookup.
+func metroVMImageSubject(description, configured, prismName string) string {
+	configured = strings.TrimSpace(configured)
+	prismName = strings.TrimSpace(prismName)
+	if configured == "" || strings.EqualFold(configured, prismName) {
+		return fmt.Sprintf("%s uses VM image %q.", description, prismName)
+	}
+	return fmt.Sprintf("%s uses VM image %q, named %q in Prism Central.", description, configured, prismName)
+}
+
 // metroVMImageCheck rejects a metro cluster node pool whose VM image matches an
 // unsupported OS version. Non-metro clusters never register this check.
 type metroVMImageCheck struct {
@@ -1255,12 +1286,9 @@ func (c *metroVMImageCheck) Run(ctx context.Context) preflight.CheckResult {
 	if c.machineDetails.ImageLookup != nil {
 		baseOS := c.machineDetails.ImageLookup.BaseOS
 		if version, ok := matchedUnsupportedOS(baseOS); ok {
-			failCheck(&result, c.field+".imageLookup.baseOS", fmt.Sprintf(
-				"%s uses imageLookup.baseOS %q, which matches unsupported OS version %q. Metro clusters reject these OS versions: %s. Set imageLookup.baseOS to a supported operating system and retry.", //nolint:lll // Message is long.
-				c.description,
-				baseOS,
+			failCheck(&result, c.field+".imageLookup.baseOS", metroUnsupportedOSRejection(
+				fmt.Sprintf("%s sets imageLookup.baseOS to %q.", c.description, baseOS),
 				version,
-				unsupportedOSVersionsText(),
 			))
 		}
 		return result
@@ -1289,13 +1317,13 @@ func (c *metroVMImageCheck) Run(ctx context.Context) preflight.CheckResult {
 		if !ok {
 			continue
 		}
-		failCheck(&result, c.field+".image", fmt.Sprintf(
-			"%s uses VM Image %q named %q, which matches unsupported OS version %q. Metro clusters reject these OS versions: %s. Choose a VM image for a supported operating system and retry.", //nolint:lll // Message is long.
-			c.description,
-			c.machineDetails.Image,
-			*image.Name,
+		configured := ""
+		if c.machineDetails.Image != nil {
+			configured = c.machineDetails.Image.String()
+		}
+		failCheck(&result, c.field+".image", metroUnsupportedOSRejection(
+			metroVMImageSubject(c.description, configured, *image.Name),
 			version,
-			unsupportedOSVersionsText(),
 		))
 	}
 
