@@ -171,8 +171,8 @@ func TestNewMetroChecks(t *testing.T) {
 			nclient: &clientWrapper{},
 			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
 			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
-			// check + 1 vHA category name check.
-			expectedChecksCount: 7,
+			// check + 1 vHA category name check + 1 control-plane VM image check.
+			expectedChecksCount: 8,
 		},
 		{
 			name: "same metro referenced by control plane and worker is de-duplicated",
@@ -190,8 +190,8 @@ func TestNewMetroChecks(t *testing.T) {
 			nclient: &clientWrapper{},
 			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
 			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
-			// check + 1 vHA category name check.
-			expectedChecksCount: 7,
+			// check + 1 vHA category name check + 1 control-plane VM image check.
+			expectedChecksCount: 8,
 		},
 		{
 			name: "two distinct metros add a single-metro check",
@@ -209,8 +209,9 @@ func TestNewMetroChecks(t *testing.T) {
 			nclient: &clientWrapper{},
 			// 2 per-metro checks + 1 single-metro check + 1 cluster PE-scale check
 			// + 1 PC-hosting check + 1 latency check + 1 all-node-pools check
-			// + 1 metro-sites identity check + 1 vHA category name check.
-			expectedChecksCount: 9,
+			// + 1 metro-sites identity check + 1 vHA category name check
+			// + 1 control-plane VM image check.
+			expectedChecksCount: 10,
 		},
 		{
 			name: "metro site failure domain resolves to its metro",
@@ -230,7 +231,8 @@ func TestNewMetroChecks(t *testing.T) {
 			nclient: &clientWrapper{},
 			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
 			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
-			// check + 1 vHA category name check.
+			// check + 1 vHA category name check. No VM image check: this case has
+			// no control-plane Nutanix spec and no worker machine details.
 			expectedChecksCount: 7,
 		},
 	}
