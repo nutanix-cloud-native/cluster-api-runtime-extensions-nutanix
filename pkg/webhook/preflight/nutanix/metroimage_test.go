@@ -22,21 +22,27 @@ func TestMatchedUnsupportedOS(t *testing.T) {
 
 	version, ok := matchedUnsupportedOS("rhel-8.10")
 	assert.True(t, ok)
-	assert.Equal(t, "rhel-8.10", version)
+	assert.Equal(t, "rhel-8", version)
 
 	version, ok = matchedUnsupportedOS("RHEL-8.10")
 	assert.True(t, ok)
-	assert.Equal(t, "rhel-8.10", version)
+	assert.Equal(t, "rhel-8", version)
 
 	version, ok = matchedUnsupportedOS("nkp-rhel-8.10-release-1.33.1-20250704023459")
 	assert.True(t, ok)
-	assert.Equal(t, "rhel-8.10", version)
+	assert.Equal(t, "rhel-8", version)
 
-	_, ok = matchedUnsupportedOS("rhel-8.1")
-	assert.False(t, ok)
-	_, ok = matchedUnsupportedOS("rhel-8.100")
-	assert.False(t, ok)
+	version, ok = matchedUnsupportedOS("rhel-8.1")
+	assert.True(t, ok)
+	assert.Equal(t, "rhel-8", version)
+
+	version, ok = matchedUnsupportedOS("rhel-8.100")
+	assert.True(t, ok)
+	assert.Equal(t, "rhel-8", version)
+
 	_, ok = matchedUnsupportedOS("rhel-9.4")
+	assert.False(t, ok)
+	_, ok = matchedUnsupportedOS("rhel-80")
 	assert.False(t, ok)
 	_, ok = matchedUnsupportedOS("rocky-9.6")
 	assert.False(t, ok)
@@ -127,7 +133,7 @@ func TestMetroVMImageCheck_Run(t *testing.T) {
 			machineDetails: imageDetails("test-uuid"),
 			nclient:        imageByIDClient(t, "nkp-rhel-8.10-release-1.33.1"),
 			expectAllowed:  false,
-			expectCause:    `Metro clusters do not support rhel-8.10. The Control Plane uses VM image "test-uuid", named "nkp-rhel-8.10-release-1.33.1" in Prism Central.`,
+			expectCause:    `A stretched Kubernetes cluster on an AHV Metro does not support rhel-8. The Control Plane uses VM image "test-uuid", named "nkp-rhel-8.10-release-1.33.1" in Prism Central.`,
 		},
 		{
 			name:           "rocky image passes",
@@ -142,10 +148,11 @@ func TestMetroVMImageCheck_Run(t *testing.T) {
 			expectAllowed:  true,
 		},
 		{
-			name:           "rhel 8.1 image passes",
+			name:           "rhel 8.1 image is rejected",
 			machineDetails: imageDetails("test-uuid"),
 			nclient:        imageByIDClient(t, "nkp-rhel-8.1-release-1.33.1"),
-			expectAllowed:  true,
+			expectAllowed:  false,
+			expectCause:    "does not support rhel-8",
 		},
 		{
 			name: "imageLookup rhel 8.10 is rejected",
@@ -154,7 +161,7 @@ func TestMetroVMImageCheck_Run(t *testing.T) {
 			},
 			nclient:       &clientWrapper{},
 			expectAllowed: false,
-			expectCause:   "Metro clusters do not support rhel-8.10. The Control Plane sets imageLookup.baseOS to \"rhel-8.10\".",
+			expectCause:   `A stretched Kubernetes cluster on an AHV Metro does not support rhel-8. The Control Plane sets imageLookup.baseOS to "rhel-8.10".`,
 		},
 		{
 			name: "imageLookup rocky passes",

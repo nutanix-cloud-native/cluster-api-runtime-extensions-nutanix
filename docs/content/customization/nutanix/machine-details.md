@@ -111,14 +111,15 @@ spec:
       vcpusPerSocket: 1
 ```
 
-### Metro clusters reject unsupported VM image OS versions
+### Stretched Kubernetes clusters on an AHV Metro reject unsupported VM image OS versions
 
-A metro (stretch) cluster rejects VM images whose operating system is on the unsupported list.
-The restriction applies to every Control Plane and Worker node pool. Non-metro clusters can use
-those OS versions.
+A stretched Kubernetes cluster on an AHV Metro rejects VM images whose operating system is on the
+unsupported list. The restriction applies to every Control Plane and Worker node pool. Clusters
+that are not stretched on an AHV Metro can use those OS versions.
 
-The unsupported list currently contains `rhel-8.10`. Each entry is matched as its own token, so
-`rhel-8.10` matches `nkp-rhel-8.10-release-1.33.1-*` and does not match `rhel-8.1` or `rhel-8.100`.
+The unsupported list currently contains `rhel-8`, which matches the RHEL 8 family. Each entry is
+matched as its own token, so `rhel-8` matches `rhel-8.10`, `rhel-8.1`, and
+`nkp-rhel-8.10-release-1.33.1-*`, and does not match `rhel-9` or `rhel-80`.
 
 Preflight check `NutanixMetroVMImage` rejects the cluster when either of these matches an
 unsupported OS version:

@@ -45,12 +45,13 @@ const (
 	controlPlaneMachineDetailsField = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails" //nolint:lll // Field is long.
 )
 
-// metroUnsupportedOSVersions are guest OS identifiers rejected for metro clusters.
-// Each entry is matched as its own token in imageLookup.baseOS or a Prism Central image
-// name, so "rhel-8.10" matches "nkp-rhel-8.10-release-..." and does not match "rhel-8.1"
-// or "rhel-8.100". Append a version here to reject it; the matcher does not change.
+// metroUnsupportedOSVersions are guest OS identifiers rejected for a stretched Kubernetes
+// cluster on an AHV Metro. Each entry is matched as its own token in imageLookup.baseOS or a
+// Prism Central image name. "rhel-8" matches the RHEL 8 family, including "rhel-8.10" and
+// "nkp-rhel-8.10-release-...", and does not match "rhel-9" or "rhel-80". Append a version
+// here to reject it; the matcher does not change.
 var metroUnsupportedOSVersions = []string{
-	"rhel-8.10",
+	"rhel-8",
 }
 
 // metroUnsupportedOS is one unsupported OS version and the token pattern compiled from it.
@@ -1232,20 +1233,21 @@ func unsupportedOSVersionsText() string {
 	return strings.Join(metroUnsupportedOSVersions, ", ")
 }
 
-// metroUnsupportedOSRejection is the admission message for a metro node pool on an unsupported OS.
+// metroUnsupportedOSRejection is the admission message for a node pool on an unsupported OS.
 // subject names the node pool and the image or imageLookup value the user set.
 func metroUnsupportedOSRejection(subject, version string) string {
 	list := unsupportedOSVersionsText()
 	if list == version {
 		return fmt.Sprintf(
-			"Metro clusters do not support %s. %s Choose a VM image for a supported operating system.",
+			"A stretched Kubernetes cluster on an AHV Metro does not support %s. %s "+
+				"Choose a VM image for a supported operating system.",
 			version,
 			subject,
 		)
 	}
 	return fmt.Sprintf(
-		"Metro clusters do not support %s. Unsupported OS versions: %s. "+
-			"%s Choose a VM image for a supported operating system.",
+		"A stretched Kubernetes cluster on an AHV Metro does not support %s. "+
+			"Unsupported OS versions: %s. %s Choose a VM image for a supported operating system.",
 		version,
 		list,
 		subject,
